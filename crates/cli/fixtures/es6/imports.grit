@@ -1,0 +1,10 @@
+language js
+
+// pattern accumulatePair($accumulator) = or {
+//     pair()
+// }
+
+pattern destructureObject() = {
+    object_pattern(properties = $props)
+}
+contains destructureObject()

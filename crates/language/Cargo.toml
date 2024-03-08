@@ -1,0 +1,65 @@
+[package]
+name = "marzano-language"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tree-sitter = { path = "../../vendor/tree-sitter-facade", package = "tree-sitter-facade-sg" }
+tree-sitter-gritql = { path = "../../vendor/tree-sitter-gritql", optional = true }
+tree-sitter-css = { path = "../../resources/language-metavariables/tree-sitter-css", optional = true }
+tree-sitter-json = { path = "../../resources/language-metavariables/tree-sitter-json", optional = true }
+tree-sitter-solidity = { path = "../../resources/language-metavariables/tree-sitter-solidity", optional = true }
+tree-sitter-yaml = { path = "../../resources/language-metavariables/tree-sitter-yaml", optional = true }
+tree-sitter-hcl = { path = "../../resources/language-metavariables/tree-sitter-hcl", optional = true }
+tree-sitter-typescript = { path = "../../resources/language-metavariables/tree-sitter-typescript", optional = true }
+tree-sitter-javascript = { path = "../../resources/language-metavariables/tree-sitter-javascript", optional = true }
+tree-sitter-html = { path = "../../resources/language-metavariables/tree-sitter-html", optional = true }
+tree-sitter-java = { path = "../../resources/language-metavariables/tree-sitter-java", optional = true }
+tree-sitter-c-sharp = { path = "../../resources/language-metavariables/tree-sitter-c-sharp", optional = true }
+tree-sitter-python = { path = "../../resources/language-metavariables/tree-sitter-python", optional = true }
+tree-sitter-md = { path = "../../resources/language-metavariables/tree-sitter-markdown", optional = true }
+tree-sitter-go = { path = "../../resources/language-metavariables/tree-sitter-go", optional = true }
+tree-sitter-rust = { path = "../../resources/language-metavariables/tree-sitter-rust", optional = true }
+tree-sitter-ruby = { path = "../../resources/language-metavariables/tree-sitter-ruby", optional = true }
+tree-sitter-sql = { path = "../../resources/language-metavariables/tree-sitter-sql", optional = true }
+tree-sitter-vue = { path = "../../resources/language-metavariables/tree-sitter-vue", optional = true }
+serde = { version = "1.0.164", features = ["derive"] }
+serde_json = { version = "1.0.91", features = ["preserve_order"] }
+marzano-util = { path = "../util" }
+regex = "1.7.1"
+anyhow = "1.0.70"
+itertools = "0.10.5"
+lazy_static = "1.4.0"
+either = "1.8.1"
+ignore = { version = "0.4.21", optional = true }
+web-sys = { version = "0.3.66", features = ["console"], optional = true }
+tree-sitter-traversal = { version = "0.1.2", default-features = false }
+enum_dispatch = "0.3.12"
+
+[dev-dependencies]
+insta = "1.26.0"
+trim-margin = "0.1.0"
+
+[features]
+default = ["builtin-parser"]
+builtin-parser = [
+    "tree-sitter-gritql",
+    "tree-sitter-css",
+    "tree-sitter-json",
+    "tree-sitter-solidity",
+    "tree-sitter-yaml",
+    "tree-sitter-hcl",
+    "tree-sitter-typescript",
+    "tree-sitter-javascript",
+    "tree-sitter-html",
+    "tree-sitter-java",
+    "tree-sitter-c-sharp",
+    "tree-sitter-python",
+    "tree-sitter-md",
+    "tree-sitter-go",
+    "tree-sitter-rust",
+    "tree-sitter-ruby",
+    "tree-sitter-sql",
+    "tree-sitter-vue",
+]
+finder = ["ignore"]

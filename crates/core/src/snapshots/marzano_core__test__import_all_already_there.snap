@@ -1,0 +1,180 @@
+---
+source: apps/marzano/core/src/test.rs
+expression: results
+---
+- __typename: Match
+  messages: []
+  variables:
+    - name: $new_files
+      scopedName: 0_0_$new_files
+      ranges: []
+    - name: $program
+      scopedName: 0_1_$program
+      ranges: []
+    - name: $filename
+      scopedName: 0_2_$filename
+      ranges: []
+    - name: $absolute_filename
+      scopedName: 0_3_$absolute_filename
+      ranges: []
+    - name: $GLOBAL_IMPORTED_SOURCES
+      scopedName: 0_4_$GLOBAL_IMPORTED_SOURCES
+      ranges: []
+    - name: $GLOBAL_IMPORTED_NAMES
+      scopedName: 0_5_$GLOBAL_IMPORTED_NAMES
+      ranges: []
+    - name: $imports
+      scopedName: 2_0_$imports
+      ranges: []
+    - name: $source
+      scopedName: 2_1_$source
+      ranges: []
+    - name: $from
+      scopedName: 3_0_$from
+      ranges: []
+    - name: $name
+      scopedName: 3_1_$name
+      ranges: []
+    - name: $statements
+      scopedName: 3_2_$statements
+      ranges: []
+    - name: $name
+      scopedName: 4_0_$name
+      ranges: []
+    - name: $from
+      scopedName: 4_1_$from
+      ranges: []
+    - name: $imports
+      scopedName: 4_2_$imports
+      ranges: []
+    - name: $source
+      scopedName: 5_0_$source
+      ranges: []
+    - name: $name
+      scopedName: 5_1_$name
+      ranges: []
+    - name: $p
+      scopedName: 6_0_$p
+      ranges: []
+    - name: $all_imports
+      scopedName: 6_1_$all_imports
+      ranges: []
+    - name: $source
+      scopedName: 6_2_$source
+      ranges: []
+    - name: $imported_names
+      scopedName: 6_3_$imported_names
+      ranges: []
+    - name: $joined_imported_names
+      scopedName: 6_4_$joined_imported_names
+      ranges: []
+    - name: $imports
+      scopedName: 6_5_$imports
+      ranges: []
+    - name: $p
+      scopedName: 7_0_$p
+      ranges: []
+    - name: $source
+      scopedName: 7_1_$source
+      ranges: []
+    - name: $imported_names
+      scopedName: 7_2_$imported_names
+      ranges: []
+    - name: $all_imports
+      scopedName: 7_3_$all_imports
+      ranges: []
+    - name: $name
+      scopedName: 7_4_$name
+      ranges: []
+    - name: $p
+      scopedName: 8_0_$p
+      ranges: []
+    - name: $all_imports
+      scopedName: 8_1_$all_imports
+      ranges: []
+    - name: $p
+      scopedName: 9_0_$p
+      ranges:
+        - start:
+            line: 1
+            column: 1
+          end:
+            line: 3
+            column: 1
+          startByte: 0
+          endByte: 66
+    - name: $from
+      scopedName: 10_0_$from
+      ranges: []
+    - name: $name
+      scopedName: 10_1_$name
+      ranges: []
+    - name: $name
+      scopedName: 11_0_$name
+      ranges: []
+    - name: $from
+      scopedName: 11_1_$from
+      ranges: []
+    - name: $clause
+      scopedName: 11_2_$clause
+      ranges: []
+    - name: $raw_source
+      scopedName: 11_3_$raw_source
+      ranges: []
+    - name: $import
+      scopedName: 11_4_$import
+      ranges: []
+    - name: $imports
+      scopedName: 11_5_$imports
+      ranges: []
+    - name: $others
+      scopedName: 11_6_$others
+      ranges: []
+    - name: $f
+      scopedName: 12_0_$f
+      ranges:
+        - start:
+            line: 1
+            column: 10
+          end:
+            line: 1
+            column: 13
+          startByte: 9
+          endByte: 12
+    - name: $new_name
+      scopedName: 12_1_$new_name
+      ranges: []
+    - name: $bar_source
+      scopedName: 12_2_$bar_source
+      ranges: []
+    - name: $other_name
+      scopedName: 12_3_$other_name
+      ranges: []
+    - name: $other_source
+      scopedName: 12_4_$other_source
+      ranges: []
+    - name: $match
+      scopedName: 12_5_$match
+      ranges:
+        - start:
+            line: 1
+            column: 10
+          end:
+            line: 1
+            column: 13
+          startByte: 9
+          endByte: 12
+  sourceFile: test-file.tsx
+  ranges:
+    - start:
+        line: 1
+        column: 10
+      end:
+        line: 1
+        column: 13
+      startByte: 9
+      endByte: 12
+  debug: "{\n  \"SORT\": \"program\",\n  \"RANGE\": {\n    \"start\": {\n      \"line\": 1,\n      \"column\": 1\n    },\n    \"end\": {\n      \"line\": 3,\n      \"column\": 1\n    }\n  },\n  \"statements\": [\n    {\n      \"SORT\": \"import_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 1,\n          \"column\": 1\n        },\n        \"end\": {\n          \"line\": 1,\n          \"column\": 31\n        }\n      },\n      \"import\": {\n        \"SORT\": \"import_clause\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 1,\n            \"column\": 8\n          },\n          \"end\": {\n            \"line\": 1,\n            \"column\": 20\n          }\n        },\n        \"name\": {\n          \"SORT\": \"named_imports\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 1,\n              \"column\": 8\n            },\n            \"end\": {\n              \"line\": 1,\n              \"column\": 20\n            }\n          },\n          \"imports\": [\n            {\n              \"SORT\": \"import_specifier\",\n              \"RANGE\": {\n                \"start\": {\n                  \"line\": 1,\n                  \"column\": 10\n                },\n                \"end\": {\n                  \"line\": 1,\n                  \"column\": 13\n                }\n              },\n              \"name\": {\n                \"SORT\": \"identifier\",\n                \"RANGE\": {\n                  \"start\": {\n                    \"line\": 1,\n                    \"column\": 10\n                  },\n                  \"end\": {\n                    \"line\": 1,\n                    \"column\": 13\n                  }\n                },\n                \"TEXT\": \"foo\"\n              }\n            },\n            {\n              \"SORT\": \",\",\n              \"RANGE\": {\n                \"start\": {\n                  \"line\": 1,\n                  \"column\": 13\n                },\n                \"end\": {\n                  \"line\": 1,\n                  \"column\": 14\n                }\n              },\n              \"TEXT\": \",\"\n            },\n            {\n              \"SORT\": \"import_specifier\",\n              \"RANGE\": {\n                \"start\": {\n                  \"line\": 1,\n                  \"column\": 15\n                },\n                \"end\": {\n                  \"line\": 1,\n                  \"column\": 18\n                }\n              },\n              \"name\": {\n                \"SORT\": \"identifier\",\n                \"RANGE\": {\n                  \"start\": {\n                    \"line\": 1,\n                    \"column\": 15\n                  },\n                  \"end\": {\n                    \"line\": 1,\n                    \"column\": 18\n                  }\n                },\n                \"TEXT\": \"bar\"\n              }\n            }\n          ],\n          \"CHILDREN\": [\n            {\n              \"SORT\": \"{\",\n              \"RANGE\": {\n                \"start\": {\n                  \"line\": 1,\n                  \"column\": 8\n                },\n                \"end\": {\n                  \"line\": 1,\n                  \"column\": 9\n                }\n              },\n              \"TEXT\": \"{\"\n            },\n            {\n              \"SORT\": \"}\",\n              \"RANGE\": {\n                \"start\": {\n                  \"line\": 1,\n                  \"column\": 19\n                },\n                \"end\": {\n                  \"line\": 1,\n                  \"column\": 20\n                }\n              },\n              \"TEXT\": \"}\"\n            }\n          ]\n        }\n      },\n      \"source\": {\n        \"SORT\": \"string\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 1,\n            \"column\": 26\n          },\n          \"end\": {\n            \"line\": 1,\n            \"column\": 31\n          }\n        },\n        \"fragment\": [\n          {\n            \"SORT\": \"string_fragment\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 1,\n                \"column\": 27\n              },\n              \"end\": {\n                \"line\": 1,\n                \"column\": 30\n              }\n            },\n            \"TEXT\": \"bar\"\n          }\n        ],\n        \"CHILDREN\": [\n          {\n            \"SORT\": \"'\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 1,\n                \"column\": 26\n              },\n              \"end\": {\n                \"line\": 1,\n                \"column\": 27\n              }\n            },\n            \"TEXT\": \"'\"\n          },\n          {\n            \"SORT\": \"'\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 1,\n                \"column\": 30\n              },\n              \"end\": {\n                \"line\": 1,\n                \"column\": 31\n              }\n            },\n            \"TEXT\": \"'\"\n          }\n        ]\n      },\n      \"CHILDREN\": [\n        {\n          \"SORT\": \"import\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 1,\n              \"column\": 1\n            },\n            \"end\": {\n              \"line\": 1,\n              \"column\": 7\n            }\n          },\n          \"TEXT\": \"import\"\n        },\n        {\n          \"SORT\": \"from\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 1,\n              \"column\": 21\n            },\n            \"end\": {\n              \"line\": 1,\n              \"column\": 25\n            }\n          },\n          \"TEXT\": \"from\"\n        }\n      ]\n    },\n    {\n      \"SORT\": \"import_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 2,\n          \"column\": 1\n        },\n        \"end\": {\n          \"line\": 2,\n          \"column\": 35\n        }\n      },\n      \"import\": {\n        \"SORT\": \"import_clause\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 2,\n            \"column\": 8\n          },\n          \"end\": {\n            \"line\": 2,\n            \"column\": 17\n          }\n        },\n        \"name\": {\n          \"SORT\": \"named_imports\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 2,\n              \"column\": 8\n            },\n            \"end\": {\n              \"line\": 2,\n              \"column\": 17\n            }\n          },\n          \"imports\": [\n            {\n              \"SORT\": \"import_specifier\",\n              \"RANGE\": {\n                \"start\": {\n                  \"line\": 2,\n                  \"column\": 10\n                },\n                \"end\": {\n                  \"line\": 2,\n                  \"column\": 15\n                }\n              },\n              \"name\": {\n                \"SORT\": \"identifier\",\n                \"RANGE\": {\n                  \"start\": {\n                    \"line\": 2,\n                    \"column\": 10\n                  },\n                  \"end\": {\n                    \"line\": 2,\n                    \"column\": 15\n                  }\n                },\n                \"TEXT\": \"other\"\n              }\n            }\n          ],\n          \"CHILDREN\": [\n            {\n              \"SORT\": \"{\",\n              \"RANGE\": {\n                \"start\": {\n                  \"line\": 2,\n                  \"column\": 8\n                },\n                \"end\": {\n                  \"line\": 2,\n                  \"column\": 9\n                }\n              },\n              \"TEXT\": \"{\"\n            },\n            {\n              \"SORT\": \"}\",\n              \"RANGE\": {\n                \"start\": {\n                  \"line\": 2,\n                  \"column\": 16\n                },\n                \"end\": {\n                  \"line\": 2,\n                  \"column\": 17\n                }\n              },\n              \"TEXT\": \"}\"\n            }\n          ]\n        }\n      },\n      \"source\": {\n        \"SORT\": \"string\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 2,\n            \"column\": 23\n          },\n          \"end\": {\n            \"line\": 2,\n            \"column\": 35\n          }\n        },\n        \"fragment\": [\n          {\n            \"SORT\": \"string_fragment\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 2,\n                \"column\": 24\n              },\n              \"end\": {\n                \"line\": 2,\n                \"column\": 34\n              }\n            },\n            \"TEXT\": \"other.file\"\n          }\n        ],\n        \"CHILDREN\": [\n          {\n            \"SORT\": \"'\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 2,\n                \"column\": 23\n              },\n              \"end\": {\n                \"line\": 2,\n                \"column\": 24\n              }\n            },\n            \"TEXT\": \"'\"\n          },\n          {\n            \"SORT\": \"'\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 2,\n                \"column\": 34\n              },\n              \"end\": {\n                \"line\": 2,\n                \"column\": 35\n              }\n            },\n            \"TEXT\": \"'\"\n          }\n        ]\n      },\n      \"CHILDREN\": [\n        {\n          \"SORT\": \"import\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 2,\n              \"column\": 1\n            },\n            \"end\": {\n              \"line\": 2,\n              \"column\": 7\n            }\n          },\n          \"TEXT\": \"import\"\n        },\n        {\n          \"SORT\": \"from\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 2,\n              \"column\": 18\n            },\n            \"end\": {\n              \"line\": 2,\n              \"column\": 22\n            }\n          },\n          \"TEXT\": \"from\"\n        }\n      ]\n    }\n  ]\n}"
+- __typename: DoneFile
+  relativeFilePath: test-file.tsx
+

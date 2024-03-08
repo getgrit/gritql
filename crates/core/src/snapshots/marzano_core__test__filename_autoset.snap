@@ -1,0 +1,55 @@
+---
+source: apps/marzano/core/src/test.rs
+expression: results
+---
+- __typename: Rewrite
+  original:
+    messages: []
+    variables:
+      - name: $new_files
+        scopedName: 0_0_$new_files
+        ranges: []
+      - name: $program
+        scopedName: 0_1_$program
+        ranges: []
+      - name: $filename
+        scopedName: 0_2_$filename
+        ranges: []
+      - name: $absolute_filename
+        scopedName: 0_3_$absolute_filename
+        ranges: []
+      - name: $match
+        scopedName: 1_0_$match
+        ranges:
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 1
+              column: 9
+            startByte: 0
+            endByte: 8
+    sourceFile: test-file.tsx
+    ranges:
+      - start:
+          line: 1
+          column: 1
+        end:
+          line: 1
+          column: 9
+        startByte: 0
+        endByte: 8
+    debug: "{\n  \"SORT\": \"program\",\n  \"RANGE\": {\n    \"start\": {\n      \"line\": 1,\n      \"column\": 1\n    },\n    \"end\": {\n      \"line\": 2,\n      \"column\": 1\n    }\n  },\n  \"statements\": [\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 1,\n          \"column\": 1\n        },\n        \"end\": {\n          \"line\": 1,\n          \"column\": 10\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"identifier\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 1,\n            \"column\": 1\n          },\n          \"end\": {\n            \"line\": 1,\n            \"column\": 9\n          }\n        },\n        \"TEXT\": \"whatever\"\n      },\n      \"CHILDREN\": [\n        {\n          \"SORT\": \";\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 1,\n              \"column\": 9\n            },\n            \"end\": {\n              \"line\": 1,\n              \"column\": 10\n            }\n          },\n          \"TEXT\": \";\"\n        }\n      ]\n    }\n  ]\n}"
+  rewritten:
+    messages: []
+    variables: []
+    sourceFile: the_new_name
+    content: "changed;\n"
+    byteRanges:
+      - start: 0
+        end: 7
+  ansiSummary: ""
+  reason: ~
+- __typename: DoneFile
+  relativeFilePath: test-file.tsx
+

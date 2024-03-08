@@ -1,0 +1,41 @@
+language js
+
+pattern handlePairs($accum) {
+    or {
+        // todo is the order here backwards?
+        pair_pattern(key = $key, value = $value) where {
+            $accum += `$key as $value, `
+        },
+        $identifier where {
+            $identifier <: shorthand_property_identifier_pattern(),
+            $accum += `$identifier, `
+        }
+    }
+}
+
+pattern destructuredImport() {
+    $lex where {
+        $imports = "{ ",
+        $lex <: lexical_declaration(declarations = [variable_declarator(
+                name = object_pattern(properties = some handlePairs(accum = $imports)),
+                value = call_expression(function = "require", arguments = [$arg]))]),
+        $imports += "}",
+        $lex => `import $imports from $arg;`
+    }
+}
+
+pattern rewriteImports() {
+    or {
+        destructuredImport(),
+        lexical_declaration(declarations = [variable_declarator(name = identifier() as $name, value = call_expression(function = "require", arguments = [$arg]))]) => `import $name from $arg`,
+        lexical_declaration(
+            declarations = [variable_declarator(name = identifier() as $name,
+            value = member_expression(object = call_expression(function = "require", arguments = [$arg]), property = "default"))]) => `import * as $name from $arg`,
+        lexical_declaration(
+            declarations = [variable_declarator(name = identifier() as $name,
+            value = member_expression(object = call_expression(function = "require", arguments = [$arg]), property = $func))]) => `import $func as $name from $arg`,
+        expression_statement(expression = call_expression(function = "require", arguments = [$arg]) => `import $arg`)
+    }
+}
+
+rewriteImports()

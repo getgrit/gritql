@@ -1,0 +1,6 @@
+engine marzano(0.1)
+language python
+
+`print($x)` => `for i in range(2):
+	print(i, $x)
+`

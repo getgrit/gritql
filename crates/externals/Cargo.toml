@@ -1,0 +1,12 @@
+[package]
+name = "marzano-externals"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.70"
+extism = "^1.0.0-rc7"
+log = "0.4.19"
+serde_json = "1.0.96"

@@ -1,0 +1,1 @@
+contains call_expression(function = "require", arguments = [$arg]) => `import $arg`

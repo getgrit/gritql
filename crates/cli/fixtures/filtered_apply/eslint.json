@@ -1,0 +1,56 @@
+[
+  {
+    "filePath": "file.js",
+    "messages": [
+      {
+        "ruleId": "import/no-cycle",
+        "severity": 2,
+        "message": "Dependency cycle via ./accounts:4=>../../providers/github:7=>../models/project:16",
+        "line": 4,
+        "column": 1,
+        "nodeType": "ImportDeclaration",
+        "endLine": 4,
+        "endColumn": 50
+      },
+      {
+        "ruleId": "import/no-cycle",
+        "severity": 2,
+        "message": "Dependency cycle via ./accounts:4=>../../providers/github:7=>../models/project:16",
+        "line": 8,
+        "column": 1,
+        "nodeType": "ImportDeclaration",
+        "endLine": 8,
+        "endColumn": 50
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 1,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  },
+  {
+    "filePath": "file2.js",
+    "messages": [
+      {
+        "ruleId": "import/no-cycle",
+        "severity": 2,
+        "message": "Dependency cycle via ./accounts:4=>../../providers/github:7=>../models/project:16",
+        "line": 9,
+        "column": 1,
+        "nodeType": "ImportDeclaration",
+        "endLine": 9,
+        "endColumn": 50
+      }
+    ],
+    "suppressedMessages": [],
+    "errorCount": 1,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": []
+  }
+]

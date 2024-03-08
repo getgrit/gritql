@@ -1,0 +1,8 @@
+---
+source: apps/marzano/cli/tests/plumbing.rs
+expression: content
+---
+{"__typename":"Rewrite","original":{"sourceFile":"file2.js"},"rewritten":{"sourceFile":"file2.js"},"reason":null}
+{"__typename":"Rewrite","original":{"sourceFile":"file1.js"},"rewritten":{"sourceFile":"file1.js"},"reason":null}
+{"__typename":"AllDone","processed":2,"found":2,"reason":"allMatchesFound"}
+

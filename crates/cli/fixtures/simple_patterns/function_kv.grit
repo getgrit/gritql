@@ -1,0 +1,11 @@
+language js
+
+pattern pair_function() = {
+    pair(key = $name, value =
+        or {
+            arrow_function(parameters = $param, body = $body),
+            function(parameters = $param, body = $body),
+        }) as $func
+}
+
+contains pair_function()

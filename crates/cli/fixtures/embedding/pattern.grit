@@ -1,0 +1,5 @@
+language js
+
+`console.log($_)` as $log where {
+  $embedding = embedding($log)
+} => `// embedding: $embedding\n$log`

@@ -1,0 +1,9 @@
+language js
+
+contains method_definition(async = $x, $name, $body) where {
+    if ($x <: .) {
+        $name => `syncronous`
+    } else {
+        $name => `asyncronous`
+    }
+}

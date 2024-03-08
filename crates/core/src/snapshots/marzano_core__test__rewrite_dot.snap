@@ -1,0 +1,75 @@
+---
+source: apps/marzano/core/src/test.rs
+expression: results
+---
+- __typename: Rewrite
+  original:
+    messages: []
+    variables:
+      - name: $new_files
+        scopedName: 0_0_$new_files
+        ranges: []
+      - name: $program
+        scopedName: 0_1_$program
+        ranges: []
+      - name: $filename
+        scopedName: 0_2_$filename
+        ranges: []
+      - name: $absolute_filename
+        scopedName: 0_3_$absolute_filename
+        ranges: []
+      - name: $bob
+        scopedName: 1_0_$bob
+        ranges: []
+      - name: $match
+        scopedName: 1_1_$match
+        ranges:
+          - start:
+              line: 2
+              column: 13
+            end:
+              line: 2
+              column: 23
+            startByte: 13
+            endByte: 23
+    sourceFile: test-file.tsx
+    ranges:
+      - start:
+          line: 2
+          column: 13
+        end:
+          line: 2
+          column: 23
+        startByte: 13
+        endByte: 23
+    debug: "{\n  \"SORT\": \"program\",\n  \"RANGE\": {\n    \"start\": {\n      \"line\": 2,\n      \"column\": 13\n    },\n    \"end\": {\n      \"line\": 2,\n      \"column\": 23\n    }\n  },\n  \"statements\": [\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 2,\n          \"column\": 13\n        },\n        \"end\": {\n          \"line\": 2,\n          \"column\": 23\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"new_expression\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 2,\n            \"column\": 13\n          },\n          \"end\": {\n            \"line\": 2,\n            \"column\": 23\n          }\n        },\n        \"constructor\": {\n          \"SORT\": \"identifier\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 2,\n              \"column\": 17\n            },\n            \"end\": {\n              \"line\": 2,\n              \"column\": 21\n            }\n          },\n          \"TEXT\": \"Date\"\n        },\n        \"CHILDREN\": [\n          {\n            \"SORT\": \"new\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 2,\n                \"column\": 13\n              },\n              \"end\": {\n                \"line\": 2,\n                \"column\": 16\n              }\n            },\n            \"TEXT\": \"new\"\n          },\n          {\n            \"SORT\": \"(\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 2,\n                \"column\": 21\n              },\n              \"end\": {\n                \"line\": 2,\n                \"column\": 22\n              }\n            },\n            \"TEXT\": \"(\"\n          },\n          {\n            \"SORT\": \")\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 2,\n                \"column\": 22\n              },\n              \"end\": {\n                \"line\": 2,\n                \"column\": 23\n              }\n            },\n            \"TEXT\": \")\"\n          }\n        ]\n      }\n    }\n  ]\n}"
+  rewritten:
+    messages: []
+    variables: []
+    sourceFile: test-file.tsx
+    content: "\n            new Date()"
+    byteRanges: []
+  ansiSummary: ""
+  reason: ~
+- __typename: DoneFile
+  relativeFilePath: test-file.tsx
+- __typename: AnalysisLog
+  level: 441
+  message: "Error: failed to rewrite binding, cannot derive range of empty field arguments of node new_expression"
+  position:
+    line: 2
+    column: 13
+  file: ""
+  engineId: marzano
+  range:
+    start:
+      line: 2
+      column: 13
+    end:
+      line: 2
+      column: 23
+    startByte: 13
+    endByte: 23
+  syntaxTree: ~
+  source: "\n            new Date()"
+

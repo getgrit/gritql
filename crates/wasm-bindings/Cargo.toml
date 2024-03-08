@@ -1,0 +1,31 @@
+[package]
+name = "marzano-wasm-bindings"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+marzano-core = { path = "../core", features = [
+    "wasm_core",
+], default-features = false }
+marzano-language = { path = "../language", default-features = false }
+marzano-util = { path = "../util" }
+ai_builtins = { git = "https://github.com/getgrit/ai_builtins.git", optional = true}
+wasm-bindgen = { version = "0.2.89", features = ["serde-serialize"] }
+wasm-bindgen-futures = "0.4.39"
+serde-wasm-bindgen = "0.6"
+web-tree-sitter-sg = { path = "../../vendor/web-tree-sitter" }
+tree-sitter = { path = "../../vendor/tree-sitter-facade", package = "tree-sitter-facade-sg" }
+web-sys = { version = "0.3.66", features = ["console"] }
+serde_json = "1.0.96"
+anyhow = "1.0.70"
+console_error_panic_hook = "0.1.7"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.39"
+
+[features]
+ai_builtins = ["dep:ai_builtins"]

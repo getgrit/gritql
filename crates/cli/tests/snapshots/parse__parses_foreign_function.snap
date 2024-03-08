@@ -1,0 +1,26 @@
+---
+source: apps/marzano/cli/tests/parse.rs
+expression: v
+---
+__typename: PatternInfo
+messages: []
+variables:
+  - name: $new_files
+    scopedName: 0_0_$new_files
+    ranges: []
+  - name: $program
+    scopedName: 0_1_$program
+    ranges: []
+  - name: $filename
+    scopedName: 0_2_$filename
+    ranges: []
+  - name: $absolute_filename
+    scopedName: 0_3_$absolute_filename
+    ranges: []
+  - name: $match
+    scopedName: 12_0_$match
+    ranges: []
+sourceFile: "engine marzano(0.1)\nlanguage js\n\nfunction adder() js {\n  console.log(\"We are in JavaScript now!\");\n  return 10 % 3\n}\n\n`x` => adder()"
+parsedPattern: "[..]"
+valid: true
+

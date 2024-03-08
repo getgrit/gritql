@@ -1,0 +1,11 @@
+language js
+
+`const $assignments` where {
+    $total = length(target=$assignments),
+    $sum_ints = 0,
+    $sum_floats = 0.0,
+    $assignments <: some bubble($removed, $sum_ints, $sum_floats) `$key = $val` where {
+        $sum_ints += 2,
+        $sum_floats += 0.1,
+    }
+} => `$sum_ints; $sum_floats;`

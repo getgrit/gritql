@@ -1,0 +1,6 @@
+language js
+
+`$foo: $bar` where {
+    $Foo = capitalize(string=$foo),
+    $foo => `$Foo`
+}

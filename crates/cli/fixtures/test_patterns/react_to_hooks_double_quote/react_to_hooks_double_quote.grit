@@ -1,0 +1,328 @@
+language js
+
+pattern handle_one_statement($class_name, $statements, $states_statements, $static_statements, $render_statements) {
+    or {
+        method_definition($static, $async, $name, $body, $parameters) as $statement where or {
+            and {
+                $name <: js"constructor",
+                $body <: change_this($states_statements)
+            },
+            and {
+                $name <: or { js"componentDidUpdate", js"componentDidMount" },
+                $body <: change_this($states_statements),
+                $statements += js"useEffect(() => $body, []);"
+            },
+            and {
+                $name <: js"componentWillUnmount",
+                $body <: change_this($states_statements),
+                $statements += js"useEffect(() => { \n    return () => $body;\n});"
+            },
+            and {
+                $name <: js"render",
+                $body <: statement_block(statements = $render_statements)
+            },
+            and {
+                $static <: js"static",
+                $body <: change_this($states_statements),
+                $static_statements += js"$class_name.$name = $parameters => $body;"
+            },
+            and {
+                $async <: js"async",
+                $statements += js"const $[name]Handler = useCallback(async () => $body, []);"
+            },
+            and {
+                $statement <: after js"@computed",
+                $statements += js"const $name = useMemo(() => $body, []);"
+            },
+            and {
+                $statements += js"const $[name]Handler = useCallback(() => $body, []);"
+            }
+        },
+
+        public_field_definition($static, $name, $value, $type) as $statement where or {
+            and {
+                $value <: contains or { js"reaction($_, $effect_function)", js"reaction($_, $effect_function, $_)" },
+                $effect_function <: or { js"($_) => $effect" , js"() => $effect" },
+                $statements += js"useEffect(() => $effect, []);"
+            },
+
+            and {
+                $value <: object($properties),
+                $name <: js"defaultProps",
+                $statements += js"const props = { \n    $properties,\n    ...inputProps,\n  };"
+            },
+
+            and {
+                $static <: js"static",
+                $static_statements += js"$class_name.$name = $value;"
+            },
+            and {
+                $statement <: after js"@observable",
+                $capitalized = capitalize(string = $name),
+                or {
+                    and {
+                        $value <: .,
+                        $after_value = js"undefined",
+                    },
+                    $after_value = $value,
+                },
+                or {
+                    and {
+                        $type <:  type_annotation(type = $inner_type),
+                        $states_statements += js"const [$name, set$capitalized] = useState<$inner_type>($after_value);"
+                    },
+                    and {
+                        $states_statements += js"const [$name, set$capitalized] = useState($after_value);"
+                    }
+                }
+            },
+            and {
+                $value <: arrow_function(),
+                $statements += js"const $[name]Handler = useCallback($value, []);"
+            },
+            and {
+                $statements += js"const $name = useRef($value);"
+            }
+        },
+    }
+}
+
+pattern change_this($states_statements) {
+    maybe contains or {
+        assignment_expression(
+            left = js"this.state",
+            right = object (
+                properties = some bubble($states_statements) pair($key, $value) where {
+                $capitalized = capitalize(string = $key),
+                $states_statements += js"const [$key, set$capitalized] = useState($value);"
+            }
+            )
+        ) => .,
+        variable_declarator(
+            name = object_pattern(properties = some bubble($states_statements) $prop where {
+                $capitalized = capitalize(string = $prop),
+                $states_statements += js"const [$prop, set$capitalized] = useState();"
+            }),
+            value = js"this.state"
+        ) => .
+    }
+}
+
+pattern gather_hooks($hooks) {
+    contains or {
+        js"useEffect" where {
+            $hooks <: not some js"useEffect",
+            $hooks += js"useEffect"
+        },
+        js"useCallback" where {
+            $hooks <: not some js"useCallback",
+            $hooks += js"useCallback"
+        },
+        js"useState" where {
+            $hooks <: not some js"useState",
+            $hooks += js"useState"
+        },
+        js"useRef" where {
+            $hooks <: not some js"useRef",
+            $hooks += js"useRef"
+        }
+    }
+}
+
+pattern adjust_imports() {
+    maybe and {
+        $hooks = [],
+        gather_hooks($hooks),
+        $hooks = join(list = $hooks, separator = ", "),
+        or {
+            // ugly dealing with imports
+            contains import_specifier(name = js"Component") => js"$hooks",
+            contains js"import React from 'react'" as $i where {
+                $i <: not contains namespace_import(),
+                $i => js"import React, { $hooks } from 'react';"
+            },
+            contains `import React from "react"` as $i where {
+                if ($i <: not contains namespace_import()) {
+                    $i => js"import React, { $hooks } from 'react';"
+                } else {
+                    $i => js"$i\nimport { $hooks } from 'react';"
+                }
+            }
+        }
+    }
+}
+
+pattern find_dependencies($hoisted_states, $dependencies) {
+    contains bubble($hoisted_states, $dependencies) identifier() as $i where {
+        $i <: not js"props",
+        $hoisted_states <: some $i,
+        $dependencies <: not some $i,
+        $dependencies += js"$i"
+    }
+}
+
+pattern rewrite_accesses($hoisted_states) {
+    or {
+        js"this.state.$x" => js"$x",
+        js"this.$property" as $p where {
+            if ($hoisted_states <: some $property) {
+                $p => js"$property"
+            } else {
+                $p => js"$[property]Handler"
+            }
+        },
+
+        lexical_declaration(declarations = [variable_declarator(value = or { js"this.state", js"this" })]) => .,
+
+        assignment_expression($left, $right) as $assignment where {
+            $hoisted_states <: some $left,
+            $capitalized = capitalize(string = $left),
+            $assignment => js"set$[capitalized]($right)"
+        },
+
+        js"this.setState($x);" as $set_state where {
+            $statements = [],
+            $x <: contains bubble($statements) pair(key = $key, value = $value) where {
+                $capitalized = capitalize(string = $key),
+                $statements += js"set$capitalized($value);"
+            },
+            $separator = js"\n    ",
+            // a bit of hack because we cannot use a code snippet as an argument to a builtin function yet
+            $separator += "",
+            $statements = join(list = $statements, $separator),
+            $set_state => js"$statements"
+        },
+
+        // to deactivate dependency detection, comment out the following lines
+        js"$method($f, $dependencies_array)" where {
+            $method <: or { js"useEffect", js"useCallback", js"useMemo" },
+            $dependencies = [],
+            $f <: find_dependencies($hoisted_states, $dependencies),
+            $dependencies = join(list = $dependencies, separator = ", "),
+            $dependencies_array => js"[$dependencies]"
+        },
+
+        // clean-up props arg -- not needed if only used in constructor, and first step introduced it
+        // if it sees it anywhere in the pattern
+        arrow_function(parameters=$props, body=$body) where {
+            $props <: contains or { js"props", js"inputProps" },
+            $body <: not contains js"props",
+            $props => .
+        }
+    }
+}
+
+pattern gather_accesses($hoisted_states) {
+    contains bubble($hoisted_states) variable_declarator($name, $value) where {
+        or {
+            and {
+                $name <: array_pattern(elements = [$used_name, $_]),
+                $value <: js"useState($_)"
+            },
+            and {
+                $name <: $used_name,
+                $value <: or { js"useRef($_)", js"useMemo($_, $_)" }
+            }
+        },
+        $hoisted_states += $name
+    },
+
+    contains bubble($hoisted_states) or {
+        variable_declarator(
+            name = array_pattern(elements = [$name, $_]),
+            value = js"useState($_)"
+        ),
+        variable_declarator(
+            name = $name,
+            value = or { js"useRef($_)", js"useMemo($_, $_)" }
+        )
+    } where $hoisted_states += $name
+}
+
+pattern second_step() {
+    maybe and {
+        $hoisted_states = [],
+        $hoisted_states += js"props",
+        maybe gather_accesses($hoisted_states), // where $_ = log(string = $hoisted_states)
+        program(statements = 
+            some or {
+                export_statement(
+                    decorator = contains js"@observer" => .,
+                    declaration = lexical_declaration(declarations = contains rewrite_accesses($hoisted_states))
+                ),
+                export_statement(
+                    declaration = lexical_declaration(declarations = contains rewrite_accesses($hoisted_states))
+                ),
+                lexical_declaration(declarations = contains rewrite_accesses($hoisted_states))
+            }
+        )
+    }
+}
+
+sequential {
+    file(body = program(statements = some bubble first_step())),
+    file(body = second_step()),
+    file(body = second_step()),
+    file(body = second_step()),
+    //maybe contains bubble js"this.$props" => js"$props"
+    file(body = adjust_imports())
+}
+
+
+pattern maybe_wrapped_class_declaration($class_name, $body, $class) {
+    or {
+        export_statement(declaration = class_declaration(name = $class_name, $body, $heritage) as $class),
+        class_declaration(name = $class_name, $body, $heritage) as $class
+    } where {
+        $heritage <: contains extends_clause(value = contains js"Component")
+    }
+}
+
+pattern first_step() {
+    maybe_wrapped_class_declaration($class_name, $body, $class) where {
+        $statements = [],
+        $states_statements = [],
+        $static_statements = [],
+
+        if ($class <: contains extends_clause(type_arguments = contains type_arguments($types))) {
+            $type_annotation = js": $types"
+        } else {
+            $type_annotation = .
+        },
+
+        // todo: replace contains with list pattern match once we have the field set
+        // we are missing a field for the statements in class_body
+        $body <: contains handle_one_statement($class_name, $statements, $states_statements, $static_statements, $render_statements),
+        $body <: not contains js"componentDidCatch",
+        $class <: not within class_declaration(name = not $class_name),
+
+        if ($body <: contains js"static defaultProps = $default_props") {
+            $the_props = "inputProps"
+        } else {
+            $the_props = "props"
+        },
+
+
+        if ($body <: contains js"props") {
+            $args = js"$[the_props]$[type_annotation]"
+        } else {
+            $args = .
+        },
+
+        $separator = js"\n    ",
+        // a bit of hack because we cannot use a code snippet as an argument to a builtin function yet
+        $separator += "",
+        $states_statements = join(list = $states_statements, $separator),
+        $statements = join(list = $statements, $separator),
+        $the_function = js"($args) => {\n    $states_statements\n\n    $statements\n\n    $render_statements \n}",
+
+        if ($body <: contains js"ViewState") {
+            $the_const = `import { observer } from "mobx-react";\n\nconst $class_name = observer($the_function);`
+        } else {
+            $the_const = js"const $class_name = $the_function;"
+        },
+
+        $static_statements = join(list = $static_statements, $separator),
+        $class => js"$the_const\n$static_statements\n"
+    }
+}

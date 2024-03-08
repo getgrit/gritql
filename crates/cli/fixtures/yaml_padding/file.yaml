@@ -1,0 +1,12 @@
+this list:
+  - item: one
+    description: |
+      This is a description
+      that spans multiple lines
+  - item: two
+map:
+  stuff: good
+  things: bad
+  indented:
+    item: map
+    items: two

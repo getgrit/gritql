@@ -1,0 +1,5 @@
+{
+  "pattern_body": "`console.log($msg)` => `console.error($msg)`",
+  "pattern_libs": {},
+  "paths": ["touch.ts"]
+}

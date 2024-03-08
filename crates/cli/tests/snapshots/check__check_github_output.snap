@@ -1,0 +1,7 @@
+---
+source: apps/marzano/cli/tests/check.rs
+expression: output
+---
+::error file=./test.js,line=2,col=3,endLine=2,endColumn=8::test_js
+::notice file=./foo.py,line=2,col=5,endLine=3,endColumn=20,title=test_notice::This is just a notice.
+::warning file=./test.py,line=2,col=3,endLine=2,endColumn=17::test_python

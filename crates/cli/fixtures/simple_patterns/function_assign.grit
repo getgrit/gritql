@@ -1,0 +1,11 @@
+language js
+
+pattern js_function_assign() = {
+    assignment_expression(left = $name, right =
+        or {
+            arrow_function(parameters = $param, body = $body),
+            function(parameters = $param, body = $body),
+        }) as $func
+}
+
+contains js_function_assign()

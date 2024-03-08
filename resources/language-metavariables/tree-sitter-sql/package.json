@@ -1,0 +1,56 @@
+{
+  "name": "@derekstride/tree-sitter-sql",
+  "version": "0.2.0",
+  "description": "Tree-sitter Grammar for SQL",
+  "main": "bindings/node",
+  "scripts": {
+    "test": "tree-sitter test",
+    "install": "tree-sitter generate && node-gyp rebuild",
+    "release": "commit-and-tag-version"
+  },
+  "author": "derek stride",
+  "license": "MIT",
+  "dependencies": {
+    "nan": "^2.18.0"
+  },
+  "devDependencies": {
+    "commit-and-tag-version": "^12.0.0",
+    "node-gyp": "^10.0.1",
+    "tree-sitter-cli": "^0.20.8"
+  },
+  "gypfile": true,
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/derekstride/tree-sitter-sql.git"
+  },
+  "bugs": {
+    "url": "https://github.com/derekstride/tree-sitter-sql/issues"
+  },
+  "homepage": "https://github.com/derekstride/tree-sitter-sql#readme",
+  "tree-sitter": [
+    {
+      "scope": "source.sql",
+      "file-types": [
+        "sql"
+      ],
+      "highlights": [
+        "queries/highlights.scm"
+      ],
+      "indents": [
+        "queries/indents.scm"
+      ]
+    }
+  ],
+  "keywords": [
+    "parser",
+    "sql"
+  ],
+  "commit-and-tag-version": {
+    "skip": {
+      "tag": true
+    }
+  }
+}

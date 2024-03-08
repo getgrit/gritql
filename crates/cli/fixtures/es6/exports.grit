@@ -1,0 +1,34 @@
+language js
+$program
+
+pattern es6ObjectIdentifierExport($program) = {
+    $x where {
+        $x <: shorthand_property_identifier(),
+        $program <: contains or {
+            lexical_declaration(declarations = [variable_declarator(name = $x, value = $val)]) => `export const $x = $val`,
+            function_declaration(async = $async, name = $x, parameters = $params, body = $body) => `export $async function $x$params $body`,
+            function_declaration(name = $x, parameters = $params, body = $body) => `export function $x($params) $body`,
+        }
+        $x => .
+    }
+}
+
+pattern es6ObjectExport($program) = {
+    assignment_expression(
+        left = member_expression(object = "module", property = "exports")
+        right = object(properties = es6ObjectIdentifierExport(program = $program)))
+}
+
+pattern es6Exports($program) = or {
+    es6ObjectExport(program = $program),
+    assignment_expression(
+        left = member_expression(object = "module", property = "exports")
+        right = $export) => `export default $export`,
+    assignment_expression(
+        left = member_expression(
+            object = member_expression(object = "module", property = "exports")
+            property = $name)
+        right = $export) => `export const $name = $export`,
+}
+
+contains es6Exports(program= $program)

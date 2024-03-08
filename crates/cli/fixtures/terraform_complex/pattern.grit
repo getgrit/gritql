@@ -1,0 +1,55 @@
+engine marzano(0.1)
+language hcl
+
+pattern fix_module($old_source, $new_source, $allow_variables) {
+  `module $name {
+        $args
+  }` where {
+        // Make sure we're looking at a module with $old_source
+        $args <: contains `source = $maybe_old` => `source = $new_source`,
+        $maybe_old <: contains $old_source,
+        // Check all attributes
+        $args <: maybe contains bubble($allow_variables) `$key = $value` as $attr where {
+            $key <: or {
+                // Remap some keys
+                `identifier` => `db_identifier`,
+                // Keep source
+                `source`,
+                // Keep meta-arguments
+                `count`,
+                `depends_on`,
+                `for_each`,
+                `lifecycle`,
+                `provider`,
+                $_ where {
+                    $allow_variables <: some bubble($key) $candidate where { $candidate <: $key }
+                },
+                // Finally, delete others we don't recognize
+                $_ where { $attr => .}
+            }
+        } until attribute()
+    }
+}
+
+pattern collect_variables($var_names) {
+    `variable $name {
+        $_
+    }` where {
+        $name <: string_lit($content),
+        if ($var_names <: undefined) {
+            $var_names = []
+        },
+        $var_names += $content,
+    }
+}
+
+multifile {
+    $var_names = [],
+    bubble($var_names) file($name, $body) where {
+        $name <: includes "variables/",
+        $body <: contains collect_variables($var_names),
+    },
+    bubble($var_names) file($body) where {
+        $body <: contains fix_module(old_source=`"old_source"`, new_source=`"new_source"`, allow_variables=$var_names)
+    }
+}

@@ -1,0 +1,12 @@
+---
+source: apps/marzano/cli/tests/apply.rs
+expression: content
+---
+const x = 5;
+
+console.log("This is a user pattern");
+
+const y = 9;
+
+const z = 10;
+

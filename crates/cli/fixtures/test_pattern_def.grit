@@ -1,0 +1,9 @@
+language js
+
+pattern MainPattern() = class_declaration(
+    name = $className, 
+    heritage = contains "Component"
+    body = $body
+) => `const $className = $body`
+
+contains MainPattern()

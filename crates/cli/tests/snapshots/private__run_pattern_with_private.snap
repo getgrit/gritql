@@ -1,0 +1,94 @@
+---
+source: apps/marzano/cli/tests/private.rs
+expression: parsed
+---
+- config:
+    name: combined
+    body: "pattern combined() {\n  or {\n    this_is_public(),\n    this_is_private()\n  }\n}"
+    level: ~
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ".grit/patterns/patterns.grit"
+    position:
+      line: 9
+      column: 9
+  module:
+    type: Module
+    host: ""
+    fullName: ""
+    remote: ""
+    providerName: ""
+  localName: combined
+  body: "pattern combined() {\n  or {\n    this_is_public(),\n    this_is_private()\n  }\n}"
+  kind: pattern
+  visibility: public
+- config:
+    name: marky
+    body: "pattern show_this_one() {\n  `foo` => `bar`\n}\n\nprivate pattern hide_this() {\n  `foods` => `calories`\n}\n\nor {\n  `foo` => `bar`,\n  show_this_one(),\n  hide_this()\n}"
+    level: info
+    title: Markdown Pattern
+    description: This is to show how to use markdown patterns.
+    tags: ~
+    samples: []
+    path: ".grit/patterns/marky.md"
+    position:
+      line: 6
+      column: 1
+  module:
+    type: Module
+    host: ""
+    fullName: ""
+    remote: ""
+    providerName: ""
+  localName: marky
+  body: "pattern show_this_one() {\n  `foo` => `bar`\n}\n\nprivate pattern hide_this() {\n  `foods` => `calories`\n}\n\nor {\n  `foo` => `bar`,\n  show_this_one(),\n  hide_this()\n}"
+  kind: pattern
+  visibility: public
+- config:
+    name: this_is_private
+    body: "private pattern this_is_private() {\n  `hidden` => `forbidden`\n}"
+    level: ~
+    title: ~
+    description: ~
+    tags:
+      - hidden
+    samples: ~
+    path: ".grit/patterns/patterns.grit"
+    position:
+      line: 5
+      column: 17
+  module:
+    type: Module
+    host: ""
+    fullName: ""
+    remote: ""
+    providerName: ""
+  localName: this_is_private
+  body: "private pattern this_is_private() {\n  `hidden` => `forbidden`\n}"
+  kind: pattern
+  visibility: private
+- config:
+    name: this_is_public
+    body: "pattern this_is_public() {\n  `cool` => `fool`\n}"
+    level: ~
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ".grit/patterns/patterns.grit"
+    position:
+      line: 1
+      column: 9
+  module:
+    type: Module
+    host: ""
+    fullName: ""
+    remote: ""
+    providerName: ""
+  localName: this_is_public
+  body: "pattern this_is_public() {\n  `cool` => `fool`\n}"
+  kind: pattern
+  visibility: public
+

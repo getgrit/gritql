@@ -1,0 +1,10 @@
+---
+source: apps/marzano/cli/tests/apply.rs
+expression: content
+---
+// This uses the generic props type and extends it with a new property
+import { OtherProps } from "./other_props.ts";
+
+const dog: OtherProps = {
+  breed: "Labrador",
+}

@@ -1,0 +1,44 @@
+{
+    "name": "tree-sitter-vue",
+    "version": "0.2.1",
+    "description": "Vue grammar for tree-sitter",
+    "keywords": [
+        "parser",
+        "lexer"
+    ],
+    "main": "bindings/node",
+    "repository": "https://github.com/ikatyang/tree-sitter-vue",
+    "homepage": "https://github.com/ikatyang/tree-sitter-vue#readme",
+    "author": {
+        "name": "Ika",
+        "email": "ikatyang@gmail.com",
+        "url": "https://github.com/ikatyang"
+    },
+    "license": "MIT",
+    "scripts": {
+        "test": "yarn tree-sitter test",
+        "prepack": "yarn tree-sitter generate",
+        "release": "standard-version --commit-all",
+        "tree-sitter": "npx tree-sitter"
+    },
+    "standard-version": {
+        "preset": "angular",
+        "scripts": {
+            "postbump": "rm -r docs && node scripts/generate-playground.js && git add docs"
+        }
+    },
+    "dependencies": {
+        "nan": "^2.18.0"
+    },
+    "devDependencies": {
+        "standard-version": "7.0.0",
+        "tree-sitter-html": "../tree-sitter-html"
+    },
+    "files": [
+        "/src/",
+        "/bindings/node/",
+        "/binding.gyp",
+        "/grammar.js",
+        "/ThirdPartyNoticeText.txt"
+    ]
+}

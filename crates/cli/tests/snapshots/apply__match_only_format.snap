@@ -1,0 +1,75 @@
+---
+source: apps/marzano/cli/tests/apply.rs
+expression: content
+---
+[1mbig.ts[0m
+    14  [2m  return new Promise<stdlib.ShResult>([0m[1;34m(resolve) => {[0m[2m[0m
+    15  [2m[0m[1;34m    const allout = [] as string[];[0m[2m[0m
+    16  [2m[0m[1;34m    const stdout = [] as string[];[0m[2m[0m
+    17  [2m[0m[1;34m    const stderr = [] as string[];[0m[2m[0m
+    18  [2m[0m[1;34m    const write = (str: string): void => {[0m[2m[0m
+    19  [2m[0m[1;34m      process.stdin.cork();[0m[2m[0m
+    20  [2m[0m[1;34m      process.stdin.write(str);[0m[2m[0m
+    21  [2m[0m[1;34m      process.stdin.uncork();[0m[2m[0m
+    22  [2m[0m[1;34m    };[0m[2m[0m
+    23  [2m[0m[1;34m[0m[2m[0m
+    24  [2m[0m[1;34m    const end = (): void => {[0m[2m[0m
+    25  [2m[0m[1;34m      process.stdin.end();[0m[2m[0m
+    26  [2m[0m[1;34m    };[0m[2m[0m
+    27  [2m[0m[1;34m[0m[2m[0m
+    28  [2m[0m[1;34m    if (callback) {[0m[2m[0m
+    29  [2m[0m[1;34m      callback(write, end);[0m[2m[0m
+    30  [2m[0m[1;34m    }[0m[2m[0m
+    31  [2m[0m[1;34m[0m[2m[0m
+    32  [2m[0m[1;34m    cp.stdout.on('data', (data: string) => {[0m[2m[0m
+    33  [2m[0m[1;34m      stdout.push(data);[0m[2m[0m
+    34  [2m[0m[1;34m      allout.push(data);[0m[2m[0m
+    35  [2m[0m[1;34m    });[0m[2m[0m
+    36  [2m[0m[1;34m    cp.stderr.on('data', (data: string) => {[0m[2m[0m
+    37  [2m[0m[1;34m      stderr.push(data);[0m[2m[0m
+    38  [2m[0m[1;34m      allout.push(data);[0m[2m[0m
+    39  [2m[0m[1;34m    });[0m[2m[0m
+    40  [2m[0m[1;34m    cp.on('error', (e) => {[0m[2m[0m
+    41  [2m[0m[1;34m      resolve({[0m[2m[0m
+    42  [2m[0m[1;34m        __typename: 'ShResult',[0m[2m[0m
+    43  [2m[0m[1;34m        kind: 'direct',[0m[2m[0m
+    44  [2m[0m[1;34m        success: false,[0m[2m[0m
+    45  [2m[0m[1;34m        code: -1,[0m[2m[0m
+    46  [2m[0m[1;34m        allout: allout.join(''),[0m[2m[0m
+    47  [2m[0m[1;34m        stdout: stdout.join(''),[0m[2m[0m
+    48  [2m[0m[1;34m        stderr: stderr.join(''),[0m[2m[0m
+    49  [2m[0m[1;34m        message: e.message,[0m[2m[0m
+    50  [2m[0m[1;34m      });[0m[2m[0m
+    51  [2m[0m[1;34m    });[0m[2m[0m
+    52  [2m[0m[1;34m    cp.on('close', (code: number) => {[0m[2m[0m
+    53  [2m[0m[1;34m      // Trailing info is more valuable than truncated.[0m[2m[0m
+    54  [2m[0m[1;34m      const message = stderr.join('').slice(-2000);[0m[2m[0m
+    55  [2m[0m[1;34m      resolve({[0m[2m[0m
+    56  [2m[0m[1;34m        __typename: 'ShResult',[0m[2m[0m
+    57  [2m[0m[1;34m        kind: 'direct',[0m[2m[0m
+    58  [2m[0m[1;34m        success: passOnNonZeroExitCode ? true : code === 0,[0m[2m[0m
+    59  [2m[0m[1;34m        code: code || 0,[0m[2m[0m
+    60  [2m[0m[1;34m        allout: allout.join(''),[0m[2m[0m
+    61  [2m[0m[1;34m        stdout: stdout.join(''),[0m[2m[0m
+    62  [2m[0m[1;34m        stderr: stderr.join(''),[0m[2m[0m
+    63  [2m[0m[1;34m        message,[0m[2m[0m
+    64  [2m[0m[1;34m      });[0m[2m[0m
+    65  [2m[0m[1;34m    });[0m[2m[0m
+    66  [2m[0m[1;34m  }[0m[2m);[0m
+    71  [2m  callback: (write: (str: string) => void, end: () => void) => void = [0m[1;34m() => {}[0m[2m,[0m
+   107  [2mexport const simpleSh = [0m[1;34masync ([0m[2m[0m
+   108  [2m[0m[1;34m  cmd: string,[0m[2m[0m
+   109  [2m[0m[1;34m  callback: (write: (str: string) => void, end: () => void) => void = () => {},[0m[2m[0m
+   110  [2m[0m[1;34m  cwd: string | URL | undefined = undefined,[0m[2m[0m
+   111  [2m[0m[1;34m): Promise<string> => {[0m[2m[0m
+   112  [2m[0m[1;34m  const res = await baseSh(cmd, callback, cwd);[0m[2m[0m
+   113  [2m[0m[1;34m  if (res.code !== 0) {[0m[2m[0m
+   114  [2m[0m[1;34m    console.log(res.stdout);[0m[2m[0m
+   115  [2m[0m[1;34m    console.error(res.stderr);[0m[2m[0m
+   116  [2m[0m[1;34m    throw new Error(res.stderr);[0m[2m[0m
+   117  [2m[0m[1;34m  }[0m[2m[0m
+   118  [2m[0m[1;34m  return res.allout;[0m[2m[0m
+   119  [2m[0m[1;34m}[0m[2m;[0m
+
+Processed 1 files and found 1 matches
+

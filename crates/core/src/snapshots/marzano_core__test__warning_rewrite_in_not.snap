@@ -1,0 +1,10 @@
+---
+source: apps/marzano/core/src/test.rs
+expression: cr.compilation_warnings
+---
+engine_id: None
+file_name: Some("PlaygroundPattern")
+level: Some(441)
+message: "Warning: rewrites inside of a not will never be applied"
+position: Some(Position { line: 2, column: 18 })
+

@@ -1,0 +1,7 @@
+---
+source: apps/marzano/cli/tests/patterns_test.rs
+expression: "String::from_utf8(output.stdout)?"
+---
+Found 1 testable patterns.
+✓ mf_no_sample
+

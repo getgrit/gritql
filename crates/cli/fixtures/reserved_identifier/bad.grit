@@ -1,0 +1,10 @@
+engine marzano(0.1)
+language js
+
+pattern any() {
+  `any` as $any where {
+      $any <: predefined_type()
+  }
+}
+
+any()

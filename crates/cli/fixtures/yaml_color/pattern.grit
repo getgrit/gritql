@@ -1,0 +1,3 @@
+language yaml
+
+`thing: two` => `thing: boo`

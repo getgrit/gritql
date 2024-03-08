@@ -1,0 +1,47 @@
+---
+source: apps/marzano/gritmodule/src/dot_grit.rs
+expression: patterns
+---
+- config:
+    name: no_tests_with_only
+    body: "language js\n\npattern no_tests_with_only() {\n  `$testlike.only` => `$testlike` where {\n    $testlike <: test_identifier()\n  }\n}"
+    level: ~
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ""
+    position:
+      line: 12
+      column: 9
+  module: ~
+  local_name: no_tests_with_only
+- config:
+    name: no_tests_with_skip
+    body: "language js\n\npattern no_tests_with_skip() {\n  `$testlike.skip` => `$testlike` where {\n    $testlike <: test_identifier()\n  }\n}"
+    level: ~
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ""
+    position:
+      line: 18
+      column: 9
+  module: ~
+  local_name: no_tests_with_skip
+- config:
+    name: test_identifier
+    body: "language js\n\npattern test_identifier() {\n  or {\n    `describe`,\n    `it`,\n    `test`\n  }\n}"
+    level: ~
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ""
+    position:
+      line: 4
+      column: 9
+  module: ~
+  local_name: test_identifier
+

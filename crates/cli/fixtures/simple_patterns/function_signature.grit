@@ -1,0 +1,12 @@
+language js
+or {
+    and {
+       contains class_declaration(
+            name = $className, 
+            heritage = contains "Component"
+            body = $body
+        ) => `const $className = $body`,
+        contains { function_declaration(name = "boo") as $f }
+    },
+    $x
+}

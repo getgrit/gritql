@@ -1,0 +1,13 @@
+language yaml
+
+or {
+  `- $item` where {
+    $item <: contains `item: one`,
+    $item => `nice: car
+second: detail`
+  },
+  `indented: $indent` where {
+    $indent => `item: pig
+distro: true`
+  }
+}

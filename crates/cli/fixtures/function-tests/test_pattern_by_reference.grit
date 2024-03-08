@@ -1,0 +1,9 @@
+pattern foo($bar) = {
+    class_declaration(
+        name = $className, 
+        heritage = contains "Component"
+        body = $body
+    ) => `const $className = $bar`
+}
+$baz = "{ b = 2; }"
+contains foo(bar = $baz)

@@ -1,0 +1,15 @@
+// come back to this one declarator is nested within a list within a declaration
+// making it harder to match
+language js
+
+pattern js_function_as_var() = {
+    export_statement(declaration = $function) where $function <:
+        // `contains` kinda hacky
+        contains variable_declarator(name = $name, value =
+            or {
+                arrow_function(parameters = $param, body = $body),
+                function(parameters = $param, body = $body),
+            }) as $func
+}
+
+contains js_function_as_var()

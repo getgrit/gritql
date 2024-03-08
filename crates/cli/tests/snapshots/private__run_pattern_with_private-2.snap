@@ -1,0 +1,10 @@
+---
+source: apps/marzano/cli/tests/private.rs
+expression: content
+---
+// This is a file
+// Becomes fool
+console.log(fool);
+// Becomes forbidden
+console.log(forbidden);
+

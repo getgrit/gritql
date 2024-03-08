@@ -1,0 +1,176 @@
+---
+source: apps/marzano/core/src/test.rs
+expression: results
+---
+- __typename: Rewrite
+  original:
+    messages: []
+    variables:
+      - name: $new_files
+        scopedName: 0_0_$new_files
+        ranges: []
+      - name: $program
+        scopedName: 0_1_$program
+        ranges: []
+      - name: $filename
+        scopedName: 0_2_$filename
+        ranges: []
+      - name: $absolute_filename
+        scopedName: 0_3_$absolute_filename
+        ranges: []
+      - name: $set
+        scopedName: 1_0_$set
+        ranges: []
+      - name: $element
+        scopedName: 1_1_$element
+        ranges: []
+      - name: $end
+        scopedName: 2_0_$end
+        ranges:
+          - start:
+              line: 5
+              column: 1
+            end:
+              line: 5
+              column: 4
+            startByte: 48
+            endByte: 51
+      - name: $big_set
+        scopedName: 2_1_$big_set
+        ranges: []
+      - name: $big_set_string
+        scopedName: 2_2_$big_set_string
+        ranges: []
+      - name: $match
+        scopedName: 2_3_$match
+        ranges:
+          - start:
+              line: 5
+              column: 1
+            end:
+              line: 5
+              column: 4
+            startByte: 48
+            endByte: 51
+      - name: $big_set
+        scopedName: 3_0_$big_set
+        ranges: []
+      - name: $x
+        scopedName: 3_1_$x
+        ranges:
+          - start:
+              line: 1
+              column: 5
+            end:
+              line: 1
+              column: 6
+            startByte: 4
+            endByte: 5
+          - start:
+              line: 2
+              column: 5
+            end:
+              line: 2
+              column: 6
+            startByte: 16
+            endByte: 17
+          - start:
+              line: 3
+              column: 5
+            end:
+              line: 3
+              column: 6
+            startByte: 28
+            endByte: 29
+          - start:
+              line: 4
+              column: 5
+            end:
+              line: 4
+              column: 6
+            startByte: 40
+            endByte: 41
+      - name: $y
+        scopedName: 3_2_$y
+        ranges:
+          - start:
+              line: 1
+              column: 8
+            end:
+              line: 1
+              column: 10
+            startByte: 7
+            endByte: 9
+          - start:
+              line: 2
+              column: 8
+            end:
+              line: 2
+              column: 10
+            startByte: 19
+            endByte: 21
+          - start:
+              line: 3
+              column: 8
+            end:
+              line: 3
+              column: 10
+            startByte: 31
+            endByte: 33
+          - start:
+              line: 4
+              column: 8
+            end:
+              line: 4
+              column: 10
+            startByte: 43
+            endByte: 45
+      - name: $element
+        scopedName: 3_3_$element
+        ranges: []
+    sourceFile: test-file.tsx
+    ranges:
+      - start:
+          line: 5
+          column: 1
+        end:
+          line: 5
+          column: 4
+        startByte: 48
+        endByte: 51
+    debug: "{\n  \"SORT\": \"program\",\n  \"RANGE\": {\n    \"start\": {\n      \"line\": 1,\n      \"column\": 1\n    },\n    \"end\": {\n      \"line\": 6,\n      \"column\": 1\n    }\n  },\n  \"statements\": [\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 1,\n          \"column\": 1\n        },\n        \"end\": {\n          \"line\": 1,\n          \"column\": 12\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"call_expression\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 1,\n            \"column\": 1\n          },\n          \"end\": {\n            \"line\": 1,\n            \"column\": 11\n          }\n        },\n        \"arguments\": [\n          {\n            \"SORT\": \"number\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 1,\n                \"column\": 5\n              },\n              \"end\": {\n                \"line\": 1,\n                \"column\": 6\n              }\n            },\n            \"TEXT\": \"1\"\n          },\n          {\n            \"SORT\": \",\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 1,\n                \"column\": 6\n              },\n              \"end\": {\n                \"line\": 1,\n                \"column\": 7\n              }\n            },\n            \"TEXT\": \",\"\n          },\n          {\n            \"SORT\": \"number\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 1,\n                \"column\": 8\n              },\n              \"end\": {\n                \"line\": 1,\n                \"column\": 10\n              }\n            },\n            \"TEXT\": \"11\"\n          }\n        ],\n        \"function\": {\n          \"SORT\": \"identifier\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 1,\n              \"column\": 1\n            },\n            \"end\": {\n              \"line\": 1,\n              \"column\": 4\n            }\n          },\n          \"TEXT\": \"foo\"\n        },\n        \"CHILDREN\": [\n          {\n            \"SORT\": \"(\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 1,\n                \"column\": 4\n              },\n              \"end\": {\n                \"line\": 1,\n                \"column\": 5\n              }\n            },\n            \"TEXT\": \"(\"\n          },\n          {\n            \"SORT\": \")\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 1,\n                \"column\": 10\n              },\n              \"end\": {\n                \"line\": 1,\n                \"column\": 11\n              }\n            },\n            \"TEXT\": \")\"\n          }\n        ]\n      },\n      \"CHILDREN\": [\n        {\n          \"SORT\": \";\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 1,\n              \"column\": 11\n            },\n            \"end\": {\n              \"line\": 1,\n              \"column\": 12\n            }\n          },\n          \"TEXT\": \";\"\n        }\n      ]\n    },\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 2,\n          \"column\": 1\n        },\n        \"end\": {\n          \"line\": 2,\n          \"column\": 12\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"call_expression\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 2,\n            \"column\": 1\n          },\n          \"end\": {\n            \"line\": 2,\n            \"column\": 11\n          }\n        },\n        \"arguments\": [\n          {\n            \"SORT\": \"number\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 2,\n                \"column\": 5\n              },\n              \"end\": {\n                \"line\": 2,\n                \"column\": 6\n              }\n            },\n            \"TEXT\": \"1\"\n          },\n          {\n            \"SORT\": \",\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 2,\n                \"column\": 6\n              },\n              \"end\": {\n                \"line\": 2,\n                \"column\": 7\n              }\n            },\n            \"TEXT\": \",\"\n          },\n          {\n            \"SORT\": \"number\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 2,\n                \"column\": 8\n              },\n              \"end\": {\n                \"line\": 2,\n                \"column\": 10\n              }\n            },\n            \"TEXT\": \"12\"\n          }\n        ],\n        \"function\": {\n          \"SORT\": \"identifier\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 2,\n              \"column\": 1\n            },\n            \"end\": {\n              \"line\": 2,\n              \"column\": 4\n            }\n          },\n          \"TEXT\": \"foo\"\n        },\n        \"CHILDREN\": [\n          {\n            \"SORT\": \"(\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 2,\n                \"column\": 4\n              },\n              \"end\": {\n                \"line\": 2,\n                \"column\": 5\n              }\n            },\n            \"TEXT\": \"(\"\n          },\n          {\n            \"SORT\": \")\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 2,\n                \"column\": 10\n              },\n              \"end\": {\n                \"line\": 2,\n                \"column\": 11\n              }\n            },\n            \"TEXT\": \")\"\n          }\n        ]\n      },\n      \"CHILDREN\": [\n        {\n          \"SORT\": \";\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 2,\n              \"column\": 11\n            },\n            \"end\": {\n              \"line\": 2,\n              \"column\": 12\n            }\n          },\n          \"TEXT\": \";\"\n        }\n      ]\n    },\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 3,\n          \"column\": 1\n        },\n        \"end\": {\n          \"line\": 3,\n          \"column\": 12\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"call_expression\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 3,\n            \"column\": 1\n          },\n          \"end\": {\n            \"line\": 3,\n            \"column\": 11\n          }\n        },\n        \"arguments\": [\n          {\n            \"SORT\": \"number\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 3,\n                \"column\": 5\n              },\n              \"end\": {\n                \"line\": 3,\n                \"column\": 6\n              }\n            },\n            \"TEXT\": \"1\"\n          },\n          {\n            \"SORT\": \",\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 3,\n                \"column\": 6\n              },\n              \"end\": {\n                \"line\": 3,\n                \"column\": 7\n              }\n            },\n            \"TEXT\": \",\"\n          },\n          {\n            \"SORT\": \"number\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 3,\n                \"column\": 8\n              },\n              \"end\": {\n                \"line\": 3,\n                \"column\": 10\n              }\n            },\n            \"TEXT\": \"12\"\n          }\n        ],\n        \"function\": {\n          \"SORT\": \"identifier\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 3,\n              \"column\": 1\n            },\n            \"end\": {\n              \"line\": 3,\n              \"column\": 4\n            }\n          },\n          \"TEXT\": \"foo\"\n        },\n        \"CHILDREN\": [\n          {\n            \"SORT\": \"(\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 3,\n                \"column\": 4\n              },\n              \"end\": {\n                \"line\": 3,\n                \"column\": 5\n              }\n            },\n            \"TEXT\": \"(\"\n          },\n          {\n            \"SORT\": \")\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 3,\n                \"column\": 10\n              },\n              \"end\": {\n                \"line\": 3,\n                \"column\": 11\n              }\n            },\n            \"TEXT\": \")\"\n          }\n        ]\n      },\n      \"CHILDREN\": [\n        {\n          \"SORT\": \";\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 3,\n              \"column\": 11\n            },\n            \"end\": {\n              \"line\": 3,\n              \"column\": 12\n            }\n          },\n          \"TEXT\": \";\"\n        }\n      ]\n    },\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 4,\n          \"column\": 1\n        },\n        \"end\": {\n          \"line\": 4,\n          \"column\": 12\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"call_expression\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 4,\n            \"column\": 1\n          },\n          \"end\": {\n            \"line\": 4,\n            \"column\": 11\n          }\n        },\n        \"arguments\": [\n          {\n            \"SORT\": \"number\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 4,\n                \"column\": 5\n              },\n              \"end\": {\n                \"line\": 4,\n                \"column\": 6\n              }\n            },\n            \"TEXT\": \"2\"\n          },\n          {\n            \"SORT\": \",\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 4,\n                \"column\": 6\n              },\n              \"end\": {\n                \"line\": 4,\n                \"column\": 7\n              }\n            },\n            \"TEXT\": \",\"\n          },\n          {\n            \"SORT\": \"number\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 4,\n                \"column\": 8\n              },\n              \"end\": {\n                \"line\": 4,\n                \"column\": 10\n              }\n            },\n            \"TEXT\": \"21\"\n          }\n        ],\n        \"function\": {\n          \"SORT\": \"identifier\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 4,\n              \"column\": 1\n            },\n            \"end\": {\n              \"line\": 4,\n              \"column\": 4\n            }\n          },\n          \"TEXT\": \"foo\"\n        },\n        \"CHILDREN\": [\n          {\n            \"SORT\": \"(\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 4,\n                \"column\": 4\n              },\n              \"end\": {\n                \"line\": 4,\n                \"column\": 5\n              }\n            },\n            \"TEXT\": \"(\"\n          },\n          {\n            \"SORT\": \")\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 4,\n                \"column\": 10\n              },\n              \"end\": {\n                \"line\": 4,\n                \"column\": 11\n              }\n            },\n            \"TEXT\": \")\"\n          }\n        ]\n      },\n      \"CHILDREN\": [\n        {\n          \"SORT\": \";\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 4,\n              \"column\": 11\n            },\n            \"end\": {\n              \"line\": 4,\n              \"column\": 12\n            }\n          },\n          \"TEXT\": \";\"\n        }\n      ]\n    },\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 5,\n          \"column\": 1\n        },\n        \"end\": {\n          \"line\": 5,\n          \"column\": 4\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"identifier\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 5,\n            \"column\": 1\n          },\n          \"end\": {\n            \"line\": 5,\n            \"column\": 4\n          }\n        },\n        \"TEXT\": \"end\"\n      }\n    }\n  ]\n}"
+  rewritten:
+    messages: []
+    variables: []
+    sourceFile: test-file.tsx
+    content: "foo(1, 11);\nfoo(1, 12);\nfoo(1, 12);\nfoo(2, 21);\n1,11||| 1,12||| 2,21\n"
+    byteRanges:
+      - start: 48
+        end: 68
+  ansiSummary: ""
+  reason: ~
+- __typename: DoneFile
+  relativeFilePath: test-file.tsx
+- __typename: AnalysisLog
+  level: 531
+  message: "Error parsing source code at 5:15 in test-file.tsx. This may cause otherwise applicable queries to not match."
+  position:
+    line: 5
+    column: 15
+  file: test-file.tsx
+  engineId: marzano(0.1)
+  range: ~
+  syntaxTree: ~
+  source: ~
+- __typename: AnalysisLog
+  level: 531
+  message: "Error parsing source code at 5:7 in test-file.tsx. This may cause otherwise applicable queries to not match."
+  position:
+    line: 5
+    column: 7
+  file: test-file.tsx
+  engineId: marzano(0.1)
+  range: ~
+  syntaxTree: ~
+  source: ~
+

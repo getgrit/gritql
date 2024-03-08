@@ -1,0 +1,10 @@
+language js
+
+or {
+  `console.log("$path")` where {
+    $path => resolve($path)
+  },
+  `console.error($thing)` where {
+    $thing => resolve($absolute_filename)
+  }
+}

@@ -1,0 +1,6 @@
+---
+source: apps/marzano/cli/tests/apply.rs
+expression: stdout
+---
+ERROR (code: 299) - check_actions_clean/.grit/grit.yaml is a config file, not a pattern. Try applying the pattern by name.
+

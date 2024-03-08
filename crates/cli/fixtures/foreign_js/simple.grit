@@ -1,0 +1,9 @@
+engine marzano(0.1)
+language js
+
+function adder() js {
+  console.log("We are in JavaScript now!");
+  return 10 % 3
+}
+
+`x` => adder()

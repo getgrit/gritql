@@ -1,0 +1,9 @@
+language js
+
+pattern js_class_export() = {
+    export_statement(declaration = $class) where {
+        $class <: class_declaration(name = $name, body = $body)
+    }
+}
+
+contains js_class_export()

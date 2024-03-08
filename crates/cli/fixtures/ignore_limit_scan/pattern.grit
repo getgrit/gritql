@@ -1,0 +1,3 @@
+file($body) where {
+  $body <: contains `x` => `y`
+} limit 1

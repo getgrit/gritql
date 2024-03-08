@@ -1,0 +1,4 @@
+{
+  "pattern_body": "language js\n`console.log`",
+  "paths": ["test/"]
+}

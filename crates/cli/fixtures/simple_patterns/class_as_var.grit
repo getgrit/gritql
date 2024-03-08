@@ -1,0 +1,12 @@
+language js
+
+pattern class_as_var() = {
+    $construct where {
+        $construct <: and {
+            variable_declarator(name = $name, value = class()),
+            not within export_statement()
+        }
+    }
+}
+
+contains class_as_var()

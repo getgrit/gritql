@@ -1,0 +1,14 @@
+---
+source: apps/marzano/cli/tests/apply.rs
+expression: content
+---
+[1mfile.yaml[0m
+[2m     this list:[0m
+[2m       - item: one[0m
+[31m    -  - thing: two[0m
+[32m    +  - thing: boo[0m
+[2m       - foo: bar[0m
+[2m    [0m
+
+Processed 1 files and found 1 matches
+

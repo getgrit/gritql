@@ -1,0 +1,6 @@
+engine marzano(0.1)
+language js
+
+function($parameters) where {
+    log(variable=$parameters),
+}

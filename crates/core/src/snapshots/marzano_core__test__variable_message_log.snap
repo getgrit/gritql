@@ -1,0 +1,77 @@
+---
+source: apps/marzano/core/src/test.rs
+expression: results
+---
+- __typename: Match
+  messages: []
+  variables:
+    - name: $new_files
+      scopedName: 0_0_$new_files
+      ranges: []
+    - name: $program
+      scopedName: 0_1_$program
+      ranges: []
+    - name: $filename
+      scopedName: 0_2_$filename
+      ranges: []
+    - name: $absolute_filename
+      scopedName: 0_3_$absolute_filename
+      ranges: []
+    - name: $x
+      scopedName: 1_0_$x
+      ranges:
+        - start:
+            line: 1
+            column: 1
+          end:
+            line: 2
+            column: 1
+          startByte: 0
+          endByte: 13
+    - name: $message
+      scopedName: 1_1_$message
+      ranges: []
+    - name: $match
+      scopedName: 1_2_$match
+      ranges:
+        - start:
+            line: 1
+            column: 1
+          end:
+            line: 2
+            column: 1
+          startByte: 0
+          endByte: 13
+  sourceFile: test-file.tsx
+  ranges:
+    - start:
+        line: 1
+        column: 1
+      end:
+        line: 2
+        column: 1
+      startByte: 0
+      endByte: 13
+  debug: "{\n  \"SORT\": \"program\",\n  \"RANGE\": {\n    \"start\": {\n      \"line\": 1,\n      \"column\": 1\n    },\n    \"end\": {\n      \"line\": 2,\n      \"column\": 1\n    }\n  },\n  \"statements\": [\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 1,\n          \"column\": 1\n        },\n        \"end\": {\n          \"line\": 1,\n          \"column\": 5\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"identifier\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 1,\n            \"column\": 1\n          },\n          \"end\": {\n            \"line\": 1,\n            \"column\": 4\n          }\n        },\n        \"TEXT\": \"foo\"\n      },\n      \"CHILDREN\": [\n        {\n          \"SORT\": \";\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 1,\n              \"column\": 4\n            },\n            \"end\": {\n              \"line\": 1,\n              \"column\": 5\n            }\n          },\n          \"TEXT\": \";\"\n        }\n      ]\n    },\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 1,\n          \"column\": 5\n        },\n        \"end\": {\n          \"line\": 1,\n          \"column\": 9\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"identifier\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 1,\n            \"column\": 5\n          },\n          \"end\": {\n            \"line\": 1,\n            \"column\": 8\n          }\n        },\n        \"TEXT\": \"bar\"\n      },\n      \"CHILDREN\": [\n        {\n          \"SORT\": \";\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 1,\n              \"column\": 8\n            },\n            \"end\": {\n              \"line\": 1,\n              \"column\": 9\n            }\n          },\n          \"TEXT\": \";\"\n        }\n      ]\n    },\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 1,\n          \"column\": 9\n        },\n        \"end\": {\n          \"line\": 1,\n          \"column\": 13\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"identifier\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 1,\n            \"column\": 9\n          },\n          \"end\": {\n            \"line\": 1,\n            \"column\": 12\n          }\n        },\n        \"TEXT\": \"baz\"\n      },\n      \"CHILDREN\": [\n        {\n          \"SORT\": \";\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 1,\n              \"column\": 12\n            },\n            \"end\": {\n              \"line\": 1,\n              \"column\": 13\n            }\n          },\n          \"TEXT\": \";\"\n        }\n      ]\n    }\n  ]\n}"
+- __typename: DoneFile
+  relativeFilePath: test-file.tsx
+- __typename: AnalysisLog
+  level: 441
+  message: "this is a message\n"
+  position:
+    line: 1
+    column: 1
+  file: test-file.tsx
+  engineId: marzano
+  range:
+    start:
+      line: 1
+      column: 1
+    end:
+      line: 2
+      column: 1
+    startByte: 0
+    endByte: 13
+  syntaxTree: "(program statements: (expression_statement expression: (identifier)) statements: (expression_statement expression: (identifier)) statements: (expression_statement expression: (identifier)))"
+  source: "foo;bar;baz;\n"
+

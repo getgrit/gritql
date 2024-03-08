@@ -1,0 +1,3 @@
+language js
+
+`console.log($msg)` => `winston.log($msg)`

@@ -1,0 +1,12 @@
+language js
+
+pattern imports() = {
+    or {
+        import_statement(source = $source),
+        import_specifier(name = $name, alias = $alias),
+        import_specifier(name = $no_alias),
+        namespace_import(namespace = $namespace),
+        import_clause(default = $default)
+    } as $import
+}
+contains imports()

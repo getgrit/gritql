@@ -1,0 +1,9 @@
+---
+source: apps/marzano/cli/tests/apply.rs
+expression: content
+---
+default_options = {
+  priority: "Hello",
+  color: "Hello"
+}
+

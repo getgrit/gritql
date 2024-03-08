@@ -1,0 +1,1 @@
+`showingCount?: boolean` => `showingCount?: string`

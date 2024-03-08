@@ -1,0 +1,49 @@
+---
+source: apps/marzano/gritmodule/src/resolver.rs
+expression: resolved_patterns
+---
+- config:
+    name: before_each_file_prep_imports
+    body: "language js\n\npattern before_each_file_prep_imports() {\n    $_ where {\n        $GLOBAL_IMPORTED_SOURCES = [],\n        $GLOBAL_IMPORTED_NAMES = [],\n    }\n}"
+    level: ~
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ".grit/.gritmodules/github.com/fakeorg/js/.grit/patterns/importing.grit"
+    position:
+      line: 4
+      column: 9
+  module:
+    type: Module
+    host: github.com
+    fullName: fakeorg/js
+    remote: "https://github.com/fakeorg/js.git"
+    providerName: github.com/fakeorg/js
+  localName: before_each_file_prep_imports
+  body: "language js\n\npattern before_each_file_prep_imports() {\n    $_ where {\n        $GLOBAL_IMPORTED_SOURCES = [],\n        $GLOBAL_IMPORTED_NAMES = [],\n    }\n}"
+  kind: pattern
+  visibility: public
+- config:
+    name: before_each_file_prep_imports
+    body: "language python\n\npattern before_each_file_prep_imports() {\n    $_ where {\n        $GLOBAL_IMPORTED_SOURCES = [],\n        $GLOBAL_IMPORTED_NAMES = [],\n        $GLOBAL_BARE_IMPORTS = [],\n    }\n}"
+    level: ~
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ".grit/.gritmodules/github.com/fakeorg/python/.grit/patterns/importing.grit"
+    position:
+      line: 4
+      column: 9
+  module:
+    type: Module
+    host: github.com
+    fullName: fakeorg/python
+    remote: "https://github.com/fakeorg/python.git"
+    providerName: github.com/fakeorg/python
+  localName: before_each_file_prep_imports
+  body: "language python\n\npattern before_each_file_prep_imports() {\n    $_ where {\n        $GLOBAL_IMPORTED_SOURCES = [],\n        $GLOBAL_IMPORTED_NAMES = [],\n        $GLOBAL_BARE_IMPORTS = [],\n    }\n}"
+  kind: pattern
+  visibility: public
+

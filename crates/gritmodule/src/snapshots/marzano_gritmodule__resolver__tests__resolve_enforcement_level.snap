@@ -1,0 +1,71 @@
+---
+source: apps/marzano/gritmodule/src/resolver.rs
+expression: resolved_patterns
+---
+- config:
+    name: hidden_pattern
+    body: "language js\n`console.log($_)` => .\n"
+    level: none
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ".grit/grit.yaml"
+    position:
+      line: 3
+      column: 11
+  module:
+    type: Module
+    host: github.com
+    fullName: getgrit/rewriter
+    remote: "https://github.com/getgrit/rewriter.git"
+    providerName: github.com/getgrit/rewriter
+  localName: hidden_pattern
+  body: "language js\n`console.log($_)` => .\n"
+  kind: pattern
+  visibility: public
+- config:
+    name: remove_console_error
+    body: "engine marzano(0.1)\nlanguage js\n\n`console.error($_)` => .\n"
+    level: error
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ".grit/grit.yaml"
+    position:
+      line: 15
+      column: 11
+  module:
+    type: Module
+    host: github.com
+    fullName: getgrit/rewriter
+    remote: "https://github.com/getgrit/rewriter.git"
+    providerName: github.com/getgrit/rewriter
+  localName: remove_console_error
+  body: "engine marzano(0.1)\nlanguage js\n\n`console.error($_)` => .\n"
+  kind: pattern
+  visibility: public
+- config:
+    name: remove_console_log
+    body: "engine marzano(0.1)\nlanguage js\n\n`console.log($_)` => .\n"
+    level: warn
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ".grit/grit.yaml"
+    position:
+      line: 8
+      column: 11
+  module:
+    type: Module
+    host: github.com
+    fullName: getgrit/rewriter
+    remote: "https://github.com/getgrit/rewriter.git"
+    providerName: github.com/getgrit/rewriter
+  localName: remove_console_log
+  body: "engine marzano(0.1)\nlanguage js\n\n`console.log($_)` => .\n"
+  kind: pattern
+  visibility: public
+

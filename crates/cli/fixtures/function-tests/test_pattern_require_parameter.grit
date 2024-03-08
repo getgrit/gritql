@@ -1,0 +1,9 @@
+language js
+// should fail due to missing parameter
+pattern MainPattern($supertype) = class_declaration(
+    name = $className, 
+    heritage = contains $supertype
+    body = $body
+) => `const $className = $body`
+
+contains MainPattern(supertype = "NotComponent")

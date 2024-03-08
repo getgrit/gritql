@@ -1,0 +1,6 @@
+language js
+
+`const $_ = [ $list ]` where {
+  $our_list = ["zebra", "monkey", "zoo", "apple", "orange", "banana"],
+  $shuffled_list = shuffle($our_list),
+} => $shuffled_list

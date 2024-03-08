@@ -1,0 +1,6 @@
+language python
+
+`def $foo():
+    $x` where {
+        $foo => llm_chat(messages=[{role: "user", content: "What is a good function name?"}])
+    }

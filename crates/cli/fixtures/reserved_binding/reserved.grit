@@ -1,0 +1,5 @@
+language js
+
+`console.log($filename)` => . where {
+    $filename <: not within catch_clause()
+}

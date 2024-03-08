@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/core",
+  "crates/cli",
+  "crates/util",
+  "crates/language",
+  "crates/gritmodule",
+  "crates/gritcache",
+  "crates/auth",
+  "crates/externals",
+  "crates/wasm-bindings",
+  "crates/marzano_messenger",
+]
+exclude = [
+  "resources",
+  "vendor/web-tree-sitter",
+  "vendor/tree-sitter-facade",
+]
