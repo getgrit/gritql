@@ -36,7 +36,7 @@ Replace `console.log` with `winston.log`:
 grit apply '`console.log($msg)` => `winston.log($msg)`'
 ```
 
-Save the pattern to [`grit.yaml`](https://docs.grit.io/guides/config) file and exclude test cases:
+Save the pattern to a [`grit.yaml`](https://docs.grit.io/guides/config) file and exclude test cases:
 ```
 cat << 'EOF' > .grit/grit.yaml
 patterns:
