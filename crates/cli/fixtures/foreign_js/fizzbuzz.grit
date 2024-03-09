@@ -1,0 +1,13 @@
+engine marzano(0.1)
+language js
+
+function fizzbuzz($x) js {
+    // Use $var.text to access the binding's value
+    const parsed = parseInt($x.text, 10);
+    let output = '';
+    if (parsed % 3 === 0) output += 'Fizz';
+    if (parsed % 5 === 0) output += 'Buzz';
+    return output || parsed;
+}
+
+`console.log($x)` => fizzbuzz($x)

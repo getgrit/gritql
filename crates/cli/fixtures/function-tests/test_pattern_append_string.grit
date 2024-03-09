@@ -1,0 +1,13 @@
+pattern handlePairs($accum) = or {
+    pair_pattern(key = $key, value = $value) where {
+        $accum += `$key as $value, `
+    },
+    $identifier where {
+        $identifier <: shorthand_property_identifier_pattern()
+        $accum += `$identifier, `
+    }
+}
+$result = "{ "
+contains variable_declarator(name = contains handlePairs(accum = $result))
+$result += "}"
+$x => `$accum`

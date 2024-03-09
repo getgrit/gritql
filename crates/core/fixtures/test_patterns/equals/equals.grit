@@ -1,0 +1,6 @@
+language js
+
+`$key: $value` where {
+   $value == `3141$key`,
+   $key => `equal`
+}

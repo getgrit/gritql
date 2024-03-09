@@ -1,0 +1,13 @@
+---
+source: apps/marzano/cli/tests/apply.rs
+expression: "String::from_utf8(output.stdout)?"
+---
+./main.tf
+     locals {
+    -  nice = "old"
+    +  nice = "multifile"
+     }
+    
+
+Processed 1 files and found 1 matches
+

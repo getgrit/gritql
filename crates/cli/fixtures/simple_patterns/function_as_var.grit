@@ -1,0 +1,17 @@
+language js
+
+pattern js_function_as_var() = {
+    $func where { 
+        $func <: and {
+            variable_declarator(name = $name, value =
+                or {
+                    arrow_function(parameters = $param, body = $body),
+                    function(parameters = $param, body = $body),
+                }
+            ),
+            not within export_statement()
+        }
+    }
+}
+
+contains js_function_as_var()

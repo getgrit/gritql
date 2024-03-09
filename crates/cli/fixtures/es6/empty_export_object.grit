@@ -1,0 +1,11 @@
+language js
+
+pattern es6EmptyObjectExport() = {
+    expression_statement(
+        expression = assignment_expression(
+            left = member_expression(object = "module", property = "exports")
+            right = object(properties = []))
+        ) => .
+}
+
+contains es6EmptyObjectExport()

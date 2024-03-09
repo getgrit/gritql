@@ -1,0 +1,77 @@
+---
+source: apps/marzano/gritmodule/src/yaml.rs
+expression: patterns
+---
+- config:
+    name: "github.com/getgrit/js#*"
+    body: ~
+    level: info
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ""
+    position:
+      line: 3
+      column: 11
+  module:
+    host: github.com
+    fullName: getgrit/js
+    remote: "https://github.com/getgrit/js.git"
+    providerName: github.com/getgrit/js
+  local_name: "*"
+- config:
+    name: "github.com/getgrit/json#no_console_log"
+    body: ~
+    level: error
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ""
+    position:
+      line: 5
+      column: 11
+  module:
+    host: github.com
+    fullName: getgrit/json
+    remote: "https://github.com/getgrit/json.git"
+    providerName: github.com/getgrit/json
+  local_name: no_console_log
+- config:
+    name: "github.com/getgrit/json#strict_tsconfig"
+    body: ~
+    level: info
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ""
+    position:
+      line: 7
+      column: 11
+  module:
+    host: github.com
+    fullName: getgrit/json
+    remote: "https://github.com/getgrit/json.git"
+    providerName: github.com/getgrit/json
+  local_name: strict_tsconfig
+- config:
+    name: remove_console_error
+    body: "engine marzano(0.1)\nlanguage js\n\n`console.error($_)` => .\n"
+    level: error
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ""
+    position:
+      line: 9
+      column: 11
+  module:
+    host: ""
+    fullName: ""
+    remote: ""
+    providerName: ""
+  local_name: remove_console_error
+

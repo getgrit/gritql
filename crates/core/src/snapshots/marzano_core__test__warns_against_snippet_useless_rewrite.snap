@@ -1,0 +1,10 @@
+---
+source: apps/marzano/core/src/test.rs
+expression: res
+---
+engine_id: None
+file_name: Some("PlaygroundPattern")
+level: Some(441)
+message: "Warning: This is rewriting `export type {$types}` into the identical string `export type {$types}`, will have no effect."
+position: Some(Position { line: 2, column: 5 })
+

@@ -1,0 +1,26 @@
+language js
+
+pattern console_thing() {
+  `console.$_($_)` as $log where {
+    $kind = llm_chat(messages=[
+      {role: "user", content: `Is this log message an info or a warning? Give a one word answer.
+  \`\`\`
+  $log
+  \`\`\`
+  `},
+  ], pattern=or { `error`, `info` })
+  } => `// Kind: $kind\n$log`
+}
+
+pattern london_thing() {
+  `capitalOf($country)` as $capital where {
+    $capital = llm_chat(messages=[
+      {role: "user", content: `What is the capital of $country?`},
+    ], pattern=not `London`)
+  } => `// Capital of $country: $capital`
+}
+
+or {
+  console_thing(),
+  london_thing()
+}

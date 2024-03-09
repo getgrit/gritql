@@ -1,0 +1,9 @@
+language js
+
+$component = "ComponentNotThere"
+
+contains class_declaration(
+    name = $className, 
+    heritage = contains $component
+    body = $body
+) => `const $className = $body`

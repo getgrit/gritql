@@ -1,0 +1,5 @@
+language js
+
+`[ $list ]` where {
+  $list <: some $_ => random(0, 1)
+}

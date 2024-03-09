@@ -1,0 +1,12 @@
+engine marzano(0.1)
+language hcl
+
+pattern fix_files() {
+  bubble file($body) where {
+    $body <: contains `nice = $_` => `nice = "multifile"`
+  }
+}
+
+multifile {
+  fix_files()
+}

@@ -1,0 +1,10 @@
+language js
+
+pattern js_function_export() = {
+    export_statement(declaration = $function) where $function <: or {
+        function_declaration(name = $name, parameters = $parameters, body = $body) as $func
+        generator_function_declaration(name = $name, parameters = $parameters, body = $body) as $func
+    }
+}
+
+contains js_function_export()

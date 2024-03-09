@@ -1,0 +1,71 @@
+---
+source: apps/marzano/gritmodule/src/resolver.rs
+expression: resolved_patterns
+---
+- config:
+    name: PatternWithBody
+    body: "`sum($a, $b)` => `sum([$a, $b])`"
+    level: ~
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ".grit/.gritmodules/github.com/custodian-sample-org/testrepo-A/.grit/grit.yaml"
+    position:
+      line: 9
+      column: 11
+  module:
+    type: Module
+    host: github.com
+    fullName: custodian-sample-org/testrepo-A
+    remote: "https://github.com/custodian-sample-org/testrepo-A.git"
+    providerName: github.com/custodian-sample-org/testrepo-A
+  localName: PatternWithBody
+  body: "`sum($a, $b)` => `sum([$a, $b])`"
+  kind: pattern
+  visibility: public
+- config:
+    name: RemovalPattern
+    body: "`sum($a, $b)` => ."
+    level: ~
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ".grit/.gritmodules/github.com/custodian-sample-org/testrepo-A/.grit/grit.yaml"
+    position:
+      line: 11
+      column: 11
+  module:
+    type: Module
+    host: github.com
+    fullName: custodian-sample-org/testrepo-A
+    remote: "https://github.com/custodian-sample-org/testrepo-A.git"
+    providerName: github.com/custodian-sample-org/testrepo-A
+  localName: RemovalPattern
+  body: "`sum($a, $b)` => ."
+  kind: pattern
+  visibility: public
+- config:
+    name: SwapPattern
+    body: "`sum($a, $b)` => `sum($b, $a)`"
+    level: ~
+    title: ~
+    description: ~
+    tags: ~
+    samples: ~
+    path: ".grit/.gritmodules/github.com/custodian-sample-org/testrepo-B/.grit/grit.yaml"
+    position:
+      line: 3
+      column: 11
+  module:
+    type: Module
+    host: github.com
+    fullName: custodian-sample-org/testrepo-B
+    remote: "https://github.com/custodian-sample-org/testrepo-B.git"
+    providerName: github.com/custodian-sample-org/testrepo-B
+  localName: SwapPattern
+  body: "`sum($a, $b)` => `sum($b, $a)`"
+  kind: pattern
+  visibility: public
+

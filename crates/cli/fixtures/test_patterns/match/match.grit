@@ -1,0 +1,8 @@
+program() as $program where {
+    $program <: contains bubble($program) and {
+        // we are checking that $program actually covers everything here, does not bind
+        // to the current node
+        $_ where $program <: contains `10`,
+        `x` => `y`
+    }
+}

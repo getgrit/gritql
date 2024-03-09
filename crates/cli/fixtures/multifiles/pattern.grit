@@ -1,0 +1,34 @@
+language js
+
+
+pattern our_multifile() {
+  multifile {
+    // Since multifile has a single global state, we need to use `bubble` to restrict the scope of $body
+    bubble($prop, $source_file, $new_prop) file($body) where $body <: contains `type $prop = $_` where {
+      // If we already have found a specific $source_file, we don't want to keep looking for new props
+      $source_file <: undefined,
+      $prop <: `Props`,
+      if ($filename <: includes "other") {
+        $new_prop = `Other$prop`,
+      } else {
+        $new_prop = `The$prop`,
+      },
+      // Rename the prop *in this file*
+      $prop => $new_prop,
+      $source_file = $filename
+    },
+    // Now that we have renamed the prop in the source file
+    bubble($prop, $source_file, $new_prop) file($body) where {
+      $body <: contains `$prop` where {
+        // Make sure the prop we are looking at
+        $prop <: imported_from(from=includes $source_file),
+      },
+      $body <: contains `$prop` => $new_prop,
+    }
+  }
+}
+
+sequential {
+  our_multifile(),
+  our_multifile(),
+}

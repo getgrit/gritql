@@ -1,0 +1,14 @@
+language js
+
+$component = "Component"
+$accum = ""
+$accum += "{ "
+contains field_definition(property = $prop) as $field
+$accum += $field
+$accum += "; }"
+
+contains class_declaration(
+    name = $className, 
+    heritage = contains $component
+    body = $body
+) => `const $className = $accum`

@@ -1,0 +1,12 @@
+pattern foo() {
+    contains `{ foo: $y }` => `{ bar: $y }`
+}
+
+pattern bar() {
+    contains `{ bar: $y }` => `{ baz: $y }`
+}
+
+sequential {
+    foo(),
+    bar()
+}

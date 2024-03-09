@@ -1,0 +1,5 @@
+language js
+
+`console.log($_)` => .where {
+    $program = `foo`,
+}

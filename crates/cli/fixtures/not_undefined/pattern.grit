@@ -1,0 +1,8 @@
+language js
+
+or {
+  `1` where $is_one = true,
+  `2`
+} where {
+  $is_one <: not undefined,
+} => `replaced`

@@ -1,0 +1,3 @@
+language js
+
+import_statement() => `// eslint-disable-next-line import/no-cycle\n$match`

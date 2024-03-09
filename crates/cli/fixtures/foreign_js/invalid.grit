@@ -1,0 +1,8 @@
+engine marzano(0.1)
+language js
+
+function invalid_function() js {
+  throw new Error("We are in JavaScript now!");
+}
+
+`console.log($x)` => invalid_function()

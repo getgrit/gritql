@@ -1,0 +1,11 @@
+engine marzano(0.1)
+language js
+
+function foo($i) js {
+    return "foo";
+}
+
+`console.log($i)` where {
+    $new = foo($i),
+    $i => $new
+}

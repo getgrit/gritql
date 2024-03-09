@@ -1,0 +1,6 @@
+---
+source: apps/marzano/cli/tests/check.rs
+expression: output
+---
+::notice file=./foo.py,line=2,col=5,endLine=3,endColumn=20,title=test_notice::This is just a notice.
+Found 0 errors, 0 warnings, and 1 notices

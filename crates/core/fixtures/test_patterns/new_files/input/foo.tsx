@@ -1,0 +1,1 @@
+foo(the_new_file.tsx, whatever)

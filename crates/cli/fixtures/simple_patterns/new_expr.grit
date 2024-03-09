@@ -1,0 +1,5 @@
+language js
+
+pattern js_new_expr() = new_expression(constructor = $name, arguments = $args) as $construct
+
+contains js_new_expr()

@@ -1,0 +1,31 @@
+[package]
+name = "marzano-gritmodule"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+marzano-core = { path = "../core", features = [], default-features = true }
+marzano-language = { path = "../language" }
+marzano-util = { path = "../util", features = ["finder"] }
+tree-sitter-gritql = { path = "../../vendor/tree-sitter-gritql" }
+tree-sitter = { path = "../../vendor/tree-sitter-facade", package = "tree-sitter-facade-sg" }
+serde = { version = "1.0.164", features = ["derive"] }
+serde_yaml = "0.9.25"
+anyhow = "1.0.70"
+rand = "0.8.5"
+git2 = { version = "0.17.2", default-features = false, features = [
+  "vendored-openssl",
+] }
+lazy_static = "1.4.0"
+regex = "1.7.3"
+markdown = "1.0.0-alpha.11"
+tokio = { version = "1", features = ["full"] }
+tempfile = "3.7.0"
+log = "0.4.19"
+reqwest = { version = "0.11.22", features = ["blocking", "json"] }
+sha2 = "0.10.8"
+ignore = "0.4.20"
+homedir = "0.2.1"
+
+[dev-dependencies]
+insta = { version = "1.30.0", features = ["yaml"] }

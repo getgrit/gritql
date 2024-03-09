@@ -1,0 +1,3 @@
+language js
+
+call_expression(function="f", arguments=[..., $x]) => `g($x)`

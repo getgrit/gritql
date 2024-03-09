@@ -1,0 +1,3 @@
+language hcl
+
+`nice = $_` => `nice = 19`

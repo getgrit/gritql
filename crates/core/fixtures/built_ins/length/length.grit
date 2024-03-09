@@ -1,0 +1,3 @@
+language js
+
+`const $args` where { $args => length(target=$args) }

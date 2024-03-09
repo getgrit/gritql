@@ -1,0 +1,3 @@
+language json
+
+contains `{ "foo": $x }` => `{ "foo": "baz" }`

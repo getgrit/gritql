@@ -1,0 +1,6 @@
+language js
+
+`const $args` where {
+    $sep = "|",
+    $args => join(list=$args, separator=$sep),
+}

@@ -1,0 +1,13 @@
+language js
+`"background": "$color"` where {
+  $color => llm_chat(messages = [
+      {
+        role: "system",
+        content: "Determine the color of the input code in a single word. Options: green, rot, blue."
+      },
+      {
+        role: "user",
+        content: "ff0000"
+      }
+    ], pattern=or {`green`, `rot`, `blue`})
+}

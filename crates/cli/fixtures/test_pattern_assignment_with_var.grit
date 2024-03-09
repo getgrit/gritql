@@ -1,0 +1,10 @@
+language js
+
+$component = "Component"
+$body = contains field_definition(property = $prop)
+
+contains class_declaration(
+    name = $className, 
+    heritage = contains $component
+    body = $body
+) => `const $className = $body`

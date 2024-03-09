@@ -1,0 +1,136 @@
+[package]
+name = "marzano-cli"
+version = "0.1.1"
+edition = "2021"
+authors = ["Grit Developers <support@grit.io>"]
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "marzano"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+anyhow = "1.0.70"
+clap = { version = "4.1.13", features = ["derive"] }
+tree-sitter = { path = "../../vendor/tree-sitter-facade", package = "tree-sitter-facade-sg" }
+walkdir = "2.3.3"
+indicatif = "0.17.5"
+ignore = "0.4.20"
+# Do *NOT* upgrade beyond 1.0.171 until https://github.com/serde-rs/serde/issues/2538 is fixed
+serde = { version = "1.0.164", features = ["derive"] }
+serde_json = "1.0.96"
+uuid = { version = "1.1", features = ["v4", "serde"] }
+tokio = { version = "1", features = ["full"] }
+chrono = { version = "0.4.26", features = ["serde"] }
+reqwest = { version = "0.11", features = ["json"] }
+lazy_static = "1.4.0"
+indicatif-log-bridge = "0.2.1"
+colored = "2.0.4"
+log = { version = "0.4.19" }
+env_logger = "0.10.0"
+git2 = "0.17.2"
+regex = "1.7.3"
+openssl = { version = "0.10", features = ["vendored"], optional = true }
+tree-sitter-gritql = { path = "../../vendor/tree-sitter-gritql" }
+tree-sitter-javascript = { path = "../../resources/language-metavariables/tree-sitter-javascript" }
+marzano-core = { path = "../core", features = [
+  "non_wasm",
+], default-features = false }
+marzano-gritmodule = { path = "../gritmodule" }
+marzano-language = { path = "../language", features = ["finder"] }
+marzano-lsp = { path = "../lsp" }
+marzano-util = { path = "../util", features = ["finder"] }
+marzano-auth = { path = "../auth" }
+marzano_messenger = { path = "../marzano_messenger" }
+cli_server = { git = "https://github.com/getgrit/cli_server.git", optional = true }
+ai_builtins = { git = "https://github.com/getgrit/ai_builtins.git", optional = true }
+grit_cache = { path = "../gritcache" }
+tempfile = "3.1"
+similar = "2.2.1"
+dialoguer = "0.10.4"
+console = "0.15.7"
+futures = "0.3.28"
+rayon = "1.8.0"
+dashmap = "5.5.3"
+clap-markdown = { git = "https://github.com/getgrit/clap-markdown", optional = true }
+flate2 = { version = "1.0.17", features = [
+  "rust_backend",
+], default-features = false }
+
+opentelemetry-otlp = { version = "0.14.0", optional = true, features = [
+  "http-proto",
+  "reqwest-client",
+] }
+opentelemetry = { version = "0.21.0", optional = true }
+opentelemetry_sdk = { version = "0.21.1", optional = true, features = [
+  "rt-tokio",
+] }
+tracing-opentelemetry = { version = "0.22.0", optional = true, default-features = false }
+
+tracing-subscriber = { version = "0.3.18" }
+tracing = { version = "0.1.40", default-features = false, features = [] }
+
+[dev-dependencies]
+insta = { version = "1.30.0", features = ["yaml", "redactions"] }
+trim-margin = "0.1.0"
+buildkite-test-collector = "0.1.1"
+assert_cmd = "2.0.12"
+predicates = "3.0.3"
+fs_extra = "1.3"
+ntest = "0.9.0"
+debug_print = "1.0.0"
+similar = "2.2.1"
+reqwest = { version = "0.11.22", features = ["blocking", "json"] }
+marzano-test-utils = { path = "../test_utils" }
+
+
+[features]
+default = [
+  "temporal_workflows",
+  "external_functions",
+  "updater",
+  "workflows_v2",
+  # "server",
+  # "remote_redis",
+  # "embeddings",
+  # "grit_timing",
+  # "grit_tracing",
+]
+workflows_v2 = []
+bundled_workflows = []
+remote_redis = []
+remote_pubsub = []
+server = ["temporal_workflows", "external_functions", "updater", "remote_redis", "remote_pubsub", "ai_builtins", "dep:cli_server"]
+updater = []
+grit_tracing = [
+  "dep:opentelemetry-otlp",
+  "dep:opentelemetry",
+  "dep:opentelemetry_sdk",
+  "dep:tracing-opentelemetry",
+  "marzano-core/grit_tracing",
+]
+external_functions = ["marzano-core/external_functions"]
+ai_builtins = ["dep:ai_builtins"]
+embeddings = ["marzano-core/embeddings", "ai_builtins/embeddings"]
+temporal_workflows = ["dep:openssl"]
+docgen = ["dep:clap-markdown"]
+grit_alpha = [
+  "temporal_workflows",
+  "external_functions",
+  "updater",
+  "docgen",
+  # "grit_timing",
+  # "grit_tracing",
+]
+grit_beta = [
+  "temporal_workflows",
+  "external_functions",
+  "updater",
+  "ai_builtins"
+  # "grit_timing",
+]
+grit_timing = []

@@ -1,0 +1,61 @@
+[submodule "resources/language-submodules/tree-sitter-solidity"]
+	path = resources/language-submodules/tree-sitter-solidity
+	url = https://github.com/JoranHonig/tree-sitter-solidity
+[submodule "resources/language-submodules/tree-sitter-typescript"]
+	path = resources/language-submodules/tree-sitter-typescript
+	url = https://github.com/tree-sitter/tree-sitter-typescript
+[submodule "resources/language-submodules/tree-sitter-javascript"]
+	path = resources/language-submodules/tree-sitter-javascript
+	url = https://github.com/tree-sitter/tree-sitter-javascript
+[submodule "resources/language-submodules/tree-sitter-html"]
+	path = resources/language-submodules/tree-sitter-html
+	url = https://github.com/tree-sitter/tree-sitter-html
+[submodule "resources/language-submodules/tree-sitter-css"]
+	path = resources/language-submodules/tree-sitter-css
+	url = https://github.com/tree-sitter/tree-sitter-css
+[submodule "resources/language-submodules/tree-sitter-json"]
+	path = resources/language-submodules/tree-sitter-json
+	url = https://github.com/tree-sitter/tree-sitter-json
+[submodule "resources/language-submodules/tree-sitter-java"]
+	path = resources/language-submodules/tree-sitter-java
+	url = https://github.com/tree-sitter/tree-sitter-java
+[submodule "resources/language-submodules/tree-sitter-c-sharp"]
+	path = resources/language-submodules/tree-sitter-c-sharp
+	url = https://github.com/tree-sitter/tree-sitter-c-sharp
+[submodule "resources/language-submodules/tree-sitter-go"]
+	path = resources/language-submodules/tree-sitter-go
+	url = https://github.com/tree-sitter/tree-sitter-go
+[submodule "resources/language-submodules/tree-sitter-rust"]
+	path = resources/language-submodules/tree-sitter-rust
+	url = https://github.com/tree-sitter/tree-sitter-rust
+[submodule "resources/language-submodules/tree-sitter-ruby"]
+	path = resources/language-submodules/tree-sitter-ruby
+	url = https://github.com/tree-sitter/tree-sitter-ruby
+[submodule "resources/language-submodules/tree-sitter-yaml"]
+	path = resources/language-submodules/tree-sitter-yaml
+	url = https://github.com/ikatyang/tree-sitter-yaml.git
+[submodule "resources/language-submodules/tree-sitter-hcl"]
+	path = resources/language-submodules/tree-sitter-hcl
+	url = https://github.com/MichaHoffmann/tree-sitter-hcl
+[submodule "resources/language-submodules/tree-sitter-markdown"]
+	path = resources/language-submodules/tree-sitter-markdown
+	url = https://github.com/MDeiml/tree-sitter-markdown.git
+[submodule "resources/language-submodules/tree-sitter-sql"]
+	path = resources/language-submodules/tree-sitter-sql
+	url = https://github.com/DerekStride/tree-sitter-sql
+[submodule "resources/language-submodules/tree-sitter-vue"]
+	path = resources/language-submodules/tree-sitter-vue
+	url = https://github.com/ikatyang/tree-sitter-vue.git
+[submodule "resources/language-submodules/tree-sitter-python"]
+	path = resources/language-submodules/tree-sitter-python
+	url = https://github.com/tree-sitter/tree-sitter-python
+	ignore = dirty
+[submodule "web-tree-sitter"]
+	path = vendor/web-tree-sitter
+	url = https://github.com/getgrit/web-tree-sitter.git
+[submodule "tree-sitter-facade"]
+	path = vendor/tree-sitter-facade
+	url = https://github.com/getgrit/tree-sitter-facade.git
+[submodule "tree-sitter-gritql"]
+	path = vendor/tree-sitter-gritql
+	url = https://github.com/getgrit/tree-sitter-gritql.git

@@ -1,0 +1,6 @@
+---
+source: apps/marzano/cli/tests/patterns_test.rs
+expression: stderr
+---
+Error: Failed to compile pattern markdown_pattern_args: Pattern markdown_pattern_args attempts to define itself - this is not allowed. Tip: Markdown patterns use the file name as their pattern name.
+

@@ -1,0 +1,8 @@
+---
+source: apps/marzano/cli/tests/parse.rs
+expression: "parsed_lines[1]"
+---
+__typename: InputFile
+sourceFile: file.ts
+syntaxTree: "[..]"
+

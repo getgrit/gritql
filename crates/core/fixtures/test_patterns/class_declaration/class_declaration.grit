@@ -1,0 +1,7 @@
+engine marzano(0.1)
+language js
+contains class_declaration(
+    name = $className, 
+    heritage = contains "Component",
+    body = $body
+) => `const $className = $body`

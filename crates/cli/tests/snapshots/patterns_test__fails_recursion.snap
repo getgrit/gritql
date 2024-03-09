@@ -1,0 +1,10 @@
+---
+source: apps/marzano/cli/tests/patterns_test.rs
+expression: stderr
+---
+Error: Unable to resolve Markdown patterns
+
+Caused by:
+    0: Failed to parse markdown pattern .grit/patterns/markdown_pattern_args.md
+    1: Pattern markdown_pattern_args attempts to define itself - this is not allowed. Tip: Markdown patterns use the file name as their pattern name.
+

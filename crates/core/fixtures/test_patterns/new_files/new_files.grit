@@ -1,0 +1,5 @@
+language js
+
+`foo($name, $body)` => `bar()` where {
+    $new_files += file($name, $body)
+}

@@ -1,0 +1,24 @@
+language js
+
+pattern handlePairs($accum) = or {
+    // todo is the order here backwards?
+    pair_pattern(key = $key, value = $value) where {
+        $accum += `$key as $value, `
+    },
+    $identifier where {
+        $identifier <: shorthand_property_identifier_pattern()
+        $accum += `$identifier, `
+    }
+}
+
+pattern destructuredImport() = {
+    $lex where {
+        $imports = "{ ",
+        $lex <: lexical_declaration(declarations = [variable_declarator(
+                name = [object_pattern(properties = handlePairs(accum = $imports))],
+                value = call_expression(function = "require", arguments = [$arg]))]),
+        $imports += "}",
+        $lex => `import $imports from $arg;`
+    }
+}
+contains destructuredImport()

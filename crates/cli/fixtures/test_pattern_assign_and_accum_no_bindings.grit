@@ -1,0 +1,13 @@
+language js
+
+$component = "Component"
+$accum = ""
+$accum += "{ "
+$accum += "a = 1; "
+$accum += "}"
+
+contains class_declaration(
+    name = $className, 
+    heritage = contains $component
+    body = $body
+) => `const $className = $accum`

@@ -1,0 +1,21 @@
+---
+source: apps/marzano/cli/tests/apply.rs
+expression: content
+---
+./small.ts:4:15 - matched
+./small.ts:6:17 - matched
+./small.ts:13:10 - matched
+
+./big.ts:14:39 - matched
+./big.ts:18:19 - matched
+./big.ts:24:17 - matched
+./big.ts:32:26 - matched
+./big.ts:36:26 - matched
+./big.ts:40:20 - matched
+./big.ts:52:20 - matched
+./big.ts:71:71 - matched
+./big.ts:107:25 - matched
+./big.ts:109:71 - matched
+
+Processed 2 files and found 2 matches
+

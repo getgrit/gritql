@@ -1,0 +1,11 @@
+language js
+
+pattern MainPattern($supertype, $body) = class_declaration(
+    name = $className, 
+    heritage = contains $supertype
+    body = $body
+) => `const $className = $body`
+
+pattern FieldDefinition() = field_definition(property = $prop)
+
+contains MainPattern(supertype = "Component", body = contains FieldDefinition())

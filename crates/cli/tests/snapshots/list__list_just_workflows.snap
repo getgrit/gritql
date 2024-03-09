@@ -1,0 +1,11 @@
+---
+source: apps/marzano/cli/tests/list.rs
+expression: "String::from_utf8(output.stdout)?"
+---
+
+LOCAL WORKFLOWS
+  ✔ my_custom_workflow
+  ✔ other_workflow
+  ✔ sum
+  ✔ test_workflow
+

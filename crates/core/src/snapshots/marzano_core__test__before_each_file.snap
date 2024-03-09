@@ -1,0 +1,60 @@
+---
+source: apps/marzano/core/src/test.rs
+expression: results
+---
+- __typename: Rewrite
+  original:
+    messages: []
+    variables:
+      - name: $new_files
+        scopedName: 0_0_$new_files
+        ranges: []
+      - name: $program
+        scopedName: 0_1_$program
+        ranges: []
+      - name: $filename
+        scopedName: 0_2_$filename
+        ranges: []
+      - name: $absolute_filename
+        scopedName: 0_3_$absolute_filename
+        ranges: []
+      - name: $p
+        scopedName: 1_0_$p
+        ranges: []
+      - name: $match
+        scopedName: 2_0_$match
+        ranges:
+          - start:
+              line: 1
+              column: 9
+            end:
+              line: 1
+              column: 12
+            startByte: 8
+            endByte: 11
+    sourceFile: test-file.tsx
+    ranges:
+      - start:
+          line: 1
+          column: 9
+        end:
+          line: 1
+          column: 12
+        startByte: 8
+        endByte: 11
+    debug: "{\n  \"SORT\": \"program\",\n  \"RANGE\": {\n    \"start\": {\n      \"line\": 1,\n      \"column\": 1\n    },\n    \"end\": {\n      \"line\": 2,\n      \"column\": 1\n    }\n  },\n  \"statements\": [\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 1,\n          \"column\": 1\n        },\n        \"end\": {\n          \"line\": 1,\n          \"column\": 5\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"identifier\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 1,\n            \"column\": 1\n          },\n          \"end\": {\n            \"line\": 1,\n            \"column\": 4\n          }\n        },\n        \"TEXT\": \"foo\"\n      },\n      \"CHILDREN\": [\n        {\n          \"SORT\": \";\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 1,\n              \"column\": 4\n            },\n            \"end\": {\n              \"line\": 1,\n              \"column\": 5\n            }\n          },\n          \"TEXT\": \";\"\n        }\n      ]\n    },\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 1,\n          \"column\": 5\n        },\n        \"end\": {\n          \"line\": 1,\n          \"column\": 9\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"identifier\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 1,\n            \"column\": 5\n          },\n          \"end\": {\n            \"line\": 1,\n            \"column\": 8\n          }\n        },\n        \"TEXT\": \"bar\"\n      },\n      \"CHILDREN\": [\n        {\n          \"SORT\": \";\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 1,\n              \"column\": 8\n            },\n            \"end\": {\n              \"line\": 1,\n              \"column\": 9\n            }\n          },\n          \"TEXT\": \";\"\n        }\n      ]\n    },\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 1,\n          \"column\": 9\n        },\n        \"end\": {\n          \"line\": 1,\n          \"column\": 13\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"identifier\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 1,\n            \"column\": 9\n          },\n          \"end\": {\n            \"line\": 1,\n            \"column\": 12\n          }\n        },\n        \"TEXT\": \"baz\"\n      },\n      \"CHILDREN\": [\n        {\n          \"SORT\": \";\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 1,\n              \"column\": 12\n            },\n            \"end\": {\n              \"line\": 1,\n              \"column\": 13\n            }\n          },\n          \"TEXT\": \";\"\n        }\n      ]\n    }\n  ]\n}"
+  rewritten:
+    messages: []
+    variables: []
+    sourceFile: test-file.tsx
+    content: "fooooo;bar;baaaz;\n"
+    byteRanges:
+      - start: 0
+        end: 7
+      - start: 11
+        end: 16
+  ansiSummary: ""
+  reason: ~
+- __typename: DoneFile
+  relativeFilePath: test-file.tsx
+

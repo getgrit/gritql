@@ -1,0 +1,98 @@
+engine marzano(0.1)
+language js
+
+pattern before_each_file() {
+    $_ where {
+    $GLOBAL_IMPORTED_SOURCES = [],
+    $GLOBAL_IMPORTED_NAMES = [],
+    }
+}
+
+pattern the_import_statement($imports, $source) {
+    import_statement(import = import_clause(name = named_imports($imports)), $source)
+}
+
+pattern imported_from($from) {
+    $name where {
+        $program <: program($statements),
+        $statements <: some bubble($name, $from) the_import_statement($imports, source = $from) where {
+            $imports <: some $name,
+        }
+    }
+}
+
+pattern ensure_import_from($source) {
+    $name where {
+    if ($name <: not imported_from(from = $source)) {
+        if ($GLOBAL_IMPORTED_SOURCES <: not some [$program, $source]) {
+        $GLOBAL_IMPORTED_SOURCES += [$program, $source]
+        } else {
+        true
+        },
+        if ($GLOBAL_IMPORTED_NAMES <: not some [$program, $name, $source]) {
+        $GLOBAL_IMPORTED_NAMES += [$program, $name, $source]
+        } else {
+        true
+        }
+    } else {
+        true
+    }
+    }
+}
+
+pattern process_one_source($p, $all_imports) {
+    [$p, $source] where {
+        $imported_names = [],
+        $GLOBAL_IMPORTED_NAMES <: some bubble($p, $source, $imported_names, $all_imports) [$p, $name, $source] where {
+            $imported_names += $name,
+        },
+        $joined_imported_names = join(list = $imported_names, separator = ", "),
+        if ($p <: program(statements = some the_import_statement($imports, $source))) {
+            $imports => `$imports, $joined_imported_names`
+        } else {
+            $all_imports += `import { $joined_imported_names } from $source;`
+        }
+    }
+}
+
+pattern insert_imports() {
+    $p where {
+    $all_imports = [],
+    $GLOBAL_IMPORTED_SOURCES <: some process_one_source($p, $all_imports),
+    if ($all_imports <: not []) {
+        $p => `$all_imports\n$p`
+    } else {
+        true
+    }
+    }
+}
+
+pattern after_each_file() {
+    file(body = $p) where {
+    $p <: maybe insert_imports()
+    }
+}
+
+pattern remove_import($from) {
+    $name where {
+        // Handle named imports
+        $program <: maybe contains bubble($name, $from) `import $clause from $raw_source` as $import where {
+          $raw_source <: contains `$from`,
+          $clause <: or {
+            // Handle module import
+            import_clause(default=$name) where {
+                $import => .
+            },
+            // Handle named import
+            import_clause(name = named_imports($imports)) where {
+                $others = `false`,
+                if ($imports <: [$name]) {
+                    $import => .
+                } else {
+                    $imports <: some $name => .
+                }
+            }
+          }
+        }
+    }
+}

@@ -1,0 +1,12 @@
+---
+source: apps/marzano/cli/tests/check.rs
+expression: summary
+---
+# Summary
+
+| Check | Description | Level | Total Findings |
+| --- | --- | --- | --- |
+| test_js | - | error | 1 |
+| test_notice | This is just a notice. | info | 1 |
+| test_python | - | warning | 1 |
+

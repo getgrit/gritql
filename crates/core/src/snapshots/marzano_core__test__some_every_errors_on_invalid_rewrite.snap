@@ -1,0 +1,18 @@
+---
+source: apps/marzano/core/src/test.rs
+expression: results
+---
+- __typename: DoneFile
+  relativeFilePath: test-file.tsx
+- __typename: AnalysisLog
+  level: 280
+  message: variable on left hand side of rewrite side-conditions cannot be bound to a constant
+  position:
+    line: 1
+    column: 1
+  file: test-file.tsx
+  engineId: marzano
+  range: ~
+  syntaxTree: ~
+  source: ~
+

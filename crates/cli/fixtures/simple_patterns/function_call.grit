@@ -1,0 +1,5 @@
+language js
+
+pattern function_call() = call_expression(function = identifier($name), arguments = $args) as $call
+
+contains function_call()

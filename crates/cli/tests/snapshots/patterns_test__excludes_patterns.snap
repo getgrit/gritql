@@ -1,0 +1,18 @@
+---
+source: apps/marzano/cli/tests/patterns_test.rs
+expression: stdout
+---
+Found 7 testable patterns.
+✗ broken_pattern
+  ✓ `$val != null` => `$val !== null` not channge
+  ✓ `$val != null` => `$val !== null` into `while` not change
+  ✓ Do not change `$val === null` not change
+  ✓ Do not change `$val !== null` not change
+  ✗ `$val == null` => `$val === null` to change
+     if (val === null) {
+       done();
+    -  console.log("This should be removed by grit patterns test --update");
+     }
+    
+
+

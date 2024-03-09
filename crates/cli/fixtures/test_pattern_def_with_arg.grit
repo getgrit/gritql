@@ -1,0 +1,7 @@
+language js
+pattern MainPattern($supertype) = class_declaration(
+    name = $className, 
+    heritage = contains $supertype
+    body = $body
+) => `const $className = $body`
+contains MainPattern(supertype = "Component")

@@ -1,0 +1,6 @@
+language js
+
+`$foo: $bar` where {
+    $foo <: includes $bar,
+    $bar => `true`
+}

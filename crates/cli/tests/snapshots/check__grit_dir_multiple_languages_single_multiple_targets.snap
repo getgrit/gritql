@@ -1,0 +1,15 @@
+---
+source: apps/marzano/cli/tests/check.rs
+expression: output
+---
+./test.js
+  2:3    rewrite        Fix available.    test_js
+
+
+./test.py
+  2:3    rewrite        Fix available.    test_python
+
+
+2 files with rewrites. Run grit check --fix to apply changes.
+
+
