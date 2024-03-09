@@ -1,0 +1,9 @@
+engine marzano(0.1)
+language js
+
+pattern ReactNode($name, $props, $children) {
+  or {
+    `<$name $props>$children</$name>`,
+    `<$name $props />`
+  }
+}

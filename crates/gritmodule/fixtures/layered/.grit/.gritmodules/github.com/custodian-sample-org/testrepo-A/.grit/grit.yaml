@@ -1,0 +1,12 @@
+version: 0.0.1
+patterns:
+  - name: NoConsoleLog
+    description: Removes all console.log statements
+    tags: ['style', 'debugging']
+    level: error
+    body: |
+      `console.log($any)` => .
+  - name: PatternWithBody
+    body: '`sum($a, $b)` => `sum([$a, $b])`'
+  - name: RemovalPattern
+    body: '`sum($a, $b)` => .'

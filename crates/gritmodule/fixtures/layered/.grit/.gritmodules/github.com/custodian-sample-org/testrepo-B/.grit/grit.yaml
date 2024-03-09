@@ -1,0 +1,5 @@
+version: 0.0.1
+patterns:
+  - name: SwapPattern
+    body: '`sum($a, $b)` => `sum($b, $a)`'
+

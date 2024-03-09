@@ -1,0 +1,8 @@
+version: 0.0.1
+patterns:
+  - name: bad
+    body: |
+      engine marzano(0.1)
+      language js
+
+      `console.log($arg) => .

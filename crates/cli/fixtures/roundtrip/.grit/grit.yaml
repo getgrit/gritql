@@ -1,0 +1,8 @@
+patterns:
+- name: this_works
+  body: |
+    `console.log` => `console.foo`
+  samples:
+    - input: "console.log('foo')"
+      output: "console.foo('foo')"
+      

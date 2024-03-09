@@ -1,0 +1,41 @@
+engine marzano(0.1)
+language python
+
+function lines($string) {
+    return split($string, separator=`\n`)
+}
+
+pattern function_like($name, $args, $statements) {
+  or {
+    `function $name($args) { $statements }`,
+    `($args) => { $statements }`,
+    `($args) => $statements`
+  }
+}
+
+predicate logger() {
+    log(`This is a log`),
+}
+
+function todo($target, $message) {
+    if($message <: undefined) {
+        $message = "This requires manual intervention."
+    },
+    $lines = lines(string = $message),
+    $lines <: some bubble($result) $x where {
+        if ($result <: undefined) { 
+              $result = `# TODO: $x`
+          } else { 
+              $result += `\n# $x`
+          }
+    },
+    $log_message = `TODO: $message`,
+    log(message=$log_message, variable=$target),
+    $lines = lines(string = $target),
+    $lines <: some bubble($result) $x where { $result += `\n# $x` },
+    return $result,
+}
+
+pattern literal_value() {
+    or { number(), string(), `null`, `undefined`}
+}

@@ -1,0 +1,10 @@
+version: 0.0.1
+patterns:
+  - name: no_skip
+    level: error
+    body: |
+      `test.only($a, $b)` => `test($a, $b)`
+  - name: no_console
+    level: error
+    body: |
+      or { `console.log($msg)`, `console.error($msg)` } => `console.warn($msg)`

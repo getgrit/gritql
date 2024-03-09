@@ -1,0 +1,3 @@
+pattern very_special_console_log() {
+  `console.log($i)` where $i => `"This is a user pattern"`
+}

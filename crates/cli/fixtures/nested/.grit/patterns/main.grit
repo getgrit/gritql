@@ -1,0 +1,5 @@
+language hcl
+
+pattern fix_red() {
+  make_hello()
+}

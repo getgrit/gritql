@@ -1,0 +1,10 @@
+version: 0.0.1
+patterns:
+  - name: test
+    tags:
+      - style
+      - debugging
+    level: error 
+    body: |
+      language python
+      `print($apple)` => `print_test($apple)`

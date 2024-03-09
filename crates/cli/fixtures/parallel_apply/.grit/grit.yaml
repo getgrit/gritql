@@ -1,0 +1,8 @@
+version: 0.0.1
+patterns:
+  - name: github.com/getgrit/stdlib#*
+  - name: var_mutate
+    body: |
+      language js
+
+      variable() => `const did_it_get_touched = true;`

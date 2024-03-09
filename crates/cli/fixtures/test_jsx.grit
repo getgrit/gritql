@@ -1,0 +1,6 @@
+language js
+
+contains or {
+  jsx_element(open_tag=$el),
+  jsx_self_closing_element(name=$el)
+}

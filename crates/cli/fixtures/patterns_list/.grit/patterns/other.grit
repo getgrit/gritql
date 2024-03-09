@@ -1,0 +1,20 @@
+pattern OtherPattern() {
+    `$foo.other` => `$foo.replacement`
+}
+
+pattern NamedPattern() {
+    `$foo.named` => `$foo.replacement`
+}
+
+pattern PatternWithArgs($arg) {
+    `$foo.$arg` => `$foo.replacement`
+}
+
+function cool_thing_wrapper($input) {
+  return `bob.$input`
+}
+
+// This should still show up in --json mode
+pattern HiddenUtility($oneArg, $twoArg) {
+  `$foo.hidden` => cool_thing_wrapper(input=`$foo.$oneArg.$twoArg`)
+}
