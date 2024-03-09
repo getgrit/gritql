@@ -1683,8 +1683,6 @@ fn applies_multifile_pattern_from_resolved_md() -> Result<()> {
         .current_dir(&fixture_dir);
 
     let output = cmd.output()?;
-    println!("Stdout is {:?}", String::from_utf8(output.stdout)?);
-    println!("Stderr is {:?}", String::from_utf8(output.stderr)?);
     assert!(
         output.status.success(),
         "Command didn't finish successfully"

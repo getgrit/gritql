@@ -1,0 +1,29 @@
+version: 0.0.3
+patterns:
+  - name: github.com/getgrit/stdlib#*
+  - name: custom_no_console_log
+    level: warn
+    body: |
+      engine marzano(0.1)
+      language js
+
+      `console.log($msg)` => . where {
+        $filename <: is_not_excluded(),
+        $msg <: not within `if (DUMP_SECRETS) { $_ }`,
+        $msg <: not includes "listening on port",
+        $msg <: not includes "[KEEP]"
+      }
+  - name: no_tests_with_only
+    description: Forbid skipping tests with .only.
+    level: error
+    body: |
+      engine marzano(0.1)
+      language js
+
+      `$testlike.only` => `$testlike` where {
+        $testlike <: or {
+          `describe`,
+          `it`,
+          `test`
+        }
+      }

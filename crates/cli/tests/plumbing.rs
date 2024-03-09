@@ -99,12 +99,11 @@ fn compact_json_output() -> Result<()> {
 fn returns_check_results_for_level() -> Result<()> {
     let mut cmd = get_test_cmd()?;
 
-    let fixtures_root = get_fixtures_root()?;
-    let fixture_path = fixtures_root.join("check.ts");
+    let (_temp_dir, fixtures_root) = get_fixture("check_level", false)?;
 
-    let input = format!(r#"{{ "paths" : [{:?}] }}"#, fixture_path.to_str().unwrap());
+    let input = format!(r#"{{ "paths" : [{:?}] }}"#, "check.ts");
 
-    cmd.arg("plumbing").arg("check").arg("--level").arg("error");
+    cmd.arg("plumbing").arg("check").arg("--level").arg("error").current_dir(fixtures_root);
     cmd.write_stdin(input);
 
     let output = cmd.output()?;

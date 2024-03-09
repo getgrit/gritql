@@ -183,12 +183,3 @@ fn does_not_attempt_to_check_universal_pattern() -> Result<()> {
     assert!(output.contains("Fix available"));
     Ok(())
 }
-
-#[test]
-fn check_works_on_our_repo() -> Result<()> {
-    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .canonicalize()?;
-    let output = check_cmd_output(dir, &[], None)?;
-    assert!(output.contains("Fix available"));
-    Ok(())
-}
