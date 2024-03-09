@@ -13,11 +13,11 @@ Note that this codebase isn't yet extensively documented. If you get stuck, plea
 
 If GritQL is failing to match a code snippet, this can typically be fixed simply by adjusting the metavariable grammar for the target language.
 
-Metavariable grammars are found under [./resources/metavariable-grammars]. Typical fixes include:
+Metavariable grammars are found under [./resources/metavariable-grammars](./resources/metavariable-grammars). Typical fixes include:
 - Adding a new named field for a relevant node you want to manipulate.
 - Adding a `grit_metavariable` node as a choice in the corresponding spot where you want to substitute the metavariable.
 
-After making your changes, run the [./resources/edit_grammars.mjs] script to regenerate the matching grammar.
+After making your changes, run the [./resources/edit_grammars.mjs](./resources/edit_grammars.mjs) script to regenerate the matching grammar.
 
 ## Feature Flags
 
