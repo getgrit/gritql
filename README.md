@@ -1,7 +1,7 @@
 # GritQL
 
-[![CI Status](https://img.shields.io/github/actions/workflow/status/getgrit/tree-sitter-gritql/ci.yml)](https://github.com/getgrit/tree-sitter-gritql/actions/workflows/ci.yml)
-[![MIT License](https://img.shields.io/github/license/getgrit/tree-sitter-gritql)](https://github.com/getgrit/tree-sitter-gritql/blob/main/LICENSE)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/getgrit/gritql/main.yml)](https://github.com/getgrit/gritql/actions/workflows/main.yml)
+[![MIT License](https://img.shields.io/github/license/getgrit/gritql)](https://github.com/getgrit/gritql/blob/main/LICENSE)
 [![Discord](https://img.shields.io/discord/1063097320771698699?logo=discord&label=discord)](https://docs.grit.io/discord)
 
 GritQL is a declarative query language for searching and modifying source code. GritQL focuses on a few areas:

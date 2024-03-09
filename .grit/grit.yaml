@@ -1,0 +1,14 @@
+version: 0.0.1
+patterns:
+  - name: github.com/getgrit/stdlib#*
+  - name: no_println_in_lsp
+    description: Don't use println!() in LSP code, it breaks the LSP stdio protocol.
+    level: error
+    body: |
+      engine marzano(0.1)
+      language rust
+
+      `println!($_)` => .  where {
+        $filename <: not includes "test.rs",
+        $absolute_filename <: includes "apps/marzano/lsp",
+      }
