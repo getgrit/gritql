@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/gritmodule/src/resolver.rs
+source: crates/gritmodule/src/resolver.rs
 expression: resolved_patterns
 ---
 - config:
@@ -125,8 +125,8 @@ expression: resolved_patterns
           startByte: 2094
           endByte: 2128
       - name: Transform default exports
-        input: "async function createTeam() {\n  console.log('cool');\n}\n\nconst addTeamToOrg = () => console.log('cool');\n\nmodule.exports = {\n  createTeam,\n  addTeamToOrg,\n};"
-        output: "export async function createTeam() {\n  console.log('cool');\n}\n\nexport const addTeamToOrg = () => console.log('cool');"
+        input: "async function createTeam() {\n  console.log('cool');\n}\n\nconst addTeamToOrgSubscription = () => console.log('cool');\n\nmodule.exports = {\n  createTeam,\n  addTeamToOrgSubscription,\n};"
+        output: "export async function createTeam() {\n  console.log('cool');\n}\n\nexport const addTeamToOrgSubscription = () => console.log('cool');"
         input_range:
           start:
             line: 66
@@ -598,4 +598,3 @@ expression: resolved_patterns
   body: "engine marzano(0.1)\nlanguage json\n\npair(key=`\"compilerOptions\"`, $value) where {\n    $value <: object($properties),\n    $newOptions = [],\n\n    $properties <: maybe contains pair(key=`\"noImplicitAny\"`, value=`false` => `true`),\n    $properties <: maybe contains pair(key=`\"strict\"`, value=`false` => `true`),\n    if ($properties <: contains pair(key=`\"strict\"`, value=$strict)) {\n        $strict <: maybe `false` => `true`\n    } else {\n        $newOptions += `\"strict\": true`\n    },\n\n    // These are all included by default; ideally we'd delete, but can't, so just mark as true\n    $properties <: maybe contains pair(key=`\"noImplicitThis\"`) => .,\n    $properties <: maybe contains pair(key=`\"alwaysStrict\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictBindCallApply\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictNullChecks\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictFunctionTypes\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictPropertyInitialization\"`) => .,\n\n    // allow JS\n    if ($properties <: contains pair(key=`\"allowJs\"`, value=$allow_js)) {\n        $allow_js <: maybe `false` => `true`\n    } else {\n        $newOptions += `\"allowJs\": true`\n    },\n\n    // check JS\n    if ($properties <: contains pair(key=`\"checkJs\"`, value=$check_js)) {\n        $check_js <: maybe `true` => `false`\n    } else {\n        $newOptions += `\"checkJs\": false`\n    },\n\n    if (!$newOptions <: []) {\n        $joined = join(list=$newOptions, separator=\", \"),\n        $properties => `$joined, $properties`\n    }\n}"
   kind: pattern
   visibility: public
-

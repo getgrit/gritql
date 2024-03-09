@@ -1,0 +1,9 @@
+engine marzano(0.1)
+language js
+
+pattern before_each_file_prep_imports() {
+    $_ where {
+        $GLOBAL_IMPORTED_SOURCES = [],
+        $GLOBAL_IMPORTED_NAMES = [],
+    }
+}

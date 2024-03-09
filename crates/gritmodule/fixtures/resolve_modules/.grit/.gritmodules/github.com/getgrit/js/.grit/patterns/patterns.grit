@@ -1,0 +1,14 @@
+engine marzano(0.1)
+language js
+
+pattern literal_value() {
+  or { number(), string(), `null`, `undefined`}
+}
+
+pattern function_like($name, $args, $statements) {
+  or {
+    `function $name($args) { $statements }`,
+    `($args) => { $statements }`,
+    `($args) => $statements`
+  }
+}

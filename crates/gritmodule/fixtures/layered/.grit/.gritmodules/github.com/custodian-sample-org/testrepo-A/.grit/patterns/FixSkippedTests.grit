@@ -1,0 +1,19 @@
+pattern FixSkippedTests() {
+  `$testlike.only` => `$testlike` where {
+    `$testlike` <: or {
+      `describe`
+      `it`
+      `test`
+    }
+  }
+}
+
+pattern FixSkippedTests2() {
+  `$testlike.only` => `$testlike` where {
+    `$testlike` <: or {
+      `describe`
+      `it`
+      `test`
+    }
+  }
+}

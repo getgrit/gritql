@@ -1,0 +1,9 @@
+version: 0.0.1
+patterns:
+  - name: github.com/custodian-sample-org/testrepo-A#PatternWithBody
+  - name: FlagConsoleLog
+    description: Flags all console.log statements
+    tags: ['style', 'debugging']
+    level: error
+    body: |
+      `console.log($any)`

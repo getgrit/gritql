@@ -1,0 +1,11 @@
+pattern OtherPattern() {
+    `$foo.other` => `$foo.replacement`
+}
+
+pattern NamedPattern() {
+    `$foo.named` => `$foo.replacement`
+}
+
+pattern PatternWithArgs($arg) {
+    `$foo.$arg` => `$foo.replacement`
+}

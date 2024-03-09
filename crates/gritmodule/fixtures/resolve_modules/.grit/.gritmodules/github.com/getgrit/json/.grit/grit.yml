@@ -1,0 +1,6 @@
+version: 0.0.1
+patterns:
+  - name: no_console_log
+    level: info
+    body: '`console.log($x)`'
+
