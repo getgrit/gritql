@@ -3,7 +3,7 @@
   "version": "0.2.2",
   "description": "Core GritQL engine and CLI",
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "private": true,
   "dependencies": {},
   "devDependencies": {
