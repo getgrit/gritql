@@ -1,0 +1,4 @@
+version: 0.0.3
+patterns:
+  - name: github.com/getgrit/stdlib#*
+  - name: github.com/getgrit/stdlib#*

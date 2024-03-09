@@ -8,7 +8,7 @@ export async function createTeam() {
   console.log('cool');
 }
 
-export const addTeamToOrg = () => console.log('cool');
+export const addTeamToOrgSubscription = () => console.log('cool');
 
 module.exports = {};
 

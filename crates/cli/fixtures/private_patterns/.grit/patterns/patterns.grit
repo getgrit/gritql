@@ -1,0 +1,14 @@
+pattern this_is_public() {
+  `cool` => `fool`
+}
+
+private pattern this_is_private() {
+  `hidden` => `forbidden`
+}
+
+pattern combined() {
+  or {
+    this_is_public(),
+    this_is_private()
+  }
+}

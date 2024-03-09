@@ -9,11 +9,11 @@ async function createTeam() {
   console.log('cool');
 }
 
-const addTeamToOrg = () => console.log('cool');
+const addTeamToOrgSubscription = () => console.log('cool');
 
 module.exports = {
   createTeam,
-  addTeamToOrg,
+  addTeamToOrgSubscription,
 };
 
 module.exports.queen = '9';

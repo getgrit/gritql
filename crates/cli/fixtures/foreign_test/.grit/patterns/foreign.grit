@@ -1,0 +1,9 @@
+language universal
+
+function sayHi() js {
+  return '"Hello!"';
+}
+
+function hi() {
+  true
+}

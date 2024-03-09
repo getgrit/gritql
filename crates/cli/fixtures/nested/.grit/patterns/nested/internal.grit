@@ -1,0 +1,5 @@
+language hcl
+
+pattern make_hello() {
+  `$arg: $red` => `$arg: "Hello"`
+}

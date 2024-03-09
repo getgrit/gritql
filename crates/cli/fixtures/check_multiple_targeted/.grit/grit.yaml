@@ -1,0 +1,17 @@
+version: 0.0.1
+patterns:
+  - name: test_js
+    tags:
+      - style
+      - debugging
+    level: error 
+    body: |
+      `$a = $b` => `console.log($b)`
+  - name: test_python
+    tags:
+      - style
+      - debugging
+    level: error 
+    body: |
+      language python
+      `print($a)` => `println($a)`
