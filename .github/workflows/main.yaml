@@ -7,77 +7,70 @@ on:
     branches: [main]
 
 jobs:
-  # test-rust:
-  #   name: Rust tests (marzano)
-  #   timeout-minutes: 20
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os: [nscloud-ubuntu-22.04-amd64-8x32]
-  #   runs-on: ${{ matrix.os }}
-  #   permissions:
-  #     contents: "read"
-  #     id-token: "write"
-  #   env:
-  #     ROOT_ANALYSIS_DIR: "${{ github.workspace }}/data"
-  #     BUILD_OS: ${{ matrix.os }}
-  #     os: ${{ matrix.os }}
-  #     BUILD_PLATFORM: amd64
-  #   steps:
-  #     - name: clone code
-  #       uses: actions/checkout@v3
-  #       with:
-  #         submodules: true
-  #         fetch-depth: 0
-  #     - name: Install Protoc
-  #       run: sudo apt-get install -y protobuf-compiler
-  #     - uses: dopplerhq/secrets-fetch-action@v1.1.1
-  #       id: doppler
-  #       with:
-  #         doppler-token: ${{ secrets.DOPPLER_SECRETS_TOKEN }}
-  #     - name: install Rust
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         # If you update this, also update build.mjs
-  #         toolchain: nightly-2023-08-01
-  #         override: true
-  #     - name: install Terraform
-  #       run: |
-  #         wget https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
-  #         unzip terraform_1.6.0_linux_amd64.zip
-  #         chmod +x terraform
-  #         sudo mv terraform /usr/local/bin/
-  #     - name: install dependencies
-  #       run: |
-  #         cargo install buildkite-test-collector
-  #     - name: setup node.js environment
-  #       uses: actions/setup-node@v3
-  #     - name: Install prettier
-  #       run: |
-  #         npm install -g prettier
-  #         prettier --version
-  #     - name: test
-  #       env:
-  #         GRIT_API_URL: ${{ steps.doppler.outputs.GRIT_API_URL }}
-  #         API_TESTING_TOKEN: ${{ steps.doppler.outputs.API_TESTING_TOKEN }}
-  #       run: |
-  #         cargo test --workspace \
-  #           --features test_ci \
-  #           --exclude marzano-wasm-bindings \
-  #           --exclude rustfsm \
-  #           --exclude temporal-sdk-core-test-utils \
-  #           --exclude temporal-client \
-  #           --exclude temporal-sdk-core-protos \
-  #           --exclude temporal-sdk \
-  #           --exclude temporal-sdk-core \
-  #           --exclude rustfsm_procmacro \
-  #           --exclude rustfsm_codegen \
-  #           --exclude google-cloud-metadata \
-  #           --exclude google-cloud-auth \
-  #           --exclude google-cloud-googleapis \
-  #           --exclude google-cloud-gax \
-  #           --exclude google-cloud-pubsub \
-  #           -- -Z unstable-options
+  test-rust:
+    name: Rust tests (marzano)
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [nscloud-ubuntu-22.04-amd64-8x32]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: "read"
+      id-token: "write"
+    env:
+      ROOT_ANALYSIS_DIR: "${{ github.workspace }}/data"
+      BUILD_OS: ${{ matrix.os }}
+      os: ${{ matrix.os }}
+      BUILD_PLATFORM: amd64
+    steps:
+      - name: clone code
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+      - name: Install Protoc
+        run: sudo apt-get install -y protobuf-compiler
+      - name: install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          # If you update this, also update build.mjs
+          toolchain: nightly-2023-08-01
+          override: true
+      - name: install Terraform
+        run: |
+          wget https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
+          unzip terraform_1.6.0_linux_amd64.zip
+          chmod +x terraform
+          sudo mv terraform /usr/local/bin/
+      - name: install dependencies
+        run: |
+          cargo install buildkite-test-collector
+      - name: setup node.js environment
+        uses: actions/setup-node@v3
+      - name: Install prettier
+        run: |
+          npm install -g prettier
+          prettier --version
+      - name: test
+        run: |
+          cargo test --workspace \
+            --features test_ci \
+            --exclude marzano-wasm-bindings \
+            --exclude rustfsm \
+            --exclude temporal-sdk-core-test-utils \
+            --exclude temporal-client \
+            --exclude temporal-sdk-core-protos \
+            --exclude temporal-sdk \
+            --exclude temporal-sdk-core \
+            --exclude rustfsm_procmacro \
+            --exclude rustfsm_codegen \
+            --exclude google-cloud-metadata \
+            --exclude google-cloud-auth \
+            --exclude google-cloud-googleapis \
+            --exclude google-cloud-gax \
+            --exclude google-cloud-pubsub \
+            -- -Z unstable-options
   test-rust-wasm:
     name: Rust wasm
     timeout-minutes: 15
