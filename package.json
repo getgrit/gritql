@@ -10,17 +10,17 @@
     "@getgrit/bridge": "*"
   },
   "scripts": {
-    "build:watch": "yarn nodemon --ext rs --exec \"yarn build\"",
+    "build:watch": "nodemon --ext rs --exec \"npm run build\"",
     "build:all": "cargo build --release --features grit_alpha --exclude marzano-wasm-bindings",
     "build:release": "cargo build --release --features grit_beta --bin marzano",
-    "build": "yarn build:release",
+    "build": "npm run build:release",
     "release": "./release.sh",
     "test:wasm": "cd wasm-bindings && wasm-pack test --node",
-    "test:watch": "yarn nodemon --ext rs --exec \"cargo test --exclude marzano-wasm-bindings\"",
+    "test:watch": "nodemon --ext rs --exec \"cargo test --exclude marzano-wasm-bindings\"",
     "copy:wasm-parsers": "cp -R wasm-bindings/wasm_parsers ../docs/public && cp -R wasm-bindings/wasm_parsers ../web/public",
     "generate:docs": "cargo run --bin marzano --features default,docgen docgen ../docs/src/pages/cli/reference.mdoc",
     "generate:wasm-bindings": "cd wasm-bindings && wasm-pack build --target web --out-dir ../../../__generated__/marzano-wasm-bindings && rm -rf ../../../__generated__/marzano-wasm-bindings/.gitignore",
-    "generate": "yarn generate:docs && yarn generate:wasm-bindings && yarn copy:wasm-parsers",
+    "generate": "npm run generate:docs && npm run generate:wasm-bindings && npm run copy:wasm-parsers",
     "lint:clippy": "cargo clippy -- -D warnings"
   }
 }
