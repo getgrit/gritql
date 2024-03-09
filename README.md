@@ -57,7 +57,7 @@ grit check
 
 ## Acknowledgements
 
-GritQL uses [tree sitter](https://github.com/tree-sitter/tree-sitter) for all language parsers and benefits greatly from the Rust ecosystem.
+GritQL uses [tree-sitter](https://github.com/tree-sitter/tree-sitter) for all language parsers and benefits greatly from the Rust ecosystem.
 
 GritQL is released under the MIT license.
 
