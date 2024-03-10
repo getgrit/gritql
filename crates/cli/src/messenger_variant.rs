@@ -17,6 +17,7 @@ use cli_server::redis::RedisMessenger;
 
 use crate::{flags::OutputFormat, jsonl::JSONLineMessenger, result_formatting::FormattedMessager};
 
+#[allow(clippy::large_enum_variant)]
 pub enum MessengerVariant<'a> {
     Formatted(FormattedMessager<'a>),
     JsonLine(JSONLineMessenger<'a>),
