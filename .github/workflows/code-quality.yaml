@@ -1,0 +1,20 @@
+name: code quality
+on: "push"
+concurrency:
+  group: ${{ github.workflow }}-${{ (github.ref == 'refs/heads/main' && github.sha) || github.ref }}
+  cancel-in-progress: true
+jobs:
+  clippy_check:
+    runs-on: "nscloud-ubuntu-22.04-amd64-4x16"
+    steps:
+      - name: clone code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Install Protoc
+        run: sudo apt-get install -y protobuf-compiler
+      - run: rustup component add clippy
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --workspace --features test_ci --exclude marzano-wasm-bindings -- -D warnings

@@ -32,11 +32,8 @@ impl AuthInfo {
 
     pub fn get_expiry(&self) -> Result<DateTime<Utc>> {
         let payload = self.get_payload()?;
-        let expiry = DateTime::<Utc>::from_naive_utc_and_offset(
-            chrono::NaiveDateTime::from_timestamp_opt(payload.exp as i64, 0)
-                .ok_or(anyhow::anyhow!("Invalid timestamp"))?,
-            Utc,
-        );
+        let expiry = DateTime::<Utc>::from_timestamp(payload.exp as i64, 0)
+                .ok_or(anyhow::anyhow!("Invalid timestamp"))?;
         Ok(expiry)
     }
 
