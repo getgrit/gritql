@@ -1,6 +1,6 @@
 use anyhow::bail;
 use anyhow::{Context, Result};
-use chrono::NaiveDateTime;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::Colorize;
 use log::info;
 use marzano_auth::info::AuthInfo;
@@ -622,7 +622,7 @@ impl Updater {
     }
 
     /// Get the release date of the app, based on the release ID
-    fn _get_app_release_date(&self, app_name: SupportedApp) -> Result<NaiveDateTime> {
+    fn _get_app_release_date(&self, app_name: SupportedApp) -> Result<DateTime<Utc>> {
         let app_manifest = self._get_app_manifest(app_name)?;
         let version_string = app_manifest
             .version
@@ -632,7 +632,7 @@ impl Updater {
         // The date is the last part
         let timestamp = version_string.last().context("Missing timestamp")?;
         // Convert the unix timestamp to a date
-        let date = NaiveDateTime::from_timestamp_millis(timestamp.parse::<i64>()?)
+        let date = DateTime::from_timestamp_millis(timestamp.parse::<i64>()?)
             .context("Could not parse timestamp")?;
         Ok(date)
     }
@@ -785,10 +785,10 @@ mod tests {
         let cli_release_date = updater._get_app_release_date(SupportedApp::Cli)?;
         assert_eq!(
             cli_release_date,
-            NaiveDate::from_ymd_opt(2023, 7, 12)
+            DateTime::<Utc>::from_naive_utc_and_offset(NaiveDate::from_ymd_opt(2023, 7, 12)
                 .unwrap()
                 .and_hms_opt(5, 2, 9)
-                .unwrap()
+                .unwrap(), Utc),
         );
 
         Ok(())
