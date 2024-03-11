@@ -217,7 +217,7 @@ async function buildLanguage(language) {
     );
 
     await execPromise(
-      `cd ${tsLangDir} && yarn && yarn build && echo 'Generated grammar for ${language}'`,
+      `cd ${tsLangDir} && yarn && yarn build && echo "Generated grammar for ${language}"`,
     );
     await Promise.all([
       execPromise(`cd ${tsLangDir}/tsx && npx tree-sitter build-wasm`),
@@ -273,7 +273,7 @@ async function run() {
   process.chdir(LANGUAGE_METAVARIABLES);
   await Promise.all(languagesTobuild.map(buildLanguage));
   await execPromise(
-    `find . -name 'build.rs' -exec sed -i '' -e 's/Wno-unused-parameter/w/g' {} \\;`,
+    `find . -name "build.rs" -exec sed -i '' -e 's/Wno-unused-parameter/w/g' {} \\;`,
   );
 }
 
