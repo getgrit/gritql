@@ -12560,3 +12560,26 @@ fn go_import_metavariable() {
     })
     .unwrap();
 }
+
+#[test]
+fn go_field_identifier() {
+    run_test_match(TestArg {
+        pattern: r#"
+            |language go
+            |
+            |`ReadFile`
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |import (
+            |   "io/ioutil"
+            |)
+            |
+            |file := ioutil.ReadFile("file.txt")
+            |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
