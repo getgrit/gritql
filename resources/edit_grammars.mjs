@@ -108,7 +108,7 @@ const copyNodeTypes = async (lang, dest) =>
 const copyWasmParser = async (lang, prefix) =>
   fs.rename(
     `${prefix ?? "tree-sitter-"}${lang}/tree-sitter-${lang}.wasm`,
-    `../../wasm-bindings/wasm_parsers/tree-sitter-${lang}.wasm`
+    `../../crates/wasm-bindings/wasm_parsers/tree-sitter-${lang}.wasm`
   );
 
 async function rsyncGrammars(language) {
@@ -194,12 +194,12 @@ async function buildLanguage(language) {
 
     await fs.rename(
       `tree-sitter-markdown/tree-sitter-markdown/tree-sitter-markdown.wasm`,
-      `../../wasm-bindings/wasm_parsers/tree-sitter-markdown-block.wasm`
+      `../../crates/wasm-bindings/wasm_parsers/tree-sitter-markdown-block.wasm`
     );
 
     await fs.rename(
       `tree-sitter-markdown/tree-sitter-markdown-inline/tree-sitter-markdown_inline.wasm`,
-      `../../wasm-bindings/wasm_parsers/tree-sitter-markdown_inline.wasm`
+      `../../crates/wasm-bindings/wasm_parsers/tree-sitter-markdown_inline.wasm`
     );
   } else if (language === "typescript") {
     // typescript is special
