@@ -64,7 +64,7 @@ module.exports = grammar({
   inline: $ => [
     $._type,
     $._type_identifier,
-    $._field_identifier,
+    $.field_identifier,
     $._package_identifier,
     $._top_level_declaration,
     $._string_literal,
@@ -211,7 +211,7 @@ module.exports = grammar({
     method_declaration: $ => prec.right(1, seq(
       'func',
       field('receiver', $.parameter_list),
-      field('name', $._field_identifier),
+      field('name', $.field_identifier),
       field('parameters', $.parameter_list),
       field('result', optional(choice($.parameter_list, $._simple_type))),
       field('body', optional($.block))
@@ -269,7 +269,7 @@ module.exports = grammar({
       field('type', $._type)
     ),
 
-    field_name_list: $ => commaSep1(field('names', $._field_identifier)),
+    field_name_list: $ => commaSep1(field('names', $.field_identifier)),
 
     expression_list: $ => commaSep1(field('expressions', $._expression)),
 
@@ -346,7 +346,7 @@ module.exports = grammar({
     field_declaration: $ => seq(
       choice(
         seq(
-          commaSep1(field('name', $._field_identifier)),
+          commaSep1(field('name', $.field_identifier)),
           field('type', $._type)
         ),
         seq(
@@ -398,7 +398,7 @@ module.exports = grammar({
     )),
 
     method_spec: $ => seq(
-      field('name', $._field_identifier),
+      field('name', $.field_identifier),
       field('parameters', $.parameter_list),
       field('result', optional(choice($.parameter_list, $._simple_type)))
     ),
@@ -765,7 +765,7 @@ module.exports = grammar({
     selector_expression: $ => prec(PREC.primary, seq(
       field('operand', $._expression),
       '.',
-      field('field', $._field_identifier)
+      field('field', $.field_identifier)
     )),
 
     index_expression: $ => prec(PREC.primary, seq(
@@ -904,7 +904,7 @@ module.exports = grammar({
     identifier: $ => choice($._identifier, $.grit_metavariable),
 
     _type_identifier: $ => alias($.identifier, $.type_identifier),
-    _field_identifier: $ => alias($.identifier, $.field_identifier),
+    field_identifier: $ => alias($.identifier, $.field_identifier),
     _package_identifier: $ => alias($.identifier, $.package_identifier),
 
     _string_literal: $ => choice(

@@ -108,14 +108,16 @@ const copyNodeTypes = async (lang, dest) =>
 const copyWasmParser = async (lang, prefix) =>
   fs.rename(
     `${prefix ?? 'tree-sitter-'}${lang}/tree-sitter-${lang}.wasm`,
-    `../../wasm-bindings/wasm_parsers/tree-sitter-${lang}.wasm`,
+    `../../crates/wasm-bindings/wasm_parsers/tree-sitter-${lang}.wasm`,
   );
 
 async function rsyncGrammars(language) {
   //If a language is given, only sync that language
   //Otherwise, rm -rf the entire language-metavariables dir and sync it from scratch
   const treeSitterLang = language ? `tree-sitter-${language}` : '.';
-  const mvDir = language ? `${LANGUAGE_METAVARIABLES}/${treeSitterLang}` : LANGUAGE_METAVARIABLES;
+  const mvDir = language
+    ? `${LANGUAGE_METAVARIABLES}/${treeSitterLang}`
+    : LANGUAGE_METAVARIABLES;
 
   if (languagesWithoutMetaVariables.includes(language)) {
     return;
@@ -134,7 +136,9 @@ async function rsyncGrammars(language) {
     'tree-sitter-*/corpus',
   ];
   await execPromise(
-    `rsync -r -l ${submodulesDir} language-metavariables --exclude={${blobsToExclude.join(',')}}`,
+    `rsync -r -l ${submodulesDir} language-metavariables --exclude={${blobsToExclude.join(
+      ','
+    )}}`
   );
 }
 
@@ -158,7 +162,8 @@ async function buildLanguage(language) {
     throw `Unsupported language ${language}`;
   }
 
-  const log = (message, ...args) => console.log(`[${language}] ` + message, ...args);
+  const log = (message, ...args) =>
+    console.log(`[${language}] ` + message, ...args);
   log(`Starting`);
   const tsLangDir = `tree-sitter-${language}`;
   //Force cargo.toml to use the correct version of tree-sitter
@@ -189,12 +194,12 @@ async function buildLanguage(language) {
 
     await fs.rename(
       `tree-sitter-markdown/tree-sitter-markdown/tree-sitter-markdown.wasm`,
-      `../../wasm-bindings/wasm_parsers/tree-sitter-markdown-block.wasm`,
+      `../../crates/wasm-bindings/wasm_parsers/tree-sitter-markdown-block.wasm`,
     );
 
     await fs.rename(
       `tree-sitter-markdown/tree-sitter-markdown-inline/tree-sitter-markdown_inline.wasm`,
-      `../../wasm-bindings/wasm_parsers/tree-sitter-markdown_inline.wasm`,
+      `../../crates/wasm-bindings/wasm_parsers/tree-sitter-markdown_inline.wasm`,
     );
   } else if (language === 'typescript') {
     // typescript is special
@@ -243,7 +248,10 @@ async function buildLanguage(language) {
     //SQL's wasm build hangs so we skip it
     await treeSitterGenerate(language, false);
     await copyNodeTypes(language);
-    await fs.copyFile(`${METAVARIABLE_GRAMMARS}/c_build.rs`, `${tsLangDir}/bindings/rust/build.rs`);
+    await fs.copyFile(
+      `${METAVARIABLE_GRAMMARS}/c_build.rs`,
+      `${tsLangDir}/bindings/rust/build.rs`,
+    );
   } else {
     await buildSimpleLanguage(log, language);
   }
