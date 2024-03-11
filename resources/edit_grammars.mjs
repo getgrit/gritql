@@ -82,33 +82,33 @@ const copyMvGrammar = async (lang, dest) => {
   }
   await fs.copyFile(
     `${METAVARIABLE_GRAMMARS}/${lang}-metavariable-grammar.js`,
-    `tree-sitter-${dest ?? lang}/grammar.js`
+    `tree-sitter-${dest ?? lang}/grammar.js`,
   );
 };
 
 const copyMvScanner = async (lang, dest) =>
   fs.copyFile(
     `${METAVARIABLE_GRAMMARS}/${lang}-metavariable-scanner.cc`,
-    `tree-sitter-${dest ?? lang}/src/scanner.cc`
+    `tree-sitter-${dest ?? lang}/src/scanner.cc`,
   );
 
 const treeSitterGenerate = async (dir, buildWasm = true) => {
   const andMaybeBuildWasm = buildWasm ? '&& npx tree-sitter build-wasm ' : '';
   await execPromise(
-    `cd tree-sitter-${dir} && npx tree-sitter generate ${andMaybeBuildWasm} && echo 'Generated grammar for ${dir}'`
+    `cd tree-sitter-${dir} && npx tree-sitter generate ${andMaybeBuildWasm} && echo "Generated grammar for ${dir}"`,
   ).catch((e) => console.log('swallowed error, ', e));
 };
 
 const copyNodeTypes = async (lang, dest) =>
   fs.copyFile(
     `tree-sitter-${lang}/src/node-types.json`,
-    `../node-types/${dest ?? lang}-node-types.json`
+    `../node-types/${dest ?? lang}-node-types.json`,
   );
 
 const copyWasmParser = async (lang, prefix) =>
   fs.rename(
     `${prefix ?? 'tree-sitter-'}${lang}/tree-sitter-${lang}.wasm`,
-    `../../crates/wasm-bindings/wasm_parsers/tree-sitter-${lang}.wasm`
+    `../../crates/wasm-bindings/wasm_parsers/tree-sitter-${lang}.wasm`,
   );
 
 async function rsyncGrammars(language) {
@@ -168,8 +168,8 @@ async function buildLanguage(language) {
   const tsLangDir = `tree-sitter-${language}`;
   //Force cargo.toml to use the correct version of tree-sitter
   await execPromise(`for cargo in ${tsLangDir}/[Cc]argo.toml; do
-    if [ -f '$cargo' ]; then
-      sed -i '' -e 's/tree-sitter = '.*'/tree-sitter = '~0.20'/g' '$cargo';
+    if [ -f "$cargo" ]; then
+      sed -i '' -e 's/tree-sitter = ".*"/tree-sitter = "~0.20"/g' "$cargo";
     fi;
   done`);
 
@@ -194,12 +194,12 @@ async function buildLanguage(language) {
 
     await fs.rename(
       `tree-sitter-markdown/tree-sitter-markdown/tree-sitter-markdown.wasm`,
-      `../../crates/wasm-bindings/wasm_parsers/tree-sitter-markdown-block.wasm`
+      `../../crates/wasm-bindings/wasm_parsers/tree-sitter-markdown-block.wasm`,
     );
 
     await fs.rename(
       `tree-sitter-markdown/tree-sitter-markdown-inline/tree-sitter-markdown_inline.wasm`,
-      `../../crates/wasm-bindings/wasm_parsers/tree-sitter-markdown_inline.wasm`
+      `../../crates/wasm-bindings/wasm_parsers/tree-sitter-markdown_inline.wasm`,
     );
   } else if (language === 'typescript') {
     // typescript is special
@@ -207,17 +207,17 @@ async function buildLanguage(language) {
     log(`Copying  files`);
     await fs.copyFile(
       `${METAVARIABLE_GRAMMARS}/typescript-package.json`,
-      `${tsLangDir}/package.json`
+      `${tsLangDir}/package.json`,
     );
 
     // typescript defines a typescript and tsx grammar, the grammar we care about is in common/define-grammar.js
     await fs.copyFile(
       `${METAVARIABLE_GRAMMARS}/typescript-metavariable-define-grammar.js`,
-      `${tsLangDir}/common/define-grammar.js`
+      `${tsLangDir}/common/define-grammar.js`,
     );
 
     await execPromise(
-      `cd ${tsLangDir} && yarn && yarn build && echo 'Generated grammar for ${language}'`
+      `cd ${tsLangDir} && yarn && yarn build && echo 'Generated grammar for ${language}'`,
     );
     await Promise.all([
       execPromise(`cd ${tsLangDir}/tsx && npx tree-sitter build-wasm`),
@@ -234,13 +234,13 @@ async function buildLanguage(language) {
     await buildSimpleLanguage(log, language);
     await fs.copyFile(
       `${METAVARIABLE_GRAMMARS}/cc_build.rs`,
-      `${tsLangDir}/bindings/rust/build.rs`
+      `${tsLangDir}/bindings/rust/build.rs`,
     );
   } else if (language === 'hcl') {
     //HCL's mv grammar goes into `make_grammar.js`, not `grammar.js`
     await fs.copyFile(
       `${METAVARIABLE_GRAMMARS}/${language}-metavariable-grammar.js`,
-      `tree-sitter-${language}/make_grammar.js`
+      `tree-sitter-${language}/make_grammar.js`,
     );
     await buildSimpleLanguage(log, language);
   } else if (language === 'sql') {
@@ -250,7 +250,7 @@ async function buildLanguage(language) {
     await copyNodeTypes(language);
     await fs.copyFile(
       `${METAVARIABLE_GRAMMARS}/c_build.rs`,
-      `${tsLangDir}/bindings/rust/build.rs`
+      `${tsLangDir}/bindings/rust/build.rs`,
     );
   } else {
     await buildSimpleLanguage(log, language);
@@ -273,7 +273,7 @@ async function run() {
   process.chdir(LANGUAGE_METAVARIABLES);
   await Promise.all(languagesTobuild.map(buildLanguage));
   await execPromise(
-    `find . -name 'build.rs' -exec sed -i '' -e 's/Wno-unused-parameter/w/g' {} \\;`
+    `find . -name 'build.rs' -exec sed -i '' -e 's/Wno-unused-parameter/w/g' {} \\;`,
   );
 }
 
