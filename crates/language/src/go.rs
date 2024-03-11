@@ -49,7 +49,7 @@ impl Language for Go {
         "Go"
     }
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[("", ""), ("", ";")]
+        &[("", ""), ("", ";"), ("GO_OBJECT.", ";")]
     }
 
     fn node_types(&self) -> &[Vec<Field>] {
