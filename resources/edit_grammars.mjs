@@ -236,15 +236,11 @@ async function buildLanguage(language) {
     await copyWasmParser('typescript', 'tree-sitter-typescript/');
     await copyWasmParser('tsx', 'tree-sitter-typescript/');
   } else if (language === 'vue') {
-    // typescript is special
-    // we edit its package.json to point to our local version of the js grammar
     log(`Copying  files`);
     await fs.copyFile(
       `${METAVARIABLE_GRAMMARS}/vue-package.json`,
       `${tsLangDir}/package.json`,
     );
-
-    // typescript defines a typescript and tsx grammar, the grammar we care about is in common/define-grammar.js
     await fs.copyFile(
       `${METAVARIABLE_GRAMMARS}/vue-metavariable-grammar.js`,
       `${tsLangDir}/grammar.js`,
