@@ -56,7 +56,8 @@ const allLanguages = [
   'sql',
   'typescript',
   'yaml',
-  'toml'
+  'toml',
+  'vue'
 ];
 
 // For these languages, copyMvGrammar is optional
@@ -234,6 +235,27 @@ async function buildLanguage(language) {
 
     await copyWasmParser('typescript', 'tree-sitter-typescript/');
     await copyWasmParser('tsx', 'tree-sitter-typescript/');
+  } else if (language === 'vue') {
+    log(`Copying  files`);
+    await fs.copyFile(
+      `${METAVARIABLE_GRAMMARS}/vue-package.json`,
+      `${tsLangDir}/package.json`,
+    );
+    await fs.copyFile(
+      `${METAVARIABLE_GRAMMARS}/vue-metavariable-grammar.js`,
+      `${tsLangDir}/grammar.js`,
+    );
+
+    await execPromise(
+      `cd ${tsLangDir} && yarn && yarn prepack && npx tree-sitter build-wasm && echo "Generated grammar for ${language}"`,
+    );
+
+    await copyNodeTypes(language);
+    await copyWasmParser(language);
+    await fs.copyFile(
+      `${METAVARIABLE_GRAMMARS}/cc_build.rs`,
+      `${tsLangDir}/bindings/rust/build.rs`,
+    );
   } else if (language === 'yaml') {
     await copyMvScanner(language);
     await buildSimpleLanguage(log, language);
