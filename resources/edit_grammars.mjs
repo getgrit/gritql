@@ -56,6 +56,7 @@ const allLanguages = [
   'sql',
   'typescript',
   'yaml',
+  'toml'
 ];
 
 // For these languages, copyMvGrammar is optional
@@ -166,6 +167,10 @@ async function buildLanguage(language) {
     console.log(`[${language}] ` + message, ...args);
   log(`Starting`);
   const tsLangDir = `tree-sitter-${language}`;
+
+  if (language == 'toml') {
+    await execPromise(`cd ${tsLangDir} && npm install regexp-util && npx tree-sitter generate && cd ..`)
+  }
   //Force cargo.toml to use the correct version of tree-sitter
   await execPromise(`for cargo in ${tsLangDir}/[Cc]argo.toml; do
     if [ -f "$cargo" ]; then

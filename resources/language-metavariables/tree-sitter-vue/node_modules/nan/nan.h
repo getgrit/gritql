@@ -13,7 +13,7 @@
  *
  * MIT License <https://github.com/nodejs/nan/blob/master/LICENSE.md>
  *
- * Version 2.18.0: current Node 20.6.1, Node 0.12: 0.12.18, Node 0.10: 0.10.48, iojs: 3.3.1
+ * Version 2.19.0: current Node 21.6.2, Node 0.12: 0.12.18, Node 0.10: 0.10.48, iojs: 3.3.1
  *
  * See https://github.com/nodejs/nan for the latest update to this file
  **********************************************************************************/
@@ -2550,7 +2550,9 @@ NAN_DEPRECATED inline void SetAccessor(
     , getter_
     , setter_
     , obj
+#if !defined(V8_MAJOR_VERSION) || V8_MAJOR_VERSION < 12
     , settings
+#endif
     , attribute
 #if (NODE_MODULE_VERSION < NODE_16_0_MODULE_VERSION)
     , signature
@@ -2596,7 +2598,9 @@ inline void SetAccessor(
     , getter_
     , setter_
     , obj
+#if !defined(V8_MAJOR_VERSION) || V8_MAJOR_VERSION < 12
     , settings
+#endif
     , attribute
   );
 }

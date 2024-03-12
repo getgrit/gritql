@@ -1,6 +1,10 @@
 # NAN ChangeLog
 
-**Version 2.18.0: current Node 20.6.1, Node 0.12: 0.12.18, Node 0.10: 0.10.48, iojs: 3.3.1**
+**Version 2.19.0: current Node 21.6.2, Node 0.12: 0.12.18, Node 0.10: 0.10.48, iojs: 3.3.1**
+
+### 2.19.0 Mar 6 2024
+
+  - Feature: Fix builds for Electron 29 (#966) 1b630ddb3412cde35b64513662b440f9fd71e1ff
 
 ### 2.18.0 Sep 12 2023
 
