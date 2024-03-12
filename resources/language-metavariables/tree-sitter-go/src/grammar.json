@@ -99,7 +99,7 @@
           "name": "package",
           "content": {
             "type": "SYMBOL",
-            "name": "_package_identifier"
+            "name": "package_identifier"
           }
         }
       ]
@@ -156,7 +156,7 @@
                   },
                   {
                     "type": "SYMBOL",
-                    "name": "_package_identifier"
+                    "name": "package_identifier"
                   }
                 ]
               }
@@ -4703,7 +4703,7 @@
           "name": "package",
           "content": {
             "type": "SYMBOL",
-            "name": "_package_identifier"
+            "name": "package_identifier"
           }
         },
         {
@@ -4797,7 +4797,7 @@
       "named": true,
       "value": "field_identifier"
     },
-    "_package_identifier": {
+    "package_identifier": {
       "type": "ALIAS",
       "content": {
         "type": "SYMBOL",
@@ -7296,7 +7296,7 @@
     "_type",
     "_type_identifier",
     "field_identifier",
-    "_package_identifier",
+    "package_identifier",
     "_top_level_declaration",
     "_string_literal"
   ],
