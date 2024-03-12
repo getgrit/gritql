@@ -65,7 +65,7 @@ module.exports = grammar({
     $._type,
     $._type_identifier,
     $.field_identifier,
-    $.package_identifier,
+    $._package_identifier,
     $._top_level_declaration,
     $._string_literal,
   ],
@@ -114,7 +114,7 @@ module.exports = grammar({
 
     package_clause: $ => seq(
       'package',
-      field('package', $.package_identifier)
+      field('package', $._package_identifier)
     ),
 
     import_declaration: $ => seq(
@@ -130,7 +130,7 @@ module.exports = grammar({
       optional(field('name', choice(
         $.dot,
         $.blank_identifier,
-        $.package_identifier
+        $._package_identifier
       ))),
       field('path', $._string_literal)
     ),
@@ -891,7 +891,7 @@ module.exports = grammar({
     },
 
     qualified_type: $ => seq(
-      field('package', $.package_identifier),
+      field('package', $._package_identifier),
       '.',
       field('name', $._type_identifier)
     ),
@@ -905,7 +905,7 @@ module.exports = grammar({
 
     _type_identifier: $ => alias($.identifier, $.type_identifier),
     field_identifier: $ => alias($.identifier, $.field_identifier),
-    package_identifier: $ => alias($.identifier, $.package_identifier),
+    _package_identifier: $ => alias($.identifier, $.package_identifier),
 
     _string_literal: $ => choice(
       $.raw_string_literal,
