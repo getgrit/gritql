@@ -12605,3 +12605,25 @@ fn go_package_identifier() {
     })
     .unwrap();
 }
+
+#[test]
+fn go_package_type() {
+    run_test_match(TestArg {
+        pattern: r#"
+            |language go
+            |
+            |`API`
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |func ZoneLockdown(api *mypackage.API) (resp interface{}, err error) {
+            |   resp, err = api.Call()
+            |   return
+            |}
+            |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}

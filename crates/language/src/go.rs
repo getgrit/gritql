@@ -54,6 +54,7 @@ impl Language for Go {
             ("", ";"),
             ("GO_OBJECT.", ";"),
             ("func GRIT_FUNC(GRIT_ARG *", ".GRIT_TYPE) {}"),
+            ("func GRIT_FUNC(GRIT_ARG *GRIT_PACKAGE.", ") {}"),
         ]
     }
 
