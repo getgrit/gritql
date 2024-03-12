@@ -1,6 +1,6 @@
 # GritQL
 
-[![CI Status](https://img.shields.io/github/actions/workflow/status/getgrit/gritql/main.yml)](https://github.com/getgrit/gritql/actions/workflows/main.yml)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/getgrit/gritql/main.yaml)](https://github.com/getgrit/gritql/actions/workflows/main.yaml)
 [![MIT License](https://img.shields.io/github/license/getgrit/gritql)](https://github.com/getgrit/gritql/blob/main/LICENSE)
 [![Discord](https://img.shields.io/discord/1063097320771698699?logo=discord&label=discord)](https://docs.grit.io/discord)
 
@@ -15,9 +15,11 @@ GritQL is a declarative query language for searching and modifying source code. 
 Read the [docs](https://docs.grit.io/language) or try any query in the [studio](https://app.grit.io/studio).
 
 ## Getting started
+
 Read the [documentation](https://docs.grit.io/language/overview), [interactive tutorial](https://docs.grit.io/tutorials/gritql), or run `grit --help`.
 
 ### Installation
+
 Install the Grit CLI:
 
 ```
@@ -27,16 +29,19 @@ curl -fsSL https://docs.grit.io/install | bash
 ### Usage
 
 Find all your `console.log` calls:
+
 ```
 grit apply '`console.log($_)`'
 ```
 
 Replace `console.log` with `winston.log`:
+
 ```
 grit apply '`console.log($msg)` => `winston.log($msg)`'
 ```
 
 Save the pattern to a [`grit.yaml`](https://docs.grit.io/guides/config) file and exclude test cases:
+
 ```
 cat << 'EOF' > .grit/grit.yaml
 patterns:
@@ -51,6 +56,7 @@ grit apply use_winston
 ```
 
 Run `grit check` to enforce your patterns as [custom lints](https://docs.grit.io/guides/ci).
+
 ```
 grit check
 ```
