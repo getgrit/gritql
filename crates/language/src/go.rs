@@ -49,7 +49,12 @@ impl Language for Go {
         "Go"
     }
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[("", ""), ("", ";"), ("GO_OBJECT.", ";")]
+        &[
+            ("", ""),
+            ("", ";"),
+            ("GO_OBJECT.", ";"),
+            ("func GRIT_FUNC(GRIT_ARG *", ".GRIT_TYPE) {}"),
+        ]
     }
 
     fn node_types(&self) -> &[Vec<Field>] {
