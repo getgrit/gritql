@@ -12583,3 +12583,25 @@ fn go_field_identifier() {
     })
     .unwrap();
 }
+
+#[test]
+fn go_package_identifier() {
+    run_test_match(TestArg {
+        pattern: r#"
+            |language go
+            |
+            |`mypackage`
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |func ZoneLockdown(api *mypackage.API) (resp interface{}, err error) {
+            |   resp, err = api.Call()
+            |   return
+            |}
+            |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
