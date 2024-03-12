@@ -754,10 +754,10 @@ modify-values@^1.0.0:
   resolved "https://registry.yarnpkg.com/modify-values/-/modify-values-1.0.1.tgz#b3939fa605546474e3e3e3c63d64bd43b4ee6022"
   integrity sha512-xV2bxeN6F7oYjZWTe/YPAy6MN2M+sL4u/Rlm2AHCIVGfo2p1yGmBHQ6vHehl4bRTZBdHu3TSkWdYgkwpYzAGSw==
 
-nan@^2.14.0:
-  version "2.14.0"
-  resolved "https://registry.yarnpkg.com/nan/-/nan-2.14.0.tgz#7818f722027b2459a86f0295d434d1fc2336c52c"
-  integrity sha512-INOFj37C7k3AfaNTtX8RhsTw7qRy7eLET14cROi9+5HAVbbHuIWUHEauBv5qT4Av2tWasiTY1Jw6puUNqRJXQg==
+nan@^2.18.0:
+  version "2.19.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.19.0.tgz#bb58122ad55a6c5bc973303908d5b16cfdd5a8c0"
+  integrity sha512-nO1xXxfh/RWNxfd/XPfbIfFk5vgLsAxUR9y5O0cHMJu/AW9U95JLXqthYHjEp+8gQ5p96K9jUp8nbVOxCdRbtw==
 
 neo-async@^2.6.0:
   version "2.6.1"
@@ -1219,12 +1219,10 @@ through@2, "through@>=2.2.7 <3":
   resolved "https://registry.yarnpkg.com/through/-/through-2.3.8.tgz#0dd4c9ffaabc357960b1b724115d7e0e86a2e1f5"
   integrity sha1-DdTJ/6q8NXlgsbckEV1+Doai4fU=
 
-tree-sitter-html@0.19.0:
-  version "0.19.0"
-  resolved "https://registry.yarnpkg.com/tree-sitter-html/-/tree-sitter-html-0.19.0.tgz#abebe9950f5ce909b6e3e8da2e90246647a70a22"
-  integrity sha512-xH6XGSBWzb4oU/aG6gouMRQKsd96iKuy0zboUqo3wcIWrA++q9a7CmQTSeIINiSfOXjT2ZLJciXFDgAh6h04Bw==
+tree-sitter-html@../tree-sitter-html:
+  version "0.20.0"
   dependencies:
-    nan "^2.14.0"
+    nan "^2.18.0"
 
 trim-newlines@^1.0.0:
   version "1.0.0"
