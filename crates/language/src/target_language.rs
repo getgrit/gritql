@@ -451,7 +451,7 @@ fn is_file_ignored(
         let ignorer = ignore_builder.build()?;
         let relativized_path = path.absolutize()?.canonicalize()?;
         relativized_path.strip_prefix(ignore_dir)?;
-        if let Match::Ignore(_) = ignorer.matched(relativized_path, false) {
+        if let Match::Ignore(_) = ignorer.matched_path_or_any_parents(relativized_path, false) {
             return Ok(true);
         }
     }
