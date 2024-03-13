@@ -240,7 +240,10 @@ impl FunctionDefinition for ForeignFunctionDefinition {
         let resolved_str: Vec<&str> = cow_resolved.iter().map(Cow::as_ref).collect();
 
         // START Simple externalized version
-        #[cfg(feature = "external_functions_ffi")]
+        #[cfg(all(
+            feature = "external_functions_ffi",
+            target_arch = "wasm32"
+        ))]
         let result = (context.runtime.exec_external)(&self.code, param_names, &resolved_str)?;
 
         // END Simple externalized version
