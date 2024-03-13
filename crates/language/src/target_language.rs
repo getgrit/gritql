@@ -418,9 +418,10 @@ fn is_file_ignored(path: &Path) -> Result<bool> {
     use ignore::{gitignore::GitignoreBuilder, Match};
     use path_absolutize::Absolutize;
 
-    let mut ignore_cache = FindIgnoreCache::new();
-    let git_ignores = find_ignore_files(path, ".gitignore", &mut ignore_cache)?;
-    let grit_ignores = find_ignore_files(path, ".gritignore", &mut ignore_cache)?;
+    let mut git_ignore_cache = FindIgnoreCache::new();
+    let git_ignores = find_ignore_files(path, ".gitignore", &mut git_ignore_cache)?;
+    let mut grit_ignore_cache = FindIgnoreCache::new();
+    let grit_ignores = find_ignore_files(path, ".gritignore", &mut grit_ignore_cache)?;
     for ignore_file in git_ignores.iter().chain(grit_ignores.iter()) {
         let ignore_dir = match ignore_file.parent() {
             Some(dir) => dir,
