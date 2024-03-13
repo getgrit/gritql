@@ -389,8 +389,7 @@ fn find_ignore_files(start_path: &Path, name: &str) -> Result<Vec<PathBuf>> {
         current_path = parent.to_path_buf();
     }
 
-    let root_path = current_path;
-    for entry in WalkDir::new(root_path).into_iter().filter_map(|e| e.ok()) {
+    for entry in WalkDir::new(start_path).into_iter().filter_map(|e| e.ok()) {
         let path = entry.path();
         if path.file_name() == Some(std::ffi::OsStr::new(name)) {
             gitignore_files.push(path.to_path_buf());
