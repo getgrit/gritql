@@ -20,6 +20,7 @@ pub fn language_id_to_pattern_language(language_id: &str) -> Option<PatternLangu
         "yaml" => Some(PatternLanguage::Yaml),
         "sql" => Some(PatternLanguage::Sql),
         "vue" => Some(PatternLanguage::Vue),
+        "toml" => Some(PatternLanguage::Toml),
         _ => None,
     }
 }
@@ -46,6 +47,7 @@ pub fn target_language_to_language_id(target_language: TargetLanguage) -> &'stat
         TargetLanguage::MarkdownBlock(_) => "markdown",
         TargetLanguage::Sql(_) => "sql",
         TargetLanguage::Vue(_) => "vue",
+        TargetLanguage::Toml(_) => "toml",
     }
 }
 

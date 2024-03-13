@@ -1,76 +1,170 @@
 [
   {
+    "type": "_pair",
+    "named": true,
+    "fields": {
+      "key": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "bare_key",
+            "named": true
+          },
+          {
+            "type": "dotted_key",
+            "named": true
+          },
+          {
+            "type": "grit_metavariable",
+            "named": true
+          },
+          {
+            "type": "quoted_key",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "array",
+            "named": true
+          },
+          {
+            "type": "boolean",
+            "named": true
+          },
+          {
+            "type": "float",
+            "named": true
+          },
+          {
+            "type": "grit_metavariable",
+            "named": true
+          },
+          {
+            "type": "inline_table",
+            "named": true
+          },
+          {
+            "type": "integer",
+            "named": true
+          },
+          {
+            "type": "local_date",
+            "named": true
+          },
+          {
+            "type": "local_date_time",
+            "named": true
+          },
+          {
+            "type": "local_time",
+            "named": true
+          },
+          {
+            "type": "offset_date_time",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "array",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "array",
-          "named": true
-        },
-        {
-          "type": "boolean",
-          "named": true
-        },
-        {
-          "type": "float",
-          "named": true
-        },
-        {
-          "type": "inline_table",
-          "named": true
-        },
-        {
-          "type": "integer",
-          "named": true
-        },
-        {
-          "type": "local_date",
-          "named": true
-        },
-        {
-          "type": "local_date_time",
-          "named": true
-        },
-        {
-          "type": "local_time",
-          "named": true
-        },
-        {
-          "type": "offset_date_time",
-          "named": true
-        },
-        {
-          "type": "string",
-          "named": true
-        }
-      ]
+    "fields": {
+      "value": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "array",
+            "named": true
+          },
+          {
+            "type": "boolean",
+            "named": true
+          },
+          {
+            "type": "float",
+            "named": true
+          },
+          {
+            "type": "grit_metavariable",
+            "named": true
+          },
+          {
+            "type": "inline_table",
+            "named": true
+          },
+          {
+            "type": "integer",
+            "named": true
+          },
+          {
+            "type": "local_date",
+            "named": true
+          },
+          {
+            "type": "local_date_time",
+            "named": true
+          },
+          {
+            "type": "local_time",
+            "named": true
+          },
+          {
+            "type": "offset_date_time",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
     "type": "document",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "pair",
-          "named": true
-        },
-        {
-          "type": "table",
-          "named": true
-        },
-        {
-          "type": "table_array_element",
-          "named": true
-        }
-      ]
+    "fields": {
+      "pair": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "grit_metavariable",
+            "named": true
+          },
+          {
+            "type": "inline_pair",
+            "named": true
+          }
+        ]
+      },
+      "table": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "table",
+            "named": true
+          },
+          {
+            "type": "table_array_element",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -90,6 +184,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "quoted_key",
           "named": true
         }
@@ -102,87 +200,103 @@
     "fields": {}
   },
   {
+    "type": "inline_pair",
+    "named": true,
+    "fields": {
+      "key": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "bare_key",
+            "named": true
+          },
+          {
+            "type": "dotted_key",
+            "named": true
+          },
+          {
+            "type": "grit_metavariable",
+            "named": true
+          },
+          {
+            "type": "quoted_key",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "array",
+            "named": true
+          },
+          {
+            "type": "boolean",
+            "named": true
+          },
+          {
+            "type": "float",
+            "named": true
+          },
+          {
+            "type": "grit_metavariable",
+            "named": true
+          },
+          {
+            "type": "inline_table",
+            "named": true
+          },
+          {
+            "type": "integer",
+            "named": true
+          },
+          {
+            "type": "local_date",
+            "named": true
+          },
+          {
+            "type": "local_date_time",
+            "named": true
+          },
+          {
+            "type": "local_time",
+            "named": true
+          },
+          {
+            "type": "offset_date_time",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "inline_table",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "pair",
-          "named": true
-        }
-      ]
+    "fields": {
+      "pair": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_pair",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
     "type": "integer",
     "named": true,
     "fields": {}
-  },
-  {
-    "type": "pair",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "array",
-          "named": true
-        },
-        {
-          "type": "bare_key",
-          "named": true
-        },
-        {
-          "type": "boolean",
-          "named": true
-        },
-        {
-          "type": "dotted_key",
-          "named": true
-        },
-        {
-          "type": "float",
-          "named": true
-        },
-        {
-          "type": "inline_table",
-          "named": true
-        },
-        {
-          "type": "integer",
-          "named": true
-        },
-        {
-          "type": "local_date",
-          "named": true
-        },
-        {
-          "type": "local_date_time",
-          "named": true
-        },
-        {
-          "type": "local_time",
-          "named": true
-        },
-        {
-          "type": "offset_date_time",
-          "named": true
-        },
-        {
-          "type": "quoted_key",
-          "named": true
-        },
-        {
-          "type": "string",
-          "named": true
-        }
-      ]
-    }
   },
   {
     "type": "quoted_key",
@@ -217,55 +331,85 @@
   {
     "type": "table",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "bare_key",
-          "named": true
-        },
-        {
-          "type": "dotted_key",
-          "named": true
-        },
-        {
-          "type": "pair",
-          "named": true
-        },
-        {
-          "type": "quoted_key",
-          "named": true
-        }
-      ]
+    "fields": {
+      "key": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "bare_key",
+            "named": true
+          },
+          {
+            "type": "dotted_key",
+            "named": true
+          },
+          {
+            "type": "grit_metavariable",
+            "named": true
+          },
+          {
+            "type": "quoted_key",
+            "named": true
+          }
+        ]
+      },
+      "pair": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "grit_metavariable",
+            "named": true
+          },
+          {
+            "type": "inline_pair",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
     "type": "table_array_element",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "bare_key",
-          "named": true
-        },
-        {
-          "type": "dotted_key",
-          "named": true
-        },
-        {
-          "type": "pair",
-          "named": true
-        },
-        {
-          "type": "quoted_key",
-          "named": true
-        }
-      ]
+    "fields": {
+      "key": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "bare_key",
+            "named": true
+          },
+          {
+            "type": "dotted_key",
+            "named": true
+          },
+          {
+            "type": "grit_metavariable",
+            "named": true
+          },
+          {
+            "type": "quoted_key",
+            "named": true
+          }
+        ]
+      },
+      "pair": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "grit_metavariable",
+            "named": true
+          },
+          {
+            "type": "inline_pair",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -326,6 +470,10 @@
   },
   {
     "type": "escape_sequence",
+    "named": true
+  },
+  {
+    "type": "grit_metavariable",
     "named": true
   },
   {

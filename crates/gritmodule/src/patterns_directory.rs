@@ -25,6 +25,7 @@ pub struct PatternsDirectory {
     yaml: BTreeMap<String, String>,
     sql: BTreeMap<String, String>,
     vue: BTreeMap<String, String>,
+    toml: BTreeMap<String, String>,
     universal: BTreeMap<String, String>,
 }
 
@@ -78,6 +79,7 @@ impl PatternsDirectory {
             yaml: BTreeMap::new(),
             sql: BTreeMap::new(),
             vue: BTreeMap::new(),
+            toml: BTreeMap::new(),
             universal: BTreeMap::new(),
         }
     }
@@ -106,6 +108,7 @@ impl PatternsDirectory {
             PatternLanguage::Yaml => &mut self.yaml,
             PatternLanguage::Sql => &mut self.sql,
             PatternLanguage::Vue => &mut self.vue,
+            PatternLanguage::Toml => &mut self.toml,
             PatternLanguage::Universal => &mut self.universal,
         }
     }
@@ -131,6 +134,7 @@ impl PatternsDirectory {
             PatternLanguage::Yaml => &self.yaml,
             PatternLanguage::Sql => &self.sql,
             PatternLanguage::Vue => &self.vue,
+            PatternLanguage::Toml => &self.toml,
             PatternLanguage::Universal => &self.universal,
         }
     }
@@ -245,6 +249,8 @@ impl PatternsDirectory {
         self.sql = other.sql;
         other.vue.extend(mem::take(&mut self.vue));
         self.vue = other.vue;
+        other.toml.extend(mem::take(&mut self.toml));
+        self.toml = other.toml;
         other.universal.extend(mem::take(&mut self.universal));
         self.universal = other.universal;
     }

@@ -2112,6 +2112,7 @@ dependencies = [
  "tree-sitter-rust",
  "tree-sitter-solidity",
  "tree-sitter-sql",
+ "tree-sitter-toml",
  "tree-sitter-traversal",
  "tree-sitter-typescript",
  "tree-sitter-vue",
@@ -4010,6 +4011,14 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter-sql"
+version = "0.0.1"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-toml"
 version = "0.0.1"
 dependencies = [
  "cc",
