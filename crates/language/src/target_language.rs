@@ -1,5 +1,4 @@
 use crate::language::{GritMetaValue, LeafEquivalenceClass, SnippetTree, TSLanguage};
-use crate::toml::Toml;
 use crate::{
     csharp::CSharp,
     css::Css,
@@ -20,6 +19,7 @@ use crate::{
     tsx::Tsx,
     typescript::TypeScript,
     vue::Vue,
+    toml::Toml,
     yaml::Yaml,
 };
 use anyhow::Result;
@@ -146,7 +146,7 @@ impl PatternLanguage {
             PatternLanguage::Yaml => Yaml::is_initialized(),
             PatternLanguage::Sql => Sql::is_initialized(),
             PatternLanguage::Vue => Vue::is_initialized(),
-            PatternLanguage::Toml => Vue::is_initialized(),
+            PatternLanguage::Toml => Toml::is_initialized(),
             PatternLanguage::Universal => false,
         }
     }
@@ -218,6 +218,7 @@ impl PatternLanguage {
             "yaml" => Some(Self::Yaml),
             "sql" => Some(Self::Sql),
             "vue" => Some(Self::Vue),
+            "toml" => Some(Self::Toml),
             "universal" => Some(Self::Universal),
             _ => None,
         }
@@ -333,6 +334,7 @@ impl PatternLanguage {
             PatternLanguage::Yaml,
             PatternLanguage::Sql,
             PatternLanguage::Vue,
+            PatternLanguage::Toml,
         ]
     }
 
@@ -366,6 +368,7 @@ impl PatternLanguage {
             PatternLanguage::Yaml => Ok(TargetLanguage::Yaml(Yaml::new(Some(lang)))),
             PatternLanguage::Sql => Ok(TargetLanguage::Sql(Sql::new(Some(lang)))),
             PatternLanguage::Vue => Ok(TargetLanguage::Vue(Vue::new(Some(lang)))),
+            PatternLanguage::Toml => Ok(TargetLanguage::Toml(Toml::new(Some(lang)))),
             PatternLanguage::Universal => Err("Cannot convert universal to TSLang".to_string()),
         }
     }
