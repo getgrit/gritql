@@ -71,8 +71,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn pair_snippet() {
-        let snippet = "fmt.Println($foo)";
+    fn table_snippet() {
+        let snippet = "[workspace]";
         let lang = Toml::new(None);
         let snippets = lang.parse_snippet_contexts(snippet);
         let nodes = nodes_from_indices(&snippets);

@@ -2798,6 +2798,25 @@ fn quote_snippet_rewrite() {
 }
 
 #[test]
+fn simple_toml() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language toml
+                |`[$foo]` where {
+                |    $foo => `bar`
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"[workspace]"#.to_owned(),
+            expected: r#"[bar]"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn multi_args_snippet() {
     run_test_match({
         TestArg {

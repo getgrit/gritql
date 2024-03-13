@@ -279,6 +279,12 @@ async function buildLanguage(language) {
       `${METAVARIABLE_GRAMMARS}/c_build.rs`,
       `${tsLangDir}/bindings/rust/build.rs`,
     );
+  } else if (language === 'toml') {
+    await buildSimpleLanguage(log, language);
+    await fs.copyFile(
+      `${METAVARIABLE_GRAMMARS}/c_build.rs`,
+      `${tsLangDir}/bindings/rust/build.rs`,
+    );
   } else {
     await buildSimpleLanguage(log, language);
   }

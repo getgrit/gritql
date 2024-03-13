@@ -35,8 +35,8 @@ module.exports = grammar({
   rules: {
     document: $ =>
       seq(
-        repeat(choice($.pair, newline)),
-        repeat(choice($.table, $.table_array_element)),
+        field('pair', repeat(choice($._pair, newline))),
+        field('table', repeat(choice($.table, $.table_array_element))),
       ),
 
     comment: $ =>
@@ -48,25 +48,25 @@ module.exports = grammar({
     table: $ =>
       seq(
         "[",
-        choice($.dotted_key, $._key),
+        field('key', choice($.dotted_key, $._key)),
         "]",
         $._line_ending_or_eof,
-        repeat(choice($.pair, newline)),
+        field('pair', repeat(choice($._pair, newline))),
       ),
 
     table_array_element: $ =>
       seq(
         "[[",
-        choice($.dotted_key, $._key),
+        field('key', choice($.dotted_key, $._key)),
         "]]",
         $._line_ending_or_eof,
-        repeat(choice($.pair, newline)),
+        field('pair', repeat(choice($._pair, newline))),
       ),
 
-    pair: $ => seq($._inline_pair, $._line_ending_or_eof),
-    _inline_pair: $ => seq(choice($.dotted_key, $._key), "=", $._inline_value),
+    _pair: $ => seq(choice($.grit_metavariable, $.inline_pair), $._line_ending_or_eof),
+    inline_pair: $ => seq(field('key', choice($.dotted_key, $._key)), "=", field('value', $._inline_value)),
 
-    _key: $ => choice($.bare_key, $.quoted_key),
+    _key: $ => choice($.bare_key, $.quoted_key, $.grit_metavariable),
     dotted_key: $ => seq(choice($.dotted_key, $._key), ".", $._key),
     bare_key: $ => /[A-Za-z0-9_-]+/,
     quoted_key: $ => choice($._basic_string, $._literal_string),
@@ -83,6 +83,7 @@ module.exports = grammar({
         $.local_time,
         $.array,
         $.inline_table,
+        $.grit_metavariable
       ),
 
     string: $ =>
@@ -190,9 +191,9 @@ module.exports = grammar({
         repeat(newline),
         optional(
           seq(
-            $._inline_value,
+            field('value', $._inline_value),
             repeat(newline),
-            repeat(seq(",", repeat(newline), $._inline_value, repeat(newline))),
+            repeat(seq(",", repeat(newline), field('value', $._inline_value), repeat(newline))),
             optional(seq(",", repeat(newline))),
           ),
         ),
@@ -204,11 +205,13 @@ module.exports = grammar({
         "{",
         optional(
           seq(
-            alias($._inline_pair, $.pair),
-            repeat(seq(",", alias($._inline_pair, $.pair))),
+            field('pair', alias($.inline_pair, $._pair)),
+            repeat(seq(",", field('pair', alias($.inline_pair, $._pair)))),
           ),
         ),
         "}",
       ),
+
+    grit_metavariable: ($) => token(prec(100, choice("µ...", /µ[a-zA-Z_][a-zA-Z0-9_]*/))),
   },
 });
