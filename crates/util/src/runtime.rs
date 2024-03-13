@@ -30,7 +30,8 @@ pub struct ExecutionContext {
 #[cfg(all(
     feature = "network_requests_external",
     feature = "external_functions_ffi",
-    not(feature = "network_requests")
+    not(feature = "network_requests"),
+    target_arch = "wasm32"
 ))]
 #[derive(Clone, Debug)]
 pub struct ExecutionContext {
@@ -83,7 +84,8 @@ impl ExecutionContext {
     #[cfg(all(
         feature = "network_requests_external",
         feature = "external_functions_ffi",
-        not(feature = "network_requests")
+        not(feature = "network_requests"),
+        target_arch = "wasm32"
     ))]
     pub fn new(
         fetch: fn(url: &str, headers: &HeaderMap, json: &serde_json::Value) -> Result<String>,
