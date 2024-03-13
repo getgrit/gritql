@@ -379,7 +379,9 @@ type FindIgnoreCache = HashMap<String, Vec<PathBuf>>;
 fn inner_find_ignore_files(start_path: &Path, name: &str, cache: &mut FindIgnoreCache) -> Vec<PathBuf> {
     let mut ignore_files = Vec::new();
 
+    println!("Cache keys are now {:?}", cache.keys().collect::<Vec<_>>());
     if let Some(cached) = cache.get(&start_path.to_string_lossy().to_string()) {
+        println!("Hit a cache and just returning that");
         return cached.clone();
     }
 
@@ -389,18 +391,21 @@ fn inner_find_ignore_files(start_path: &Path, name: &str, cache: &mut FindIgnore
     }
     let git_dir = start_path.join(".git");
     if git_dir.exists() {
+        println!("Inserting with key {}", start_path.to_string_lossy());
         cache.insert(start_path.to_string_lossy().to_string(), ignore_files.clone());
         return ignore_files;
     }
     let parent = match start_path.parent() {
         Some(p) => p,
         None => {
+            println!("Inserting with key {}", start_path.to_string_lossy());
             cache.insert(start_path.to_string_lossy().to_string(), ignore_files.clone());
             return ignore_files
         },
     };
     let ancestor_ignores = inner_find_ignore_files(parent, name, cache);
     ignore_files.extend(ancestor_ignores);
+    println!("Inserting with key {}", start_path.to_string_lossy());
     cache.insert(start_path.to_string_lossy().to_string(), ignore_files.clone());
     ignore_files
 }
