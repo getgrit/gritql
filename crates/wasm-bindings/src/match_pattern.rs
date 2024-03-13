@@ -49,6 +49,12 @@ pub async fn initialize_tree_sitter() -> Result<(), JsError> {
 extern "C" {
     #[wasm_bindgen(catch)]
     pub(crate) fn gritApiRequest(url: &str, headers: &str, body: &str) -> Result<String, JsValue>;
+    #[wasm_bindgen(catch)]
+    pub(crate) fn gritExternalFunctionCall(
+        code: &str,
+        arg_names: Vec<String>,
+        arg_values: Vec<String>,
+    ) -> Result<String, JsValue>;
 }
 
 #[wasm_bindgen(js_name = parseInputFiles)]
@@ -172,12 +178,24 @@ pub async fn match_pattern(
             let headers_str = serde_json::to_string(&header_map)?;
             let result = gritApiRequest(url, &headers_str, &body);
             match result {
-            Ok(s) => Ok(s),
-            Err(_e) => Err(anyhow::anyhow!("HTTP error when making AI request, likely due to a network error. Please make sure you are logged in, or try again later.")),
-        }
+                Ok(s) => Ok(s),
+                Err(_e) => Err(anyhow::anyhow!("HTTP error when making AI request, likely due to a network error. Please make sure you are logged in, or try again later.")),
+            }
         },
-        |_code: &[u8], _param_names: Vec<String>, _input_bindings: &[&str]| {
-            Err(anyhow::anyhow!("We are on the dark side now"))
+        |code: &[u8], param_names: Vec<String>, input_bindings: &[&str]| {
+            let result = gritExternalFunctionCall(
+                &String::from_utf8_lossy(code),
+                param_names,
+                input_bindings.iter().map(|s| s.to_string()).collect(),
+            );
+            match result {
+                Ok(s) => Ok(s.into()),
+                Err(e) => {
+                    // TODO: figure out why we don't get the real error here
+                    let unwrapped = e.as_string().unwrap_or_else(|| "unknown error, check console for details".to_string());
+                    Err(anyhow::anyhow!("Error calling external function: {}", unwrapped))
+                }
+            }
         },
     );
 
