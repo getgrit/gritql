@@ -461,11 +461,12 @@ pub fn expand_paths(
     // }
     file_walker.add_custom_ignore_filename(PathBuf::from_str(".gritignore")?);
 
-    let grit = OverrideBuilder::new(".").add("!**/.grit/**")?.build()?;
-    file_walker.overrides(grit);
+    let mut grit = OverrideBuilder::new(".");
     for path in start_paths {
-        file_walker.overrides(OverrideBuilder::new(path).build()?);
+        grit.add(&path.to_string_lossy())?;
     }
+    let grit = grit.add("!**/.grit/**")?.build()?;
+    file_walker.overrides(grit);
 
     let final_walker = file_walker
         .standard_filters(true)
