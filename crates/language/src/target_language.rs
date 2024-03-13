@@ -454,15 +454,18 @@ pub fn expand_paths(
         }
     }
 
-    let mut file_walker = WalkBuilder::new(start_paths[0].clone());
+    let mut file_walker = WalkBuilder::new(".");
     file_walker.types(file_types.build()?);
-    for path in start_paths.iter().skip(1) {
-        file_walker.add(path);
-    }
+    // for path in start_paths.iter().skip(1) {
+    //     file_walker.add(path);
+    // }
     file_walker.add_custom_ignore_filename(PathBuf::from_str(".gritignore")?);
 
     let grit = OverrideBuilder::new(".").add("!**/.grit/**")?.build()?;
     file_walker.overrides(grit);
+    for path in start_paths {
+        file_walker.overrides(OverrideBuilder::new(path).build()?);
+    }
 
     let final_walker = file_walker
         .standard_filters(true)
