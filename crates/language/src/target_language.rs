@@ -382,7 +382,6 @@ fn find_ignore_files(start_path: &Path, name: &str) -> Result<Vec<PathBuf>> {
     let mut current_path = start_path.absolutize()?.canonicalize()?;
     while let Some(parent) = current_path.parent() {
         let gitignore_path = parent.join(name);
-        println!("Checking gitignore path {}, next parent is {:?}", gitignore_path.display(), parent.parent().map(|p| p.display()));
         if gitignore_path.exists() && gitignore_path.is_file() {
             gitignore_files.push(gitignore_path);
         }
@@ -402,6 +401,7 @@ fn find_ignore_files(start_path: &Path, name: &str) -> Result<Vec<PathBuf>> {
 #[cfg(feature = "finder")]
 fn is_file_ignored(path: &Path) -> Result<bool> {
     use ignore::{gitignore::GitignoreBuilder, Match};
+    use path_absolutize::Absolutize;
 
     let git_ignores = find_ignore_files(path, ".gitignore")?;
     let grit_ignores = find_ignore_files(path, ".gritignore")?;
@@ -413,7 +413,9 @@ fn is_file_ignored(path: &Path) -> Result<bool> {
         let mut ignore_builder = GitignoreBuilder::new(ignore_dir);
         ignore_builder.add(ignore_file);
         let ignorer = ignore_builder.build()?;
-        if let Match::Ignore(_) = ignorer.matched(path, false) {
+        let relativized_path = path.absolutize()?.canonicalize()?;
+        relativized_path.strip_prefix(ignore_dir)?;
+        if let Match::Ignore(_) = ignorer.matched(relativized_path, false) {
             return Ok(true);
         }
     }
