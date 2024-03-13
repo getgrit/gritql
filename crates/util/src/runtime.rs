@@ -36,7 +36,7 @@ pub struct ExecutionContext {
 pub struct ExecutionContext {
     llm_api: Option<LanguageModelAPI>,
     fetch: fn(url: &str, headers: &HeaderMap, json: &serde_json::Value) -> Result<String>,
-    exec_external:
+    pub exec_external:
         fn(code: &[u8], param_names: Vec<String>, input_bindings: &[&str]) -> Result<Vec<u8>>,
     pub ignore_limit_pattern: bool,
 }

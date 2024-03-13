@@ -62,9 +62,10 @@ default = [
   "language-parsers",
   "non_wasm",
 ]
-external_functions = ["dep:marzano-externals"]
+external_functions_common = []
+external_functions = ["external_functions_common", "dep:marzano-externals"]
 # Use external functions via FFI
-external_functions_ffi = []
+external_functions_ffi = ["external_functions_common"]
 embeddings = ["dep:embeddings"]
 test_ci = ["external_functions"]
 test_all = ["embeddings", "external_functions"]
