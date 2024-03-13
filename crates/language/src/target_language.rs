@@ -25,6 +25,7 @@ use anyhow::Result;
 use enum_dispatch::enum_dispatch;
 use itertools::Itertools;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::fmt;
 use std::hash::Hash;
 
@@ -43,8 +44,6 @@ use std::path::Path;
 use std::path::PathBuf;
 #[cfg(feature = "finder")]
 use std::str::FromStr;
-#[cfg(feature = "finder")]
-use walkdir::WalkDir;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub enum PatternLanguage {
@@ -374,28 +373,44 @@ impl PatternLanguage {
 }
 
 #[cfg(feature = "finder")]
-fn find_ignore_files(start_path: &Path, name: &str) -> Result<Vec<PathBuf>> {
+type FindIgnoreCache = HashMap<String, Vec<PathBuf>>;
+
+#[cfg(feature = "finder")]
+fn inner_find_ignore_files(start_path: &Path, name: &str, cache: &mut FindIgnoreCache) -> Vec<PathBuf> {
+    let mut ignore_files = Vec::new();
+
+    if let Some(cached) = cache.get(&start_path.to_string_lossy().to_string()) {
+        return cached.clone();
+    }
+
+    let ignore_path = start_path.join(name);
+    if ignore_path.exists() && ignore_path.is_file() {
+        ignore_files.push(ignore_path);
+    }
+    let git_dir = start_path.join(".git");
+    if git_dir.exists() {
+        cache.insert(start_path.to_string_lossy().to_string(), ignore_files.clone());
+        return ignore_files;
+    }
+    let parent = match start_path.parent() {
+        Some(p) => p,
+        None => {
+            cache.insert(start_path.to_string_lossy().to_string(), ignore_files.clone());
+            return ignore_files
+        },
+    };
+    let ancestor_ignores = inner_find_ignore_files(parent, name, cache);
+    ignore_files.extend(ancestor_ignores);
+    cache.insert(start_path.to_string_lossy().to_string(), ignore_files.clone());
+    ignore_files
+}
+
+#[cfg(feature = "finder")]
+fn find_ignore_files(start_path: &Path, name: &str, cache: &mut FindIgnoreCache) -> Result<Vec<PathBuf>> {
     use path_absolutize::Absolutize;
 
-    let mut gitignore_files = Vec::new();
-
-    let mut current_path = start_path.absolutize()?.canonicalize()?;
-    while let Some(parent) = current_path.parent() {
-        let gitignore_path = parent.join(name);
-        if gitignore_path.exists() && gitignore_path.is_file() {
-            gitignore_files.push(gitignore_path);
-        }
-        current_path = parent.to_path_buf();
-    }
-
-    for entry in WalkDir::new(start_path).into_iter().filter_map(|e| e.ok()) {
-        let path = entry.path();
-        if path.file_name() == Some(std::ffi::OsStr::new(name)) {
-            gitignore_files.push(path.to_path_buf());
-        }
-    }
-
-    Ok(gitignore_files)
+    let current_path = start_path.absolutize()?.canonicalize()?;
+    Ok(inner_find_ignore_files(&current_path, name, cache))
 }
 
 #[cfg(feature = "finder")]
@@ -403,8 +418,9 @@ fn is_file_ignored(path: &Path) -> Result<bool> {
     use ignore::{gitignore::GitignoreBuilder, Match};
     use path_absolutize::Absolutize;
 
-    let git_ignores = find_ignore_files(path, ".gitignore")?;
-    let grit_ignores = find_ignore_files(path, ".gritignore")?;
+    let mut ignore_cache = FindIgnoreCache::new();
+    let git_ignores = find_ignore_files(path, ".gitignore", &mut ignore_cache)?;
+    let grit_ignores = find_ignore_files(path, ".gritignore", &mut ignore_cache)?;
     for ignore_file in git_ignores.iter().chain(grit_ignores.iter()) {
         let ignore_dir = match ignore_file.parent() {
             Some(dir) => dir,
