@@ -1,11 +1,13 @@
 use marzano_core::{
     pattern::{
-        api::{AnalysisLog, InputFile, MatchResult, PatternInfo}, built_in_functions::BuiltIns, compiler::{src_to_problem_libs_for_language, CompilationResult}
+        api::{AnalysisLog, InputFile, MatchResult, PatternInfo},
+        built_in_functions::BuiltIns,
+        compiler::{src_to_problem_libs_for_language, CompilationResult},
     },
     tree_sitter_serde::tree_sitter_node_to_json,
 };
-use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
 use marzano_language::target_language::{PatternLanguage, TargetLanguage};
+use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
 use marzano_util::{position::Position, rich_path::RichFile};
 use std::{
     collections::{BTreeMap, HashMap},
@@ -89,7 +91,15 @@ pub async fn parse_input_files(
     let injected_builtins: Option<BuiltIns> = None;
     #[cfg(feature = "ai_builtins")]
     let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
-    match src_to_problem_libs_for_language(pattern.clone(), &libs, lang, None, None, parser, injected_builtins) {
+    match src_to_problem_libs_for_language(
+        pattern.clone(),
+        &libs,
+        lang,
+        None,
+        None,
+        parser,
+        injected_builtins,
+    ) {
         Ok(c) => {
             let warning_logs = c
                 .compilation_warnings
@@ -152,19 +162,24 @@ pub async fn match_pattern(
     let ParsedPattern { libs, lang, .. } =
         get_parsed_pattern(&pattern, lib_paths, lib_contents, parser).await?;
 
-    let context = ExecutionContext::new(|url, headers, json| {
-        let body = serde_json::to_string(json)?;
-        let mut header_map = HashMap::<&str, &str>::new();
-        for (k, v) in headers.iter() {
-            header_map.insert(k.as_str(), v.to_str()?);
-        }
-        let headers_str = serde_json::to_string(&header_map)?;
-        let result = gritApiRequest(url, &headers_str, &body);
-        match result {
+    let context = ExecutionContext::new(
+        |url, headers, json| {
+            let body = serde_json::to_string(json)?;
+            let mut header_map = HashMap::<&str, &str>::new();
+            for (k, v) in headers.iter() {
+                header_map.insert(k.as_str(), v.to_str()?);
+            }
+            let headers_str = serde_json::to_string(&header_map)?;
+            let result = gritApiRequest(url, &headers_str, &body);
+            match result {
             Ok(s) => Ok(s),
             Err(_e) => Err(anyhow::anyhow!("HTTP error when making AI request, likely due to a network error. Please make sure you are logged in, or try again later.")),
         }
-    });
+        },
+        |_code: &[u8], _param_names: Vec<String>, _input_bindings: &[&str]| {
+            Err(anyhow::anyhow!("We are on the dark side now"))
+        },
+    );
 
     let context = if !llm_api_base.is_empty() {
         let llm_api = LanguageModelAPI {
@@ -182,7 +197,15 @@ pub async fn match_pattern(
     let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
     let CompilationResult {
         problem: pattern, ..
-    } = match src_to_problem_libs_for_language(pattern, &libs, lang, None, None, parser, injected_builtins) {
+    } = match src_to_problem_libs_for_language(
+        pattern,
+        &libs,
+        lang,
+        None,
+        None,
+        parser,
+        injected_builtins,
+    ) {
         Ok(c) => c,
         Err(e) => {
             let log = match e.downcast::<marzano_util::analysis_logs::AnalysisLog>() {
