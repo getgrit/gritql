@@ -517,7 +517,7 @@ pub fn expand_paths(
 
     let mut file_walker = WalkBuilder::new(start_paths[first_whitelisted_index].clone());
     file_walker.types(file_types.build()?);
-    for path in start_paths.iter().skip(first_whitelisted_index) {
+    for path in start_paths.iter().skip(first_whitelisted_index + 1) {
         // This is necessary because ignore does not check directly added WalkBuilder paths against ignore files
         if path.is_file() && is_file_ignored(path)? {
             continue;
