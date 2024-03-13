@@ -415,6 +415,7 @@ fn is_file_ignored(path: &Path) -> Result<bool> {
             return Ok(true);
         }
     }
+    println!("Is file ignored returning false for {}, grit ignores were {:?}", path.display(), grit_ignores);
     Ok(false)
 }
 
@@ -506,6 +507,7 @@ pub fn expand_paths(
     let mut file_walker = WalkBuilder::new(start_paths[0].clone());
     file_walker.types(file_types.build()?);
     for path in start_paths.iter().skip(1) {
+        println!("Path {} is file: {}", path.display(), path.is_file());
         // This is necessary because ignore does not check directly added WalkBuilder paths against ignore files
         if path.is_file() && is_file_ignored(path)? {
             continue;
