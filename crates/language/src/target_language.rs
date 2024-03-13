@@ -380,6 +380,7 @@ fn find_ignore_files(start_path: &Path, name: &str) -> Vec<PathBuf> {
     let mut current_path = start_path;
     while let Some(parent) = current_path.parent() {
         let gitignore_path = parent.join(name);
+        println!("Checking gitignore path {}, next parent is {:?}", gitignore_path.display(), parent.parent().map(|p| p.display()));
         if gitignore_path.exists() && gitignore_path.is_file() {
             gitignore_files.push(gitignore_path);
         }
