@@ -376,7 +376,11 @@ impl PatternLanguage {
 type FindIgnoreCache = HashMap<String, Vec<PathBuf>>;
 
 #[cfg(feature = "finder")]
-fn inner_find_ignore_files(start_path: &Path, name: &str, cache: &mut FindIgnoreCache) -> Vec<PathBuf> {
+fn inner_find_ignore_files(
+    start_path: &Path,
+    name: &str,
+    cache: &mut FindIgnoreCache,
+) -> Vec<PathBuf> {
     let mut ignore_files = Vec::new();
 
     println!("Cache keys are now {:?}", cache.keys().collect::<Vec<_>>());
@@ -392,26 +396,39 @@ fn inner_find_ignore_files(start_path: &Path, name: &str, cache: &mut FindIgnore
     let git_dir = start_path.join(".git");
     if git_dir.exists() {
         println!("Inserting with key {}", start_path.to_string_lossy());
-        cache.insert(start_path.to_string_lossy().to_string(), ignore_files.clone());
+        cache.insert(
+            start_path.to_string_lossy().to_string(),
+            ignore_files.clone(),
+        );
         return ignore_files;
     }
     let parent = match start_path.parent() {
         Some(p) => p,
         None => {
             println!("Inserting with key {}", start_path.to_string_lossy());
-            cache.insert(start_path.to_string_lossy().to_string(), ignore_files.clone());
-            return ignore_files
-        },
+            cache.insert(
+                start_path.to_string_lossy().to_string(),
+                ignore_files.clone(),
+            );
+            return ignore_files;
+        }
     };
     let ancestor_ignores = inner_find_ignore_files(parent, name, cache);
     ignore_files.extend(ancestor_ignores);
     println!("Inserting with key {}", start_path.to_string_lossy());
-    cache.insert(start_path.to_string_lossy().to_string(), ignore_files.clone());
+    cache.insert(
+        start_path.to_string_lossy().to_string(),
+        ignore_files.clone(),
+    );
     ignore_files
 }
 
 #[cfg(feature = "finder")]
-fn find_ignore_files(start_path: &Path, name: &str, cache: &mut FindIgnoreCache) -> Result<Vec<PathBuf>> {
+fn find_ignore_files(
+    start_path: &Path,
+    name: &str,
+    cache: &mut FindIgnoreCache,
+) -> Result<Vec<PathBuf>> {
     use path_absolutize::Absolutize;
 
     let current_path = start_path.absolutize()?.canonicalize()?;
@@ -419,14 +436,16 @@ fn find_ignore_files(start_path: &Path, name: &str, cache: &mut FindIgnoreCache)
 }
 
 #[cfg(feature = "finder")]
-fn is_file_ignored(path: &Path) -> Result<bool> {
+fn is_file_ignored(
+    path: &Path,
+    git_ignore_cache: &mut FindIgnoreCache,
+    grit_ignore_cache: &mut FindIgnoreCache,
+) -> Result<bool> {
     use ignore::{gitignore::GitignoreBuilder, Match};
     use path_absolutize::Absolutize;
 
-    let mut git_ignore_cache = FindIgnoreCache::new();
-    let git_ignores = find_ignore_files(path, ".gitignore", &mut git_ignore_cache)?;
-    let mut grit_ignore_cache = FindIgnoreCache::new();
-    let grit_ignores = find_ignore_files(path, ".gritignore", &mut grit_ignore_cache)?;
+    let git_ignores = find_ignore_files(path, ".gitignore", git_ignore_cache)?;
+    let grit_ignores = find_ignore_files(path, ".gritignore", grit_ignore_cache)?;
     for ignore_file in git_ignores.iter().chain(grit_ignores.iter()) {
         let ignore_dir = match ignore_file.parent() {
             Some(dir) => dir,
@@ -529,10 +548,11 @@ pub fn expand_paths(
         }
     }
 
-    let first_whitelisted_index = match start_paths
-        .iter()
-        .position(|path| !is_file_ignored(path).unwrap_or(false))
-    {
+    let mut git_ignore_cache = FindIgnoreCache::new();
+    let mut grit_ignore_cache = FindIgnoreCache::new();
+    let first_whitelisted_index = match start_paths.iter().position(|path| {
+        !is_file_ignored(path, &mut git_ignore_cache, &mut grit_ignore_cache).unwrap_or(false)
+    }) {
         Some(index) => index,
         None => return Ok(None),
     };
@@ -541,7 +561,7 @@ pub fn expand_paths(
     file_walker.types(file_types.build()?);
     for path in start_paths.iter().skip(first_whitelisted_index + 1) {
         // This is necessary because ignore does not check directly added WalkBuilder paths against ignore files
-        if path.is_file() && is_file_ignored(path)? {
+        if path.is_file() && is_file_ignored(path, &mut git_ignore_cache, &mut grit_ignore_cache)? {
             continue;
         }
         file_walker.add(path);
