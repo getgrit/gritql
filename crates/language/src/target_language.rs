@@ -411,11 +411,15 @@ fn is_file_ignored(path: &Path) -> Result<bool> {
         let mut ignore_builder = GitignoreBuilder::new(ignore_dir);
         ignore_builder.add(ignore_file);
         let ignorer = ignore_builder.build()?;
-        if let Match::Ignore(_) =  ignorer.matched(path, false) {
+        if let Match::Ignore(_) = ignorer.matched(path, false) {
             return Ok(true);
         }
     }
-    println!("Is file ignored returning false for {}, grit ignores were {:?}", path.display(), grit_ignores);
+    println!(
+        "Is file ignored returning false for {}, grit ignores were {:?}",
+        path.display(),
+        grit_ignores
+    );
     Ok(false)
 }
 
@@ -424,6 +428,7 @@ pub fn expand_paths(
     start_paths: &[PathBuf],
     target_languages: Option<&[PatternLanguage]>,
 ) -> Result<Walk, Error> {
+    use anyhow::bail;
     use ignore::overrides::OverrideBuilder;
 
     let mut file_types = TypesBuilder::new();
@@ -504,9 +509,17 @@ pub fn expand_paths(
         }
     }
 
-    let mut file_walker = WalkBuilder::new(start_paths[0].clone());
+    let first_whitelisted_index = match start_paths
+        .iter()
+        .position(|path| !is_file_ignored(path).unwrap_or(false))
+    {
+        Some(index) => index,
+        None => bail!("All selected paths are ignored"),
+    };
+
+    let mut file_walker = WalkBuilder::new(start_paths[first_whitelisted_index].clone());
     file_walker.types(file_types.build()?);
-    for path in start_paths.iter().skip(1) {
+    for path in start_paths.iter().skip(first_whitelisted_index) {
         println!("Path {} is file: {}", path.display(), path.is_file());
         // This is necessary because ignore does not check directly added WalkBuilder paths against ignore files
         if path.is_file() && is_file_ignored(path)? {
