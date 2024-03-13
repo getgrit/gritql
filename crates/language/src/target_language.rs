@@ -393,19 +393,28 @@ fn inner_find_ignore_files(
     }
     let git_dir = start_path.join(".git");
     if git_dir.exists() {
-        cache.insert(start_path.to_string_lossy().to_string(), ignore_files.clone());
+        cache.insert(
+            start_path.to_string_lossy().to_string(),
+            ignore_files.clone(),
+        );
         return ignore_files;
     }
     let parent = match start_path.parent() {
         Some(p) => p,
         None => {
-            cache.insert(start_path.to_string_lossy().to_string(), ignore_files.clone());
-            return ignore_files
-        },
+            cache.insert(
+                start_path.to_string_lossy().to_string(),
+                ignore_files.clone(),
+            );
+            return ignore_files;
+        }
     };
     let ancestor_ignores = inner_find_ignore_files(parent, name, cache);
     ignore_files.extend(ancestor_ignores);
-    cache.insert(start_path.to_string_lossy().to_string(), ignore_files.clone());
+    cache.insert(
+        start_path.to_string_lossy().to_string(),
+        ignore_files.clone(),
+    );
     ignore_files
 }
 
