@@ -23,3 +23,4 @@ pub mod typescript;
 pub mod vue;
 mod xscript_util;
 pub mod yaml;
+pub mod toml;

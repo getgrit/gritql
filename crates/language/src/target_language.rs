@@ -1,4 +1,5 @@
 use crate::language::{GritMetaValue, LeafEquivalenceClass, SnippetTree, TSLanguage};
+use crate::toml::Toml;
 use crate::{
     csharp::CSharp,
     css::Css,
@@ -64,6 +65,7 @@ pub enum PatternLanguage {
     Yaml,
     Sql,
     Vue,
+    Toml,
     Universal,
 }
 
@@ -89,6 +91,7 @@ impl fmt::Display for PatternLanguage {
             PatternLanguage::Yaml => write!(f, "yaml"),
             PatternLanguage::Sql => write!(f, "sql"),
             PatternLanguage::Vue => write!(f, "vue"),
+            PatternLanguage::Toml => write!(f, "toml"),
             PatternLanguage::Universal => write!(f, "universal"),
         }
     }
@@ -116,6 +119,7 @@ impl From<&TargetLanguage> for PatternLanguage {
             TargetLanguage::Yaml(_) => PatternLanguage::Yaml,
             TargetLanguage::Sql(_) => PatternLanguage::Sql,
             TargetLanguage::Vue(_) => PatternLanguage::Vue,
+            TargetLanguage::Toml(_) => PatternLanguage::Toml,
         }
     }
 }
@@ -142,6 +146,7 @@ impl PatternLanguage {
             PatternLanguage::Yaml => Yaml::is_initialized(),
             PatternLanguage::Sql => Sql::is_initialized(),
             PatternLanguage::Vue => Vue::is_initialized(),
+            PatternLanguage::Toml => Vue::is_initialized(),
             PatternLanguage::Universal => false,
         }
     }
@@ -241,6 +246,7 @@ impl PatternLanguage {
             PatternLanguage::Yaml => &["yaml", "yml"],
             PatternLanguage::Sql => &["sql"],
             PatternLanguage::Vue => &["vue"],
+            PatternLanguage::Toml => &["toml"],
             PatternLanguage::Universal => &[],
         }
     }
@@ -266,6 +272,7 @@ impl PatternLanguage {
             PatternLanguage::Yaml => Some("yaml"),
             PatternLanguage::Sql => Some("sql"),
             PatternLanguage::Vue => Some("vue"),
+            PatternLanguage::Toml => Some("toml"),
             PatternLanguage::Universal => None,
         }
     }
@@ -444,6 +451,9 @@ pub fn expand_paths(
                     PatternLanguage::Vue => {
                         file_types.select("vue");
                     }
+                    PatternLanguage::Toml => {
+                        file_types.select("toml");
+                    }
                     PatternLanguage::Universal => {}
                 }
             }
@@ -489,6 +499,7 @@ pub enum TargetLanguage {
     Hcl(Hcl),
     Yaml(Yaml),
     Vue(Vue),
+    Toml(Toml),
     Sql(Sql),
 }
 
@@ -521,6 +532,7 @@ impl TryFrom<PatternLanguage> for TargetLanguage {
             PatternLanguage::Yaml => Ok(TargetLanguage::Yaml(Yaml::new(None))),
             PatternLanguage::Sql => Ok(TargetLanguage::Sql(Sql::new(None))),
             PatternLanguage::Vue => Ok(TargetLanguage::Vue(Vue::new(None))),
+            PatternLanguage::Toml => Ok(TargetLanguage::Toml(Toml::new(None))),
             PatternLanguage::Universal => {
                 Err("cannot instantiate Universal as a target language".to_string())
             }
@@ -550,6 +562,7 @@ impl fmt::Display for TargetLanguage {
             TargetLanguage::Yaml(_) => write!(f, "yaml"),
             TargetLanguage::Sql(_) => write!(f, "sql"),
             TargetLanguage::Vue(_) => write!(f, "vue"),
+            TargetLanguage::Toml(_) => write!(f, "toml"),
         }
     }
 }
@@ -592,6 +605,7 @@ impl TargetLanguage {
             TargetLanguage::Yaml(_) => PatternLanguage::Yaml,
             TargetLanguage::Sql(_) => PatternLanguage::Sql,
             TargetLanguage::Vue(_) => PatternLanguage::Vue,
+            TargetLanguage::Toml(_) => PatternLanguage::Toml,
         }
     }
 
@@ -616,6 +630,7 @@ impl TargetLanguage {
             TargetLanguage::Yaml(_) => true,
             TargetLanguage::Sql(_) => false,
             TargetLanguage::Vue(_) => false,
+            TargetLanguage::Toml(_) => false,
         }
     }
 
@@ -645,6 +660,7 @@ impl TargetLanguage {
             TargetLanguage::Python(_)
             | TargetLanguage::Hcl(_)
             | TargetLanguage::Ruby(_)
+            | TargetLanguage::Toml(_)
             | TargetLanguage::Yaml(_) => format!("# {}\n", text),
             TargetLanguage::Html(_)
             | TargetLanguage::Vue(_)
