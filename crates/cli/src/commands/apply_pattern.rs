@@ -374,6 +374,19 @@ pub(crate) async fn run_apply_pattern(
         expand_paths(&my_input.paths, Some(&[(&compiled.language).into()]))
     );
 
+    if file_walker.is_none() {
+        let all_done = MatchResult::AllDone(AllDone {
+            processed: 0,
+            found: 0,
+            reason: AllDoneReason::AllPathsIgnored,
+        });
+        emitter.emit(&all_done, min_level).unwrap();
+        emitter.flush().await?;
+
+        return Ok(());
+    }
+    let file_walker = file_walker.unwrap();
+
     let processed = AtomicI32::new(0);
 
     let mut emitter = par_apply_pattern(

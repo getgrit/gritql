@@ -785,10 +785,13 @@ mod tests {
         let cli_release_date = updater._get_app_release_date(SupportedApp::Cli)?;
         assert_eq!(
             cli_release_date,
-            DateTime::<Utc>::from_naive_utc_and_offset(NaiveDate::from_ymd_opt(2023, 7, 12)
-                .unwrap()
-                .and_hms_opt(5, 2, 9)
-                .unwrap(), Utc),
+            DateTime::<Utc>::from_naive_utc_and_offset(
+                NaiveDate::from_ymd_opt(2023, 7, 12)
+                    .unwrap()
+                    .and_hms_opt(5, 2, 9)
+                    .unwrap(),
+                Utc
+            ),
         );
 
         Ok(())

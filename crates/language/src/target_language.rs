@@ -419,11 +419,6 @@ fn is_file_ignored(path: &Path) -> Result<bool> {
             return Ok(true);
         }
     }
-    println!(
-        "Is file ignored returning false for {}, grit ignores were {:?}",
-        path.display(),
-        grit_ignores
-    );
     Ok(false)
 }
 
@@ -431,8 +426,7 @@ fn is_file_ignored(path: &Path) -> Result<bool> {
 pub fn expand_paths(
     start_paths: &[PathBuf],
     target_languages: Option<&[PatternLanguage]>,
-) -> Result<Walk, Error> {
-    use anyhow::bail;
+) -> Result<Option<Walk>, Error> {
     use ignore::overrides::OverrideBuilder;
 
     let mut file_types = TypesBuilder::new();
@@ -518,13 +512,12 @@ pub fn expand_paths(
         .position(|path| !is_file_ignored(path).unwrap_or(false))
     {
         Some(index) => index,
-        None => bail!("All selected paths are ignored"),
+        None => return Ok(None),
     };
 
     let mut file_walker = WalkBuilder::new(start_paths[first_whitelisted_index].clone());
     file_walker.types(file_types.build()?);
     for path in start_paths.iter().skip(first_whitelisted_index) {
-        println!("Path {} is file: {}", path.display(), path.is_file());
         // This is necessary because ignore does not check directly added WalkBuilder paths against ignore files
         if path.is_file() && is_file_ignored(path)? {
             continue;
@@ -541,7 +534,7 @@ pub fn expand_paths(
         .parents(true)
         .hidden(false)
         .build();
-    Ok(final_walker)
+    Ok(Some(final_walker))
 }
 
 #[derive(Debug, Clone)]

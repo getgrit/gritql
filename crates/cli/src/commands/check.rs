@@ -153,7 +153,10 @@ pub(crate) async fn run_check(
     let found_files: DashMap<String, Vec<RichPath>> = DashMap::new();
 
     for language in target_languages {
-        let file_walker = expand_paths(&paths, Some(&[language]))?;
+        let file_walker = match expand_paths(&paths, Some(&[language]))? {
+            Some(walker) => walker,
+            None => continue,
+        };
         let mut language_paths = Vec::new();
         for file in file_walker {
             let file = file?;

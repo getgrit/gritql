@@ -12,7 +12,10 @@ pub fn get_watched_files(root_uri: Url) -> Vec<String> {
     let paths = vec![root];
     let languages = PatternLanguage::enumerate();
     let walker = match expand_paths(&paths, Some(&languages)) {
-        Ok(walker) => walker,
+        Ok(Some(walker)) => walker,
+        Ok(None) => {
+            return vec![];
+        }
         Err(_) => {
             return vec![];
         }

@@ -555,6 +555,7 @@ pub struct AllDone {
 #[serde(rename_all = "camelCase")]
 pub enum AllDoneReason {
     NoInputPaths,
+    AllPathsIgnored,
     AllMatchesFound,
     MaxResultsReached,
     Aborted,
