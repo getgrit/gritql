@@ -38,9 +38,13 @@ use anyhow::Error;
 #[cfg(feature = "finder")]
 use ignore::{types::TypesBuilder, Walk, WalkBuilder};
 #[cfg(feature = "finder")]
+use std::path::Path;
+#[cfg(feature = "finder")]
 use std::path::PathBuf;
 #[cfg(feature = "finder")]
 use std::str::FromStr;
+#[cfg(feature = "finder")]
+use walkdir::WalkDir;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub enum PatternLanguage {
@@ -370,6 +374,51 @@ impl PatternLanguage {
 }
 
 #[cfg(feature = "finder")]
+fn find_ignore_files(start_path: &Path, name: &str) -> Vec<PathBuf> {
+    let mut gitignore_files = Vec::new();
+
+    let mut current_path = start_path;
+    while let Some(parent) = current_path.parent() {
+        let gitignore_path = parent.join(name);
+        if gitignore_path.exists() && gitignore_path.is_file() {
+            gitignore_files.push(gitignore_path);
+        }
+        current_path = parent;
+    }
+
+    let root_path = current_path;
+    for entry in WalkDir::new(root_path).into_iter().filter_map(|e| e.ok()) {
+        let path = entry.path();
+        if path.file_name() == Some(std::ffi::OsStr::new(name)) {
+            gitignore_files.push(path.to_path_buf());
+        }
+    }
+
+    gitignore_files
+}
+
+#[cfg(feature = "finder")]
+fn is_file_ignored(path: &Path) -> Result<bool> {
+    use ignore::{gitignore::GitignoreBuilder, Match};
+
+    let git_ignores = find_ignore_files(path, ".gitignore");
+    let grit_ignores = find_ignore_files(path, ".gritignore");
+    for ignore_file in git_ignores.iter().chain(grit_ignores.iter()) {
+        let ignore_dir = match ignore_file.parent() {
+            Some(dir) => dir,
+            None => continue,
+        };
+        let mut ignore_builder = GitignoreBuilder::new(ignore_dir);
+        ignore_builder.add(ignore_file);
+        let ignorer = ignore_builder.build()?;
+        if let Match::Ignore(_) =  ignorer.matched(path, false) {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+#[cfg(feature = "finder")]
 pub fn expand_paths(
     start_paths: &[PathBuf],
     target_languages: Option<&[PatternLanguage]>,
@@ -457,6 +506,10 @@ pub fn expand_paths(
     let mut file_walker = WalkBuilder::new(start_paths[0].clone());
     file_walker.types(file_types.build()?);
     for path in start_paths.iter().skip(1) {
+        // This is necessary because ignore does not check directly added WalkBuilder paths against ignore files
+        if path.is_file() && is_file_ignored(path)? {
+            continue;
+        }
         file_walker.add(path);
     }
     file_walker.add_custom_ignore_filename(PathBuf::from_str(".gritignore")?);

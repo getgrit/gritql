@@ -2117,6 +2117,7 @@ dependencies = [
  "tree-sitter-vue",
  "tree-sitter-yaml",
  "trim-margin",
+ "walkdir",
  "web-sys",
 ]
 
