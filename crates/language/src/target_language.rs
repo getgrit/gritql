@@ -464,7 +464,7 @@ pub fn expand_paths(
     let grit = OverrideBuilder::new(".").add("!**/.grit/**")?.build()?;
     file_walker.overrides(grit);
 
-    let final_walker = file_walker.standard_filters(true).hidden(false).build();
+    let final_walker = file_walker.standard_filters(true).parents(true).hidden(false).build();
     Ok(final_walker)
 }
 
