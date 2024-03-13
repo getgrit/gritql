@@ -29,12 +29,15 @@ pub struct ExecutionContext {
 /// It is particularly useful for the WebAssembly variant of Marzano.
 #[cfg(all(
     feature = "network_requests_external",
+    feature = "external_functions_ffi",
     not(feature = "network_requests")
 ))]
 #[derive(Clone, Debug)]
 pub struct ExecutionContext {
     llm_api: Option<LanguageModelAPI>,
     fetch: fn(url: &str, headers: &HeaderMap, json: &serde_json::Value) -> Result<String>,
+    pub exec_external:
+        fn(code: &[u8], param_names: Vec<String>, input_bindings: &[&str]) -> Result<Vec<u8>>,
     pub ignore_limit_pattern: bool,
 }
 
@@ -79,14 +82,21 @@ impl ExecutionContext {
 
     #[cfg(all(
         feature = "network_requests_external",
+        feature = "external_functions_ffi",
         not(feature = "network_requests")
     ))]
     pub fn new(
         fetch: fn(url: &str, headers: &HeaderMap, json: &serde_json::Value) -> Result<String>,
+        exec_external: fn(
+            code: &[u8],
+            param_names: Vec<String>,
+            input_bindings: &[&str],
+        ) -> Result<Vec<u8>>,
     ) -> ExecutionContext {
         Self {
             llm_api: None,
             fetch,
+            exec_external,
             ignore_limit_pattern: false,
         }
     }
@@ -185,6 +195,9 @@ impl Default for ExecutionContext {
             llm_api: None,
             fetch: |_url: &str, _headers: &HeaderMap, _json: &serde_json::Value| {
                 Err(anyhow::anyhow!("Network requests are disabled"))
+            },
+            exec_external: |_code: &[u8], _param_names: Vec<String>, _input_bindings: &[&str]| {
+                Err(anyhow::anyhow!("External functions are disabled"))
             },
             ignore_limit_pattern: false,
         }

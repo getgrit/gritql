@@ -1,11 +1,13 @@
 use marzano_core::{
     pattern::{
-        api::{AnalysisLog, InputFile, MatchResult, PatternInfo}, built_in_functions::BuiltIns, compiler::{src_to_problem_libs_for_language, CompilationResult}
+        api::{AnalysisLog, InputFile, MatchResult, PatternInfo},
+        built_in_functions::BuiltIns,
+        compiler::{src_to_problem_libs_for_language, CompilationResult},
     },
     tree_sitter_serde::tree_sitter_node_to_json,
 };
-use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
 use marzano_language::target_language::{PatternLanguage, TargetLanguage};
+use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
 use marzano_util::{position::Position, rich_path::RichFile};
 use std::{
     collections::{BTreeMap, HashMap},
@@ -47,6 +49,12 @@ pub async fn initialize_tree_sitter() -> Result<(), JsError> {
 extern "C" {
     #[wasm_bindgen(catch)]
     pub(crate) fn gritApiRequest(url: &str, headers: &str, body: &str) -> Result<String, JsValue>;
+    #[wasm_bindgen(catch)]
+    pub(crate) fn gritExternalFunctionCall(
+        code: &str,
+        arg_names: Vec<String>,
+        arg_values: Vec<String>,
+    ) -> Result<String, JsValue>;
 }
 
 #[wasm_bindgen(js_name = parseInputFiles)]
@@ -89,7 +97,15 @@ pub async fn parse_input_files(
     let injected_builtins: Option<BuiltIns> = None;
     #[cfg(feature = "ai_builtins")]
     let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
-    match src_to_problem_libs_for_language(pattern.clone(), &libs, lang, None, None, parser, injected_builtins) {
+    match src_to_problem_libs_for_language(
+        pattern.clone(),
+        &libs,
+        lang,
+        None,
+        None,
+        parser,
+        injected_builtins,
+    ) {
         Ok(c) => {
             let warning_logs = c
                 .compilation_warnings
@@ -152,19 +168,36 @@ pub async fn match_pattern(
     let ParsedPattern { libs, lang, .. } =
         get_parsed_pattern(&pattern, lib_paths, lib_contents, parser).await?;
 
-    let context = ExecutionContext::new(|url, headers, json| {
-        let body = serde_json::to_string(json)?;
-        let mut header_map = HashMap::<&str, &str>::new();
-        for (k, v) in headers.iter() {
-            header_map.insert(k.as_str(), v.to_str()?);
-        }
-        let headers_str = serde_json::to_string(&header_map)?;
-        let result = gritApiRequest(url, &headers_str, &body);
-        match result {
-            Ok(s) => Ok(s),
-            Err(_e) => Err(anyhow::anyhow!("HTTP error when making AI request, likely due to a network error. Please make sure you are logged in, or try again later.")),
-        }
-    });
+    let context = ExecutionContext::new(
+        |url, headers, json| {
+            let body = serde_json::to_string(json)?;
+            let mut header_map = HashMap::<&str, &str>::new();
+            for (k, v) in headers.iter() {
+                header_map.insert(k.as_str(), v.to_str()?);
+            }
+            let headers_str = serde_json::to_string(&header_map)?;
+            let result = gritApiRequest(url, &headers_str, &body);
+            match result {
+                Ok(s) => Ok(s),
+                Err(_e) => Err(anyhow::anyhow!("HTTP error when making AI request, likely due to a network error. Please make sure you are logged in, or try again later.")),
+            }
+        },
+        |code: &[u8], param_names: Vec<String>, input_bindings: &[&str]| {
+            let result = gritExternalFunctionCall(
+                &String::from_utf8_lossy(code),
+                param_names,
+                input_bindings.iter().map(|s| s.to_string()).collect(),
+            );
+            match result {
+                Ok(s) => Ok(s.into()),
+                Err(e) => {
+                    // TODO: figure out why we don't get the real error here
+                    let unwrapped = e.as_string().unwrap_or_else(|| "unknown error, check console for details".to_string());
+                    Err(anyhow::anyhow!("Error calling external function: {}", unwrapped))
+                }
+            }
+        },
+    );
 
     let context = if !llm_api_base.is_empty() {
         let llm_api = LanguageModelAPI {
@@ -182,7 +215,15 @@ pub async fn match_pattern(
     let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
     let CompilationResult {
         problem: pattern, ..
-    } = match src_to_problem_libs_for_language(pattern, &libs, lang, None, None, parser, injected_builtins) {
+    } = match src_to_problem_libs_for_language(
+        pattern,
+        &libs,
+        lang,
+        None,
+        None,
+        parser,
+        injected_builtins,
+    ) {
         Ok(c) => c,
         Err(e) => {
             let log = match e.downcast::<marzano_util::analysis_logs::AnalysisLog>() {

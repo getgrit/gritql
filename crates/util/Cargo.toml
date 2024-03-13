@@ -30,3 +30,5 @@ finder = ["log", "ignore"]
 network_requests_common = []
 network_requests = ["reqwest", "tokio", "tokio/rt", "network_requests_common"]
 network_requests_external = ["network_requests_common"]
+
+external_functions_ffi = []

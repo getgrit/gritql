@@ -62,7 +62,10 @@ default = [
   "language-parsers",
   "non_wasm",
 ]
-external_functions = ["dep:marzano-externals"]
+external_functions_common = []
+external_functions = ["external_functions_common", "dep:marzano-externals"]
+# Use external functions via FFI
+external_functions_ffi = ["external_functions_common"]
 embeddings = ["dep:embeddings"]
 test_ci = ["external_functions"]
 test_all = ["embeddings", "external_functions"]
@@ -71,7 +74,7 @@ grit_alpha = ["external_functions", "embeddings"]
 network_requests_common = ["marzano-util/network_requests_common"]
 network_requests = ["reqwest", "tokio", "tokio/rt", "network_requests_common", "marzano-util/network_requests"]
 network_requests_external = ["network_requests_common", "marzano-util/network_requests_external"]
-wasm_core = ["getrandom/js", "web-sys", "network_requests_external"]
+wasm_core = ["getrandom/js", "web-sys", "network_requests_external", "external_functions_common", "external_functions_ffi", "marzano-util/external_functions_ffi"]
 grit_tracing = ["dep:tracing-opentelemetry"]
 language-parsers = ["marzano-language/builtin-parser"]
 grit-parser = ["tree-sitter-gritql"]

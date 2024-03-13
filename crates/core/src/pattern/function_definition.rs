@@ -200,7 +200,7 @@ impl ForeignFunctionDefinition {
 }
 
 impl FunctionDefinition for ForeignFunctionDefinition {
-    #[cfg(not(feature = "external_functions"))]
+    #[cfg(not(feature = "external_functions_common"))]
     fn call<'a>(
         &'a self,
         _state: &mut State<'a>,
@@ -210,7 +210,7 @@ impl FunctionDefinition for ForeignFunctionDefinition {
     ) -> Result<FuncEvaluation> {
         bail!("External functions are not enabled in your environment")
     }
-    #[cfg(feature = "external_functions")]
+    #[cfg(feature = "external_functions_common")]
     fn call<'a>(
         &'a self,
         state: &mut State<'a>,
@@ -239,13 +239,23 @@ impl FunctionDefinition for ForeignFunctionDefinition {
 
         let resolved_str: Vec<&str> = cow_resolved.iter().map(Cow::as_ref).collect();
 
+        // START Simple externalized version
+        #[cfg(feature = "external_functions_ffi")]
+        let result = (context.runtime.exec_external)(&self.code, param_names, &resolved_str)?;
+
+        // END Simple externalized version
+
+        // START embedded version
         // Really, we should compile ahead of time and then call the compiled function
         // But, the WebAssembly function model is currently *mutable* so state would be contaminated
+        #[cfg(feature = "external_functions")]
         let mut function = ExternalFunction::new_js(&self.code, param_names)?;
 
+        #[cfg(feature = "external_functions")]
         let result = function
             .call(&resolved_str)
             .or_else(|e| bail!("failed to call function {}: {}", self.name, e))?;
+        // END embedded version
 
         let string = String::from_utf8(result).or_else(|_| {
             bail!(
