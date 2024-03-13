@@ -36,6 +36,7 @@ web-sys = { version = "0.3.66", features = ["console"], optional = true }
 tree-sitter-traversal = { version = "0.1.2", default-features = false }
 enum_dispatch = "0.3.12"
 walkdir = "2.3.3"
+path-absolutize = "3.1.1"
 
 [dev-dependencies]
 insta = "1.26.0"

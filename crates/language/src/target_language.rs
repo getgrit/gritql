@@ -374,17 +374,19 @@ impl PatternLanguage {
 }
 
 #[cfg(feature = "finder")]
-fn find_ignore_files(start_path: &Path, name: &str) -> Vec<PathBuf> {
+fn find_ignore_files(start_path: &Path, name: &str) -> Result<Vec<PathBuf>> {
+    use path_absolutize::Absolutize;
+
     let mut gitignore_files = Vec::new();
 
-    let mut current_path = start_path;
+    let mut current_path = start_path.absolutize()?.canonicalize()?;
     while let Some(parent) = current_path.parent() {
         let gitignore_path = parent.join(name);
         println!("Checking gitignore path {}, next parent is {:?}", gitignore_path.display(), parent.parent().map(|p| p.display()));
         if gitignore_path.exists() && gitignore_path.is_file() {
             gitignore_files.push(gitignore_path);
         }
-        current_path = parent;
+        current_path = parent.to_path_buf();
     }
 
     let root_path = current_path;
@@ -395,15 +397,15 @@ fn find_ignore_files(start_path: &Path, name: &str) -> Vec<PathBuf> {
         }
     }
 
-    gitignore_files
+    Ok(gitignore_files)
 }
 
 #[cfg(feature = "finder")]
 fn is_file_ignored(path: &Path) -> Result<bool> {
     use ignore::{gitignore::GitignoreBuilder, Match};
 
-    let git_ignores = find_ignore_files(path, ".gitignore");
-    let grit_ignores = find_ignore_files(path, ".gritignore");
+    let git_ignores = find_ignore_files(path, ".gitignore")?;
+    let grit_ignores = find_ignore_files(path, ".gritignore")?;
     for ignore_file in git_ignores.iter().chain(grit_ignores.iter()) {
         let ignore_dir = match ignore_file.parent() {
             Some(dir) => dir,
