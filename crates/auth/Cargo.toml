@@ -3,6 +3,9 @@ name = "marzano-auth"
 version = "0.1.0"
 edition = "2021"
 
+[lints]
+rust.unused_crate_dependencies = "forbid"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

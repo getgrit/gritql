@@ -3,6 +3,9 @@ name = "grit_cache"
 version = "0.1.0"
 edition = "2021"
 
+[lints]
+rust.unused_crate_dependencies = "forbid"
+
 [dependencies]
 marzano-gritmodule = { path = "../gritmodule", features = [
 ], default-features = false }

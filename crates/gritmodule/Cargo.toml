@@ -3,11 +3,13 @@ name = "marzano-gritmodule"
 version = "0.1.0"
 edition = "2021"
 
+[lints]
+rust.unused_crate_dependencies = "forbid"
+
 [dependencies]
 marzano-core = { path = "../core", features = [], default-features = true }
 marzano-language = { path = "../language" }
 marzano-util = { path = "../util", features = ["finder"] }
-tree-sitter-gritql = { path = "../../vendor/tree-sitter-gritql" }
 tree-sitter = { path = "../../vendor/tree-sitter-facade", package = "tree-sitter-facade-sg" }
 serde = { version = "1.0.164", features = ["derive"] }
 serde_yaml = "0.9.25"
@@ -23,7 +25,6 @@ tokio = { version = "1", features = ["full"] }
 tempfile = "3.7.0"
 log = "0.4.19"
 reqwest = { version = "0.11.22", features = ["blocking", "json"] }
-sha2 = "0.10.8"
 ignore = "0.4.20"
 homedir = "0.2.1"
 
