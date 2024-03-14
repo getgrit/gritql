@@ -3,6 +3,9 @@ name = "marzano-wasm-bindings"
 version = "0.1.0"
 edition = "2021"
 
+[lints]
+rust.unused_crate_dependencies = "forbid"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 crate-type = ["cdylib"]
@@ -19,10 +22,12 @@ wasm-bindgen-futures = "0.4.39"
 serde-wasm-bindgen = "0.6"
 web-tree-sitter-sg = { path = "../../vendor/web-tree-sitter" }
 tree-sitter = { path = "../../vendor/tree-sitter-facade", package = "tree-sitter-facade-sg" }
+console_error_panic_hook = "0.1.7"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+anyhow = "1.0.70"
 web-sys = { version = "0.3.66", features = ["console"] }
 serde_json = "1.0.96"
-anyhow = "1.0.70"
-console_error_panic_hook = "0.1.7"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.39"
