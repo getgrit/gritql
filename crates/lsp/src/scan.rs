@@ -6,7 +6,6 @@ use std::{
 use dashmap::{DashMap, DashSet};
 
 use grit_cache::cache::{cache_dir, Cache};
-use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use tokio::{runtime::Runtime, task::spawn_blocking};
 use tower_lsp::{
     lsp_types::{Diagnostic, MessageType, TextDocumentItem, Url},

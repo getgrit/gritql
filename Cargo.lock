@@ -1986,7 +1986,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "extism",
- "log",
  "serde_json",
 ]
 
@@ -2010,11 +2009,9 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_yaml",
- "sha2",
  "tempfile",
  "tokio",
  "tree-sitter-facade-sg",
- "tree-sitter-gritql",
 ]
 
 [[package]]
@@ -2022,15 +2019,12 @@ name = "marzano-language"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "either",
  "enum_dispatch",
  "ignore",
- "insta",
  "itertools 0.10.5",
  "lazy_static",
  "marzano-util",
  "regex",
- "serde",
  "serde_json",
  "tree-sitter-c-sharp",
  "tree-sitter-css",
@@ -2065,13 +2059,10 @@ dependencies = [
  "anyhow",
  "dashmap",
  "grit_cache",
- "lazy_static",
  "marzano-core",
  "marzano-gritmodule",
  "marzano-language",
  "marzano-util",
- "rayon",
- "reqwest",
  "serde",
  "serde_json",
  "tempfile",

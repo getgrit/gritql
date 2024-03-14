@@ -3,6 +3,9 @@ name = "marzano-util"
 version = "0.1.0"
 edition = "2021"
 
+[lints]
+rust.unused_crate_dependencies = "forbid"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -21,14 +24,14 @@ reqwest = { version = "0.11.22", features = [
 ], optional = true }
 tokio = { version = "1.35.1", optional = true }
 serde_json = "1.0.114"
-futures = "0.3.29"
+futures = { version = "0.3.29", optional = true}
 http = "0.2.11"
 
 [features]
 finder = ["log", "ignore"]
 
 network_requests_common = []
-network_requests = ["reqwest", "tokio", "tokio/rt", "network_requests_common"]
+network_requests = ["dep:futures", "reqwest", "tokio", "tokio/rt", "network_requests_common"]
 network_requests_external = ["network_requests_common"]
 
 external_functions_ffi = []
