@@ -35,6 +35,8 @@ rand = "0.8.5"
 path-absolutize = { version = "3.1.1", optional = false, features = [
   "use_unix_paths_on_wasm",
 ] }
+# getrandom = "0.2.11"
+getrandom = {version = "0.2.11", optional = true }
 
 [dev-dependencies]
 similar = "2.2.1"
@@ -65,7 +67,7 @@ grit_alpha = ["external_functions", "embeddings"]
 network_requests_common = ["marzano-util/network_requests_common"]
 network_requests = ["network_requests_common", "marzano-util/network_requests"]
 network_requests_external = ["network_requests_common", "marzano-util/network_requests_external"]
-wasm_core = ["network_requests_external", "external_functions_common", "external_functions_ffi", "marzano-util/external_functions_ffi"]
+wasm_core = [ "dep:getrandom", "getrandom/js", "network_requests_external", "external_functions_common", "external_functions_ffi", "marzano-util/external_functions_ffi"]
 grit_tracing = ["dep:tracing-opentelemetry"]
 language-parsers = ["marzano-language/builtin-parser"]
 grit-parser = ["tree-sitter-gritql"]
