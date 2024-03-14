@@ -39,7 +39,6 @@ tree-sitter-traversal = { version = "0.1.2", default-features = false }
 enum_dispatch = "0.3.12"
 
 [dev-dependencies]
-insta = "1.26.0"
 trim-margin = "0.1.0"
 
 [features]
