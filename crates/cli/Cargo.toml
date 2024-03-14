@@ -34,7 +34,7 @@ log = { version = "0.4.19" }
 env_logger = "0.10.0"
 git2 = "0.17.2"
 regex = "1.7.3"
-openssl = { version = "0.10", features = ["vendored"], optional = true }
+openssl = { version = "0.10", features = ["vendored"] }
 tree-sitter-gritql = { path = "../../vendor/tree-sitter-gritql" }
 tree-sitter-javascript = { path = "../../resources/language-metavariables/tree-sitter-javascript" }
 marzano-core = { path = "../core", features = [
@@ -90,7 +90,6 @@ marzano-test-utils = { path = "../test_utils" }
 
 [features]
 default = [
-  "temporal_workflows",
   "external_functions",
   "updater",
   "workflows_v2",
@@ -104,7 +103,7 @@ workflows_v2 = []
 bundled_workflows = []
 remote_redis = []
 remote_pubsub = []
-server = ["temporal_workflows", "external_functions", "updater", "remote_redis", "remote_pubsub", "ai_builtins", "dep:cli_server"]
+server = ["workflows_v2", "external_functions", "updater", "remote_redis", "remote_pubsub", "ai_builtins", "dep:cli_server"]
 updater = []
 grit_tracing = [
   "dep:opentelemetry-otlp",
@@ -116,10 +115,8 @@ grit_tracing = [
 external_functions = ["marzano-core/external_functions"]
 ai_builtins = ["dep:ai_builtins"]
 embeddings = ["marzano-core/embeddings", "ai_builtins/embeddings"]
-temporal_workflows = ["dep:openssl"]
 docgen = ["dep:clap-markdown"]
 grit_alpha = [
-  "temporal_workflows",
   "external_functions",
   "updater",
   "docgen",
@@ -127,7 +124,6 @@ grit_alpha = [
   # "grit_tracing",
 ]
 grit_beta = [
-  "temporal_workflows",
   "external_functions",
   "updater",
   "ai_builtins"

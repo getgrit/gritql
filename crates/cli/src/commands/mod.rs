@@ -22,11 +22,11 @@ pub(crate) mod patterns_test;
 pub(crate) mod plumbing;
 pub(crate) mod version;
 
-#[cfg(feature = "temporal_workflows")]
+#[cfg(feature = "workflows_v2")]
 pub(crate) mod apply_migration;
-#[cfg(feature = "temporal_workflows")]
+#[cfg(feature = "workflows_v2")]
 pub(crate) mod workflows;
-#[cfg(feature = "temporal_workflows")]
+#[cfg(feature = "workflows_v2")]
 pub(crate) mod workflows_list;
 
 #[cfg(feature = "docgen")]
@@ -63,10 +63,10 @@ use std::time::Instant;
 use tracing::instrument;
 use version::VersionArgs;
 
-#[cfg(feature = "temporal_workflows")]
+#[cfg(feature = "workflows_v2")]
 use workflows_list::run_list_workflows;
 
-#[cfg(feature = "temporal_workflows")]
+#[cfg(feature = "workflows_v2")]
 use crate::commands::workflows::{WorkflowCommands, Workflows};
 
 #[cfg(feature = "docgen")]
@@ -115,7 +115,7 @@ pub enum Commands {
     #[clap(name = "parse", hide = true)]
     Parse(ParseArgs),
     /// Workflow commands, run `grit workflows --help` for more information
-    #[cfg(feature = "temporal_workflows")]
+    #[cfg(feature = "workflows_v2")]
     #[clap(name = "workflows")]
     Workflows(Workflows),
     /// Patterns commands, run `grit patterns --help` for more information
@@ -154,7 +154,7 @@ impl fmt::Display for Commands {
                 PatternCommands::Edit(_) => write!(f, "patterns edit"),
                 PatternCommands::Describe(_) => write!(f, "patterns describe"),
             },
-            #[cfg(feature = "temporal_workflows")]
+            #[cfg(feature = "workflows_v2")]
             Commands::Workflows(arg) => match arg.workflows_commands {
                 WorkflowCommands::List(_) => write!(f, "workflows list"),
             },
@@ -335,7 +335,7 @@ pub async fn run_command() -> Result<()> {
             PatternCommands::Edit(arg) => run_patterns_edit(arg).await,
             PatternCommands::Describe(arg) => run_patterns_describe(arg).await,
         },
-        #[cfg(feature = "temporal_workflows")]
+        #[cfg(feature = "workflows_v2")]
         Commands::Workflows(arg) => match arg.workflows_commands {
             WorkflowCommands::List(arg) => run_list_workflows(&arg, &app.format_flags).await,
         },
