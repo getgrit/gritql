@@ -19,3 +19,10 @@ pub mod tree_sitter_serde;
 
 #[cfg(test)]
 mod test;
+
+// getrandom is a deeply nested dependency used by many things eg. uuid
+// to get wasm working we needed to enable a feature for this crate, so
+// while we don't have a direct usage of it, we had to add it as a dependency
+// and here we import it to avoid an unused dependency warning
+#[cfg(target_arch = "wasm32")]
+use getrandom as _;
