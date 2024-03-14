@@ -3,6 +3,9 @@ name = "marzano-core"
 version = "0.2.0"
 edition = "2021"
 
+[lints]
+rust.unused_crate_dependencies = "forbid"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 # todo remove all these since we should be interfacing through the language crate.
 [dependencies]
@@ -20,34 +23,22 @@ tracing-opentelemetry = { version = "0.22.0", optional = true, default-features 
 regex = "1.7.3"
 anyhow = "1.0.70"
 tree-sitter-traversal = { version = "0.1.2", default-features = false }
-lazy_static = "1.4.0"
 itertools = "0.10.5"
 im = "15.1.0"
 serde_json = "1.0.96"
 serde = { version = "1.0.164", features = ["derive"] }
-debug_print = "1.0.0"
-derive_builder = { version = "0.12.0", features = ["clippy"] }
-similar = "2.2.1"
 sha2 = "0.10.8"
 elsa = "1.9.0"
-reqwest = { version = "0.11.22", features = [
-  "blocking",
-  "json",
-], optional = true }
-futures = "0.3.29"
 rayon = "1.8.0"
 log = "0.4.20"
-tiktoken-rs = "0.5.7"
 rand = "0.8.5"
 path-absolutize = { version = "3.1.1", optional = false, features = [
   "use_unix_paths_on_wasm",
 ] }
-getrandom = "0.2.11"
-http = "0.2.11"
-tokio = { version = "1.35.1", optional = true }
-web-sys = { version = "0.3.66", features = ["console"], optional = true }
 
 [dev-dependencies]
+similar = "2.2.1"
+lazy_static = "1.4.0"
 insta = { version = "1.30.0", features = ["yaml", "redactions"] }
 trim-margin = "0.1.0"
 marzano-auth = { path = "../auth" }
@@ -72,9 +63,9 @@ test_all = ["embeddings", "external_functions"]
 grit_alpha = ["external_functions", "embeddings"]
 # Shared network requests - common to all approaches
 network_requests_common = ["marzano-util/network_requests_common"]
-network_requests = ["reqwest", "tokio", "tokio/rt", "network_requests_common", "marzano-util/network_requests"]
+network_requests = ["network_requests_common", "marzano-util/network_requests"]
 network_requests_external = ["network_requests_common", "marzano-util/network_requests_external"]
-wasm_core = ["getrandom/js", "web-sys", "network_requests_external", "external_functions_common", "external_functions_ffi", "marzano-util/external_functions_ffi"]
+wasm_core = ["network_requests_external", "external_functions_common", "external_functions_ffi", "marzano-util/external_functions_ffi"]
 grit_tracing = ["dep:tracing-opentelemetry"]
 language-parsers = ["marzano-language/builtin-parser"]
 grit-parser = ["tree-sitter-gritql"]
