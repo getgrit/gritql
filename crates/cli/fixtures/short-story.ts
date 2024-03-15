@@ -5,8 +5,7 @@ const configuration = new Configuration({
 });
 const openai = new OpenAIApi(configuration);
 
-export default async function (req, res) {
-  const completion = await openai.createCompletion({
+export async function short_story(req, res) { const completion = await openai.createCompletion({
     model: 'text-davinci-003',
     prompt: reviewPrompt(req.body.product),
     max_tokens: 150,
@@ -15,8 +14,7 @@ export default async function (req, res) {
     frequency_penalty: 0.5,
     presence_penalty: 0.0,
   });
-  res.status(200).json({ result: completion.data.choices[0].text });
-}
+  res.status(200).json({ result: completion.data.choices[0].text }); }
 
 function reviewPrompt(productName) {
   return `Topic: Breakfast

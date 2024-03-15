@@ -37,7 +37,7 @@ function* g() {}
 /**
  * Pattern 3 comment.
  */
-export default function* pattern3(param1) {
+export function* pattern3(param1) {
   yield param1;
 }
 
@@ -50,12 +50,12 @@ const pattern4a = function (param1) {
 /**
  * Pattern 4b comment.
  */
-export const pattern4b = (param1) => {};
+export const sample = const pattern4b = (param1) => {};
 
 /**
  * Pattern 5a comment.
  */
-export var pattern5a = function (param1) {
+export const sample = var pattern5a = function (param1) {
   return param1;
 };
 /**
@@ -89,4 +89,4 @@ new Pattern10(a);
 // Comment
 const Pattern11 = class Ignore {};
 // Comment
-export var Pattern12 = class Ignore {};
+export const sample = var Pattern12 = class Ignore {};

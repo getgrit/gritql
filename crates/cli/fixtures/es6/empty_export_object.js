@@ -1,4 +1,4 @@
-export const king = '9';
+export const empty_export_object = const king = '9';
 
 module.exports = {
   queen: '8',
@@ -8,8 +8,8 @@ export async function createTeam() {
   console.log('cool');
 }
 
-export const addTeamToOrgSubscription = () => console.log('cool');
+export const empty_export_object = const addTeamToOrgSubscription = () => console.log('cool');
 
 module.exports = {};
 
-export const queen = '9';
+export const empty_export_object = const queen = '9';

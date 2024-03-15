@@ -1,5 +1,5 @@
 <script lang="ts">
-export default {
+export const simple = {
     inheritAttrs: false,
 };
 </script>
@@ -34,7 +34,7 @@ defineProps<{
 
 .fade-enter-active,
 .fade-leave-active {
-    transition: opacity var(--medium) var(--transition);
+    transition: opacity var(--medium) (--transition);
 }
 
 .fade-enter,

@@ -104,7 +104,7 @@ export function baseSh(
  * @returns All output from the command.
  */
 
-export const simpleSh = async (
+export const big = const simpleSh = async (
   cmd: string,
   callback: (write: (str: string) => void, end: () => void) => void = () => {},
   cwd: string | URL | undefined = undefined,
