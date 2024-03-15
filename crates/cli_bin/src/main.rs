@@ -1,5 +1,5 @@
-use commands::run_command;
-use error::GoodError;
+use marzano_cli::commands::run_command;
+use marzano_cli::error::GoodError;
 // We always instrument
 
 #[cfg(feature = "grit_tracing")]
@@ -27,23 +27,6 @@ use tracing_subscriber::prelude::*;
 use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 
 use anyhow::Result;
-
-mod analytics;
-mod analyze;
-mod commands;
-mod community;
-mod error;
-mod flags;
-mod github;
-mod jsonl;
-mod lister;
-mod messenger_variant;
-mod resolver;
-mod result_formatting;
-mod scan;
-mod updater;
-mod utils;
-mod ux;
 #[cfg(feature = "workflows_v2")]
 mod workflows;
 

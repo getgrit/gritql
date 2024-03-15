@@ -1870,6 +1870,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "marzano"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "marzano-cli",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "marzano-auth"
 version = "0.1.0"
 dependencies = [
