@@ -10,7 +10,7 @@ jobs:
       - name: clone code
         uses: actions/checkout@v3
         with:
-          submodules: recursive
+          submodules: true
       - name: Install Protoc
         run: sudo apt-get install -y protobuf-compiler
       - run: rustup component add clippy
