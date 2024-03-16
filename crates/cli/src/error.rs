@@ -1,7 +1,7 @@
 /// A good error isn't really an error at all.
 /// It means Grit is functioning correctly, but should return a non-zero exit code.
 /// This is mainly used for `grit check`, where non-zero exit codes are used to signal that there are issues.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct GoodError {
     pub message: Option<String>,
 }
