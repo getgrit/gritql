@@ -1874,7 +1874,17 @@ name = "marzano"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "assert_cmd",
+ "fs_extra",
+ "insta",
  "marzano-cli",
+ "marzano-gritmodule",
+ "ntest",
+ "predicates",
+ "rayon",
+ "regex",
+ "serde_json",
+ "tempfile",
  "tokio",
  "tracing",
 ]
