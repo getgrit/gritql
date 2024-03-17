@@ -2,7 +2,7 @@ mod analytics;
 mod analyze;
 pub mod commands;
 mod community;
-mod error;
+pub mod error;
 mod flags;
 mod github;
 mod jsonl;

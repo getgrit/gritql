@@ -4,12 +4,6 @@ version = "0.1.1"
 edition = "2021"
 authors = ["Grit Developers <support@grit.io>"]
 
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[[bin]]
-name = "marzano"
-path = "src/main.rs"
-
 [lib]
 path = "src/lib.rs"
 
