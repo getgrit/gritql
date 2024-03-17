@@ -16,3 +16,8 @@ mod utils;
 mod ux;
 #[cfg(feature = "workflows_v2")]
 mod workflows;
+
+// git2 uses openssl, but breaks windows, so we need 
+// to import openssl and specify the vendored feature in order
+// to prevet git2 from breaking on windows
+use openssl as _;

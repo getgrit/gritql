@@ -1957,13 +1957,8 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-opentelemetry",
- "tracing-subscriber",
- "tree-sitter-facade-sg",
- "tree-sitter-gritql",
- "tree-sitter-javascript",
  "trim-margin",
  "uuid",
- "walkdir",
 ]
 
 [[package]]
