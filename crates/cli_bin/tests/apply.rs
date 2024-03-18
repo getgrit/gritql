@@ -871,6 +871,7 @@ fn basic_js_in_vue_apply() -> Result<()> {
     let output = apply_cmd.output()?;
 
     // Assert that the command executed successfully
+    println!("OUTPUT: {:#?}", output);
     assert!(
         output.status.success(),
         "Command didn't finish successfully: {}",

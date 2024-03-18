@@ -77,7 +77,7 @@ impl GritServer {
         })?;
         let range = convert_lsp_range_to_grit_range(&range, &document.text);
         let grit_files = get_grit_files_from_uri(document.uri.as_str(), true).await;
-        let language = PatternLanguage::from_string(language.as_str(), &[]).unwrap_or_default();
+        let language = PatternLanguage::from_string(language.as_str(), None).unwrap_or_default();
 
         apply_pattern_body(
             &document,
