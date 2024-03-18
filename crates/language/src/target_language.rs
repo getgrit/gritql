@@ -16,10 +16,10 @@ use crate::{
     rust::Rust,
     solidity::Solidity,
     sql::Sql,
+    toml::Toml,
     tsx::Tsx,
     typescript::TypeScript,
     vue::Vue,
-    toml::Toml,
     yaml::Yaml,
 };
 use anyhow::Result;
