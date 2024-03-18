@@ -277,8 +277,8 @@ impl PatternLanguage {
 
     pub fn from_extension(extension: &str) -> Option<Self> {
         match extension {
-            "js" | "jsx" | "cjs" | "mjs" => Some(Self::JavaScript),
-            "ts" | "tsx" | "cts" | "mts" => Some(Self::TypeScript),
+            "js" | "jsx" | "cjs" | "mjs" => Some(Self::Tsx),
+            "ts" | "tsx" | "cts" | "mts" => Some(Self::Tsx),
             "html" => Some(Self::Html),
             "css" => Some(Self::Css),
             "json" => Some(Self::Json),
