@@ -348,7 +348,7 @@ fn language_specific_snippet(
         .child_by_field_name("language")
         .ok_or_else(|| anyhow!("missing language of languageSpecificSnippet"))?;
     let lang_name = lang_node.utf8_text(src.as_bytes())?.trim().to_string();
-    let _snippet_lang = TargetLanguage::from_string(&lang_name, &[])
+    let _snippet_lang = TargetLanguage::from_string(&lang_name, None)
         .ok_or_else(|| anyhow!("invalid language: {}", lang_name))?;
     let snippet_node = node
         .child_by_field_name("snippet")

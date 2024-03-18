@@ -24,7 +24,6 @@ use crate::{
 };
 use anyhow::Result;
 use enum_dispatch::enum_dispatch;
-use itertools::Itertools;
 use std::borrow::Cow;
 use std::fmt;
 use std::hash::Hash;
@@ -159,14 +158,10 @@ impl PatternLanguage {
             .utf8_text(src.as_bytes())
             .ok()?;
         let lang = lang.trim();
-        let mut cursor = langdecl.walk();
-        let flavors = langdecl
-            .children_by_field_name("flavor", &mut cursor)
-            .filter(|f| f.is_named())
-            .map(|f| f.utf8_text(src.as_bytes()).ok())
-            .collect::<Option<Vec<Cow<str>>>>()?;
-        let flavors = flavors.iter().map(|s| s.as_ref()).collect_vec();
-        Self::from_string(lang, &flavors)
+        let flavor = langdecl
+            .child_by_field_name("flavor")
+            .and_then(|f| f.utf8_text(src.as_bytes()).ok());
+        Self::from_string(lang, flavor.as_deref())
     }
 
     #[cfg(not(feature = "builtin-parser"))]
@@ -188,12 +183,12 @@ impl PatternLanguage {
         Self::get_language_with_parser(&mut parser, src)
     }
 
-    pub fn from_string(name: &str, flavor: &[&str]) -> Option<Self> {
+    pub fn from_string(name: &str, flavor: Option<&str>) -> Option<Self> {
         match name {
             "js" => match flavor {
-                ["jsx"] => Some(Self::Tsx),
-                ["typescript"] => Some(Self::TypeScript),
-                ["js_do_not_use"] => Some(Self::JavaScript),
+                Some("jsx") => Some(Self::Tsx),
+                Some("typescript") => Some(Self::TypeScript),
+                Some("js_do_not_use") => Some(Self::JavaScript),
                 _ => Some(Self::Tsx),
             },
             "html" => Some(Self::Html),
@@ -202,8 +197,8 @@ impl PatternLanguage {
             "java" => Some(Self::Java),
             "csharp" => Some(Self::CSharp),
             "markdown" => match flavor {
-                ["block"] => Some(Self::MarkdownBlock),
-                ["inline"] => Some(Self::MarkdownInline),
+                Some("block") => Some(Self::MarkdownBlock),
+                Some("inline") => Some(Self::MarkdownInline),
                 _ => Some(Self::MarkdownInline),
             },
             "python" => Some(Self::Python),
@@ -580,7 +575,7 @@ impl TargetLanguage {
         PatternLanguage::get_language(src).map(|l| l.try_into().ok())?
     }
 
-    pub fn from_string(name: &str, flavor: &[&str]) -> Option<Self> {
+    pub fn from_string(name: &str, flavor: Option<&str>) -> Option<Self> {
         PatternLanguage::from_string(name, flavor).map(|l| l.try_into().ok())?
     }
 
