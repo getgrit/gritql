@@ -7,7 +7,7 @@ use std::io::{Read, Seek, Write};
 use std::path::Path;
 use tokio::io::SeekFrom;
 
-use crate::config::{DefinitionKind, GritPatternMetadata};
+use crate::config::{DefinitionKind, GritPatternMetadata, RawGritDefinition};
 use crate::{
     config::{GritDefinitionConfig, GritPatternSample, ModuleGritPattern},
     fetcher::ModuleRepo,
@@ -380,6 +380,7 @@ pub fn get_patterns_from_md(
     root: &Option<String>,
 ) -> Result<Vec<ModuleGritPattern>> {
     let source = &file.content;
+    let content = source.clone();
     let tree = match to_mdast(source, &ParseOptions::default()) {
         Ok(tree) => tree,
         Err(e) => bail!("Failed to parse markdown source: {}", e),
@@ -442,6 +443,10 @@ pub fn get_patterns_from_md(
             path: extract_relative_file_path(file, root),
             position,
             meta,
+            raw: Some(RawGritDefinition {
+                content,
+                format: crate::parser::PatternFileExt::Md,
+            }),
         },
         module: source_module.clone(),
         local_name: name.to_string(),

@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/cli/tests/patterns.rs
+source: crates/cli_bin/tests/patterns.rs
 expression: v
 ---
 - config:
@@ -14,6 +14,7 @@ expression: v
     position:
       line: 18
       column: 9
+    raw: ~
   module:
     type: Module
     host: ""
@@ -36,6 +37,7 @@ expression: v
     position:
       line: 5
       column: 9
+    raw: ~
   module:
     type: Module
     host: ""
@@ -58,6 +60,7 @@ expression: v
     position:
       line: 1
       column: 9
+    raw: ~
   module:
     type: Module
     host: ""
@@ -80,6 +83,7 @@ expression: v
     position:
       line: 9
       column: 9
+    raw: ~
   module:
     type: Module
     host: ""
@@ -200,6 +204,9 @@ expression: v
     position:
       line: 10
       column: 1
+    raw:
+      format: markdown
+      content: "---\ntitle: Compare `null` using  `===` or `!==`\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\ntags: #good\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n## `$val == null` => `$val === null` to change\n\n```javascript\nif (val == null) {\n  done();\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n  console.log(\"This should be removed by grit patterns test --update\");\n}\n\n```\n\n## `$val != null` => `$val !== null` not channge\n\n```javascript\nif (val != null) {\n  done();\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while` not change\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null` not change\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null` not change\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
   module:
     type: Module
     host: ""
@@ -222,6 +229,7 @@ expression: v
     position:
       line: 13
       column: 10
+    raw: ~
   module:
     type: Module
     host: ""
@@ -343,6 +351,9 @@ expression: v
     position:
       line: 10
       column: 1
+    raw:
+      format: markdown
+      content: "---\ntitle: Compare `null` using  `===` or `!==`\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\ntags: #good, #exclude2\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n```\n\n```\n\n## `$val == null` => `$val === null` to change\n\n```javascript\nif (val == null) {\n  done();\n  cnonsole.log(\"This should be added to the output by patterns test --update\");\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` to channge\n\n```javascript\nif (val != null) {\n  done();\n  console.log(\"This should be added as well\");\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while` not change\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null` not change\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null` not change\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
   module:
     type: Module
     host: ""
@@ -464,6 +475,9 @@ expression: v
     position:
       line: 10
       column: 1
+    raw:
+      format: markdown
+      content: "---\ntitle: Compare `null` using  `===` or `!==`\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\ntags: #good, #exclude1\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n```\n\n```\n\n## `$val == null` => `$val === null`\n\n```javascript\nif (val == null) {\n  done();\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null`\n\n```javascript\nif (val != null) {\n  done();\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while`\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null`\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null`\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
   module:
     type: Module
     host: ""
@@ -486,6 +500,7 @@ expression: v
     position:
       line: 3
       column: 11
+    raw: ~
   module:
     type: Module
     host: ""
@@ -496,4 +511,3 @@ expression: v
   body: "engine marzano(0.1)\nlanguage js\n\n`console.error($_)` => .\n"
   kind: pattern
   visibility: public
-
