@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/gritmodule/src/markdown.rs
+source: crates/gritmodule/src/markdown.rs
 expression: patterns
 ---
 - config:
@@ -14,10 +14,12 @@ expression: patterns
     position:
       line: 6
       column: 1
+    raw:
+      format: markdown
+      content: "# Copy activity names to timekeeper\n\nWe cannot directly include `@getgrit/sdk` in `@getgrit/timekeeper` but we _can_ use Grit to copy over the function names list.\n\n```grit\nengine marzano(0.1)\nlanguage js\n\nmultifile {\n    $names = [],\n    bubble($names) file($name, $body) where {\n        $name <: r\".+sdk/src/stdlib/index.ts\",\n        $body <: contains `const stdlib = { $activities }` where {\n            $activities <: some bubble($names) $activity where {\n                $names += `'$activity'`\n            }\n        }\n    },\n    bubble($names) file($name, $body) where {\n      $body <: contains `const stdlib = [$old] as const`,\n      $name <: r\".+__generated__/stdlib.ts\",\n      $new_names = join(list = $names, separator = \", \"),\n      $old => `$new_names`,\n    },\n}\n```\n"
   module:
     host: github.com
     fullName: getgrit/rewriter
     remote: "https://github.com/getgrit/rewriter.git"
     providerName: github.com/getgrit/rewriter
   local_name: CloneActivities
-

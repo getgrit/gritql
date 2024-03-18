@@ -14,6 +14,7 @@ expression: resolved_patterns
     position:
       line: 5
       column: 9
+    raw: ~
   module:
     type: Module
     host: github.com
@@ -36,6 +37,7 @@ expression: resolved_patterns
     position:
       line: 1
       column: 9
+    raw: ~
   module:
     type: Module
     host: github.com
@@ -58,6 +60,7 @@ expression: resolved_patterns
     position:
       line: 9
       column: 9
+    raw: ~
   module:
     type: Module
     host: github.com
@@ -80,6 +83,7 @@ expression: resolved_patterns
     position:
       line: 4
       column: 9
+    raw: ~
   module:
     type: Module
     host: github.com
@@ -191,6 +195,9 @@ expression: resolved_patterns
     position:
       line: 10
       column: 1
+    raw:
+      format: markdown
+      content: "---\ntitle: Prefer ES6-style exports over module.exports\n---\n\nConverts CommonJS `module.exports` to ES6-style exports.\n\ntags: #js, #es6, #migration, #cjs, #commonjs\n\n```grit\nengine marzano(0.1)\nlanguage js\n\nor {\n    and {\n        // handle a default export of an object by exporting the individual original definitions\n        `module.exports = { $vals }` where {\n            $new_export = \"\",\n            // it's only safe to remove the overall export if every property is individually exported\n            $vals <: some bubble($new_export) $prop where {\n                $prop <: or {\n                    shorthand_property_identifier() as $name where { $value = $name },\n                    pair(key=$name, $value)\n                },\n                or {\n                    $program <: contains or {\n                        // does not handle difficult trying to match a sublist of the module.exports\n                        `const $name = require($val).$foo` => `export { $foo as $name } from $val`,\n                        `const $name = require($val)` => `export { default as $name } from $val`,\n                        `const $name = require($val).default` => `export { default as $name } from $val`,\n                        or {\n                            `let $name = $val`,\n                            `var $name = $val`,\n                            `const $name = $val`,\n                            function_declaration($name)\n                        } as $match => `export $match`\n                    },\n                    if ($value <: $name) {\n                        $new_export += `export { $name };\\n`\n                    } else {\n                        $new_export += `export const $name = $value;\\n`\n                    }\n                }\n            }\n        } => `$new_export`\n    },\n    // handle other default exports\n    `module.exports = $export` => `export default $export`,\n    // Handle individually named exports\n    `module.exports.$name = $export` => `export const $name = $export;\\n`\n}\n```\n\n## Transform direct exports\n\n```js\nmodule.exports.king = '9';\n```\n\n```js\nexport const king = '9';\n```\n\n## Transform default exports\n\n```js\nasync function createTeam() {\n  console.log('cool');\n}\n\nconst addTeamToOrgSubscription = () => console.log('cool');\n\nmodule.exports = {\n  createTeam,\n  addTeamToOrgSubscription,\n};\n```\n\n```js\nexport async function createTeam() {\n  console.log('cool');\n}\n\nexport const addTeamToOrgSubscription = () => console.log('cool');\n```\n\n### Keep inline values in tact\n\n```js\nconst king = '9';\n\nmodule.exports = {\n  king,\n  queen: '8',\n};\n```\n\n```js\nexport const king = '9';\n\nexport const queen = '8';\n```\n\n### Work on\n\n```js\nconst c1 = require('./mod1');\nconst c2 = require('./mod2');\nconst c3 = require('./mod3');\nconst myDefaultConst = require('./mod4').default;\nconst myRenamed = require('mod5').originalName;\nconst { sub1, sub2 } = require('mod5'); // not handled\n\nmodule.exports = { c1, c2, c3, myDefaultConst, myRenamed, sub1, sub2 };\n```\n\n```js\nexport { default as c1 } from './mod1';\nexport { default as c2 } from './mod2';\nexport { default as c3 } from './mod3';\nexport { default as myDefaultConst } from './mod4';\nexport { originalName as myRenamed } from 'mod5';\nconst { sub1, sub2 } = require('mod5'); // not handled\n\nexport { sub1 };\nexport { sub2 };\n```\n"
   module:
     type: Module
     host: github.com
@@ -213,6 +220,7 @@ expression: resolved_patterns
     position:
       line: 8
       column: 9
+    raw: ~
   module:
     type: Module
     host: github.com
@@ -235,6 +243,7 @@ expression: resolved_patterns
     position:
       line: 4
       column: 9
+    raw: ~
   module:
     type: Module
     host: github.com
@@ -257,6 +266,7 @@ expression: resolved_patterns
     position:
       line: 3
       column: 11
+    raw: ~
   module:
     type: Module
     host: github.com
@@ -336,6 +346,9 @@ expression: resolved_patterns
     position:
       line: 10
       column: 1
+    raw:
+      format: markdown
+      content: "---\ntitle: Remove unreachable code\n---\n\nRemove unreachable code found after `return` / `throw` / `continue` or `break` statements.\n\ntags: #good, #SE\n\n```grit\nengine marzano(0.1)\nlanguage js\n\nstatement_block($statements) where {\n    $deleting = \"false\",\n    $statements <: some bubble($deleting) $s where {\n        if ($deleting <: \"true\") {\n            $s => .\n        } else {\n            // we start deleting\n            if ($s <: or { throw_statement() , continue_statement() , return_statement() }) {\n                $deleting = \"true\",\n            }\n        }\n    }\n}\n```\n\n## Remove code after return\n\n```javascript\nfunction f() {\n  return 3;\n  1 + 1;\n}\n```\n\n```typescript\nfunction f() {\n  return 3;\n}\n```\n\n## Remove code after return, multiline\n\n```javascript\nfunction f() {\n  foo();\n  return 3;\n  1 + 1;\n}\n```\n\n```typescript\nfunction f() {\n  foo();\n  return 3;\n}\n```\n\n## Don't exit a scope\n\n```javascript\nfunction f() {\n  if (a) {\n    return 3;\n  }\n  1 + 1;\n}\n```\n"
   module:
     type: Module
     host: github.com
@@ -456,6 +469,9 @@ expression: resolved_patterns
     position:
       line: 10
       column: 1
+    raw:
+      format: markdown
+      content: "---\ntitle: Compare `null` using  `===` or `!==`\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\ntags: #good\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n```\n\n```\n\n## `$val == null` => `$val === null`\n\n```javascript\nif (val == null) {\n  done();\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null`\n\n```javascript\nif (val != null) {\n  done();\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while`\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null`\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null`\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
   module:
     type: Module
     host: github.com
@@ -478,6 +494,7 @@ expression: resolved_patterns
     position:
       line: 9
       column: 11
+    raw: ~
   module:
     type: Module
     host: github.com
@@ -588,6 +605,9 @@ expression: resolved_patterns
     position:
       line: 12
       column: 1
+    raw:
+      format: markdown
+      content: "---\ntitle: Strict tsconfig\n---\n\n# Strict tsconfig\n\nAdds `\"strict\": true, \"allowJs\": true, \"checkJs\": false` from a tsconfig's `compilerOptions`, and then removes existing redundant options (such as `noImplicitAny`).\n\ntags: #js, #ts, #tsconfig, #strict\n\n```grit\nengine marzano(0.1)\nlanguage json\n\npair(key=`\"compilerOptions\"`, $value) where {\n    $value <: object($properties),\n    $newOptions = [],\n\n    $properties <: maybe contains pair(key=`\"noImplicitAny\"`, value=`false` => `true`),\n    $properties <: maybe contains pair(key=`\"strict\"`, value=`false` => `true`),\n    if ($properties <: contains pair(key=`\"strict\"`, value=$strict)) {\n        $strict <: maybe `false` => `true`\n    } else {\n        $newOptions += `\"strict\": true`\n    },\n\n    // These are all included by default; ideally we'd delete, but can't, so just mark as true\n    $properties <: maybe contains pair(key=`\"noImplicitThis\"`) => .,\n    $properties <: maybe contains pair(key=`\"alwaysStrict\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictBindCallApply\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictNullChecks\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictFunctionTypes\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictPropertyInitialization\"`) => .,\n\n    // allow JS\n    if ($properties <: contains pair(key=`\"allowJs\"`, value=$allow_js)) {\n        $allow_js <: maybe `false` => `true`\n    } else {\n        $newOptions += `\"allowJs\": true`\n    },\n\n    // check JS\n    if ($properties <: contains pair(key=`\"checkJs\"`, value=$check_js)) {\n        $check_js <: maybe `true` => `false`\n    } else {\n        $newOptions += `\"checkJs\": false`\n    },\n\n    if (!$newOptions <: []) {\n        $joined = join(list=$newOptions, separator=\", \"),\n        $properties => `$joined, $properties`\n    }\n}\n```\n\n## Transform standard tsconfig.json\n\n```json\n{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"outDir\": \"../../dist/out-tsc\",\n    \"types\": [\"node\"],\n    \"foo\": \"bar\"\n  },\n  \"exclude\": [\"**/*.spec.ts\"],\n  \"include\": [\"**/*.ts\"]\n}\n```\n\n```json\n{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"allowJs\": true,\n    \"checkJs\": false,\n    \"outDir\": \"../../dist/out-tsc\",\n    \"types\": [\"node\"],\n    \"foo\": \"bar\"\n  },\n  \"exclude\": [\"**/*.spec.ts\"],\n  \"include\": [\"**/*.ts\"]\n}\n```\n\n## Handles redundant options\n\n```json\n{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"outDir\": \"../../dist/out-tsc\",\n    \"types\": [\"node\"],\n    \"foo\": \"bar\",\n    \"baz\": \"raz\"\n  },\n  \"exclude\": [\"**/*.spec.ts\"],\n  \"include\": [\"**/*.ts\"]\n}\n```\n\n```json\n{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"allowJs\": true,\n    \"checkJs\": false,\n    \"outDir\": \"../../dist/out-tsc\",\n    \"types\": [\"node\"],\n    \"foo\": \"bar\",\n    \"baz\": \"raz\"\n  },\n  \"exclude\": [\"**/*.spec.ts\"],\n  \"include\": [\"**/*.ts\"]\n}\n```\n\n## Handles existing strict\n\n```json\n{\n  \"compilerOptions\": {\n    \"target\": \"es5\",\n    \"lib\": [\"dom\", \"dom.iterable\", \"esnext\"],\n    \"allowJs\": true,\n    \"skipLibCheck\": true,\n    \"strict\": true,\n    \"forceConsistentCasingInFileNames\": true,\n    \"noEmit\": true,\n    \"esModuleInterop\": true,\n    \"module\": \"esnext\",\n    \"moduleResolution\": \"node\",\n    \"resolveJsonModule\": true,\n    \"isolatedModules\": true,\n    \"jsx\": \"preserve\",\n    \"incremental\": true,\n    \"noImplicitAny\": false,\n    \"plugins\": [\n      {\n        \"name\": \"next\"\n      }\n    ],\n    \"baseUrl\": \".\",\n    \"paths\": {\n      \"@/*\": [\"./*\"]\n    }\n  },\n  \"include\": [\"next-env.d.ts\", \"**/*.ts\", \"**/*.tsx\", \".next/types/**/*.ts\"],\n  \"exclude\": [\"node_modules\"]\n}\n```\n\n```json\n{\n  \"compilerOptions\": {\n    \"checkJs\": false,\n    \"target\": \"es5\",\n    \"lib\": [\"dom\", \"dom.iterable\", \"esnext\"],\n    \"allowJs\": true,\n    \"skipLibCheck\": true,\n    \"strict\": true,\n    \"forceConsistentCasingInFileNames\": true,\n    \"noEmit\": true,\n    \"esModuleInterop\": true,\n    \"module\": \"esnext\",\n    \"moduleResolution\": \"node\",\n    \"resolveJsonModule\": true,\n    \"isolatedModules\": true,\n    \"jsx\": \"preserve\",\n    \"incremental\": true,\n    \"noImplicitAny\": true,\n    \"plugins\": [\n      {\n        \"name\": \"next\"\n      }\n    ],\n    \"baseUrl\": \".\",\n    \"paths\": {\n      \"@/*\": [\"./*\"]\n    }\n  },\n  \"include\": [\"next-env.d.ts\", \"**/*.ts\", \"**/*.tsx\", \".next/types/**/*.ts\"],\n  \"exclude\": [\"node_modules\"]\n}\n```\n\n## Bugfix $decl <: false\n\n```json\n{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"outDir\": \"../../dist/out-tsc\",\n    \"module\": \"commonjs\",\n    \"types\": [\"node\", \"express\"],\n    \"allowJs\": true\n  },\n  \"exclude\": [\"jest.config.ts\", \"**/*.spec.ts\", \"**/*.test.ts\"],\n  \"include\": [\"**/*.ts\"]\n}\n```\n\n```json\n{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"checkJs\": false,\n    \"outDir\": \"../../dist/out-tsc\",\n    \"module\": \"commonjs\",\n    \"types\": [\"node\", \"express\"],\n    \"allowJs\": true\n  },\n  \"exclude\": [\"jest.config.ts\", \"**/*.spec.ts\", \"**/*.test.ts\"],\n  \"include\": [\"**/*.ts\"]\n}\n```\n"
   module:
     type: Module
     host: github.com
