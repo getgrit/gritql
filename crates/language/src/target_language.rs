@@ -159,7 +159,7 @@ impl PatternLanguage {
             .ok()?;
         let lang = lang.trim();
         let flavor = langdecl
-            .named_child_by_field_name("flavor")
+            .child_by_field_name("flavor")
             .and_then(|f| f.utf8_text(src.as_bytes()).ok());
         println!("FLAVOR: {:?}", flavor);
         Self::from_string(lang, flavor.as_deref())
