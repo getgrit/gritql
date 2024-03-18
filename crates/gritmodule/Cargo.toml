@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [lints]
-rust.unused_crate_dependencies = "forbid"
+rust.unused_crate_dependencies = "warn"
 
 [dependencies]
 marzano-core = { path = "../core", features = [], default-features = true }
