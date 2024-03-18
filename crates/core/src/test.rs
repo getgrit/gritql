@@ -9981,7 +9981,7 @@ fn inline_ignore_does_not_disable_next_line() {
 }
 
 #[test]
-fn respects_stacked_ignores() {
+fn jsx_respects_stacked_ignores() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
@@ -10020,6 +10020,38 @@ fn respects_stacked_ignores() {
                 |       <p>this.bar</p>
                 |   </div>)
                 |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn python_respects_stacked_ignores() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language python
+                |
+                |`print($x)` => `log($x)`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |print('hello')
+                |# grit-ignore
+                |# pylint: disable=missing-docstring
+                |print('hi')
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |log('hello')
+                |# grit-ignore
+                |# pylint: disable=missing-docstring
+                |print('hi')
                 |"#
             .trim_margin()
             .unwrap(),
