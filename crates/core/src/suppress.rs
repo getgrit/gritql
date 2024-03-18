@@ -31,7 +31,6 @@ pub(crate) fn is_binding_suppressed(
         let mut cursor = n.walk();
         let children = n.children(&mut cursor);
         for c in children {
-            // println!("c is {:?} and is comment wrapper is {}, c is kind {} with children {}", c.utf8_text(src.as_bytes()), lang.is_comment_wrapper(&c), c.kind(), c.named_child_count());
             if !(lang.is_comment(c.kind_id()) || lang.is_comment_wrapper(&c)) {
                 continue;
             }
@@ -95,31 +94,17 @@ fn comment_applies_to_range(
     lang: &impl Language,
     src: &str,
 ) -> Result<bool> {
-    let mut applicable = resolve!(comment_node.next_sibling());
-    // if next_sibling.is_none() {
-    //     return false;
-    // }
-    // let mut applicable = next_sibling.unwrap();
+    let mut applicable = resolve!(comment_node.next_named_sibling());
     while let Some(next) = applicable.next_named_sibling() {
-        applicable = next;
         if !lang.is_comment(applicable.kind_id())
             && !lang.is_comment_wrapper(&applicable)
             // Some languages have significant whitespace; continue until we find a non-whitespace non-comment node
             && !applicable.utf8_text(src.as_bytes())?.trim().is_empty()
         {
-            //     println!("Actually doing this once");
-            //     applicable = next;
-            // } else {
             break;
         }
+        applicable = next;
     }
-    // if comment_node
-    //     .utf8_text(src.as_bytes())
-    //     .unwrap()
-    //     .contains("/* grit-ignore")
-    // {
-    //     println!("Applicable is {:?}", applicable);
-    // }
     let applicable_range = applicable.range();
     Ok(applicable_range.start_point().row() == range.start_point().row())
 }
