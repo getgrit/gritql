@@ -782,12 +782,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "debug_print"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f215f9b7224f49fb73256115331f677d868b34d18b65dbe4db392e6021eea90"
-
-[[package]]
 name = "debugid"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1910,7 +1904,6 @@ version = "0.1.1"
 dependencies = [
  "ai_builtins",
  "anyhow",
- "assert_cmd",
  "buildkite-test-collector",
  "chrono",
  "clap",
@@ -1919,18 +1912,15 @@ dependencies = [
  "colored",
  "console",
  "dashmap",
- "debug_print",
  "dialoguer",
  "env_logger",
  "flate2",
- "fs_extra",
  "futures",
  "git2",
  "grit_cache",
  "ignore",
  "indicatif",
  "indicatif-log-bridge",
- "insta",
  "lazy_static",
  "log",
  "marzano-auth",
@@ -1941,12 +1931,10 @@ dependencies = [
  "marzano-test-utils",
  "marzano-util",
  "marzano_messenger",
- "ntest",
  "openssl",
  "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
- "predicates",
  "rayon",
  "regex",
  "reqwest",
@@ -1957,13 +1945,8 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-opentelemetry",
- "tracing-subscriber",
- "tree-sitter-facade-sg",
- "tree-sitter-gritql",
- "tree-sitter-javascript",
  "trim-margin",
  "uuid",
- "walkdir",
 ]
 
 [[package]]
