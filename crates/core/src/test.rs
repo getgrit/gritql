@@ -9981,6 +9981,54 @@ fn inline_ignore_does_not_disable_next_line() {
 }
 
 #[test]
+fn respects_stacked_ignores() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |`this.foo` => `this.bar`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |const Component = () => {
+                |   // grit-ignore
+                |   // eslint-disable-next-line
+                |   this.foo = 3;
+                |   return (
+                |   <div>
+                |       {/* grit-ignore */}
+                |       {/* eslint-disable-next-line */}
+                |       <button>this.foo</button>
+                |       <p>this.foo</p>
+                |   </div>)
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |const Component = () => {
+                |   // grit-ignore
+                |   // eslint-disable-next-line
+                |   this.foo = 3;
+                |   return (
+                |   <div>
+                |       {/* grit-ignore */}
+                |       {/* eslint-disable-next-line */}
+                |       <button>this.foo</button>
+                |       <p>this.bar</p>
+                |   </div>)
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn hcl_respects_suppression() {
     run_test_no_match({
         TestArg {
