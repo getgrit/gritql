@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/gritmodule/src/dot_grit.rs
+source: crates/gritmodule/src/dot_grit.rs
 expression: patterns
 ---
 - config:
@@ -14,6 +14,7 @@ expression: patterns
     position:
       line: 12
       column: 9
+    raw: ~
   module: ~
   local_name: no_tests_with_only
 - config:
@@ -28,6 +29,7 @@ expression: patterns
     position:
       line: 18
       column: 9
+    raw: ~
   module: ~
   local_name: no_tests_with_skip
 - config:
@@ -42,6 +44,6 @@ expression: patterns
     position:
       line: 4
       column: 9
+    raw: ~
   module: ~
   local_name: test_identifier
-

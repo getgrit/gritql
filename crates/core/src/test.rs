@@ -298,13 +298,12 @@ fn test_setup(dir: &str, pattern: &str, test: &str) -> Result<(ExecutionResult, 
         .join(pattern)
         .join(format!("{}.grit", pattern));
 
-    let lang = TargetLanguage::from_string(
+    let lang = TargetLanguage::from_extension(
         Path::new(test)
             .extension()
             .ok_or_else(|| anyhow!("test parameter {} must have an extension", test))?
             .to_str()
             .ok_or_else(|| anyhow!("test parameter {} is malformed path", test))?,
-        &[],
     )
     .ok_or_else(|| {
         anyhow!(

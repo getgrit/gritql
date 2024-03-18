@@ -14,9 +14,13 @@ use anyhow::{Context, Result};
 use marzano_util::rich_path::RichFile;
 use tokio::fs;
 
-#[derive(Debug, Clone)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum PatternFileExt {
+    #[serde(rename = "grit")]
     Grit,
+    #[serde(rename = "markdown")]
     Md,
 }
 

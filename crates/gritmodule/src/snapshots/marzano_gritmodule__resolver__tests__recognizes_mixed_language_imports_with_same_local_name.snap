@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/gritmodule/src/resolver.rs
+source: crates/gritmodule/src/resolver.rs
 expression: resolved_patterns
 ---
 - config:
@@ -14,6 +14,7 @@ expression: resolved_patterns
     position:
       line: 4
       column: 9
+    raw: ~
   module:
     type: Module
     host: github.com
@@ -36,6 +37,7 @@ expression: resolved_patterns
     position:
       line: 4
       column: 9
+    raw: ~
   module:
     type: Module
     host: github.com
@@ -46,4 +48,3 @@ expression: resolved_patterns
   body: "language python\n\npattern before_each_file_prep_imports() {\n    $_ where {\n        $GLOBAL_IMPORTED_SOURCES = [],\n        $GLOBAL_IMPORTED_NAMES = [],\n        $GLOBAL_BARE_IMPORTS = [],\n    }\n}"
   kind: pattern
   visibility: public
-

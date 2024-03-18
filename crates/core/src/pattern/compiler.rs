@@ -816,14 +816,26 @@ mod tests {
 
     use super::*;
 
+
+    #[test]
+    fn test_typescript_flavor() {
+        let libs = BTreeMap::new();
+        let pattern = r#"
+            language js (typescript)
+            `foo`
+        "#.to_owned();
+        let pattern = src_to_problem_libs(pattern, &libs, PatternLanguage::JavaScript.try_into().unwrap(), None, None, None).unwrap();
+        let language = pattern.problem.language.language_name();
+        assert_eq!(language, "TypeScript");
+    }
+
     #[test]
     fn language_parsing() {
         let pattern_javascript = "language js(js_do_not_use)";
         let pattern_typescript = "language js(typescript)";
         let pattern_tsx = "language js(jsx)";
-        let pattern_tsx1 = "language js(typescript, jsx)";
         let pattern_default = "language js";
-        let pattern_default_fall_through = "language js(typescript, js_do_not_use)";
+        let pattern_default_fall_through = "language js(block)";
         let js: TargetLanguage = PatternLanguage::JavaScript.try_into().unwrap();
         let ts: TargetLanguage = PatternLanguage::TypeScript.try_into().unwrap();
         let tsx: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
@@ -841,12 +853,6 @@ mod tests {
         );
         assert_eq!(
             TargetLanguage::get_language(pattern_tsx)
-                .unwrap()
-                .language_name(),
-            tsx.language_name()
-        );
-        assert_eq!(
-            TargetLanguage::get_language(pattern_tsx1)
                 .unwrap()
                 .language_name(),
             tsx.language_name()

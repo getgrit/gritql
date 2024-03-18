@@ -190,15 +190,12 @@ impl PatternLanguage {
 
     pub fn from_string(name: &str, flavor: &[&str]) -> Option<Self> {
         match name {
-            "js" | "javascript" => match flavor {
+            "js" => match flavor {
                 ["jsx"] => Some(Self::Tsx),
-                ["typescript", "jsx"] => Some(Self::Tsx),
                 ["typescript"] => Some(Self::TypeScript),
                 ["js_do_not_use"] => Some(Self::JavaScript),
                 _ => Some(Self::Tsx),
             },
-            "ts" => Some(Self::Tsx),
-            "tsx" => Some(Self::Tsx),
             "html" => Some(Self::Html),
             "css" => Some(Self::Css),
             "json" => Some(Self::Json),
@@ -280,8 +277,8 @@ impl PatternLanguage {
 
     pub fn from_extension(extension: &str) -> Option<Self> {
         match extension {
-            "js" | "jsx" | "cjs" | "mjs" => Some(Self::JavaScript),
-            "ts" | "tsx" | "cts" | "mts" => Some(Self::TypeScript),
+            "js" | "jsx" | "cjs" | "mjs" => Some(Self::Tsx),
+            "ts" | "tsx" | "cts" | "mts" => Some(Self::Tsx),
             "html" => Some(Self::Html),
             "css" => Some(Self::Css),
             "json" => Some(Self::Json),

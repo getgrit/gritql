@@ -64,7 +64,7 @@ pub async fn collect_patterns(
                     file_readers.push(tokio::spawn(get_patterns_from_file(
                         path.to_path_buf(),
                         source_module.clone(),
-                        ext.clone(),
+                        ext,
                     )));
                 }
             }

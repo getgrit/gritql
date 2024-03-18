@@ -9,7 +9,7 @@ use std::{
 };
 use tree_sitter::Parser;
 
-use crate::fetcher::ModuleRepo;
+use crate::{fetcher::ModuleRepo, parser::PatternFileExt};
 use anyhow::Result;
 
 #[derive(Debug, Deserialize)]
@@ -49,6 +49,14 @@ pub struct GritPatternMetadata {
     pub tags: Option<Vec<String>>,
 }
 
+/// This contains the raw pattern data
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct RawGritDefinition {
+    pub format: PatternFileExt,
+    pub content: String,
+}
+
 /// This is the pure implementation of a pattern definition, which can be picked up from any source
 #[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -62,6 +70,7 @@ pub struct GritDefinitionConfig {
     pub samples: Option<Vec<GritPatternSample>>,
     pub path: String,
     pub position: Option<Position>,
+    pub raw: Option<RawGritDefinition>,
 }
 
 impl GritDefinitionConfig {
@@ -74,6 +83,7 @@ impl GritDefinitionConfig {
             samples: serialized.samples,
             path,
             position: None,
+            raw: None,
         }
     }
 }
