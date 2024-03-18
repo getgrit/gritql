@@ -1,3 +1,4 @@
+#![cfg_attr(not(test), deny(unused_crate_dependencies))]
 use marzano_cli::commands::run_command;
 use marzano_cli::error::GoodError;
 // We always instrument
