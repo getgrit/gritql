@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Grit Developers <support@grit.io>"]
 
 [lints]
-rust.unused_crate_dependencies = "forbid"
+rust.unused_crate_dependencies = "warn"
 
 [lib]
 path = "src/lib.rs"
