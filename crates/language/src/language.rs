@@ -217,6 +217,10 @@ pub trait Language {
         false
     }
 
+    fn is_comment_wrapper(&self, _node: &tree_sitter::Node) -> bool {
+        false
+    }
+
     fn is_statement(&self, _id: SortId) -> bool {
         false
     }

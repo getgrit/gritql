@@ -49,9 +49,7 @@ impl Language for Toml {
         "Toml"
     }
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[
-            ("", ""),
-        ]
+        &[("", "")]
     }
 
     fn node_types(&self) -> &[Vec<Field>] {

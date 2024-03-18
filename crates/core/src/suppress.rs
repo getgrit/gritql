@@ -1,16 +1,16 @@
 use marzano_language::{
     language::Language,
     parent_traverse::{ParentTraverse, TreeSitterParentCursor},
-    target_language::TargetLanguage,
 };
 use tree_sitter::{Node, Range};
 
 use crate::binding::Binding;
+use crate::resolve;
 use anyhow::Result;
 
 pub(crate) fn is_binding_suppressed(
     binding: &Binding,
-    lang: &TargetLanguage,
+    lang: &impl Language,
     current_name: &Option<String>,
 ) -> Result<bool> {
     let (src, node) = match binding {
@@ -31,26 +31,10 @@ pub(crate) fn is_binding_suppressed(
         let mut cursor = n.walk();
         let children = n.children(&mut cursor);
         for c in children {
-            // TODO language specific conditions should be
-            // bound to the language trait.
-            // jsx_expression node should not be used as a condition
-            let (child, wrapped) = if c.kind() == "jsx_expression" {
-                (
-                    c.children(&mut c.walk())
-                        .find(|c| lang.is_comment(c.kind_id())),
-                    true,
-                )
-            } else {
-                (Some(c), false)
-            };
-            let child = match child {
-                Some(c) => c,
-                None => continue,
-            };
-            if !(lang.is_comment(child.kind_id())) {
+            if !(lang.is_comment(c.kind_id()) || lang.is_comment_wrapper(&c)) {
                 continue;
             }
-            if is_suppress_comment(&child, src, &target_range, wrapped, current_name)? {
+            if is_suppress_comment(&c, src, &target_range, current_name, lang)? {
                 return Ok(true);
             }
         }
@@ -63,19 +47,16 @@ fn is_suppress_comment(
     comment_node: &Node,
     src: &str,
     target_range: &Range,
-    wrapped: bool,
     current_name: &Option<String>,
+    lang: &impl Language,
 ) -> Result<bool> {
     let child_range = comment_node.range();
     let text = comment_node.utf8_text(src.as_bytes())?;
     let inline_suppress = child_range.end_point().row() >= target_range.start_point().row()
         && child_range.end_point().row() <= target_range.end_point().row();
     if !inline_suppress {
-        let pre_suppress = target_range.start_point().row() >= 1
-            && child_range.end_point().row() == target_range.start_point().row() - 1
-            && child_range.end_point().row() < target_range.end_point().row()
-            && (wrapped
-                || comment_occupies_entire_line(text.as_ref(), &comment_node.range(), src)?);
+        let pre_suppress = comment_applies_to_range(comment_node, target_range, lang, src)?
+            && comment_occupies_entire_line(text.as_ref(), &comment_node.range(), src)?;
         if !pre_suppress {
             return Ok(false);
         }
@@ -105,6 +86,27 @@ fn is_suppress_comment(
     let current_name = current_name.as_ref().unwrap();
     let ignored_rules = ignore_spec.split(',').map(|s| s.trim()).collect::<Vec<_>>();
     Ok(ignored_rules.contains(&&current_name[..]))
+}
+
+fn comment_applies_to_range(
+    comment_node: &Node,
+    range: &Range,
+    lang: &impl Language,
+    src: &str,
+) -> Result<bool> {
+    let mut applicable = resolve!(comment_node.next_named_sibling());
+    while let Some(next) = applicable.next_named_sibling() {
+        if !lang.is_comment(applicable.kind_id())
+            && !lang.is_comment_wrapper(&applicable)
+            // Some languages have significant whitespace; continue until we find a non-whitespace non-comment node
+            && !applicable.utf8_text(src.as_bytes())?.trim().is_empty()
+        {
+            break;
+        }
+        applicable = next;
+    }
+    let applicable_range = applicable.range();
+    Ok(applicable_range.start_point().row() == range.start_point().row())
 }
 
 fn comment_occupies_entire_line(text: &str, range: &Range, src: &str) -> Result<bool> {

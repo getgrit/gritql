@@ -4,4 +4,5 @@ class Button extends Component {
 }
 
 // grit-ignore test, another_test: should only match the rule third
+// eslint-disable-next-line
 const a = 1;
