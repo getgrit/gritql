@@ -1,16 +1,16 @@
 use marzano_language::{
     language::Language,
     parent_traverse::{ParentTraverse, TreeSitterParentCursor},
-    target_language::TargetLanguage,
 };
 use tree_sitter::{Node, Range};
 
 use crate::binding::Binding;
+use crate::resolve;
 use anyhow::Result;
 
 pub(crate) fn is_binding_suppressed(
     binding: &Binding,
-    lang: &TargetLanguage,
+    lang: &impl Language,
     current_name: &Option<String>,
 ) -> Result<bool> {
     let (src, node) = match binding {

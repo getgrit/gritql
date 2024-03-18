@@ -175,6 +175,10 @@ impl Language for TypeScript {
         id == self.comment_sort
     }
 
+    fn is_comment_wrapper(&self, node: &Node) -> bool {
+        node.kind() == "jsx_expression" && node.named_child_count() == 1 && node.named_child(0).map(|c| self.is_comment(c.kind_id())).is_some_and(|b| b)
+    }
+
     fn is_statement(&self, id: SortId) -> bool {
         self.statement_sorts.contains(&id)
     }
