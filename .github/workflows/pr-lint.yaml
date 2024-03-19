@@ -1,0 +1,28 @@
+name: pr-lint
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+
+jobs:
+  main:
+    name: validate PR title
+    runs-on: "nscloud-ubuntu-22.04-amd64-4x16"
+    steps:
+      - uses: amannn/action-semantic-pull-request@v4
+        with:
+          types: |
+            build
+            chore
+            ci
+            docs
+            feat
+            fix
+            perf
+            refactor
+            revert
+            style
+            test
