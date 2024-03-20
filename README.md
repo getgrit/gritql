@@ -1,7 +1,7 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/getgrit/gritql/raw/readme-brand/assets/grit-logo-darkmode.png">
-    <img alt="Grit logo" src="https://github.com/getgrit/raw/readme-brand/assets/images/grit-logo.png" width="40%">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/getgrit/gritql/readme-brand/assets/grit-logo-darkmode.png">
+    <img alt="Grit logo" src="https://raw.githubusercontent.com/getgrit/gritql/readme-brand/assets/grit-logo.png" width="40%">
   </picture>
 </div>
 
