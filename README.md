@@ -12,6 +12,8 @@
 [![CI Status](https://img.shields.io/github/actions/workflow/status/getgrit/gritql/main.yaml)](https://github.com/getgrit/gritql/actions/workflows/main.yaml)
 [![MIT License](https://img.shields.io/github/license/getgrit/gritql)](https://github.com/getgrit/gritql/blob/main/LICENSE)
 [![Discord](https://img.shields.io/discord/1063097320771698699?logo=discord&label=discord)](https://docs.grit.io/discord)
+[![Playground](https://img.shields.io/badge/playground-2D1DFF)](https://app.grit.io/studio)
+[![Docs](https://img.shields.io/badge/docs-2D1DFF)](https://docs.grit.io/language)
 
 </div>
 
