@@ -80,7 +80,7 @@ grit check
 
 GritQL comes from our experiences with conducting large scale refactors and migrations.
 
-Usually, migrations start with exploratory work with regular expressions. These are easy to start with, but most migrations end up accumulating additional requirements like ensuring the right packages are imported and excluding cases which don’t have a viable migration path.
+Usually, migrations start with exploratory work to figure out the scope of the problem—often using simple grep searches. These are easy to start with, but most migrations end up accumulating additional requirements like ensuring the right packages are imported and excluding cases which don’t have a viable migration path.
 
 Eventually, any complex migration ends up being a full codemod program written with a tool like [jscodeshift](https://github.com/facebook/jscodeshift). This comes with its own problems:
 - Most of the exploratory work has to be abandoned as you figure out how to represent your original regex search as an AST.
