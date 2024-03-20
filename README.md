@@ -92,7 +92,7 @@ Eventually, any complex migration ends up being a full codemod program written w
 GritQL is our attempt to develop a powerful middle ground:
 - Exploratory analysis is easy: just put a code snippet in backticks and use `$metavariables` for holes you want to represent.
 - Incrementally add complexity by introducing side conditions with where clauses.
-- Reuse named patterns to avoid rebuilding queries, and use shared patterns from our standard library for common tasks like ensuring modules are imported.
+- Reuse named patterns to avoid rebuilding queries, and use shared patterns from our [standard library](https://github.com/getgrit/stdlib) for common tasks like ensuring modules are imported.
 - Written in Rust for maximum performance: rewrite millions of lines of code in seconds.
 
 ## Acknowledgements
