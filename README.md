@@ -5,6 +5,9 @@
   </picture>
 </div>
 
+<hr>
+<br>
+
 <div align="center">
 
 [![CI Status](https://img.shields.io/github/actions/workflow/status/getgrit/gritql/main.yaml)](https://github.com/getgrit/gritql/actions/workflows/main.yaml)
