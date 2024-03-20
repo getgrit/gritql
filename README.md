@@ -1,8 +1,19 @@
-# GritQL
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/getgrit/gritql/raw/main/assets/grit-logo-darkmode.png">
+    <img alt="Grit logo" src="https://github.com/getgrit/raw/main/assets/images/grit-logo.png" width="40%">
+  </picture>
+</div>
+
+<br><br>
+
+<div align="center">
 
 [![CI Status](https://img.shields.io/github/actions/workflow/status/getgrit/gritql/main.yaml)](https://github.com/getgrit/gritql/actions/workflows/main.yaml)
 [![MIT License](https://img.shields.io/github/license/getgrit/gritql)](https://github.com/getgrit/gritql/blob/main/LICENSE)
 [![Discord](https://img.shields.io/discord/1063097320771698699?logo=discord&label=discord)](https://docs.grit.io/discord)
+
+</div>
 
 GritQL is a declarative query language for searching and modifying source code. GritQL focuses on a few areas:
 
