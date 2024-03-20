@@ -5,7 +5,6 @@
   </picture>
 </div>
 
-<hr>
 <br>
 
 <div align="center">
@@ -15,6 +14,8 @@
 [![Discord](https://img.shields.io/discord/1063097320771698699?logo=discord&label=discord)](https://docs.grit.io/discord)
 
 </div>
+
+<hr>
 
 GritQL is a declarative query language for searching and modifying source code. GritQL focuses on a few areas:
 
