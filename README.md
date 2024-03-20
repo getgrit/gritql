@@ -13,8 +13,8 @@
 [![MIT License](https://img.shields.io/github/license/getgrit/gritql)](https://github.com/getgrit/gritql/blob/main/LICENSE)
 [![Discord](https://img.shields.io/discord/1063097320771698699?logo=discord&label=discord)](https://docs.grit.io/discord)
 
-
-[Playground](https://app.grit.io/studio)
+[Playground](https://app.grit.io/studio) |
+[Tutorial](https://docs.grit.io/tutorials/gritql) |
 [Docs](https://docs.grit.io/language)
 
 </div>
