@@ -24,6 +24,8 @@ assert_cmd = "2.0.12"
 marzano-gritmodule = { path = "../gritmodule" }
 
 [features]
+default = ["marzano-cli/default"]
 grit_tracing = [
   "marzano-cli/grit_tracing",
 ]
+docgen = ["marzano-cli/docgen"]
