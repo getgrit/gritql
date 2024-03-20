@@ -21,15 +21,13 @@
 
 <hr>
 
-GritQL is a declarative query language for searching and modifying source code. GritQL focuses on a few areas:
+GritQL is a declarative query language for searching and modifying source code.
 
 - 📖 Start simply without learning AST details: any code snippet is a valid GritQL query
 - ⚡️ Use Rust and query optimization to scale up to 10M+ line repositories
 - 📦 Use Grit's built-in module system to reuse 200+ [standard patterns](https://github.com/getgrit/stdlib) or [share your own](https://docs.grit.io/guides/sharing#anchor-publishing-patterns)
 - ♻️ Once you learn GritQL, you can use it to rewrite any [target language](https://docs.grit.io/language/target-languages): JavaScript/TypeScript, Python, JSON, Java, Terraform, Solidity, CSS, Markdown, YAML, Rust, Go, or SQL
 - 🔧 GritQL makes it easy to include auto-fix rules for faster remediation
-
-Read the [docs](https://docs.grit.io/language) or try any query in the [studio](https://app.grit.io/studio).
 
 ## Getting started
 
@@ -45,19 +43,19 @@ curl -fsSL https://docs.grit.io/install | bash
 
 ### Usage
 
-Find all your `console.log` calls:
+Search for all your `console.log` calls by putting the desired pattern in backticks:
 
 ```
 grit apply '`console.log($_)`'
 ```
 
-Replace `console.log` with `winston.log`:
+Replace `console.log` with `winston.log`, using `=>` to create rewrites:
 
 ```
 grit apply '`console.log($msg)` => `winston.log($msg)`'
 ```
 
-Save the pattern to a [`grit.yaml`](https://docs.grit.io/guides/config) file and exclude test cases:
+Save the pattern to a [`grit.yaml`](https://docs.grit.io/guides/config) file and exclude test cases in a where clause:
 
 ```
 cat << 'EOF' > .grit/grit.yaml
