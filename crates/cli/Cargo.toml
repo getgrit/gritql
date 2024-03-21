@@ -26,7 +26,9 @@ indicatif-log-bridge = { workspace = true }
 colored = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
-git2 = { workspace = true }
+git2 = { version = "0.17.2", default-features = false, features = [
+  "vendored-openssl",
+] }
 regex = { workspace = true }
 openssl = { version = "0.10", features = ["vendored"] }
 marzano-core = { path = "../core", features = [
