@@ -32,7 +32,7 @@ After making your changes, run the [./resources/edit_grammars.mjs](./resources/e
 
 ### Snippet contexts
 
-Snippet contexts help when a snippet is a valid AST subtree, but needs to be in a larger tree to parse. For example, matching on a table name like ` $schema.$table` in SQL is not valid SQL by itself, only when surrounded by something like `SELECT x from $schema.$table`  is the snippet valid.
+Snippet contexts help when a snippet is a valid AST subtree, but needs to be in a larger tree to parse. For example, matching on a table name like ` $schema.$table` in SQL is not valid SQL by itself, only when surrounded by something like `SELECT x from $schema.$table` is the snippet valid.
 
 Snippet contexts are defined by implementing the `snippet_context_strings` method in the `Language` trait. This method returns a list of strings that are used to match the snippet in the larger tree. For example, the SQL implementation returns `["SELECT 1 from ", ";"]` to match a table name in a SQL query.
 
