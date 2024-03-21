@@ -13,7 +13,7 @@ Note that this codebase isn't yet extensively documented. If you get stuck, plea
 
 We use [feature flags](https://doc.rust-lang.org/cargo/reference/features.html) to control which parts of the codebase are compiled.
 
-Note that some proprietary server-only integrations are hidden behind the "server" feature flag. This flag is disabled by default and code should compile without any additions.
+Note that some proprietary server-only integrations are hidden behind the "server" feature flag. This flag is disabled by default, and code should compile without any additions.
 
 For major changes, we put new features should be put into the `grit_alpha` feature flag. Features that are ready for broad release should be put into the `grit_beta` feature flag. This is used for all public releases.
 
