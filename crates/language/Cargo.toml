@@ -27,19 +27,19 @@ tree-sitter-ruby = { path = "../../resources/language-metavariables/tree-sitter-
 tree-sitter-sql = { path = "../../resources/language-metavariables/tree-sitter-sql", optional = true }
 tree-sitter-vue = { path = "../../resources/language-metavariables/tree-sitter-vue", optional = true }
 tree-sitter-toml = { path = "../../resources/language-metavariables/tree-sitter-toml", optional = true }
-serde_json = { version = "1.0.91", features = ["preserve_order"] }
+serde_json = { workspace = true, features = ["preserve_order"] }
 marzano-util = { path = "../util" }
-regex = "1.7.1"
-anyhow = "1.0.70"
-itertools = "0.10.5"
-lazy_static = "1.4.0"
-ignore = { version = "0.4.21", optional = true }
-web-sys = { version = "0.3.66", features = ["console"], optional = true }
-tree-sitter-traversal = { version = "0.1.2", default-features = false }
-enum_dispatch = "0.3.12"
+regex = { workspace = true }
+anyhow = { workspace = true }
+itertools = { workspace = true }
+lazy_static = { workspace = true }
+ignore = { workspace = true, optional = true }
+web-sys = { workspace = true, features = ["console"], optional = true }
+tree-sitter-traversal = { workspace = true }
+enum_dispatch = { workspace = true }
 
 [dev-dependencies]
-trim-margin = "0.1.0"
+trim-margin = { workspace = true }
 
 [features]
 default = ["builtin-parser"]

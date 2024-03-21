@@ -9,15 +9,14 @@ rust.unused_crate_dependencies = "warn"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "4.1.13", features = ["derive"] }
-# Do *NOT* upgrade beyond 1.0.171 until https://github.com/serde-rs/serde/issues/2538 is fixed
-serde = { version = "1.0.164", features = ["derive"] }
-anyhow = "1.0.70"
-colored = "2.0.4"
-dialoguer = "0.10.4"
-log = { version = "0.4.19" }
-indicatif = "0.17.5"
-serde_json = "1.0.113"
+clap = { workspace = true, features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
+anyhow = { workspace = true }
+colored = { workspace = true }
+dialoguer = { workspace = true }
+log = { workspace = true }
+indicatif = { workspace = true }
+serde_json = { workspace = true }
 
 
 marzano-core = { path = "../core", features = [

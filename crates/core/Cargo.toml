@@ -14,36 +14,31 @@ tree-sitter-gritql = { path = "../../vendor/tree-sitter-gritql", optional = true
 marzano-language = { path = "../language", default-features = false }
 marzano-util = { path = "../util" }
 marzano-externals = { path = "../externals", optional = true }
-embeddings = { git = "https://github.com/getgrit/embeddings.git", optional = true }
-
-tracing = { version = "0.1.40", default-features = false, features = [] }
-tracing-opentelemetry = { version = "0.22.0", optional = true, default-features = false, features = [
-] }
-
-regex = "1.7.3"
-anyhow = "1.0.70"
-tree-sitter-traversal = { version = "0.1.2", default-features = false }
-itertools = "0.10.5"
-im = "15.1.0"
-serde_json = "1.0.96"
-serde = { version = "1.0.164", features = ["derive"] }
-sha2 = "0.10.8"
-elsa = "1.9.0"
-rayon = "1.8.0"
-log = "0.4.20"
-rand = "0.8.5"
-path-absolutize = { version = "3.1.1", optional = false, features = [
-  "use_unix_paths_on_wasm",
-] }
-getrandom = {version = "0.2.11", optional = true }
+embeddings = { workspace = true, optional = true }
+tracing = { workspace = true, features = [] }
+tracing-opentelemetry = { workspace = true, features = [], optional = true }
+regex = { workspace = true }
+anyhow = { workspace = true }
+tree-sitter-traversal = { workspace = true }
+itertools = { workspace = true }
+im = { workspace = true }
+serde_json = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+sha2 = { workspace = true }
+elsa = { workspace = true }
+rayon = { workspace = true }
+log = { workspace = true }
+rand = { workspace = true }
+path-absolutize = { workspace = true, features = ["use_unix_paths_on_wasm"], optional = false }
+getrandom = { workspace = true, optional = true }
 
 [dev-dependencies]
-similar = "2.2.1"
-lazy_static = "1.4.0"
-insta = { version = "1.30.0", features = ["yaml", "redactions"] }
-trim-margin = "0.1.0"
+similar = { workspace = true }
+lazy_static = { workspace = true }
+insta = { workspace = true, features = ["yaml", "redactions"] }
+trim-margin = { workspace = true }
 marzano-auth = { path = "../auth" }
-walkdir = "2.3.3"
+walkdir = { workspace = true }
 
 [features]
 default = [

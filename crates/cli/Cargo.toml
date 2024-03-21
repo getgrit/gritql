@@ -11,25 +11,24 @@ rust.unused_crate_dependencies = "warn"
 path = "src/lib.rs"
 
 [dependencies]
-anyhow = "1.0.70"
-clap = { version = "4.1.13", features = ["derive"] }
-indicatif = "0.17.5"
-ignore = "0.4.20"
-# Do *NOT* upgrade beyond 1.0.171 until https://github.com/serde-rs/serde/issues/2538 is fixed
-serde = { version = "1.0.164", features = ["derive"] }
-serde_json = "1.0.96"
-uuid = { version = "1.1", features = ["v4", "serde"] }
-tokio = { version = "1", features = ["full"] }
-chrono = { version = "0.4.26", features = ["serde"] }
-reqwest = { version = "0.11", features = ["json"] }
-lazy_static = "1.4.0"
-indicatif-log-bridge = "0.2.1"
-colored = "2.0.4"
-log = { version = "0.4.19" }
-env_logger = "0.10.0"
-git2 = "0.17.2"
-regex = "1.7.3"
-openssl = { version = "0.10", features = ["vendored"] }
+anyhow = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+indicatif = { workspace = true }
+ignore = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+uuid = { workspace = true, features = ["v4", "serde"] }
+tokio = { workspace = true, features = ["full"] }
+chrono = { workspace = true, features = ["serde"] }
+reqwest = { workspace = true, features = ["json"] }
+lazy_static = { workspace = true }
+indicatif-log-bridge = { workspace = true }
+colored = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
+git2 = { workspace = true }
+regex = { workspace = true }
+openssl = { workspace = true, features = ["vendored"] }
 marzano-core = { path = "../core", features = [
   "non_wasm",
 ], default-features = false }
@@ -39,38 +38,29 @@ marzano-lsp = { path = "../lsp" }
 marzano-util = { path = "../util", features = ["finder"] }
 marzano-auth = { path = "../auth" }
 marzano_messenger = { path = "../marzano_messenger" }
-cli_server = { git = "https://github.com/getgrit/cli_server.git", optional = true }
-ai_builtins = { git = "https://github.com/getgrit/ai_builtins.git", optional = true }
+cli_server = { workspace = true, optional = true }
+ai_builtins = { workspace = true, optional = true }
 grit_cache = { path = "../gritcache" }
-tempfile = "3.1"
-similar = "2.2.1"
-dialoguer = "0.10.4"
-console = "0.15.7"
-futures = "0.3.28"
-rayon = "1.8.0"
-dashmap = "5.5.3"
-clap-markdown = { git = "https://github.com/getgrit/clap-markdown", optional = true }
-flate2 = { version = "1.0.17", features = [
-  "rust_backend",
-], default-features = false }
-
-opentelemetry-otlp = { version = "0.14.0", optional = true, features = [
-  "http-proto",
-  "reqwest-client",
-] }
-opentelemetry = { version = "0.21.0", optional = true }
-opentelemetry_sdk = { version = "0.21.1", optional = true, features = [
-  "rt-tokio",
-] }
-tracing-opentelemetry = { version = "0.22.0", optional = true, default-features = false }
-
-tracing = { version = "0.1.40", default-features = false, features = [] }
+tempfile = { workspace = true }
+similar = { workspace = true }
+dialoguer = { workspace = true }
+console = { workspace = true }
+futures = { workspace = true }
+rayon = { workspace = true }
+dashmap = { workspace = true }
+clap-markdown = { workspace = true, optional = true }
+flate2 = { workspace = true, features = ["rust_backend"] }
+opentelemetry-otlp = { workspace = true, features = ["http-proto", "reqwest-client"], optional = true }
+opentelemetry = { workspace = true, optional = true }
+opentelemetry_sdk = { workspace = true, features = ["rt-tokio"], optional = true }
+tracing-opentelemetry = { workspace = true, optional = true }
+tracing = { workspace = true, features = [] }
 
 [dev-dependencies]
-trim-margin = "0.1.0"
-buildkite-test-collector = "0.1.1"
-similar = "2.2.1"
-reqwest = { version = "0.11.22", features = ["blocking", "json"] }
+trim-margin = { workspace = true }
+buildkite-test-collector = { workspace = true }
+similar = { workspace = true }
+reqwest = { workspace = true, features = ["blocking", "json"] }
 marzano-test-utils = { path = "../test_utils" }
 
 
