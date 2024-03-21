@@ -52,7 +52,7 @@ Here are the steps for adding a new target language:
 2. Add a simple parse test in `crates/core/src/test.rs` to ensure that the grammar is working.
 3. Copy the grammar file into `resources/metavariable-grammars`. This alternative grammar is used for parsing `snippets` in GritQL.
 4. Patch the metavariable grammar to include  `$.grit_metavariable` anywhere we want to substitute a metavariable. This is usually at least `$identifier` and `$literal`.
-    - For a snippet to match, it also needs to be a field. Often you’ll want to to wrap `$thing` like: `field('thing', choice($.grit_metavariable, $thing))`
+    - For a snippet to match, it also needs to be a field. Often you’ll want to wrap `$thing` like: `field('thing', choice($.grit_metavariable, $thing))`
 5. Add a new language implementation in `crates/core/src/languages`. This involves implementing the `Language` trait and adding a new `Language` enum variant.
 6. Add `snippet_context_strings` [like this](https://github.com/getgrit/gritql/blob/main/crates/language/src/sql.rs#L52) to provide context for snippets to match in.
 7. Add test cases for the language in `crates/core/src/test.rs`. This is a good time to add a few dozen test cases to ensure that the language is parsed correctly, and that the metavariable grammar is working.
