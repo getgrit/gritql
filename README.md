@@ -76,6 +76,30 @@ Run `grit check` to enforce your patterns as [custom lints](https://docs.grit.io
 grit check
 ```
 
+## Examples
+
+### Remove all `console.log` calls, unless they are inside a try-catch block
+
+```grit
+`console.log($log)` => . where {
+  $log <: not within `try { $_ } catch { $_ }`
+}
+```
+
+### Replace a method call with a new method call
+
+```grit
+`$instance.oldMethod($args)` => `$instance.newMethod($args)` where {
+  $program <: contains `$instance = new TargetClass($_)`
+}
+```
+
+### More examples
+
+Many more examples can be found in the [GritQL standard library](https://github.com/getgrit/stdlib/blob/main/.grit/patterns/).
+
+Patterns can be combined to create complex queries, including [large refactors](https://github.com/getgrit/stdlib/blob/main/.grit/patterns/python/openai.md).
+
 ## Why GritQL?
 
 GritQL comes from our experiences with conducting large scale refactors and migrations.
