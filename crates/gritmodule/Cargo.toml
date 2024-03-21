@@ -15,7 +15,9 @@ serde = { workspace = true, features = ["derive"] }
 serde_yaml = { workspace = true }
 anyhow = { workspace = true }
 rand = { workspace = true }
-git2 = { workspace = true, features = ["vendored-openssl"] }
+git2 = { version = "0.17.2", default-features = false, features = [
+  "vendored-openssl",
+] }
 lazy_static = { workspace = true }
 regex = { workspace = true }
 markdown = { workspace = true }

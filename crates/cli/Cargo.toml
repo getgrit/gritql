@@ -28,7 +28,7 @@ log = { workspace = true }
 env_logger = { workspace = true }
 git2 = { workspace = true }
 regex = { workspace = true }
-openssl = { workspace = true, features = ["vendored"] }
+openssl = { version = "0.10", features = ["vendored"] }
 marzano-core = { path = "../core", features = [
   "non_wasm",
 ], default-features = false }
