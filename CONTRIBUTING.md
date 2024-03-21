@@ -47,6 +47,7 @@ Most of these steps involve iteration over a set of sample programs to get close
 
 Here are the steps for adding a new target language:
 
+0. Add the language as a supported language in the GritQL grammar, [like this](https://github.com/getgrit/tree-sitter-gritql/commit/ea514376a6da7bfc187c05d93e403112cae87787).
 1. Find a tree sitter grammar for the language and add it as a submodule under `resources/language-submodules`.
 2. Add a simple parse test in `crates/core/src/test.rs` to ensure that the grammar is working.
 3. Copy the grammar file into `resources/metavariable-grammars`. This alternative grammar is used for parsing `snippets` in GritQL.
