@@ -6,7 +6,7 @@ fn main() {
     let mut config = cc::Build::new();
     config.include(&typescript_dir);
     config
-        .flag_if_supported("-Wno-unused-parameter")
+        .flag_if_supported("-w")
         .flag_if_supported("-Wno-unused-but-set-variable");
 
     for path in &[

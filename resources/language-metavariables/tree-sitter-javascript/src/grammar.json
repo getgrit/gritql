@@ -166,7 +166,7 @@
                           "members": [
                             {
                               "type": "FIELD",
-                              "name": "value",
+                              "name": "declaration",
                               "content": {
                                 "type": "SYMBOL",
                                 "name": "expression"
@@ -3617,12 +3617,8 @@
       ]
     },
     "_call_signature": {
-      "type": "FIELD",
-      "name": "parameters",
-      "content": {
-        "type": "SYMBOL",
-        "name": "formal_parameters"
-      }
+      "type": "SYMBOL",
+      "name": "_formal_parameters"
     },
     "_formal_parameter": {
       "type": "CHOICE",
@@ -3672,21 +3668,21 @@
                 }
               },
               {
-                "type": "FIELD",
-                "name": "arguments",
-                "content": {
-                  "type": "CHOICE",
-                  "members": [
-                    {
-                      "type": "SYMBOL",
-                      "name": "_arguments"
-                    },
-                    {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "_arguments"
+                  },
+                  {
+                    "type": "FIELD",
+                    "name": "arguments",
+                    "content": {
                       "type": "SYMBOL",
                       "name": "template_string"
                     }
-                  ]
-                }
+                  }
+                ]
               }
             ]
           }
@@ -6724,7 +6720,7 @@
         }
       ]
     },
-    "formal_parameters": {
+    "_formal_parameters": {
       "type": "SEQ",
       "members": [
         {
@@ -6970,12 +6966,8 @@
           }
         },
         {
-          "type": "FIELD",
-          "name": "parameters",
-          "content": {
-            "type": "SYMBOL",
-            "name": "formal_parameters"
-          }
+          "type": "SYMBOL",
+          "name": "_formal_parameters"
         },
         {
           "type": "FIELD",

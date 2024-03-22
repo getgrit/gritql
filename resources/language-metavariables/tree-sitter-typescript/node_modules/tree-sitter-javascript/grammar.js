@@ -147,8 +147,7 @@ module.exports = grammar({
             choice(
               field('declaration', $.declaration),
               seq(
-                // field(declaration) ?
-                field('value', $.expression),
+                field('declaration', $.expression),
                 $._semicolon,
               ),
             ),
@@ -837,7 +836,7 @@ module.exports = grammar({
     ),
 
     // Override
-    _call_signature: $ => field('parameters', $.formal_parameters),
+    _call_signature: $ => $._formal_parameters,
     _formal_parameter: $ => choice($.pattern, $.assignment_pattern),
 
     optional_chain: _ => '?.',
@@ -847,7 +846,7 @@ module.exports = grammar({
     call_expression: $ => choice(
       prec('call', seq(
         field('function', choice($.expression, $.import)),
-        field('arguments', choice($._arguments, $.template_string)),
+        choice($._arguments, field('arguments', $.template_string)),
       )),
       prec('member', seq(
         field('function', $.primary_expression),
@@ -1295,9 +1294,7 @@ module.exports = grammar({
       optional($._initializer),
     ),
 
-    // _formal_parameters?
-    // updated skip_snippet_compilation_sort
-    formal_parameters: $ => seq(
+    _formal_parameters: $ => seq(
       field('parenthesis', alias('(', $.l_parenthesis)),
       optional(seq(field('parameters',
         commaSep1($._formal_parameter),
@@ -1331,7 +1328,7 @@ module.exports = grammar({
       field('async', optional($.async)),
       optional(choice('get', 'set', '*')),
       field('name', $._property_name),
-      field('parameters', $.formal_parameters),
+      $._formal_parameters,
       field('body', $.statement_block),
     ),
 

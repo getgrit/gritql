@@ -173,7 +173,7 @@ module.exports = function defineGrammar(dialect) {
         prec('call', seq(
           field('function', choice($.expression, $.import)),
           field('type_arguments', optional($.type_arguments)),
-          field('arguments', choice($._arguments, $.template_string)),
+          choice($._arguments, field('arguments', $.template_string)),
         )),
         prec('member', seq(
           field('function', $.primary_expression),
@@ -730,7 +730,7 @@ module.exports = function defineGrammar(dialect) {
         optional('abstract'),
         'new',
         field('type_parameters', optional($.type_parameters)),
-        field('parameters', $.formal_parameters),
+        $._formal_parameters,
         '=>',
         field('type', $._type),
       )),
@@ -970,7 +970,7 @@ module.exports = function defineGrammar(dialect) {
 
       _call_signature: ($) => seq(
         field('type_parameters', optional($.type_parameters)),
-        field('parameters', $.formal_parameters),
+        $._formal_parameters,
         field('return_type', optional(
           choice($.type_annotation, $.asserts_annotation, $.type_predicate_annotation),
         )),
@@ -1004,7 +1004,7 @@ module.exports = function defineGrammar(dialect) {
         optional('abstract'),
         'new',
         field('type_parameters', optional($.type_parameters)),
-        field('parameters', $.formal_parameters),
+        $._formal_parameters,
         field('type', optional($.type_annotation)),
       ),
 
@@ -1047,7 +1047,7 @@ module.exports = function defineGrammar(dialect) {
 
       function_type: ($) => prec.left(seq(
         field('type_parameters', optional($.type_parameters)),
-        field('parameters', $.formal_parameters),
+        $._formal_parameters,
         '=>',
         field('return_type', choice($._type, $.asserts, $.type_predicate)),
       )),

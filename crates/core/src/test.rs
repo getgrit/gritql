@@ -5935,7 +5935,7 @@ fn dont_swallow_rewrites() {
         TestArgExpected {
             pattern: r#"
                 |engine marzano(0.1)
-                |language js
+                |language js(js_do_not_use)
                 |js"export default $susan" => `bob\n$susan`
                 |"#
             .trim_margin()

@@ -4,7 +4,7 @@ fn main() {
     let mut c_config = cc::Build::new();
     c_config.include(&src_dir);
     c_config
-        .flag_if_supported("-Wno-unused-parameter")
+        .flag_if_supported("-w")
         .flag_if_supported("-Wno-unused-but-set-variable")
         .flag_if_supported("-Wno-trigraphs");
     let parser_path = src_dir.join("parser.c");
@@ -30,7 +30,7 @@ fn main() {
     cpp_config.cpp(true);
     cpp_config.include(&src_dir);
     cpp_config
-        .flag_if_supported("-Wno-unused-parameter")
+        .flag_if_supported("-w")
         .flag_if_supported("-Wno-unused-but-set-variable");
     let scanner_path = src_dir.join("scanner.cc");
     cpp_config.file(&scanner_path);
