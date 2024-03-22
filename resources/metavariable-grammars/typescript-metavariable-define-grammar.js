@@ -131,22 +131,41 @@ module.exports = function defineGrammar(dialect) {
       ]),
 
     rules: {
-      public_field_definition: ($) => seq(
-        repeat(field('decorator', $.decorator)),
-        optional(choice(
-          seq('declare', optional($.accessibility_modifier)),
-          seq($.accessibility_modifier, optional('declare')),
-        )),
-        choice(
-          seq(field('static', optional($.static)), optional($.override_modifier), optional('readonly')),
-          seq(optional('abstract'), optional('readonly')),
-          seq(optional('readonly'), optional('abstract')),
+      public_field_definition: ($) =>
+        seq(
+          optional('declare'),
+          optional($.accessibility_modifier),
+          choice(
+            seq(
+              field('static', optional($.static)),
+              optional($.override_modifier),
+              optional('readonly'),
+            ),
+            seq(optional('abstract'), optional('readonly')),
+            seq(optional('readonly'), optional('abstract')),
+          ),
+          field('name', $._property_name),
+          optional(choice('?', '!')),
+          field('type', optional($.type_annotation)),
+          optional($._initializer),
         ),
-        field('name', $._property_name),
-        optional(choice('?', '!')),
-        field('type', optional($.type_annotation)),
-        optional($._initializer),
-      ),
+
+      // public_field_definition: ($) => seq(
+      //   repeat(field('decorator', $.decorator)),
+      //   optional(choice(
+      //     seq('declare', optional($.accessibility_modifier)),
+      //     seq($.accessibility_modifier, optional('declare')),
+      //   )),
+      //   choice(
+      //     seq(field('static', optional($.static)), optional($.override_modifier), optional('readonly')),
+      //     seq(optional('abstract'), optional('readonly')),
+      //     seq(optional('readonly'), optional('abstract')),
+      //   ),
+      //   field('name', $._property_name),
+      //   optional(choice('?', '!')),
+      //   field('type', optional($.type_annotation)),
+      //   optional($._initializer),
+      // ),
 
       // override original catch_clause, add optional type annotation
       catch_clause: ($) => seq(
@@ -388,39 +407,73 @@ module.exports = function defineGrammar(dialect) {
         choice($._semicolon, $._function_signature_automatic_semicolon),
       ),
 
-      class_body: ($) => seq(
-        '{',
-        repeat(choice(
-          seq(
-            repeat(field('decorator', $.decorator)),
-            field('member', $.method_definition),
-            optional($._semicolon),
-          ),
-          // As it happens for functions, the semicolon insertion should not
-          // happen if a block follows the closing paren, because then it's a
-          // *definition*, not a declaration. Example:
-          //     public foo()
-          //     { <--- this brace made the method signature become a definition
-          //     }
-          // The same rule applies for functions and that's why we use
-          // "_function_signature_automatic_semicolon".
-          seq(field('member', $.method_signature), choice($._function_signature_automatic_semicolon, ',')),
-          field('member', $.class_static_block),
-          seq(
-            field('member',
+      class_body: ($) =>
+        seq(
+          '{',
+          field(
+            'members',
+            repeat(
               choice(
-                $.abstract_method_signature,
-                $.index_signature,
-                $.method_signature,
-                $.public_field_definition,
+                $.decorator,
+                seq($.method_definition, optional($._semicolon)),
+                // As it happens for functions, the semicolon insertion should not
+                // happen if a block follows the closing paren, because then it's a
+                // *definition*, not a declaration. Example:
+                //     public foo()
+                //     { <--- this brace made the method signature become a definition
+                //     }
+                // The same rule applies for functions and that's why we use
+                // "_function_signature_automatic_semicolon".
+                seq($.method_signature, choice($._function_signature_automatic_semicolon, ',')),
+                $.class_static_block,
+                seq(
+                  choice(
+                    $.abstract_method_signature,
+                    $.index_signature,
+                    $.method_signature,
+                    $.public_field_definition,
+                  ),
+                  choice($._semicolon, ','),
+                ),
               ),
             ),
-            choice($._semicolon, ','),
           ),
-          ';',
-        )),
-        '}',
-      ),
+          '}',
+        ),
+
+      // class_body: ($) => seq(
+      //   '{',
+      //   repeat(choice(
+      //     seq(
+      //       repeat(field('decorator', $.decorator)),
+      //       field('member', $.method_definition),
+      //       optional($._semicolon),
+      //     ),
+      //     // As it happens for functions, the semicolon insertion should not
+      //     // happen if a block follows the closing paren, because then it's a
+      //     // *definition*, not a declaration. Example:
+      //     //     public foo()
+      //     //     { <--- this brace made the method signature become a definition
+      //     //     }
+      //     // The same rule applies for functions and that's why we use
+      //     // "_function_signature_automatic_semicolon".
+      //     seq(field('member', $.method_signature), choice($._function_signature_automatic_semicolon, ',')),
+      //     field('member', $.class_static_block),
+      //     seq(
+      //       field('member',
+      //         choice(
+      //           $.abstract_method_signature,
+      //           $.index_signature,
+      //           $.method_signature,
+      //           $.public_field_definition,
+      //         ),
+      //       ),
+      //       choice($._semicolon, ','),
+      //     ),
+      //     ';',
+      //   )),
+      //   '}',
+      // ),
 
       method_definition: ($) => prec.left(seq(
         optional($.accessibility_modifier),

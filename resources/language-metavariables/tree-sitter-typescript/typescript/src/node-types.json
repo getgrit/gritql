@@ -1557,26 +1557,28 @@
     "type": "class_body",
     "named": true,
     "fields": {
-      "decorator": {
+      "members": {
         "multiple": true,
         "required": false,
         "types": [
           {
-            "type": "decorator",
-            "named": true
-          }
-        ]
-      },
-      "member": {
-        "multiple": true,
-        "required": false,
-        "types": [
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": ";",
+            "named": false
+          },
           {
             "type": "abstract_method_signature",
             "named": true
           },
           {
             "type": "class_static_block",
+            "named": true
+          },
+          {
+            "type": "decorator",
             "named": true
           },
           {
@@ -5586,16 +5588,6 @@
     "type": "public_field_definition",
     "named": true,
     "fields": {
-      "decorator": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": "decorator",
-            "named": true
-          }
-        ]
-      },
       "name": {
         "multiple": false,
         "required": true,
