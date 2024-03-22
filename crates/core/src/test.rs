@@ -12725,3 +12725,25 @@ fn go_package_type() {
     })
     .unwrap();
 }
+
+#[test]
+fn css_property_value() {
+    run_test_match(TestArg {
+        pattern: r#"
+            |language css
+            |
+            |`var($a)`
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |#some-id {
+            |    some-property: 5px;
+            |    color: var(--red)
+            |  }
+            |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
