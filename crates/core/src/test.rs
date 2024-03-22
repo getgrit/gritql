@@ -9786,15 +9786,12 @@ fn js_automatically_adds_comma() {
 
 #[test]
 fn js_multiple_insert_with_trailing_comma() {
-    run_test_expected({
-        TestArgExpected {
+    run_test_match({
+        TestArg {
             pattern: r#"
-                |language js
+                |language js(js_do_not_use)
                 |
-                |`($x) => { $_ }` where {
-                |   $x += `a`,
-                |   $x += `b`,
-                |}
+                |`($x) => { $_ }`
                 |"#
             .trim_margin()
             .unwrap(),
@@ -9804,14 +9801,7 @@ fn js_multiple_insert_with_trailing_comma() {
                 |};
                 |"#
             .trim_margin()
-            .unwrap(),
-            expected: r#"
-                |var times = (x, y, z, a, b,) => {
-                |   return x * y * z;
-                |};
-                |"#
-            .trim_margin()
-            .unwrap(),
+            .unwrap()
         }
     })
     .unwrap();

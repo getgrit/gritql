@@ -316,7 +316,7 @@
         "named": true
       },
       {
-        "type": "function_expression",
+        "type": "function",
         "named": true
       },
       {
@@ -816,16 +816,6 @@
           }
         ]
       },
-      "parameter": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "identifier",
-            "named": true
-          }
-        ]
-      },
       "parameters": {
         "multiple": true,
         "required": false,
@@ -833,6 +823,10 @@
           {
             "type": ",",
             "named": false
+          },
+          {
+            "type": "identifier",
+            "named": true
           },
           {
             "type": "optional_parameter",
@@ -2707,7 +2701,7 @@
     }
   },
   {
-    "type": "function_declaration",
+    "type": "function",
     "named": true,
     "fields": {
       "async": {
@@ -2732,7 +2726,7 @@
       },
       "name": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "identifier",
@@ -2803,7 +2797,7 @@
     }
   },
   {
-    "type": "function_expression",
+    "type": "function_declaration",
     "named": true,
     "fields": {
       "async": {
@@ -2828,7 +2822,7 @@
       },
       "name": {
         "multiple": false,
-        "required": false,
+        "required": true,
         "types": [
           {
             "type": "identifier",
@@ -3802,36 +3796,45 @@
   {
     "type": "interface_body",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "call_signature",
-          "named": true
-        },
-        {
-          "type": "construct_signature",
-          "named": true
-        },
-        {
-          "type": "export_statement",
-          "named": true
-        },
-        {
-          "type": "index_signature",
-          "named": true
-        },
-        {
-          "type": "method_signature",
-          "named": true
-        },
-        {
-          "type": "property_signature",
-          "named": true
-        }
-      ]
+    "fields": {
+      "signatures": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": ";",
+            "named": false
+          },
+          {
+            "type": "call_signature",
+            "named": true
+          },
+          {
+            "type": "construct_signature",
+            "named": true
+          },
+          {
+            "type": "export_statement",
+            "named": true
+          },
+          {
+            "type": "index_signature",
+            "named": true
+          },
+          {
+            "type": "method_signature",
+            "named": true
+          },
+          {
+            "type": "property_signature",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -5082,36 +5085,45 @@
   {
     "type": "object_type",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "call_signature",
-          "named": true
-        },
-        {
-          "type": "construct_signature",
-          "named": true
-        },
-        {
-          "type": "export_statement",
-          "named": true
-        },
-        {
-          "type": "index_signature",
-          "named": true
-        },
-        {
-          "type": "method_signature",
-          "named": true
-        },
-        {
-          "type": "property_signature",
-          "named": true
-        }
-      ]
+    "fields": {
+      "signatures": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": ";",
+            "named": false
+          },
+          {
+            "type": "call_signature",
+            "named": true
+          },
+          {
+            "type": "construct_signature",
+            "named": true
+          },
+          {
+            "type": "export_statement",
+            "named": true
+          },
+          {
+            "type": "index_signature",
+            "named": true
+          },
+          {
+            "type": "method_signature",
+            "named": true
+          },
+          {
+            "type": "property_signature",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {

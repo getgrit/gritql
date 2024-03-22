@@ -938,7 +938,7 @@ module.exports = function defineGrammar(dialect) {
 
       object_type: ($) => seq(
         choice('{', '{|'),
-        optional(seq(
+        field('signatures', optional(seq(
           optional(choice(',', ';')),
           sepBy1(
             choice(',', $._semicolon),
@@ -952,7 +952,7 @@ module.exports = function defineGrammar(dialect) {
             ),
           ),
           optional(choice(',', $._semicolon)),
-        )),
+        ))),
         choice('}', '|}'),
       ),
 

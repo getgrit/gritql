@@ -150,7 +150,7 @@
         "named": true
       },
       {
-        "type": "function_expression",
+        "type": "function",
         "named": true
       },
       {
@@ -377,16 +377,6 @@
           },
           {
             "type": "statement_block",
-            "named": true
-          }
-        ]
-      },
-      "parameter": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "identifier",
             "named": true
           }
         ]
@@ -1550,7 +1540,7 @@
     }
   },
   {
-    "type": "function_declaration",
+    "type": "function",
     "named": true,
     "fields": {
       "async": {
@@ -1575,7 +1565,7 @@
       },
       "name": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "identifier",
@@ -1618,7 +1608,7 @@
     }
   },
   {
-    "type": "function_expression",
+    "type": "function_declaration",
     "named": true,
     "fields": {
       "async": {
@@ -1643,7 +1633,7 @@
       },
       "name": {
         "multiple": false,
-        "required": false,
+        "required": true,
         "types": [
           {
             "type": "identifier",

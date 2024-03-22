@@ -523,7 +523,7 @@ module.exports = grammar({
       $.null,
       $.object,
       $.array,
-      $.function_expression,
+      $.function,
       $.arrow_function,
       $.generator_function,
       $.class,
@@ -774,7 +774,8 @@ module.exports = grammar({
 
     class_heritage: $ => seq('extends', field('expression', $.expression)),
 
-    function_expression: $ => prec('literal', seq(
+    // as of 03/22/2023 function_expression in the original grammar
+    function: $ => prec('literal', seq(
       field('async', optional($.async)),
       'function',
       field('name', optional($.identifier)),
@@ -822,7 +823,7 @@ module.exports = grammar({
     arrow_function: $ => seq(
       field('async', optional($.async)),
       choice(
-        field('parameter', choice(
+        field('parameters', choice(
           alias($._reserved_identifier, $.identifier),
           $.identifier,
         )),
