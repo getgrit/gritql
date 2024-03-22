@@ -40,6 +40,7 @@ static YAML_LANGUAGE: OnceLock<Language> = OnceLock::new();
 static SQL_LANGUAGE: OnceLock<Language> = OnceLock::new();
 static VUE_LANGUAGE: OnceLock<Language> = OnceLock::new();
 static TOML_LANGUAGE: OnceLock<Language> = OnceLock::new();
+static PHP_LANGUAGE: OnceLock<Language> = OnceLock::new();
 
 #[wasm_bindgen(js_name = initializeTreeSitter)]
 pub async fn initialize_tree_sitter() -> Result<(), JsError> {
@@ -398,6 +399,7 @@ fn get_lang_store(language: &PatternLanguage) -> Result<&'static OnceLock<Langua
         PatternLanguage::Sql => Ok(&SQL_LANGUAGE),
         PatternLanguage::Vue => Ok(&VUE_LANGUAGE),
         PatternLanguage::Toml => Ok(&TOML_LANGUAGE),
+        PatternLanguage::Php => Ok(&PHP_LANGUAGE),
         PatternLanguage::Universal => Err(JsError::new("Universal does not have a parser")),
     }
 }
