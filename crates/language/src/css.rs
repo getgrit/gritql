@@ -53,7 +53,7 @@ impl Language for Css {
         "CSS"
     }
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[("", ""), ("GRIT_BLOCK { ", " }")]
+        &[("", ""), ("GRIT_BLOCK { ", " }"), ("GRIT_BLOCK { GRIT_PROPERTY: ", " }")]
     }
 
     fn node_types(&self) -> &[Vec<Field>] {
@@ -66,5 +66,25 @@ impl Language for Css {
 
     fn is_comment(&self, id: SortId) -> bool {
         id == self.comment_sort
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use marzano_util::print_node::print_node;
+    use crate::language::nodes_from_indices;
+
+    #[test]
+    fn import_variable() {
+        let snippet = r#"var(--red)"#;
+        let lang = Css::new(None);
+        let mut parser = tree_sitter::Parser::new().unwrap();
+        parser.set_language(lang.get_ts_language()).unwrap();
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        assert!(!nodes.is_empty());
+        print_node(&nodes[0].node);
     }
 }
