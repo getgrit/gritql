@@ -66,14 +66,10 @@ impl ThreadedCache {
         let file_vector = match std::fs::read(path) {
             Ok(bytes) => bytes,
             Err(e) => {
-                if e.kind() == std::io::ErrorKind::NotFound {
-                    return Ok(HashMap::new());
-                } else {
-                    return Err(e).context(format!(
-                        "Failed to read cache file {}",
-                        path.to_string_lossy()
-                    ));
-                }
+                return Err(e).context(format!(
+                    "Failed to read cache file {}",
+                    path.to_string_lossy()
+                ));
             }
         };
 
@@ -182,6 +178,9 @@ mod tests {
         if mismatches_cache_path.exists() {
             std::fs::remove_file(&mismatches_cache_path)?;
         }
+
+        // Assert cache raises err on no file existing + no cache refresh 
+        assert!(ThreadedCache::new(path.clone(), false).await.is_err());
 
         // Create an empty cache
         let (cache, manager) = ThreadedCache::new(path.clone(), true).await?;
