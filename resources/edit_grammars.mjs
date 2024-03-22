@@ -57,7 +57,8 @@ const allLanguages = [
   'typescript',
   'yaml',
   'toml',
-  'vue'
+  'vue',
+  'php'
 ];
 
 // For these languages, copyMvGrammar is optional
