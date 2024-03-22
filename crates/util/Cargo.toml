@@ -10,22 +10,19 @@ rust.unused_crate_dependencies = "warn"
 
 [dependencies]
 tree-sitter = { path = "../../vendor/tree-sitter-facade", package = "tree-sitter-facade-sg" }
-serde = { version = "1.0.164", features = ["derive"] }
-base64 = "0.21.2"
-anyhow = "1.0.70"
-log = { version = "0.4.20", optional = true }
-ignore = { version = "0.4.21", optional = true }
-sha2 = { version = "0.10.8" }
-derive_builder = "0.13.1"
-tree-sitter-traversal = { version = "0.1.2", default-features = false }
-reqwest = { version = "0.11.22", features = [
-  "blocking",
-  "json",
-], optional = true }
-tokio = { version = "1.35.1", optional = true }
-serde_json = "1.0.114"
-futures = { version = "0.3.29", optional = true}
-http = "0.2.11"
+serde = { workspace = true, features = ["derive"] }
+base64 = { workspace = true }
+anyhow = { workspace = true }
+log = { workspace = true, optional = true }
+ignore = { workspace = true, optional = true }
+sha2 = { workspace = true }
+derive_builder = { workspace = true }
+tree-sitter-traversal = { workspace = true }
+reqwest = { workspace = true, features = ["blocking", "json"], optional = true }
+tokio = { workspace = true, optional = true }
+serde_json = { workspace = true }
+futures = { workspace = true, optional = true }
+http = { workspace = true }
 
 [features]
 finder = ["log", "ignore"]

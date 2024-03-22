@@ -9,9 +9,9 @@ rust.unused_crate_dependencies = "warn"
 [dependencies]
 marzano-gritmodule = { path = "../gritmodule", features = [
 ], default-features = false }
-anyhow = "1.0.70"
+anyhow = { workspace = true }
 marzano-util = { path = "../util", features = [], default-features = false }
 
 [dev-dependencies]
 marzano-util = { path = "../util", features = ["finder"] }
-tokio = { version = "1.35.1" }
+tokio = { workspace = true }
