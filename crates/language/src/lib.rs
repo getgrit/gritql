@@ -19,6 +19,7 @@ pub mod solidity;
 pub mod sql;
 pub mod target_language;
 pub mod toml;
+pub mod php;
 pub mod tsx;
 pub mod typescript;
 pub mod vue;

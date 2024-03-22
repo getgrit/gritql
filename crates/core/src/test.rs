@@ -2816,6 +2816,25 @@ fn simple_toml() {
 }
 
 #[test]
+fn simple_php() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |`[$foo]` where {
+                |    $foo => `bar`
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"[workspace]"#.to_owned(),
+            expected: r#"[bar]"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn multi_args_snippet() {
     run_test_match({
         TestArg {
