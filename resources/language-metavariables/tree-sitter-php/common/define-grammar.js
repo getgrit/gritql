@@ -1576,7 +1576,7 @@ module.exports = function defineGrammar(dialect) {
       )),
 
       _semicolon: $ => choice($._automatic_semicolon, ';'),
-      grit_metavariable: ($) => token(prec(PREC.GRIT_METAVARIABLE, choice('µ...', /µ[a-zA-Z_][a-zA-Z0-9_]*/))),
+      grit_metavariable: ($) => token(prec(PREC.GRIT_METAVARIABLE, choice('µ[...]', /µ\[[a-zA-Z_][a-zA-Z0-9_]*\]/))),
     },
   });
 };
