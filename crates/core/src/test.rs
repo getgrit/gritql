@@ -12725,3 +12725,27 @@ fn go_package_type() {
     })
     .unwrap();
 }
+
+#[test]
+fn call_php() {
+    run_test_no_match({
+        TestArg {
+            pattern: r#"
+                <?php
+                $color = "red";
+                `TEST`
+                echo "My car is " . $color . "<br>";
+                ?>
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |/* grit-ignore */
+                |echo "hello world"
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}

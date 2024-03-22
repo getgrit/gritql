@@ -26,6 +26,7 @@ pub struct PatternsDirectory {
     sql: BTreeMap<String, String>,
     vue: BTreeMap<String, String>,
     toml: BTreeMap<String, String>,
+    php: BTreeMap<String, String>,
     universal: BTreeMap<String, String>,
 }
 
@@ -80,6 +81,7 @@ impl PatternsDirectory {
             sql: BTreeMap::new(),
             vue: BTreeMap::new(),
             toml: BTreeMap::new(),
+            php: BTreeMap::new(),
             universal: BTreeMap::new(),
         }
     }
@@ -109,6 +111,7 @@ impl PatternsDirectory {
             PatternLanguage::Sql => &mut self.sql,
             PatternLanguage::Vue => &mut self.vue,
             PatternLanguage::Toml => &mut self.toml,
+            PatternLanguage::Php => &mut self.php,
             PatternLanguage::Universal => &mut self.universal,
         }
     }
@@ -135,6 +138,7 @@ impl PatternsDirectory {
             PatternLanguage::Sql => &self.sql,
             PatternLanguage::Vue => &self.vue,
             PatternLanguage::Toml => &self.toml,
+            PatternLanguage::Php => &self.php,
             PatternLanguage::Universal => &self.universal,
         }
     }
