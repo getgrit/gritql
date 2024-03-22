@@ -1298,9 +1298,9 @@ module.exports = grammar({
     _formal_parameters: $ => seq(
       field('parenthesis', alias('(', $.l_parenthesis)),
       optional(seq(field('parameters',
-        commaSep1($._formal_parameter),
+        commaSep1($._formal_parameter)),
         optional(','),
-      ))),
+      )),
       field('parenthesis', alias(')', $.r_parenthesis)),
     ),
 
