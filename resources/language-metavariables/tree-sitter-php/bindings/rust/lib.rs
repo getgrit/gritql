@@ -22,6 +22,10 @@ extern "C" {
     fn tree_sitter_php_only() -> Language;
 }
 
+pub fn language() -> Language {
+    unsafe { tree_sitter_php() }
+}
+
 /// Get the tree-sitter [Language][] for this grammar.
 ///
 /// [Language]: https://docs.rs/tree-sitter/*/tree_sitter/struct.Language.html

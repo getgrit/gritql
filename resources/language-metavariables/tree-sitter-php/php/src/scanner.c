@@ -1,4 +1,4 @@
-#include "../../common/scanner.h"
+#include "scanner.h"
 
 void *tree_sitter_php_external_scanner_create() {
     return external_scanner_create();

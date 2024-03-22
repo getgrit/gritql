@@ -3230,6 +3230,10 @@
         {
           "type": "SYMBOL",
           "name": "null"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "grit_metavariable"
         }
       ]
     },
@@ -7150,6 +7154,10 @@
             "name": "escape_sequence"
           },
           {
+            "type": "SYMBOL",
+            "name": "grit_metavariable"
+          },
+          {
             "type": "SEQ",
             "members": [
               {
@@ -7204,6 +7212,10 @@
           {
             "type": "SYMBOL",
             "name": "escape_sequence"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "grit_metavariable"
           },
           {
             "type": "SEQ",
@@ -9114,6 +9126,26 @@
           "value": ";"
         }
       ]
+    },
+    "grit_metavariable": {
+      "type": "TOKEN",
+      "content": {
+        "type": "PREC",
+        "value": 100,
+        "content": {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "µ..."
+            },
+            {
+              "type": "PATTERN",
+              "value": "µ[a-zA-Z_][a-zA-Z0-9_]*"
+            }
+          ]
+        }
+      }
     }
   },
   "extras": [

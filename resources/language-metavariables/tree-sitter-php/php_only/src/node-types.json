@@ -86,6 +86,10 @@
         "named": true
       },
       {
+        "type": "grit_metavariable",
+        "named": true
+      },
+      {
         "type": "heredoc",
         "named": true
       },
@@ -5455,11 +5459,11 @@
   },
   {
     "type": "float",
-    "named": false
+    "named": true
   },
   {
     "type": "float",
-    "named": true
+    "named": false
   },
   {
     "type": "fn",
@@ -5488,6 +5492,10 @@
   {
     "type": "goto",
     "named": false
+  },
+  {
+    "type": "grit_metavariable",
+    "named": true
   },
   {
     "type": "heredoc_end",

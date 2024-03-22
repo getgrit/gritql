@@ -41,6 +41,7 @@ const PREC = {
   CALL: 24,
   MEMBER: 25,
   DEREF: 26,
+  GRIT_METAVARIABLE: 100,
 };
 
 module.exports = function defineGrammar(dialect) {
@@ -624,6 +625,7 @@ module.exports = function defineGrammar(dialect) {
         $._string,
         $.boolean,
         $.null,
+        $.grit_metavariable,
       ),
 
       float: _ => /\d*(_\d+)*((\.\d*(_\d+)*)?([eE][\+-]?\d+(_\d+)*)|(\.\d*(_\d+)*)([eE][\+-]?\d+(_\d+)*)?)/,
@@ -1574,6 +1576,7 @@ module.exports = function defineGrammar(dialect) {
       )),
 
       _semicolon: $ => choice($._automatic_semicolon, ';'),
+      grit_metavariable: ($) => token(prec(PREC.GRIT_METAVARIABLE, choice('µ...', /µ[a-zA-Z_][a-zA-Z0-9_]*/))),
     },
   });
 };

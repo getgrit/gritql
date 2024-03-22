@@ -86,6 +86,10 @@
         "named": true
       },
       {
+        "type": "grit_metavariable",
+        "named": true
+      },
+      {
         "type": "heredoc",
         "named": true
       },
@@ -1849,6 +1853,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "member_access_expression",
           "named": true
         },
@@ -2405,6 +2413,10 @@
         },
         {
           "type": "escape_sequence",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -5511,6 +5523,10 @@
   {
     "type": "goto",
     "named": false
+  },
+  {
+    "type": "grit_metavariable",
+    "named": true
   },
   {
     "type": "heredoc_end",

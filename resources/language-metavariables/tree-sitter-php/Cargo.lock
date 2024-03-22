@@ -61,7 +61,7 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter-php"
-version = "0.22.0"
+version = "0.22.2"
 dependencies = [
  "cc",
  "tree-sitter",
