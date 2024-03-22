@@ -493,7 +493,7 @@ pub fn fields_for_nodes(language: &TSLanguage, types: &str) -> Vec<Vec<Field>> {
 #[cfg(test)]
 mod tests {
     use super::nodes_from_indices;
-    use crate::{language::Language, tsx::Tsx};
+    use crate::{language::Language, php::Php, tsx::Tsx};
     use tree_sitter::Parser;
     use trim_margin::MarginTrimmable;
 
@@ -534,6 +534,14 @@ mod tests {
         let lang = Tsx::new(None);
         let subbed = lang.substitute_metavariable_prefix(snippet);
         assert_eq!(subbed, "µfoo$('µbar')");
+    }
+
+    #[test]
+    fn test_php_substitute_variable() {
+        let snippet = "$foo$('$bar')";
+        let lang = Php::new(None);
+        let subbed = lang.substitute_metavariable_prefix(snippet);
+        assert_eq!(subbed, "µ[foo]$('µ[bar]')");
     }
 
     #[test]

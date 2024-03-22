@@ -64,4 +64,13 @@ impl Language for Php {
     fn metavariable_sort(&self) -> SortId {
         self.metavariable_sort
     }
+
+    fn substitute_metavariable_prefix(&self, src: &str) -> String {
+        self.metavariable_regex()
+            .replace_all(
+                src,
+                format!("{}[$1]", self.metavariable_prefix_substitute()).as_str(),
+            )
+            .to_string()
+    }
 }
