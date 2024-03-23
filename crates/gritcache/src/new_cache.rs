@@ -39,8 +39,8 @@ impl ThreadedCache {
         };
 
         let (sender, receiver) = mpsc::channel::<HashKey>();
+        let mut writer = Self::new_writer(&mismatches_path)?;
         let manager = thread::spawn(move || {
-            let mut writer = Self::new_writer(&mismatches_path).unwrap();
             while let Ok(key) = receiver.recv() {
                 writer.write_all(&key).unwrap();
             }
@@ -105,7 +105,8 @@ impl ThreadedCache {
                 .create(true)
                 .append(true)
                 .open(path)
-                .context("Failed to open cache file".to_string())?,
+                .context("Failed to open cache file".to_string())
+                .context("Please run `grit init` or set GRIT_CACHE_DIR to cache check results")?,
         );
 
         Ok(writer)
@@ -172,6 +173,7 @@ mod tests {
 
         let path = PathBuf::from(".");
         let mismatches_cache_path = path.join(MISMATCHES_CACHE_NAME);
+        let bad_path = PathBuf::from("./doesnotexist").join(MISMATCHES_CACHE_NAME);
 
         println!(
             "mismatches_cache_path: {}",
@@ -182,6 +184,9 @@ mod tests {
         if mismatches_cache_path.exists() {
             std::fs::remove_file(&mismatches_cache_path)?;
         }
+
+        // assert cache creation fails gracefully on invalid paths
+        assert!(ThreadedCache::new(bad_path.clone(), false).await.is_err());
 
         // Create an empty cache
         let (cache, manager) = ThreadedCache::new(path.clone(), true).await?;

@@ -46,7 +46,6 @@ tempfile = "3.1"
 similar = "2.2.1"
 dialoguer = "0.10.4"
 console = "0.15.7"
-futures = "0.3.28"
 rayon = "1.8.0"
 dashmap = "5.5.3"
 clap-markdown = { git = "https://github.com/getgrit/clap-markdown", optional = true }

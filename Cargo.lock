@@ -1915,7 +1915,6 @@ dependencies = [
  "dialoguer",
  "env_logger",
  "flate2",
- "futures",
  "git2",
  "grit_cache",
  "ignore",
