@@ -257,7 +257,8 @@ pub(crate) async fn run_plumbing(
                     )
                 })?;
 
-            let libs = get_grit_files_from(None).await?;
+            let cwd = std::env::current_dir()?;
+            let libs = get_grit_files_from(Some(cwd)).await?;
             get_marzano_pattern_test_results(
                 patterns,
                 &libs,

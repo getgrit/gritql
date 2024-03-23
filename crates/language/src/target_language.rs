@@ -24,6 +24,7 @@ use crate::{
 };
 use anyhow::Result;
 use enum_dispatch::enum_dispatch;
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::fmt;
 use std::hash::Hash;
@@ -42,7 +43,8 @@ use std::path::PathBuf;
 #[cfg(feature = "finder")]
 use std::str::FromStr;
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum PatternLanguage {
     JavaScript,
     TypeScript,

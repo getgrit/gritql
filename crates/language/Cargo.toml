@@ -28,6 +28,7 @@ tree-sitter-sql = { path = "../../resources/language-metavariables/tree-sitter-s
 tree-sitter-vue = { path = "../../resources/language-metavariables/tree-sitter-vue", optional = true }
 tree-sitter-toml = { path = "../../resources/language-metavariables/tree-sitter-toml", optional = true }
 serde_json = { version = "1.0.91", features = ["preserve_order"] }
+serde = { version = "1.0.91", features = ["derive"] }
 marzano-util = { path = "../util" }
 regex = "1.7.1"
 anyhow = "1.0.70"
