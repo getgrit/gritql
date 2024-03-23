@@ -33,10 +33,7 @@ pub(crate) mod workflows_list;
 pub(crate) mod docgen;
 
 use crate::{
-    analytics::{
-        is_telemetry_disabled, is_telemetry_foregrounded, AnalyticsEvent, AnalyticsEventName,
-        CompletedEvent, ErroredEvent,
-    },
+    analytics::{is_telemetry_disabled, AnalyticsEvent, CompletedEvent, ErroredEvent},
     flags::{GlobalFormatFlags, OutputFormat},
     updater::Updater,
 };
@@ -59,10 +56,10 @@ use parse::ParseArgs;
 use patterns::{PatternCommands, Patterns};
 use plumbing::PlumbingArgs;
 use serde::Serialize;
+use std::fmt;
 use std::io::Write;
 use std::process::{ChildStdin, Command, Stdio};
 use std::time::Instant;
-use std::{fmt, process::Child};
 use tracing::instrument;
 use version::VersionArgs;
 
@@ -189,7 +186,7 @@ fn maybe_spawn_analytics_worker(
     command: &Commands,
     args: &[String],
     updater: &Updater,
-) -> Result<Option<Child>> {
+) -> Result<Option<ChildStdin>> {
     if is_telemetry_disabled() {
         return Ok(None);
     }
@@ -220,37 +217,33 @@ fn maybe_spawn_analytics_worker(
         .arg(command.to_string())
         .arg("--args")
         .arg(args.join(" "))
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .stdin(Stdio::piped());
 
-    if !is_telemetry_foregrounded() {
-        cmd.stdout(Stdio::null());
-        cmd.stderr(Stdio::null());
+    let stdin = cmd.spawn()?.stdin;
+
+    match stdin {
+        Some(stdin) => Ok(Some(stdin)),
+        None => Err(Error::msg(
+            "Failed to open stdin of analytics worker process",
+        )),
     }
-
-    let child = cmd.spawn()?;
-
-    Ok(Some(child))
 }
 
 fn write_analytics_event(
     analytics_worker: Option<&mut ChildStdin>,
     analytics_event: &AnalyticsEvent,
 ) {
-    let serialized_name = serde_json::to_string(&AnalyticsEventName::from(analytics_event));
+    let serialized_name = serde_json::to_string(&analytics_event);
     let serialized_event = serde_json::to_string(&analytics_event);
     match (analytics_worker, serialized_name, serialized_event) {
         (Some(analytics_worker), Ok(serialized_name), Ok(serialized_event)) => {
             let data = format!("{}\t{}\n", serialized_name, serialized_event);
-            let res = analytics_worker.write_all(data.as_bytes());
-            if let Err(e) = res {
-                println!("Failed to write to analytics worker: {:?}", e);
-            }
-        }
-        (None, _, _) => {
-            // No analytics worker to send event to, do nothing
+            let _ = analytics_worker.write_all(data.as_bytes());
         }
         (worker, name_err, event_err) => {
-            println!(
+            debug!(
                 "Failed to serialize analytics event: {:?} {:?} {:?}",
                 worker, name_err, event_err
             );
@@ -268,15 +261,14 @@ pub async fn run_command() -> Result<()> {
     let mut updater = Updater::from_current_bin().await?;
     updater.dump().await?;
 
-    let mut analytics_child =
+    let mut analytics_worker =
         match maybe_spawn_analytics_worker(&app.command, &analytics_args, &updater) {
             Err(_e) => {
-                println!("Failed to start the analytics worker process");
                 // We failed to start the analytics worker process
                 None
             }
             Ok(None) => None,
-            Ok(Some(child)) => Some(child),
+            Ok(Some(analytics_worker)) => Some(analytics_worker),
         };
 
     let log_level = app.format_flags.log_level.unwrap_or(match &app.command {
@@ -311,7 +303,7 @@ pub async fn run_command() -> Result<()> {
     let start = Instant::now();
 
     write_analytics_event(
-        analytics_child.as_mut().map(|c| c.stdin.as_mut().unwrap()),
+        analytics_worker.as_mut(),
         &AnalyticsEvent::from_cmd(&app.command),
     );
 
@@ -367,21 +359,7 @@ pub async fn run_command() -> Result<()> {
         Err(_) => AnalyticsEvent::Errored(ErroredEvent::from_elapsed(elapsed)),
     };
 
-    write_analytics_event(
-        analytics_child.as_mut().map(|c| c.stdin.as_mut().unwrap()),
-        &final_analytics_event,
-    );
-
-    // If we are in the foreground, wait for the analytics worker to finish
-    if is_telemetry_foregrounded() {
-        if let Some(mut child) = analytics_child {
-            println!("Waiting for analytics worker to finish");
-            let res = child.wait();
-            if let Err(e) = res {
-                println!("Failed to wait for analytics worker: {:?}", e);
-            }
-        }
-    }
+    write_analytics_event(analytics_worker.as_mut(), &final_analytics_event);
 
     res
 }
