@@ -2,7 +2,7 @@ use std::sync::OnceLock;
 
 use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
 
-static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/Php-node-types.json");
+static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/php-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 
@@ -14,7 +14,7 @@ fn language() -> TSLanguage {
 }
 #[cfg(feature = "builtin-parser")]
 fn language() -> TSLanguage {
-    tree_sitter_Php::language().into()
+    tree_sitter_php::language().into()
 }
 
 #[derive(Debug, Clone)]

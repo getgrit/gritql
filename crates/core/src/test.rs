@@ -2816,19 +2816,21 @@ fn simple_toml() {
 }
 
 #[test]
-fn simple_php() {
-    run_test_expected({
-        TestArgExpected {
+fn call_php() {
+    run_test_no_match({
+        TestArg {
             pattern: r#"
                 |language php
-                |`[$foo]` where {
-                |    $foo => `bar`
-                |}
+                |
+                |`TEST`
                 |"#
             .trim_margin()
             .unwrap(),
-            source: r#"[workspace]"#.to_owned(),
-            expected: r#"[bar]"#.to_owned(),
+            source: r#"
+                |echo "hello world"
+                |"#
+            .trim_margin()
+            .unwrap(),
         }
     })
     .unwrap();

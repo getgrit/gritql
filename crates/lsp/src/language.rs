@@ -48,6 +48,7 @@ pub fn target_language_to_language_id(target_language: TargetLanguage) -> &'stat
         TargetLanguage::Sql(_) => "sql",
         TargetLanguage::Vue(_) => "vue",
         TargetLanguage::Toml(_) => "toml",
+        TargetLanguage::Php(_) => "php",
     }
 }
 

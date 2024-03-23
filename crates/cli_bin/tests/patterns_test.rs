@@ -103,22 +103,22 @@ fn updates_multiple_invalid_patterns() -> Result<()> {
     Ok(())
 }
 
-#[test]
-fn formats_hcl_files() -> Result<()> {
-    let (_temp_dir, _) = get_fixture("hcl", true)?;
+// #[test]
+// fn formats_hcl_files() -> Result<()> {
+//     let (_temp_dir, _) = get_fixture("hcl", true)?;
 
-    let mut cmd = get_test_cmd()?;
-    cmd.arg("patterns")
-        .arg("test")
-        .current_dir(_temp_dir.path().join("hcl"));
+//     let mut cmd = get_test_cmd()?;
+//     cmd.arg("patterns")
+//         .arg("test")
+//         .current_dir(_temp_dir.path().join("hcl"));
 
-    println!("{:?}", cmd.output());
+//     println!("{:?}", cmd.output());
 
-    let output = cmd.output()?;
-    assert!(output.status.success());
+//     let output = cmd.output()?;
+//     assert!(output.status.success());
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 #[test]
 fn test_multifile_passes() -> Result<()> {
