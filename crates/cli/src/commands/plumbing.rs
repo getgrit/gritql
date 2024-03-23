@@ -18,7 +18,8 @@ use crate::resolver::{get_grit_files_from, resolve_from, Source};
 use crate::utils::is_pattern_name;
 use futures::future::join_all;
 
-use super::super::analytics::{track_event, AnalyticsArgs};
+use super::super::analytics::track_event;
+use super::super::analytics::AnalyticsArgs;
 use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
 use super::check::{run_check, CheckArg};
 use super::init::{init_config_from_cwd, init_global_grit_modules};
@@ -268,6 +269,7 @@ pub(crate) async fn run_plumbing(
                     filter: None,
                     exclude: vec![],
                 },
+                parent.into(),
             )
             .await
         }
