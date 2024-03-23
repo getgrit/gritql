@@ -40,7 +40,7 @@ use crate::{
     flags::{GlobalFormatFlags, OutputFormat},
     updater::Updater,
 };
-use anyhow::{Error, Result};
+use anyhow::{Result};
 use apply::ApplyArgs;
 use auth::{Auth, AuthCommands};
 use check::CheckArg;
@@ -52,7 +52,7 @@ use indicatif_log_bridge::LogWrapper;
 use init::InitArgs;
 use install::InstallArgs;
 use list::ListArgs;
-use log::{debug, LevelFilter};
+use log::{LevelFilter};
 use lsp::LspArgs;
 use marzano_messenger::emit::ApplyDetails;
 use parse::ParseArgs;
