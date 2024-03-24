@@ -3,15 +3,16 @@ use super::{
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::VariableSourceLocations,
-    Context, State,
+    State,
 };
-use crate::{binding::Binding, resolve};
+use crate::{binding::Binding, context::Context, resolve};
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use marzano_language::parent_traverse::{ParentTraverse, TreeSitterParentCursor};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
 use tree_sitter::Node;
+
 #[derive(Debug, Clone)]
 pub struct Within {
     pub(crate) pattern: Pattern,
@@ -59,7 +60,7 @@ impl Matcher for Within {
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut did_match = false;

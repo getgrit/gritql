@@ -25,7 +25,7 @@ pub(crate) fn apply_effects<'a>(
     the_filename: &str,
     new_filename: &mut Constant,
     language: &TargetLanguage,
-    current_name: &Option<String>,
+    current_name: Option<&str>,
     logs: &mut AnalysisLogs,
 ) -> Result<(String, Option<Vec<Range<usize>>>)> {
     let mut our_effects = Vec::new();

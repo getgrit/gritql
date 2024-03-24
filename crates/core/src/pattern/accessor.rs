@@ -1,6 +1,6 @@
 use std::{borrow::Cow, collections::BTreeMap};
 
-use crate::{binding::Constant, equivalence::are_bindings_equivalent};
+use crate::{binding::Constant, context::Context, equivalence::are_bindings_equivalent};
 
 use super::{
     compiler::CompilationContext,
@@ -10,7 +10,6 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
     variable::{Variable, VariableSourceLocations},
-    Context,
 };
 use anyhow::{anyhow, bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -174,7 +173,7 @@ impl Matcher for Accessor {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match self.get(state)? {

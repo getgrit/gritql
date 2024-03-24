@@ -1,5 +1,3 @@
-use crate::binding::Binding;
-
 use super::{
     compiler::CompilationContext,
     functions::{Evaluator, FuncEvaluation},
@@ -7,12 +5,12 @@ use super::{
     predicates::Predicate,
     resolved_pattern::ResolvedPattern,
     variable::VariableSourceLocations,
-    Context, State,
+    State,
 };
+use crate::{binding::Binding, context::Context};
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
-
 use std::collections::BTreeMap;
 use tree_sitter::Node;
 
@@ -70,7 +68,7 @@ impl Matcher for Or {
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let ResolvedPattern::Binding(binding_vector) = &binding {
@@ -157,7 +155,7 @@ impl Evaluator for PrOr {
     fn execute_func<'a>(
         &'a self,
         init_state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         for p in self.predicates.iter() {

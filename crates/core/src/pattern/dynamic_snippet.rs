@@ -7,7 +7,7 @@ use marzano_util::{
     position::{Position, Range},
 };
 
-use crate::split_snippet::split_snippet;
+use crate::{context::Context, split_snippet::split_snippet};
 
 use super::{
     accessor::Accessor,
@@ -18,7 +18,7 @@ use super::{
     patterns::{Matcher, Name},
     resolved_pattern::ResolvedPattern,
     variable::{register_variable, Variable, VariableSourceLocations, GLOBAL_VARS_SCOPE_INDEX},
-    Context, State,
+    State,
 };
 #[derive(Debug, Clone)]
 pub enum DynamicSnippetPart {
@@ -52,7 +52,7 @@ impl DynamicPattern {
     pub fn text<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<String> {
         let resolved = ResolvedPattern::from_dynamic_pattern(self, state, context, logs)?;
@@ -71,7 +71,7 @@ impl Matcher for DynamicPattern {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if binding.text(&state.files)? == self.text(state, context, logs)? {

@@ -1,24 +1,22 @@
-use crate::binding::Binding;
-
 use super::{
     code_snippet::from_back_tick_node,
     compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::{Variable, VariableSourceLocations},
-    Context, State,
+    State,
 };
+use crate::{binding::Binding, context::Context};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use im::vector;
+use marzano_language::{language::Language, target_language::TargetLanguage};
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 use marzano_util::position::Range;
-
 use regex::Regex;
 use std::collections::BTreeMap;
 use tree_sitter::Node;
 
-use marzano_language::{language::Language, target_language::TargetLanguage};
 #[derive(Debug, Clone)]
 pub struct RegexPattern {
     pub regex: RegexLike,
@@ -149,7 +147,7 @@ impl Matcher for RegexPattern {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let text = binding.text(&state.files)?;

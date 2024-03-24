@@ -1,4 +1,7 @@
-use crate::binding::{Binding, Constant};
+use crate::{
+    binding::{Binding, Constant},
+    context::Context,
+};
 use itertools::Itertools;
 use marzano_util::analysis_logs::AnalysisLogs;
 use rand::prelude::SliceRandom;
@@ -14,7 +17,7 @@ use super::{
         patterns_to_resolved, JoinFn, LazyBuiltIn, ListBinding, ResolvedPattern, ResolvedSnippet,
     },
     variable::get_absolute_file_name,
-    Context, State,
+    State,
 };
 use anyhow::{anyhow, bail, Result};
 use im::vector;
@@ -56,10 +59,10 @@ impl GritCall for CallBuiltIn {
     fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
-        context.built_ins.call(self, context, state, logs)
+        context.built_ins().call(self, context, state, logs)
     }
 }
 
@@ -113,7 +116,7 @@ impl BuiltIns {
     fn call<'a>(
         &self,
         call: &'a CallBuiltIn,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         state: &mut State<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {

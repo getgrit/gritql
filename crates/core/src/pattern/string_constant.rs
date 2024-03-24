@@ -1,9 +1,12 @@
 use super::{
     patterns::{Matcher, Name},
     resolved_pattern::ResolvedPattern,
-    Context, State,
+    State,
 };
-use crate::binding::{node_text, Binding};
+use crate::{
+    binding::{node_text, Binding},
+    context::Context,
+};
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use marzano_language::language::{Language, LeafEquivalenceClass, SortId};
@@ -42,7 +45,7 @@ impl Matcher for StringConstant {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        _context: &Context<'a>,
+        _context: &'a impl Context<'a>,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let text = binding.text(&state.files)?;
@@ -86,7 +89,7 @@ impl Matcher for AstLeafNode {
         &'a self,
         binding: &ResolvedPattern<'a>,
         _state: &mut State<'a>,
-        _context: &Context<'a>,
+        _context: &'a impl Context<'a>,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let ResolvedPattern::Binding(b) = binding {

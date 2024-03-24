@@ -1,14 +1,13 @@
-use anyhow::Result;
-use tree_sitter::Node;
-
 use super::{
     patterns::{Matcher, Name},
     resolved_pattern::{ResolvedPattern, ResolvedSnippet},
     state::State,
-    Context,
 };
 use crate::binding::{Binding, Constant};
+use crate::context::Context;
+use anyhow::Result;
 use marzano_util::{analysis_logs::AnalysisLogs, tree_sitter_util::children_by_field_id_count};
+use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub struct BooleanConstant {
@@ -42,7 +41,7 @@ impl Matcher for BooleanConstant {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        _context: &Context<'a>,
+        _context: &'a impl Context<'a>,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let binding_as_bool = match binding {

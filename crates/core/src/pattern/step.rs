@@ -8,10 +8,11 @@ use super::{
     resolved_pattern::{File, ResolvedPattern},
     state::{FilePtr, State},
     variable::{VariableSourceLocations, GLOBAL_VARS_SCOPE_INDEX},
-    Context, FileOwner,
+    FileOwner,
 };
 use crate::{
     binding::Constant,
+    context::Context,
     orphan::{get_orphaned_ranges, remove_orphaned_ranges},
     pattern::{InputRanges, MatchRanges},
     text_unparser::apply_effects,
@@ -189,11 +190,11 @@ impl Matcher for Step {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut parser = Parser::new()?;
-        parser.set_language(context.language.get_ts_language())?;
+        parser.set_language(context.language().get_ts_language())?;
 
         let files = if let Some(files) = extract_file_pointers(binding) {
             files
@@ -220,7 +221,7 @@ impl Matcher for Step {
 
         // todo, for multifile we need to split up the matches by file.
         let (variables, ranges, suppressed) =
-            state.bindings_history_to_ranges(context.language, &context.name);
+            state.bindings_history_to_ranges(context.language(), context.name());
 
         let input_ranges = InputRanges {
             ranges,
@@ -257,13 +258,13 @@ impl Matcher for Step {
                     &state.files,
                     &file.name,
                     &mut new_filename,
-                    context.language,
-                    &context.name,
+                    context.language(),
+                    context.name(),
                     logs,
                 )?;
                 if let Some(new_ranges) = new_ranges {
                     let tree = parser.parse(new_src.as_bytes(), None).unwrap().unwrap();
-                    let orphans = get_orphaned_ranges(&tree, &new_src, context.language);
+                    let orphans = get_orphaned_ranges(&tree, &new_src, context.language());
                     let (_cleaned_tree, cleaned_src) =
                         remove_orphaned_ranges(&mut parser, orphans, &new_src)?;
                     let new_src = if let Some(src) = cleaned_src {
@@ -279,13 +280,13 @@ impl Matcher for Step {
                         new_src,
                         Some(ranges),
                         true,
-                        context.language,
+                        context.language(),
                         logs,
                     )?;
-                    context.files.push(owned_file);
+                    context.files().push(owned_file);
                     state
                         .files
-                        .push_revision(&file_ptr, context.files.last().unwrap())
+                        .push_revision(&file_ptr, context.files().last().unwrap())
                 }
             };
         }
@@ -298,9 +299,9 @@ impl Matcher for Step {
                     let name = file.name(&state.files).text(&state.files).unwrap().into();
                     let body = file.body(&state.files).text(&state.files).unwrap().into();
                     let owned_file =
-                        FileOwner::new(name, body, None, true, context.language, logs)?;
-                    context.files.push(owned_file);
-                    let _ = state.files.push_new_file(context.files.last().unwrap());
+                        FileOwner::new(name, body, None, true, context.language(), logs)?;
+                    context.files().push(owned_file);
+                    let _ = state.files.push_new_file(context.files().last().unwrap());
                 } else {
                     bail!("Expected a list of files")
                 }

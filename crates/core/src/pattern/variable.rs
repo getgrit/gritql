@@ -3,9 +3,9 @@ use super::{
     container::{PatternOrResolved, PatternOrResolvedMut},
     patterns::{Matcher, Name},
     resolved_pattern::ResolvedPattern,
-    Context, State,
+    State,
 };
-use crate::{binding::Binding, equivalence::are_bindings_equivalent};
+use crate::{binding::Binding, context::Context, equivalence::are_bindings_equivalent};
 use anyhow::{bail, Result};
 use core::fmt::Debug;
 use im::vector;
@@ -313,7 +313,7 @@ impl Matcher for Variable {
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let Some(res) = self.execute_resolved(resolved_pattern, state)? {

@@ -1,17 +1,14 @@
-use anyhow::{anyhow, Result};
-use im::vector;
-use marzano_util::analysis_logs::AnalysisLogs;
-
-use crate::{binding::Binding, resolve};
-
 use super::{
     compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::VariableSourceLocations,
-    Context, State,
+    State,
 };
-
+use crate::{binding::Binding, context::Context, resolve};
+use anyhow::{anyhow, Result};
+use im::vector;
+use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
 use tree_sitter::Node;
 
@@ -62,7 +59,7 @@ impl Matcher for Every {
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         // might be necessary to clone init state at the top,

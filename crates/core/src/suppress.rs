@@ -11,7 +11,7 @@ use anyhow::Result;
 pub(crate) fn is_binding_suppressed(
     binding: &Binding,
     lang: &impl Language,
-    current_name: &Option<String>,
+    current_name: Option<&str>,
 ) -> Result<bool> {
     let (src, node) = match binding {
         Binding::Node(src, node) => (src, node),
@@ -47,7 +47,7 @@ fn is_suppress_comment(
     comment_node: &Node,
     src: &str,
     target_range: &Range,
-    current_name: &Option<String>,
+    current_name: Option<&str>,
     lang: &impl Language,
 ) -> Result<bool> {
     let child_range = comment_node.range();
@@ -80,10 +80,9 @@ fn is_suppress_comment(
     {
         return Ok(true);
     }
-    if current_name.is_none() {
+    let Some(current_name) = current_name else {
         return Ok(false);
-    }
-    let current_name = current_name.as_ref().unwrap();
+    };
     let ignored_rules = ignore_spec.split(',').map(|s| s.trim()).collect::<Vec<_>>();
     Ok(ignored_rules.contains(&&current_name[..]))
 }

@@ -1,4 +1,4 @@
-use crate::{binding::Binding, resolve};
+use crate::{binding::Binding, context::Context, resolve};
 
 use super::{
     compiler::CompilationContext,
@@ -7,7 +7,7 @@ use super::{
     patterns::{Name, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::VariableSourceLocations,
-    Context, State,
+    State,
 };
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
@@ -152,7 +152,7 @@ impl Matcher for ASTNode {
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let binding = if let ResolvedPattern::Binding(binding) = binding {
@@ -190,8 +190,8 @@ impl Matcher for ASTNode {
         if self.args.is_empty() {
             return Ok(true);
         }
-        if context.language.is_comment(self.sort) {
-            let content = context.language.comment_text(node, src);
+        if context.language().is_comment(self.sort) {
+            let content = context.language().comment_text(node, src);
             let content = resolve!(content);
             let content = Binding::String(src, content.1);
 

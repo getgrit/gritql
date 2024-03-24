@@ -1,20 +1,3 @@
-use std::{
-    borrow::Cow,
-    collections::{BTreeMap, HashMap},
-};
-
-use crate::{
-    binding::{Binding, Constant},
-    pattern::{container::PatternOrResolved, patterns::Name},
-    smart_insert::normalize_insert,
-};
-use anyhow::{anyhow, bail, Result};
-use im::{vector, Vector};
-use marzano_language::{language::FieldId, target_language::TargetLanguage};
-use marzano_util::{analysis_logs::AnalysisLogs, position::Range};
-
-use tree_sitter::Node;
-
 use super::{
     accessor::Accessor,
     code_snippet::CodeSnippet,
@@ -24,8 +7,23 @@ use super::{
     paths::absolutize,
     patterns::Pattern,
     state::{FilePtr, FileRegistry, State},
-    Context, Effect, EffectKind,
+    Effect, EffectKind,
 };
+use crate::{
+    binding::{Binding, Constant},
+    context::Context,
+    pattern::{container::PatternOrResolved, patterns::Name},
+    smart_insert::normalize_insert,
+};
+use anyhow::{anyhow, bail, Result};
+use im::{vector, Vector};
+use marzano_language::{language::FieldId, target_language::TargetLanguage};
+use marzano_util::{analysis_logs::AnalysisLogs, position::Range};
+use std::{
+    borrow::Cow,
+    collections::{BTreeMap, HashMap},
+};
+use tree_sitter::Node;
 
 /**
  * This file contains data structures for everything resolved.
@@ -548,7 +546,7 @@ impl<'a> ResolvedPattern<'a> {
     pub fn from_dynamic_snippet(
         snippet: &'a DynamicSnippet,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         let mut parts = Vec::new();
@@ -582,7 +580,7 @@ impl<'a> ResolvedPattern<'a> {
     pub fn from_dynamic_pattern(
         pattern: &'a DynamicPattern,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         match pattern {
@@ -624,7 +622,7 @@ impl<'a> ResolvedPattern<'a> {
     pub(crate) fn from_accessor(
         accessor: &'a Accessor,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         match accessor.get(state)? {
@@ -640,7 +638,7 @@ impl<'a> ResolvedPattern<'a> {
     pub(crate) fn from_list_index(
         index: &'a ListIndex,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         match index.get(state)? {
@@ -656,7 +654,7 @@ impl<'a> ResolvedPattern<'a> {
     pub fn from_pattern(
         pattern: &'a Pattern,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         match pattern {
@@ -984,7 +982,7 @@ impl<'a> ResolvedPattern<'a> {
 pub(crate) fn pattern_to_binding<'a>(
     pattern: &'a Pattern,
     state: &mut State<'a>,
-    context: &Context<'a>,
+    context: &'a impl Context<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<Binding<'a>> {
     let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)?;
@@ -1003,7 +1001,7 @@ pub(crate) fn pattern_to_binding<'a>(
 pub fn patterns_to_resolved<'a>(
     patterns: &'a [Option<Pattern>],
     state: &mut State<'a>,
-    context: &Context<'a>,
+    context: &'a impl Context<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<Vec<Option<ResolvedPattern<'a>>>> {
     patterns

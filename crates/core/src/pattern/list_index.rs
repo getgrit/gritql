@@ -1,10 +1,3 @@
-use std::collections::BTreeMap;
-
-use crate::{
-    binding::{Binding, Constant},
-    resolve_opt,
-};
-
 use super::{
     accessor::execute_resolved_with_binding,
     compiler::CompilationContext,
@@ -14,11 +7,14 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
     variable::VariableSourceLocations,
-    Context,
 };
+use crate::binding::{Binding, Constant};
+use crate::context::Context;
+use crate::resolve_opt;
 use anyhow::{anyhow, bail, Result};
 use im::vector;
 use marzano_util::{analysis_logs::AnalysisLogs, tree_sitter_util::named_children_by_field_id};
+use std::collections::BTreeMap;
 use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
@@ -238,7 +234,7 @@ impl Matcher for ListIndex {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match self.get(state)? {
