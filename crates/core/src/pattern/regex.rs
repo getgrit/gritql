@@ -135,29 +135,21 @@ impl RegexPattern {
             regex, variables,
         ))))
     }
-}
 
-impl Name for RegexPattern {
-    fn name(&self) -> &'static str {
-        "REGEX"
-    }
-}
-
-impl Matcher for RegexPattern {
-    // wrong, but whatever for now
-    fn execute<'a>(
+    fn execute_matching<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
         context: &Context<'a>,
         logs: &mut AnalysisLogs,
+        entire_string: bool,
     ) -> Result<bool> {
         let text = binding.text(&state.files)?;
         let resolved_regex = match self.regex {
             RegexLike::Regex(ref regex) => regex.clone(),
             RegexLike::Pattern(ref pattern) => {
                 let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)?;
-                let text = format!("^{}$", resolved.text(&state.files)?);
+                let text = format!("{}", resolved.text(&state.files)?);
                 Regex::new(&text)?
             }
         };
@@ -228,5 +220,23 @@ impl Matcher for RegexPattern {
         }
 
         Ok(true)
+    }
+}
+
+impl Name for RegexPattern {
+    fn name(&self) -> &'static str {
+        "REGEX"
+    }
+}
+
+impl Matcher for RegexPattern {
+    fn execute<'a>(
+        &'a self,
+        binding: &ResolvedPattern<'a>,
+        state: &mut State<'a>,
+        context: &Context<'a>,
+        logs: &mut AnalysisLogs,
+    ) -> Result<bool> {
+        self.execute_matching(binding, state, context, logs, true)
     }
 }

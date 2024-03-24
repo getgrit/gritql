@@ -2911,6 +2911,40 @@ fn hcl_implicit_regex() {
 }
 
 #[test]
+fn includes_regex() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |`console.log($_)` as $haystack where {
+                |   $haystack <: includes r"Hello"
+                |} => `console.log("Goodbye world!")`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |console.log("Hello world!");
+                |console.log("Hello handsome!");
+                |console.log("But not me, sadly.");
+                |console.log("Hi, Hello world!");
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |console.log("Goodbye world!");
+                |console.log("Goodbye world!");
+                |console.log("But not me, sadly.");
+                |console.log("Goodbye world!");
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn parses_simple_pattern() {
     let pattern = r#"
         |engine marzano(0.1)
@@ -2927,7 +2961,7 @@ fn parses_simple_pattern() {
 fn warning_rewrite_in_not() {
     let pattern = r#"
         |`async ($args) => { $body }` where {
-        |    $body <: not contains `try` => ` try { 
+        |    $body <: not contains `try` => ` try {
         |        $body
         |    } catch { }`
         |}"#
@@ -10743,7 +10777,7 @@ fn rewrite_to_accessor_mut() {
                 |language js
                 |
                 |`const $x = $foo` where {
-                |   $cities = {}, 
+                |   $cities = {},
                 |   $kiel = `kiel`,
                 |   $cities.germany = $kiel,
                 |   $cities.italy = `"venice"`,
