@@ -66,9 +66,7 @@ impl RegexPattern {
                 .strip_suffix('\"')
                 .ok_or_else(|| anyhow!("invalid regex postfix"))?;
 
-            let regex = format!("^{}$", regex);
-
-            RegexLike::Regex(Regex::new(regex.as_str())?)
+            RegexLike::Regex(Regex::new(regex)?)
         } else {
             let back_tick_node = regex_node
                 .child_by_field_name("snippet")
@@ -136,13 +134,13 @@ impl RegexPattern {
         ))))
     }
 
-    fn execute_matching<'a>(
+    pub(crate) fn execute_matching<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
         context: &Context<'a>,
         logs: &mut AnalysisLogs,
-        entire_string: bool,
+        must_match_entire_string: bool,
     ) -> Result<bool> {
         let text = binding.text(&state.files)?;
         let resolved_regex = match self.regex {
@@ -152,6 +150,10 @@ impl RegexPattern {
                 let text = format!("{}", resolved.text(&state.files)?);
                 Regex::new(&text)?
             }
+        };
+        let wrapped_regex = match must_match_entire_string {
+            true => format!("^{}$", resolved_regex),
+            false => format!("{}", resolved_regex),
         };
         let captures = match resolved_regex.captures(&text) {
             Some(captures) => captures,

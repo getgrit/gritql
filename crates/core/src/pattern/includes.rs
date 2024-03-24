@@ -63,9 +63,8 @@ impl Matcher for Includes {
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match &self.includes {
-            Pattern::Regex(_) => {
-                Ok(true)
-                // bail!("regex patterns are not allowed in includes")
+            Pattern::Regex(pattern) => {
+                pattern.execute_matching(binding, state, context, logs, false)
             }
             Pattern::ASTNode(_)
             | Pattern::List(_)
