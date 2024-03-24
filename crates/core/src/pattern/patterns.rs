@@ -43,7 +43,7 @@ use marzano_language::{language::Language, language::SnippetNode};
 use marzano_util::analysis_logs::AnalysisLogs;
 use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::position::{char_index_to_byte_index, Position, Range};
-use regex::{Match, Regex};
+use regex::Match;
 use std::collections::{BTreeMap, HashMap};
 use std::str;
 use std::vec;
@@ -409,8 +409,8 @@ fn implicit_metavariable_regex(
             &text[last as usize..range.end_byte as usize],
         ));
     }
-    let regex = format!("^{}$", regex_string);
-    let regex = RegexLike::Regex(Regex::new(regex.as_str())?);
+    let regex = regex_string.to_string();
+    let regex = RegexLike::Regex(regex);
     Ok(Some(RegexPattern::new(regex, variables)))
 }
 
