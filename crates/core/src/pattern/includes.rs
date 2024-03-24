@@ -5,7 +5,7 @@ use super::{
     variable::VariableSourceLocations,
     Context, Node, State,
 };
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;

@@ -2945,6 +2945,40 @@ fn includes_regex() {
 }
 
 #[test]
+fn includes_regex_with_capture() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |`console.log($_)` as $haystack where {
+                |   $haystack <: includes r"Hello (\w+)"($name)
+                |} => `console.log("Goodbye $name!")`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |console.log("Hello world!");
+                |console.log("Hello handsome!");
+                |console.log("But not me, sadly.");
+                |console.log("Hi, Hello world!");
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |console.log("Goodbye world!");
+                |console.log("Goodbye handsome!");
+                |console.log("But not me, sadly.");
+                |console.log("Goodbye world!");
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn parses_simple_pattern() {
     let pattern = r#"
         |engine marzano(0.1)
