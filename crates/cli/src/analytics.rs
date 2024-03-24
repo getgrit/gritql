@@ -1,3 +1,4 @@
+use anyhow::Context;
 use anyhow::Result;
 use clap::Args;
 use lazy_static::lazy_static;
@@ -17,6 +18,26 @@ pub enum AnalyticsEventName {
     Completed,
     #[serde(rename = "command-errored")]
     Errored,
+}
+
+impl fmt::Display for AnalyticsEventName {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            AnalyticsEventName::Invoked => write!(f, "command-invoked"),
+            AnalyticsEventName::Completed => write!(f, "command-completed"),
+            AnalyticsEventName::Errored => write!(f, "command-errored"),
+        }
+    }
+}
+
+impl<'a> From<&'a AnalyticsEvent<'a>> for AnalyticsEventName {
+    fn from(event: &'a AnalyticsEvent) -> Self {
+        match event {
+            AnalyticsEvent::Invoked(_) => AnalyticsEventName::Invoked,
+            AnalyticsEvent::Completed(_) => AnalyticsEventName::Completed,
+            AnalyticsEvent::Errored(_) => AnalyticsEventName::Errored,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -107,7 +128,7 @@ lazy_static! {
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct SegmentPayload {
+struct SegmentPayload<'a> {
     user_id: Option<String>,
     ///
     /// Anonymous ID is used, as we don't
@@ -117,33 +138,24 @@ struct SegmentPayload {
     /// https://segment.com/docs/connections/spec/identify/#anonymous-id
     ///
     anonymous_id: Uuid,
-    event: AnalyticsEventName,
+    event: &'a AnalyticsEventName,
     properties: AnalyticsProperties,
 }
 
-async fn track_event_segment(
-    analytics_event_name: AnalyticsEventName,
-    analytics_properties: AnalyticsProperties,
+pub async fn track_event_line(
+    line: &str,
+    command: String,
+    args: Vec<String>,
     installation_id: Uuid,
     user_id: Option<String>,
 ) -> Result<()> {
-    let payload = SegmentPayload {
-        user_id,
-        anonymous_id: installation_id,
-        event: analytics_event_name,
-        properties: analytics_properties,
-    };
+    let (name, json) = line
+        .split_once('\t')
+        .ok_or(anyhow::anyhow!("Invalid line, no tab found"))?;
+    let event = serde_json::from_str::<AnalyticsEventName>(name).context("Invalid event name")?;
+    let data = serde_json::from_str::<serde_json::Value>(json).context("Invalid event data")?;
 
-    //
-    // https://segment.com/docs/connections/sources/catalog/libraries/server/http-api/#track
-    //
-    reqwest::Client::new()
-        .post("https://api.segment.io/v1/track")
-        .basic_auth::<&String, &str>(&SEGMENT_WRITE_KEY, None)
-        .json(&payload)
-        .timeout(Duration::from_secs(5))
-        .send()
-        .await?;
+    track_event(event, data, command, args, installation_id, user_id).await;
 
     Ok(())
 }
@@ -180,17 +192,53 @@ pub async fn track_event(
         data: Some(analytics_event_data),
     };
 
-    let _ = tokio::task::spawn(track_event_segment(
-        analytics_event_name,
-        properties,
-        installation_id,
+    let payload = SegmentPayload {
         user_id,
-    ))
-    .await;
+        anonymous_id: installation_id,
+        event: &analytics_event_name,
+        properties,
+    };
+
+    //
+    // https://segment.com/docs/connections/sources/catalog/libraries/server/http-api/#track
+    //
+    match reqwest::Client::new()
+        .post("https://api.segment.io/v1/track")
+        .basic_auth::<&String, &str>(&SEGMENT_WRITE_KEY, None)
+        .json(&payload)
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+    {
+        Ok(response) => {
+            if !response.status().is_success() {
+                eprintln!(
+                    "Failed to send event {}: {}",
+                    analytics_event_name,
+                    response.status()
+                );
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed to send event {}: {:#}", analytics_event_name, e);
+        }
+    }
+
+    println!("Successfully sent event {}", analytics_event_name);
 }
 
 pub fn is_telemetry_disabled() -> bool {
     env::var("GRIT_TELEMETRY_DISABLED")
+        .unwrap_or_else(|_| "false".to_owned())
+        .parse::<bool>()
+        .unwrap_or(false)
+}
+
+/// By default, telemetry is sent in the background so the main process can exit quickly.
+/// If this environment variable is set to true, telemetry will be sent in the foreground.
+/// This is useful for debugging telemetry issues.
+pub fn is_telemetry_foregrounded() -> bool {
+    env::var("GRIT_TELEMETRY_FOREGROUND")
         .unwrap_or_else(|_| "false".to_owned())
         .parse::<bool>()
         .unwrap_or(false)
