@@ -12747,3 +12747,21 @@ fn css_property_value() {
     })
     .unwrap();
 }
+
+#[test]
+fn parses_php_console_method() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`echo` => `print`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"echo 'Hello, World'"#.to_owned(),
+            expected: r#"print 'Hello, World'"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
