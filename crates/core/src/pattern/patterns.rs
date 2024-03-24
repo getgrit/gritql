@@ -409,8 +409,8 @@ fn implicit_metavariable_regex(
             &text[last as usize..range.end_byte as usize],
         ));
     }
-    let regex = format!("^{}$", regex_string);
-    let regex = RegexLike::Regex(Regex::new(regex.as_str())?);
+    let regex = format!("{}", regex_string);
+    let regex = RegexLike::Regex(regex);
     Ok(Some(RegexPattern::new(regex, variables)))
 }
 

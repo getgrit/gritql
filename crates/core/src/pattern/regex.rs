@@ -27,7 +27,7 @@ pub struct RegexPattern {
 
 #[derive(Debug, Clone)]
 pub enum RegexLike {
-    Regex(Regex),
+    Regex(String),
     Pattern(Box<Pattern>),
 }
 
@@ -66,7 +66,7 @@ impl RegexPattern {
                 .strip_suffix('\"')
                 .ok_or_else(|| anyhow!("invalid regex postfix"))?;
 
-            RegexLike::Regex(Regex::new(regex)?)
+            RegexLike::Regex(regex.to_string())
         } else {
             let back_tick_node = regex_node
                 .child_by_field_name("snippet")
@@ -143,19 +143,22 @@ impl RegexPattern {
         must_match_entire_string: bool,
     ) -> Result<bool> {
         let text = binding.text(&state.files)?;
-        let resolved_regex = match self.regex {
-            RegexLike::Regex(ref regex) => regex.clone(),
+        let resolved_regex_text = match &self.regex {
+            RegexLike::Regex(regex) => match must_match_entire_string {
+                true => format!("^{}$", regex),
+                false => regex.to_string(),
+            },
             RegexLike::Pattern(ref pattern) => {
                 let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)?;
-                let text = format!("{}", resolved.text(&state.files)?);
-                Regex::new(&text)?
+                let text = resolved.text(&state.files)?;
+                match must_match_entire_string {
+                    true => format!("^{}$", text),
+                    false => text.to_string(),
+                }
             }
         };
-        let wrapped_regex = match must_match_entire_string {
-            true => format!("^{}$", resolved_regex),
-            false => format!("{}", resolved_regex),
-        };
-        let captures = match resolved_regex.captures(&text) {
+        let final_regex = Regex::new(&resolved_regex_text)?;
+        let captures = match final_regex.captures(&text) {
             Some(captures) => captures,
             None => return Ok(false),
         };
