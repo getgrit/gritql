@@ -62,13 +62,71 @@ impl Matcher for Includes {
         context: &Context<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let resolved = ResolvedPattern::from_pattern(&self.includes, state, context, logs)?;
-        let substring = resolved.text(&state.files)?;
-        let string = binding.text(&state.files)?;
-        if string.contains(&*substring) {
-            Ok(true)
-        } else {
-            Ok(false)
+        match &self.includes {
+            Pattern::Regex(pattern) => {
+                pattern.execute_matching(binding, state, context, logs, false)
+            }
+            Pattern::ASTNode(_)
+            | Pattern::List(_)
+            | Pattern::ListIndex(_)
+            | Pattern::Map(_)
+            | Pattern::Accessor(_)
+            | Pattern::Call(_)
+            | Pattern::File(_)
+            | Pattern::Files(_)
+            | Pattern::Bubble(_)
+            | Pattern::Limit(_)
+            | Pattern::CallBuiltIn(_)
+            | Pattern::CallFunction(_)
+            | Pattern::CallForeignFunction(_)
+            | Pattern::Assignment(_)
+            | Pattern::Accumulate(_)
+            | Pattern::And(_)
+            | Pattern::Or(_)
+            | Pattern::Maybe(_)
+            | Pattern::Any(_)
+            | Pattern::Not(_)
+            | Pattern::If(_)
+            | Pattern::Undefined
+            | Pattern::Top
+            | Pattern::Bottom
+            | Pattern::Underscore
+            | Pattern::StringConstant(_)
+            | Pattern::AstLeafNode(_)
+            | Pattern::IntConstant(_)
+            | Pattern::FloatConstant(_)
+            | Pattern::BooleanConstant(_)
+            | Pattern::Dynamic(_)
+            | Pattern::CodeSnippet(_)
+            | Pattern::Variable(_)
+            | Pattern::Rewrite(_)
+            | Pattern::Log(_)
+            | Pattern::Range(_)
+            | Pattern::Contains(_)
+            | Pattern::Includes(_)
+            | Pattern::Within(_)
+            | Pattern::After(_)
+            | Pattern::Before(_)
+            | Pattern::Where(_)
+            | Pattern::Some(_)
+            | Pattern::Every(_)
+            | Pattern::Add(_)
+            | Pattern::Subtract(_)
+            | Pattern::Multiply(_)
+            | Pattern::Divide(_)
+            | Pattern::Modulo(_)
+            | Pattern::Dots
+            | Pattern::Sequential(_)
+            | Pattern::Like(_) => {
+                let resolved = ResolvedPattern::from_pattern(&self.includes, state, context, logs)?;
+                let substring = resolved.text(&state.files)?;
+                let string = binding.text(&state.files)?;
+                if string.contains(&*substring) {
+                    Ok(true)
+                } else {
+                    Ok(false)
+                }
+            }
         }
     }
 }
