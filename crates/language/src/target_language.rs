@@ -216,6 +216,7 @@ impl PatternLanguage {
             "sql" => Some(Self::Sql),
             "vue" => Some(Self::Vue),
             "toml" => Some(Self::Toml),
+            "php" => Some(Self::Php),
             "universal" => Some(Self::Universal),
             _ => None,
         }

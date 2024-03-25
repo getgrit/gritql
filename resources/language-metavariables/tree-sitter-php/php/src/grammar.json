@@ -7154,10 +7154,6 @@
             "name": "escape_sequence"
           },
           {
-            "type": "SYMBOL",
-            "name": "grit_metavariable"
-          },
-          {
             "type": "SEQ",
             "members": [
               {
@@ -7212,10 +7208,6 @@
           {
             "type": "SYMBOL",
             "name": "escape_sequence"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "grit_metavariable"
           },
           {
             "type": "SEQ",

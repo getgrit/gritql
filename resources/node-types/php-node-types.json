@@ -1853,10 +1853,6 @@
           "named": true
         },
         {
-          "type": "grit_metavariable",
-          "named": true
-        },
-        {
           "type": "member_access_expression",
           "named": true
         },
@@ -2413,10 +2409,6 @@
         },
         {
           "type": "escape_sequence",
-          "named": true
-        },
-        {
-          "type": "grit_metavariable",
           "named": true
         },
         {

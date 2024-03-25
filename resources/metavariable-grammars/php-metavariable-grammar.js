@@ -620,12 +620,12 @@ module.exports = function defineGrammar(dialect) {
       ),
 
       _literal: $ => choice(
+        $.grit_metavariable,
         $.integer,
         $.float,
         $._string,
         $.boolean,
         $.null,
-        $.grit_metavariable,
       ),
 
       float: _ => /\d*(_\d+)*((\.\d*(_\d+)*)?([eE][\+-]?\d+(_\d+)*)|(\.\d*(_\d+)*)([eE][\+-]?\d+(_\d+)*)?)/,

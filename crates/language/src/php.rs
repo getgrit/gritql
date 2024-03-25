@@ -1,8 +1,11 @@
 use std::sync::OnceLock;
+use lazy_static::lazy_static;
+use regex::Regex;
+
 
 use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
 
-static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/php-node-types.json");
+static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/php_only-node-types.json");
 
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
@@ -15,7 +18,7 @@ fn language() -> TSLanguage {
 }
 #[cfg(feature = "builtin-parser")]
 fn language() -> TSLanguage {
-    tree_sitter_php::language_php().into()
+    tree_sitter_php::language_php_only().into()
 }
 
 #[derive(Debug, Clone)]
@@ -24,7 +27,7 @@ pub struct Php {
     metavariable_sort: SortId,
     language: &'static TSLanguage,
 }
-
+// use std::io::Write;
 impl Php {
     pub(crate) fn new(lang: Option<TSLanguage>) -> Self {
         let language = LANGUAGE.get_or_init(|| lang.unwrap_or_else(language));
@@ -41,6 +44,15 @@ impl Php {
     }
 }
 
+lazy_static! {
+    pub static ref EXACT_VARIABLE_REGEX: Regex =
+        Regex::new(r"^\^([A-Za-z_][A-Za-z0-9_]*)$").unwrap();
+    pub static ref VARIABLE_REGEX: Regex =
+        Regex::new(r"\^(\.\.\.|[A-Za-z_][A-Za-z0-9_]*)").unwrap();
+    pub static ref BRACKET_VAR_REGEX: Regex =
+        Regex::new(r"\^\[([A-Za-z_][A-Za-z0-9_]*)\]").unwrap();
+}
+
 impl Language for Php {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -54,7 +66,10 @@ impl Language for Php {
         "Php"
     }
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[("", "")]
+        &[
+            ("", ""),
+            ("", ";"),
+        ]
     }
 
     fn node_types(&self) -> &[Vec<Field>] {
@@ -65,12 +80,31 @@ impl Language for Php {
         self.metavariable_sort
     }
 
-    fn substitute_metavariable_prefix(&self, src: &str) -> String {
-        self.metavariable_regex()
-            .replace_all(
-                src,
-                format!("{}[$1]", self.metavariable_prefix_substitute()).as_str(),
-            )
-            .to_string()
+    fn metavariable_prefix(&self) -> &'static str {
+        "^"
+    }
+
+    fn metavariable_regex(&self) -> &'static Regex {
+        &VARIABLE_REGEX
+    }
+
+    fn metavariable_bracket_regex(&self) -> &'static Regex {
+        &BRACKET_VAR_REGEX
+    }
+
+    fn exact_variable_regex(&self) -> &'static Regex {
+        &EXACT_VARIABLE_REGEX
+    }
+}
+#[cfg(test)]
+mod tests {
+    use crate::{language::Language, php::Php};
+
+#[test]
+    fn test_php_substitute_variable() {
+        let snippet = "^foo$('^bar')";
+        let lang = Php::new(None);
+        let subbed = lang.substitute_metavariable_prefix(snippet);
+        assert_eq!(subbed, "µfoo$('µbar')");
     }
 }
