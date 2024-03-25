@@ -512,16 +512,4 @@ mod tests {
         println!("{:#?}", nodes);
         assert!(!nodes.is_empty());
     }
-
-    #[test]
-    fn parse_file() {
-        let mut parser = Parser::new().unwrap();
-        let ts = tree_sitter_typescript::language_tsx().into();
-        parser.set_language(&ts).unwrap();
-        let text = include_str!("../test.ts");
-        let tree = parser.parse(text, None).unwrap().unwrap();
-        let root = tree.root_node();
-        let sexp = root.to_sexp();
-        println!("{sexp}");
-    }
 }
