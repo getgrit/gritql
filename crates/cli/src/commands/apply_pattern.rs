@@ -288,7 +288,8 @@ pub(crate) async fn run_apply_pattern(
                 }
             }
         };
-        // option will override language specified in the pattern
+        // If the `--language` option is specified, it overrides the language determined
+        // from the pattern
         if let Some(lang_name) = &arg.language {
             lang = PatternLanguage::from_string(lang_name, None);
         }
