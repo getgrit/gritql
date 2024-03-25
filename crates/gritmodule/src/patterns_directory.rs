@@ -255,6 +255,8 @@ impl PatternsDirectory {
         self.vue = other.vue;
         other.toml.extend(mem::take(&mut self.toml));
         self.toml = other.toml;
+        other.php.extend(mem::take(&mut self.php));
+        self.php = other.php;
         other.universal.extend(mem::take(&mut self.universal));
         self.universal = other.universal;
     }
