@@ -11,14 +11,14 @@ use std::io::{stdin, Read};
 use std::path::Path;
 use std::path::PathBuf;
 
-use crate::analytics::AnalyticsEventName;
+use crate::analytics::{track_event_line};
 use crate::flags::GlobalFormatFlags;
 use crate::lister::list_applyables;
 use crate::resolver::{get_grit_files_from, resolve_from, Source};
 use crate::utils::is_pattern_name;
-use futures::future::join_all;
 
-use super::super::analytics::{track_event, AnalyticsArgs};
+
+use super::super::analytics::{AnalyticsArgs};
 use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
 use super::check::{run_check, CheckArg};
 use super::init::{init_config_from_cwd, init_global_grit_modules};
@@ -173,20 +173,20 @@ pub(crate) async fn run_plumbing(
         }
         PlumbingArgs::Analytics { args, shared_args } => {
             let buffer = read_input(&shared_args)?;
-            let events_to_send = buffer.lines().filter_map(|line| {
-                // Split line in name and JSON
-                let (name, json) = line.split_once('\t')?;
-
-                Some(track_event(
-                    serde_json::from_str::<AnalyticsEventName>(name).ok()?,
-                    serde_json::from_str::<serde_json::Value>(json).ok()?,
+            for line in buffer.lines() {
+                let result = track_event_line(
+                    line,
                     args.command.clone(),
                     args.args.clone(),
                     args.installation_id,
                     args.user_id.clone(),
-                ))
-            });
-            join_all(events_to_send).await;
+                )
+                .await;
+                if let Err(e) = result {
+                    eprintln!("Error when processing {}: {:#}", line, e);
+                }
+            }
+
             Ok(())
         }
         PlumbingArgs::Check { args, shared_args } => {

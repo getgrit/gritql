@@ -226,16 +226,16 @@ async function buildLanguage(language) {
     await execPromise(
       `cd ${tsLangDir} && yarn && yarn build && echo "Generated grammar for ${language}"`,
     );
-    await Promise.all([
-      execPromise(`cd ${tsLangDir}/tsx && npx tree-sitter build-wasm`),
-      execPromise(`cd ${tsLangDir}/typescript && npx tree-sitter build-wasm`),
-    ]);
+    // await Promise.all([
+    //   execPromise(`cd ${tsLangDir}/tsx && npx tree-sitter build-wasm`),
+    //   execPromise(`cd ${tsLangDir}/typescript && npx tree-sitter build-wasm`),
+    // ]);
 
     await copyNodeTypes('typescript/typescript', 'typescript');
     await copyNodeTypes('typescript/tsx', 'tsx');
 
-    await copyWasmParser('typescript', 'tree-sitter-typescript/');
-    await copyWasmParser('tsx', 'tree-sitter-typescript/');
+    // await copyWasmParser('typescript', 'tree-sitter-typescript/');
+    // await copyWasmParser('tsx', 'tree-sitter-typescript/');
   } else if (language === 'vue') {
     log(`Copying  files`);
     await fs.copyFile(
