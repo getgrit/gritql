@@ -288,10 +288,22 @@ pub(crate) async fn run_apply_pattern(
                 }
             }
         };
-        // If the `--language` option is specified, it overrides the language determined
-        // from the pattern
         if let Some(lang_name) = &arg.language {
-            lang = PatternLanguage::from_string(lang_name, None);
+            let lang_option = PatternLanguage::from_string(lang_name, None);
+            if let Some(lang_option) = lang_option {
+                if let Some(lang) = lang {
+                    if lang != lang_option {
+                        return Err(anyhow::anyhow!(
+                            "Language option {} does not match pattern language {}",
+                            lang_name,
+                            lang
+                        ));
+                    }
+                }
+                lang = Some(lang_option);
+            } else {
+                return Err(anyhow::anyhow!("Invalid language option: {}", lang_name));
+            }
         }
         let pattern_libs = flushable_unwrap!(
             emitter,

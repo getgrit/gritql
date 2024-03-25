@@ -2015,3 +2015,101 @@ fn ignores_file_in_grit_dir() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn language_option_apply() -> Result<()> {
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("simple_python", false)?;
+
+    // from the tempdir as cwd, run init
+    run_init(&dir.as_path())?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    // apply_cmd.current_dir(basic_path);
+    apply_cmd.arg("apply").arg("--force").arg("pattern.grit").arg("--language").arg("python");
+    let output = apply_cmd.output()?;
+
+    // Assert that the command executed successfully
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        String::from_utf8(output.stderr)?
+    );
+
+    // Read back the require.js file
+    let target_file = dir.join("main.py");
+    let content: String = std::fs::read_to_string(target_file)?;
+
+    // assert that it matches snapshot
+    assert_snapshot!(content);
+
+    Ok(())
+}
+
+#[test]
+fn language_option_inline_pattern_apply() -> Result<()> {
+    let pattern = r"`os.getenv` => `dotenv.fetch`";
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("simple_python", false)?;
+
+    // from the tempdir as cwd, run init
+    run_init(&dir.as_path())?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    // apply_cmd.current_dir(basic_path);
+    apply_cmd.arg("apply").arg(pattern).arg("--force").arg("--language").arg("python");
+    let output = apply_cmd.output()?;
+
+    // Assert that the command executed successfully
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        String::from_utf8(output.stdout)?
+    );
+
+    // Read back the require.js file
+    let target_file = dir.join("main.py");
+    let content: String = std::fs::read_to_string(target_file)?;
+
+    // assert that it matches snapshot
+    assert_snapshot!(content);
+
+    Ok(())
+}
+
+#[test]
+fn language_option_conflict_apply() -> Result<()> {
+    let pattern = r"language php
+     `os.getenv` => `dotenv.fetch`";
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("simple_python", false)?;
+
+    // from the tempdir as cwd, run init
+    run_init(&dir.as_path())?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    // apply_cmd.current_dir(basic_path);
+    apply_cmd.arg("apply").arg(pattern).arg("--force").arg("--language").arg("python");
+    let output = apply_cmd.output()?;
+
+    // Assert that the command failed
+    assert!(
+        !output.status.success(),
+        "Command with conflict language option and pattern should fail"
+    );
+
+    // Read back the require.js file
+    let target_file = dir.join("main.py");
+    let content: String = std::fs::read_to_string(target_file)?;
+
+    // assert that it matches snapshot
+    assert_snapshot!(content);
+
+    Ok(())
+}
