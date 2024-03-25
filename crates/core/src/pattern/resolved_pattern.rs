@@ -546,7 +546,7 @@ impl<'a> ResolvedPattern<'a> {
     pub fn from_dynamic_snippet(
         snippet: &'a DynamicSnippet,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         let mut parts = Vec::new();
@@ -580,7 +580,7 @@ impl<'a> ResolvedPattern<'a> {
     pub fn from_dynamic_pattern(
         pattern: &'a DynamicPattern,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         match pattern {
@@ -622,7 +622,7 @@ impl<'a> ResolvedPattern<'a> {
     pub(crate) fn from_accessor(
         accessor: &'a Accessor,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         match accessor.get(state)? {
@@ -638,7 +638,7 @@ impl<'a> ResolvedPattern<'a> {
     pub(crate) fn from_list_index(
         index: &'a ListIndex,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         match index.get(state)? {
@@ -654,7 +654,7 @@ impl<'a> ResolvedPattern<'a> {
     pub fn from_pattern(
         pattern: &'a Pattern,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         match pattern {
@@ -982,7 +982,7 @@ impl<'a> ResolvedPattern<'a> {
 pub(crate) fn pattern_to_binding<'a>(
     pattern: &'a Pattern,
     state: &mut State<'a>,
-    context: &'a impl Context<'a>,
+    context: &'a impl Context,
     logs: &mut AnalysisLogs,
 ) -> Result<Binding<'a>> {
     let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)?;
@@ -1001,7 +1001,7 @@ pub(crate) fn pattern_to_binding<'a>(
 pub fn patterns_to_resolved<'a>(
     patterns: &'a [Option<Pattern>],
     state: &mut State<'a>,
-    context: &'a impl Context<'a>,
+    context: &'a impl Context,
     logs: &mut AnalysisLogs,
 ) -> Result<Vec<Option<ResolvedPattern<'a>>>> {
     patterns

@@ -99,7 +99,7 @@ impl PatternDefinition {
         &'a self,
         state: &mut State<'a>,
         binding: &ResolvedPattern<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
         args: &'a [Option<Pattern>],
     ) -> Result<bool> {

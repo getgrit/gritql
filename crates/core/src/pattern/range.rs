@@ -89,7 +89,7 @@ impl Matcher for Range {
         &'a self,
         binding: &ResolvedPattern<'a>,
         _state: &mut state::State<'a>,
-        _context: &'a impl Context<'a>,
+        _context: &'a impl Context,
         _logs: &mut AnalysisLogs,
     ) -> anyhow::Result<bool> {
         if let Some(range) = binding.position() {

@@ -102,7 +102,7 @@ impl Matcher for CodeSnippet {
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let binding = match resolved_pattern {

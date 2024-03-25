@@ -144,7 +144,7 @@ impl Matcher for Accumulate {
         &'a self,
         context_node: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let Pattern::Variable(var) = &self.left {
@@ -222,7 +222,7 @@ impl Evaluator for Accumulate {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         if let Pattern::Variable(var) = &self.left {

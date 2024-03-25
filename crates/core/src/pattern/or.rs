@@ -68,7 +68,7 @@ impl Matcher for Or {
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let ResolvedPattern::Binding(binding_vector) = &binding {
@@ -155,7 +155,7 @@ impl Evaluator for PrOr {
     fn execute_func<'a>(
         &'a self,
         init_state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         for p in self.predicates.iter() {

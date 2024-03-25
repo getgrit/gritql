@@ -22,7 +22,7 @@ pub(crate) trait FunctionDefinition {
     fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         args: &'a [Option<Pattern>],
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation>;
@@ -112,7 +112,7 @@ impl FunctionDefinition for GritFunctionDefinition {
     fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         args: &'a [Option<Pattern>],
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
@@ -202,7 +202,7 @@ impl FunctionDefinition for ForeignFunctionDefinition {
     fn call<'a>(
         &'a self,
         _state: &mut State<'a>,
-        _context: &'a impl Context<'a>,
+        _context: &'a impl Context,
         _args: &'a [Option<Pattern>],
         _logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
@@ -212,7 +212,7 @@ impl FunctionDefinition for ForeignFunctionDefinition {
     fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         args: &'a [Option<Pattern>],
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {

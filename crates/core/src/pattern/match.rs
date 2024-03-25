@@ -71,7 +71,7 @@ impl Evaluator for Match {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         match &self.val {

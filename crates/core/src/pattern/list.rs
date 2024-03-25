@@ -116,7 +116,7 @@ impl Matcher for List {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut super::state::State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match binding {
@@ -155,7 +155,7 @@ fn execute_assoc<'a>(
     patterns: &'a [Pattern],
     children: &[Cow<ResolvedPattern<'a>>],
     current_state: &mut State<'a>,
-    context: &'a impl Context<'a>,
+    context: &'a impl Context,
     logs: &mut AnalysisLogs,
 ) -> Result<bool> {
     let mut working_state = current_state.clone();

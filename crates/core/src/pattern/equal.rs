@@ -76,7 +76,7 @@ impl Evaluator for Equal {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let lhs_text = self.var.text(state)?;

@@ -180,7 +180,7 @@ impl Rewrite {
         &'a self,
         resolved: Option<&ResolvedPattern<'a>>,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let resolved = match resolved {
@@ -257,7 +257,7 @@ impl Matcher for Rewrite {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         self.execute_generalized(Some(binding), state, context, logs)
@@ -268,7 +268,7 @@ impl Evaluator for Rewrite {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let predicator = self.execute_generalized(None, state, context, logs)?;

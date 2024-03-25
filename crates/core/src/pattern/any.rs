@@ -72,7 +72,7 @@ impl Matcher for Any {
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut matched = false;
@@ -146,7 +146,7 @@ impl Evaluator for PrAny {
     fn execute_func<'a>(
         &'a self,
         init_state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let mut matched = false;

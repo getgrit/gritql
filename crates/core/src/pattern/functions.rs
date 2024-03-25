@@ -19,7 +19,7 @@ pub(crate) trait Evaluator: Debug {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation>;
 }
@@ -34,7 +34,7 @@ pub(crate) trait GritCall {
     fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>>;
 }
@@ -49,7 +49,7 @@ impl GritCall for CallFunction {
     fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let function_definition = &context.function_definitions()[self.index];
@@ -86,7 +86,7 @@ impl GritCall for CallForeignFunction {
     fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let function_definition = &context.foreign_function_definitions()[self.index];

@@ -79,7 +79,7 @@ impl Matcher for Assignment {
         &'a self,
         _context_node: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let resolved = ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
@@ -92,7 +92,7 @@ impl Evaluator for Assignment {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let resolved: ResolvedPattern<'_> =

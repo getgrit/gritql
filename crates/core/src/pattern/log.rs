@@ -32,7 +32,7 @@ impl Log {
     fn add_log<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut message = String::new();
@@ -126,7 +126,7 @@ impl Matcher for Log {
         &'a self,
         _binding: &super::resolved_pattern::ResolvedPattern<'a>,
         state: &mut super::state::State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         self.add_log(state, context, logs)
@@ -137,7 +137,7 @@ impl Evaluator for Log {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let predicator = self.add_log(state, context, logs)?;

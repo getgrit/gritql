@@ -98,7 +98,7 @@ impl PredicateDefinition {
     pub fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         args: &'a [Option<Pattern>],
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {

@@ -75,7 +75,7 @@ fn execute_until<'a>(
     init_state: &mut State<'a>,
     node: &Node<'a>,
     src: &'a str,
-    context: &'a impl Context<'a>,
+    context: &'a impl Context,
     logs: &mut AnalysisLogs,
     the_contained: &'a Pattern,
     until: &'a Option<Pattern>,
@@ -131,7 +131,7 @@ impl Matcher for Contains {
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match resolved_pattern {

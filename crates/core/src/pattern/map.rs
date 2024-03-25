@@ -75,7 +75,7 @@ impl Matcher for GritMap {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut super::state::State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let ResolvedPattern::Map(map) = binding {

@@ -313,7 +313,7 @@ impl Matcher for Variable {
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let Some(res) = self.execute_resolved(resolved_pattern, state)? {

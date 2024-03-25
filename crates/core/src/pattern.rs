@@ -811,7 +811,7 @@ impl<'a> MarzanoContext<'a> {
     }
 }
 
-impl<'a> Context<'a> for MarzanoContext<'a> {
+impl<'a> Context for MarzanoContext<'a> {
     fn pattern_definitions(&self) -> &[PatternDefinition] {
         self.pattern_definitions
     }

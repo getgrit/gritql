@@ -12,7 +12,7 @@ impl Undefined {
     pub(crate) fn execute<'a>(
         binding: &ResolvedPattern<'a>,
         _init_state: &mut State<'a>,
-        _context: &'a impl Context<'a>,
+        _context: &'a impl Context,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         Ok(binding.matches_undefined())

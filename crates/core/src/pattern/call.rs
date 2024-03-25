@@ -280,7 +280,7 @@ impl Matcher for Call {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let pattern_definition = &context.pattern_definitions()[self.index];
@@ -366,7 +366,7 @@ impl Evaluator for PrCall {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let predicate_definition = &context.predicate_definitions().get(self.index);

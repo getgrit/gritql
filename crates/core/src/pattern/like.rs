@@ -78,7 +78,7 @@ impl Matcher for Like {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         use crate::errors::debug;
@@ -96,7 +96,7 @@ impl Matcher for Like {
         &'a self,
         _binding: &ResolvedPattern<'a>,
         _state: &mut State<'a>,
-        _context: &'a impl Context<'a>,
+        _context: &'a impl Context,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         Err(anyhow!("Like only available under the embeddings feature"))

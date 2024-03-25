@@ -52,7 +52,7 @@ impl DynamicPattern {
     pub fn text<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<String> {
         let resolved = ResolvedPattern::from_dynamic_pattern(self, state, context, logs)?;
@@ -71,7 +71,7 @@ impl Matcher for DynamicPattern {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if binding.text(&state.files)? == self.text(state, context, logs)? {

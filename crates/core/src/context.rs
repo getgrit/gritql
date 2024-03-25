@@ -7,7 +7,7 @@ use crate::pattern::{
 };
 use marzano_language::target_language::TargetLanguage;
 
-pub trait Context<'a> {
+pub trait Context {
     fn pattern_definitions(&self) -> &[PatternDefinition];
 
     fn predicate_definitions(&self) -> &[PredicateDefinition];

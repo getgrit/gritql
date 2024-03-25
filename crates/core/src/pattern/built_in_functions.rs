@@ -59,7 +59,7 @@ impl GritCall for CallBuiltIn {
     fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         context.built_ins().call(self, context, state, logs)
@@ -116,7 +116,7 @@ impl BuiltIns {
     fn call<'a>(
         &self,
         call: &'a CallBuiltIn,
-        context: &'a impl Context<'a>,
+        context: &'a impl Context,
         state: &mut State<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {

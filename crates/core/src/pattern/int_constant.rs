@@ -36,7 +36,7 @@ impl Matcher for IntConstant {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        _context: &'a impl Context<'a>,
+        _context: &'a impl Context,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let text = binding.text(&state.files)?;

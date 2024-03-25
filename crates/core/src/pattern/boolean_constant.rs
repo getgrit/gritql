@@ -41,7 +41,7 @@ impl Matcher for BooleanConstant {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        _context: &'a impl Context<'a>,
+        _context: &'a impl Context,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let binding_as_bool = match binding {
