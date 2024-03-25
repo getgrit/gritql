@@ -109,6 +109,9 @@ pub struct ApplyPatternArgs {
     /// Clear cache before running apply
     #[clap(long = "refresh-cache", conflicts_with = "cache")]
     pub refresh_cache: bool,
+    // --langugage flag
+    #[clap(long = "language", short = 'l', help = "Language to use for the pattern")]
+    pub language: Option<String>,
 }
 
 impl Default for ApplyPatternArgs {
@@ -125,6 +128,7 @@ impl Default for ApplyPatternArgs {
             output_file: Default::default(),
             cache: Default::default(),
             refresh_cache: Default::default(),
+            language: Default::default(),
         }
     }
 }
@@ -226,7 +230,7 @@ pub(crate) async fn run_apply_pattern(
         }
 
         let pattern_libs = flushable_unwrap!(emitter, get_grit_files_from_cwd().await);
-        let (lang, pattern_body) = if pattern.ends_with(".grit") || pattern.ends_with(".md") {
+        let (mut lang, pattern_body) = if pattern.ends_with(".grit") || pattern.ends_with(".md") {
             match fs::read_to_string(pattern.clone()).await {
                 Ok(pb) => {
                     if pattern.ends_with(".grit") {
@@ -285,6 +289,10 @@ pub(crate) async fn run_apply_pattern(
                 }
             }
         };
+        // If --language flag is set, override the language pattern
+        if let Some(lang_flag) = arg.language.clone() {
+            lang = PatternLanguage::from_string(&lang_flag, None);
+        }
         let pattern_libs = flushable_unwrap!(
             emitter,
             pattern_libs.get_language_directory_or_default(lang)
