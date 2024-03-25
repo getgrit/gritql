@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 use std::time::Instant;
 use std::{fs, path};
 
@@ -2014,4 +2014,64 @@ fn ignores_file_in_grit_dir() -> Result<()> {
     assert!(stdout.contains("Processed 0 files and found 0 matches"));
 
     Ok(())
+}
+
+fn run_apply_test<P: AsRef<Path>>(
+    fixture_name: &str,
+    pattern: impl AsRef<str>,
+    language: Option<&str>,
+    expected_success: bool,
+) -> Result<()> {
+    // Setup
+    let (_temp_dir, dir) = get_fixture(fixture_name, false)?;
+    run_init(&dir.as_path())?;
+
+    // Run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(&dir);
+    apply_cmd.arg("apply").arg("--force").arg(pattern.as_ref());
+    if let Some(lang) = language {
+        apply_cmd.arg("--language").arg(lang);
+    }
+    let output = apply_cmd.output()?;
+
+    // Assertions
+    if expected_success {
+        assert!(
+            output.status.success(),
+            "Command didn't finish successfully: {}",
+            String::from_utf8(output.stderr)?
+        );
+    } else {
+        assert!(
+            !output.status.success(),
+            "Command unexpectedly succeeded."
+        );
+    }
+
+    // Verify content
+    let target_file = dir.join("main.py");
+    let content: String = std::fs::read_to_string(target_file)?;
+    assert_snapshot!(content);
+
+    Ok(())
+}
+
+#[test]
+fn language_option_apply_test() -> Result<()> {
+    run_apply_test::<PathBuf>("simple_python", "pattern.grit", Some("python"), true)
+}
+
+#[test]
+fn language_option_inline_pattern_apply_test() -> Result<()> {
+    let pattern = r"language python
+    `os.getenv` => `dotenv.fetch`";
+    run_apply_test::<PathBuf>("simple_python", pattern, Some("python"), true)
+}
+
+#[test]
+fn language_option_conflict_apply_test() -> Result<()> {
+    let pattern = r"language php
+     `os.getenv` => `dotenv.fetch`";
+    run_apply_test::<PathBuf>("simple_python", pattern, Some("python"), false)
 }

@@ -289,9 +289,25 @@ pub(crate) async fn run_apply_pattern(
                 }
             }
         };
-        // If --language flag is set, override the language pattern
+        // If --language flag is set, override the language
         if let Some(lang_flag) = arg.language.clone() {
-            lang = PatternLanguage::from_string(&lang_flag, None);
+            let options = PatternLanguage::from_string(&lang_flag, None);
+            // Check if the language is valid as per the patterns available
+            if let Some(options) = options {
+                if let Some(lang) = lang {
+                    if lang != options {
+                        // Return an error
+                        return Err(anyhow::anyhow!(
+                            "Language option `{}` does not match the language of the pattern",
+                            lang_flag
+                        ));
+                    }
+                }
+                lang = Some(options);
+            }
+            else {
+                return Err(anyhow::anyhow!("Invalid language option {}", lang_flag));
+            }
         }
         let pattern_libs = flushable_unwrap!(
             emitter,
