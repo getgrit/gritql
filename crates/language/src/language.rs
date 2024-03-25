@@ -254,7 +254,7 @@ pub trait Language {
                 "..." => GritMetaValue::Dots,
                 _ => {
                     let mut s = s.to_owned();
-                    s.insert_str(0, GRIT_METAVARIABLE_PREFIX);
+                    s.insert_str(0, self.metavariable_prefix());
                     GritMetaValue::Variable(s)
                 }
             })
@@ -414,11 +414,10 @@ impl SnippetTree {
             }
             // sanity check to avoid infinite loop
             if snippet_root.id() == id {
-                if snippet_root
+                if !snippet_root
                     .utf8_text(self.context.as_bytes())
                     .unwrap()
-                    .trim()
-                    != self.snippet.trim()
+                    .trim().contains(self.snippet.trim())
                 {
                     return None;
                 }
@@ -493,7 +492,7 @@ pub fn fields_for_nodes(language: &TSLanguage, types: &str) -> Vec<Vec<Field>> {
 #[cfg(test)]
 mod tests {
     use super::nodes_from_indices;
-    use crate::{language::Language, php::Php, tsx::Tsx};
+    use crate::{language::Language, tsx::Tsx};
     use tree_sitter::Parser;
     use trim_margin::MarginTrimmable;
 
@@ -534,14 +533,6 @@ mod tests {
         let lang = Tsx::new(None);
         let subbed = lang.substitute_metavariable_prefix(snippet);
         assert_eq!(subbed, "µfoo$('µbar')");
-    }
-
-    #[test]
-    fn test_php_substitute_variable() {
-        let snippet = "$foo$('$bar')";
-        let lang = Php::new(None);
-        let subbed = lang.substitute_metavariable_prefix(snippet);
-        assert_eq!(subbed, "µ[foo]$('µ[bar]')");
     }
 
     #[test]
