@@ -109,7 +109,7 @@ pub struct ApplyPatternArgs {
     /// Clear cache before running apply
     #[clap(long = "refresh-cache", conflicts_with = "cache")]
     pub refresh_cache: bool,
-    // --langugage flag
+    // --language flag
     #[clap(long = "language", short = 'l', help = "Language to use for the pattern")]
     pub language: Option<String>,
 }
