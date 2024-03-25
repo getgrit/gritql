@@ -57,7 +57,8 @@ const allLanguages = [
   'typescript',
   'yaml',
   'toml',
-  'vue'
+  'vue',
+  'php'
 ];
 
 // For these languages, copyMvGrammar is optional
@@ -68,8 +69,8 @@ const allLanguages = [
 const languagesWithoutMetaVariables = ['ruby', 'html', 'hcl'];
 
 // assumes that this script is run from marzano/resources directory
-const METAVARIABLE_GRAMMARS = `../metavariable-grammars`;
-const LANGUAGE_METAVARIABLES = 'language-metavariables';
+const METAVARIABLE_GRAMMARS = `${process.cwd()}/metavariable-grammars`;
+const LANGUAGE_METAVARIABLES = `${process.cwd()}/language-metavariables`;
 
 ///////////////////////////////////////////////////
 // Build steps
@@ -84,7 +85,7 @@ const copyMvGrammar = async (lang, dest) => {
   }
   await fs.copyFile(
     `${METAVARIABLE_GRAMMARS}/${lang}-metavariable-grammar.js`,
-    `tree-sitter-${dest ?? lang}/grammar.js`,
+    `${LANGUAGE_METAVARIABLES}/tree-sitter-${dest ?? lang}/grammar.js`,
   );
 };
 
@@ -285,6 +286,29 @@ async function buildLanguage(language) {
       `${METAVARIABLE_GRAMMARS}/c_build.rs`,
       `${tsLangDir}/bindings/rust/build.rs`,
     );
+  } else if (language === 'php') {
+    log(`Copying  files`);
+
+    // php has two dialects: php_only (start and end tags are optional) and php (often mixed with HTML)
+    // the grammar we care about is in common/define-grammar.js
+    await fs.copyFile(
+      `${METAVARIABLE_GRAMMARS}/php-metavariable-grammar.js`,
+      `${tsLangDir}/common/define-grammar.js`,
+    );
+
+    await execPromise(
+      `cd ${tsLangDir} && yarn && yarn build && echo "Generated grammar for ${language}"`,
+    );
+    // await Promise.all([
+    //   execPromise(`cd ${tsLangDir}/php_only && npx tree-sitter build-wasm`),
+    //   execPromise(`cd ${tsLangDir}/php && npx tree-sitter build-wasm`),
+    // ]);
+
+    await copyNodeTypes('php/php_only', 'php_only');
+    await copyNodeTypes('php/php', 'php');
+
+    // await copyWasmParser('php_only', 'tree-sitter-php/');
+    // await copyWasmParser('php', 'tree-sitter-php/');
   } else {
     await buildSimpleLanguage(log, language);
   }
