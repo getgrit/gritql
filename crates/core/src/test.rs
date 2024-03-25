@@ -12861,6 +12861,9 @@ fn php_simple_match() {
             .trim_margin()
             .unwrap(),
         }
+    })
+    .unwrap();
+}
 
 #[test]
 fn css_property_value() {
