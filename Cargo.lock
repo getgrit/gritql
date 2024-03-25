@@ -2039,6 +2039,7 @@ dependencies = [
  "tree-sitter-javascript",
  "tree-sitter-json",
  "tree-sitter-md",
+ "tree-sitter-php",
  "tree-sitter-python",
  "tree-sitter-ruby",
  "tree-sitter-rust",
@@ -3885,6 +3886,14 @@ dependencies = [
 [[package]]
 name = "tree-sitter-md"
 version = "0.1.7"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-php"
+version = "0.22.2"
 dependencies = [
  "cc",
  "tree-sitter",

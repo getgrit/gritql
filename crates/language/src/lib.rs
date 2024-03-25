@@ -24,3 +24,5 @@ pub mod typescript;
 pub mod vue;
 mod xscript_util;
 pub mod yaml;
+pub mod php_html;
+pub mod php_only;
