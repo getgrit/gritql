@@ -17,7 +17,7 @@ use super::{
         patterns_to_resolved, JoinFn, LazyBuiltIn, ListBinding, ResolvedPattern, ResolvedSnippet,
     },
     variable::get_absolute_file_name,
-    State,
+    MarzanoContext, State,
 };
 use anyhow::{anyhow, bail, Result};
 use im::vector;
@@ -76,7 +76,12 @@ impl Name for CallBuiltIn {
 // eg. capitalize returns an owned string_constant pattern, but unique would return a borrowed
 // value.
 
-type F = dyn for<'a> Fn(Vec<Option<ResolvedPattern<'a>>>, &mut State<'a>) -> Result<ResolvedPattern<'a>>
+type F = dyn for<'a> Fn(
+        &'a [Option<Pattern>],
+        &'a MarzanoContext<'a>,
+        &mut State<'a>,
+        &mut AnalysisLogs,
+    ) -> Result<ResolvedPattern<'a>>
     + Send
     + Sync;
 
@@ -89,10 +94,12 @@ pub struct BuiltInFunction {
 impl BuiltInFunction {
     fn call<'a>(
         &self,
-        args: Vec<Option<ResolvedPattern<'a>>>,
+        args: &'a [Option<Pattern>],
+        context: &'a MarzanoContext<'a>,
         state: &mut State<'a>,
+        logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
-        (self.func)(args, state)
+        (self.func)(args, context, state, logs)
     }
 
     pub fn new(name: &'static str, params: Vec<&'static str>, func: Box<F>) -> Self {
@@ -116,13 +123,11 @@ impl BuiltIns {
     pub(crate) fn call<'a>(
         &self,
         call: &'a CallBuiltIn,
-        context: &'a impl Context,
+        context: &'a MarzanoContext<'a>,
         state: &mut State<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
-        let args = patterns_to_resolved(&call.args, state, context, logs)?;
-
-        self.0[call.index].call(args, state)
+        self.0[call.index].call(&call.args, context, state, logs)
     }
 
     pub fn extend_builtins(&mut self, other: BuiltIns) -> Result<()> {
@@ -178,9 +183,13 @@ impl From<Vec<BuiltInFunction>> for BuiltIns {
 
 /// Turn an arbitrary path into a resolved and normalized absolute path
 fn resolve_path_fn<'a>(
-    args: Vec<Option<ResolvedPattern<'a>>>,
+    args: &'a [Option<Pattern>],
+    context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
+    logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
+    let args = patterns_to_resolved(args, state, context, logs)?;
+
     let current_file = get_absolute_file_name(state)?;
     let target_path = match &args[0] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
@@ -201,9 +210,13 @@ fn capitalize(s: &str) -> String {
 }
 
 fn capitalize_fn<'a>(
-    args: Vec<Option<ResolvedPattern<'a>>>,
+    args: &'a [Option<Pattern>],
+    context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
+    logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
+    let args = patterns_to_resolved(args, state, context, logs)?;
+
     let s = match &args[0] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
         None => return Err(anyhow!("No argument provided for capitalize function")),
@@ -212,9 +225,13 @@ fn capitalize_fn<'a>(
 }
 
 fn lowercase_fn<'a>(
-    args: Vec<Option<ResolvedPattern<'a>>>,
+    args: &'a [Option<Pattern>],
+    context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
+    logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
+    let args = patterns_to_resolved(args, state, context, logs)?;
+
     let s = match &args[0] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
         None => return Err(anyhow!("lowercase takes 1 argument")),
@@ -223,9 +240,13 @@ fn lowercase_fn<'a>(
 }
 
 fn uppercase_fn<'a>(
-    args: Vec<Option<ResolvedPattern<'a>>>,
+    args: &'a [Option<Pattern>],
+    context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
+    logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
+    let args = patterns_to_resolved(args, state, context, logs)?;
+
     let s = match &args[0] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
         None => return Err(anyhow!("uppercase takes 1 argument")),
@@ -234,9 +255,13 @@ fn uppercase_fn<'a>(
 }
 
 fn text_fn<'a>(
-    args: Vec<Option<ResolvedPattern<'a>>>,
+    args: &'a [Option<Pattern>],
+    context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
+    logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
+    let args = patterns_to_resolved(args, state, context, logs)?;
+
     let s = match args.first() {
         Some(Some(resolved_pattern)) => resolved_pattern.text(&state.files)?,
         _ => return Err(anyhow!("text takes 1 argument")),
@@ -245,9 +270,13 @@ fn text_fn<'a>(
 }
 
 fn trim_fn<'a>(
-    args: Vec<Option<ResolvedPattern<'a>>>,
+    args: &'a [Option<Pattern>],
+    context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
+    logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
+    let args = patterns_to_resolved(args, state, context, logs)?;
+
     let trim_chars = match &args[1] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
         None => return Err(anyhow!("trim takes 2 arguments: string and trim_chars")),
@@ -265,9 +294,13 @@ fn trim_fn<'a>(
 }
 
 fn split_fn<'a>(
-    args: Vec<Option<ResolvedPattern<'a>>>,
+    args: &'a [Option<Pattern>],
+    context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
+    logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
+    let args = patterns_to_resolved(args, state, context, logs)?;
+
     let string = if let Some(string) = &args[0] {
         string.text(&state.files)?
     } else {
@@ -286,9 +319,13 @@ fn split_fn<'a>(
 }
 
 fn random_fn<'a>(
-    args: Vec<Option<ResolvedPattern<'a>>>,
+    args: &'a [Option<Pattern>],
+    context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
+    logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
+    let args = patterns_to_resolved(args, state, context, logs)?;
+
     match args.as_slice() {
         [Some(start), Some(end)] => {
             let start = start.text(&state.files)?;
@@ -314,9 +351,13 @@ fn random_fn<'a>(
 }
 
 fn join_fn<'a>(
-    args: Vec<Option<ResolvedPattern<'a>>>,
+    args: &'a [Option<Pattern>],
+    context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
+    logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
+    let args = patterns_to_resolved(args, state, context, logs)?;
+
     let separator = &args[1];
     let separator = match separator {
         Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
@@ -342,9 +383,13 @@ fn join_fn<'a>(
 }
 
 fn distinct_fn<'a>(
-    args: Vec<Option<ResolvedPattern<'a>>>,
-    _state: &mut State<'a>,
+    args: &'a [Option<Pattern>],
+    context: &'a MarzanoContext<'a>,
+    state: &mut State<'a>,
+    logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
+    let args = patterns_to_resolved(args, state, context, logs)?;
+
     let list = args.into_iter().next().unwrap();
     match list {
         Some(ResolvedPattern::List(list)) => {
@@ -387,9 +432,13 @@ fn distinct_fn<'a>(
 
 // Shuffle a list
 fn shuffle_fn<'a>(
-    args: Vec<Option<ResolvedPattern<'a>>>,
+    args: &'a [Option<Pattern>],
+    context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
+    logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
+    let args = patterns_to_resolved(args, state, context, logs)?;
+
     let list = args
         .into_iter()
         .next()
@@ -431,9 +480,13 @@ fn shuffle_fn<'a>(
 }
 
 fn length_fn<'a>(
-    args: Vec<Option<ResolvedPattern<'a>>>,
+    args: &'a [Option<Pattern>],
+    context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
+    logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
+    let args = patterns_to_resolved(args, state, context, logs)?;
+
     let list = args.into_iter().next().unwrap();
     match &list {
         Some(ResolvedPattern::List(list)) => {
