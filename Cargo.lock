@@ -3852,7 +3852,7 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter-html"
-version = "0.20.0"
+version = "0.20.2"
 dependencies = [
  "cc",
  "tree-sitter",

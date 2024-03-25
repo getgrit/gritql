@@ -121,10 +121,6 @@ async function rsyncGrammars(language) {
     ? `${LANGUAGE_METAVARIABLES}/${treeSitterLang}`
     : LANGUAGE_METAVARIABLES;
 
-  if (languagesWithoutMetaVariables.includes(language)) {
-    return;
-  }
-
   await fs.rmdir(mvDir, { recursive: true });
   await fs.mkdir(mvDir, { recursive: true });
 

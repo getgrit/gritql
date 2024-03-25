@@ -61,3 +61,39 @@ impl Language for Html {
         self.metavariable_sort
     }
 }
+
+
+
+
+#[cfg(test)]
+mod tests {
+    use marzano_util::print_node::print_node;
+
+    use crate::language::nodes_from_indices;
+
+    use super::*;
+
+    #[test]
+    fn import_variable() {
+        let snippet = r#"<Hello attr="foo"></Hello>"#;
+        let lang = Html::new(None);
+        let mut parser = tree_sitter::Parser::new().unwrap();
+        parser.set_language(lang.get_ts_language()).unwrap();
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        assert!(!nodes.is_empty());
+        print_node(&nodes[0].node);
+    }
+
+    #[test]
+    fn print_sexp() {
+        let code = r#"<Hello attr="foo"></Hello>"#;
+        let mut parser = tree_sitter::Parser::new().unwrap();
+        let lang = Html::new(None);
+        parser.set_language(lang.get_ts_language()).unwrap();
+        let tree = parser.parse(code, None).unwrap().unwrap();
+        let root = tree.root_node();
+        let sexp = root.to_sexp();
+        println!("{sexp}");
+    }
+}
