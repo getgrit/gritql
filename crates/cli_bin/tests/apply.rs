@@ -2038,7 +2038,7 @@ fn language_option_apply() -> Result<()> {
         String::from_utf8(output.stderr)?
     );
 
-    // Read back the require.js file
+    // Read back the main.py file
     let target_file = dir.join("main.py");
     let content: String = std::fs::read_to_string(target_file)?;
 
@@ -2071,7 +2071,7 @@ fn language_option_inline_pattern_apply() -> Result<()> {
         String::from_utf8(output.stdout)?
     );
 
-    // Read back the require.js file
+    // Read back the main.py file
     let target_file = dir.join("main.py");
     let content: String = std::fs::read_to_string(target_file)?;
 
@@ -2104,7 +2104,7 @@ fn language_option_conflict_apply() -> Result<()> {
         "Command with conflict language option and pattern should fail"
     );
 
-    // Read back the require.js file
+    // Read back the main.py file
     let target_file = dir.join("main.py");
     let content: String = std::fs::read_to_string(target_file)?;
 
