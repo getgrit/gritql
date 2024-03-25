@@ -62,7 +62,7 @@ impl GritCall for CallBuiltIn {
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
-        context.built_ins().call(self, context, state, logs)
+        context.call_built_in(self, context, state, logs)
     }
 }
 
@@ -113,7 +113,7 @@ impl std::fmt::Debug for BuiltInFunction {
 pub struct BuiltIns(Vec<BuiltInFunction>);
 
 impl BuiltIns {
-    fn call<'a>(
+    pub(crate) fn call<'a>(
         &self,
         call: &'a CallBuiltIn,
         context: &'a impl Context,

@@ -1,11 +1,15 @@
 use crate::pattern::{
-    built_in_functions::BuiltIns,
+    built_in_functions::CallBuiltIn,
     function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
     pattern_definition::PatternDefinition,
     predicate_definition::PredicateDefinition,
+    resolved_pattern::ResolvedPattern,
+    state::State,
     FileOwners,
 };
+use anyhow::Result;
 use marzano_language::target_language::TargetLanguage;
+use marzano_util::analysis_logs::AnalysisLogs;
 
 pub trait Context {
     fn pattern_definitions(&self) -> &[PatternDefinition];
@@ -18,10 +22,16 @@ pub trait Context {
 
     fn ignore_limit_pattern(&self) -> bool;
 
+    fn call_built_in<'a>(
+        &self,
+        call: &'a CallBuiltIn,
+        context: &'a Self,
+        state: &mut State<'a>,
+        logs: &mut AnalysisLogs,
+    ) -> Result<ResolvedPattern<'a>>;
+
     // FIXME: Don't depend on Grit's file handling in Context.
     fn files(&self) -> &FileOwners;
-
-    fn built_ins(&self) -> &BuiltIns;
 
     // FIXME: This introduces a dependency on TreeSitter.
     fn language(&self) -> &TargetLanguage;

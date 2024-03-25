@@ -109,7 +109,7 @@ use variable::VariableSourceLocations;
 
 use self::{
     api::{is_match, AnalysisLog, ByteRange, DoneFile, MatchResult},
-    built_in_functions::BuiltIns,
+    built_in_functions::{BuiltIns, CallBuiltIn},
     compiler::NEW_FILES_INDEX,
     function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
     paths::absolutize,
@@ -832,13 +832,19 @@ impl<'a> Context for MarzanoContext<'a> {
         self.runtime.ignore_limit_pattern
     }
 
+    fn call_built_in<'b>(
+        &self,
+        call: &'b CallBuiltIn,
+        context: &'b Self,
+        state: &mut State<'b>,
+        logs: &mut AnalysisLogs,
+    ) -> Result<ResolvedPattern<'b>> {
+        self.built_ins.call(call, context, state, logs)
+    }
+
     // FIXME: Don't depend on Grit's file handling in context.
     fn files(&self) -> &FileOwners {
         self.files
-    }
-
-    fn built_ins(&self) -> &BuiltIns {
-        self.built_ins
     }
 
     // FIXME: This introduces a dependency on TreeSitter.
