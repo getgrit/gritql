@@ -12750,7 +12750,7 @@ fn go_package_type() {
 }
 
 #[test]
-fn call_php() {
+fn php_no_match() {
     run_test_no_match({
         TestArg {
             pattern: r#"
@@ -12772,23 +12772,23 @@ fn call_php() {
 
 
 #[test]
-fn call_php_2() {
+fn php_simple_match() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
                 |language php
                 |
-                |`echo $str` => `echo "modified"`
+                |`echo ^match` => `^match + ^match;`
                 |"#
             .trim_margin()
             .unwrap(),
             source: r#"
-                |echo "this is a message"
+                |echo "duplicate this message";
                 |"#
             .trim_margin()
             .unwrap(),
             expected: r#"
-                |echo "modified"
+                |"duplicate this message" + "duplicate this message";
                 |"#
             .trim_margin()
             .unwrap(),
