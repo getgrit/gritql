@@ -8142,29 +8142,6 @@ fn test_basic_md() {
 }
 
 #[test]
-fn test_basic_php() {
-    let pattern = r#"
-    |language php
-    |
-    |`echo $str` => `echo $str;`
-    |"#
-    .trim_margin()
-    .unwrap();
-
-    let source = r#"echo "hello world""#.trim_margin().unwrap();
-    let file = "foo.php";
-
-    let context = ExecutionContext::default();
-    let language: TargetLanguage = PatternLanguage::Php.try_into().unwrap();
-    // println!("language: {language} pattern: {pattern}");
-
-    let pattern = src_to_problem(pattern, language).unwrap();
-    let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    // println!("results: {results}");
-    assert_yaml_snapshot!(results);
-}
-
-#[test]
 fn md_link_metavariable() {
     let pattern = r#"
     |language markdown

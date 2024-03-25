@@ -46,7 +46,7 @@ const PREC = {
 
 module.exports = function defineGrammar(dialect) {
   if (dialect !== 'php' && dialect !== 'php_only') {
-    throw new Error(`Unknown dialect ${dialect}`);
+    throw new Error(`Unknown dialect ${dialect}. Supported dialects are 'php' and 'php_only'.`);
   }
 
   return grammar({
