@@ -11,18 +11,14 @@ static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static EQUIVALENT_LEAF_NODES: OnceLock<Vec<Vec<LeafNormalizer>>> = OnceLock::new();
 
 #[cfg(not(feature = "builtin-parser"))]
-fn language() -> TSLanguage {
+fn built_in_language() -> TSLanguage {
     unimplemented!(
         "tree-sitter parser must be initialized before use when [builtin-parser] is off."
     )
 }
 #[cfg(feature = "builtin-parser")]
-fn language() -> TSLanguage {
+fn built_in_language() -> TSLanguage {
     tree_sitter_yaml::language().into()
-}
-
-fn id_for_kind(name: &str) -> SortId {
-    language().id_for_node_kind(name, true)
 }
 
 #[derive(Debug, Clone)]
@@ -35,13 +31,13 @@ pub struct Yaml {
 
 impl Yaml {
     pub(crate) fn new(lang: Option<TSLanguage>) -> Self {
-        let language = LANGUAGE.get_or_init(|| lang.unwrap_or_else(language));
+        let language = LANGUAGE.get_or_init(|| lang.unwrap_or_else(built_in_language));
         let node_types = NODE_TYPES.get_or_init(|| fields_for_nodes(language, NODE_TYPES_STRING));
         let equivalent_leaf_nodes = EQUIVALENT_LEAF_NODES.get_or_init(|| {
             vec![vec![
-                LeafNormalizer::new(id_for_kind("string_scalar"), normalize_identity),
+                LeafNormalizer::new(language.id_for_node_kind("string_scalar", true), normalize_identity),
                 LeafNormalizer::new(
-                    id_for_kind("double_quote_scalar"),
+                    language.id_for_node_kind("double_quote_scalar", true),
                     normalize_double_quote_string,
                 ),
             ]]
