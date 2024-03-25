@@ -2061,7 +2061,7 @@ fn language_option_inline_pattern_apply() -> Result<()> {
     let mut apply_cmd = get_test_cmd()?;
     apply_cmd.current_dir(dir.as_path());
     // apply_cmd.current_dir(basic_path);
-    apply_cmd.arg("apply").arg(pattern).arg("--force").arg("--language").arg("python");
+    apply_cmd.arg("apply").arg(pattern).arg("--force").arg("--lang").arg("python");
     let output = apply_cmd.output()?;
 
     // Assert that the command executed successfully
