@@ -2816,6 +2816,27 @@ fn simple_toml() {
 }
 
 #[test]
+fn call_php() {
+    run_test_no_match({
+        TestArg {
+            pattern: r#"
+                |language php
+                |
+                |`TEST`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |echo "hello world"
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn multi_args_snippet() {
     run_test_match({
         TestArg {
