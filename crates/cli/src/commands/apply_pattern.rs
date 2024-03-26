@@ -144,6 +144,11 @@ macro_rules! flushable_unwrap {
     };
 }
 
+#[inline]
+fn is_pattern_file(pattern: &str) -> bool {
+    pattern.ends_with(".grit") || pattern.ends_with(".md")
+}
+
 #[instrument]
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn run_apply_pattern(
@@ -229,7 +234,7 @@ pub(crate) async fn run_apply_pattern(
         }
 
         let pattern_libs = flushable_unwrap!(emitter, get_grit_files_from_cwd().await);
-        let (mut lang, pattern_body) = if pattern.ends_with(".grit") || pattern.ends_with(".md") {
+        let (mut lang, pattern_body) = if is_pattern_file(&pattern) {
             match fs::read_to_string(pattern.clone()).await {
                 Ok(pb) => {
                     if pattern.ends_with(".grit") {
@@ -289,20 +294,24 @@ pub(crate) async fn run_apply_pattern(
             }
         };
         if let Some(lang_name) = &arg.language {
-            let lang_option = PatternLanguage::from_string(lang_name, None);
-            if let Some(lang_option) = lang_option {
-                if let Some(lang) = lang {
-                    if lang != lang_option {
-                        return Err(anyhow::anyhow!(
-                            "Language option {} does not match pattern language {}",
-                            lang_name,
-                            lang
-                        ));
-                    }
-                }
-                lang = Some(lang_option);
+            if is_pattern_file(&pattern) {
+                log::warn!("Ignoring language option for pattern file.")
             } else {
-                return Err(anyhow::anyhow!("Invalid language option: {}", lang_name));
+                let lang_option = PatternLanguage::from_string(lang_name, None);
+                if let Some(lang_option) = lang_option {
+                    if let Some(lang) = lang {
+                        if lang != lang_option {
+                            return Err(anyhow::anyhow!(
+                                "Language option {} does not match pattern language {}",
+                                lang_name,
+                                lang
+                            ));
+                        }
+                    }
+                    lang = Some(lang_option);
+                } else {
+                    return Err(anyhow::anyhow!("Invalid language option: {}", lang_name));
+                }
             }
         }
         let pattern_libs = flushable_unwrap!(

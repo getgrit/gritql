@@ -2017,7 +2017,7 @@ fn ignores_file_in_grit_dir() -> Result<()> {
 }
 
 #[test]
-fn language_option_apply() -> Result<()> {
+fn language_option_file_pattern_apply() -> Result<()> {
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("simple_python", false)?;
 
@@ -2027,7 +2027,8 @@ fn language_option_apply() -> Result<()> {
     // from the tempdir as cwd, run marzano apply
     let mut apply_cmd = get_test_cmd()?;
     apply_cmd.current_dir(dir.as_path());
-    apply_cmd.arg("apply").arg("--force").arg("pattern.grit").arg("--language").arg("python");
+    // The language option in the pattern file should be ignored
+    apply_cmd.arg("apply").arg("--force").arg("pattern.grit").arg("--language").arg("java");
     let output = apply_cmd.output()?;
 
     // Assert that the command executed successfully
