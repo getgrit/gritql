@@ -181,7 +181,7 @@ impl ListIndex {
                         let index = resolve_opt!(to_unsigned(index, len));
                         return Ok(list
                             .nth(index)
-                            .map(|n| PatternOrResolvedMut::_ResolvedBinding));
+                            .map(|_n| PatternOrResolvedMut::_ResolvedBinding));
                     }
                     bail!("left side of a listIndex must be a list")
                 }
