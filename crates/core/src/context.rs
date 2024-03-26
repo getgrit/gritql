@@ -30,6 +30,19 @@ pub trait Context {
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>>;
 
+    #[cfg(all(
+        feature = "network_requests_external",
+        feature = "external_functions_ffi",
+        not(feature = "network_requests"),
+        target_arch = "wasm32"
+    ))]
+    fn exec_external(
+        &self,
+        code: &[u8],
+        param_names: Vec<String>,
+        input_bindings: &[&str],
+    ) -> Result<Vec<u8>>;
+
     // FIXME: Don't depend on Grit's file handling in Context.
     fn files(&self) -> &FileOwners;
 

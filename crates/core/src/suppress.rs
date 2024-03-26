@@ -84,7 +84,7 @@ fn is_suppress_comment(
         return Ok(false);
     };
     let ignored_rules = ignore_spec.split(',').map(|s| s.trim()).collect::<Vec<_>>();
-    Ok(ignored_rules.contains(&&current_name[..]))
+    Ok(ignored_rules.contains(&current_name))
 }
 
 fn comment_applies_to_range(

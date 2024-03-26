@@ -842,6 +842,21 @@ impl<'a> Context for MarzanoContext<'a> {
         self.built_ins.call(call, context, state, logs)
     }
 
+    #[cfg(all(
+        feature = "network_requests_external",
+        feature = "external_functions_ffi",
+        not(feature = "network_requests"),
+        target_arch = "wasm32"
+    ))]
+    fn exec_external(
+        &self,
+        code: &[u8],
+        param_names: Vec<String>,
+        input_bindings: &[&str],
+    ) -> Result<Vec<u8>> {
+        (self.runtime.exec_external)(code, param_names, input_bindings)
+    }
+
     // FIXME: Don't depend on Grit's file handling in context.
     fn files(&self) -> &FileOwners {
         self.files
