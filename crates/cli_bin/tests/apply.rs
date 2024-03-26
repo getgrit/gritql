@@ -2081,6 +2081,42 @@ fn language_option_inline_pattern_apply() -> Result<()> {
 }
 
 #[test]
+fn language_option_named_pattern_apply() -> Result<()> {
+    let pattern = r"pattern test_pattern() {
+        `os.getenv` => `dotenv.fetch`
+    }
+    test_pattern()
+    ";
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("simple_python", false)?;
+
+    // from the tempdir as cwd, run init
+    run_init(&dir.as_path())?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    apply_cmd.arg("apply").arg(pattern).arg("--force").arg("--lang").arg("python");
+    let output = apply_cmd.output()?;
+
+    // Assert that the command executed successfully
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        String::from_utf8(output.stdout)?
+    );
+
+    // Read back the main.py file
+    let target_file = dir.join("main.py");
+    let content: String = std::fs::read_to_string(target_file)?;
+
+    // assert that it matches snapshot
+    assert_snapshot!(content);
+
+    Ok(())
+}
+
+#[test]
 fn language_option_conflict_apply() -> Result<()> {
     let pattern = r"language java
      `os.getenv` => `dotenv.fetch`";
