@@ -44,7 +44,7 @@ use marzano_language::{language::Language, language::SnippetNode};
 use marzano_util::analysis_logs::AnalysisLogs;
 use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::position::{char_index_to_byte_index, Position, Range};
-use regex::{Match, Regex};
+use regex::Match;
 use std::collections::{BTreeMap, HashMap};
 use std::str;
 use std::vec;
@@ -410,8 +410,8 @@ fn implicit_metavariable_regex(
             &text[last as usize..range.end_byte as usize],
         ));
     }
-    let regex = format!("^{}$", regex_string);
-    let regex = RegexLike::Regex(Regex::new(regex.as_str())?);
+    let regex = regex_string.to_string();
+    let regex = RegexLike::Regex(regex);
     Ok(Some(RegexPattern::new(regex, variables)))
 }
 
@@ -506,7 +506,7 @@ impl Pattern {
                 )?));
             }
             let fields: &Vec<Field> = &node_types[sort as usize];
-            let args = fields
+            let mut args = fields
                 .iter()
                 .filter(|field| {
                     node.child_by_field_id(field.id()).is_some()
@@ -563,6 +563,26 @@ impl Pattern {
                     ))
                 })
                 .collect::<Result<Vec<(u16, bool, Pattern)>>>()?;
+            let mut mandatory_empty_args = fields.iter().filter(|field| {
+                node.child_by_field_id(field.id()).is_none() && lang.mandatory_empty_field(sort, field.id())
+            }).map(|field| {
+                if field.multiple() {
+                    (
+                        field.id(),
+                        true,
+                        Pattern::List(Box::new(List::new(Vec::new()))))
+                } else {
+                    (
+                        field.id(),
+                        false,
+                        Pattern::Dynamic(DynamicPattern::Snippet(DynamicSnippet {
+                        parts: vec![DynamicSnippetPart::String("".to_string())],
+                        }))
+                    )
+                }
+            })
+            .collect::<Vec<(u16, bool, Pattern)>>();
+            args.append(&mut mandatory_empty_args);
             Ok(Pattern::ASTNode(Box::new(ASTNode { sort, args })))
         }
         node_to_astnode(

@@ -25,7 +25,7 @@ pub struct RegexPattern {
 
 #[derive(Debug, Clone)]
 pub enum RegexLike {
-    Regex(Regex),
+    Regex(String),
     Pattern(Box<Pattern>),
 }
 
@@ -64,9 +64,7 @@ impl RegexPattern {
                 .strip_suffix('\"')
                 .ok_or_else(|| anyhow!("invalid regex postfix"))?;
 
-            let regex = format!("^{}$", regex);
-
-            RegexLike::Regex(Regex::new(regex.as_str())?)
+            RegexLike::Regex(regex.to_string())
         } else {
             let back_tick_node = regex_node
                 .child_by_field_name("snippet")
@@ -133,33 +131,32 @@ impl RegexPattern {
             regex, variables,
         ))))
     }
-}
 
-impl Name for RegexPattern {
-    fn name(&self) -> &'static str {
-        "REGEX"
-    }
-}
-
-impl Matcher for RegexPattern {
-    // wrong, but whatever for now
-    fn execute<'a>(
+    pub(crate) fn execute_matching<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
+        must_match_entire_string: bool,
     ) -> Result<bool> {
         let text = binding.text(&state.files)?;
-        let resolved_regex = match self.regex {
-            RegexLike::Regex(ref regex) => regex.clone(),
+        let resolved_regex_text = match &self.regex {
+            RegexLike::Regex(regex) => match must_match_entire_string {
+                true => format!("^{}$", regex),
+                false => regex.to_string(),
+            },
             RegexLike::Pattern(ref pattern) => {
                 let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)?;
-                let text = format!("^{}$", resolved.text(&state.files)?);
-                Regex::new(&text)?
+                let text = resolved.text(&state.files)?;
+                match must_match_entire_string {
+                    true => format!("^{}$", text),
+                    false => text.to_string(),
+                }
             }
         };
-        let captures = match resolved_regex.captures(&text) {
+        let final_regex = Regex::new(&resolved_regex_text)?;
+        let captures = match final_regex.captures(&text) {
             Some(captures) => captures,
             None => return Ok(false),
         };
@@ -226,5 +223,23 @@ impl Matcher for RegexPattern {
         }
 
         Ok(true)
+    }
+}
+
+impl Name for RegexPattern {
+    fn name(&self) -> &'static str {
+        "REGEX"
+    }
+}
+
+impl Matcher for RegexPattern {
+    fn execute<'a>(
+        &'a self,
+        binding: &ResolvedPattern<'a>,
+        state: &mut State<'a>,
+        context: &Context<'a>,
+        logs: &mut AnalysisLogs,
+    ) -> Result<bool> {
+        self.execute_matching(binding, state, context, logs, true)
     }
 }

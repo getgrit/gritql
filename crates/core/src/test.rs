@@ -2911,6 +2911,74 @@ fn hcl_implicit_regex() {
 }
 
 #[test]
+fn includes_regex() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |`console.log($_)` as $haystack where {
+                |   $haystack <: includes r"Hello"
+                |} => `console.log("Goodbye world!")`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |console.log("Hello world!");
+                |console.log("Hello handsome!");
+                |console.log("But not me, sadly.");
+                |console.log("Hi, Hello world!");
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |console.log("Goodbye world!");
+                |console.log("Goodbye world!");
+                |console.log("But not me, sadly.");
+                |console.log("Goodbye world!");
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn includes_regex_with_capture() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |`console.log($_)` as $haystack where {
+                |   $haystack <: includes r"Hello (\w+)"($name)
+                |} => `console.log("Goodbye $name!")`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |console.log("Hello world!");
+                |console.log("Hello handsome!");
+                |console.log("But not me, sadly.");
+                |console.log("Hi, Hello world!");
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |console.log("Goodbye world!");
+                |console.log("Goodbye handsome!");
+                |console.log("But not me, sadly.");
+                |console.log("Goodbye world!");
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn parses_simple_pattern() {
     let pattern = r#"
         |engine marzano(0.1)
@@ -2927,7 +2995,7 @@ fn parses_simple_pattern() {
 fn warning_rewrite_in_not() {
     let pattern = r#"
         |`async ($args) => { $body }` where {
-        |    $body <: not contains `try` => ` try { 
+        |    $body <: not contains `try` => ` try {
         |        $body
         |    } catch { }`
         |}"#
@@ -10743,7 +10811,7 @@ fn rewrite_to_accessor_mut() {
                 |language js
                 |
                 |`const $x = $foo` where {
-                |   $cities = {}, 
+                |   $cities = {},
                 |   $kiel = `kiel`,
                 |   $cities.germany = $kiel,
                 |   $cities.italy = `"venice"`,
@@ -12741,6 +12809,50 @@ fn css_property_value() {
             |    some-property: 5px;
             |    color: var(--red)
             |  }
+            |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
+
+#[test]
+fn json_empty_string_should_not_match_everything() {
+    run_test_no_match(TestArg {
+        pattern: r#"
+            |engine marzano(0.1)
+            |language json
+            |
+            |`"x": ""`
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |{
+            |  "x": "foo"
+            |}
+            |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
+
+#[test]
+fn json_empty_string_should_match_self() {
+    run_test_match(TestArg {
+        pattern: r#"
+            |engine marzano(0.1)
+            |language json
+            |
+            |`"x": ""`
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |{
+            |  "x": ""
+            |}
             |"#
         .trim_margin()
         .unwrap(),
