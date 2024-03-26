@@ -89,8 +89,9 @@ mod tests {
     fn print_sexp() {
         let code = r#"<Hello attr="foo"></Hello>"#;
         let mut parser = tree_sitter::Parser::new().unwrap();
-        let lang = Html::new(None);
-        parser.set_language(lang.get_ts_language()).unwrap();
+        let lang = tree_sitter_html::language().into();
+        // let lang = Html::new(None);
+        parser.set_language(&lang).unwrap();
         let tree = parser.parse(code, None).unwrap().unwrap();
         let root = tree.root_node();
         let sexp = root.to_sexp();
