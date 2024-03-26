@@ -237,7 +237,7 @@ impl Matcher for RegexPattern {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         self.execute_matching(binding, state, context, logs, true)
