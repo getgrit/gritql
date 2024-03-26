@@ -2081,7 +2081,7 @@ fn language_option_inline_pattern_apply() -> Result<()> {
 
 #[test]
 fn language_option_conflict_apply() -> Result<()> {
-    let pattern = r"language php
+    let pattern = r"language java
      `os.getenv` => `dotenv.fetch`";
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("simple_python", false)?;
