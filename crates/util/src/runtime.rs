@@ -70,11 +70,11 @@ impl ExecutionContext {
             Some(api) => Ok(api.clone()),
             None => {
                 // Try to build it from the legacy env vars
-                let openai_api_key = match env::var("OPENAI_API_KEY") {
+                let openai_api_key = match env::var("GRIT_OPENAI_API_KEY") {
                     Ok(val) => val,
                     Err(_) => {
                         return Err(anyhow::anyhow!(
-                            "Authentication is required. Please run grit auth login or provide the OPENAI_API_KEY environment variable."
+                            "Authentication is required. Please run grit auth login or provide the GRIT_OPENAI_API_KEY environment variable."
                         ))
                     }
                 };

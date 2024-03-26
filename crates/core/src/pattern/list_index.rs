@@ -170,16 +170,14 @@ impl ListIndex {
                     let binding = b
                         .last()
                         .ok_or_else(|| anyhow!("left side of a listIndex must be a list"))?;
-                    if let Binding::List(src, node, field) = binding {
+                    if let Binding::List(_src, node, field) = binding {
                         let mut cursor = node.walk();
                         let len = named_children_by_field_id(node, &mut cursor, *field).count();
                         let mut list = named_children_by_field_id(node, &mut cursor, *field);
                         let index = resolve_opt!(to_unsigned(index, len));
-                        return Ok(list.nth(index).map(|n| {
-                            PatternOrResolvedMut::_ResolvedBinding(ResolvedPattern::Binding(
-                                vector![Binding::Node(src, n)],
-                            ))
-                        }));
+                        return Ok(list
+                            .nth(index)
+                            .map(|_n| PatternOrResolvedMut::_ResolvedBinding));
                     }
                     bail!("left side of a listIndex must be a list")
                 }

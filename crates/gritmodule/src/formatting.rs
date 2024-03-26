@@ -28,6 +28,7 @@ pub async fn format_rich_files(
         let mut f = OpenOptions::new()
             .write(true)
             .create(true)
+            .truncate(true)
             .open(&new_file_path)
             .await
             .with_context(|| {
