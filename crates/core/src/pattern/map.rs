@@ -1,16 +1,14 @@
-use std::collections::BTreeMap;
-
-use anyhow::{anyhow, Result};
-use tree_sitter::Node;
-
-use marzano_util::analysis_logs::AnalysisLogs;
-
 use super::{
     compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::VariableSourceLocations,
 };
+use crate::context::Context;
+use anyhow::{anyhow, Result};
+use marzano_util::analysis_logs::AnalysisLogs;
+use std::collections::BTreeMap;
+use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub struct GritMap {
@@ -77,7 +75,7 @@ impl Matcher for GritMap {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut super::state::State<'a>,
-        context: &super::Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let ResolvedPattern::Map(map) = binding {

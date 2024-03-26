@@ -1,13 +1,3 @@
-use std::collections::BTreeMap;
-
-use anyhow::{anyhow, bail, Result};
-use itertools::Itertools;
-use marzano_language::language::Language;
-
-use marzano_util::{
-    analysis_logs::AnalysisLogs, position::Range, tree_sitter_util::children_by_field_name_count,
-};
-
 use super::{
     ast_node::ASTNode,
     built_in_functions::CallBuiltIn,
@@ -19,8 +9,16 @@ use super::{
     patterns::{Name, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::VariableSourceLocations,
-    Context, State,
+    State,
 };
+use crate::context::Context;
+use anyhow::{anyhow, bail, Result};
+use itertools::Itertools;
+use marzano_language::language::Language;
+use marzano_util::{
+    analysis_logs::AnalysisLogs, position::Range, tree_sitter_util::children_by_field_name_count,
+};
+use std::collections::BTreeMap;
 use tree_sitter::Node;
 
 #[derive(Clone, Debug)]
@@ -282,10 +280,10 @@ impl Matcher for Call {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let pattern_definition = &context.pattern_definitions[self.index];
+        let pattern_definition = &context.pattern_definitions()[self.index];
 
         pattern_definition.call(state, binding, context, logs, &self.args)
     }
@@ -368,10 +366,10 @@ impl Evaluator for PrCall {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
-        let predicate_definition = &context.predicate_definitions.get(self.index);
+        let predicate_definition = &context.predicate_definitions().get(self.index);
         if let Some(predicate_definition) = predicate_definition {
             let predicator = predicate_definition.call(state, context, &self.args, logs)?;
             Ok(FuncEvaluation {
@@ -379,7 +377,7 @@ impl Evaluator for PrCall {
                 ret_val: None,
             })
         } else {
-            let function_definition = &context.function_definitions.get(self.index);
+            let function_definition = &context.function_definitions().get(self.index);
             if let Some(function_definition) = function_definition {
                 let res = function_definition.call(state, context, &self.args, logs)?;
                 Ok(res)

@@ -1,7 +1,3 @@
-use std::collections::BTreeMap;
-
-use crate::{binding::Binding, pattern::patterns::Pattern};
-
 use super::{
     compiler::CompilationContext,
     functions::{Evaluator, FuncEvaluation},
@@ -9,10 +5,11 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
     variable::{get_file_name, Variable, VariableSourceLocations},
-    Context,
 };
+use crate::{binding::Binding, context::Context, pattern::patterns::Pattern};
 use anyhow::Result;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
+use std::collections::BTreeMap;
 use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
@@ -35,7 +32,7 @@ impl Log {
     fn add_log<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut message = String::new();
@@ -129,7 +126,7 @@ impl Matcher for Log {
         &'a self,
         _binding: &super::resolved_pattern::ResolvedPattern<'a>,
         state: &mut super::state::State<'a>,
-        context: &super::Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         self.add_log(state, context, logs)
@@ -140,7 +137,7 @@ impl Evaluator for Log {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let predicator = self.add_log(state, context, logs)?;

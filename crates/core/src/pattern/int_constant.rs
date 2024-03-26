@@ -1,13 +1,13 @@
-use anyhow::Result;
-use tree_sitter::Node;
-
 use super::{
     patterns::{Matcher, Name},
     resolved_pattern::ResolvedPattern,
     state::State,
-    Context,
 };
+use crate::context::Context;
+use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
+use tree_sitter::Node;
+
 #[derive(Debug, Clone)]
 pub struct IntConstant {
     pub value: i64,
@@ -36,7 +36,7 @@ impl Matcher for IntConstant {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        _context: &Context<'a>,
+        _context: &'a impl Context,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let text = binding.text(&state.files)?;

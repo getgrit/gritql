@@ -237,7 +237,7 @@ impl<'a> State<'a> {
     pub(crate) fn bindings_history_to_ranges(
         &self,
         lang: &TargetLanguage,
-        current_name: &Option<String>,
+        current_name: Option<&str>,
     ) -> (Vec<VariableMatch>, Vec<Range>, bool) {
         let mut matches = vec![];
         let mut top_level_matches = vec![];

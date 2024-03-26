@@ -1,18 +1,16 @@
-use std::collections::BTreeMap;
-
-use anyhow::{anyhow, Result};
-use marzano_util::analysis_logs::AnalysisLogs;
-use tree_sitter::Node;
-
 use super::{
     compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     state::State,
     variable::VariableSourceLocations,
-    Context,
 };
-use crate::binding::Constant;
+use crate::{binding::Constant, context::Context};
+use anyhow::{anyhow, Result};
+use marzano_util::analysis_logs::AnalysisLogs;
+use std::collections::BTreeMap;
+use tree_sitter::Node;
+
 #[derive(Debug, Clone)]
 pub struct Modulo {
     pub(crate) lhs: Pattern,
@@ -67,7 +65,7 @@ impl Modulo {
     pub(crate) fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let res = self.evaluate(state, context, logs)?;
@@ -77,7 +75,7 @@ impl Modulo {
     fn evaluate<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<i64> {
         let lhs = self.lhs.text(state, context, logs)?;
@@ -100,7 +98,7 @@ impl Matcher for Modulo {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let binding_text = binding.text(&state.files)?;

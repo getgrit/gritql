@@ -5,8 +5,9 @@ use super::{
     patterns::Pattern,
     predicates::Predicate,
     variable::{get_variables, Variable, VariableSourceLocations},
-    Context, State,
+    State,
 };
+use crate::context::Context;
 use anyhow::{anyhow, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
@@ -97,7 +98,7 @@ impl PredicateDefinition {
     pub fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         args: &'a [Option<Pattern>],
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {

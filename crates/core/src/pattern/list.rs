@@ -1,8 +1,3 @@
-use core::fmt::Debug;
-use std::{borrow::Cow, collections::BTreeMap};
-
-use crate::binding::Binding;
-
 use super::{
     compiler::CompilationContext,
     list_index,
@@ -10,12 +5,15 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
     variable::VariableSourceLocations,
-    Context,
 };
+use crate::{binding::Binding, context::Context};
 use anyhow::{anyhow, bail, Result};
+use core::fmt::Debug;
 use marzano_language::language::Field;
 use marzano_util::analysis_logs::AnalysisLogs;
+use std::{borrow::Cow, collections::BTreeMap};
 use tree_sitter::Node;
+
 #[derive(Debug, Clone)]
 pub struct List {
     pub patterns: Vec<Pattern>,
@@ -118,7 +116,7 @@ impl Matcher for List {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut super::state::State<'a>,
-        context: &super::Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match binding {
@@ -157,7 +155,7 @@ fn execute_assoc<'a>(
     patterns: &'a [Pattern],
     children: &[Cow<ResolvedPattern<'a>>],
     current_state: &mut State<'a>,
-    context: &Context<'a>,
+    context: &'a impl Context,
     logs: &mut AnalysisLogs,
 ) -> Result<bool> {
     let mut working_state = current_state.clone();

@@ -1,11 +1,10 @@
-use std::{borrow::Cow, collections::BTreeMap};
-
-use crate::binding::Constant;
+use crate::{binding::Constant, context::Context};
 use anyhow::{anyhow, bail, Result};
 #[cfg(feature = "external_functions")]
 use marzano_externals::function::ExternalFunction;
 use marzano_language::foreign_language::ForeignLanguage;
 use marzano_util::analysis_logs::AnalysisLogs;
+use std::{borrow::Cow, collections::BTreeMap};
 use tree_sitter::Node;
 
 use super::{
@@ -17,14 +16,13 @@ use super::{
     resolved_pattern::patterns_to_resolved,
     state::State,
     variable::{get_variables, Variable, VariableSourceLocations},
-    Context,
 };
 
 pub(crate) trait FunctionDefinition {
     fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         args: &'a [Option<Pattern>],
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation>;
@@ -114,7 +112,7 @@ impl FunctionDefinition for GritFunctionDefinition {
     fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         args: &'a [Option<Pattern>],
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
@@ -204,7 +202,7 @@ impl FunctionDefinition for ForeignFunctionDefinition {
     fn call<'a>(
         &'a self,
         _state: &mut State<'a>,
-        _context: &Context<'a>,
+        _context: &'a impl Context,
         _args: &'a [Option<Pattern>],
         _logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
@@ -214,7 +212,7 @@ impl FunctionDefinition for ForeignFunctionDefinition {
     fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         args: &'a [Option<Pattern>],
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
@@ -241,7 +239,7 @@ impl FunctionDefinition for ForeignFunctionDefinition {
 
         // START Simple externalized version
         #[cfg(all(feature = "external_functions_ffi", target_arch = "wasm32"))]
-        let result = (context.runtime.exec_external)(&self.code, param_names, &resolved_str)?;
+        let result = context.exec_external(&self.code, param_names, &resolved_str)?;
 
         // END Simple externalized version
 

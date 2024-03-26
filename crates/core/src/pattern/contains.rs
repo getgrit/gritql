@@ -1,11 +1,11 @@
-use crate::{binding::Binding, resolve};
+use crate::{binding::Binding, context::Context, resolve};
 
 use super::{
     compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::{LazyBuiltIn, ListBinding, Lists, ResolvedPattern, ResolvedSnippet},
     variable::VariableSourceLocations,
-    Context, Node, State,
+    Node, State,
 };
 
 use anyhow::{anyhow, Result};
@@ -75,7 +75,7 @@ fn execute_until<'a>(
     init_state: &mut State<'a>,
     node: &Node<'a>,
     src: &'a str,
-    context: &Context<'a>,
+    context: &'a impl Context,
     logs: &mut AnalysisLogs,
     the_contained: &'a Pattern,
     until: &'a Option<Pattern>,
@@ -131,7 +131,7 @@ impl Matcher for Contains {
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match resolved_pattern {

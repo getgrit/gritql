@@ -1,12 +1,11 @@
-use anyhow::Result;
-use im::vector;
-
 use super::{
     patterns::{Matcher, Pattern},
     resolved_pattern::ResolvedPattern,
     state::State,
-    Context,
 };
+use crate::context::Context;
+use anyhow::Result;
+use im::vector;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
@@ -25,7 +24,7 @@ impl Matcher for Files {
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match resolved_pattern {

@@ -8,9 +8,9 @@ use super::{
     resolved_pattern::ResolvedPattern,
     variable::Variable,
     variable::VariableSourceLocations,
-    Context, State,
+    State,
 };
-use crate::split_snippet::split_snippet;
+use crate::{context::Context, split_snippet::split_snippet};
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use marzano_language::language::Language;
@@ -155,7 +155,7 @@ impl Matcher for Where {
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut cur_state = init_state.clone();

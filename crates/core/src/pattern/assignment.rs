@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use super::{
     compiler::CompilationContext,
     container::Container,
@@ -7,11 +5,13 @@ use super::{
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::{is_reserved_metavariable, VariableSourceLocations},
-    Context, State,
+    State,
 };
+use crate::context::Context;
 use anyhow::{anyhow, bail, Result};
 use marzano_language::{language::GRIT_METAVARIABLE_PREFIX, target_language::TargetLanguage};
 use marzano_util::analysis_logs::AnalysisLogs;
+use std::collections::BTreeMap;
 use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
@@ -79,7 +79,7 @@ impl Matcher for Assignment {
         &'a self,
         _context_node: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let resolved = ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
@@ -92,7 +92,7 @@ impl Evaluator for Assignment {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let resolved: ResolvedPattern<'_> =

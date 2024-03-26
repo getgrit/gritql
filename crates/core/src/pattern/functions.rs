@@ -1,14 +1,13 @@
-use marzano_util::analysis_logs::AnalysisLogs;
-
 use super::{
     function_definition::FunctionDefinition,
     patterns::{Name, Pattern},
     resolved_pattern::ResolvedPattern,
     state::State,
-    Context,
 };
+use crate::context::Context;
 use anyhow::{bail, Result};
 use core::fmt::Debug;
+use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
 pub(crate) struct FuncEvaluation<'a> {
@@ -20,7 +19,7 @@ pub(crate) trait Evaluator: Debug {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation>;
 }
@@ -35,7 +34,7 @@ pub(crate) trait GritCall {
     fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>>;
 }
@@ -50,10 +49,10 @@ impl GritCall for CallFunction {
     fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
-        let function_definition = &context.function_definitions[self.index];
+        let function_definition = &context.function_definitions()[self.index];
 
         match function_definition
             .call(state, context, &self.args, logs)?
@@ -87,10 +86,10 @@ impl GritCall for CallForeignFunction {
     fn call<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
-        let function_definition = &context.foreign_function_definitions[self.index];
+        let function_definition = &context.foreign_function_definitions()[self.index];
 
         match function_definition
             .call(state, context, &self.args, logs)?

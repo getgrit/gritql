@@ -3,11 +3,11 @@ use super::{
     functions::{Evaluator, FuncEvaluation},
     patterns::{Name, Pattern},
     variable::{Variable, VariableSourceLocations},
-    Context, State,
+    State,
 };
+use crate::context::Context;
 use anyhow::{anyhow, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
-
 use std::collections::BTreeMap;
 use tree_sitter::Node;
 
@@ -76,7 +76,7 @@ impl Evaluator for Equal {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let lhs_text = self.var.text(state)?;

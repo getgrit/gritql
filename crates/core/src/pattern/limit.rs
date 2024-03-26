@@ -1,24 +1,19 @@
-use std::{
-    collections::BTreeMap,
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
-    },
-};
-
-use anyhow::{anyhow, Result};
-use tree_sitter::Node;
-
-use marzano_util::analysis_logs::AnalysisLogs;
-
 use super::{
     compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     state::State,
     variable::VariableSourceLocations,
-    Context,
 };
+use crate::context::Context;
+use anyhow::{anyhow, Result};
+use marzano_util::analysis_logs::AnalysisLogs;
+use std::collections::BTreeMap;
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
+};
+use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub struct Limit {
@@ -80,10 +75,10 @@ impl Matcher for Limit {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        if context.runtime.ignore_limit_pattern {
+        if context.ignore_limit_pattern() {
             let res = self.pattern.execute(binding, state, context, logs)?;
             return Ok(res);
         }

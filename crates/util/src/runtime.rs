@@ -1,8 +1,6 @@
-use std::env;
-
-use anyhow::anyhow;
 use anyhow::Result;
 use http::HeaderMap;
+use std::env;
 #[cfg(feature = "network_requests")]
 use tokio::runtime::Handle;
 
@@ -25,6 +23,23 @@ pub struct ExecutionContext {
     pub ignore_limit_pattern: bool,
 }
 
+#[cfg(all(
+    feature = "network_requests_external",
+    feature = "external_functions_ffi",
+    not(feature = "network_requests"),
+    target_arch = "wasm32"
+))]
+type FetchFn = fn(url: &str, headers: &HeaderMap, json: &serde_json::Value) -> Result<String>;
+
+#[cfg(all(
+    feature = "network_requests_external",
+    feature = "external_functions_ffi",
+    not(feature = "network_requests"),
+    target_arch = "wasm32"
+))]
+type ExecExternalFn =
+    fn(code: &[u8], param_names: Vec<String>, input_bindings: &[&str]) -> Result<Vec<u8>>;
+
 /// This variant of execution context depends on an *external* system making HTTP requests.
 /// It is particularly useful for the WebAssembly variant of Marzano.
 #[cfg(all(
@@ -36,9 +51,8 @@ pub struct ExecutionContext {
 #[derive(Clone, Debug)]
 pub struct ExecutionContext {
     llm_api: Option<LanguageModelAPI>,
-    fetch: fn(url: &str, headers: &HeaderMap, json: &serde_json::Value) -> Result<String>,
-    pub exec_external:
-        fn(code: &[u8], param_names: Vec<String>, input_bindings: &[&str]) -> Result<Vec<u8>>,
+    fetch: FetchFn,
+    pub exec_external: ExecExternalFn,
     pub ignore_limit_pattern: bool,
 }
 
@@ -87,14 +101,7 @@ impl ExecutionContext {
         not(feature = "network_requests"),
         target_arch = "wasm32"
     ))]
-    pub fn new(
-        fetch: fn(url: &str, headers: &HeaderMap, json: &serde_json::Value) -> Result<String>,
-        exec_external: fn(
-            code: &[u8],
-            param_names: Vec<String>,
-            input_bindings: &[&str],
-        ) -> Result<Vec<u8>>,
-    ) -> ExecutionContext {
+    pub fn new(fetch: FetchFn, exec_external: ExecExternalFn) -> ExecutionContext {
         Self {
             llm_api: None,
             fetch,
@@ -116,10 +123,9 @@ impl ExecutionContext {
         url: &str,
         token: &str,
     ) -> Result<String> {
-        let handle = self
-            .handle
-            .as_ref()
-            .ok_or_else(|| anyhow!("llm request must be made from within a tokio runtime"))?;
+        let handle = self.handle.as_ref().ok_or_else(|| {
+            anyhow::anyhow!("llm request must be made from within a tokio runtime")
+        })?;
         let client = self.reqwest.clone();
         let url = url.to_owned();
         let token = token.to_owned();

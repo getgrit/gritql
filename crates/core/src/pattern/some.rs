@@ -1,14 +1,14 @@
 use anyhow::{anyhow, Result};
 use im::vector;
 
-use crate::{binding::Binding, resolve};
+use crate::{binding::Binding, context::Context, resolve};
 
 use super::{
     compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::VariableSourceLocations,
-    Context, State,
+    State,
 };
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
@@ -61,7 +61,7 @@ impl Matcher for Some {
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match binding {
