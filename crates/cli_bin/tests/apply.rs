@@ -2027,7 +2027,6 @@ fn language_option_apply() -> Result<()> {
     // from the tempdir as cwd, run marzano apply
     let mut apply_cmd = get_test_cmd()?;
     apply_cmd.current_dir(dir.as_path());
-    // apply_cmd.current_dir(basic_path);
     apply_cmd.arg("apply").arg("--force").arg("pattern.grit").arg("--language").arg("python");
     let output = apply_cmd.output()?;
 
@@ -2060,7 +2059,6 @@ fn language_option_inline_pattern_apply() -> Result<()> {
     // from the tempdir as cwd, run marzano apply
     let mut apply_cmd = get_test_cmd()?;
     apply_cmd.current_dir(dir.as_path());
-    // apply_cmd.current_dir(basic_path);
     apply_cmd.arg("apply").arg(pattern).arg("--force").arg("--lang").arg("python");
     let output = apply_cmd.output()?;
 
@@ -2094,7 +2092,6 @@ fn language_option_conflict_apply() -> Result<()> {
     // from the tempdir as cwd, run marzano apply
     let mut apply_cmd = get_test_cmd()?;
     apply_cmd.current_dir(dir.as_path());
-    // apply_cmd.current_dir(basic_path);
     apply_cmd.arg("apply").arg(pattern).arg("--force").arg("--language").arg("python");
     let output = apply_cmd.output()?;
 
