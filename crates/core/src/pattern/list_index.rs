@@ -179,11 +179,9 @@ impl ListIndex {
                         let len = named_children_by_field_id(node, &mut cursor, *field).count();
                         let mut list = named_children_by_field_id(node, &mut cursor, *field);
                         let index = resolve_opt!(to_unsigned(index, len));
-                        return Ok(list.nth(index).map(|n| {
-                            PatternOrResolvedMut::_ResolvedBinding(ResolvedPattern::Binding(
-                                vector![Binding::Node(src, n)],
-                            ))
-                        }));
+                        return Ok(list
+                            .nth(index)
+                            .map(|n| PatternOrResolvedMut::_ResolvedBinding));
                     }
                     bail!("left side of a listIndex must be a list")
                 }
