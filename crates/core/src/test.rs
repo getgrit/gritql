@@ -12815,3 +12815,47 @@ fn css_property_value() {
     })
     .unwrap();
 }
+
+#[test]
+fn json_empty_string_should_not_match_everything() {
+    run_test_no_match(TestArg {
+        pattern: r#"
+            |engine marzano(0.1)
+            |language json
+            |
+            |`"x": ""`
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |{
+            |  "x": "foo"
+            |}
+            |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
+
+#[test]
+fn json_empty_string_should_match_self() {
+    run_test_match(TestArg {
+        pattern: r#"
+            |engine marzano(0.1)
+            |language json
+            |
+            |`"x": ""`
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |{
+            |  "x": ""
+            |}
+            |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
