@@ -110,7 +110,7 @@ pub struct ApplyPatternArgs {
     #[clap(long = "refresh-cache", conflicts_with = "cache")]
     pub refresh_cache: bool,
     #[clap(long = "language", alias="lang")]
-    pub language: Option<String>,
+    pub language: Option<PatternLanguage>,
 }
 
 impl Default for ApplyPatternArgs {
@@ -293,25 +293,20 @@ pub(crate) async fn run_apply_pattern(
                 }
             }
         };
-        if let Some(lang_name) = &arg.language {
+        if let Some(lang_option) = &arg.language {
             if is_pattern_file(&pattern) {
                 log::warn!("Ignoring language option for pattern file.")
             } else {
-                let lang_option = PatternLanguage::from_string(lang_name, None);
-                if let Some(lang_option) = lang_option {
-                    if let Some(lang) = lang {
-                        if lang != lang_option {
-                            return Err(anyhow::anyhow!(
-                                "Language option {} does not match pattern language {}",
-                                lang_name,
-                                lang
-                            ));
-                        }
+                if let Some(lang) = lang {
+                    if lang != *lang_option {
+                        return Err(anyhow::anyhow!(
+                            "Language option {} does not match pattern language {}",
+                            lang_option,
+                            lang
+                        ));
                     }
-                    lang = Some(lang_option);
-                } else {
-                    return Err(anyhow::anyhow!("Invalid language option: {}", lang_name));
                 }
+                lang = Some(*lang_option);
             }
         }
         let pattern_libs = flushable_unwrap!(
