@@ -16,7 +16,6 @@ use super::{
 };
 use super::{Effect, EffectKind};
 use crate::context::Context;
-use crate::smart_insert::normalize_insert;
 use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
@@ -203,7 +202,7 @@ impl Matcher for Accumulate {
                 .iter()
                 .map(|b| {
                     let is_first = !state.effects.iter().any(|e| e.binding == *b);
-                    normalize_insert(b, &mut replacement, is_first, context.language())?;
+                    replacement.normalize_insert(b, is_first, context.language())?;
                     Ok(Effect {
                         binding: b.clone(),
                         pattern: replacement.clone(),

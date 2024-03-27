@@ -1,69 +1,53 @@
-use crate::{
-    binding::Binding,
-    pattern::resolved_pattern::{ResolvedPattern, ResolvedSnippet},
-};
-use anyhow::Result;
+use crate::binding::Binding;
 use itertools::Itertools;
 use marzano_language::{language::Language, target_language::TargetLanguage};
 use tree_sitter::Node;
 
-pub(crate) fn normalize_insert<'a>(
-    binding: &Binding<'a>,
-    with: &mut ResolvedPattern<'a>,
-    is_first: bool,
-    language: &TargetLanguage,
-) -> Result<()> {
-    let ResolvedPattern::Snippets(ref mut snippets) = with else {
-        return Ok(());
-    };
-    let Some(ResolvedSnippet::Text(text)) = snippets.front() else {
-        return Ok(());
-    };
-    let insert_padding = match binding {
-        Binding::List(src, node, field_id) => {
-            let mut cursor = node.walk();
-            let children = node
-                .children_by_field_id(*field_id, &mut cursor)
-                .collect_vec();
-            if children.is_empty() {
-                return Ok(());
-            }
-            calculate_padding(src, &children, text, is_first, language).or_else(|| {
-                if children.len() == 1 {
-                    let child = children.first().unwrap();
-                    let child_text = child.utf8_text(src.as_bytes()).ok()?;
-                    if child.end_position().row() > child.start_position().row()
-                        && !child_text.ends_with('\n')
-                        && !text.starts_with('\n')
-                    {
-                        return Some("\n".to_string());
-                    }
+impl<'a> Binding<'a> {
+    /// Returns the padding to use for inserting the given text.
+    pub(crate) fn get_insertion_padding(
+        &self,
+        text: &str,
+        is_first: bool,
+        language: &TargetLanguage,
+    ) -> Option<String> {
+        match self {
+            Self::List(src, node, field_id) => {
+                let mut cursor = node.walk();
+                let children = node
+                    .children_by_field_id(*field_id, &mut cursor)
+                    .collect_vec();
+                if children.is_empty() {
+                    return None;
                 }
-                None
-            })
-        }
-        Binding::Node(src, node) => {
-            let node_text = node.utf8_text(src.as_bytes())?;
-            if language.is_statement(node.kind_id())
-                && !node_text.ends_with('\n')
-                && !text.starts_with('\n')
-            {
-                Some("\n".to_string())
-            } else {
-                None
+                calculate_padding(src, &children, text, is_first, language).or_else(|| {
+                    if children.len() == 1 {
+                        let child = children.first().unwrap();
+                        let child_text = child.utf8_text(src.as_bytes()).ok()?;
+                        if child.end_position().row() > child.start_position().row()
+                            && !child_text.ends_with('\n')
+                            && !text.starts_with('\n')
+                        {
+                            return Some("\n".to_string());
+                        }
+                    }
+                    None
+                })
             }
-        }
-        Binding::String(..)
-        | Binding::FileName(_)
-        | Binding::Empty(..)
-        | Binding::ConstantRef(_) => None,
-    };
-    if let Some(padding) = insert_padding {
-        if padding.chars().next() != binding.text().chars().last() {
-            snippets.push_front(ResolvedSnippet::Text(padding.into()));
+            Self::Node(src, node) => {
+                let node_text = node.utf8_text(src.as_bytes()).ok()?;
+                if language.is_statement(node.kind_id())
+                    && !node_text.ends_with('\n')
+                    && !text.starts_with('\n')
+                {
+                    Some("\n".to_string())
+                } else {
+                    None
+                }
+            }
+            Self::String(..) | Self::FileName(_) | Self::Empty(..) | Self::ConstantRef(_) => None,
         }
     }
-    Ok(())
 }
 
 fn calculate_padding(

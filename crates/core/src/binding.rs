@@ -1,3 +1,4 @@
+use crate::ast_node::NodeWithSource;
 use crate::inline_snippets::inline_sorted_snippets_with_offset;
 use crate::pattern::state::{get_top_level_effects, FileRegistry};
 use crate::pattern::{Effect, EffectKind};
@@ -7,6 +8,7 @@ use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 use marzano_util::position::{Position, Range};
 use std::ops::Range as StdRange;
+use std::path::Path;
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
 use tree_sitter::Node;
 
@@ -52,7 +54,7 @@ pub enum Binding<'a> {
     // used by slices that don't correspond to a node
     // currently only comment content.
     String(&'a str, Range),
-    FileName(&'a str),
+    FileName(&'a Path),
     Node(&'a str, Node<'a>),
     // tree-sitter lists ("multiple" fields of nodes) do not have a unique identity
     // so we represent them by the parent node and a field id
@@ -175,49 +177,6 @@ impl EffectRange {
     }
 }
 
-pub(crate) fn log_empty_field_rewrite_error<T>(
-    range: &Option<T>,
-    binding: &Binding,
-    language: &TargetLanguage,
-    logs: &mut AnalysisLogs,
-) -> Result<()> {
-    if range.is_none() {
-        match binding {
-            Binding::Empty(src, node, field) => {
-                let range: Range = node.range().into();
-                let log = AnalysisLogBuilder::default()
-                    .level(441_u16)
-                    .source(*src)
-                    .position(range.start)
-                    .range(range)
-                    .message(format!(
-            "Error: failed to rewrite binding, cannot derive range of empty field {} of node {}", language.get_ts_language().field_name_for_id(*field).unwrap(), node.kind()
-        ))
-                    .build()?;
-                logs.push(log);
-            }
-            Binding::List(src, node, field) => {
-                let range: Range = node.range().into();
-                let log = AnalysisLogBuilder::default()
-                    .level(441_u16)
-                    .source(*src)
-                    .position(range.start)
-                    .range(range)
-                    .message(format!(
-            "Error: failed to rewrite binding, cannot derive range of empty field {} of node {}", language.get_ts_language().field_name_for_id(*field).unwrap(), node.kind()
-        ))
-                    .build()?;
-                logs.push(log);
-            }
-            Binding::String(_, _)
-            | Binding::FileName(_)
-            | Binding::Node(_, _)
-            | Binding::ConstantRef(_) => {}
-        }
-    }
-    Ok(())
-}
-
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn linearize_binding<'a>(
     language: &TargetLanguage,
@@ -239,9 +198,11 @@ pub(crate) fn linearize_binding<'a>(
                 (Some(src), Some(orig_range)) => {
                     (Some(src), Some(CodeRange::from_range(src, orig_range)))
                 }
-                _ => (None, None),
+                _ => {
+                    b.log_empty_field_rewrite_error(language, logs)?;
+                    (None, None)
+                }
             };
-            log_empty_field_rewrite_error(&range, &b, language, logs)?;
             if let (Some(src), Some(range)) = (src, &range) {
                 match effect.kind {
                     EffectKind::Rewrite => {
@@ -324,6 +285,39 @@ pub(crate) fn linearize_binding<'a>(
 }
 
 impl<'a> Binding<'a> {
+    pub(crate) fn from_node(node: NodeWithSource<'a>) -> Self {
+        Self::Node(node.source, node.node)
+    }
+
+    /// Returns the node this binding applies to.
+    ///
+    /// Unlike [`Self::get_node()`], this will return the exact child node if
+    /// the binding applies to a list.
+    pub(crate) fn as_node(&self) -> Option<NodeWithSource<'a>> {
+        match self {
+            Self::Node(src, node) => Some(NodeWithSource::new(node.clone(), src)),
+            Self::List(src, node, field) => node
+                .child_by_field_id(*field)
+                .map(|child| NodeWithSource::new(child, src)),
+            Self::Empty(..) | Self::String(..) | Self::ConstantRef(..) | Binding::FileName(..) => {
+                None
+            }
+        }
+    }
+
+    /// Returns the node from which this binding was created.
+    ///
+    /// This differs from [`Self::as_node()`] in that it returns the node for an
+    /// entire list when the binding applies to a list item.
+    pub(crate) fn get_node(&self) -> Option<NodeWithSource<'a>> {
+        match self {
+            Self::Node(source, node)
+            | Self::List(source, node, _)
+            | Self::Empty(source, node, _) => Some(NodeWithSource::new(node.clone(), source)),
+            Self::String(..) | Binding::FileName(..) | Binding::ConstantRef(_) => None,
+        }
+    }
+
     pub fn singleton(&self) -> Option<(&str, Node)> {
         match self {
             Binding::Node(src, node) => Some((src, node.to_owned())),
@@ -453,7 +447,7 @@ impl<'a> Binding<'a> {
             Binding::String(s, r) => Ok(Cow::Owned(
                 s[r.start_byte as usize..r.end_byte as usize].into(),
             )),
-            Binding::FileName(s) => Ok(Cow::Owned(s.to_string())),
+            Binding::FileName(s) => Ok(Cow::Owned(s.to_string_lossy().into())),
             Binding::List(source, _parent_node, _field_id) => {
                 if let Some(pos) = self.position() {
                     let range = CodeRange::new(pos.start_byte, pos.end_byte, source);
@@ -482,7 +476,7 @@ impl<'a> Binding<'a> {
             Binding::Empty(_, _, _) => "".to_string(),
             Binding::Node(source, node) => node_text(source, node).to_string(),
             Binding::String(s, r) => s[r.start_byte as usize..r.end_byte as usize].into(),
-            Binding::FileName(s) => s.to_string(),
+            Binding::FileName(s) => s.to_string_lossy().into(),
             Binding::List(source, _, _) => {
                 if let Some(pos) = self.position() {
                     source[pos.start_byte as usize..pos.end_byte as usize].to_string()
@@ -506,10 +500,46 @@ impl<'a> Binding<'a> {
             Binding::Node(source, _) => Some(source),
             Binding::String(source, _) => Some(source),
             Binding::List(source, _, _) => Some(source),
-            // maybe should be none?
-            Binding::FileName(source) => Some(source),
-            Binding::ConstantRef(_) => None,
+            Binding::FileName(..) | Binding::ConstantRef(..) => None,
         }
+    }
+
+    pub fn as_filename(&self) -> Option<&Path> {
+        match self {
+            Binding::FileName(path) => Some(path),
+            Binding::Empty(..)
+            | Binding::Node(..)
+            | Binding::String(..)
+            | Binding::List(..)
+            | Binding::ConstantRef(..) => None,
+        }
+    }
+
+    pub(crate) fn log_empty_field_rewrite_error(
+        &self,
+        language: &TargetLanguage,
+        logs: &mut AnalysisLogs,
+    ) -> Result<()> {
+        match self {
+            Self::Empty(src, node, field) | Self::List(src, node, field) => {
+                let range: Range = node.range().into();
+                let log = AnalysisLogBuilder::default()
+                        .level(441_u16)
+                        .source(*src)
+                        .position(range.start)
+                        .range(range)
+                        .message(format!(
+                            "Error: failed to rewrite binding, cannot derive range of empty field {} of node {}",
+                            language.get_ts_language().field_name_for_id(*field).unwrap(),
+                            node.kind()
+                        ))
+                        .build()?;
+                logs.push(log);
+            }
+            Self::String(_, _) | Self::FileName(_) | Self::Node(_, _) | Self::ConstantRef(_) => {}
+        }
+
+        Ok(())
     }
 }
 

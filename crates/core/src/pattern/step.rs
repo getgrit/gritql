@@ -1,5 +1,5 @@
 use marzano_util::position::Range;
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, path::PathBuf};
 
 use super::{
     auto_wrap::wrap_pattern_in_before_and_after_each_file,
@@ -11,7 +11,6 @@ use super::{
     FileOwner,
 };
 use crate::{
-    binding::Constant,
     context::Context,
     orphan::{get_orphaned_ranges, remove_orphaned_ranges},
     pattern::{InputRanges, MatchRanges},
@@ -232,10 +231,9 @@ impl Matcher for Step {
             let file = state.files.get_file(file_ptr);
             let mut match_log = file.matches.borrow_mut();
 
-            let filename_string = &file.name;
+            let filename_path = &file.name;
 
-            // todo shouldn't have to wrap new_filename in const
-            let mut new_filename: Constant = Constant::String(filename_string.to_owned());
+            let mut new_filename = filename_path.clone();
 
             let src = &file.source;
 
@@ -247,7 +245,8 @@ impl Matcher for Step {
                 .effects
                 .iter()
                 .find(|e| {
-                    e.binding.source() == Some(src) || e.binding.source() == Some(filename_string)
+                    e.binding.source() == Some(src)
+                        || e.binding.as_filename() == Some(filename_path)
                 })
                 .cloned()
                 .is_some()
@@ -276,7 +275,7 @@ impl Matcher for Step {
                     let ranges =
                         MatchRanges::new(new_ranges.into_iter().map(|r| r.into()).collect());
                     let owned_file = FileOwner::new(
-                        new_filename.to_string(),
+                        new_filename,
                         new_src,
                         Some(ranges),
                         true,
@@ -296,7 +295,12 @@ impl Matcher for Step {
         {
             for f in new_files_vector {
                 if let ResolvedPattern::File(file) = f {
-                    let name = file.name(&state.files).text(&state.files).unwrap().into();
+                    let name: PathBuf = file
+                        .name(&state.files)
+                        .text(&state.files)
+                        .unwrap()
+                        .as_ref()
+                        .into();
                     let body = file.body(&state.files).text(&state.files).unwrap().into();
                     let owned_file =
                         FileOwner::new(name, body, None, true, context.language(), logs)?;

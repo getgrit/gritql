@@ -61,7 +61,7 @@ pub fn are_bindings_equivalent(binding1: &Binding, binding2: &Binding) -> bool {
         Binding::String(s1, range) => {
             s1[range.start_byte as usize..range.end_byte as usize] == binding2.text()
         }
-        Binding::FileName(s1) => *s1 == binding2.text(),
+        Binding::FileName(s1) => binding2.as_filename().map_or(false, |s2| *s1 == s2),
     }
 }
 
