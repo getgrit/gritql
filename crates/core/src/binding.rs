@@ -515,6 +515,18 @@ impl<'a> Binding<'a> {
         }
     }
 
+    /// Returns the parent node of this binding.
+    ///
+    /// Returns `None` if the binding has no relation to a node.
+    pub(crate) fn parent_node(&self) -> Option<NodeWithSource<'a>> {
+        match self {
+            Self::Node(src, node) => node.parent().map(|parent| NodeWithSource::new(parent, src)),
+            Self::List(src, node, _) => Some(NodeWithSource::new(node.clone(), src)),
+            Self::Empty(src, node, _) => Some(NodeWithSource::new(node.clone(), src)),
+            Self::String(..) | Self::FileName(..) | Self::ConstantRef(..) => None,
+        }
+    }
+
     pub fn is_truthy(&self) -> bool {
         match self {
             Self::Empty(..) => false,
