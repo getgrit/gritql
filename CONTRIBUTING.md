@@ -69,3 +69,12 @@ These steps are done in our cloud environment and are not necessary for contribu
 - There are also `exhaustive` runtime checks that error if a switch case doesn’t handle a language, like `makeSingleLineComment`. Search for `exhaustive(lang` and fill those out too.
 - Regenerate both DB/prisma types to add it to the DB schema and GraphQL types.
 - Add the language to `language-selector.tsx`. Pick an icon from [https://react-icons.github.io](https://react-icons.github.io/), usually from the Simple Icons category.
+
+## Development Tools
+
+Make sure you have the following tools installed to guarantee everything works:
+
+- Rust Toolchain
+  - In order to create WASM builds, you should run `rustup target install wasm32-unknown-unknown`
+- `terraform` CLI. See https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
+- `npx`. Install with Node.js: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm

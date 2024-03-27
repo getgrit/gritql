@@ -252,9 +252,7 @@ impl GritServerManager {
     }
 
     pub fn get_root_path(&self) -> Option<PathBuf> {
-        let Some(root_uri) = self.get_root_uri() else {
-            return None;
-        };
+        let root_uri = self.get_root_uri()?;
         match uri_to_file_path(root_uri.as_ref()) {
             Ok(path) => Some(path),
             Err(_) => None,

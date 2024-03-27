@@ -55,9 +55,7 @@ pub fn target_language_to_language_id(target_language: TargetLanguage) -> &'stat
 
 #[allow(dead_code)]
 pub fn extension_to_language_id(extension: &str) -> Option<String> {
-    let Some(language) = TargetLanguage::from_extension(extension) else {
-        return None;
-    };
+    let language = TargetLanguage::from_extension(extension)?;
     Some(target_language_to_language_id(language).to_string())
 }
 

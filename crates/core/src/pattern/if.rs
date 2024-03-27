@@ -5,12 +5,12 @@ use super::{
     predicates::Predicate,
     resolved_pattern::ResolvedPattern,
     variable::VariableSourceLocations,
-    Context, State,
+    State,
 };
+use crate::context::Context;
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
-
 use std::collections::BTreeMap;
 use tree_sitter::Node;
 
@@ -93,7 +93,7 @@ impl Matcher for If {
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut state = init_state.clone();
@@ -182,7 +182,7 @@ impl Evaluator for PrIf {
     fn execute_func<'a>(
         &'a self,
         init_state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let mut state = init_state.clone();

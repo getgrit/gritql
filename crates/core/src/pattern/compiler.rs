@@ -816,15 +816,23 @@ mod tests {
 
     use super::*;
 
-
     #[test]
     fn test_typescript_flavor() {
         let libs = BTreeMap::new();
         let pattern = r#"
             language js (typescript)
             `foo`
-        "#.to_owned();
-        let pattern = src_to_problem_libs(pattern, &libs, PatternLanguage::JavaScript.try_into().unwrap(), None, None, None).unwrap();
+        "#
+        .to_owned();
+        let pattern = src_to_problem_libs(
+            pattern,
+            &libs,
+            PatternLanguage::JavaScript.try_into().unwrap(),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
         let language = pattern.problem.language.language_name();
         assert_eq!(language, "TypeScript");
     }

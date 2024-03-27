@@ -31,7 +31,7 @@ pub(crate) enum PatternOrResolved<'a, 'b> {
 pub(crate) enum PatternOrResolvedMut<'a, 'b> {
     Pattern(&'a Pattern),
     Resolved(&'b mut ResolvedPattern<'a>),
-    _ResolvedBinding(ResolvedPattern<'a>),
+    _ResolvedBinding,
 }
 
 // A Container represents anything which "contains" a reference to a Pattern

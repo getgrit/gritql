@@ -1,10 +1,12 @@
 use std::collections::BTreeMap;
 
+use crate::context::Context;
+
 use super::compiler::CompilationContext;
 use super::patterns::Name;
 use super::resolved_pattern::ResolvedPattern;
 use super::variable::{get_variables, register_variable, VariableSourceLocations};
-use super::{patterns::Matcher, patterns::Pattern, Context, PatternDefinition, State};
+use super::{patterns::Matcher, patterns::Pattern, PatternDefinition, State};
 use anyhow::{anyhow, bail, Result};
 use itertools::Itertools;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -115,7 +117,7 @@ impl Matcher for Bubble {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         self.pattern_def

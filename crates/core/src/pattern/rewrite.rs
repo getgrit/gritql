@@ -7,12 +7,12 @@ use super::{
     resolved_pattern::ResolvedPattern,
     variable::VariableSourceLocations,
     variable_content::VariableContent,
-    Context, Effect, EffectKind, State,
+    Effect, EffectKind, State,
 };
+use crate::context::Context;
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
-
 use std::{borrow::Cow, collections::BTreeMap};
 use tree_sitter::Node;
 
@@ -180,7 +180,7 @@ impl Rewrite {
         &'a self,
         resolved: Option<&ResolvedPattern<'a>>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let resolved = match resolved {
@@ -257,7 +257,7 @@ impl Matcher for Rewrite {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         self.execute_generalized(Some(binding), state, context, logs)
@@ -268,7 +268,7 @@ impl Evaluator for Rewrite {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let predicator = self.execute_generalized(None, state, context, logs)?;

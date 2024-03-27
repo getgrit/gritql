@@ -160,6 +160,10 @@ pub trait Language {
         false
     }
 
+    fn mandatory_empty_field(&self, _sort_id: SortId, _field_id: FieldId) -> bool {
+        false
+    }
+
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)];
 
     // todo maybe iterate over every node and check for is_missing/is_error?

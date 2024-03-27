@@ -4,9 +4,9 @@ use super::{
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::{pattern_to_binding, ResolvedPattern},
     variable::VariableSourceLocations,
-    Context, Node, State,
+    Node, State,
 };
-use crate::{binding::Binding, resolve};
+use crate::{binding::Binding, context::Context, resolve};
 use crate::{binding::Constant, errors::debug};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
@@ -52,7 +52,7 @@ impl Before {
     pub(crate) fn prev_pattern<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let binding = pattern_to_binding(&self.before, state, context, logs)?;
@@ -100,7 +100,7 @@ impl Matcher for Before {
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let binding = match binding {

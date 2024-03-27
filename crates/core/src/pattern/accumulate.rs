@@ -12,9 +12,10 @@ use super::{
     patterns::Pattern,
     patterns::{Matcher, Name},
     resolved_pattern::ResolvedPattern,
-    Context, State,
+    State,
 };
 use super::{Effect, EffectKind};
+use crate::context::Context;
 use crate::smart_insert::normalize_insert;
 use tree_sitter::Node;
 
@@ -143,7 +144,7 @@ impl Matcher for Accumulate {
         &'a self,
         context_node: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let Pattern::Variable(var) = &self.left {
@@ -153,7 +154,7 @@ impl Matcher for Accumulate {
                 .value
                 .as_mut()
             {
-                base.extend(append, &mut state.effects, context.language)?;
+                base.extend(append, &mut state.effects, context.language())?;
                 Ok(true)
             } else {
                 bail!(
@@ -202,7 +203,7 @@ impl Matcher for Accumulate {
                 .iter()
                 .map(|b| {
                     let is_first = !state.effects.iter().any(|e| e.binding == *b);
-                    normalize_insert(b, &mut replacement, is_first, context.language)?;
+                    normalize_insert(b, &mut replacement, is_first, context.language())?;
                     Ok(Effect {
                         binding: b.clone(),
                         pattern: replacement.clone(),
@@ -221,7 +222,7 @@ impl Evaluator for Accumulate {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         if let Pattern::Variable(var) = &self.left {
@@ -231,7 +232,7 @@ impl Evaluator for Accumulate {
                 .value
                 .as_mut()
             {
-                base.extend(append, &mut state.effects, context.language)?;
+                base.extend(append, &mut state.effects, context.language())?;
                 Ok(FuncEvaluation {
                     predicator: true,
                     ret_val: None,

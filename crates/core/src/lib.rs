@@ -1,6 +1,7 @@
 #![deny(clippy::wildcard_enum_match_arm)]
 pub mod binding;
 pub mod compact_api;
+pub mod context;
 mod effects_dependency_graph;
 mod equivalence;
 pub mod errors;

@@ -1,16 +1,17 @@
-use anyhow::{anyhow, Result};
-use std::collections::BTreeMap;
-use tree_sitter::Node;
-
 use super::{
     and::And,
     compiler::CompilationContext,
     patterns::{Matcher, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::{get_variables, Variable, VariableSourceLocations},
-    Context, State,
+    State,
 };
+use crate::context::Context;
+use anyhow::{anyhow, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
+use std::collections::BTreeMap;
+use tree_sitter::Node;
+
 #[derive(Clone, Debug)]
 pub struct PatternDefinition {
     pub name: String,
@@ -98,7 +99,7 @@ impl PatternDefinition {
         &'a self,
         state: &mut State<'a>,
         binding: &ResolvedPattern<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
         args: &'a [Option<Pattern>],
     ) -> Result<bool> {

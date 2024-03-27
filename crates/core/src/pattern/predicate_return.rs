@@ -1,10 +1,3 @@
-use std::collections::BTreeMap;
-
-use anyhow::{anyhow, Result};
-use tree_sitter::Node;
-
-use marzano_util::analysis_logs::AnalysisLogs;
-
 use super::{
     compiler::CompilationContext,
     functions::{Evaluator, FuncEvaluation},
@@ -12,8 +5,12 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
     variable::VariableSourceLocations,
-    Context,
 };
+use crate::context::Context;
+use anyhow::{anyhow, Result};
+use marzano_util::analysis_logs::AnalysisLogs;
+use std::collections::BTreeMap;
+use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub struct PrReturn {
@@ -55,7 +52,7 @@ impl Evaluator for PrReturn {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let resolved = ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;

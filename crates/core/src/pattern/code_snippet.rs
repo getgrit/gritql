@@ -1,11 +1,11 @@
-use crate::{binding::Binding, resolve};
+use crate::{binding::Binding, context::Context, resolve};
 
 use super::{
     dynamic_snippet::{DynamicPattern, DynamicSnippet},
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::{register_variable, VariableSourceLocations},
-    Context, State,
+    State,
 };
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
@@ -102,7 +102,7 @@ impl Matcher for CodeSnippet {
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let binding = match resolved_pattern {

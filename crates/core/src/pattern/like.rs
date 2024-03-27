@@ -4,8 +4,9 @@ use super::{
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::VariableSourceLocations,
-    Context, Node, State,
+    Node, State,
 };
+use crate::context::Context;
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -77,7 +78,7 @@ impl Matcher for Like {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         use crate::errors::debug;
@@ -95,7 +96,7 @@ impl Matcher for Like {
         &'a self,
         _binding: &ResolvedPattern<'a>,
         _state: &mut State<'a>,
-        _context: &Context<'a>,
+        _context: &'a impl Context,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         Err(anyhow!("Like only available under the embeddings feature"))

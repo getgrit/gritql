@@ -6,8 +6,9 @@ use super::{
     predicates::Predicate,
     resolved_pattern::ResolvedPattern,
     variable::VariableSourceLocations,
-    Context, State,
+    State,
 };
+use crate::context::Context;
 use anyhow::{anyhow, bail, Ok, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
@@ -79,7 +80,7 @@ impl Matcher for Not {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         Ok(!self
@@ -150,7 +151,7 @@ impl Evaluator for PrNot {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let res = self

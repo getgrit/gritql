@@ -32,9 +32,10 @@ use super::{
     ast_node::ASTNode, bubble::Bubble, built_in_functions::CallBuiltIn, call::Call,
     code_snippet::CodeSnippet, contains::Contains, list::List, not::Not, or::Or, r#if::If,
     r#where::Where, rewrite::Rewrite, some::Some, string_constant::StringConstant,
-    variable::Variable, within::Within, Context, Node, State,
+    variable::Variable, within::Within, Node, State,
 };
 use crate::binding::node_text;
+use crate::context::Context;
 use crate::pattern::register_variable;
 use crate::pattern::string_constant::AstLeafNode;
 use anyhow::{anyhow, bail, Result};
@@ -58,7 +59,7 @@ pub(crate) trait Matcher: Debug {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool>;
 
@@ -506,7 +507,7 @@ impl Pattern {
                 )?));
             }
             let fields: &Vec<Field> = &node_types[sort as usize];
-            let args = fields
+            let mut args = fields
                 .iter()
                 .filter(|field| {
                     node.child_by_field_id(field.id()).is_some()
@@ -566,6 +567,26 @@ impl Pattern {
                     ))
                 })
                 .collect::<Result<Vec<(u16, bool, Pattern)>>>()?;
+            let mut mandatory_empty_args = fields.iter().filter(|field| {
+                node.child_by_field_id(field.id()).is_none() && lang.mandatory_empty_field(sort, field.id())
+            }).map(|field| {
+                if field.multiple() {
+                    (
+                        field.id(),
+                        true,
+                        Pattern::List(Box::new(List::new(Vec::new()))))
+                } else {
+                    (
+                        field.id(),
+                        false,
+                        Pattern::Dynamic(DynamicPattern::Snippet(DynamicSnippet {
+                        parts: vec![DynamicSnippetPart::String("".to_string())],
+                        }))
+                    )
+                }
+            })
+            .collect::<Vec<(u16, bool, Pattern)>>();
+            args.append(&mut mandatory_empty_args);
             Ok(Pattern::ASTNode(Box::new(ASTNode { sort, args })))
         }
         node_to_astnode(
@@ -587,7 +608,7 @@ impl Pattern {
     pub fn text<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<String> {
         Ok(ResolvedPattern::from_pattern(self, state, context, logs)?
@@ -598,7 +619,7 @@ impl Pattern {
     pub(crate) fn float<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<f64> {
         ResolvedPattern::from_pattern(self, state, context, logs)?.float(&state.files)
@@ -1053,7 +1074,7 @@ impl Matcher for Pattern {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let ResolvedPattern::File(file) = &binding {

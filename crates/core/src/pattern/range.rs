@@ -1,11 +1,11 @@
-use marzano_util::analysis_logs::AnalysisLogs;
-
 use super::{
     patterns::{Matcher, Name},
     resolved_pattern::ResolvedPattern,
-    state, Context,
+    state,
 };
+use crate::context::Context;
 use anyhow::{anyhow, Result};
+use marzano_util::analysis_logs::AnalysisLogs;
 use marzano_util::position::UtilRange;
 use tree_sitter::Node;
 
@@ -89,7 +89,7 @@ impl Matcher for Range {
         &'a self,
         binding: &ResolvedPattern<'a>,
         _state: &mut state::State<'a>,
-        _context: &Context<'a>,
+        _context: &'a impl Context,
         _logs: &mut AnalysisLogs,
     ) -> anyhow::Result<bool> {
         if let Some(range) = binding.position() {

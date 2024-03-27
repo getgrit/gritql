@@ -17,8 +17,9 @@ use super::{
     r#match::Match,
     rewrite::Rewrite,
     variable::VariableSourceLocations,
-    Context, State,
+    State,
 };
+use crate::context::Context;
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -227,7 +228,7 @@ impl Evaluator for Predicate {
     fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
-        context: &Context<'a>,
+        context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         match self {

@@ -170,7 +170,7 @@ impl PatternLanguage {
     }
 
     #[cfg(not(feature = "builtin-parser"))]
-    pub fn get_language_with_parser(parser: &mut Parser, body: &str) -> Option<Self> {
+    pub fn get_language_with_parser(_parser: &mut Parser, _body: &str) -> Option<Self> {
         unimplemented!("grit_parser is unavailable when feature flag [builtin-parser] is off.")
     }
 
