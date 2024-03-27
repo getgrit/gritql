@@ -1,5 +1,4 @@
-use crate::binding::{linearize_binding, Binding, Constant};
-
+use crate::binding::{linearize_binding, Binding};
 use crate::pattern::resolved_pattern::CodeRange;
 use crate::pattern::state::FileRegistry;
 use crate::pattern::Effect;
@@ -10,6 +9,7 @@ use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::HashMap;
 use std::ops::Range;
+use std::path::{Path, PathBuf};
 
 /**
  * Applies the given effects to the given code, using the bindings to resolve metavariables in the snippets.
@@ -22,8 +22,8 @@ pub(crate) fn apply_effects<'a>(
     code: &'a str,
     effects: Vector<Effect<'a>>,
     files: &FileRegistry<'a>,
-    the_filename: &str,
-    new_filename: &mut Constant,
+    the_filename: &Path,
+    new_filename: &mut PathBuf,
     language: &TargetLanguage,
     current_name: Option<&str>,
     logs: &mut AnalysisLogs,
@@ -60,7 +60,7 @@ pub(crate) fn apply_effects<'a>(
                     false,
                     logs,
                 )?;
-                *new_filename = Constant::String(snippet.to_string());
+                *new_filename = PathBuf::from(snippet.to_string());
             }
         }
     }

@@ -215,8 +215,8 @@ impl MatchRanges {
 
 #[derive(Debug, Clone)]
 pub struct FileOwner {
-    absolute_path: String,
-    name: String,
+    absolute_path: PathBuf,
+    name: PathBuf,
     // todo wrap in Rc<RefCell<Option<>>>
     // so that we can lazily parse
     tree: Tree,
@@ -227,15 +227,16 @@ pub struct FileOwner {
 
 impl FileOwner {
     pub(crate) fn new(
-        name: String,
+        name: impl Into<PathBuf>,
         source: String,
         matches: Option<MatchRanges>,
         new: bool,
         language: &impl Language,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
-        let tree = language.parse_file(&name, &source, logs, new)?;
-        let absolute_path = absolutize(&name)?;
+        let name = name.into();
+        let tree = language.parse_file(name.to_string_lossy().as_ref(), &source, logs, new)?;
+        let absolute_path = PathBuf::from(absolutize(name.to_string_lossy().as_ref())?);
         Ok(FileOwner {
             name,
             absolute_path,
@@ -768,7 +769,7 @@ impl Debug for FileOwners {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0
             .iter()
-            .try_fold((), |_, file| writeln!(f, "{}", file.name))
+            .try_fold((), |_, file| writeln!(f, "{}", file.name.display()))
     }
 }
 
