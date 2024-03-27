@@ -302,7 +302,7 @@ impl<'a> Binding<'a> {
         Self::Node(node.source, node.node)
     }
 
-    pub fn singleton(&self) -> Option<(&str, Node)> {
+    pub(crate) fn singleton(&self) -> Option<(&str, Node)> {
         match self {
             Binding::Node(src, node) => Some((src, node.to_owned())),
             Binding::List(src, parent_node, field_id) => {
@@ -485,6 +485,15 @@ impl<'a> Binding<'a> {
             Binding::String(source, _) => Some(source),
             Binding::List(source, _, _) => Some(source),
             Binding::FileName(..) | Binding::ConstantRef(..) => None,
+        }
+    }
+
+    /// Returns the constant this binding binds to, if and only if it is a constant binding.
+    pub fn as_constant(&self) -> Option<&Constant> {
+        if let Self::ConstantRef(constant) = self {
+            Some(constant)
+        } else {
+            None
         }
     }
 

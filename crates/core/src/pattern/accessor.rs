@@ -1,7 +1,3 @@
-use std::{borrow::Cow, collections::BTreeMap};
-
-use crate::{binding::Constant, context::Context, equivalence::are_bindings_equivalent};
-
 use super::{
     compiler::CompilationContext,
     container::{Container, PatternOrResolved, PatternOrResolvedMut},
@@ -11,8 +7,10 @@ use super::{
     state::State,
     variable::{Variable, VariableSourceLocations},
 };
+use crate::{binding::Constant, context::Context};
 use anyhow::{anyhow, bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
+use std::{borrow::Cow, collections::BTreeMap};
 use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
@@ -200,7 +198,7 @@ pub(crate) fn execute_resolved_with_binding<'a>(
     if let ResolvedPattern::Binding(r) = r {
         if let ResolvedPattern::Binding(b) = binding {
             if let (Some(r), Some(b)) = (r.last(), b.last()) {
-                return Ok(are_bindings_equivalent(r, b));
+                return Ok(r.is_equivalent_to(b));
             } else {
                 bail!("Resolved pattern missing binding")
             }
