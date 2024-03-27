@@ -414,10 +414,10 @@ impl SnippetTree {
             }
             // sanity check to avoid infinite loop
             if snippet_root.id() == id {
-                if !snippet_root
+                if snippet_root
                     .utf8_text(self.context.as_bytes())
                     .unwrap()
-                    .trim().contains(self.snippet.trim())
+                    .trim() != self.snippet.trim()
                 {
                     return None;
                 }
