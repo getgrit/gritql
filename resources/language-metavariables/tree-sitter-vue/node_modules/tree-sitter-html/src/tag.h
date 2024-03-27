@@ -1,6 +1,5 @@
-#include "tree_sitter/parser.h"
+#include "tree_sitter/array.h"
 
-#include <assert.h>
 #include <string.h>
 
 typedef enum {
@@ -137,23 +136,19 @@ typedef enum {
     END_,
 } TagType;
 
-typedef struct {
-    uint32_t len;
-    uint32_t cap;
-    char *data;
-} String;
+typedef Array(char) String;
 
 typedef struct {
     char tag_name[16];
-    TagType tag_value;
-} TagMap;
+    TagType tag_type;
+} TagMapEntry;
 
 typedef struct {
     TagType type;
     String custom_tag_name;
 } Tag;
 
-const TagMap TAG_TYPES_BY_TAG_NAME[126] = {
+static const TagMapEntry TAG_TYPES_BY_TAG_NAME[126] = {
     {"AREA",       AREA      },
     {"BASE",       BASE      },
     {"BASEFONT",   BASEFONT  },
@@ -289,59 +284,65 @@ static const TagType TAG_TYPES_NOT_ALLOWED_IN_PARAGRAPHS[] = {
     NAV,      OL,         P,      PRE,        SECTION,
 };
 
-static TagType get_tag_from_string(const char *tag_name) {
+static TagType tag_type_for_name(const String *tag_name) {
     for (int i = 0; i < 126; i++) {
-        if (strcmp(TAG_TYPES_BY_TAG_NAME[i].tag_name, tag_name) == 0) {
-            return TAG_TYPES_BY_TAG_NAME[i].tag_value;
+        const TagMapEntry *entry = &TAG_TYPES_BY_TAG_NAME[i];
+        if (
+            strlen(entry->tag_name) == tag_name->size &&
+            memcmp(tag_name->contents, entry->tag_name, tag_name->size) == 0
+        ) {
+            return entry->tag_type;
         }
     }
     return CUSTOM;
 }
 
-static inline Tag new_tag() {
+static inline Tag tag_new() {
     Tag tag;
     tag.type = END_;
-    tag.custom_tag_name.data = NULL;
-    tag.custom_tag_name.len = 0;
-    tag.custom_tag_name.cap = 0;
+    tag.custom_tag_name = (String) array_new();
     return tag;
 }
 
-static Tag make_tag(TagType type, const char *name) {
-    Tag tag = new_tag();
-    tag.type = type;
-    if (type == CUSTOM) {
-        tag.custom_tag_name.len = (uint32_t)strlen(name);
-        tag.custom_tag_name.data =
-            (char *)calloc(1, sizeof(char) * (tag.custom_tag_name.len + 1));
-        strncpy(tag.custom_tag_name.data, name, tag.custom_tag_name.len);
+static inline Tag tag_for_name(String name) {
+    Tag tag = tag_new();
+    tag.type = tag_type_for_name(&name);
+    if (tag.type == CUSTOM) {
+        tag.custom_tag_name = name;
+    } else {
+        array_delete(&name);
     }
     return tag;
 }
 
 static inline void tag_free(Tag *tag) {
     if (tag->type == CUSTOM) {
-        free(tag->custom_tag_name.data);
+        array_delete(&tag->custom_tag_name);
     }
-    tag->custom_tag_name.data = NULL;
 }
 
-static inline bool is_void(const Tag *tag) {
-    return tag->type < END_OF_VOID_TAGS;
+static inline bool tag_is_void(const Tag *self) {
+    return self->type < END_OF_VOID_TAGS;
 }
 
-static inline Tag for_name(const char *name) {
-    return make_tag(get_tag_from_string(name), name);
+static inline bool tag_eq(const Tag *self, const Tag *other) {
+    if (self->type != other->type) return false;
+    if (self->type == CUSTOM) {
+        if (self->custom_tag_name.size != other->custom_tag_name.size) {
+            return false;
+        }
+        if (memcmp(
+            self->custom_tag_name.contents,
+            other->custom_tag_name.contents,
+            self->custom_tag_name.size
+        ) != 0) {
+            return false;
+        }
+    }
+    return true;
 }
 
-static inline bool tagcmp(const Tag *_tag1, const Tag *_tag2) {
-    return _tag1->type == _tag2->type &&
-           (_tag1->type == CUSTOM ? strcmp(_tag1->custom_tag_name.data,
-                                           _tag2->custom_tag_name.data) == 0
-                                  : true);
-}
-
-static bool can_contain(Tag *self, const Tag *other) {
+static bool tag_can_contain(Tag *self, const Tag *other) {
     TagType child = other->type;
 
     switch (self->type) {

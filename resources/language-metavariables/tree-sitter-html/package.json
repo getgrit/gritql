@@ -1,6 +1,6 @@
 {
   "name": "tree-sitter-html",
-  "version": "0.20.0",
+  "version": "0.20.2",
   "description": "HTML grammar for tree-sitter",
   "main": "bindings/node",
   "keywords": [
@@ -37,7 +37,7 @@
   },
   "tree-sitter": [
     {
-      "scope": "text.html.basic",
+      "scope": "source.html",
       "file-types": [
         "html"
       ],
@@ -47,6 +47,9 @@
       ],
       "injections": [
         "queries/injections.scm"
+      ],
+      "external-files": [
+        "src/tag.h"
       ]
     }
   ]
