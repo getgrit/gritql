@@ -6,6 +6,7 @@ use marzano_language::language::{FieldId, Language};
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 use marzano_util::position::{Position, Range};
+use marzano_util::tree_sitter_util::children_by_field_id_count;
 use std::ops::Range as StdRange;
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
 use tree_sitter::Node;
@@ -20,6 +21,18 @@ pub enum Constant {
     Integer(i64),
     Float(f64),
     Undefined,
+}
+
+impl Constant {
+    pub(crate) fn is_truthy(&self) -> bool {
+        match self {
+            Constant::Integer(i) => *i != 0,
+            Constant::Float(d) => *d != 0.0,
+            Constant::Boolean(b) => *b,
+            Constant::String(s) => !s.is_empty(),
+            Constant::Undefined => false,
+        }
+    }
 }
 
 impl Display for Constant {
@@ -509,6 +522,21 @@ impl<'a> Binding<'a> {
             // maybe should be none?
             Binding::FileName(source) => Some(source),
             Binding::ConstantRef(_) => None,
+        }
+    }
+
+    pub fn is_truthy(&self) -> bool {
+        match self {
+            Self::Empty(..) => false,
+            Self::List(_, node, field_id) => {
+                let child_count = children_by_field_id_count(node, *field_id);
+                child_count > 0
+            }
+            Self::Node(..) => true,
+            // This refers to a slice of the source code, not a Grit string literal, so it is truthy
+            Self::String(..) => true,
+            Self::FileName(_) => true,
+            Self::ConstantRef(c) => c.is_truthy(),
         }
     }
 }
