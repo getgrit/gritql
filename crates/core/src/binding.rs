@@ -302,35 +302,6 @@ impl<'a> Binding<'a> {
         Self::Node(node.source, node.node)
     }
 
-    /// Returns the node this binding applies to.
-    ///
-    /// Unlike [`Self::get_node()`], this will return the exact child node if
-    /// the binding applies to a list.
-    pub(crate) fn as_node(&self) -> Option<NodeWithSource<'a>> {
-        match self {
-            Self::Node(src, node) => Some(NodeWithSource::new(node.clone(), src)),
-            Self::List(src, node, field) => node
-                .child_by_field_id(*field)
-                .map(|child| NodeWithSource::new(child, src)),
-            Self::Empty(..) | Self::String(..) | Self::ConstantRef(..) | Binding::FileName(..) => {
-                None
-            }
-        }
-    }
-
-    /// Returns the node from which this binding was created.
-    ///
-    /// This differs from [`Self::as_node()`] in that it returns the node for an
-    /// entire list when the binding applies to a list item.
-    pub(crate) fn get_node(&self) -> Option<NodeWithSource<'a>> {
-        match self {
-            Self::Node(source, node)
-            | Self::List(source, node, _)
-            | Self::Empty(source, node, _) => Some(NodeWithSource::new(node.clone(), source)),
-            Self::String(..) | Binding::FileName(..) | Binding::ConstantRef(_) => None,
-        }
-    }
-
     pub fn singleton(&self) -> Option<(&str, Node)> {
         match self {
             Binding::Node(src, node) => Some((src, node.to_owned())),
@@ -517,14 +488,21 @@ impl<'a> Binding<'a> {
         }
     }
 
+    /// Returns the path of this binding, if and only if it is a filename binding.
     pub fn as_filename(&self) -> Option<&Path> {
-        match self {
-            Binding::FileName(path) => Some(path),
-            Binding::Empty(..)
-            | Binding::Node(..)
-            | Binding::String(..)
-            | Binding::List(..)
-            | Binding::ConstantRef(..) => None,
+        if let Self::FileName(path) = self {
+            Some(path)
+        } else {
+            None
+        }
+    }
+
+    /// Returns the node of this binding, if and only if it is a node binding.
+    pub(crate) fn as_node(&self) -> Option<NodeWithSource<'a>> {
+        if let Self::Node(source, node) = self {
+            Some(NodeWithSource::new(node.clone(), source))
+        } else {
+            None
         }
     }
 

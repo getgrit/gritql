@@ -998,7 +998,7 @@ impl<'a> ResolvedPattern<'a> {
         let Some(ResolvedSnippet::Text(text)) = snippets.front() else {
             return Ok(());
         };
-        if let Some(padding) = binding.get_insertion_padding(&text, is_first, language) {
+        if let Some(padding) = binding.get_insertion_padding(text, is_first, language) {
             if padding.chars().next() != binding.text().chars().last() {
                 snippets.push_front(ResolvedSnippet::Text(padding.into()));
             }

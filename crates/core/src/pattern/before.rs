@@ -55,7 +55,7 @@ impl Before {
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let binding = pattern_to_binding(&self.before, state, context, logs)?;
-        let Some(node) = binding.get_node() else {
+        let Some(node) = binding.as_node() else {
             bail!("cannot get the node before this binding")
         };
 
