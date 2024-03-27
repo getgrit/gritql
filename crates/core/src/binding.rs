@@ -7,6 +7,7 @@ use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 use marzano_util::position::{Position, Range};
 use std::ops::Range as StdRange;
+use std::path::Path;
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
 use tree_sitter::Node;
 
@@ -52,7 +53,7 @@ pub enum Binding<'a> {
     // used by slices that don't correspond to a node
     // currently only comment content.
     String(&'a str, Range),
-    FileName(&'a str),
+    FileName(&'a Path),
     Node(&'a str, Node<'a>),
     // tree-sitter lists ("multiple" fields of nodes) do not have a unique identity
     // so we represent them by the parent node and a field id
@@ -453,7 +454,7 @@ impl<'a> Binding<'a> {
             Binding::String(s, r) => Ok(Cow::Owned(
                 s[r.start_byte as usize..r.end_byte as usize].into(),
             )),
-            Binding::FileName(s) => Ok(Cow::Owned(s.to_string())),
+            Binding::FileName(s) => Ok(Cow::Owned(s.to_string_lossy().into())),
             Binding::List(source, _parent_node, _field_id) => {
                 if let Some(pos) = self.position() {
                     let range = CodeRange::new(pos.start_byte, pos.end_byte, source);
@@ -482,7 +483,7 @@ impl<'a> Binding<'a> {
             Binding::Empty(_, _, _) => "".to_string(),
             Binding::Node(source, node) => node_text(source, node).to_string(),
             Binding::String(s, r) => s[r.start_byte as usize..r.end_byte as usize].into(),
-            Binding::FileName(s) => s.to_string(),
+            Binding::FileName(s) => s.to_string_lossy().into(),
             Binding::List(source, _, _) => {
                 if let Some(pos) = self.position() {
                     source[pos.start_byte as usize..pos.end_byte as usize].to_string()
@@ -507,8 +508,19 @@ impl<'a> Binding<'a> {
             Binding::String(source, _) => Some(source),
             Binding::List(source, _, _) => Some(source),
             // maybe should be none?
-            Binding::FileName(source) => Some(source),
+            Binding::FileName(source) => source.to_str(),
             Binding::ConstantRef(_) => None,
+        }
+    }
+
+    pub fn as_filename(&self) -> Option<&Path> {
+        match self {
+            Binding::FileName(path) => Some(path),
+            Binding::Empty(..)
+            | Binding::Node(..)
+            | Binding::String(..)
+            | Binding::List(..)
+            | Binding::ConstantRef(..) => None,
         }
     }
 }
