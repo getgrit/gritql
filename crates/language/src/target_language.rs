@@ -25,7 +25,6 @@ use crate::{
 use anyhow::Result;
 use enum_dispatch::enum_dispatch;
 use clap::ValueEnum;
-use clap::builder::PossibleValue;
 use serde::Serialize;
 use std::borrow::Cow;
 use std::fmt;
@@ -45,11 +44,15 @@ use std::path::PathBuf;
 #[cfg(feature = "finder")]
 use std::str::FromStr;
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize)]
+#[derive(ValueEnum, Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize)]
+#[clap(rename_all = "lower")]
 pub enum PatternLanguage {
+    #[value(skip)]
     JavaScript,
+    #[value(skip)]
     TypeScript,
     #[default]
+    #[value(name = "js")]
     Tsx,
     Html,
     Css,
@@ -57,7 +60,9 @@ pub enum PatternLanguage {
     Java,
     CSharp, // f
     Python,
+    #[value(name = "markdown")]
     MarkdownBlock,
+    #[value(skip)]
     MarkdownInline,
     Go,
     Rust,
@@ -68,6 +73,7 @@ pub enum PatternLanguage {
     Sql,
     Vue,
     Toml,
+    #[value(skip)]
     Universal,
 }
 
@@ -371,60 +377,6 @@ impl PatternLanguage {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn to_target_with_ts_lang(self, _lang: TSLanguage) -> Result<TargetLanguage, String> {
         unreachable!()
-    }
-}
-
-impl ValueEnum for PatternLanguage {
-    fn value_variants<'a>() -> &'a [Self] {
-        &[
-            PatternLanguage::JavaScript,
-            PatternLanguage::TypeScript,
-            PatternLanguage::Tsx,
-            PatternLanguage::Html,
-            PatternLanguage::Css,
-            PatternLanguage::Json,
-            PatternLanguage::Java,
-            PatternLanguage::CSharp,
-            PatternLanguage::Python,
-            PatternLanguage::MarkdownBlock,
-            PatternLanguage::MarkdownInline,
-            PatternLanguage::Go,
-            PatternLanguage::Rust,
-            PatternLanguage::Ruby,
-            PatternLanguage::Solidity,
-            PatternLanguage::Hcl,
-            PatternLanguage::Yaml,
-            PatternLanguage::Sql,
-            PatternLanguage::Vue,
-            PatternLanguage::Toml,
-            PatternLanguage::Universal,
-        ]
-    }
-
-    fn to_possible_value(&self) -> Option<PossibleValue> {
-        match self {
-            PatternLanguage::JavaScript => Some(PossibleValue::new("js(js_do_not_use)")),
-            PatternLanguage::TypeScript => Some(PossibleValue::new("js(typescript)")),
-            PatternLanguage::Tsx => Some(PossibleValue::new("js")),
-            PatternLanguage::Html => Some(PossibleValue::new("html")),
-            PatternLanguage::Css => Some(PossibleValue::new("css")),
-            PatternLanguage::Json => Some(PossibleValue::new("json")),
-            PatternLanguage::Java => Some(PossibleValue::new("java")),
-            PatternLanguage::CSharp => Some(PossibleValue::new("csharp")),
-            PatternLanguage::Python => Some(PossibleValue::new("python")),
-            PatternLanguage::MarkdownBlock => Some(PossibleValue::new("markdown(block)")),
-            PatternLanguage::MarkdownInline => Some(PossibleValue::new("markdown(inline)")),
-            PatternLanguage::Go => Some(PossibleValue::new("go")),
-            PatternLanguage::Rust => Some(PossibleValue::new("rust")),
-            PatternLanguage::Ruby => Some(PossibleValue::new("ruby")),
-            PatternLanguage::Solidity => Some(PossibleValue::new("solidity")),
-            PatternLanguage::Hcl => Some(PossibleValue::new("hcl")),
-            PatternLanguage::Yaml => Some(PossibleValue::new("yaml")),
-            PatternLanguage::Sql => Some(PossibleValue::new("sql")),
-            PatternLanguage::Vue => Some(PossibleValue::new("vue")),
-            PatternLanguage::Toml => Some(PossibleValue::new("toml")),
-            PatternLanguage::Universal => Some(PossibleValue::new("universal")),
-        }
     }
 }
 
