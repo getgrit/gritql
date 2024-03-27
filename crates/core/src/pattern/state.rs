@@ -4,7 +4,6 @@ use std::ops::Range as StdRange;
 
 use super::compiler::MATCH_VAR;
 use super::FileOwner;
-use crate::binding::log_empty_field_rewrite_error;
 use crate::intervals::{earliest_deadline_sort, get_top_level_intervals_in_range, Interval};
 use crate::suppress::is_binding_suppressed;
 use anyhow::{anyhow, Result};
@@ -94,18 +93,13 @@ fn get_top_level_effect_ranges<'a>(
         .filter(|effect| {
             let binding = &effect.binding;
             if let Some(src) = binding.source() {
-                let _ = log_empty_field_rewrite_error(
-                    &binding.position(),
-                    &effect.binding,
-                    language,
-                    logs,
-                );
-                range.equal_address(src)
-                    && binding.position().is_some()
-                    && !matches!(
-                        memo.get(&CodeRange::from_range(src, binding.position().unwrap())),
-                        Some(None)
-                    )
+                if let Some(position) = binding.position() {
+                    range.equal_address(src)
+                        && !matches!(memo.get(&CodeRange::from_range(src, position)), Some(None))
+                } else {
+                    let _ = binding.log_empty_field_rewrite_error(language, logs);
+                    false
+                }
             } else {
                 false
             }
