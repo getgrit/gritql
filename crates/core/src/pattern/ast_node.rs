@@ -1,5 +1,3 @@
-use crate::{ast_node::NodeWithSource, binding::Binding, context::Context, resolve};
-
 use super::{
     compiler::CompilationContext,
     list::List,
@@ -9,10 +7,11 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
+use crate::{binding::Binding, context::Context, resolve};
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use marzano_language::language::{FieldId, Language, SortId};
-use marzano_util::analysis_logs::AnalysisLogs;
+use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource};
 use std::collections::BTreeMap;
 use tree_sitter::Node;
 
