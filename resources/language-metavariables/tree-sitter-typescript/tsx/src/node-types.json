@@ -2053,6 +2053,11 @@
     }
   },
   {
+    "type": "default",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "default_type",
     "named": true,
     "fields": {},
@@ -2355,6 +2360,16 @@
         "types": [
           {
             "type": "decorator",
+            "named": true
+          }
+        ]
+      },
+      "default": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "default",
             "named": true
           }
         ]

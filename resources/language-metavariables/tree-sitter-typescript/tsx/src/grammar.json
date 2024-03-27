@@ -150,8 +150,12 @@
                       "type": "SEQ",
                       "members": [
                         {
-                          "type": "STRING",
-                          "value": "default"
+                          "type": "FIELD",
+                          "name": "default",
+                          "content": {
+                            "type": "SYMBOL",
+                            "name": "default"
+                          }
                         },
                         {
                           "type": "CHOICE",
@@ -283,6 +287,10 @@
           ]
         }
       ]
+    },
+    "default": {
+      "type": "STRING",
+      "value": "default"
     },
     "namespace_export": {
       "type": "SEQ",

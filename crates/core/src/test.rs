@@ -12859,3 +12859,29 @@ fn json_empty_string_should_match_self() {
     })
     .unwrap();
 }
+
+#[test]
+fn limit_export_default_match() {
+    run_test_expected(TestArgExpected {
+        pattern: r#"
+            |language js
+            |
+            |`export default function $name() {}` where $name => `foo`
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |export async function loader() {}
+            |export default function main() {}
+            |"#
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
+        |export async function loader() {}
+        |export default function foo() {}
+        |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}

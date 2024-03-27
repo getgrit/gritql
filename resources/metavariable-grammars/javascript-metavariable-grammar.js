@@ -143,7 +143,7 @@ module.exports = grammar({
         choice(
           field('declaration', $.declaration),
           seq(
-            'default',
+            field('default', $.default),
             choice(
               field('declaration', $.declaration),
               seq(
@@ -155,6 +155,8 @@ module.exports = grammar({
         ),
       ),
     ),
+
+    default: _ => 'default',
 
     namespace_export: $ => seq(
       '*', 'as', field('module', $._module_export_name),
