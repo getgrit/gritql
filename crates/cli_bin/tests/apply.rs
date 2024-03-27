@@ -2123,6 +2123,8 @@ fn language_option_conflict_apply() -> Result<()> {
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("simple_python", false)?;
 
+    let origin_content = std::fs::read_to_string(dir.join("main.py"))?;
+
     // from the tempdir as cwd, run init
     run_init(&dir.as_path())?;
 
@@ -2143,7 +2145,7 @@ fn language_option_conflict_apply() -> Result<()> {
     let content: String = std::fs::read_to_string(target_file)?;
 
     // assert that it matches snapshot
-    assert_snapshot!(content);
+    assert_eq!(origin_content, content);
 
     Ok(())
 }
@@ -2153,6 +2155,7 @@ fn invalid_language_option_apply() -> Result<()> {
     let pattern = r"`os.getenv` => `dotenv.fetch`";
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("simple_python", false)?;
+    let origin_content = std::fs::read_to_string(dir.join("main.py"))?;
 
     // from the tempdir as cwd, run init
     run_init(&dir.as_path())?;
@@ -2175,7 +2178,7 @@ fn invalid_language_option_apply() -> Result<()> {
     let content: String = std::fs::read_to_string(target_file)?;
 
     // assert that it matches snapshot
-    assert_snapshot!(content);
+    assert_eq!(origin_content, content);
 
     Ok(())
 }
