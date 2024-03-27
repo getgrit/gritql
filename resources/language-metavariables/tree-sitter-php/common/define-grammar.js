@@ -46,7 +46,7 @@ const PREC = {
 
 module.exports = function defineGrammar(dialect) {
   if (dialect !== 'php' && dialect !== 'php_only') {
-    throw new Error(`Unknown dialect ${dialect}. Supported dialects are 'php' and 'php_only'.`);
+    throw new Error(`Unknown dialect ${dialect}`);
   }
 
   return grammar({
@@ -153,42 +153,35 @@ module.exports = function defineGrammar(dialect) {
       )),
 
       _statement: $ => choice(
-        $.no_semicolon,
         $.empty_statement,
         $.compound_statement,
         $.named_label_statement,
         $.expression_statement,
         $.if_statement,
+        $.switch_statement,
         $.while_statement,
+        $.do_statement,
         $.for_statement,
         $.foreach_statement,
+        $.goto_statement,
+        $.continue_statement,
+        $.break_statement,
+        $.return_statement,
         $.try_statement,
         $.declare_statement,
+        $.echo_statement,
+        $.exit_statement,
+        $.unset_statement,
+        $.const_declaration,
         $.function_definition,
         $.class_declaration,
         $.interface_declaration,
         $.trait_declaration,
         $.enum_declaration,
         $.namespace_definition,
-      ),
-
-      no_semicolon: $ => seq(
-        choice(
-          $.echo_statement,
-          $.exit_statement,
-          $.goto_statement,
-          $.do_statement,
-          $.switch_statement,
-          $.continue_statement,
-          $.break_statement,
-          $.return_statement,
-          $.unset_statement,
-          $.const_declaration,
-          $.namespace_use_declaration,
-          $.global_declaration,
-          $.function_static_declaration,
-        ), 
-        $._semicolon
+        $.namespace_use_declaration,
+        $.global_declaration,
+        $.function_static_declaration,
       ),
 
       empty_statement: _ => prec(-1, ';'),
@@ -198,6 +191,7 @@ module.exports = function defineGrammar(dialect) {
       function_static_declaration: $ => seq(
         keyword('static'),
         commaSep1($.static_variable_declaration),
+        $._semicolon,
       ),
 
       static_variable_declaration: $ => seq(
@@ -211,6 +205,7 @@ module.exports = function defineGrammar(dialect) {
       global_declaration: $ => seq(
         keyword('global'),
         commaSep1($._variable_name),
+        $._semicolon,
       ),
 
       namespace_definition: $ => seq(
@@ -241,6 +236,7 @@ module.exports = function defineGrammar(dialect) {
             $.namespace_use_group,
           ),
         ),
+        $._semicolon,
       ),
 
       namespace_use_clause: $ => seq(
@@ -311,11 +307,10 @@ module.exports = function defineGrammar(dialect) {
         '}',
       ),
 
-      _enum_member_declaration: $ => choice(seq(choice(
-          $.enum_case,
-          $.use_declaration,
-        ), $._semicolon),
+      _enum_member_declaration: $ => choice(
+        $.enum_case,
         $.method_declaration,
+        $.use_declaration,
       ),
 
       enum_case: $ => seq(
@@ -323,6 +318,7 @@ module.exports = function defineGrammar(dialect) {
         keyword('case'),
         field('name', $.name),
         optional(seq('=', field('value', choice($._string, $.integer)))),
+        $._semicolon,
       ),
 
       class_declaration: $ => prec.right(seq(
@@ -352,12 +348,11 @@ module.exports = function defineGrammar(dialect) {
         commaSep1(choice($.name, alias($._reserved_identifier, $.name), $.qualified_name)),
       ),
 
-      _member_declaration: $ => choice(seq(choice(
-          alias($._class_const_declaration, $.const_declaration),
-          $.property_declaration,
-          $.use_declaration,
-        ), $._semicolon),
+      _member_declaration: $ => choice(
+        alias($._class_const_declaration, $.const_declaration),
+        $.property_declaration,
         $.method_declaration,
+        $.use_declaration,
       ),
 
       const_declaration: $ => $._const_declaration,
@@ -373,6 +368,7 @@ module.exports = function defineGrammar(dialect) {
         keyword('const'),
         optional(field('type', $._type)),
         commaSep1($.const_element),
+        $._semicolon,
       ),
 
       property_declaration: $ => seq(
@@ -380,6 +376,7 @@ module.exports = function defineGrammar(dialect) {
         repeat1($._modifier),
         optional(field('type', $._type)),
         commaSep1($.property_element),
+        $._semicolon,
       ),
 
       _modifier: $ => prec.left(choice(
@@ -415,7 +412,7 @@ module.exports = function defineGrammar(dialect) {
       use_declaration: $ => seq(
         keyword('use'),
         commaSep1(choice($.name, alias($._reserved_identifier, $.name), $.qualified_name)),
-        optional($.use_list),
+        choice($.use_list, $._semicolon),
       ),
 
       use_list: $ => seq(
@@ -595,16 +592,17 @@ module.exports = function defineGrammar(dialect) {
       ),
 
       echo_statement: $ => seq(
-        keyword('echo'), $._expressions,
+        keyword('echo'), $._expressions, $._semicolon,
       ),
 
       exit_statement: $ => seq(
         keyword('exit'),
         optional(seq('(', optional($._expression), ')')),
+        $._semicolon,
       ),
 
       unset_statement: $ => seq(
-        'unset', '(', commaSep1($._variable), ')',
+        'unset', '(', commaSep1($._variable), ')', $._semicolon,
       ),
 
       declare_statement: $ => seq(
@@ -655,15 +653,15 @@ module.exports = function defineGrammar(dialect) {
       ),
 
       goto_statement: $ => seq(
-        keyword('goto'), $.name,
+        keyword('goto'), $.name, $._semicolon,
       ),
 
       continue_statement: $ => seq(
-        keyword('continue'), optional($._expression),
+        keyword('continue'), optional($._expression), $._semicolon,
       ),
 
       break_statement: $ => seq(
-        keyword('break'), optional($._expression),
+        keyword('break'), optional($._expression), $._semicolon,
       ),
 
       integer: _ => {
@@ -680,7 +678,7 @@ module.exports = function defineGrammar(dialect) {
       },
 
       return_statement: $ => seq(
-        keyword('return'), optional($._expression),
+        keyword('return'), optional($._expression), $._semicolon,
       ),
 
       throw_expression: $ => seq(
@@ -706,6 +704,7 @@ module.exports = function defineGrammar(dialect) {
         field('body', $._statement),
         keyword('while'),
         field('condition', $.parenthesized_expression),
+        $._semicolon,
       ),
 
       for_statement: $ => seq(
@@ -858,6 +857,7 @@ module.exports = function defineGrammar(dialect) {
           ':',
           repeat(choice($.case_statement, $.default_statement)),
           keyword('endswitch'),
+          $._semicolon,
         ),
       ),
 

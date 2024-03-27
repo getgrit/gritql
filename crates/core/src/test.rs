@@ -12823,7 +12823,7 @@ fn php_simple_match() {
             pattern: r#"
                 |language php
                 |
-                |`echo ^match` => `^match + ^match`
+                |`echo ^match;` => `^match + ^match;`
                 |"#
             .trim_margin()
             .unwrap(),

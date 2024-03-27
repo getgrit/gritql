@@ -111,10 +111,6 @@
       "members": [
         {
           "type": "SYMBOL",
-          "name": "no_semicolon"
-        },
-        {
-          "type": "SYMBOL",
           "name": "empty_statement"
         },
         {
@@ -135,7 +131,15 @@
         },
         {
           "type": "SYMBOL",
+          "name": "switch_statement"
+        },
+        {
+          "type": "SYMBOL",
           "name": "while_statement"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "do_statement"
         },
         {
           "type": "SYMBOL",
@@ -147,11 +151,43 @@
         },
         {
           "type": "SYMBOL",
+          "name": "goto_statement"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "continue_statement"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "break_statement"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "return_statement"
+        },
+        {
+          "type": "SYMBOL",
           "name": "try_statement"
         },
         {
           "type": "SYMBOL",
           "name": "declare_statement"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "echo_statement"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "exit_statement"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "unset_statement"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "const_declaration"
         },
         {
           "type": "SYMBOL",
@@ -176,72 +212,18 @@
         {
           "type": "SYMBOL",
           "name": "namespace_definition"
-        }
-      ]
-    },
-    "no_semicolon": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "echo_statement"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "exit_statement"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "goto_statement"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "do_statement"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "switch_statement"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "continue_statement"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "break_statement"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "return_statement"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "unset_statement"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "const_declaration"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "namespace_use_declaration"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "global_declaration"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "function_static_declaration"
-            }
-          ]
         },
         {
           "type": "SYMBOL",
-          "name": "_semicolon"
+          "name": "namespace_use_declaration"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "global_declaration"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "function_static_declaration"
         }
       ]
     },
@@ -294,6 +276,10 @@
               }
             }
           ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_semicolon"
         }
       ]
     },
@@ -372,6 +358,10 @@
               }
             }
           ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_semicolon"
         }
       ]
     },
@@ -550,6 +540,10 @@
               ]
             }
           ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_semicolon"
         }
       ]
     },
@@ -1101,30 +1095,16 @@
       "type": "CHOICE",
       "members": [
         {
-          "type": "SEQ",
-          "members": [
-            {
-              "type": "CHOICE",
-              "members": [
-                {
-                  "type": "SYMBOL",
-                  "name": "enum_case"
-                },
-                {
-                  "type": "SYMBOL",
-                  "name": "use_declaration"
-                }
-              ]
-            },
-            {
-              "type": "SYMBOL",
-              "name": "_semicolon"
-            }
-          ]
+          "type": "SYMBOL",
+          "name": "enum_case"
         },
         {
           "type": "SYMBOL",
           "name": "method_declaration"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "use_declaration"
         }
       ]
     },
@@ -1198,6 +1178,10 @@
               "type": "BLANK"
             }
           ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_semicolon"
         }
       ]
     },
@@ -1459,39 +1443,25 @@
       "type": "CHOICE",
       "members": [
         {
-          "type": "SEQ",
-          "members": [
-            {
-              "type": "CHOICE",
-              "members": [
-                {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "SYMBOL",
-                    "name": "_class_const_declaration"
-                  },
-                  "named": true,
-                  "value": "const_declaration"
-                },
-                {
-                  "type": "SYMBOL",
-                  "name": "property_declaration"
-                },
-                {
-                  "type": "SYMBOL",
-                  "name": "use_declaration"
-                }
-              ]
-            },
-            {
-              "type": "SYMBOL",
-              "name": "_semicolon"
-            }
-          ]
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_class_const_declaration"
+          },
+          "named": true,
+          "value": "const_declaration"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "property_declaration"
         },
         {
           "type": "SYMBOL",
           "name": "method_declaration"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "use_declaration"
         }
       ]
     },
@@ -1609,6 +1579,10 @@
               }
             }
           ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_semicolon"
         }
       ]
     },
@@ -1678,6 +1652,10 @@
               }
             }
           ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_semicolon"
         }
       ]
     },
@@ -1894,7 +1872,8 @@
               "name": "use_list"
             },
             {
-              "type": "BLANK"
+              "type": "SYMBOL",
+              "name": "_semicolon"
             }
           ]
         }
@@ -3019,6 +2998,10 @@
         {
           "type": "SYMBOL",
           "name": "_expressions"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_semicolon"
         }
       ]
     },
@@ -3067,6 +3050,10 @@
               "type": "BLANK"
             }
           ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_semicolon"
         }
       ]
     },
@@ -3109,6 +3096,10 @@
         {
           "type": "STRING",
           "value": ")"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_semicolon"
         }
       ]
     },
@@ -3403,6 +3394,10 @@
         {
           "type": "SYMBOL",
           "name": "name"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_semicolon"
         }
       ]
     },
@@ -3430,6 +3425,10 @@
               "type": "BLANK"
             }
           ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_semicolon"
         }
       ]
     },
@@ -3457,6 +3456,10 @@
               "type": "BLANK"
             }
           ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_semicolon"
         }
       ]
     },
@@ -3508,6 +3511,10 @@
               "type": "BLANK"
             }
           ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_semicolon"
         }
       ]
     },
@@ -3631,6 +3638,10 @@
             "type": "SYMBOL",
             "name": "parenthesized_expression"
           }
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_semicolon"
         }
       ]
     },
@@ -4476,6 +4487,10 @@
               },
               "named": false,
               "value": "endswitch"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_semicolon"
             }
           ]
         }
