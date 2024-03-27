@@ -299,16 +299,23 @@ async function buildLanguage(language) {
     await execPromise(
       `cd ${tsLangDir} && yarn && yarn build && echo "Generated grammar for ${language}"`,
     );
-    // await Promise.all([
-    //   execPromise(`cd ${tsLangDir}/php_only && npx tree-sitter build-wasm`),
-    //   execPromise(`cd ${tsLangDir}/php && npx tree-sitter build-wasm`),
-    // ]);
+    await Promise.all([
+      execPromise(`cd ${tsLangDir}/php_only && npx tree-sitter build-wasm`),
+      execPromise(`cd ${tsLangDir}/php && npx tree-sitter build-wasm`),
+    ]);
 
     await copyNodeTypes('php/php_only', 'php_only');
     await copyNodeTypes('php/php', 'php');
 
-    // await copyWasmParser('php_only', 'tree-sitter-php/');
-    // await copyWasmParser('php', 'tree-sitter-php/');
+    // move the built Wasm parsers
+    await fs.rename(
+      `${tsLangDir}/${'php_only'}/tree-sitter-${'php_only'}.wasm`,
+      `../../crates/wasm-bindings/wasm_parsers/tree-sitter-${'php_only'}.wasm`,
+    );
+    await fs.rename(
+      `${tsLangDir}/${'php'}/tree-sitter-${'php'}.wasm`,
+      `../../crates/wasm-bindings/wasm_parsers/tree-sitter-${'php'}.wasm`,
+    );
   } else {
     await buildSimpleLanguage(log, language);
   }
