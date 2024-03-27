@@ -358,6 +358,15 @@ impl<'a> ResolvedSnippet<'a> {
         };
         res
     }
+
+    pub(crate) fn is_truthy(&self, state: &mut State<'a>) -> Result<bool> {
+        let truthiness = match self {
+            Self::Binding(b) => b.is_truthy(),
+            Self::Text(t) => !t.is_empty(),
+            Self::LazyFn(t) => !t.text(&state.files)?.is_empty(),
+        };
+        Ok(truthiness)
+    }
 }
 
 impl<'a> ResolvedPattern<'a> {
@@ -995,6 +1004,25 @@ impl<'a> ResolvedPattern<'a> {
             }
         }
         Ok(())
+    }
+
+    pub(crate) fn is_truthy(&self, state: &mut State<'a>) -> Result<bool> {
+        let truthiness = match self {
+            Self::Binding(bindings) => bindings.last().map_or(false, Binding::is_truthy),
+            Self::List(elements) => !elements.is_empty(),
+            Self::Map(map) => !map.is_empty(),
+            Self::Constant(c) => c.is_truthy(),
+            Self::Snippets(s) => {
+                if let Some(s) = s.last() {
+                    s.is_truthy(state)?
+                } else {
+                    false
+                }
+            }
+            Self::File(..) => true,
+            Self::Files(..) => true,
+        };
+        Ok(truthiness)
     }
 }
 
