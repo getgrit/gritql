@@ -276,7 +276,7 @@ fn register_variable_optional_range(
         }
         return Ok(Variable::new(GLOBAL_VARS_SCOPE_INDEX, *i));
     }
-    let (name_map, scope_index) = if name.starts_with("$GLOBAL_") {
+    let (name_map, scope_index) = if name.starts_with("$GLOBAL_") || name.starts_with("^GLOBAL_") {
         (global_vars, GLOBAL_VARS_SCOPE_INDEX)
     } else {
         (vars, scope_index)

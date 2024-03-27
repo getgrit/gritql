@@ -1,0 +1,47 @@
+{
+  "main": "../bindings/node/php",
+  "types": "bindings/node",
+  "tree-sitter": [
+    {
+      "scope": "source.php",
+      "file-types": [
+        "php"
+      ],
+      "highlights": "../queries/highlights.scm",
+      "injections": [
+        "../queries/injections.scm",
+        "../queries/injections-text.scm"
+      ],
+      "tags": "../queries/tags.scm",
+      "external-files": [
+        "../common/scanner.h"
+      ]
+    }
+  ],
+  "dependencies": {
+    "node-gyp-build": "^4.8.0"
+  },
+  "peerDependencies": {
+    "tree-sitter": "^0.21.0"
+  },
+  "peerDependenciesMeta": {
+    "tree_sitter": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "prebuildify": "^6.0.0"
+  },
+  "scripts": {
+    "install": "node-gyp-build",
+    "prebuildify": "prebuildify --napi --strip"
+  },
+  "files": [
+    "grammar.js",
+    "binding.gyp",
+    "prebuilds/**",
+    "bindings/node/*",
+    "queries/*",
+    "src/**"
+  ]
+}

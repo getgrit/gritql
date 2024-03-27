@@ -34,6 +34,7 @@ use super::{
     r#where::Where, rewrite::Rewrite, some::Some, string_constant::StringConstant,
     variable::Variable, within::Within, Node, State,
 };
+use crate::binding::node_text;
 use crate::context::Context;
 use crate::pattern::register_variable;
 use crate::pattern::string_constant::AstLeafNode;
@@ -482,7 +483,7 @@ impl Pattern {
             }
             if node_types[sort as usize].is_empty() {
                 let content = node.utf8_text(text)?;
-                if node.named_child_count() == 0
+                if (node.named_child_count() == 0 || node.named_child_count() == 1)
                     && lang.replaced_metavariable_regex().is_match(&content)
                 {
                     let regex = implicit_metavariable_regex(
@@ -539,14 +540,17 @@ impl Pattern {
                             )
                         })
                         .collect::<Result<Vec<Pattern>>>()?;
-                    // assumes that non multiple field has exactly one element
+
                     // TODO check if Pattern is Dots, and error at compile time,
                     // dots only makes sense in a list.
-                    if !field.multiple() {
-                        let lang = lang.get_ts_language();
-                        let field_name = lang.field_name_for_id(field_id).unwrap();
-                        let message = format!("field {} was empty!", field_name);
-                        return Ok((field_id, false, nodes_list.pop().expect(&message)));
+                    if !field.multiple() {    
+                        if nodes_list.len() == 1 {
+                            return Ok((field_id, false, nodes_list.pop().unwrap()));
+                        }
+                        let field_node = node.child_by_field_id(field_id).unwrap();
+                        return Ok((field_id, false,  Pattern::AstLeafNode(AstLeafNode::new(
+                            field_node.kind_id(), node_text(str::from_utf8(text).unwrap(), &field_node), lang,
+                        )?)));
                     }
                     if nodes_list.len() == 1
                         && matches!(
