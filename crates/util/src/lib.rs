@@ -5,9 +5,10 @@ pub mod cursor_wrapper;
 #[cfg(feature = "finder")]
 pub mod finder;
 pub mod hasher;
+pub mod node_with_source;
 pub mod position;
 pub mod print_node;
 pub mod rich_path;
+pub mod runtime;
 pub mod tree_sitter_util;
 pub mod url;
-pub mod runtime;
