@@ -12885,3 +12885,34 @@ fn limit_export_default_match() {
     })
     .unwrap();
 }
+
+#[test]
+fn python_support_empty_line() {
+    run_test_expected(TestArgExpected {
+        pattern: r#"
+            |engine marzano(0.1)
+            |language python
+            |`class $name: $body` => $body
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |class MyClass:
+            |    def function(self):
+            |        result = 1 + 1
+            |
+            |        return result
+            |"#
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
+        |def function(self):
+        |    result = 1 + 1
+        |
+        |    return result
+        |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
