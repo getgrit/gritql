@@ -12886,6 +12886,66 @@ fn php_quote_snippet_rewrite() {
 }
 
 #[test]
+fn php_if_statement() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`$a = 12;` => `$b=24;`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |#
+                |if (!$foo = $bar) {
+                |   $a = 12;
+                |}
+                |"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+                |#
+                |if (!$foo = $bar) {
+                |   $b=24;
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+#[test]
+fn php_delete_include() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`include ^package;` => .
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |include 'test.php';
+                |$test = "";
+                |"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+                |
+                |$test = "";
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+#[test]
 fn css_property_value() {
     run_test_match(TestArg {
         pattern: r#"
