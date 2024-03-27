@@ -9,7 +9,7 @@ impl<'a> Binding<'a> {
     pub fn is_equivalent_to(&self, other: &'a Binding) -> bool {
         // covers Node, and List with one element
         if let (Some(s1), Some(s2)) = (self.singleton(), other.singleton()) {
-            return are_equivalent(s1.0, &s1.1, s2.0, &s2.1);
+            return are_equivalent(s1.source, &s1.node, s2.source, &s2.node);
         }
 
         match self {
