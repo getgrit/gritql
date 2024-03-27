@@ -175,49 +175,6 @@ impl EffectRange {
     }
 }
 
-pub(crate) fn log_empty_field_rewrite_error<T>(
-    range: &Option<T>,
-    binding: &Binding,
-    language: &TargetLanguage,
-    logs: &mut AnalysisLogs,
-) -> Result<()> {
-    if range.is_none() {
-        match binding {
-            Binding::Empty(src, node, field) => {
-                let range: Range = node.range().into();
-                let log = AnalysisLogBuilder::default()
-                    .level(441_u16)
-                    .source(*src)
-                    .position(range.start)
-                    .range(range)
-                    .message(format!(
-            "Error: failed to rewrite binding, cannot derive range of empty field {} of node {}", language.get_ts_language().field_name_for_id(*field).unwrap(), node.kind()
-        ))
-                    .build()?;
-                logs.push(log);
-            }
-            Binding::List(src, node, field) => {
-                let range: Range = node.range().into();
-                let log = AnalysisLogBuilder::default()
-                    .level(441_u16)
-                    .source(*src)
-                    .position(range.start)
-                    .range(range)
-                    .message(format!(
-            "Error: failed to rewrite binding, cannot derive range of empty field {} of node {}", language.get_ts_language().field_name_for_id(*field).unwrap(), node.kind()
-        ))
-                    .build()?;
-                logs.push(log);
-            }
-            Binding::String(_, _)
-            | Binding::FileName(_)
-            | Binding::Node(_, _)
-            | Binding::ConstantRef(_) => {}
-        }
-    }
-    Ok(())
-}
-
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn linearize_binding<'a>(
     language: &TargetLanguage,
@@ -239,9 +196,11 @@ pub(crate) fn linearize_binding<'a>(
                 (Some(src), Some(orig_range)) => {
                     (Some(src), Some(CodeRange::from_range(src, orig_range)))
                 }
-                _ => (None, None),
+                _ => {
+                    b.log_empty_field_rewrite_error(language, logs)?;
+                    (None, None)
+                }
             };
-            log_empty_field_rewrite_error(&range, &b, language, logs)?;
             if let (Some(src), Some(range)) = (src, &range) {
                 match effect.kind {
                     EffectKind::Rewrite => {
@@ -510,6 +469,33 @@ impl<'a> Binding<'a> {
             Binding::FileName(source) => Some(source),
             Binding::ConstantRef(_) => None,
         }
+    }
+
+    pub(crate) fn log_empty_field_rewrite_error(
+        &self,
+        language: &TargetLanguage,
+        logs: &mut AnalysisLogs,
+    ) -> Result<()> {
+        match self {
+            Self::Empty(src, node, field) | Self::List(src, node, field) => {
+                let range: Range = node.range().into();
+                let log = AnalysisLogBuilder::default()
+                        .level(441_u16)
+                        .source(*src)
+                        .position(range.start)
+                        .range(range)
+                        .message(format!(
+                            "Error: failed to rewrite binding, cannot derive range of empty field {} of node {}",
+                            language.get_ts_language().field_name_for_id(*field).unwrap(),
+                            node.kind()
+                        ))
+                        .build()?;
+                logs.push(log);
+            }
+            Self::String(_, _) | Self::FileName(_) | Self::Node(_, _) | Self::ConstantRef(_) => {}
+        }
+
+        Ok(())
     }
 }
 
