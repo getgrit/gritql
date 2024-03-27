@@ -150,6 +150,9 @@ module.exports = function defineGrammar(dialect) {
           optional($._initializer),
         ),
 
+      // TODO use the below version of the rule as it is up to date with the upstream typescript grammar
+      // unfortunatly using it breaks the react class componenets to functional componenets pattern
+
       // public_field_definition: ($) => seq(
       //   repeat(field('decorator', $.decorator)),
       //   optional(choice(
@@ -440,6 +443,9 @@ module.exports = function defineGrammar(dialect) {
           ),
           '}',
         ),
+
+      // TODO use the below version of the rule as it is up to date with the upstream typescript grammar
+      // unfortunatly using it breaks the react class componenets to functional componenets pattern
 
       // class_body: ($) => seq(
       //   '{',

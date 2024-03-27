@@ -10,7 +10,7 @@ members = [
   "crates/auth",
   "crates/externals",
   "crates/wasm-bindings",
-  "crates/marzano_messenger", "crates/cli_bin",
+  "crates/marzano_messenger", "crates/cli_bin", "crates/test_html_grammar",
 ]
 exclude = [
   "resources",

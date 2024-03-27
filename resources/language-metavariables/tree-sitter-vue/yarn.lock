@@ -1220,7 +1220,7 @@ through@2, "through@>=2.2.7 <3":
   integrity sha1-DdTJ/6q8NXlgsbckEV1+Doai4fU=
 
 tree-sitter-html@../tree-sitter-html:
-  version "0.20.0"
+  version "0.20.2"
   dependencies:
     nan "^2.18.0"
 

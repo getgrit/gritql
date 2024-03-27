@@ -12817,6 +12817,47 @@ fn css_property_value() {
 }
 
 #[test]
+fn html_match_element() {
+    run_test_match(TestArg {
+        pattern: r#"
+        |language html
+        |
+        |contains `<Hello attr="foo"></$name>`
+        |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"<Hello attr="foo"></Hello>"#
+        .to_owned(),
+    })
+    .unwrap();
+}
+
+#[test]
+fn html_prefer_self_closing_tags() {
+    run_test_expected(TestArgExpected {
+        pattern: r#"
+            |language html
+            |
+            |`<$name $props>$body</$name>` => `<$name $props />` where $body <: .
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |<Hello attr="foo"></Hello>
+            |"#
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
+            |<Hello attr="foo" />
+            |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
+
+
+#[test]
 fn json_empty_string_should_not_match_everything() {
     run_test_no_match(TestArg {
         pattern: r#"

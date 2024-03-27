@@ -1,0 +1,11 @@
+[package]
+name = "test_html_grammar"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tree-sitter = { path = "../../vendor/tree-sitter-facade", package = "tree-sitter-facade-sg" }
+# tree-sitter-html = "0.20.0"
+tree-sitter-html = { path = "../../resources/language-metavariables/tree-sitter-html" }
