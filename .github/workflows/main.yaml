@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [namespace-profile-grit-oss]
+        os: [nscloud-ubuntu-22.04-amd64-8x32]
     runs-on: ${{ matrix.os }}
     permissions:
       contents: "read"
@@ -76,7 +76,8 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
-    runs-on: namespace-profile-grit-oss
+    runs-on:
+      - ubuntu-latest
     permissions:
       contents: "read"
       id-token: "write"

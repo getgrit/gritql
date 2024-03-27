@@ -5,7 +5,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   clippy_check:
-    runs-on: namespace-profile-grit-oss
+    runs-on: "nscloud-ubuntu-22.04-amd64-4x16"
     steps:
       - name: clone code
         uses: actions/checkout@v3
