@@ -1,12 +1,11 @@
 use super::{
-    after::After,
     compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::{pattern_to_binding, ResolvedPattern},
     variable::VariableSourceLocations,
     Node, State,
 };
-use crate::{binding::Binding, context::Context, resolve};
+use crate::{ast_node::AstNode, binding::Binding, context::Context, resolve};
 use crate::{binding::Constant, errors::debug};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
@@ -56,18 +55,12 @@ impl Before {
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let binding = pattern_to_binding(&self.before, state, context, logs)?;
-        let (source, node) = match binding {
-            Binding::String(_, _) => bail!("cannot get the node before a string"),
-            Binding::FileName(_) => bail!("cannot get the node before a filename"),
-            Binding::Node(s, n) => (s, n),
-            Binding::List(s, n, _) => (s, n),
-            Binding::Empty(s, n, _) => (s, n),
-            Binding::ConstantRef(_) => bail!("cannot get the node before a constant"),
+        let Some(node) = binding.get_node() else {
+            bail!("cannot get the node before this binding")
         };
-        if let Some(prev) = After::prev_node(node) {
-            Ok(ResolvedPattern::Binding(vector![Binding::Node(
-                source, prev
-            )]))
+
+        if let Some(prev) = node.previous_non_trivia_node() {
+            Ok(ResolvedPattern::Binding(vector![Binding::from_node(prev)]))
         } else {
             debug(
                 logs,
@@ -75,16 +68,6 @@ impl Before {
                 "no node before current node, treating as undefined",
             )?;
             Ok(ResolvedPattern::Constant(Constant::Undefined))
-        }
-    }
-
-    pub(crate) fn next_node(node: Node) -> Option<Node> {
-        let mut current_node = node;
-        loop {
-            if let Some(sibling) = current_node.next_named_sibling() {
-                return Some(sibling);
-            }
-            current_node = current_node.parent()?;
         }
     }
 }
@@ -114,17 +97,12 @@ impl Matcher for Before {
         };
         let mut cur_state = init_state.clone();
         // todo implement for empty and empty list
-        let (src, node) = match binding {
-            Binding::Empty(_, _, _) => return Ok(true),
-            Binding::Node(src, node) => (src, node.to_owned()),
-            Binding::String(_, _) => return Ok(true),
-            Binding::List(src, node, field) => (src, resolve!(node.child_by_field_id(*field))),
-            Binding::ConstantRef(_) => return Ok(true),
-            Binding::FileName(_) => return Ok(true),
+        let Some(node) = binding.as_node() else {
+            return Ok(true);
         };
-        let before_node = resolve!(Self::next_node(node.clone()));
+        let next_node = resolve!(node.next_non_trivia_node());
         if !self.before.execute(
-            &ResolvedPattern::from_node(src, before_node),
+            &ResolvedPattern::from_node(next_node.source, next_node.node),
             &mut cur_state,
             context,
             logs,

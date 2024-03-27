@@ -101,7 +101,7 @@ impl MatchResult {
             let file = file.last().unwrap();
             if file.new {
                 return Ok(Some(MatchResult::CreateFile(CreateFile::file_to_create(
-                    &file.name,
+                    file.name.to_string_lossy().as_ref(),
                     &file.source,
                 ))));
             } else if let Some(ranges) = &file.matches.borrow().input_matches {
@@ -111,7 +111,7 @@ impl MatchResult {
                 return Ok(Some(MatchResult::Match(Match::file_to_match(
                     ranges,
                     &file.source,
-                    &file.name,
+                    file.name.to_string_lossy().as_ref(),
                     &file.tree,
                     language,
                 ))));
@@ -358,7 +358,7 @@ impl Rewrite {
             Match::file_to_match(
                 ranges,
                 &initial.source,
-                &initial.name,
+                initial.name.to_string_lossy().as_ref(),
                 &initial.tree,
                 language,
             )
@@ -366,7 +366,7 @@ impl Rewrite {
             bail!("cannot have rewrite without matches")
         };
         let rewritten = EntireFile::file_to_entire_file(
-            &rewrite.name,
+            rewrite.name.to_string_lossy().as_ref(),
             &rewrite.source,
             rewrite.matches.borrow().byte_ranges.as_ref(),
         );
