@@ -6,7 +6,7 @@ use super::{
     state::State,
     variable::VariableSourceLocations,
 };
-use crate::{binding::Binding, context::Context};
+use crate::context::Context;
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_language::language::Field;
@@ -121,21 +121,15 @@ impl Matcher for List {
     ) -> Result<bool> {
         match binding {
             ResolvedPattern::Binding(v) => {
-                if let Some(Binding::List(src, node, field_id)) = v.last() {
-                    let mut cursor = node.walk();
+                let Some(list_items) = v.last().and_then(|b| b.list_items()) else {
+                    return Ok(false);
+                };
 
-                    let children_vec: Vec<Cow<ResolvedPattern>> = node
-                        .children_by_field_id(*field_id, &mut cursor)
-                        .filter(|n| n.is_named())
-                        .map(|node| Cow::Owned(ResolvedPattern::from_node(src, node)))
-                        .collect();
+                let children: Vec<Cow<ResolvedPattern>> = list_items
+                    .map(|node| Cow::Owned(ResolvedPattern::from_node(node.source, node.node)))
+                    .collect();
 
-                    let children: &[Cow<ResolvedPattern>] = &children_vec;
-                    let patterns: &[Pattern] = &self.patterns;
-                    execute_assoc(patterns, children, state, context, logs)
-                } else {
-                    Ok(false)
-                }
+                execute_assoc(&self.patterns, &children, state, context, logs)
             }
             ResolvedPattern::List(patterns) => {
                 let patterns: Vec<Cow<ResolvedPattern<'_>>> =

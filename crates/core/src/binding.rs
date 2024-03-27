@@ -9,6 +9,7 @@ use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::position::{Position, Range};
 use marzano_util::tree_sitter_util::children_by_field_id_count;
+use std::iter;
 use std::ops::Range as StdRange;
 use std::path::Path;
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
@@ -520,6 +521,44 @@ impl<'a> Binding<'a> {
     /// Returns `true` if and only if this binding is bound to a list.
     pub(crate) fn is_list(&self) -> bool {
         matches!(self, Self::List(..))
+    }
+
+    /// Returns an iterator over the items in a list.
+    ///
+    /// Returns `None` if the binding is not bound to a list.
+    pub(crate) fn list_items(&self) -> Option<impl Iterator<Item = NodeWithSource<'a>>> {
+        match self {
+            Self::List(src, node, field_id) => {
+                let field_id = *field_id;
+                let mut cursor = node.walk();
+                cursor.goto_first_child();
+                let mut done = false;
+                Some(
+                    iter::from_fn(move || {
+                        while !done {
+                            while cursor.field_id() != Some(field_id) {
+                                if !cursor.goto_next_sibling() {
+                                    return None;
+                                }
+                            }
+                            let result = cursor.node();
+                            if !cursor.goto_next_sibling() {
+                                done = true;
+                            }
+                            return Some(result);
+                        }
+                        None
+                    })
+                    .filter(|child| child.is_named())
+                    .map(|named_child| NodeWithSource::new(named_child, src)),
+                )
+            }
+            Self::Empty(..)
+            | Self::Node(..)
+            | Self::String(..)
+            | Self::ConstantRef(..)
+            | Self::FileName(..) => None,
+        }
     }
 
     /// Returns the parent node of this binding.
