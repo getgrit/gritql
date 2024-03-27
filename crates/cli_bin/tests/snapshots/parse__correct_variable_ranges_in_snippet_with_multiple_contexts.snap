@@ -1,5 +1,5 @@
 ---
-source: crates/cli_bin/tests/parse.rs
+source: apps/marzano/cli/tests/parse.rs
 expression: "parsed_lines[0]"
 ---
 __typename: PatternInfo
@@ -28,17 +28,10 @@ variables:
           column: 21
         startByte: 15
         endByte: 20
-      - start:
-          line: 1
-          column: 19
-        end:
-          line: 1
-          column: 24
-        startByte: 18
-        endByte: 23
   - name: $match
     scopedName: 11_1_$match
     ranges: []
 sourceFile: "`function () { $body }`"
 parsedPattern: "[..]"
 valid: true
+
