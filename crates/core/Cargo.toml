@@ -15,14 +15,13 @@ marzano-language = { path = "../language", default-features = false }
 marzano-util = { path = "../util" }
 marzano-externals = { path = "../externals", optional = true }
 embeddings = { git = "https://github.com/getgrit/embeddings.git", optional = true }
-
+grit-util = { path = "../grit-util" }
 tracing = { version = "0.1.40", default-features = false, features = [] }
 tracing-opentelemetry = { version = "0.22.0", optional = true, default-features = false, features = [
 ] }
 
 regex = "1.7.3"
 anyhow = "1.0.70"
-tree-sitter-traversal = { version = "0.1.2", default-features = false }
 itertools = "0.10.5"
 im = "15.1.0"
 serde_json = "1.0.96"
@@ -35,7 +34,7 @@ rand = "0.8.5"
 path-absolutize = { version = "3.1.1", optional = false, features = [
   "use_unix_paths_on_wasm",
 ] }
-getrandom = {version = "0.2.11", optional = true }
+getrandom = { version = "0.2.11", optional = true }
 
 [dev-dependencies]
 similar = "2.2.1"
@@ -65,8 +64,18 @@ grit_alpha = ["external_functions", "embeddings"]
 # Shared network requests - common to all approaches
 network_requests_common = ["marzano-util/network_requests_common"]
 network_requests = ["network_requests_common", "marzano-util/network_requests"]
-network_requests_external = ["network_requests_common", "marzano-util/network_requests_external"]
-wasm_core = [ "dep:getrandom", "getrandom/js", "network_requests_external", "external_functions_common", "external_functions_ffi", "marzano-util/external_functions_ffi"]
+network_requests_external = [
+  "network_requests_common",
+  "marzano-util/network_requests_external",
+]
+wasm_core = [
+  "dep:getrandom",
+  "getrandom/js",
+  "network_requests_external",
+  "external_functions_common",
+  "external_functions_ffi",
+  "marzano-util/external_functions_ffi",
+]
 grit_tracing = ["dep:tracing-opentelemetry"]
 language-parsers = ["marzano-language/builtin-parser"]
 grit-parser = ["tree-sitter-gritql"]

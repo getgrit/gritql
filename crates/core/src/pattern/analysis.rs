@@ -1,12 +1,10 @@
 use super::compiler::parse_one;
 use anyhow::anyhow;
 use anyhow::Result;
+use grit_util::{traverse, Order};
 use marzano_util::cursor_wrapper::CursorWrapper;
 use std::collections::BTreeMap;
-use tree_sitter::Node;
-use tree_sitter::Parser;
-use tree_sitter_traversal;
-use tree_sitter_traversal::Order;
+use tree_sitter::{Node, Parser};
 
 /// Walks the call tree and returns true if the predicate is true for any node.
 /// This is potentially error-prone, so not entirely recommended
@@ -18,7 +16,8 @@ pub fn walk_call_tree(
     is_true: &dyn Fn(&Node, &str) -> Result<bool>,
 ) -> Result<bool> {
     let cursor = node.walk();
-    for n in tree_sitter_traversal::traverse(CursorWrapper::from(cursor), Order::Pre) {
+    for n in traverse(CursorWrapper::new(cursor, source), Order::Pre) {
+        let n = n.node;
         if is_true(&n, source)? {
             return Ok(true);
         }
@@ -87,7 +86,8 @@ pub fn is_async(
 /// Return true if the pattern attempts to define itself
 pub fn defines_itself(root: &Node, source: &str, root_name: &str) -> Result<bool> {
     let cursor = root.walk();
-    for n in tree_sitter_traversal::traverse(CursorWrapper::from(cursor), Order::Pre) {
+    for n in traverse(CursorWrapper::new(cursor, source), Order::Pre) {
+        let n = n.node;
         if n.kind() != "patternDefinition" {
             continue;
         }

@@ -1,19 +1,18 @@
-use crate::ast_node::NodeWithSource;
 use crate::inline_snippets::inline_sorted_snippets_with_offset;
+use crate::pattern::resolved_pattern::CodeRange;
 use crate::pattern::state::{get_top_level_effects, FileRegistry};
 use crate::pattern::{Effect, EffectKind};
 use anyhow::{anyhow, Result};
 use marzano_language::language::{FieldId, Language};
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
+use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::position::{Position, Range};
 use marzano_util::tree_sitter_util::children_by_field_id_count;
 use std::ops::Range as StdRange;
 use std::path::Path;
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
 use tree_sitter::Node;
-
-use crate::pattern::resolved_pattern::CodeRange;
 
 // the inner references hold the mutable state
 #[derive(Debug, Clone)]

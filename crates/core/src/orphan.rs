@@ -1,11 +1,10 @@
 use anyhow::Result;
+use grit_util::{traverse, Order};
 use itertools::Itertools;
 use marzano_language::{language::Language, target_language::TargetLanguage};
+use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::position::Range;
 use tree_sitter::{Parser, Range as TSRange, Tree};
-use tree_sitter_traversal::{traverse, Order};
-
-use marzano_util::cursor_wrapper::CursorWrapper;
 
 fn merge_treesitter_ranges(ranges: Vec<TSRange>) -> Vec<Range> {
     if ranges.is_empty() {
@@ -54,8 +53,8 @@ pub(crate) fn remove_orphaned_ranges(
 pub fn get_orphaned_ranges(tree: &Tree, src: &str, lang: &TargetLanguage) -> Vec<TSRange> {
     let mut orphan_ranges = vec![];
     let cursor = tree.walk();
-    for n in traverse(CursorWrapper::from(cursor), Order::Pre) {
-        lang.check_orphaned(n, src, &mut orphan_ranges);
+    for n in traverse(CursorWrapper::new(cursor, src), Order::Pre) {
+        lang.check_orphaned(n.node, src, &mut orphan_ranges);
     }
     orphan_ranges
 }

@@ -39,6 +39,7 @@ use crate::pattern::register_variable;
 use crate::pattern::string_constant::AstLeafNode;
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
+use grit_util::{traverse, Order};
 use marzano_language::language::{Field, GritMetaValue};
 use marzano_language::{language::Language, language::SnippetNode};
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -48,7 +49,6 @@ use regex::Match;
 use std::collections::{BTreeMap, HashMap};
 use std::str;
 use std::vec;
-use tree_sitter_traversal::{traverse, Order};
 
 pub(crate) trait Matcher: Debug {
     // it is important that any implementors of Pattern
@@ -302,13 +302,13 @@ fn node_sub_variables(node: Node, lang: &impl Language, text: &str) -> Vec<Range
 
 fn metavariable_ranges(node: &Node, lang: &impl Language, text: &str) -> Vec<Range> {
     let cursor = node.walk();
-    traverse(CursorWrapper::from(cursor), Order::Pre)
+    traverse(CursorWrapper::new(cursor, text), Order::Pre)
         .flat_map(|n| {
-            if is_metavariable(&n, lang, text.as_bytes()) {
-                let range: Range = n.range().into();
+            if is_metavariable(&n.node, lang, text.as_bytes()) {
+                let range: Range = n.node.range().into();
                 vec![range]
             } else {
-                node_sub_variables(n, lang, text)
+                node_sub_variables(n.node, lang, text)
             }
         })
         .collect()
@@ -563,25 +563,30 @@ impl Pattern {
                     ))
                 })
                 .collect::<Result<Vec<(u16, bool, Pattern)>>>()?;
-            let mut mandatory_empty_args = fields.iter().filter(|field| {
-                node.child_by_field_id(field.id()).is_none() && lang.mandatory_empty_field(sort, field.id())
-            }).map(|field| {
-                if field.multiple() {
-                    (
-                        field.id(),
-                        true,
-                        Pattern::List(Box::new(List::new(Vec::new()))))
-                } else {
-                    (
-                        field.id(),
-                        false,
-                        Pattern::Dynamic(DynamicPattern::Snippet(DynamicSnippet {
-                        parts: vec![DynamicSnippetPart::String("".to_string())],
-                        }))
-                    )
-                }
-            })
-            .collect::<Vec<(u16, bool, Pattern)>>();
+            let mut mandatory_empty_args = fields
+                .iter()
+                .filter(|field| {
+                    node.child_by_field_id(field.id()).is_none()
+                        && lang.mandatory_empty_field(sort, field.id())
+                })
+                .map(|field| {
+                    if field.multiple() {
+                        (
+                            field.id(),
+                            true,
+                            Pattern::List(Box::new(List::new(Vec::new()))),
+                        )
+                    } else {
+                        (
+                            field.id(),
+                            false,
+                            Pattern::Dynamic(DynamicPattern::Snippet(DynamicSnippet {
+                                parts: vec![DynamicSnippetPart::String("".to_string())],
+                            })),
+                        )
+                    }
+                })
+                .collect::<Vec<(u16, bool, Pattern)>>();
             args.append(&mut mandatory_empty_args);
             Ok(Pattern::ASTNode(Box::new(ASTNode { sort, args })))
         }
