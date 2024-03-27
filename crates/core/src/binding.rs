@@ -302,15 +302,21 @@ impl<'a> Binding<'a> {
         Self::Node(node.source, node.node)
     }
 
-    pub(crate) fn singleton(&self) -> Option<(&str, Node)> {
+    /// Returns the only node bound by this binding.
+    ///
+    /// This includes list bindings that only match a single child.
+    ///
+    /// Returns `None` if the binding has no associated node, or if there is
+    /// more than one associated node.
+    pub(crate) fn singleton(&self) -> Option<NodeWithSource<'a>> {
         match self {
-            Binding::Node(src, node) => Some((src, node.to_owned())),
-            Binding::List(src, parent_node, field_id) => {
+            Self::Node(src, node) => Some(NodeWithSource::new(node.clone(), src)),
+            Self::List(src, parent_node, field_id) => {
                 let mut cursor = parent_node.walk();
                 let mut children = parent_node.children_by_field_id(*field_id, &mut cursor);
                 if let Some(node) = children.next() {
                     if children.next().is_none() {
-                        Some((src, node.to_owned()))
+                        Some(NodeWithSource::new(node.clone(), src))
                     } else {
                         None
                     }
@@ -318,10 +324,7 @@ impl<'a> Binding<'a> {
                     None
                 }
             }
-            Binding::String(..)
-            | Binding::FileName(_)
-            | Binding::Empty(..)
-            | Binding::ConstantRef(_) => None,
+            Self::String(..) | Self::FileName(..) | Self::Empty(..) | Self::ConstantRef(..) => None,
         }
     }
 
@@ -513,6 +516,11 @@ impl<'a> Binding<'a> {
         } else {
             None
         }
+    }
+
+    /// Returns `true` if and only if this binding is bound to a list.
+    pub(crate) fn is_list(&self) -> bool {
+        matches!(self, Self::List(..))
     }
 
     /// Returns the parent node of this binding.

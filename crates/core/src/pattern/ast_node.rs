@@ -1,4 +1,4 @@
-use crate::{binding::Binding, context::Context, resolve};
+use crate::{ast_node::NodeWithSource, binding::Binding, context::Context, resolve};
 
 use super::{
     compiler::CompilationContext,
@@ -160,30 +160,19 @@ impl Matcher for ASTNode {
         } else {
             return Ok(false);
         };
-        let (src, node) = match binding {
-            Binding::Empty(_, _, _) => return Ok(false),
-            Binding::Node(src, node) => (src, node),
-            // maybe String should instead be fake node? eg for comment_content
-            Binding::String(_, _) => return Ok(false),
-            Binding::List(src, node, id) => {
-                let mut cursor = node.walk();
-                let mut list = node.children_by_field_id(*id, &mut cursor);
-                if let Some(child) = list.next() {
-                    if list.next().is_some() {
-                        return Ok(false);
-                    }
-                    return self.execute(
-                        &ResolvedPattern::from_binding(Binding::Node(src, child)),
-                        init_state,
-                        context,
-                        logs,
-                    );
-                }
-                return Ok(false);
-            }
-            Binding::FileName(_) => return Ok(false),
-            Binding::ConstantRef(_) => return Ok(false),
+        let Some(node) = binding.singleton() else {
+            return Ok(false);
         };
+        if binding.is_list() {
+            return self.execute(
+                &ResolvedPattern::from_binding(Binding::from_node(node)),
+                init_state,
+                context,
+                logs,
+            );
+        }
+
+        let NodeWithSource { node, source } = node;
         if node.kind_id() != self.sort {
             return Ok(false);
         }
@@ -191,9 +180,9 @@ impl Matcher for ASTNode {
             return Ok(true);
         }
         if context.language().is_comment(self.sort) {
-            let content = context.language().comment_text(node, src);
+            let content = context.language().comment_text(&node, source);
             let content = resolve!(content);
-            let content = Binding::String(src, content.1);
+            let content = Binding::String(source, content.1);
 
             return self.args[0].2.execute(
                 &ResolvedPattern::from_binding(content),
@@ -208,21 +197,21 @@ impl Matcher for ASTNode {
 
             let res = if *is_list {
                 pattern.execute(
-                    &ResolvedPattern::from_list(src, node.clone(), *field_id),
+                    &ResolvedPattern::from_list(source, node.clone(), *field_id),
                     &mut cur_state,
                     context,
                     logs,
                 )
             } else if let Some(child) = node.child_by_field_id(*field_id) {
                 pattern.execute(
-                    &ResolvedPattern::from_node(src, child),
+                    &ResolvedPattern::from_node(source, child),
                     &mut cur_state,
                     context,
                     logs,
                 )
             } else {
                 pattern.execute(
-                    &ResolvedPattern::empty_field(src, node.clone(), *field_id),
+                    &ResolvedPattern::empty_field(source, node.clone(), *field_id),
                     &mut cur_state,
                     context,
                     logs,
