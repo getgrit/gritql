@@ -6,6 +6,7 @@ use crate::{
     },
 };
 use anyhow::{anyhow, bail, Result};
+use grit_util::{traverse, Order};
 use itertools::Itertools;
 use marzano_language::{self, target_language::TargetLanguage};
 use marzano_util::cursor_wrapper::CursorWrapper;
@@ -21,7 +22,6 @@ use std::{
     vec,
 };
 use tree_sitter::{Node, Parser, Tree};
-use tree_sitter_traversal::{traverse, Order};
 
 #[cfg(feature = "grit_tracing")]
 use tracing::instrument;
@@ -69,11 +69,11 @@ fn grit_parsing_errors(tree: &Tree, src: &str, file_name: &str) -> Result<Analys
         .engine_id("marzano(0.1)".to_owned())
         .file(file_name.to_owned());
 
-    for n in traverse(CursorWrapper::from(cursor), Order::Pre) {
-        if n.is_error() || n.is_missing() {
-            let position: Position = n.range().start_point().into();
+    for n in traverse(CursorWrapper::new(cursor, src), Order::Pre) {
+        if n.node.is_error() || n.node.is_missing() {
+            let position: Position = n.node.range().start_point().into();
 
-            let error_node = n.utf8_text(src.as_bytes())?;
+            let error_node = n.node.utf8_text(src.as_bytes())?;
             let identifier_regex = Regex::new(r"^([A-Za-z0-9_]*)\(\)$")?;
             let message = if let Some(found) = identifier_regex.find(&error_node) {
                 format!(
@@ -88,8 +88,8 @@ fn grit_parsing_errors(tree: &Tree, src: &str, file_name: &str) -> Result<Analys
                 };
                 format!(
                         "Pattern syntax error at {}:{}{}. If you hit this error while running grit apply on a pattern from the Grit standard library, try running grit init. If you are running a custom pattern, check out the docs at https://docs.grit.io/ for help with writing patterns.",
-                        n.range().start_point().row() + 1,
-                        n.range().start_point().column() + 1,
+                        n.node.range().start_point().row() + 1,
+                        n.node.range().start_point().column() + 1,
                         file_locations_str
                     )
             };
@@ -594,7 +594,8 @@ fn filter_libs(
     };
     while let Some((tree, source)) = stack.pop() {
         let cursor = tree.walk();
-        for n in tree_sitter_traversal::traverse(CursorWrapper::from(cursor), Order::Pre)
+        for n in traverse(CursorWrapper::new(cursor, source), Order::Pre)
+            .map(|n| n.node)
             .filter(|n| n.is_named() && (n.kind() == node_like || n.kind() == predicate_call))
         {
             let name = n

@@ -5,10 +5,11 @@ use super::{
     variable::VariableSourceLocations,
     Node, State,
 };
-use crate::{ast_node::AstNode, binding::Binding, context::Context, resolve};
+use crate::{binding::Binding, context::Context, resolve};
 use crate::{binding::Constant, errors::debug};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
+use grit_util::AstNode;
 use im::vector;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
