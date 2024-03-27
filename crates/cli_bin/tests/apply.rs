@@ -2020,6 +2020,7 @@ fn ignores_file_in_grit_dir() -> Result<()> {
 fn language_option_file_pattern_apply() -> Result<()> {
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("simple_python", false)?;
+    let origin_content = std::fs::read_to_string(dir.join("main.py"))?;
 
     // from the tempdir as cwd, run init
     run_init(&dir.as_path())?;
@@ -2027,23 +2028,21 @@ fn language_option_file_pattern_apply() -> Result<()> {
     // from the tempdir as cwd, run marzano apply
     let mut apply_cmd = get_test_cmd()?;
     apply_cmd.current_dir(dir.as_path());
-    // The language option in the pattern file should be ignored
     apply_cmd.arg("apply").arg("--force").arg("pattern.grit").arg("--language").arg("java");
     let output = apply_cmd.output()?;
 
-    // Assert that the command executed successfully
+    // Assert that the command failed
     assert!(
-        output.status.success(),
-        "Command didn't finish successfully: {}",
-        String::from_utf8(output.stderr)?
+        !output.status.success(),
+        "Command with incorrect language option should fail: {}",
+        String::from_utf8(output.stdout)?
     );
 
     // Read back the main.py file
     let target_file = dir.join("main.py");
     let content: String = std::fs::read_to_string(target_file)?;
 
-    // assert that it matches snapshot
-    assert_snapshot!(content);
+    assert_eq!(origin_content, content);
 
     Ok(())
 }
