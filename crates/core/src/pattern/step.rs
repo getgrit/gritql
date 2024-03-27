@@ -246,8 +246,7 @@ impl Matcher for Step {
                 .iter()
                 .find(|e| {
                     e.binding.source() == Some(src)
-                        || e.binding.source().map(str::as_bytes)
-                            == Some(filename_path.to_string_lossy().as_bytes())
+                        || e.binding.as_filename() == Some(filename_path)
                 })
                 .cloned()
                 .is_some()

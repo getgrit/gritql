@@ -507,9 +507,7 @@ impl<'a> Binding<'a> {
             Binding::Node(source, _) => Some(source),
             Binding::String(source, _) => Some(source),
             Binding::List(source, _, _) => Some(source),
-            // maybe should be none?
-            Binding::FileName(source) => source.to_str(),
-            Binding::ConstantRef(_) => None,
+            Binding::FileName(..) | Binding::ConstantRef(..) => None,
         }
     }
 
