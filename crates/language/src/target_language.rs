@@ -347,7 +347,7 @@ impl PatternLanguage {
             PatternLanguage::Sql,
             PatternLanguage::Vue,
             PatternLanguage::Toml,
-            PatternLanguage::PhpHtml,
+            PatternLanguage::PhpOnly,
         ]
     }
 
@@ -382,6 +382,7 @@ impl PatternLanguage {
             PatternLanguage::Sql => Ok(TargetLanguage::Sql(Sql::new(Some(lang)))),
             PatternLanguage::Vue => Ok(TargetLanguage::Vue(Vue::new(Some(lang)))),
             PatternLanguage::Toml => Ok(TargetLanguage::Toml(Toml::new(Some(lang)))),
+            PatternLanguage::PhpOnly => Ok(TargetLanguage::PhpOnly(Toml::new(Some(lang)))),
             PatternLanguage::Universal => Err("Cannot convert universal to TSLang".to_string()),
         }
     }

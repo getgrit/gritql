@@ -57,6 +57,7 @@ impl Language for PhpOnly {
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
         &[
             ("", ""),
+            ("", ";"),
             ("GRIT_VAR = ", ";"),
             ("class GRIT_CLASS { ", " }"),
             ("class GRIT_CLASS { ", " GRIT_FUNCTION() {} }"),
