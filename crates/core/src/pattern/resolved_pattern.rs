@@ -13,7 +13,6 @@ use crate::{
     binding::{Binding, Constant},
     context::Context,
     pattern::{container::PatternOrResolved, patterns::Name},
-    smart_insert::normalize_insert,
 };
 use anyhow::{anyhow, bail, Result};
 use im::{vector, Vector};
@@ -374,7 +373,7 @@ impl<'a> ResolvedPattern<'a> {
                     .iter()
                     .map(|b| {
                         let is_first = !effects.iter().any(|e| e.binding == *b);
-                        normalize_insert(b, &mut with, is_first, language)?;
+                        with.normalize_insert(b, is_first, language)?;
                         Ok(Effect {
                             binding: b.clone(),
                             pattern: with.clone(),
@@ -976,6 +975,26 @@ impl<'a> ResolvedPattern<'a> {
             ResolvedPattern::Files(files) => files.text(state),
             ResolvedPattern::Constant(constant) => Ok(constant.to_string().into()),
         }
+    }
+
+    pub(crate) fn normalize_insert(
+        &mut self,
+        binding: &Binding<'a>,
+        is_first: bool,
+        language: &TargetLanguage,
+    ) -> Result<()> {
+        let ResolvedPattern::Snippets(ref mut snippets) = self else {
+            return Ok(());
+        };
+        let Some(ResolvedSnippet::Text(text)) = snippets.front() else {
+            return Ok(());
+        };
+        if let Some(padding) = binding.get_insertion_padding(&text, is_first, language) {
+            if padding.chars().next() != binding.text().chars().last() {
+                snippets.push_front(ResolvedSnippet::Text(padding.into()));
+            }
+        }
+        Ok(())
     }
 }
 
