@@ -25,7 +25,7 @@ jobs:
       BUILD_PLATFORM: amd64
     steps:
       - name: clone code
-        uses: actions/checkout@v3
+        uses: namespacelabs/nscloud-checkout-action@v3
         with:
           submodules: true
           fetch-depth: 0
