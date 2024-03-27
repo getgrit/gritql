@@ -109,6 +109,8 @@ pub struct ApplyPatternArgs {
     /// Clear cache before running apply
     #[clap(long = "refresh-cache", conflicts_with = "cache")]
     pub refresh_cache: bool,
+    #[clap(long = "language", alias="lang")]
+    pub language: Option<PatternLanguage>,
 }
 
 impl Default for ApplyPatternArgs {
@@ -125,6 +127,7 @@ impl Default for ApplyPatternArgs {
             output_file: Default::default(),
             cache: Default::default(),
             refresh_cache: Default::default(),
+            language: Default::default(),
         }
     }
 }
@@ -226,7 +229,8 @@ pub(crate) async fn run_apply_pattern(
         }
 
         let pattern_libs = flushable_unwrap!(emitter, get_grit_files_from_cwd().await);
-        let (lang, pattern_body) = if pattern.ends_with(".grit") || pattern.ends_with(".md") {
+        let (mut lang, pattern_body) = if pattern.ends_with(".grit") || pattern.ends_with(".md") {
+    
             match fs::read_to_string(pattern.clone()).await {
                 Ok(pb) => {
                     if pattern.ends_with(".grit") {
@@ -285,6 +289,18 @@ pub(crate) async fn run_apply_pattern(
                 }
             }
         };
+        if let Some(lang_option) = &arg.language {
+            if let Some(lang) = lang {
+                if lang != *lang_option {
+                    return Err(anyhow::anyhow!(
+                        "Language option {} does not match pattern language {}",
+                        lang_option,
+                        lang
+                    ));
+                }
+            }
+            lang = Some(*lang_option);
+        }
         let pattern_libs = flushable_unwrap!(
             emitter,
             pattern_libs.get_language_directory_or_default(lang)

@@ -1,0 +1,12 @@
+---
+source: crates/cli_bin/tests/apply.rs
+assertion_line: 2079
+expression: content
+---
+import os
+
+import openai
+from flask import Flask, redirect, render_template, request, url_for
+
+app = Flask(__name__)
+openai.api_key = dotenv.fetch("OPENAI_API_KEY")

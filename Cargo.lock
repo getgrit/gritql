@@ -2021,12 +2021,14 @@ name = "marzano-language"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "clap",
  "enum_dispatch",
  "ignore",
  "itertools 0.10.5",
  "lazy_static",
  "marzano-util",
  "regex",
+ "serde",
  "serde_json",
  "tree-sitter-c-sharp",
  "tree-sitter-css",

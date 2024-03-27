@@ -24,6 +24,8 @@ use crate::{
 };
 use anyhow::Result;
 use enum_dispatch::enum_dispatch;
+use clap::ValueEnum;
+use serde::Serialize;
 use std::borrow::Cow;
 use std::fmt;
 use std::hash::Hash;
@@ -42,11 +44,15 @@ use std::path::PathBuf;
 #[cfg(feature = "finder")]
 use std::str::FromStr;
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+#[derive(ValueEnum, Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize)]
+#[clap(rename_all = "lower")]
 pub enum PatternLanguage {
+    #[value(skip)]
     JavaScript,
+    #[value(skip)]
     TypeScript,
     #[default]
+    #[value(name = "js")]
     Tsx,
     Html,
     Css,
@@ -54,7 +60,9 @@ pub enum PatternLanguage {
     Java,
     CSharp, // f
     Python,
+    #[value(name = "markdown")]
     MarkdownBlock,
+    #[value(skip)]
     MarkdownInline,
     Go,
     Rust,
@@ -65,6 +73,7 @@ pub enum PatternLanguage {
     Sql,
     Vue,
     Toml,
+    #[value(skip)]
     Universal,
 }
 
@@ -370,6 +379,7 @@ impl PatternLanguage {
         unreachable!()
     }
 }
+
 
 #[cfg(feature = "finder")]
 pub fn expand_paths(
