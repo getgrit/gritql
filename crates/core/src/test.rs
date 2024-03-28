@@ -12823,7 +12823,7 @@ fn php_simple_match() {
             pattern: r#"
                 |language php
                 |
-                |`echo ^match;` => `^match + ^match;`
+                |`echo ^x;` => `^x + ^x;`
                 |"#
             .trim_margin()
             .unwrap(),
@@ -12944,6 +12944,72 @@ fn php_delete_include() {
     )
     .unwrap();
 }
+
+#[test]
+fn php_function_modifier() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`class ^_ { ^mod function ^name(){ ^_ } }` where {
+                |   ^mod => `private`,
+                |   ^name => `modified`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+            |class Log {
+            |   public function printHello()
+            |   {
+            |       echo $this->public;
+            |       echo $this->protected;
+            |       echo $this->private;
+            |   }
+            |}
+            |"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+            |class Log {
+            |   private function modified()
+            |   {
+            |       echo $this->public;
+            |       echo $this->protected;
+            |       echo $this->private;
+            |   }
+            |}
+            |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+#[test]
+fn php_rewrite_arrow_function() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`fn(^a) => ^_` => `fn(^a) => $x * $x`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: "$fn1 = fn($x) => $x + $y;"
+            .trim_margin().
+            unwrap(),
+            expected: "$fn1 = fn($x) => $x * $x;"
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
 
 #[test]
 fn css_property_value() {
