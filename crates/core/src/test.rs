@@ -12020,7 +12020,7 @@ fn struct_name_and_body_metavariable() {
                 |engine marzano(0.1)
                 |language rust
                 |
-                |`struct $name {
+                |`$_ struct $name {
                 |   $fields
                 |}`
                 |"#

@@ -109,6 +109,22 @@ impl TypeScript {
                 (
                     language.id_for_node_kind("call_expression", true),
                     language.field_id_for_name("type_arguments").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("function", true),
+                    language.field_id_for_name("return_type").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("function", true),
+                    language.field_id_for_name("return_type").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("function", true),
+                    language.field_id_for_name("async").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("arrow_function", true),
+                    language.field_id_for_name("async").unwrap(),
                 )
             ]
         });
