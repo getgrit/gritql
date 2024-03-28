@@ -190,6 +190,7 @@ fn process_snippet_content(
         if lang.exact_variable_regex().is_match(source.trim()) {
             match source.trim() {
                 "$_" => return Ok(Pattern::Underscore),
+                "^_" => return Ok(Pattern::Underscore),
                 name => {
                     let var = register_variable(
                         name,
