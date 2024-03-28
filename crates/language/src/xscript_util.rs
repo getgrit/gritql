@@ -1,12 +1,11 @@
-use anyhow::{anyhow, Result};
-use grit_util::{traverse, Order};
-use marzano_util::{cursor_wrapper::CursorWrapper, tree_sitter_util::children_by_field_name_count};
-use tree_sitter::{Node, Parser, Range, Tree};
+use anyhow::anyhow;
+use marzano_util::tree_sitter_util::children_by_field_name_count;
+use tree_sitter::{Node, Parser, Tree};
 
 use crate::{
     language::{default_parse_file, Language, SortId, TSLanguage},
     parent_traverse::{ParentTraverse, TreeSitterParentCursor},
-    vue::Vue,
+    vue::get_vue_ranges,
 };
 
 pub static STATEMENT_NODE_NAMES: &[&str] = &[
@@ -46,55 +45,6 @@ pub fn jslike_get_statement_sorts(lang: &TSLanguage) -> Vec<SortId> {
         .collect()
 }
 
-fn is_js_lang_attribute(node: &Node, text: &[u8]) -> bool {
-    let js_name_array = ["js", "ts", "tsx", "jsx", "javascript", "typescript"];
-    node.child_by_field_name("name")
-        .is_some_and(|name| name.utf8_text(text).unwrap().trim() == "lang")
-        && node
-            .child_by_field_name("value")
-            .and_then(|n| {
-                if n.kind() == "attribute_value" {
-                    Some(n)
-                } else if n.kind() == "quoted_attribute_value" {
-                    n.child_by_field_name("value")
-                } else {
-                    None
-                }
-            })
-            .is_some_and(|lang| js_name_array.contains(&lang.utf8_text(text).unwrap().trim()))
-}
-
-fn append_code_range(node: &Node, text: &[u8], ranges: &mut Vec<Range>) {
-    if node.kind() == "script_element" {
-        let mut cursor = node.walk();
-        if let Some(mut attributes) = node
-            .child_by_field_name("start_tag")
-            .map(|n| n.children_by_field_name("atributes", &mut cursor))
-        {
-            if attributes.any(|n| is_js_lang_attribute(&n, text)) {
-                if let Some(code) = node.child_by_field_name("text") {
-                    ranges.push(code.range())
-                }
-            }
-        };
-    }
-}
-
-// could probably be done better using a tree-sitter query?
-fn get_vue_ranges(file: &str) -> Result<Vec<Range>> {
-    let vue = Vue::new(None);
-    let mut parser = Parser::new()?;
-    let text = file.as_bytes();
-    parser.set_language(vue.get_ts_language())?;
-    let tree = parser.parse(file, None)?.ok_or(anyhow!("missing tree"))?;
-    let cursor = tree.walk();
-    let mut ranges = Vec::new();
-    for n in traverse(CursorWrapper::new(cursor, file), Order::Pre) {
-        append_code_range(&n.node, text, &mut ranges)
-    }
-    Ok(ranges)
-}
-
 pub(crate) fn parse_file(
     lang: &impl Language,
     name: &str,
@@ -102,11 +52,16 @@ pub(crate) fn parse_file(
     logs: &mut marzano_util::analysis_logs::AnalysisLogs,
     new: bool,
     parser: &mut Parser,
-) -> anyhow::Result<Tree> {
+) -> anyhow::Result<Option<Tree>> {
     if name.ends_with(".vue") {
-        let ranges = get_vue_ranges(body)?;
+        let js_name_array = ["js", "ts", "tsx", "jsx", "javascript", "typescript"];
+        let parent_node_kind = "script_element";
+        let ranges = get_vue_ranges(body, parent_node_kind, Some(&js_name_array))?;
         parser.set_included_ranges(&ranges)?;
-        parser.parse(body, None)?.ok_or(anyhow!("missing tree"))
+        parser
+            .parse(body, None)?
+            .ok_or(anyhow!("missing tree"))
+            .map(Some)
     } else {
         default_parse_file(lang.get_ts_language(), name, body, logs, new)
     }
@@ -152,11 +107,9 @@ pub(crate) fn jslike_check_orphaned(
 #[cfg(test)]
 mod tests {
 
-    use marzano_util::print_node::print_node;
-
-    use crate::tsx::Tsx;
-
     use super::*;
+    use crate::tsx::Tsx;
+    use marzano_util::print_node::print_node;
 
     #[test]
     fn gets_ranges() {
@@ -181,7 +134,9 @@ defineProps<{
         </span>
     </transition>
 </template>"#;
-        let ranges = get_vue_ranges(snippet);
+        let js_name_array = ["js", "ts", "tsx", "jsx", "javascript", "typescript"];
+        let parent_node_kind = "script_element";
+        let ranges = get_vue_ranges(snippet, parent_node_kind, Some(&js_name_array));
         println!("RANGES: {:#?}", ranges);
         let ts = Tsx::new(None);
         let ts_ts = ts.get_ts_language();
@@ -195,6 +150,7 @@ defineProps<{
             false,
             &mut parser,
         )
+        .unwrap()
         .unwrap();
         let root = tree.root_node();
         print_node(&root);

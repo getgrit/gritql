@@ -227,7 +227,7 @@ impl Language for TypeScript {
         body: &str,
         logs: &mut marzano_util::analysis_logs::AnalysisLogs,
         new: bool,
-    ) -> anyhow::Result<tree_sitter::Tree> {
+    ) -> anyhow::Result<Option<tree_sitter::Tree>> {
         let mut parser = Parser::new().unwrap();
         parser.set_language(self.get_ts_language())?;
         xscript_util::parse_file(self, name, body, logs, new, &mut parser)

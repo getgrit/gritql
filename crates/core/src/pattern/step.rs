@@ -16,7 +16,7 @@ use crate::{
     pattern::{InputRanges, MatchRanges},
     text_unparser::apply_effects,
 };
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use im::vector;
 use marzano_language::language::Language;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
@@ -275,13 +275,19 @@ impl Matcher for Step {
                     let ranges =
                         MatchRanges::new(new_ranges.into_iter().map(|r| r.into()).collect());
                     let owned_file = FileOwner::new(
-                        new_filename,
+                        new_filename.clone(),
                         new_src,
                         Some(ranges),
                         true,
                         context.language(),
                         logs,
-                    )?;
+                    )?
+                    .ok_or_else(|| {
+                        anyhow!(
+                            "failed to construct new file for file {}",
+                            new_filename.to_string_lossy()
+                        )
+                    })?;
                     context.files().push(owned_file);
                     state
                         .files
@@ -303,7 +309,13 @@ impl Matcher for Step {
                         .into();
                     let body = file.body(&state.files).text(&state.files).unwrap().into();
                     let owned_file =
-                        FileOwner::new(name, body, None, true, context.language(), logs)?;
+                        FileOwner::new(name.clone(), body, None, true, context.language(), logs)?
+                            .ok_or_else(|| {
+                            anyhow!(
+                                "failed to construct new file for file {}",
+                                name.to_string_lossy()
+                            )
+                        })?;
                     context.files().push(owned_file);
                     let _ = state.files.push_new_file(context.files().last().unwrap());
                 } else {
