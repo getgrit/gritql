@@ -12956,3 +12956,26 @@ fn python_support_empty_line() {
     })
     .unwrap();
 }
+
+#[test]
+fn snippet_does_not_match_with_extra_children() {
+    run_test_no_match({
+        TestArg {
+            pattern: r#"
+                |language js
+                |
+                |`var increment = function (i) {};`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |var increment = function (i) {
+                |   return i + 1;
+                |};
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
