@@ -2815,6 +2815,274 @@ fn simple_toml() {
     .unwrap();
 }
 
+
+#[test]
+fn php_include_to_require() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+            |engine marzano(0.1)
+            |language php
+            |
+            |`include $message` => `require $message`"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+            |<?php
+            |include 'foo';
+            |?>
+            "#
+                .to_owned(),
+            expected: r#"
+            |<?php
+            |require 'foo';
+            |?>
+            "#
+                .to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_extends_component_snippet() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                |engine marzano(0.1)
+                |language php
+                |
+                |`class $_ extends $c { $b }`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |<?php
+                |class Button extends Component {
+                |    
+                |}
+                |?>
+                "#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_equals_zero_snippet_test() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                |engine marzano(0.1)
+                |language php
+                |`exit($a);`"#
+                .trim_margin()
+                .unwrap(),
+            source: r#"<?php
+            |exit(1);
+            |?>"#.to_string(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_switch_statement() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                |engine marzano(0.1)
+                |language php
+                |
+                |`switch ($type) {
+                |   case $cond:
+                |        $statements
+                |}`"#
+                .trim_margin()
+                .unwrap(),
+            source: r#"<?php
+                |switch ($i) {
+                |    case 0:
+                |        echo "i equals 0";
+                |        break;
+                |}
+            |?>"#.to_string(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_while_loop() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                |engine marzano(0.1)
+                |language php
+                |
+                |`while ($cond) {
+                |   $statements
+                |}`"#
+                .trim_margin()
+                .unwrap(),
+            source: r#"<?php
+                |while ($i <= 10) {
+                |    echo $i++;  
+                |}
+            |?>"#.to_string(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_for_loop() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                |engine marzano(0.1)
+                |language php
+                |
+                |`for($a; $b; $c) {
+                |    $body
+                |}`"#
+                .trim_margin()
+                .unwrap(),
+            source: r#"<?php
+                |
+                |for ($i = 1; $i <= 10; $i++) {
+                |    echo $i;
+                |}
+            |?>"#.to_string(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_foreach_loop() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                |engine marzano(0.1)
+                |language php
+                |
+                |`foreach ($a as $v) {
+                |    $body
+                |}`"#.trim_margin()
+                .unwrap(),
+            source: r#"<?php
+                |
+                |foreach ($arr as &$value) {
+                |    echo $i;
+                |}
+            |?>"#.to_string(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_equals_zero_snippet3() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                |language php
+                |
+                |`function $name($a){$body}`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"<?php 
+            |function foo($a){
+            |   echo 'hello';
+            |}
+            |?>"#.to_string(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_equals_zero_snippet4() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                |language php
+                |
+                |`if($cond){ $r }`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"<?php 
+            |if (!$response) {
+            |    return false;
+            |} ?>"#
+            .to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_equals_zero_snippet() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                |language php
+                |
+                |`$f($arg)`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"<?php foo ($f) ?>"#.to_string(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_equals_zero_snippet2() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                |language php
+                |
+                |`$y = $x`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"<?php $bar = 1; ?>"#.to_string(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_test_conditional_snippet() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |`if ($cond) { $cond_true }` => `$cond;`"#
+                .trim_margin()
+                .unwrap(),
+            source: r#"<?php 
+            |if (!$response) {
+            |    return false;
+            |} 
+            |?>"#
+            .to_owned(),
+            expected: r#"<?php 
+            |!$response;
+            |?>"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
 #[test]
 fn multi_args_snippet() {
     run_test_match({

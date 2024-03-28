@@ -57,6 +57,7 @@ const allLanguages = [
   'typescript',
   'yaml',
   'toml',
+  'php',
   'vue'
 ];
 
@@ -285,7 +286,23 @@ async function buildLanguage(language) {
       `${METAVARIABLE_GRAMMARS}/c_build.rs`,
       `${tsLangDir}/bindings/rust/build.rs`,
     );
-  } else {
+  } else if (language == 'php'){
+    log(`Copying files`);
+    await copyMvGrammar(language, "php/php");
+    log(`Running tree-sitter generate`);
+    await treeSitterGenerate("php/php");
+    log(`Copying output node types`);
+    fs.copyFile(
+      `tree-sitter-php/php/src/node-types.json`,
+      `../node-types/php-node-types.json`,
+    );
+
+    log(`Copying wasm parser`);
+    fs.rename(
+      'tree-sitter-php/php/tree-sitter-php.wasm',
+      `../../crates/wasm-bindings/wasm_parsers/tree-sitter-php.wasm`,
+    );
+  }else {
     await buildSimpleLanguage(log, language);
   }
 
