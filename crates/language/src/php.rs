@@ -69,6 +69,9 @@ impl Language for Php {
         &[
             ("", ""),
             ("", ";"),
+            ("$", ";"),
+            ("class GRIT_CLASS {", "}"),
+            ("class GRIT_CLASS { ", " function GRIT_FN(); }"),
         ]
     }
 
