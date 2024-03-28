@@ -104,6 +104,17 @@ fn pad_snippet(padding: &str, snippet: &str) -> String {
     result
 }
 
+fn adjust_ranges(substitutions: &mut [(EffectRange, String)], index: usize, delta: isize) {
+    for (EffectRange { range, .. }, _) in substitutions.iter_mut() {
+        if range.start >= index {
+            range.start = (range.start as isize + delta) as usize;
+        }
+        if range.end >= index {
+            range.end = (range.end as isize + delta) as usize;
+        }
+    }
+}
+
 // in multiline snippets, remove padding from every line equal to the padding of the first line,
 // such that the first line is left-aligned.
 pub(crate) fn adjust_padding<'a>(
@@ -137,14 +148,11 @@ pub(crate) fn adjust_padding<'a>(
         for line in lines {
             result.push('\n');
             index += 1;
-            for (EffectRange { range, .. }, _) in substitutions.iter_mut() {
-                if range.start >= index {
-                    range.start = (range.start as isize + delta) as usize;
-                }
-                if range.end >= index {
-                    range.end = (range.end as isize + delta) as usize;
-                }
+            if line.trim().is_empty() {
+                adjust_ranges(substitutions, index, -(line.len() as isize));
+                continue;
             }
+            adjust_ranges(substitutions, index, delta);
             let line = line.strip_prefix(&padding).ok_or_else(|| {
                 anyhow!(
                     "expected line \n{}\n to start with {} spaces, code is either not indented with spaces, or does not consistently indent code blocks",
