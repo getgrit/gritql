@@ -9,7 +9,7 @@ use crate::{context::Context, resolve};
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use marzano_language::parent_traverse::{ParentTraverse, TreeSitterParentCursor};
-use marzano_util::analysis_logs::AnalysisLogs;
+use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource};
 use std::collections::BTreeMap;
 use tree_sitter::Node;
 
@@ -88,7 +88,7 @@ impl Matcher for Within {
         for n in ParentTraverse::new(TreeSitterParentCursor::new(node.node)) {
             let state = cur_state.clone();
             if self.pattern.execute(
-                &ResolvedPattern::from_node(node.source, n),
+                &ResolvedPattern::from_node(NodeWithSource::new(n, node.source)),
                 &mut cur_state,
                 context,
                 logs,

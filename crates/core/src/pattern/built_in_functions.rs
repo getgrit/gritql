@@ -402,28 +402,20 @@ fn distinct_fn<'a>(
             Ok(ResolvedPattern::List(unique_list))
         }
         Some(ResolvedPattern::Binding(binding)) => match binding.last() {
-            Some(b) => match b {
-                Binding::List(src, parent_node, field_id) => {
+            Some(b) => {
+                if let Some(list_items) = b.list_items() {
                     let mut unique_list = Vector::new();
-                    for child in parent_node
-                        .children_by_field_id(*field_id, &mut parent_node.walk())
-                        .filter(|child| child.is_named())
-                    {
-                        let resolved = ResolvedPattern::from_node(src, child);
+                    for item in list_items {
+                        let resolved = ResolvedPattern::from_node(item);
                         if !unique_list.contains(&resolved) {
                             unique_list.push_back(resolved);
                         }
                     }
                     Ok(ResolvedPattern::List(unique_list))
-                }
-                Binding::String(..)
-                | Binding::FileName(_)
-                | Binding::Node(..)
-                | Binding::Empty(..)
-                | Binding::ConstantRef(_) => {
+                } else {
                     bail!("distinct takes a list as the first argument")
                 }
-            },
+            }
             None => Ok(ResolvedPattern::Binding(binding)),
         },
         _ => Err(anyhow!("distinct takes a list as the first argument")),
@@ -454,19 +446,17 @@ fn shuffle_fn<'a>(
             Ok(ResolvedPattern::List(shuffled_list.into()))
         }
         ResolvedPattern::Binding(binding) => match binding.last() {
-            Some(Binding::List(src, parent_node, field_id)) => {
-                let mut list = parent_node
-                    .children_by_field_id(*field_id, &mut parent_node.walk())
-                    .filter(|child| child.is_named())
-                    .collect::<Vec<_>>();
-                list.shuffle(state.get_rng());
-                let list = list
-                    .into_iter()
-                    .map(|child| ResolvedPattern::from_node(src, child))
-                    .collect::<Vector<_>>();
-                Ok(ResolvedPattern::List(list))
+            Some(b) => {
+                if let Some(list_items) = b.list_items() {
+                    let mut list: Vec<_> = list_items.collect();
+                    list.shuffle(state.get_rng());
+                    let list: Vector<_> =
+                        list.into_iter().map(ResolvedPattern::from_node).collect();
+                    Ok(ResolvedPattern::List(list))
+                } else {
+                    Err(anyhow!("shuffle takes a list as the first argument"))
+                }
             }
-            Some(_) => Err(anyhow!("shuffle takes a list as the first argument")),
             None => Err(anyhow!("shuffle argument must be bound")),
         },
         ResolvedPattern::Snippets(_)

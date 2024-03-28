@@ -126,7 +126,8 @@ impl Matcher for List {
                 };
 
                 let children: Vec<Cow<ResolvedPattern>> = list_items
-                    .map(|node| Cow::Owned(ResolvedPattern::from_node(node.source, node.node)))
+                    .map(ResolvedPattern::from_node)
+                    .map(Cow::Owned)
                     .collect();
 
                 execute_assoc(&self.patterns, &children, state, context, logs)
