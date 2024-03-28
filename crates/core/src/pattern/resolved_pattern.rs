@@ -17,7 +17,9 @@ use crate::{
 use anyhow::{anyhow, bail, Result};
 use im::{vector, Vector};
 use marzano_language::{language::FieldId, target_language::TargetLanguage};
-use marzano_util::{analysis_logs::AnalysisLogs, position::Range};
+use marzano_util::{
+    analysis_logs::AnalysisLogs, node_with_source::NodeWithSource, position::Range,
+};
 use std::{
     borrow::Cow,
     collections::{BTreeMap, HashMap},
@@ -478,8 +480,8 @@ impl<'a> ResolvedPattern<'a> {
         Self::Binding(vector![Binding::ConstantRef(constant)])
     }
 
-    pub(crate) fn from_node(src: &'a str, node: Node<'a>) -> Self {
-        Self::Binding(vector![Binding::Node(src, node)])
+    pub(crate) fn from_node(node: NodeWithSource<'a>) -> Self {
+        Self::Binding(vector![Binding::Node(node.source, node.node)])
     }
 
     pub(crate) fn from_list(src: &'a str, node: Node<'a>, field_id: FieldId) -> Self {

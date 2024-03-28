@@ -203,7 +203,7 @@ impl Matcher for ASTNode {
                 )
             } else if let Some(child) = node.child_by_field_id(*field_id) {
                 pattern.execute(
-                    &ResolvedPattern::from_node(source, child),
+                    &ResolvedPattern::from_node(NodeWithSource::new(child, source)),
                     &mut cur_state,
                     context,
                     logs,

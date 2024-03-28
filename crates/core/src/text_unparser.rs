@@ -28,20 +28,17 @@ pub(crate) fn apply_effects<'a>(
     current_name: Option<&str>,
     logs: &mut AnalysisLogs,
 ) -> Result<(String, Option<Vec<Range<usize>>>)> {
-    let mut our_effects = Vec::new();
-    for effect in effects {
-        let disabled = is_binding_suppressed(&effect.binding, language, current_name)?;
-        if !disabled {
-            our_effects.push(effect);
-        }
-    }
-    if our_effects.is_empty() {
+    let effects: Vec<_> = effects
+        .into_iter()
+        .filter(|effect| !is_binding_suppressed(&effect.binding, language, current_name))
+        .collect();
+    if effects.is_empty() {
         return Ok((code.to_string(), None));
     }
     let mut memo: HashMap<CodeRange, Option<String>> = HashMap::new();
     let (from_inline, ranges) = linearize_binding(
         language,
-        &our_effects,
+        &effects,
         files,
         &mut memo,
         code,
@@ -49,17 +46,12 @@ pub(crate) fn apply_effects<'a>(
         language.should_pad_snippet().then_some(0),
         logs,
     )?;
-    for effect in our_effects.iter() {
+    for effect in effects.iter() {
         if let Binding::FileName(c) = effect.binding {
             if std::ptr::eq(c, the_filename) {
-                let snippet = effect.pattern.linearized_text(
-                    language,
-                    &our_effects,
-                    files,
-                    &mut memo,
-                    false,
-                    logs,
-                )?;
+                let snippet = effect
+                    .pattern
+                    .linearized_text(language, &effects, files, &mut memo, false, logs)?;
                 *new_filename = PathBuf::from(snippet.to_string());
             }
         }

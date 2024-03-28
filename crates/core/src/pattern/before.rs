@@ -103,7 +103,7 @@ impl Matcher for Before {
         };
         let next_node = resolve!(node.next_non_trivia_node());
         if !self.before.execute(
-            &ResolvedPattern::from_node(next_node.source, next_node.node),
+            &ResolvedPattern::from_node(next_node),
             &mut cur_state,
             context,
             logs,
