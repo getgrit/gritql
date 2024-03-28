@@ -5356,7 +5356,7 @@ language js
 `class $foo { $body }` where {
     $fns = [],
     $body <: contains bubble($fns) {
-        `$name() { $body }` as $fn where {
+        `$name($_) { $body }` as $fn where {
                 $body => `"foo"`,
                 $fns += $fn
             }
@@ -12964,12 +12964,12 @@ fn snippet_does_not_match_with_extra_children() {
             pattern: r#"
                 |language js
                 |
-                |`var increment = function (i) {};`
+                |`function (i) { }`
                 |"#
             .trim_margin()
             .unwrap(),
             source: r#"
-                |var increment = function (i) {
+                |function (i) {
                 |   return i + 1;
                 |};
                 |"#

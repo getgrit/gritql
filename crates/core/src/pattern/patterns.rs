@@ -509,13 +509,13 @@ impl Pattern {
             let mut args = fields
                 .iter()
                 .filter(|field| {
-                    node.child_by_field_id(field.id()).is_some()
-                        // sometimes we want to be able to manually match on fields, but
-                        // not have snippets include those fields, for example
-                        // we don't want to match on the parenthesis of parameters
-                        // by default, but we want to be able to manually check
-                        // for parenthesis. see react-to-hooks for an example
-                        && !lang.skip_snippet_compilation_of_field(sort, field.id())
+                    // node.child_by_field_id(field.id()).is_some()
+                    // sometimes we want to be able to manually match on fields, but
+                    // not have snippets include those fields, for example
+                    // we don't want to match on the parenthesis of parameters
+                    // by default, but we want to be able to manually check
+                    // for parenthesis. see react-to-hooks for an example
+                    !lang.skip_snippet_compilation_of_field(sort, field.id())
                 })
                 .map(|field| {
                     let field_id = field.id();
@@ -546,7 +546,17 @@ impl Pattern {
                         let lang = lang.get_ts_language();
                         let field_name = lang.field_name_for_id(field_id).unwrap();
                         let message = format!("field {} was empty!", field_name);
-                        return Ok((field_id, false, nodes_list.pop().expect(&message)));
+                        return Ok((
+                            field_id,
+                            false,
+                            nodes_list.pop().unwrap_or(if field.multiple() {
+                                Pattern::List(Box::new(List::new(Vec::new())))
+                            } else {
+                                Pattern::Dynamic(DynamicPattern::Snippet(DynamicSnippet {
+                                    parts: vec![DynamicSnippetPart::String("".to_string())],
+                                }))
+                            }),
+                        ));
                     }
                     if nodes_list.len() == 1
                         && matches!(

@@ -4,6 +4,7 @@ use tree_sitter::Node;
 
 /// A TreeSitter node, including a reference to the source code from which it
 /// was parsed.
+#[derive(Debug)]
 pub struct NodeWithSource<'a> {
     pub node: Node<'a>,
     pub source: &'a str,
