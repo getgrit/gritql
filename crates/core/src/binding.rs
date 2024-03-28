@@ -540,6 +540,9 @@ impl<'a> Binding<'a> {
                 let mut done = false;
                 Some(
                     iter::from_fn(move || {
+                        // seems to me that the external loop is unnecessary, but was
+                        // getting an infinite loop without it.
+                        #[allow(clippy::never_loop)]
                         while !done {
                             while cursor.field_id() != Some(field_id) {
                                 if !cursor.goto_next_sibling() {
