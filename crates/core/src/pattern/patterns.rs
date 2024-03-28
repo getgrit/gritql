@@ -545,7 +545,6 @@ impl Pattern {
                     if !field.multiple() {
                         let lang = lang.get_ts_language();
                         let field_name = lang.field_name_for_id(field_id).unwrap();
-                        let message = format!("field {} was empty!", field_name);
                         return Ok((
                             field_id,
                             false,
