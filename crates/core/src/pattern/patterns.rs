@@ -506,7 +506,7 @@ impl Pattern {
                 )?));
             }
             let fields: &Vec<Field> = &node_types[sort as usize];
-            let mut args = fields
+            let args = fields
                 .iter()
                 .filter(|field| {
                     // node.child_by_field_id(field.id()).is_some()
@@ -543,8 +543,6 @@ impl Pattern {
                     // TODO check if Pattern is Dots, and error at compile time,
                     // dots only makes sense in a list.
                     if !field.multiple() {
-                        let lang = lang.get_ts_language();
-                        let field_name = lang.field_name_for_id(field_id).unwrap();
                         return Ok((
                             field_id,
                             false,
@@ -572,31 +570,6 @@ impl Pattern {
                     ))
                 })
                 .collect::<Result<Vec<(u16, bool, Pattern)>>>()?;
-            let mut mandatory_empty_args = fields
-                .iter()
-                .filter(|field| {
-                    node.child_by_field_id(field.id()).is_none()
-                        && lang.mandatory_empty_field(sort, field.id())
-                })
-                .map(|field| {
-                    if field.multiple() {
-                        (
-                            field.id(),
-                            true,
-                            Pattern::List(Box::new(List::new(Vec::new()))),
-                        )
-                    } else {
-                        (
-                            field.id(),
-                            false,
-                            Pattern::Dynamic(DynamicPattern::Snippet(DynamicSnippet {
-                                parts: vec![DynamicSnippetPart::String("".to_string())],
-                            })),
-                        )
-                    }
-                })
-                .collect::<Vec<(u16, bool, Pattern)>>();
-            args.append(&mut mandatory_empty_args);
             Ok(Pattern::ASTNode(Box::new(ASTNode { sort, args })))
         }
         node_to_astnode(

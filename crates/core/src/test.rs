@@ -5404,13 +5404,13 @@ language js
 `class $foo { $body }` where {
     $fns = [],
     $body <: contains bubble($fns) {
-        `$name() { $body }` as $fn where {
+        `$name($_) { $body }` as $fn where {
                 $body => `"foo"`,
                 $fns += $fn
             }
         },
     $joined = join(list=$fns, separator=`\n`),
-    $joined <: contains bubble `$name() { $body }` where {
+    $joined <: contains bubble `$name($_) { $body }` where {
         $name => `hammering_time`
     },
     $body => $joined
@@ -12104,7 +12104,7 @@ fn enum_name_and_body_metavariable() {
                 |engine marzano(0.1)
                 |language rust
                 |
-                |`enum $name {
+                |`$_ enum $name {
                 |   $variants
                 |}`
                 |"#
@@ -12381,7 +12381,7 @@ fn rust_match_fn_params() {
                 |engine marzano(0.1)
                 |language rust
                 |
-                |`fn execute(
+                |`fn execute<'a>(
                 |        $_
                 |    ) -> $_ { $_ }` as $fn => `async $fn`
                 |"#
