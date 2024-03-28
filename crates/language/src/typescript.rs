@@ -106,6 +106,10 @@ impl TypeScript {
                     language.id_for_node_kind("function_signature", true),
                     language.field_id_for_name("parenthesis").unwrap(),
                 ),
+                (
+                    language.id_for_node_kind("call_expression", true),
+                    language.field_id_for_name("type_arguments").unwrap(),
+                )
             ]
         });
 
