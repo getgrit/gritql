@@ -2,7 +2,6 @@ use crate::binding::{linearize_binding, Binding};
 use crate::pattern::resolved_pattern::CodeRange;
 use crate::pattern::state::FileRegistry;
 use crate::pattern::Effect;
-use crate::suppress::is_binding_suppressed;
 use anyhow::Result;
 use im::Vector;
 use marzano_language::target_language::TargetLanguage;
@@ -28,9 +27,9 @@ pub(crate) fn apply_effects<'a>(
     current_name: Option<&str>,
     logs: &mut AnalysisLogs,
 ) -> Result<(String, Option<Vec<Range<usize>>>)> {
-    let mut our_effects = Vec::new();
+    let mut our_effects = Vec::with_capacity(effects.len());
     for effect in effects {
-        let disabled = is_binding_suppressed(&effect.binding, language, current_name)?;
+        let disabled = effect.binding.is_suppressed(language, current_name)?;
         if !disabled {
             our_effects.push(effect);
         }

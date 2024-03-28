@@ -8,39 +8,41 @@ use crate::binding::Binding;
 use crate::resolve;
 use anyhow::Result;
 
-pub(crate) fn is_binding_suppressed(
-    binding: &Binding,
-    lang: &impl Language,
-    current_name: Option<&str>,
-) -> Result<bool> {
-    let (src, node) = match binding {
-        Binding::Node(src, node) => (src, node),
-        Binding::String(_, _) => return Ok(false),
-        Binding::List(src, node, _) => (src, node),
-        Binding::Empty(src, node, _) => (src, node),
-        Binding::FileName(_) => return Ok(false),
-        Binding::ConstantRef(_) => return Ok(false),
-    };
-    let target_range = node.range();
-    for n in
-        node.children(&mut node.walk())
-            .chain(ParentTraverse::new(TreeSitterParentCursor::new(
-                node.clone(),
-            )))
-    {
-        let mut cursor = n.walk();
-        let children = n.children(&mut cursor);
-        for c in children {
-            if !(lang.is_comment(c.kind_id()) || lang.is_comment_wrapper(&c)) {
-                continue;
-            }
-            if is_suppress_comment(&c, src, &target_range, current_name, lang)? {
-                return Ok(true);
+impl<'a> Binding<'a> {
+    pub(crate) fn is_suppressed(
+        &self,
+        lang: &impl Language,
+        current_name: Option<&str>,
+    ) -> Result<bool> {
+        let (src, node) = match self {
+            Self::Node(src, node) => (src, node),
+            Self::String(_, _) => return Ok(false),
+            Self::List(src, node, _) => (src, node),
+            Self::Empty(src, node, _) => (src, node),
+            Self::FileName(_) => return Ok(false),
+            Self::ConstantRef(_) => return Ok(false),
+        };
+        let target_range = node.range();
+        for n in
+            node.children(&mut node.walk())
+                .chain(ParentTraverse::new(TreeSitterParentCursor::new(
+                    node.clone(),
+                )))
+        {
+            let mut cursor = n.walk();
+            let children = n.children(&mut cursor);
+            for c in children {
+                if !(lang.is_comment(c.kind_id()) || lang.is_comment_wrapper(&c)) {
+                    continue;
+                }
+                if is_suppress_comment(&c, src, &target_range, current_name, lang)? {
+                    return Ok(true);
+                }
             }
         }
-    }
 
-    Ok(false)
+        Ok(false)
+    }
 }
 
 fn is_suppress_comment(
