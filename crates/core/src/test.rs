@@ -12381,7 +12381,7 @@ fn rust_match_fn_params() {
                 |engine marzano(0.1)
                 |language rust
                 |
-                |`fn execute<'a>(
+                |`fn execute(
                 |        $_
                 |    ) -> $_ { $_ }` as $fn => `async $fn`
                 |"#

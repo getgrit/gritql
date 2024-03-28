@@ -509,7 +509,6 @@ impl Pattern {
             let args = fields
                 .iter()
                 .filter(|field| {
-                    // node.child_by_field_id(field.id()).is_some()
                     // sometimes we want to be able to manually match on fields, but
                     // not have snippets include those fields, for example
                     // we don't want to match on the parenthesis of parameters

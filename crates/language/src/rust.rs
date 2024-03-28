@@ -1,11 +1,12 @@
 use std::sync::OnceLock;
 
-use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
+use crate::language::{fields_for_nodes, Field, FieldId, Language, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/rust-node-types.json");
 
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static SKIP_SNIPPET_COMPILATION_SORTS: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
 
 #[cfg(not(feature = "builtin-parser"))]
 fn language() -> TSLanguage {
@@ -23,6 +24,7 @@ pub struct Rust {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,
     language: &'static TSLanguage,
+    skip_snippet_compilation_sorts: &'static Vec<(SortId, FieldId)>,
 }
 
 impl Rust {
@@ -30,10 +32,19 @@ impl Rust {
         let language = LANGUAGE.get_or_init(|| lang.unwrap_or_else(language));
         let node_types = NODE_TYPES.get_or_init(|| fields_for_nodes(language, NODE_TYPES_STRING));
         let metavariable_sort = language.id_for_node_kind("grit_metavariable", true);
+        let skip_snippet_compilation_sorts = SKIP_SNIPPET_COMPILATION_SORTS.get_or_init(|| {
+            vec![
+                (
+                    language.id_for_node_kind("function_item", true),
+                    language.field_id_for_name("type_parameters").unwrap(),
+                ),
+            ]
+        });
         Self {
             node_types,
             metavariable_sort,
             language,
+            skip_snippet_compilation_sorts,
         }
     }
     pub(crate) fn is_initialized() -> bool {
@@ -65,6 +76,12 @@ impl Language for Rust {
 
     fn metavariable_sort(&self) -> SortId {
         self.metavariable_sort
+    }
+
+    fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
+        self.skip_snippet_compilation_sorts
+            .iter()
+            .any(|(s, f)| *s == sort_id && *f == field_id)
     }
 }
 
