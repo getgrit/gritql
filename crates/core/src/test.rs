@@ -13010,6 +13010,28 @@ fn php_rewrite_arrow_function() {
     .unwrap();
 }
 
+#[test]
+fn php_array() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`^a=>^_` => `^a=>24`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"$fn1 = array("a"=>1, "b"=>2, "c"=>3);"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"$fn1 = array("a"=>24, "b"=>24, "c"=>24);"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
 
 #[test]
 fn css_property_value() {

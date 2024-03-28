@@ -1259,8 +1259,8 @@ module.exports = function defineGrammar(dialect) {
       )),
 
       array_creation_expression: $ => choice(
-        seq(keyword('array'), '(', commaSep($.array_element_initializer), optional(','), ')'),
-        seq('[', commaSep($.array_element_initializer), optional(','), ']'),
+        seq(keyword('array'), '(', field('array_element', commaSep($.array_element_initializer)), optional(','), ')'),
+        seq('[', field('array_element', commaSep($.array_element_initializer)), optional(','), ']'),
       ),
 
       attribute_group: $ => seq(
@@ -1475,7 +1475,7 @@ module.exports = function defineGrammar(dialect) {
 
       array_element_initializer: $ => prec.right(choice(
         choice($.by_ref, $._expression),
-        seq($._expression, '=>', choice($.by_ref, $._expression)),
+        seq(field('expression_l', $._expression), '=>', field('expression_r', choice($.by_ref, $._expression))),
         $.variadic_unpacking,
       )),
 

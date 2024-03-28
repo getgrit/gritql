@@ -533,25 +533,55 @@
   {
     "type": "array_creation_expression",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "array_element_initializer",
-          "named": true
-        }
-      ]
+    "fields": {
+      "array_element": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "array_element_initializer",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
     "type": "array_element_initializer",
     "named": true,
-    "fields": {},
+    "fields": {
+      "expression_l": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "_expression",
+            "named": true
+          }
+        ]
+      },
+      "expression_r": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "_expression",
+            "named": true
+          },
+          {
+            "type": "by_ref",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
-      "multiple": true,
-      "required": true,
+      "multiple": false,
+      "required": false,
       "types": [
         {
           "type": "_expression",
