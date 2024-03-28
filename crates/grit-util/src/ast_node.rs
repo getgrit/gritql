@@ -7,4 +7,7 @@ pub trait AstNode: Sized {
 
     /// Returns the previous node, ignoring trivia such as whitespace.
     fn previous_non_trivia_node(&self) -> Option<Self>;
+
+    /// Returns the text representation of the node.
+    fn text(&self) -> &str;
 }

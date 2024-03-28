@@ -3,6 +3,7 @@ use crate::pattern::resolved_pattern::CodeRange;
 use crate::pattern::state::{get_top_level_effects, FileRegistry};
 use crate::pattern::{Effect, EffectKind};
 use anyhow::{anyhow, Result};
+use grit_util::AstNode;
 use marzano_language::language::{FieldId, Language};
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
@@ -461,7 +462,9 @@ impl<'a> Binding<'a> {
     pub fn text(&self) -> String {
         match self {
             Binding::Empty(_, _, _) => "".to_string(),
-            Binding::Node(source, node) => node_text(source, node).to_string(),
+            Binding::Node(source, node) => {
+                NodeWithSource::new(node.clone(), source).text().to_string()
+            }
             Binding::String(s, r) => s[r.start_byte as usize..r.end_byte as usize].into(),
             Binding::FileName(s) => s.to_string_lossy().into(),
             Binding::List(source, _, _) => {
@@ -471,13 +474,7 @@ impl<'a> Binding<'a> {
                     "".to_string()
                 }
             }
-            Binding::ConstantRef(c) => match c {
-                Constant::Boolean(b) => b.to_string(),
-                Constant::String(s) => s.to_string(),
-                Constant::Integer(i) => i.to_string(),
-                Constant::Float(d) => d.to_string(),
-                Constant::Undefined => String::new(),
-            },
+            Binding::ConstantRef(c) => c.to_string(),
         }
     }
 
@@ -614,9 +611,4 @@ impl<'a> Binding<'a> {
 
         Ok(())
     }
-}
-
-pub(crate) fn node_text<'a>(source: &'a str, node: &Node) -> &'a str {
-    let range = Range::from(node.range());
-    &source[range.start_byte as usize..range.end_byte as usize]
 }
