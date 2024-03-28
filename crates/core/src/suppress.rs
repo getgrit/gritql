@@ -115,7 +115,7 @@ fn comment_occupies_entire_line(text: &str, range: &Range, src: &str) -> bool {
     src.lines()
         .skip(range.start_point().row() as usize)
         .take((range.end_point().row() - range.start_point().row() + 1) as usize)
-        .zip_longest(text.split("\n"))
+        .zip_longest(text.split('\n'))
         .all(|zipped| {
             if let EitherOrBoth::Both(src_line, text_line) = zipped {
                 src_line.trim() == text_line.trim()
