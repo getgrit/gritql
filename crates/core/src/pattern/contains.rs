@@ -11,7 +11,7 @@ use super::{
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use im::vector;
-use marzano_util::analysis_logs::AnalysisLogs;
+use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource};
 
 use std::collections::BTreeMap;
 
@@ -86,7 +86,7 @@ fn execute_until<'a>(
     let mut still_computing = true;
     while still_computing {
         let node = cursor.node();
-        let node_lhs = ResolvedPattern::from_node(src, node);
+        let node_lhs = ResolvedPattern::from_node(NodeWithSource::new(node, src));
 
         let state = cur_state.clone();
         if the_contained.execute(&node_lhs, &mut cur_state, context, logs)? {
@@ -137,50 +137,43 @@ impl Matcher for Contains {
         match resolved_pattern {
             ResolvedPattern::Binding(bindings) => {
                 let binding = resolve!(bindings.last());
-                let mut did_match = false;
-                let mut cur_state = init_state.clone();
-                let mut cursor; // needed for scope in case of list.
-                match binding {
-                    Binding::Empty(_, _, _) => Ok(false),
-                    Binding::String(_, _) => Ok(false),
-                    Binding::Node(src, node) => execute_until(
+                if let Some(node) = binding.as_node() {
+                    execute_until(
                         init_state,
-                        node,
-                        src,
+                        &node.node,
+                        node.source,
                         context,
                         logs,
                         &self.contains,
                         &self.until,
-                    ),
-                    Binding::List(src, node, field_id) => {
-                        cursor = node.walk();
-                        let children = node.children_by_field_id(*field_id, &mut cursor);
-
-                        for child in children {
-                            let state = cur_state.clone();
-                            if self.execute(
-                                &ResolvedPattern::from_node(src, child),
-                                &mut cur_state,
-                                context,
-                                logs,
-                            )? {
-                                did_match = true;
-                            } else {
-                                cur_state = state;
-                            }
+                    )
+                } else if let Some(list_items) = binding.list_items() {
+                    let mut did_match = false;
+                    let mut cur_state = init_state.clone();
+                    for item in list_items {
+                        let state = cur_state.clone();
+                        if self.execute(
+                            &ResolvedPattern::from_node(item),
+                            &mut cur_state,
+                            context,
+                            logs,
+                        )? {
+                            did_match = true;
+                        } else {
+                            cur_state = state;
                         }
-
-                        if did_match {
-                            *init_state = cur_state;
-                        }
-                        Ok(did_match)
                     }
-                    Binding::FileName(_) => Ok(false),
+
+                    if did_match {
+                        *init_state = cur_state;
+                    }
+                    Ok(did_match)
+                } else if let Some(_c) = binding.as_constant() {
                     // this seems like an infinite loop, todo return false?
-                    Binding::ConstantRef(_c) => {
-                        self.contains
-                            .execute(resolved_pattern, init_state, context, logs)
-                    }
+                    self.contains
+                        .execute(resolved_pattern, init_state, context, logs)
+                } else {
+                    Ok(false)
                 }
             }
             ResolvedPattern::List(elements) => {

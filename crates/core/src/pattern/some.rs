@@ -74,7 +74,7 @@ impl Matcher for Some {
                 for item in list_items {
                     let state = cur_state.clone();
                     if self.pattern.execute(
-                        &ResolvedPattern::from_node(item.source, item.node),
+                        &ResolvedPattern::from_node(item),
                         &mut cur_state,
                         context,
                         logs,
