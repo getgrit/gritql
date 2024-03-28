@@ -9,7 +9,7 @@ use crate::pattern::{
 };
 use anyhow::Result;
 use marzano_language::target_language::TargetLanguage;
-use marzano_util::analysis_logs::AnalysisLogs;
+use marzano_util::{analysis_logs::AnalysisLogs, runtime::ExecutionContext};
 
 pub trait Context {
     fn pattern_definitions(&self) -> &[PatternDefinition];
@@ -50,4 +50,6 @@ pub trait Context {
     fn language(&self) -> &TargetLanguage;
 
     fn name(&self) -> Option<&str>;
+
+    fn runtime(&self) -> &ExecutionContext;
 }

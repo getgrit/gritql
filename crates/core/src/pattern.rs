@@ -858,6 +858,10 @@ impl<'a> Context for MarzanoContext<'a> {
         (self.runtime.exec_external)(code, param_names, input_bindings)
     }
 
+    fn runtime(&self) -> &ExecutionContext {
+        self.runtime
+    }
+
     // FIXME: Don't depend on Grit's file handling in context.
     fn files(&self) -> &FileOwners {
         self.files
