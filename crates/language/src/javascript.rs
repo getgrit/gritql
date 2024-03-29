@@ -2,6 +2,7 @@ use crate::{
     language::{fields_for_nodes, Field, FieldId, Language, SortId, TSLanguage},
     xscript_util::{self, jslike_check_orphaned, jslike_get_statement_sorts},
 };
+use anyhow::Result;
 use marzano_util::position::Range;
 use std::{borrow::Cow, sync::OnceLock};
 use tree_sitter::Node;
@@ -177,7 +178,7 @@ impl Language for JavaScript {
         body: &str,
         logs: &mut marzano_util::analysis_logs::AnalysisLogs,
         new: bool,
-    ) -> anyhow::Result<tree_sitter::Tree> {
+    ) -> Result<Option<tree_sitter::Tree>> {
         let mut parser = Parser::new().unwrap();
         parser.set_language(self.get_ts_language())?;
         xscript_util::parse_file(self, name, body, logs, new, &mut parser)
