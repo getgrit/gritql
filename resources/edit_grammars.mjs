@@ -286,7 +286,38 @@ async function buildLanguage(language) {
       `${METAVARIABLE_GRAMMARS}/c_build.rs`,
       `${tsLangDir}/bindings/rust/build.rs`,
     );
-  } else {
+  } else if (language === 'php') {
+    //php has sub-grammars
+    log(`Copying  files`);  
+    await Promise.all([
+      copyMvGrammar('php-common',  'php/common'),
+      copyMvGrammar('php_only', 'php/php_only'),
+      copyMvGrammar('php', 'php/php'),
+    ]);
+    log(`Running tree-sitter generate`);
+
+    await Promise.all([
+      treeSitterGenerate('php/php_only'),
+      treeSitterGenerate('php/php'),
+    ]);
+
+    log(`Copying output node types`);
+    await Promise.all([
+      copyNodeTypes('php/php_only', 'php_only'),
+      copyNodeTypes('php/php', `php`),
+    ]);
+
+    log(`Copying wasm parser`);
+    await fs.rename(
+      `tree-sitter-php/php/tree-sitter-php_only.wasm`,
+      `../../crates/wasm-bindings/wasm_parsers/tree-sitter-php_only.wasm`,
+    );
+
+    await fs.rename(
+      `tree-sitter-php/php/tree-sitter-php.wasm`,
+      `../../crates/wasm-bindings/wasm_parsers/tree-sitter-php.wasm`,
+    );
+  }else {
     await buildSimpleLanguage(log, language);
   }
 
