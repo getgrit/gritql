@@ -5356,7 +5356,7 @@ language js
 `class $foo { $body }` where {
     $fns = [],
     $body <: contains bubble($fns) {
-        `$name() { $body }` as $fn where {
+        `$name($_) { $body }` as $fn where {
                 $body => `"foo"`,
                 $fns += $fn
             }
@@ -5404,13 +5404,13 @@ language js
 `class $foo { $body }` where {
     $fns = [],
     $body <: contains bubble($fns) {
-        `$name() { $body }` as $fn where {
+        `$name($_) { $body }` as $fn where {
                 $body => `"foo"`,
                 $fns += $fn
             }
         },
     $joined = join(list=$fns, separator=`\n`),
-    $joined <: contains bubble `$name() { $body }` where {
+    $joined <: contains bubble `$name($_) { $body }` where {
         $name => `hammering_time`
     },
     $body => $joined

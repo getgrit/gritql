@@ -160,7 +160,7 @@ pub trait Language {
         false
     }
 
-    fn mandatory_empty_field(&self, _sort_id: SortId, _field_id: FieldId) -> bool {
+    fn optional_empty_field_compilation(&self, _sort_id: SortId, _field_id: FieldId) -> bool {
         false
     }
 

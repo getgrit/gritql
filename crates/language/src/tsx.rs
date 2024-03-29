@@ -13,6 +13,7 @@ static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static SKIP_SNIPPET_COMPILATION_SORTS: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
 static STATEMENT_SORTS: OnceLock<Vec<SortId>> = OnceLock::new();
+static OPTIONAL_EMPTY_FIELD_COMPILATION: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
 
 #[cfg(not(feature = "builtin-parser"))]
 fn language() -> TSLanguage {
@@ -33,6 +34,7 @@ pub struct Tsx {
     statement_sorts: &'static [SortId],
     language: &'static TSLanguage,
     skip_snippet_compilation_sorts: &'static Vec<(SortId, FieldId)>,
+    optional_empty_field_compilation: &'static Vec<(SortId, FieldId)>,
 }
 
 impl Tsx {
@@ -109,6 +111,32 @@ impl Tsx {
                 ),
             ]
         });
+
+        let optional_empty_field_compilation = OPTIONAL_EMPTY_FIELD_COMPILATION.get_or_init(|| {
+            vec![
+                (
+                    language.id_for_node_kind("call_expression", true),
+                    language.field_id_for_name("type_arguments").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("function", true),
+                    language.field_id_for_name("return_type").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("arrow_function", true),
+                    language.field_id_for_name("return_type").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("function", true),
+                    language.field_id_for_name("async").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("arrow_function", true),
+                    language.field_id_for_name("async").unwrap(),
+                ),
+            ]
+        });
+
         let statement_sorts = STATEMENT_SORTS.get_or_init(|| jslike_get_statement_sorts(language));
 
         Self {
@@ -118,6 +146,7 @@ impl Tsx {
             statement_sorts,
             language,
             skip_snippet_compilation_sorts,
+            optional_empty_field_compilation,
         }
     }
     pub(crate) fn is_initialized() -> bool {
@@ -128,6 +157,16 @@ impl Tsx {
 impl Language for Tsx {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
+    }
+
+    fn optional_empty_field_compilation(
+        &self,
+        sort_id: SortId,
+        field_id: crate::language::FieldId,
+    ) -> bool {
+        self.optional_empty_field_compilation
+            .iter()
+            .any(|(s, f)| *s == sort_id && *f == field_id)
     }
 
     fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
