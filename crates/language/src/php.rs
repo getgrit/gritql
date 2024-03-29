@@ -1,5 +1,4 @@
 use std::sync::OnceLock;
-use std::collections::{BTreeMap, HashMap};
 use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str =
