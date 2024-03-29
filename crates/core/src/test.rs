@@ -12956,3 +12956,117 @@ fn python_support_empty_line() {
     })
     .unwrap();
 }
+
+#[test]
+fn delete_import_clause() {
+    run_test_expected(TestArgExpected {
+        pattern: r#"
+            |engine marzano(0.1)
+            |language js
+            |`import $_` => .
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |import * as React from "react";
+            |
+            |<div>Hi</div>;
+            |"#
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
+        |<div>Hi</div>;
+        |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
+
+#[test]
+fn remove_unused_import() {
+    run_test_expected(TestArgExpected {
+        pattern: r#"
+language js
+
+pattern remove_unused_imports($src) {
+or {
+    `import * as $import_clause from $src`,
+    `import $import_clause, { $named_imports } from $src` where {
+        $named_imports <: maybe some bubble($keep_named_import_list) or {`type $import`, `$import`} as $full where {
+            if($program <: contains `$import` until `import $_`) {
+                $keep_named_import_list = true
+             } else {
+                $full => .
+            }
+        }
+    },
+    `import $import_clause from $src` where { $import_clause <: not contains `{$_}`},
+} as $import_line where {
+    $import_clause <: or {`type $module_name`, `$module_name`},
+    $program <: not contains $module_name until `import $_`,
+    if($keep_named_import_list <: undefined) {
+        $import_line => .
+    } else {
+        $import_clause => .
+    }
+  } 
+}
+
+remove_unused_imports()"#
+        .to_owned(),
+        source: r#"
+            |import * as React from "react";
+            |
+            |<div>Hi</div>;
+            |"#
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
+        |<div>Hi</div>;
+        |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
+
+#[test]
+fn declaration_test() {
+    run_test_match(TestArg {
+        pattern: r#"
+engine marzano(0.1)
+language js
+
+// pattern exp_returns_moment($exp) {
+//   `$fn()` as $exp where {
+//     $fn <: or {
+//       `moment`,
+//       `$_.duration`,
+//       `$_.clone`,
+//       `$_.add`,
+//       `$_.subtract`,
+//       `$_.startOf`,
+//       `$_.endOf`,
+//       `$m.$min_or_max` where {
+//         !$m <: `Math`,
+//         $min_or_max <: or { `min`, `max` }
+//       },
+//     } 
+//   }
+// }
+
+`$varName = $moment` where {
+  $moment <: `$fn()`,
+//   $varName <: within `$declaration` where { $declaration <: `const $declarators` },
+}
+"#
+        .to_owned(),
+        source: r#"
+            |const then = new Date("2001-01-02");
+            |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}

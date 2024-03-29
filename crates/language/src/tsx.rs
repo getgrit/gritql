@@ -119,6 +119,10 @@ impl Tsx {
                     language.field_id_for_name("type_arguments").unwrap(),
                 ),
                 (
+                    language.id_for_node_kind("new_expression", true),
+                    language.field_id_for_name("type_arguments").unwrap(),
+                ),
+                (
                     language.id_for_node_kind("function", true),
                     language.field_id_for_name("return_type").unwrap(),
                 ),
@@ -133,6 +137,14 @@ impl Tsx {
                 (
                     language.id_for_node_kind("arrow_function", true),
                     language.field_id_for_name("async").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("import_statement", true),
+                    language.field_id_for_name("import").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("import_statement", true),
+                    language.field_id_for_name("type").unwrap(),
                 ),
             ]
         });
