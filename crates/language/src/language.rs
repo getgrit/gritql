@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Result};
 use enum_dispatch::enum_dispatch;
+use grit_util::{traverse, Order};
 use itertools::{self, Itertools};
 use lazy_static::lazy_static;
 use marzano_util::{
@@ -12,7 +13,6 @@ use serde_json::Value;
 use std::{borrow::Cow, cmp::max, collections::HashMap};
 pub(crate) use tree_sitter::Language as TSLanguage;
 use tree_sitter::{Parser, Tree};
-use tree_sitter_traversal::{traverse, Order};
 // todo decide where this belongs, not good to
 // define static variable twice. (also in core/config.rs)
 pub static GRIT_METAVARIABLE_PREFIX: &str = "$";
@@ -331,12 +331,17 @@ pub(crate) fn default_parse_file(
     let tree = parser
         .parse(body, None)?
         .ok_or_else(|| anyhow!("failed to parse tree"))?;
-    let mut errors = file_parsing_error(&tree, name, new)?;
+    let mut errors = file_parsing_error(&tree, name, body, new)?;
     logs.append(&mut errors);
     Ok(tree)
 }
 
-fn file_parsing_error(tree: &Tree, file_name: &str, is_new: bool) -> Result<AnalysisLogs> {
+fn file_parsing_error(
+    tree: &Tree,
+    file_name: &str,
+    body: &str,
+    is_new: bool,
+) -> Result<AnalysisLogs> {
     let mut errors = vec![];
     let cursor = tree.walk();
     let mut log_builder = AnalysisLogBuilder::default();
@@ -346,11 +351,12 @@ fn file_parsing_error(tree: &Tree, file_name: &str, is_new: bool) -> Result<Anal
         .engine_id("marzano(0.1)".to_owned())
         .file(file_name.to_owned());
 
-    for n in traverse(CursorWrapper::from(cursor), Order::Pre) {
-        if n.is_error() || n.is_missing() {
-            let position: Position = n.range().start_point().into();
+    for n in traverse(CursorWrapper::new(cursor, body), Order::Pre) {
+        let node = &n.node;
+        if node.is_error() || node.is_missing() {
+            let position: Position = node.range().start_point().into();
             let message = format!("Error parsing source code at {}:{} in {}. This may cause otherwise applicable queries to not match.",
-                n.range().start_point().row() + 1, n.range().start_point().column() + 1, file_name);
+                node.range().start_point().row() + 1, node.range().start_point().column() + 1, file_name);
             let log = log_builder
                 .clone()
                 .message(message)

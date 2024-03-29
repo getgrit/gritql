@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
+use grit_util::{traverse, Order};
 use marzano_util::{cursor_wrapper::CursorWrapper, tree_sitter_util::children_by_field_name_count};
 use tree_sitter::{Node, Parser, Range, Tree};
-use tree_sitter_traversal::{traverse, Order};
 
 use crate::{
     language::{default_parse_file, Language, SortId, TSLanguage},
@@ -89,8 +89,8 @@ fn get_vue_ranges(file: &str) -> Result<Vec<Range>> {
     let tree = parser.parse(file, None)?.ok_or(anyhow!("missing tree"))?;
     let cursor = tree.walk();
     let mut ranges = Vec::new();
-    for n in traverse(CursorWrapper::from(cursor), Order::Pre) {
-        append_code_range(&n, text, &mut ranges)
+    for n in traverse(CursorWrapper::new(cursor, file), Order::Pre) {
+        append_code_range(&n.node, text, &mut ranges)
     }
     Ok(ranges)
 }

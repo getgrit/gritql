@@ -1,5 +1,4 @@
 #![deny(clippy::wildcard_enum_match_arm)]
-mod ast_node;
 pub mod binding;
 pub mod compact_api;
 pub mod context;

@@ -1,5 +1,3 @@
-use crate::{binding::Binding, context::Context, resolve};
-
 use super::{
     dynamic_snippet::{DynamicPattern, DynamicSnippet},
     patterns::{Matcher, Name, Pattern},
@@ -7,16 +5,17 @@ use super::{
     variable::{register_variable, VariableSourceLocations},
     State,
 };
+use crate::{context::Context, resolve};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
-use marzano_util::{analysis_logs::AnalysisLogs, position::Range};
-use std::collections::BTreeMap;
-use tree_sitter::Node;
-
 use marzano_language::{
     language::{nodes_from_indices, Language, SortId},
     target_language::TargetLanguage,
 };
+use marzano_util::{analysis_logs::AnalysisLogs, position::Range};
+use std::collections::BTreeMap;
+use tree_sitter::Node;
+
 #[derive(Debug, Clone)]
 pub struct CodeSnippet {
     pub(crate) patterns: Vec<(SortId, Pattern)>,
@@ -117,28 +116,15 @@ impl Matcher for CodeSnippet {
             }
         };
 
-        let node = match binding {
-            Binding::Empty(_, _, _) => return Ok(false),
-            Binding::Node(_, node) => node.to_owned(),
-            // maybe String should instead be fake node? eg for comment_content
-            Binding::String(_, _) => return Ok(false),
-            Binding::List(_, node, id) => {
-                let mut cursor = node.walk();
-                let mut list = node.children_by_field_id(*id, &mut cursor);
-                if let Some(child) = list.next() {
-                    if list.next().is_some() {
-                        return Ok(false);
-                    }
-                    child
-                } else {
-                    return Ok(false);
-                }
-            }
-            Binding::FileName(_) => return Ok(false),
-            Binding::ConstantRef(_) => return Ok(false),
+        let Some(node) = binding.singleton() else {
+            return Ok(false);
         };
 
-        if let Some((_, pattern)) = self.patterns.iter().find(|(id, _)| *id == node.kind_id()) {
+        if let Some((_, pattern)) = self
+            .patterns
+            .iter()
+            .find(|(id, _)| *id == node.node.kind_id())
+        {
             pattern.execute(resolved_pattern, state, context, logs)
         } else {
             Ok(false)

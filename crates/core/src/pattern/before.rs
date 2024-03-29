@@ -5,10 +5,11 @@ use super::{
     variable::VariableSourceLocations,
     Node, State,
 };
-use crate::{ast_node::AstNode, binding::Binding, context::Context, resolve};
+use crate::{binding::Binding, context::Context, resolve};
 use crate::{binding::Constant, errors::debug};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
+use grit_util::AstNode;
 use im::vector;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
@@ -55,7 +56,7 @@ impl Before {
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let binding = pattern_to_binding(&self.before, state, context, logs)?;
-        let Some(node) = binding.get_node() else {
+        let Some(node) = binding.as_node() else {
             bail!("cannot get the node before this binding")
         };
 
@@ -102,7 +103,7 @@ impl Matcher for Before {
         };
         let next_node = resolve!(node.next_non_trivia_node());
         if !self.before.execute(
-            &ResolvedPattern::from_node(next_node.source, next_node.node),
+            &ResolvedPattern::from_node(next_node),
             &mut cur_state,
             context,
             logs,

@@ -13,12 +13,11 @@ use super::{
 use crate::{context::Context, split_snippet::split_snippet};
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
+use grit_util::{traverse, Order};
 use marzano_language::language::Language;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::position::Range;
-use tree_sitter_traversal::{traverse, Order};
-
 use std::collections::BTreeMap;
 use tree_sitter::Node;
 
@@ -97,7 +96,7 @@ impl Where {
         // this just searches the subtree for a variables that share the name.
         // could possible lead to some false positives, but more precise solutions
         // require much greater changes.
-        if pattern_repeated_variable(&pattern, name, context.src.as_bytes(), context.lang)? {
+        if pattern_repeated_variable(&pattern, name, context.src, context.lang)? {
             let range: Range = node.range().into();
             let log = AnalysisLogBuilder::default()
                 .level(441_u16)
@@ -186,16 +185,16 @@ fn is_variables_in_snippet(name: &str, snippet: &str, lang: &impl Language) -> b
 fn pattern_repeated_variable(
     pattern: &Node,
     name: &str,
-    bytes: &[u8],
+    source: &str,
     lang: &impl Language,
 ) -> Result<bool> {
     let cursor = pattern.walk();
-    let cursor = traverse(CursorWrapper::from(cursor), Order::Pre);
+    let cursor = traverse(CursorWrapper::new(cursor, source), Order::Pre);
     Ok(cursor
-        .filter(|n| n.kind() == "variable" || n.kind() == "codeSnippet")
-        .map(|v| {
-            let s = v.utf8_text(bytes)?.trim().to_string();
-            if v.kind() == "variable" {
+        .filter(|n| n.node.kind() == "variable" || n.node.kind() == "codeSnippet")
+        .map(|n| {
+            let s = n.node.utf8_text(source.as_bytes())?.trim().to_string();
+            if n.node.kind() == "variable" {
                 Ok(s == name)
             } else {
                 Ok(is_variables_in_snippet(name, &s, lang))

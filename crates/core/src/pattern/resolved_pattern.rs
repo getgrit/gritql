@@ -17,7 +17,9 @@ use crate::{
 use anyhow::{anyhow, bail, Result};
 use im::{vector, Vector};
 use marzano_language::{language::FieldId, target_language::TargetLanguage};
-use marzano_util::{analysis_logs::AnalysisLogs, position::Range};
+use marzano_util::{
+    analysis_logs::AnalysisLogs, node_with_source::NodeWithSource, position::Range,
+};
 use std::{
     borrow::Cow,
     collections::{BTreeMap, HashMap},
@@ -358,6 +360,15 @@ impl<'a> ResolvedSnippet<'a> {
         };
         res
     }
+
+    pub(crate) fn is_truthy(&self, state: &mut State<'a>) -> Result<bool> {
+        let truthiness = match self {
+            Self::Binding(b) => b.is_truthy(),
+            Self::Text(t) => !t.is_empty(),
+            Self::LazyFn(t) => !t.text(&state.files)?.is_empty(),
+        };
+        Ok(truthiness)
+    }
 }
 
 impl<'a> ResolvedPattern<'a> {
@@ -469,8 +480,8 @@ impl<'a> ResolvedPattern<'a> {
         Self::Binding(vector![Binding::ConstantRef(constant)])
     }
 
-    pub(crate) fn from_node(src: &'a str, node: Node<'a>) -> Self {
-        Self::Binding(vector![Binding::Node(src, node)])
+    pub(crate) fn from_node(node: NodeWithSource<'a>) -> Self {
+        Self::Binding(vector![Binding::Node(node.source, node.node)])
     }
 
     pub(crate) fn from_list(src: &'a str, node: Node<'a>, field_id: FieldId) -> Self {
@@ -989,12 +1000,31 @@ impl<'a> ResolvedPattern<'a> {
         let Some(ResolvedSnippet::Text(text)) = snippets.front() else {
             return Ok(());
         };
-        if let Some(padding) = binding.get_insertion_padding(&text, is_first, language) {
+        if let Some(padding) = binding.get_insertion_padding(text, is_first, language) {
             if padding.chars().next() != binding.text().chars().last() {
                 snippets.push_front(ResolvedSnippet::Text(padding.into()));
             }
         }
         Ok(())
+    }
+
+    pub(crate) fn is_truthy(&self, state: &mut State<'a>) -> Result<bool> {
+        let truthiness = match self {
+            Self::Binding(bindings) => bindings.last().map_or(false, Binding::is_truthy),
+            Self::List(elements) => !elements.is_empty(),
+            Self::Map(map) => !map.is_empty(),
+            Self::Constant(c) => c.is_truthy(),
+            Self::Snippets(s) => {
+                if let Some(s) = s.last() {
+                    s.is_truthy(state)?
+                } else {
+                    false
+                }
+            }
+            Self::File(..) => true,
+            Self::Files(..) => true,
+        };
+        Ok(truthiness)
     }
 }
 

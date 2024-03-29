@@ -31,13 +31,13 @@ tree-sitter-php = { path = "../../resources/language-metavariables/tree-sitter-p
 serde = { version = "1.0.164", features = ["derive"] }
 serde_json = { version = "1.0.91", features = ["preserve_order"] }
 marzano-util = { path = "../util" }
+grit-util = { path = "../grit-util" }
 regex = "1.7.1"
 anyhow = "1.0.70"
 itertools = "0.10.5"
 lazy_static = "1.4.0"
 ignore = { version = "0.4.21", optional = true }
 web-sys = { version = "0.3.66", features = ["console"], optional = true }
-tree-sitter-traversal = { version = "0.1.2", default-features = false }
 enum_dispatch = "0.3.12"
 clap = { version = "4.1.13", features = ["derive"] }
 

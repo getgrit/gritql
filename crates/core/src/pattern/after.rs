@@ -5,10 +5,11 @@ use super::{
     variable::VariableSourceLocations,
     Node, State,
 };
-use crate::{ast_node::AstNode, binding::Binding, context::Context, resolve};
+use crate::{binding::Binding, context::Context, resolve};
 use crate::{binding::Constant, errors::debug};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
+use grit_util::AstNode;
 use im::vector;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
@@ -55,7 +56,7 @@ impl After {
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let binding = pattern_to_binding(&self.after, state, context, logs)?;
-        let Some(node) = binding.get_node() else {
+        let Some(node) = binding.as_node() else {
             bail!("cannot get the node after this binding")
         };
 
@@ -102,7 +103,7 @@ impl Matcher for After {
         };
         let prev_node = resolve!(node.previous_non_trivia_node());
         if !self.after.execute(
-            &ResolvedPattern::from_node(prev_node.source, prev_node.node),
+            &ResolvedPattern::from_node(prev_node),
             &mut cur_state,
             context,
             logs,

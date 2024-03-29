@@ -1,19 +1,10 @@
+use crate::position::Range;
+use grit_util::AstNode;
 use tree_sitter::Node;
-
-/// Represents an AST node and offers convenient AST-specific functionality.
-///
-/// This trait should be free from dependencies on TreeSitter.
-pub trait AstNode: Sized {
-    /// Returns the next node, ignoring trivia such as whitespace.
-    fn next_non_trivia_node(&self) -> Option<Self>;
-
-    /// Returns the previous node, ignoring trivia such as whitespace.
-    fn previous_non_trivia_node(&self) -> Option<Self>;
-}
 
 /// A TreeSitter node, including a reference to the source code from which it
 /// was parsed.
-pub(crate) struct NodeWithSource<'a> {
+pub struct NodeWithSource<'a> {
     pub node: Node<'a>,
     pub source: &'a str,
 }
@@ -43,5 +34,10 @@ impl<'a> AstNode for NodeWithSource<'a> {
             }
             current_node = current_node.parent()?;
         }
+    }
+
+    fn text(&self) -> &str {
+        let range = Range::from(self.node.range());
+        &self.source[range.start_byte as usize..range.end_byte as usize]
     }
 }

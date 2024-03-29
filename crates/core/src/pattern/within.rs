@@ -5,11 +5,11 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
-use crate::{binding::Binding, context::Context, resolve};
+use crate::{context::Context, resolve};
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use marzano_language::parent_traverse::{ParentTraverse, TreeSitterParentCursor};
-use marzano_util::analysis_logs::AnalysisLogs;
+use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource};
 use std::collections::BTreeMap;
 use tree_sitter::Node;
 
@@ -82,25 +82,13 @@ impl Matcher for Within {
             return Ok(did_match);
         };
 
-        let (src, node) = match binding {
-            Binding::Node(src, node) => (
-                src,
-                if let Some(node) = node.parent() {
-                    node
-                } else {
-                    return Ok(did_match);
-                },
-            ),
-            Binding::String(_, _) => return Ok(did_match),
-            Binding::List(src, node, _) => (src, node.to_owned()),
-            Binding::Empty(src, node, _) => (src, node.to_owned()),
-            Binding::FileName(_) => return Ok(did_match),
-            Binding::ConstantRef(_) => return Ok(did_match),
+        let Some(node) = binding.parent_node() else {
+            return Ok(did_match);
         };
-        for n in ParentTraverse::new(TreeSitterParentCursor::new(node)) {
+        for n in ParentTraverse::new(TreeSitterParentCursor::new(node.node)) {
             let state = cur_state.clone();
             if self.pattern.execute(
-                &ResolvedPattern::from_node(src, n),
+                &ResolvedPattern::from_node(NodeWithSource::new(n, node.source)),
                 &mut cur_state,
                 context,
                 logs,

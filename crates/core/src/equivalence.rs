@@ -1,85 +1,78 @@
-use tree_sitter::Node;
-
 use crate::binding::Binding;
 use marzano_util::tree_sitter_util::children_by_field_id_count;
+use tree_sitter::Node;
 
-pub fn are_bindings_equivalent(binding1: &Binding, binding2: &Binding) -> bool {
-    // covers Node, and List with one element
-    if let Some(binding1) = binding1.singleton() {
-        if let Some(binding2) = binding2.singleton() {
-            return are_equivalent(binding1.0, &binding1.1, binding2.0, &binding2.1);
+impl<'a> Binding<'a> {
+    /// Checks whether two bindings are equivalent.
+    ///
+    /// Bindings are considered equivalent if they refer to the same thing.
+    pub fn is_equivalent_to(&self, other: &'a Binding) -> bool {
+        // covers Node, and List with one element
+        if let (Some(s1), Some(s2)) = (self.singleton(), other.singleton()) {
+            return are_equivalent(s1.source, &s1.node, s2.source, &s2.node);
         }
-    }
-    match binding1 {
-        // should never occur covered by singleton
-        Binding::Node(source1, node1) => match binding2 {
-            Binding::Node(source2, node2) => are_equivalent(source1, node1, source2, node2),
-            Binding::String(str, range) => {
-                str[range.start_byte as usize..range.end_byte as usize] == binding1.text()
+
+        match self {
+            // should never occur covered by singleton
+            Self::Node(source1, node1) => match other {
+                Self::Node(source2, node2) => are_equivalent(source1, node1, source2, node2),
+                Self::String(str, range) => {
+                    str[range.start_byte as usize..range.end_byte as usize] == self.text()
+                }
+                Self::FileName(_) | Self::List(..) | Self::Empty(..) | Self::ConstantRef(_) => {
+                    false
+                }
+            },
+            Self::List(source1, parent_node1, field1) => match other {
+                Self::List(source2, parent_node2, field2) => {
+                    let mut cursor1 = parent_node1.walk();
+                    let mut cursor2 = parent_node2.walk();
+                    children_by_field_id_count(parent_node1, *field1)
+                        == children_by_field_id_count(parent_node2, *field2)
+                        && parent_node1
+                            .children_by_field_id(*field1, &mut cursor1)
+                            .zip(parent_node2.children_by_field_id(*field2, &mut cursor2))
+                            .all(|(node1, node2)| are_equivalent(source1, &node1, source2, &node2))
+                }
+                Self::String(..)
+                | Self::FileName(_)
+                | Self::Node(..)
+                | Self::Empty(..)
+                | Self::ConstantRef(_) => false,
+            },
+            // I suspect matching kind is too strict
+            Self::Empty(_, node1, field1) => match other {
+                Self::Empty(_, node2, field2) => {
+                    node1.kind_id() == node2.kind_id() && field1 == field2
+                }
+                Self::String(..)
+                | Self::FileName(_)
+                | Self::Node(..)
+                | Self::List(..)
+                | Self::ConstantRef(_) => false,
+            },
+            Self::ConstantRef(c1) => other.as_constant().map_or(false, |c2| *c1 == c2),
+            Self::String(s1, range) => {
+                s1[range.start_byte as usize..range.end_byte as usize] == other.text()
             }
-            Binding::FileName(_)
-            | Binding::List(..)
-            | Binding::Empty(..)
-            | Binding::ConstantRef(_) => false,
-        },
-        Binding::List(source1, parent_node1, field1) => match binding2 {
-            Binding::List(source2, parent_node2, field2) => {
-                let mut cursor1 = parent_node1.walk();
-                let mut cursor2 = parent_node2.walk();
-                children_by_field_id_count(parent_node1, *field1)
-                    == children_by_field_id_count(parent_node2, *field2)
-                    && parent_node1
-                        .children_by_field_id(*field1, &mut cursor1)
-                        .zip(parent_node2.children_by_field_id(*field2, &mut cursor2))
-                        .all(|(node1, node2)| are_equivalent(source1, &node1, source2, &node2))
-            }
-            Binding::String(..)
-            | Binding::FileName(_)
-            | Binding::Node(..)
-            | Binding::Empty(..)
-            | Binding::ConstantRef(_) => false,
-        },
-        // I suspect matching kind is too strict
-        Binding::Empty(_, node1, field1) => match binding2 {
-            Binding::Empty(_, node2, field2) => {
-                node1.kind_id() == node2.kind_id() && field1 == field2
-            }
-            Binding::String(..)
-            | Binding::FileName(_)
-            | Binding::Node(..)
-            | Binding::List(..)
-            | Binding::ConstantRef(_) => false,
-        },
-        Binding::ConstantRef(c1) => match binding2 {
-            Binding::ConstantRef(c2) => c1 == c2,
-            Binding::String(..)
-            | Binding::FileName(_)
-            | Binding::Node(..)
-            | Binding::List(..)
-            | Binding::Empty(..) => false,
-        },
-        Binding::String(s1, range) => {
-            s1[range.start_byte as usize..range.end_byte as usize] == binding2.text()
+            Self::FileName(s1) => other.as_filename().map_or(false, |s2| *s1 == s2),
         }
-        Binding::FileName(s1) => binding2.as_filename().map_or(false, |s2| *s1 == s2),
     }
 }
 
-/**
- * Checks whether two nodes are equivalent.
- *
- * We define two nodes to be equivalent if they have the same sort (kind) and
- * equivalent named fields.
- *
- * TODO: Improve performance. Equivalence checks happen often so we want them to
- * be fast. The current implementation requires a traversal of the tree on all
- * named fields, which can be slow for large nodes. It also creates a cursor
- * at each traversal step.
- *
- * Potential improvements:
- * 1. Use cursors that are passed as arguments -- not clear if this would be faster.
- * 2. Precompute hashes on all nodes, which define the equivalence relation. The check then becomes O(1).
- */
+/// Checks whether two nodes are equivalent.
+///
+/// We define two nodes to be equivalent if they have the same sort (kind) and
+/// equivalent named fields.
+///
+/// TODO: Improve performance. Equivalence checks happen often so we want them to
+/// be fast. The current implementation requires a traversal of the tree on all
+/// named fields, which can be slow for large nodes. It also creates a cursor
+/// at each traversal step.
+///
+/// Potential improvements:
+/// 1. Use cursors that are passed as arguments -- not clear if this would be faster.
+/// 2. Precompute hashes on all nodes, which define the equivalence relation. The check then becomes O(1).
 pub fn are_equivalent(source1: &str, node1: &Node, source2: &str, node2: &Node) -> bool {
     // If the source is identical, we consider the nodes equivalent.
     // This covers most cases of constant nodes.

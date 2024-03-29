@@ -7,13 +7,11 @@ members = [
   "crates/language",
   "crates/gritmodule",
   "crates/gritcache",
+  "crates/grit-util",
   "crates/auth",
   "crates/externals",
   "crates/wasm-bindings",
-  "crates/marzano_messenger", "crates/cli_bin",
+  "crates/marzano_messenger",
+  "crates/cli_bin",
 ]
-exclude = [
-  "resources",
-  "vendor/web-tree-sitter",
-  "vendor/tree-sitter-facade",
-]
+exclude = ["resources", "vendor/web-tree-sitter", "vendor/tree-sitter-facade"]

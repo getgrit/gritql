@@ -5,7 +5,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{binding::Binding, context::Context, equivalence::are_bindings_equivalent};
+use crate::{binding::Binding, context::Context};
 use anyhow::{bail, Result};
 use core::fmt::Debug;
 use im::vector;
@@ -137,7 +137,7 @@ impl Variable {
                             if let (Some(var_binding), Some(binding)) =
                                 (bindings.last(), cur_bindings.last())
                             {
-                                if !are_bindings_equivalent(var_binding, binding) {
+                                if !var_binding.is_equivalent_to(binding) {
                                     return Ok(Some(false));
                                 }
                                 let value_history = &mut variable_content.value_history;

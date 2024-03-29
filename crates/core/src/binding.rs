@@ -1,18 +1,20 @@
-use crate::ast_node::NodeWithSource;
 use crate::inline_snippets::inline_sorted_snippets_with_offset;
+use crate::pattern::resolved_pattern::CodeRange;
 use crate::pattern::state::{get_top_level_effects, FileRegistry};
 use crate::pattern::{Effect, EffectKind};
 use anyhow::{anyhow, Result};
+use grit_util::AstNode;
 use marzano_language::language::{FieldId, Language};
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
+use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::position::{Position, Range};
+use marzano_util::tree_sitter_util::children_by_field_id_count;
+use std::iter;
 use std::ops::Range as StdRange;
 use std::path::Path;
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
 use tree_sitter::Node;
-
-use crate::pattern::resolved_pattern::CodeRange;
 
 // the inner references hold the mutable state
 #[derive(Debug, Clone)]
@@ -22,6 +24,18 @@ pub enum Constant {
     Integer(i64),
     Float(f64),
     Undefined,
+}
+
+impl Constant {
+    pub(crate) fn is_truthy(&self) -> bool {
+        match self {
+            Constant::Integer(i) => *i != 0,
+            Constant::Float(d) => *d != 0.0,
+            Constant::Boolean(b) => *b,
+            Constant::String(s) => !s.is_empty(),
+            Constant::Undefined => false,
+        }
+    }
 }
 
 impl Display for Constant {
@@ -91,6 +105,17 @@ fn pad_snippet(padding: &str, snippet: &str) -> String {
     result
 }
 
+fn adjust_ranges(substitutions: &mut [(EffectRange, String)], index: usize, delta: isize) {
+    for (EffectRange { range, .. }, _) in substitutions.iter_mut() {
+        if range.start >= index {
+            range.start = (range.start as isize + delta) as usize;
+        }
+        if range.end >= index {
+            range.end = (range.end as isize + delta) as usize;
+        }
+    }
+}
+
 // in multiline snippets, remove padding from every line equal to the padding of the first line,
 // such that the first line is left-aligned.
 pub(crate) fn adjust_padding<'a>(
@@ -124,14 +149,11 @@ pub(crate) fn adjust_padding<'a>(
         for line in lines {
             result.push('\n');
             index += 1;
-            for (EffectRange { range, .. }, _) in substitutions.iter_mut() {
-                if range.start >= index {
-                    range.start = (range.start as isize + delta) as usize;
-                }
-                if range.end >= index {
-                    range.end = (range.end as isize + delta) as usize;
-                }
+            if line.trim().is_empty() {
+                adjust_ranges(substitutions, index, -(line.len() as isize));
+                continue;
             }
+            adjust_ranges(substitutions, index, delta);
             let line = line.strip_prefix(&padding).ok_or_else(|| {
                 anyhow!(
                     "expected line \n{}\n to start with {} spaces, code is either not indented with spaces, or does not consistently indent code blocks",
@@ -289,44 +311,21 @@ impl<'a> Binding<'a> {
         Self::Node(node.source, node.node)
     }
 
-    /// Returns the node this binding applies to.
+    /// Returns the only node bound by this binding.
     ///
-    /// Unlike [`Self::get_node()`], this will return the exact child node if
-    /// the binding applies to a list.
-    pub(crate) fn as_node(&self) -> Option<NodeWithSource<'a>> {
+    /// This includes list bindings that only match a single child.
+    ///
+    /// Returns `None` if the binding has no associated node, or if there is
+    /// more than one associated node.
+    pub(crate) fn singleton(&self) -> Option<NodeWithSource<'a>> {
         match self {
             Self::Node(src, node) => Some(NodeWithSource::new(node.clone(), src)),
-            Self::List(src, node, field) => node
-                .child_by_field_id(*field)
-                .map(|child| NodeWithSource::new(child, src)),
-            Self::Empty(..) | Self::String(..) | Self::ConstantRef(..) | Binding::FileName(..) => {
-                None
-            }
-        }
-    }
-
-    /// Returns the node from which this binding was created.
-    ///
-    /// This differs from [`Self::as_node()`] in that it returns the node for an
-    /// entire list when the binding applies to a list item.
-    pub(crate) fn get_node(&self) -> Option<NodeWithSource<'a>> {
-        match self {
-            Self::Node(source, node)
-            | Self::List(source, node, _)
-            | Self::Empty(source, node, _) => Some(NodeWithSource::new(node.clone(), source)),
-            Self::String(..) | Binding::FileName(..) | Binding::ConstantRef(_) => None,
-        }
-    }
-
-    pub fn singleton(&self) -> Option<(&str, Node)> {
-        match self {
-            Binding::Node(src, node) => Some((src, node.to_owned())),
-            Binding::List(src, parent_node, field_id) => {
+            Self::List(src, parent_node, field_id) => {
                 let mut cursor = parent_node.walk();
                 let mut children = parent_node.children_by_field_id(*field_id, &mut cursor);
                 if let Some(node) = children.next() {
                     if children.next().is_none() {
-                        Some((src, node.to_owned()))
+                        Some(NodeWithSource::new(node.clone(), src))
                     } else {
                         None
                     }
@@ -334,10 +333,7 @@ impl<'a> Binding<'a> {
                     None
                 }
             }
-            Binding::String(..)
-            | Binding::FileName(_)
-            | Binding::Empty(..)
-            | Binding::ConstantRef(_) => None,
+            Self::String(..) | Self::FileName(..) | Self::Empty(..) | Self::ConstantRef(..) => None,
         }
     }
 
@@ -474,7 +470,9 @@ impl<'a> Binding<'a> {
     pub fn text(&self) -> String {
         match self {
             Binding::Empty(_, _, _) => "".to_string(),
-            Binding::Node(source, node) => node_text(source, node).to_string(),
+            Binding::Node(source, node) => {
+                NodeWithSource::new(node.clone(), source).text().to_string()
+            }
             Binding::String(s, r) => s[r.start_byte as usize..r.end_byte as usize].into(),
             Binding::FileName(s) => s.to_string_lossy().into(),
             Binding::List(source, _, _) => {
@@ -484,13 +482,7 @@ impl<'a> Binding<'a> {
                     "".to_string()
                 }
             }
-            Binding::ConstantRef(c) => match c {
-                Constant::Boolean(b) => b.to_string(),
-                Constant::String(s) => s.to_string(),
-                Constant::Integer(i) => i.to_string(),
-                Constant::Float(d) => d.to_string(),
-                Constant::Undefined => String::new(),
-            },
+            Binding::ConstantRef(c) => c.to_string(),
         }
     }
 
@@ -504,14 +496,103 @@ impl<'a> Binding<'a> {
         }
     }
 
+    /// Returns the constant this binding binds to, if and only if it is a constant binding.
+    pub fn as_constant(&self) -> Option<&Constant> {
+        if let Self::ConstantRef(constant) = self {
+            Some(constant)
+        } else {
+            None
+        }
+    }
+
+    /// Returns the path of this binding, if and only if it is a filename binding.
     pub fn as_filename(&self) -> Option<&Path> {
+        if let Self::FileName(path) = self {
+            Some(path)
+        } else {
+            None
+        }
+    }
+
+    /// Returns the node of this binding, if and only if it is a node binding.
+    pub(crate) fn as_node(&self) -> Option<NodeWithSource<'a>> {
+        if let Self::Node(source, node) = self {
+            Some(NodeWithSource::new(node.clone(), source))
+        } else {
+            None
+        }
+    }
+
+    /// Returns `true` if and only if this binding is bound to a list.
+    pub(crate) fn is_list(&self) -> bool {
+        matches!(self, Self::List(..))
+    }
+
+    /// Returns an iterator over the items in a list.
+    ///
+    /// Returns `None` if the binding is not bound to a list.
+    pub(crate) fn list_items(&self) -> Option<impl Iterator<Item = NodeWithSource<'a>>> {
         match self {
-            Binding::FileName(path) => Some(path),
-            Binding::Empty(..)
-            | Binding::Node(..)
-            | Binding::String(..)
-            | Binding::List(..)
-            | Binding::ConstantRef(..) => None,
+            Self::List(src, node, field_id) => {
+                let field_id = *field_id;
+                let mut cursor = node.walk();
+                cursor.goto_first_child();
+                let mut done = false;
+                Some(
+                    iter::from_fn(move || {
+                        // seems to me that the external loop is unnecessary, but was
+                        // getting an infinite loop without it.
+                        #[allow(clippy::never_loop)]
+                        while !done {
+                            while cursor.field_id() != Some(field_id) {
+                                if !cursor.goto_next_sibling() {
+                                    return None;
+                                }
+                            }
+                            let result = cursor.node();
+                            if !cursor.goto_next_sibling() {
+                                done = true;
+                            }
+                            return Some(result);
+                        }
+                        None
+                    })
+                    .filter(|child| child.is_named())
+                    .map(|named_child| NodeWithSource::new(named_child, src)),
+                )
+            }
+            Self::Empty(..)
+            | Self::Node(..)
+            | Self::String(..)
+            | Self::ConstantRef(..)
+            | Self::FileName(..) => None,
+        }
+    }
+
+    /// Returns the parent node of this binding.
+    ///
+    /// Returns `None` if the binding has no relation to a node.
+    pub(crate) fn parent_node(&self) -> Option<NodeWithSource<'a>> {
+        match self {
+            Self::Node(src, node) => node.parent().map(|parent| NodeWithSource::new(parent, src)),
+            Self::List(src, node, _) => Some(NodeWithSource::new(node.clone(), src)),
+            Self::Empty(src, node, _) => Some(NodeWithSource::new(node.clone(), src)),
+            Self::String(..) | Self::FileName(..) | Self::ConstantRef(..) => None,
+        }
+    }
+
+    pub fn is_truthy(&self) -> bool {
+        match self {
+            Self::Empty(..) => false,
+            Self::List(_, node, field_id) => {
+                let child_count = children_by_field_id_count(node, *field_id);
+                child_count > 0
+            }
+            Self::Node(..) => true,
+            // This refers to a slice of the source code, not a Grit string literal, so it is truthy
+            Self::String(..) => true,
+            Self::FileName(_) => true,
+            Self::ConstantRef(c) => c.is_truthy(),
         }
     }
 
@@ -541,9 +622,4 @@ impl<'a> Binding<'a> {
 
         Ok(())
     }
-}
-
-pub(crate) fn node_text<'a>(source: &'a str, node: &Node) -> &'a str {
-    let range = Range::from(node.range());
-    &source[range.start_byte as usize..range.end_byte as usize]
 }

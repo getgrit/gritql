@@ -13099,3 +13099,60 @@ fn json_empty_string_should_match_self() {
     })
     .unwrap();
 }
+
+#[test]
+fn limit_export_default_match() {
+    run_test_expected(TestArgExpected {
+        pattern: r#"
+            |language js
+            |
+            |`export default function $name() {}` where $name => `foo`
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |export async function loader() {}
+            |export default function main() {}
+            |"#
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
+        |export async function loader() {}
+        |export default function foo() {}
+        |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
+
+#[test]
+fn python_support_empty_line() {
+    run_test_expected(TestArgExpected {
+        pattern: r#"
+            |engine marzano(0.1)
+            |language python
+            |`class $name: $body` => $body
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |class MyClass:
+            |    def function(self):
+            |        result = 1 + 1
+            |
+            |        return result
+            |"#
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
+        |def function(self):
+        |    result = 1 + 1
+        |
+        |    return result
+        |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
