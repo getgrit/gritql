@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -e
+
+EMSCRIPTEN_VERSION=2.0.9
+
+mkdir -p target
+EMSDK_DIR="./target/emsdk"
+
+(
+  if [ ! -f "$EMSDK_DIR/emsdk" ]; then
+    echo 'Downloading emscripten SDK...'
+    git clone https://github.com/emscripten-core/emsdk.git $EMSDK_DIR
+  fi
+
+  cd $EMSDK_DIR
+
+  echo 'Updating emscripten SDK...'
+  git reset --hard
+  git pull
+  ./emsdk list
+
+  echo 'Installing latest emscripten...'
+  ./emsdk install $EMSCRIPTEN_VERSION
+
+  echo 'Activating latest emscripten...'
+  ./emsdk activate $EMSCRIPTEN_VERSION
+) >&2
+
+(
+  source "$EMSDK_DIR/emsdk_env.sh" > /dev/null
+  emcc --version >&2
+  declare -px
+)

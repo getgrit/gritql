@@ -50,13 +50,13 @@ CFLAGS_OBJC_Debug :=
 CFLAGS_OBJCC_Debug :=
 
 INCS_Debug := \
-	-I/Users/itamarlevy-or/Library/Caches/node-gyp/18.5.0/include/node \
-	-I/Users/itamarlevy-or/Library/Caches/node-gyp/18.5.0/src \
-	-I/Users/itamarlevy-or/Library/Caches/node-gyp/18.5.0/deps/openssl/config \
-	-I/Users/itamarlevy-or/Library/Caches/node-gyp/18.5.0/deps/openssl/openssl/include \
-	-I/Users/itamarlevy-or/Library/Caches/node-gyp/18.5.0/deps/uv/include \
-	-I/Users/itamarlevy-or/Library/Caches/node-gyp/18.5.0/deps/zlib \
-	-I/Users/itamarlevy-or/Library/Caches/node-gyp/18.5.0/deps/v8/include \
+	-I/Users/morgante/Library/Caches/node-gyp/18.17.0/include/node \
+	-I/Users/morgante/Library/Caches/node-gyp/18.17.0/src \
+	-I/Users/morgante/Library/Caches/node-gyp/18.17.0/deps/openssl/config \
+	-I/Users/morgante/Library/Caches/node-gyp/18.17.0/deps/openssl/openssl/include \
+	-I/Users/morgante/Library/Caches/node-gyp/18.17.0/deps/uv/include \
+	-I/Users/morgante/Library/Caches/node-gyp/18.17.0/deps/zlib \
+	-I/Users/morgante/Library/Caches/node-gyp/18.17.0/deps/v8/include \
 	-I$(srcdir)/node_modules/nan \
 	-I$(srcdir)/src
 
@@ -105,13 +105,13 @@ CFLAGS_OBJC_Release :=
 CFLAGS_OBJCC_Release :=
 
 INCS_Release := \
-	-I/Users/itamarlevy-or/Library/Caches/node-gyp/18.5.0/include/node \
-	-I/Users/itamarlevy-or/Library/Caches/node-gyp/18.5.0/src \
-	-I/Users/itamarlevy-or/Library/Caches/node-gyp/18.5.0/deps/openssl/config \
-	-I/Users/itamarlevy-or/Library/Caches/node-gyp/18.5.0/deps/openssl/openssl/include \
-	-I/Users/itamarlevy-or/Library/Caches/node-gyp/18.5.0/deps/uv/include \
-	-I/Users/itamarlevy-or/Library/Caches/node-gyp/18.5.0/deps/zlib \
-	-I/Users/itamarlevy-or/Library/Caches/node-gyp/18.5.0/deps/v8/include \
+	-I/Users/morgante/Library/Caches/node-gyp/18.17.0/include/node \
+	-I/Users/morgante/Library/Caches/node-gyp/18.17.0/src \
+	-I/Users/morgante/Library/Caches/node-gyp/18.17.0/deps/openssl/config \
+	-I/Users/morgante/Library/Caches/node-gyp/18.17.0/deps/openssl/openssl/include \
+	-I/Users/morgante/Library/Caches/node-gyp/18.17.0/deps/uv/include \
+	-I/Users/morgante/Library/Caches/node-gyp/18.17.0/deps/zlib \
+	-I/Users/morgante/Library/Caches/node-gyp/18.17.0/deps/v8/include \
 	-I$(srcdir)/node_modules/nan \
 	-I$(srcdir)/src
 
@@ -133,25 +133,25 @@ $(OBJS): GYP_OBJCXXFLAGS := $(DEFS_$(BUILDTYPE)) $(INCS_$(BUILDTYPE))  $(CFLAGS_
 
 # Suffix rules, putting all outputs into $(obj).
 
-$(obj).$(TOOLSET)/$(TARGET)/%.o: $(srcdir)/%.c FORCE_DO_CMD
-	@$(call do_cmd,cc,1)
-
 $(obj).$(TOOLSET)/$(TARGET)/%.o: $(srcdir)/%.cc FORCE_DO_CMD
 	@$(call do_cmd,cxx,1)
 
-# Try building from generated source, too.
-
-$(obj).$(TOOLSET)/$(TARGET)/%.o: $(obj).$(TOOLSET)/%.c FORCE_DO_CMD
+$(obj).$(TOOLSET)/$(TARGET)/%.o: $(srcdir)/%.c FORCE_DO_CMD
 	@$(call do_cmd,cc,1)
+
+# Try building from generated source, too.
 
 $(obj).$(TOOLSET)/$(TARGET)/%.o: $(obj).$(TOOLSET)/%.cc FORCE_DO_CMD
 	@$(call do_cmd,cxx,1)
 
-$(obj).$(TOOLSET)/$(TARGET)/%.o: $(obj)/%.c FORCE_DO_CMD
+$(obj).$(TOOLSET)/$(TARGET)/%.o: $(obj).$(TOOLSET)/%.c FORCE_DO_CMD
 	@$(call do_cmd,cc,1)
 
 $(obj).$(TOOLSET)/$(TARGET)/%.o: $(obj)/%.cc FORCE_DO_CMD
 	@$(call do_cmd,cxx,1)
+
+$(obj).$(TOOLSET)/$(TARGET)/%.o: $(obj)/%.c FORCE_DO_CMD
+	@$(call do_cmd,cc,1)
 
 # End of this set of suffix rules
 ### Rules for final target.

@@ -1,0 +1,11 @@
+>2
+
+  folded line
+
+  next line
+    * bullet
+
+    * list
+    * lines
+
+  last line
