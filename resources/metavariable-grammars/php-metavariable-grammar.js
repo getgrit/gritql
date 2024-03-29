@@ -89,18 +89,9 @@ module.exports = grammar({
     [$.namespace_use_declaration, $.namespace_name_as_prefix],
     //Grit conflicts
     [$.variable_name, $.name],
-    [$.formal_parameters, $.variable_name],
-    [$.formal_parameters, $.simple_parameter, $.variable_name],
-    [$.simple_parameter, $.variable_name],
-    [$.arguments, $.variable_name, $.name],
-    [$.argument, $.variable_name, $.name],
-    [$.arguments, $.argument, $.variable_name, $.name],
-
-    [$.parenthesized_expression, $.variable_name],
     [$.compound_statement, $.variable_name, $.name],
     [$.compound_statement, $.name],
     [$.compound_statement, $.variable_name],
-    [$.parenthesized_expression, $.variable_name, $.name],
     [$.program, $.variable_name, $.name],
     [$.program, $.name],
     [$.program, $.variable_name],
@@ -131,7 +122,6 @@ module.exports = grammar({
     [$.foreach_statement, $.variable_name, $.name],
     [$.foreach_statement, $.name],
     [$.foreach_statement, $.variable_name],
-    [$.program, $.variable_name, $.name],
   ],
 
   inline: $ => [
@@ -363,12 +353,6 @@ module.exports = grammar({
       optional($._semicolon),
     )),
 
-    // declaration_list: $ => seq(
-    //   '{',
-    //   choice($.grit_metavariable, repeat($._member_declaration)),
-    //   '}',
-    // ),
-
     declaration_list: $ => seq(
       '{',
         field('_member_declarations', choice(repeat($._member_declaration), $.grit_metavariable)),
@@ -504,14 +488,6 @@ module.exports = grammar({
       optional($._return_type),
     ),
 
-    // _function_definition_header: $ => seq(
-    //   keyword('function'),
-    //   optional(field('reference_modifier', $.reference_modifier)),
-    //   field('name', choice($.name, alias($._reserved_identifier, $.name))),
-    //   field('parameters', choice($.grit_metavariable, $.formal_parameters)),
-    //   optional($._return_type),
-    // ),
-
     _arrow_function_header: $ => seq(
       optional(field('attributes', $.attribute_list)),
       optional($.static_modifier),
@@ -533,13 +509,6 @@ module.exports = grammar({
       optional(','),
       ')',
     ),
-
-    // formal_parameters: $ => seq(
-    //   '(',
-    //   choice($.grit_metavariable, commaSep(choice($.simple_parameter, $.variadic_parameter, $.property_promotion_parameter))),
-    //   optional(','),
-    //   ')',
-    // ),
 
     property_promotion_parameter: $ => seq(
       optional(field('attributes', $.attribute_list)),
@@ -563,17 +532,6 @@ module.exports = grammar({
         field('default_value', $._expression),
       )),
     ),
-
-    // simple_parameter: $ => choice(seq(
-    //   optional(field('attributes', $.attribute_list)),
-    //   field('type', optional($._type)),
-    //   optional(field('reference_modifier', $.reference_modifier)),
-    //   field('name', $.variable_name),
-    //   optional(seq(
-    //     '=',
-    //     field('default_value', $._expression),
-    //   )),
-    // ), $.grit_metavariable),
 
     variadic_parameter: $ => seq(
       optional(field('attributes', $.attribute_list)),
@@ -1003,7 +961,6 @@ module.exports = grammar({
       $.arrow_function,
     ),
 
-    // parenthesized_expression: $ => seq('(', choice($.grit_metavariable, $._expression), ')'),
     parenthesized_expression: $ => seq('(', field('condition', $._expression), ')'),
     class_constant_access_expression: $ => seq(
       $._scope_resolution_qualifier,
@@ -1236,24 +1193,6 @@ module.exports = grammar({
       ),
       ')',
     ),
-
-    // arguments: $ => seq(
-    //   '(',
-    //   choice(
-    //     seq(
-    //       commaSep(choice($.grit_metavariable, $.argument)),
-    //       optional(','),
-    //     ),
-    //     $.variadic_placeholder,
-    //   ),
-    //   ')',
-    // ),
-
-    // argument: $ => seq(
-    //   optional($._argument_name),
-    //   optional(field('reference_modifier', $.reference_modifier)),
-    //   choice($.grit_metavariable, alias($._reserved_identifier, $.name), $.variadic_unpacking, $._expression),
-    // ),
 
     argument: $ => seq(
       optional($._argument_name),

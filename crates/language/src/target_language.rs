@@ -680,8 +680,8 @@ impl TargetLanguage {
             | TargetLanguage::Rust(_)
             | TargetLanguage::Solidity(_)
             | TargetLanguage::Tsx(_)
-            | TargetLanguage::TypeScript(_) => format!("// {}\n", text),
             | TargetLanguage::Php(_)
+            | TargetLanguage::TypeScript(_) => format!("// {}\n", text),
             TargetLanguage::Python(_)
             | TargetLanguage::Hcl(_)
             | TargetLanguage::Ruby(_)
