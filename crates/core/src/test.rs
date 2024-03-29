@@ -2985,7 +2985,7 @@ fn php_foreach_loop() {
 }
 
 #[test]
-fn php_equals_zero_snippet3() {
+fn php_function_snippet() {
     run_test_match({
         TestArg {
             pattern: r#"
@@ -3006,7 +3006,7 @@ fn php_equals_zero_snippet3() {
 }
 
 #[test]
-fn php_equals_zero_snippet4() {
+fn php_if_statement_snippet() {
     run_test_match({
         TestArg {
             pattern: r#"
@@ -3027,7 +3027,7 @@ fn php_equals_zero_snippet4() {
 }
 
 #[test]
-fn php_equals_zero_snippet() {
+fn php_function_call_snippet() {
     run_test_match({
         TestArg {
             pattern: r#"
@@ -3044,7 +3044,7 @@ fn php_equals_zero_snippet() {
 }
 
 #[test]
-fn php_equals_zero_snippet2() {
+fn php_assignment_snippet() {
     run_test_match({
         TestArg {
             pattern: r#"
