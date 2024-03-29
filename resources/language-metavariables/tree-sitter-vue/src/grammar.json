@@ -179,29 +179,41 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "ALIAS",
+          "type": "FIELD",
+          "name": "start_tag",
+          "content": {
+            "type": "ALIAS",
+            "content": {
+              "type": "SYMBOL",
+              "name": "style_start_tag"
+            },
+            "named": true,
+            "value": "start_tag"
+          }
+        },
+        {
+          "type": "FIELD",
+          "name": "text",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "raw_text"
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
+          }
+        },
+        {
+          "type": "FIELD",
+          "name": "end_tag",
           "content": {
             "type": "SYMBOL",
-            "name": "style_start_tag"
-          },
-          "named": true,
-          "value": "start_tag"
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "raw_text"
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
-          "type": "SYMBOL",
-          "name": "end_tag"
+            "name": "end_tag"
+          }
         }
       ]
     },
@@ -335,28 +347,36 @@
           "value": "<"
         },
         {
-          "type": "ALIAS",
+          "type": "FIELD",
+          "name": "name",
           "content": {
-            "type": "SYMBOL",
-            "name": "_style_start_tag_name"
-          },
-          "named": true,
-          "value": "tag_name"
+            "type": "ALIAS",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_style_start_tag_name"
+            },
+            "named": true,
+            "value": "tag_name"
+          }
         },
         {
-          "type": "REPEAT",
+          "type": "FIELD",
+          "name": "atributes",
           "content": {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "attribute"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "directive_attribute"
-              }
-            ]
+            "type": "REPEAT",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "attribute"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "directive_attribute"
+                }
+              ]
+            }
           }
         },
         {

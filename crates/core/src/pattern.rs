@@ -233,18 +233,22 @@ impl FileOwner {
         new: bool,
         language: &impl Language,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
+    ) -> Result<Option<Self>> {
         let name = name.into();
-        let tree = language.parse_file(name.to_string_lossy().as_ref(), &source, logs, new)?;
+        let Some(tree) =
+            language.parse_file(name.to_string_lossy().as_ref(), &source, logs, new)?
+        else {
+            return Ok(None);
+        };
         let absolute_path = PathBuf::from(absolutize(name.to_string_lossy().as_ref())?);
-        Ok(FileOwner {
+        Ok(Some(FileOwner {
             name,
             absolute_path,
             tree,
             source,
             matches: matches.unwrap_or_default().into(),
             new,
-        })
+        }))
     }
 }
 
@@ -404,8 +408,10 @@ impl Problem {
                     );
                     match owned_file {
                         Result::Ok(owned_file) => {
-                            file_pointers.push(FilePtr::new(file_pointers.len() as u16, 0));
-                            owned_files.push(owned_file);
+                            if let Some(owned_file) = owned_file {
+                                file_pointers.push(FilePtr::new(file_pointers.len() as u16, 0));
+                                owned_files.push(owned_file);
+                            }
                             done_files.push(MatchResult::DoneFile(DoneFile {
                                 relative_file_path: file.path.to_string(),
                                 has_results: None,
