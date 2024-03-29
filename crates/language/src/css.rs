@@ -1,6 +1,11 @@
 use std::sync::OnceLock;
 
-use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
+use crate::{
+    language::{default_parse_file, fields_for_nodes, Field, Language, SortId, TSLanguage},
+    vue::get_vue_ranges,
+};
+use anyhow::anyhow;
+use tree_sitter::{Parser, Tree};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/css-node-types.json");
 
@@ -53,7 +58,11 @@ impl Language for Css {
         "CSS"
     }
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[("", ""), ("GRIT_BLOCK { ", " }"), ("GRIT_BLOCK { GRIT_PROPERTY: ", " }")]
+        &[
+            ("", ""),
+            ("GRIT_BLOCK { ", " }"),
+            ("GRIT_BLOCK { GRIT_PROPERTY: ", " }"),
+        ]
     }
 
     fn node_types(&self) -> &[Vec<Field>] {
@@ -67,14 +76,38 @@ impl Language for Css {
     fn is_comment(&self, id: SortId) -> bool {
         id == self.comment_sort
     }
-}
 
+    fn parse_file(
+        &self,
+        name: &str,
+        body: &str,
+        logs: &mut marzano_util::analysis_logs::AnalysisLogs,
+        new: bool,
+    ) -> anyhow::Result<Option<Tree>> {
+        let mut parser = Parser::new().unwrap();
+        parser.set_language(self.get_ts_language())?;
+        if name.ends_with(".vue") {
+            let parent_node_kind = "style_element";
+            let ranges = get_vue_ranges(body, parent_node_kind, None)?;
+            if ranges.is_empty() {
+                return Ok(None);
+            }
+            parser.set_included_ranges(&ranges)?;
+            parser
+                .parse(body, None)?
+                .ok_or(anyhow!("missing tree"))
+                .map(Some)
+        } else {
+            default_parse_file(self.get_ts_language(), name, body, logs, new)
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use marzano_util::print_node::print_node;
     use crate::language::nodes_from_indices;
+    use marzano_util::print_node::print_node;
 
     #[test]
     fn import_variable() {
@@ -86,5 +119,68 @@ mod tests {
         let nodes = nodes_from_indices(&snippets);
         assert!(!nodes.is_empty());
         print_node(&nodes[0].node);
+    }
+
+    #[test]
+    fn gets_ranges() {
+        let snippet = r#"
+<script lang="ts">
+export default {
+    inheritAttrs: false,
+};
+</script>
+
+<script setup lang="ts">
+defineProps<{
+    itemCount?: number;
+    showingCount?: boolean;
+}>();
+</script>
+
+<template>
+    <transition name="fade">
+        <span v-if="itemCount" class="item-count">
+            {{ showingCount }}
+        </span>
+    </transition>
+</template>
+
+<style lang="scss" scoped>
+.item-count {
+    position: relative;
+    display: none;
+    margin: 0 8px;
+    color: var(--theme--foreground-subdued);
+    white-space: nowrap;
+
+    @media (min-width: 600px) {
+        display: inline;
+    }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity var(--medium) var(--transition);
+}
+
+.fade-enter,
+.fade-leave-to {
+    opacity: 0;
+}
+</style>
+"#;
+        let parent_node_kind = "style_element";
+        let ranges = get_vue_ranges(snippet, parent_node_kind, None);
+        println!("RANGES: {:#?}", ranges);
+        let css = Css::new(None);
+        let css_ts = css.get_ts_language();
+        let mut parser = Parser::new().unwrap();
+        parser.set_language(css_ts).unwrap();
+        let tree = css
+            .parse_file("test.vue", snippet, &mut vec![].into(), false)
+            .unwrap()
+            .unwrap();
+        let root = tree.root_node();
+        print_node(&root);
     }
 }

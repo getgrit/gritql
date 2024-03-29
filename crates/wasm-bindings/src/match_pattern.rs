@@ -194,8 +194,13 @@ pub async fn match_pattern(
                 Ok(s) => Ok(s.into()),
                 Err(e) => {
                     // TODO: figure out why we don't get the real error here
-                    let unwrapped = e.as_string().unwrap_or_else(|| "unknown error, check console for details".to_string());
-                    Err(anyhow::anyhow!("Error calling external function: {}", unwrapped))
+                    let unwrapped = e
+                        .as_string()
+                        .unwrap_or_else(|| "unknown error, check console for details".to_string());
+                    Err(anyhow::anyhow!(
+                        "Error calling external function: {}",
+                        unwrapped
+                    ))
                 }
             }
         },
@@ -319,7 +324,10 @@ async fn get_language_for_tree(tree: &Tree, src: &str) -> Result<TargetLanguage,
     } else {
         if matches!(
             lang,
-            PatternLanguage::JavaScript | PatternLanguage::TypeScript | PatternLanguage::Tsx
+            PatternLanguage::JavaScript
+                | PatternLanguage::TypeScript
+                | PatternLanguage::Tsx
+                | PatternLanguage::Css
         ) {
             // javascript also parses vue files to look for javascript so
             // we need to initialize the Vue struct with a wasm parser

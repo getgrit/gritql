@@ -24,8 +24,8 @@ use crate::{
     php::Php,
 };
 use anyhow::Result;
-use enum_dispatch::enum_dispatch;
 use clap::ValueEnum;
+use enum_dispatch::enum_dispatch;
 use serde::Serialize;
 use std::borrow::Cow;
 use std::fmt;
@@ -239,7 +239,7 @@ impl PatternLanguage {
             }
             PatternLanguage::Tsx => &["js", "jsx", "ts", "tsx", "cjs", "mjs", "cts", "mts", "vue"],
             PatternLanguage::Html => &["html"],
-            PatternLanguage::Css => &["css"],
+            PatternLanguage::Css => &["css", "vue"],
             PatternLanguage::Json => &["json"],
             PatternLanguage::Java => &["java"],
             PatternLanguage::CSharp => &["cs"],
@@ -391,7 +391,6 @@ impl PatternLanguage {
     }
 }
 
-
 #[cfg(feature = "finder")]
 pub fn expand_paths(
     start_paths: &[PathBuf],
@@ -401,7 +400,7 @@ pub fn expand_paths(
 
     let mut file_types = TypesBuilder::new();
     file_types.add_defaults();
-
+    file_types.add("vue", "*.vue").unwrap();
     match target_languages {
         Some(languages) => {
             for &target_language in languages {
@@ -438,6 +437,7 @@ pub fn expand_paths(
                     }
                     PatternLanguage::Css => {
                         file_types.select("css");
+                        file_types.select("vue");
                     }
                     PatternLanguage::Json => {
                         file_types.select("json");
