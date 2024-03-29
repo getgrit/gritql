@@ -17,6 +17,7 @@ const PREC = {
     CAST: -1,
     LOGICAL_OR_2: 1,
     LOGICAL_XOR: 2,
+    NAMED_TYPE: 2,
     LOGICAL_AND_2: 3,
     ASSIGNMENT: 4,
     TERNARY: 5,
@@ -92,9 +93,7 @@ const PREC = {
   
         [$.namespace_name_as_prefix],
         [$.namespace_use_declaration, $.namespace_name_as_prefix],
-  
-        [$._modifier, $.named_type],
-      ],
+        ],
   
       inline: $ => [
         $._statement,
@@ -537,7 +536,7 @@ const PREC = {
           $.primitive_type,
         ),
   
-        named_type: $ => choice($.name, $.qualified_name, $.grit_metavariable),
+        named_type: $ => prec(PREC.NAMED_TYPE, choice($.name, $.qualified_name, $.grit_metavariable)),
   
         optional_type: $ => seq(
           '?',
