@@ -7701,6 +7701,45 @@ fn multiply_decimals() {
 }
 
 #[test]
+fn python_removes_orphaned_type_arrow() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language python
+                |
+                |function_definition($name, $return_type) where {
+                |  $name <: `foo`,
+                |  $return_type => .
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |def foo() -> None:
+                |    print('hi')
+                |
+                |def bar() -> SomeType:
+                |    print('hello')
+                |    return SomeType
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |def foo():
+                |    print('hi')
+                |
+                |def bar() -> SomeType:
+                |    print('hello')
+                |    return SomeType
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn removes_orphaned_semicolon() {
     run_test_expected({
         TestArgExpected {
