@@ -34,13 +34,13 @@ use super::{
     r#where::Where, rewrite::Rewrite, some::Some, string_constant::StringConstant,
     variable::Variable, within::Within, Node, State,
 };
-use crate::binding::node_text;
+use marzano_util::node_with_source::NodeWithSource;
 use crate::context::Context;
 use crate::pattern::register_variable;
 use crate::pattern::string_constant::AstLeafNode;
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
-use grit_util::{traverse, Order};
+use grit_util::{traverse, Order, AstNode};
 use marzano_language::language::{Field, GritMetaValue};
 use marzano_language::{language::Language, language::SnippetNode};
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -548,8 +548,9 @@ impl Pattern {
                             return Ok((field_id, false, nodes_list.pop().unwrap()));
                         }
                         let field_node = node.child_by_field_id(field_id).unwrap();
+                        let field_node_with_source = NodeWithSource::new(field_node.clone(), str::from_utf8(text).unwrap());
                         return Ok((field_id, false,  Pattern::AstLeafNode(AstLeafNode::new(
-                            field_node.kind_id(), node_text(str::from_utf8(text).unwrap(), &field_node), lang,
+                            field_node.kind_id(), field_node_with_source.text(), lang,
                         )?)));
                     }
                     if nodes_list.len() == 1
