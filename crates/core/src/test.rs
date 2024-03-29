@@ -7724,8 +7724,9 @@ fn python_removes_orphaned_type_arrow() {
                 |"#
             .trim_margin()
             .unwrap(),
+            // The whitespace is fine, because Ruff will remove it
             expected: r#"
-                |def foo():
+                |def foo()  :
                 |    print('hi')
                 |
                 |def bar() -> SomeType:
