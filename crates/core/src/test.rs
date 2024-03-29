@@ -2871,7 +2871,7 @@ fn php_extends_component_snippet() {
 }
 
 #[test]
-fn php_equals_zero_snippet_test() {
+fn php_exit_snippet_test() {
     run_test_match({
         TestArg {
             pattern: r#"
