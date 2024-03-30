@@ -246,8 +246,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "static",
-            "flags": "i"
+            "value": "static"
           },
           "named": false,
           "value": "static"
@@ -328,8 +327,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "global",
-            "flags": "i"
+            "value": "global"
           },
           "named": false,
           "value": "global"
@@ -372,8 +370,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "namespace",
-            "flags": "i"
+            "value": "namespace"
           },
           "named": false,
           "value": "namespace"
@@ -447,8 +444,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "use",
-            "flags": "i"
+            "value": "use"
           },
           "named": false,
           "value": "use"
@@ -463,8 +459,7 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "PATTERN",
-                    "value": "function",
-                    "flags": "i"
+                    "value": "function"
                   },
                   "named": false,
                   "value": "function"
@@ -473,8 +468,7 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "PATTERN",
-                    "value": "const",
-                    "flags": "i"
+                    "value": "const"
                   },
                   "named": false,
                   "value": "const"
@@ -647,8 +641,7 @@
               "type": "ALIAS",
               "content": {
                 "type": "PATTERN",
-                "value": "namespace",
-                "flags": "i"
+                "value": "namespace"
               },
               "named": false,
               "value": "namespace"
@@ -666,8 +659,7 @@
               "type": "ALIAS",
               "content": {
                 "type": "PATTERN",
-                "value": "namespace",
-                "flags": "i"
+                "value": "namespace"
               },
               "named": false,
               "value": "namespace"
@@ -728,8 +720,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "as",
-            "flags": "i"
+            "value": "as"
           },
           "named": false,
           "value": "as"
@@ -791,8 +782,7 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "PATTERN",
-                    "value": "function",
-                    "flags": "i"
+                    "value": "function"
                   },
                   "named": false,
                   "value": "function"
@@ -801,8 +791,7 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "PATTERN",
-                    "value": "const",
-                    "flags": "i"
+                    "value": "const"
                   },
                   "named": false,
                   "value": "const"
@@ -839,8 +828,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "trait",
-            "flags": "i"
+            "value": "trait"
           },
           "named": false,
           "value": "trait"
@@ -879,8 +867,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "interface",
-            "flags": "i"
+            "value": "interface"
           },
           "named": false,
           "value": "interface"
@@ -931,8 +918,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "extends",
-            "flags": "i"
+            "value": "extends"
           },
           "named": false,
           "value": "extends"
@@ -1034,8 +1020,7 @@
             "type": "ALIAS",
             "content": {
               "type": "PATTERN",
-              "value": "enum",
-              "flags": "i"
+              "value": "enum"
             },
             "named": false,
             "value": "enum"
@@ -1179,8 +1164,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "case",
-            "flags": "i"
+            "value": "case"
           },
           "named": false,
           "value": "case"
@@ -1313,8 +1297,7 @@
             "type": "ALIAS",
             "content": {
               "type": "PATTERN",
-              "value": "class",
-              "flags": "i"
+              "value": "class"
             },
             "named": false,
             "value": "class"
@@ -1411,8 +1394,7 @@
       "type": "ALIAS",
       "content": {
         "type": "PATTERN",
-        "value": "final",
-        "flags": "i"
+        "value": "final"
       },
       "named": false,
       "value": "final"
@@ -1421,8 +1403,7 @@
       "type": "ALIAS",
       "content": {
         "type": "PATTERN",
-        "value": "abstract",
-        "flags": "i"
+        "value": "abstract"
       },
       "named": false,
       "value": "abstract"
@@ -1431,8 +1412,7 @@
       "type": "ALIAS",
       "content": {
         "type": "PATTERN",
-        "value": "readonly",
-        "flags": "i"
+        "value": "readonly"
       },
       "named": false,
       "value": "readonly"
@@ -1444,8 +1424,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "implements",
-            "flags": "i"
+            "value": "implements"
           },
           "named": false,
           "value": "implements"
@@ -1607,8 +1586,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "const",
-            "flags": "i"
+            "value": "const"
           },
           "named": false,
           "value": "const"
@@ -1859,15 +1837,13 @@
     },
     "var_modifier": {
       "type": "PATTERN",
-      "value": "var",
-      "flags": "i"
+      "value": "var"
     },
     "static_modifier": {
       "type": "ALIAS",
       "content": {
         "type": "PATTERN",
-        "value": "static",
-        "flags": "i"
+        "value": "static"
       },
       "named": false,
       "value": "static"
@@ -1879,8 +1855,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "use",
-            "flags": "i"
+            "value": "use"
           },
           "named": false,
           "value": "use"
@@ -2030,8 +2005,7 @@
             "type": "ALIAS",
             "content": {
               "type": "PATTERN",
-              "value": "insteadof",
-              "flags": "i"
+              "value": "insteadof"
             },
             "named": false,
             "value": "insteadof"
@@ -2063,8 +2037,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "as",
-            "flags": "i"
+            "value": "as"
           },
           "named": false,
           "value": "as"
@@ -2125,8 +2098,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "public",
-            "flags": "i"
+            "value": "public"
           },
           "named": false,
           "value": "public"
@@ -2135,8 +2107,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "protected",
-            "flags": "i"
+            "value": "protected"
           },
           "named": false,
           "value": "protected"
@@ -2145,8 +2116,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "private",
-            "flags": "i"
+            "value": "private"
           },
           "named": false,
           "value": "private"
@@ -2193,8 +2163,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "function",
-            "flags": "i"
+            "value": "function"
           },
           "named": false,
           "value": "function"
@@ -2298,8 +2267,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "fn",
-            "flags": "i"
+            "value": "fn"
           },
           "named": false,
           "value": "fn"
@@ -2922,8 +2890,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "callable",
-            "flags": "i"
+            "value": "callable"
           },
           "named": false,
           "value": "callable"
@@ -2975,63 +2942,51 @@
       "members": [
         {
           "type": "PATTERN",
-          "value": "array",
-          "flags": "i"
+          "value": "array"
         },
         {
           "type": "PATTERN",
-          "value": "binary",
-          "flags": "i"
+          "value": "binary"
         },
         {
           "type": "PATTERN",
-          "value": "bool",
-          "flags": "i"
+          "value": "bool"
         },
         {
           "type": "PATTERN",
-          "value": "boolean",
-          "flags": "i"
+          "value": "boolean"
         },
         {
           "type": "PATTERN",
-          "value": "double",
-          "flags": "i"
+          "value": "double"
         },
         {
           "type": "PATTERN",
-          "value": "int",
-          "flags": "i"
+          "value": "int"
         },
         {
           "type": "PATTERN",
-          "value": "integer",
-          "flags": "i"
+          "value": "integer"
         },
         {
           "type": "PATTERN",
-          "value": "float",
-          "flags": "i"
+          "value": "float"
         },
         {
           "type": "PATTERN",
-          "value": "object",
-          "flags": "i"
+          "value": "object"
         },
         {
           "type": "PATTERN",
-          "value": "real",
-          "flags": "i"
+          "value": "real"
         },
         {
           "type": "PATTERN",
-          "value": "string",
-          "flags": "i"
+          "value": "string"
         },
         {
           "type": "PATTERN",
-          "value": "unset",
-          "flags": "i"
+          "value": "unset"
         }
       ]
     },
@@ -3099,8 +3054,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "echo",
-            "flags": "i"
+            "value": "echo"
           },
           "named": false,
           "value": "echo"
@@ -3126,8 +3080,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "exit",
-            "flags": "i"
+            "value": "exit"
           },
           "named": false,
           "value": "exit"
@@ -3224,8 +3177,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "declare",
-            "flags": "i"
+            "value": "declare"
           },
           "named": false,
           "value": "declare"
@@ -3267,8 +3219,7 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "PATTERN",
-                    "value": "enddeclare",
-                    "flags": "i"
+                    "value": "enddeclare"
                   },
                   "named": false,
                   "value": "enddeclare"
@@ -3357,8 +3308,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "try",
-            "flags": "i"
+            "value": "try"
           },
           "named": false,
           "value": "try"
@@ -3396,8 +3346,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "catch",
-            "flags": "i"
+            "value": "catch"
           },
           "named": false,
           "value": "catch"
@@ -3476,8 +3425,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "finally",
-            "flags": "i"
+            "value": "finally"
           },
           "named": false,
           "value": "finally"
@@ -3499,8 +3447,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "goto",
-            "flags": "i"
+            "value": "goto"
           },
           "named": false,
           "value": "goto"
@@ -3522,8 +3469,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "continue",
-            "flags": "i"
+            "value": "continue"
           },
           "named": false,
           "value": "continue"
@@ -3553,8 +3499,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "break",
-            "flags": "i"
+            "value": "break"
           },
           "named": false,
           "value": "break"
@@ -3608,8 +3553,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "return",
-            "flags": "i"
+            "value": "return"
           },
           "named": false,
           "value": "return"
@@ -3639,8 +3583,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "throw",
-            "flags": "i"
+            "value": "throw"
           },
           "named": false,
           "value": "throw"
@@ -3658,8 +3601,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "while",
-            "flags": "i"
+            "value": "while"
           },
           "named": false,
           "value": "while"
@@ -3698,8 +3640,7 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "PATTERN",
-                    "value": "endwhile",
-                    "flags": "i"
+                    "value": "endwhile"
                   },
                   "named": false,
                   "value": "endwhile"
@@ -3721,8 +3662,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "do",
-            "flags": "i"
+            "value": "do"
           },
           "named": false,
           "value": "do"
@@ -3739,8 +3679,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "while",
-            "flags": "i"
+            "value": "while"
           },
           "named": false,
           "value": "while"
@@ -3766,8 +3705,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "for",
-            "flags": "i"
+            "value": "for"
           },
           "named": false,
           "value": "for"
@@ -3857,8 +3795,7 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "PATTERN",
-                    "value": "endfor",
-                    "flags": "i"
+                    "value": "endfor"
                   },
                   "named": false,
                   "value": "endfor"
@@ -3923,8 +3860,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "foreach",
-            "flags": "i"
+            "value": "foreach"
           },
           "named": false,
           "value": "foreach"
@@ -3945,8 +3881,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "as",
-            "flags": "i"
+            "value": "as"
           },
           "named": false,
           "value": "as"
@@ -4003,8 +3938,7 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "PATTERN",
-                    "value": "endforeach",
-                    "flags": "i"
+                    "value": "endforeach"
                   },
                   "named": false,
                   "value": "endforeach"
@@ -4060,8 +3994,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "if",
-            "flags": "i"
+            "value": "if"
           },
           "named": false,
           "value": "if"
@@ -4169,8 +4102,7 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "PATTERN",
-                    "value": "endif",
-                    "flags": "i"
+                    "value": "endif"
                   },
                   "named": false,
                   "value": "endif"
@@ -4208,8 +4140,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "elseif",
-            "flags": "i"
+            "value": "elseif"
           },
           "named": false,
           "value": "elseif"
@@ -4239,8 +4170,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "else",
-            "flags": "i"
+            "value": "else"
           },
           "named": false,
           "value": "else"
@@ -4262,8 +4192,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "elseif",
-            "flags": "i"
+            "value": "elseif"
           },
           "named": false,
           "value": "elseif"
@@ -4293,8 +4222,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "else",
-            "flags": "i"
+            "value": "else"
           },
           "named": false,
           "value": "else"
@@ -4316,8 +4244,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "match",
-            "flags": "i"
+            "value": "match"
           },
           "named": false,
           "value": "match"
@@ -4494,8 +4421,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "default",
-            "flags": "i"
+            "value": "default"
           },
           "named": false,
           "value": "default"
@@ -4521,8 +4447,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "switch",
-            "flags": "i"
+            "value": "switch"
           },
           "named": false,
           "value": "switch"
@@ -4604,8 +4529,7 @@
               "type": "ALIAS",
               "content": {
                 "type": "PATTERN",
-                "value": "endswitch",
-                "flags": "i"
+                "value": "endswitch"
               },
               "named": false,
               "value": "endswitch"
@@ -4625,8 +4549,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "case",
-            "flags": "i"
+            "value": "case"
           },
           "named": false,
           "value": "case"
@@ -4668,8 +4591,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "default",
-            "flags": "i"
+            "value": "default"
           },
           "named": false,
           "value": "default"
@@ -4746,8 +4668,12 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "SYMBOL",
-          "name": "_expression"
+          "type": "FIELD",
+          "name": "expression",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_expression"
+          }
         },
         {
           "type": "SYMBOL",
@@ -4899,8 +4825,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "clone",
-            "flags": "i"
+            "value": "clone"
           },
           "named": false,
           "value": "clone"
@@ -5057,8 +4982,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "print",
-            "flags": "i"
+            "value": "print"
           },
           "named": false,
           "value": "print"
@@ -5095,8 +5019,7 @@
               "type": "ALIAS",
               "content": {
                 "type": "PATTERN",
-                "value": "static",
-                "flags": "i"
+                "value": "static"
               },
               "named": false,
               "value": "static"
@@ -5110,8 +5033,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "function",
-            "flags": "i"
+            "value": "function"
           },
           "named": false,
           "value": "function"
@@ -5181,8 +5103,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "use",
-            "flags": "i"
+            "value": "use"
           },
           "named": false,
           "value": "use"
@@ -5283,8 +5204,7 @@
                 "type": "ALIAS",
                 "content": {
                   "type": "PATTERN",
-                  "value": "new",
-                  "flags": "i"
+                  "value": "new"
                 },
                 "named": false,
                 "value": "new"
@@ -5314,8 +5234,7 @@
                 "type": "ALIAS",
                 "content": {
                   "type": "PATTERN",
-                  "value": "new",
-                  "flags": "i"
+                  "value": "new"
                 },
                 "named": false,
                 "value": "new"
@@ -5340,8 +5259,7 @@
                 "type": "ALIAS",
                 "content": {
                   "type": "PATTERN",
-                  "value": "class",
-                  "flags": "i"
+                  "value": "class"
                 },
                 "named": false,
                 "value": "class"
@@ -5929,8 +5847,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "list",
-            "flags": "i"
+            "value": "list"
           },
           "named": false,
           "value": "list"
@@ -6408,8 +6325,7 @@
             "type": "ALIAS",
             "content": {
               "type": "PATTERN",
-              "value": "static",
-              "flags": "i"
+              "value": "static"
             },
             "named": false,
             "value": "static"
@@ -6435,37 +6351,41 @@
               "type": "SEQ",
               "members": [
                 {
-                  "type": "CHOICE",
-                  "members": [
-                    {
-                      "type": "SEQ",
-                      "members": [
-                        {
-                          "type": "SYMBOL",
-                          "name": "argument"
-                        },
-                        {
-                          "type": "REPEAT",
-                          "content": {
-                            "type": "SEQ",
-                            "members": [
-                              {
-                                "type": "STRING",
-                                "value": ","
-                              },
-                              {
-                                "type": "SYMBOL",
-                                "name": "argument"
-                              }
-                            ]
+                  "type": "FIELD",
+                  "name": "argument",
+                  "content": {
+                    "type": "CHOICE",
+                    "members": [
+                      {
+                        "type": "SEQ",
+                        "members": [
+                          {
+                            "type": "SYMBOL",
+                            "name": "argument"
+                          },
+                          {
+                            "type": "REPEAT",
+                            "content": {
+                              "type": "SEQ",
+                              "members": [
+                                {
+                                  "type": "STRING",
+                                  "value": ","
+                                },
+                                {
+                                  "type": "SYMBOL",
+                                  "name": "argument"
+                                }
+                              ]
+                            }
                           }
-                        }
-                      ]
-                    },
-                    {
-                      "type": "BLANK"
-                    }
-                  ]
+                        ]
+                      },
+                      {
+                        "type": "BLANK"
+                      }
+                    ]
+                  }
                 },
                 {
                   "type": "CHOICE",
@@ -6565,38 +6485,31 @@
                 },
                 {
                   "type": "PATTERN",
-                  "value": "array",
-                  "flags": "i"
+                  "value": "array"
                 },
                 {
                   "type": "PATTERN",
-                  "value": "fn",
-                  "flags": "i"
+                  "value": "fn"
                 },
                 {
                   "type": "PATTERN",
-                  "value": "function",
-                  "flags": "i"
+                  "value": "function"
                 },
                 {
                   "type": "PATTERN",
-                  "value": "match",
-                  "flags": "i"
+                  "value": "match"
                 },
                 {
                   "type": "PATTERN",
-                  "value": "namespace",
-                  "flags": "i"
+                  "value": "namespace"
                 },
                 {
                   "type": "PATTERN",
-                  "value": "null",
-                  "flags": "i"
+                  "value": "null"
                 },
                 {
                   "type": "PATTERN",
-                  "value": "static",
-                  "flags": "i"
+                  "value": "static"
                 },
                 {
                   "type": "STRING",
@@ -6608,8 +6521,7 @@
                 },
                 {
                   "type": "PATTERN",
-                  "value": "true|false",
-                  "flags": "i"
+                  "value": "true|false"
                 }
               ]
             },
@@ -6870,8 +6782,7 @@
               "type": "ALIAS",
               "content": {
                 "type": "PATTERN",
-                "value": "array",
-                "flags": "i"
+                "value": "array"
               },
               "named": false,
               "value": "array"
@@ -7894,13 +7805,11 @@
     },
     "boolean": {
       "type": "PATTERN",
-      "value": "true|false",
-      "flags": "i"
+      "value": "true|false"
     },
     "null": {
       "type": "PATTERN",
-      "value": "null",
-      "flags": "i"
+      "value": "null"
     },
     "_string": {
       "type": "CHOICE",
@@ -8046,8 +7955,7 @@
             "type": "ALIAS",
             "content": {
               "type": "PATTERN",
-              "value": "yield",
-              "flags": "i"
+              "value": "yield"
             },
             "named": false,
             "value": "yield"
@@ -8069,8 +7977,7 @@
                         "type": "ALIAS",
                         "content": {
                           "type": "PATTERN",
-                          "value": "from",
-                          "flags": "i"
+                          "value": "from"
                         },
                         "named": false,
                         "value": "from"
@@ -8175,8 +8082,7 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "PATTERN",
-                    "value": "instanceof",
-                    "flags": "i"
+                    "value": "instanceof"
                   },
                   "named": false,
                   "value": "instanceof"
@@ -8280,8 +8186,7 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "PATTERN",
-                    "value": "and",
-                    "flags": "i"
+                    "value": "and"
                   },
                   "named": false,
                   "value": "and"
@@ -8319,8 +8224,7 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "PATTERN",
-                    "value": "or",
-                    "flags": "i"
+                    "value": "or"
                   },
                   "named": false,
                   "value": "or"
@@ -8358,8 +8262,7 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "PATTERN",
-                    "value": "xor",
-                    "flags": "i"
+                    "value": "xor"
                   },
                   "named": false,
                   "value": "xor"
@@ -9144,15 +9047,18 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "include",
-            "flags": "i"
+            "value": "include"
           },
           "named": false,
           "value": "include"
         },
         {
-          "type": "SYMBOL",
-          "name": "_expression"
+          "type": "FIELD",
+          "name": "include_path",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_expression"
+          }
         }
       ]
     },
@@ -9163,15 +9069,18 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "include_once",
-            "flags": "i"
+            "value": "include_once"
           },
           "named": false,
           "value": "include_once"
         },
         {
-          "type": "SYMBOL",
-          "name": "_expression"
+          "type": "FIELD",
+          "name": "include_path",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_expression"
+          }
         }
       ]
     },
@@ -9182,15 +9091,18 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "require",
-            "flags": "i"
+            "value": "require"
           },
           "named": false,
           "value": "require"
         },
         {
-          "type": "SYMBOL",
-          "name": "_expression"
+          "type": "FIELD",
+          "name": "require_path",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_expression"
+          }
         }
       ]
     },
@@ -9201,15 +9113,18 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "require_once",
-            "flags": "i"
+            "value": "require_once"
           },
           "named": false,
           "value": "require_once"
         },
         {
-          "type": "SYMBOL",
-          "name": "_expression"
+          "type": "FIELD",
+          "name": "require_path",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_expression"
+          }
         }
       ]
     },
@@ -9232,8 +9147,7 @@
           "type": "ALIAS",
           "content": {
             "type": "PATTERN",
-            "value": "static",
-            "flags": "i"
+            "value": "static"
           },
           "named": false,
           "value": "static"
@@ -9460,11 +9374,6 @@
     "_class_type_designator",
     "_variable_name"
   ],
-  "supertypes": [
-    "_statement",
-    "_expression",
-    "_primary_expression",
-    "_type",
-    "_literal"
-  ]
+  "supertypes": []
 }
+

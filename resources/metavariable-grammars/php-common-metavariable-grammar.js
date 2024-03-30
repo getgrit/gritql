@@ -67,13 +67,13 @@ module.exports = function defineGrammar(dialect) {
       $.sentinel_error, // Unused token used to indicate error recovery mode
     ],
 
-    supertypes: $ => [
-      $._statement,
-      $._expression,
-      $._primary_expression,
-      $._type,
-      $._literal,
-    ],
+    // supertypes: $ => [
+    //   $._statement,
+    //   $._expression,
+    //   $._primary_expression,
+    //   $._type,
+    //   $._literal,
+    // ],
 
     word: $ => $.name,
 
@@ -889,7 +889,7 @@ module.exports = function defineGrammar(dialect) {
       ),
 
       expression_statement: $ => seq(
-        $._expression,
+        field('expression', $._expression),
         $._semicolon,
       ),
 
@@ -1175,7 +1175,7 @@ module.exports = function defineGrammar(dialect) {
         '(',
         choice(
           seq(
-            commaSep($.argument),
+            field('argument', commaSep($.argument)),
             optional(','),
           ),
           $.variadic_placeholder,
@@ -1533,22 +1533,22 @@ module.exports = function defineGrammar(dialect) {
 
       include_expression: $ => seq(
         keyword('include'),
-        $._expression,
+        field('include_path', $._expression),
       ),
 
       include_once_expression: $ => seq(
         keyword('include_once'),
-        $._expression,
+        field('include_path', $._expression),
       ),
 
       require_expression: $ => seq(
         keyword('require'),
-        $._expression,
+        field('require_path', $._expression),
       ),
 
       require_once_expression: $ => seq(
         keyword('require_once'),
-        $._expression,
+        field('require_path', $._expression),
       ),
 
       // Note that PHP officially only supports the following character regex

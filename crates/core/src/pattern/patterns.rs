@@ -483,7 +483,7 @@ impl Pattern {
             }
             if node_types[sort as usize].is_empty() {
                 let content = node.utf8_text(text)?;
-                if (node.named_child_count() == 0 || node.named_child_count() == 1)
+                if (node.named_child_count() == 0)
                     && lang.replaced_metavariable_regex().is_match(&content)
                 {
                     let regex = implicit_metavariable_regex(
