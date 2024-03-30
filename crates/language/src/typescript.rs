@@ -11,6 +11,7 @@ static NODE_TYPES_STRING: &str =
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static SKIP_SNIPPET_COMPILATION_SORTS: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
+static IGNORE_EMPTY_SNIPPET_SORTS: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
 static STATEMENT_SORTS: OnceLock<Vec<SortId>> = OnceLock::new();
 
 #[cfg(not(feature = "builtin-parser"))]
@@ -32,6 +33,7 @@ pub struct TypeScript {
     statement_sorts: &'static [SortId],
     language: &'static TSLanguage,
     skip_snippet_compilation_sorts: &'static Vec<(SortId, FieldId)>,
+    ignore_empty_snippet_sorts: &'static Vec<(SortId, FieldId)>,
 }
 
 impl TypeScript {
@@ -40,6 +42,30 @@ impl TypeScript {
         let node_types = NODE_TYPES.get_or_init(|| fields_for_nodes(language, NODE_TYPES_STRING));
         let metavariable_sort = language.id_for_node_kind("grit_metavariable", true);
         let comment_sort = language.id_for_node_kind("comment", true);
+        let ignore_empty_snippet_sorts = IGNORE_EMPTY_SNIPPET_SORTS.get_or_init(|| {
+            vec![
+                (
+                    language.id_for_node_kind("call_expression", true),
+                    language.field_id_for_name("type_arguments").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("function", true),
+                    language.field_id_for_name("return_type").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("function", true),
+                    language.field_id_for_name("return_type").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("function", true),
+                    language.field_id_for_name("async").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("arrow_function", true),
+                    language.field_id_for_name("async").unwrap(),
+                ),
+            ]
+        });
         let skip_snippet_compilation_sorts = SKIP_SNIPPET_COMPILATION_SORTS.get_or_init(|| {
             vec![
                 (
@@ -106,26 +132,6 @@ impl TypeScript {
                     language.id_for_node_kind("function_signature", true),
                     language.field_id_for_name("parenthesis").unwrap(),
                 ),
-                (
-                    language.id_for_node_kind("call_expression", true),
-                    language.field_id_for_name("type_arguments").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("function", true),
-                    language.field_id_for_name("return_type").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("function", true),
-                    language.field_id_for_name("return_type").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("function", true),
-                    language.field_id_for_name("async").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("arrow_function", true),
-                    language.field_id_for_name("async").unwrap(),
-                )
             ]
         });
 
@@ -138,6 +144,7 @@ impl TypeScript {
             statement_sorts,
             language,
             skip_snippet_compilation_sorts,
+            ignore_empty_snippet_sorts,
         }
     }
     pub(crate) fn is_initialized() -> bool {
@@ -152,6 +159,12 @@ impl Language for TypeScript {
 
     fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
         self.skip_snippet_compilation_sorts
+            .iter()
+            .any(|(s, f)| *s == sort_id && *f == field_id)
+    }
+
+    fn ignore_empty_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
+        self.ignore_empty_snippet_sorts
             .iter()
             .any(|(s, f)| *s == sort_id && *f == field_id)
     }

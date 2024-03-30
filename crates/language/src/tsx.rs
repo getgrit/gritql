@@ -12,6 +12,7 @@ static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/tsx
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static SKIP_SNIPPET_COMPILATION_SORTS: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
+static IGNORE_EMPTY_SNIPPET_SORTS: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
 static STATEMENT_SORTS: OnceLock<Vec<SortId>> = OnceLock::new();
 
 #[cfg(not(feature = "builtin-parser"))]
@@ -33,6 +34,7 @@ pub struct Tsx {
     statement_sorts: &'static [SortId],
     language: &'static TSLanguage,
     skip_snippet_compilation_sorts: &'static Vec<(SortId, FieldId)>,
+    ignore_empty_snippet_sorts: &'static Vec<(SortId, FieldId)>,
 }
 
 impl Tsx {
@@ -107,6 +109,10 @@ impl Tsx {
                     language.id_for_node_kind("function_signature", true),
                     language.field_id_for_name("parenthesis").unwrap(),
                 ),
+            ]
+        });
+        let ignore_empty_snippet_sorts = IGNORE_EMPTY_SNIPPET_SORTS.get_or_init(|| {
+            vec![
                 (
                     language.id_for_node_kind("call_expression", true),
                     language.field_id_for_name("type_arguments").unwrap(),
@@ -116,7 +122,7 @@ impl Tsx {
                     language.field_id_for_name("return_type").unwrap(),
                 ),
                 (
-                    language.id_for_node_kind("arrow_function", true),
+                    language.id_for_node_kind("function", true),
                     language.field_id_for_name("return_type").unwrap(),
                 ),
                 (
@@ -126,7 +132,7 @@ impl Tsx {
                 (
                     language.id_for_node_kind("arrow_function", true),
                     language.field_id_for_name("async").unwrap(),
-                )
+                ),
             ]
         });
         let statement_sorts = STATEMENT_SORTS.get_or_init(|| jslike_get_statement_sorts(language));
@@ -138,6 +144,7 @@ impl Tsx {
             statement_sorts,
             language,
             skip_snippet_compilation_sorts,
+            ignore_empty_snippet_sorts,
         }
     }
     pub(crate) fn is_initialized() -> bool {
@@ -152,6 +159,12 @@ impl Language for Tsx {
 
     fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
         self.skip_snippet_compilation_sorts
+            .iter()
+            .any(|(s, f)| *s == sort_id && *f == field_id)
+    }
+
+    fn ignore_empty_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
+        self.ignore_empty_snippet_sorts
             .iter()
             .any(|(s, f)| *s == sort_id && *f == field_id)
     }
