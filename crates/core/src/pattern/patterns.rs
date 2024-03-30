@@ -515,6 +515,8 @@ impl Pattern {
                     // by default, but we want to be able to manually check
                     // for parenthesis. see react-to-hooks for an example
                     !lang.skip_snippet_compilation_of_field(sort, field.id())
+                        && (node.child_by_field_id(field.id()).is_some()
+                            || !lang.ignore_empty_field(sort, field.id()))
                 })
                 .map(|field| {
                     let field_id = field.id();

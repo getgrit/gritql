@@ -64,6 +64,10 @@ impl TypeScript {
                     language.id_for_node_kind("arrow_function", true),
                     language.field_id_for_name("async").unwrap(),
                 ),
+                (
+                    language.id_for_node_kind("arrow_function", true),
+                    language.field_id_for_name("return_type").unwrap(),
+                ),
             ]
         });
         let skip_snippet_compilation_sorts = SKIP_SNIPPET_COMPILATION_SORTS.get_or_init(|| {

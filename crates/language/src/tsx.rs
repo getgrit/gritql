@@ -133,6 +133,10 @@ impl Tsx {
                     language.id_for_node_kind("arrow_function", true),
                     language.field_id_for_name("async").unwrap(),
                 ),
+                (
+                    language.id_for_node_kind("arrow_function", true),
+                    language.field_id_for_name("return_type").unwrap(),
+                ),
             ]
         });
         let statement_sorts = STATEMENT_SORTS.get_or_init(|| jslike_get_statement_sorts(language));
