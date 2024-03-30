@@ -1,23 +1,26 @@
 [package]
 name = "tree-sitter-php-only"
-description = "PhpOnly grammar for tree-sitter"
+description = "php-only grammar for the tree-sitter parsing library"
 version = "0.0.1"
-license = "MIT"
-readme = "README.md"
-keywords = ["incremental", "parsing", "tree-sitter", "php-only"]
+keywords = ["incremental", "parsing", "php-only"]
 categories = ["parsing", "text-editors"]
 repository = "https://github.com/tree-sitter/tree-sitter-php-only"
-edition = "2021"
-autoexamples = false
+edition = "2018"
+license = "MIT"
 
 build = "bindings/rust/build.rs"
-include = ["bindings/rust/*", "grammar.js", "queries/*", "src/*"]
+include = [
+  "bindings/rust/*",
+  "grammar.js",
+  "queries/*",
+  "src/*",
+]
 
 [lib]
 path = "bindings/rust/lib.rs"
 
 [dependencies]
-tree-sitter = ">=0.22.2"
+tree-sitter = "~0.20.10"
 
 [build-dependencies]
-cc = "1.0.87"
+cc = "1.0"

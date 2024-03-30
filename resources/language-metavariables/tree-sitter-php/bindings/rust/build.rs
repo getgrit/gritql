@@ -6,7 +6,7 @@ fn main() {
     let mut c_config = cc::Build::new();
     c_config.include(&php_dir);
     c_config
-        .flag_if_supported("-Wno-unused-parameter")
+        .flag_if_supported("-w")
         .flag_if_supported("-Wno-unused-but-set-variable")
         .flag_if_supported("-Wno-trigraphs");
 

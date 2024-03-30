@@ -1,20 +1,37 @@
-#include <napi.h>
+#include "tree_sitter/parser.h"
+#include <node.h>
+#include "nan.h"
 
-typedef struct TSLanguage TSLanguage;
+using namespace v8;
 
-extern "C" TSLanguage *tree_sitter_php();
+extern "C" TSLanguage * tree_sitter_php();
+extern "C" TSLanguage * tree_sitter_php_only();
 
-// "tree-sitter", "language" hashed with BLAKE2
-const napi_type_tag LANGUAGE_TYPE_TAG = {
-  0x8AF2E5212AD58ABF, 0xD5006CAD83ABBA16
-};
+namespace {
 
-Napi::Object Init(Napi::Env env, Napi::Object exports) {
-    exports["name"] = Napi::String::New(env, "php");
-    auto language = Napi::External<TSLanguage>::New(env, tree_sitter_php());
-    language.TypeTag(&LANGUAGE_TYPE_TAG);
-    exports["language"] = language;
-    return exports;
+NAN_METHOD(New) {}
+
+void Init(Local<Object> exports, Local<Object> module) {
+  Local<FunctionTemplate> php_tpl = Nan::New<FunctionTemplate>(New);
+  php_tpl->SetClassName(Nan::New("Language").ToLocalChecked());
+  php_tpl->InstanceTemplate()->SetInternalFieldCount(1);
+  Local<Function> php_constructor = Nan::GetFunction(php_tpl).ToLocalChecked();
+  Local<Object> php_instance = php_constructor->NewInstance(Nan::GetCurrentContext()).ToLocalChecked();
+  Nan::SetInternalFieldPointer(php_instance, 0, tree_sitter_php());
+  Nan::Set(php_instance, Nan::New("name").ToLocalChecked(), Nan::New("php").ToLocalChecked());
+
+  Local<FunctionTemplate> php_only_tpl = Nan::New<FunctionTemplate>(New);
+  php_only_tpl->SetClassName(Nan::New("Language").ToLocalChecked());
+  php_only_tpl->InstanceTemplate()->SetInternalFieldCount(1);
+  Local<Function> php_only_constructor = Nan::GetFunction(php_only_tpl).ToLocalChecked();
+  Local<Object> php_only_instance = php_only_constructor->NewInstance(Nan::GetCurrentContext()).ToLocalChecked();
+  Nan::SetInternalFieldPointer(php_only_instance, 0, tree_sitter_php_only());
+  Nan::Set(php_only_instance, Nan::New("name").ToLocalChecked(), Nan::New("php_only").ToLocalChecked());
+
+  Nan::Set(exports, Nan::New("php").ToLocalChecked(), php_instance);
+  Nan::Set(exports, Nan::New("php_only").ToLocalChecked(), php_only_instance);
 }
 
-NODE_API_MODULE(tree_sitter_php_binding, Init)
+NODE_MODULE(tree_sitter_php_binding, Init)
+
+}  // namespace
