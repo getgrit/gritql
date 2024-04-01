@@ -100,6 +100,7 @@ impl DynamicSnippet {
         let source_string = raw_source
             .replace("\\n", "\n")
             .replace("\\$", "$")
+            .replace("\\^", "^")
             .replace("\\`", "`")
             .replace("\\\"", "\"")
             .replace("\\\\", "\\");

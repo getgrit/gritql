@@ -11,6 +11,7 @@ use crate::{
     language::{Field, FieldId, Language, SortId},
     markdown_block::MarkdownBlock,
     markdown_inline::MarkdownInline,
+    php::Php,
     python::Python,
     ruby::Ruby,
     rust::Rust,
@@ -73,6 +74,7 @@ pub enum PatternLanguage {
     Sql,
     Vue,
     Toml,
+    Php,
     #[value(skip)]
     Universal,
 }
@@ -101,6 +103,7 @@ impl fmt::Display for PatternLanguage {
             PatternLanguage::Vue => write!(f, "vue"),
             PatternLanguage::Toml => write!(f, "toml"),
             PatternLanguage::Universal => write!(f, "universal"),
+            PatternLanguage::Php => write!(f, "php"),
         }
     }
 }
@@ -128,6 +131,7 @@ impl From<&TargetLanguage> for PatternLanguage {
             TargetLanguage::Sql(_) => PatternLanguage::Sql,
             TargetLanguage::Vue(_) => PatternLanguage::Vue,
             TargetLanguage::Toml(_) => PatternLanguage::Toml,
+            TargetLanguage::Php(_) => PatternLanguage::Php,
         }
     }
 }
@@ -155,6 +159,7 @@ impl PatternLanguage {
             PatternLanguage::Sql => Sql::is_initialized(),
             PatternLanguage::Vue => Vue::is_initialized(),
             PatternLanguage::Toml => Toml::is_initialized(),
+            PatternLanguage::Php => Php::is_initialized(),
             PatternLanguage::Universal => false,
         }
     }
@@ -220,6 +225,7 @@ impl PatternLanguage {
             "sql" => Some(Self::Sql),
             "vue" => Some(Self::Vue),
             "toml" => Some(Self::Toml),
+            "php" => Some(Self::Php),
             "universal" => Some(Self::Universal),
             _ => None,
         }
@@ -249,6 +255,7 @@ impl PatternLanguage {
             PatternLanguage::Sql => &["sql"],
             PatternLanguage::Vue => &["vue"],
             PatternLanguage::Toml => &["toml"],
+            PatternLanguage::Php => &["php", "phps", "phar", "phtml", "pht"],
             PatternLanguage::Universal => &[],
         }
     }
@@ -275,6 +282,7 @@ impl PatternLanguage {
             PatternLanguage::Sql => Some("sql"),
             PatternLanguage::Vue => Some("vue"),
             PatternLanguage::Toml => Some("toml"),
+            PatternLanguage::Php => Some("php"),
             PatternLanguage::Universal => None,
         }
     }
@@ -298,6 +306,7 @@ impl PatternLanguage {
             "yaml" | "yml" => Some(Self::Yaml),
             "sql" => Some(Self::Sql),
             "vue" => Some(Self::Vue),
+            "php" | "phps" | "phar" | "phtml" | "pht" => Some(Self::Php),
             _ => None,
         }
     }
@@ -336,6 +345,7 @@ impl PatternLanguage {
             PatternLanguage::Sql,
             PatternLanguage::Vue,
             PatternLanguage::Toml,
+            PatternLanguage::Php,
         ]
     }
 
@@ -370,6 +380,7 @@ impl PatternLanguage {
             PatternLanguage::Sql => Ok(TargetLanguage::Sql(Sql::new(Some(lang)))),
             PatternLanguage::Vue => Ok(TargetLanguage::Vue(Vue::new(Some(lang)))),
             PatternLanguage::Toml => Ok(TargetLanguage::Toml(Toml::new(Some(lang)))),
+            PatternLanguage::Php => Ok(TargetLanguage::Php(Php::new(Some(lang)))),
             PatternLanguage::Universal => Err("Cannot convert universal to TSLang".to_string()),
         }
     }
@@ -459,6 +470,13 @@ pub fn expand_paths(
                     PatternLanguage::Toml => {
                         file_types.select("toml");
                     }
+                    PatternLanguage::Php => {
+                        file_types.select("php");
+                        file_types.select("phtml");
+                        file_types.select("phar");
+                        file_types.select("pht");
+                        file_types.select("phps");
+                    }
                     PatternLanguage::Universal => {}
                 }
             }
@@ -506,6 +524,7 @@ pub enum TargetLanguage {
     Vue(Vue),
     Toml(Toml),
     Sql(Sql),
+    Php(Php),
 }
 
 // when built to wasm the language must be initialized with a parser at least once
@@ -538,6 +557,7 @@ impl TryFrom<PatternLanguage> for TargetLanguage {
             PatternLanguage::Sql => Ok(TargetLanguage::Sql(Sql::new(None))),
             PatternLanguage::Vue => Ok(TargetLanguage::Vue(Vue::new(None))),
             PatternLanguage::Toml => Ok(TargetLanguage::Toml(Toml::new(None))),
+            PatternLanguage::Php => Ok(TargetLanguage::Php(Php::new(None))),
             PatternLanguage::Universal => {
                 Err("cannot instantiate Universal as a target language".to_string())
             }
@@ -568,6 +588,7 @@ impl fmt::Display for TargetLanguage {
             TargetLanguage::Sql(_) => write!(f, "sql"),
             TargetLanguage::Vue(_) => write!(f, "vue"),
             TargetLanguage::Toml(_) => write!(f, "toml"),
+            TargetLanguage::Php(_) => write!(f, "php"),
         }
     }
 }
@@ -611,6 +632,7 @@ impl TargetLanguage {
             TargetLanguage::Sql(_) => PatternLanguage::Sql,
             TargetLanguage::Vue(_) => PatternLanguage::Vue,
             TargetLanguage::Toml(_) => PatternLanguage::Toml,
+            TargetLanguage::Php(_) => PatternLanguage::Php,
         }
     }
 
@@ -636,6 +658,7 @@ impl TargetLanguage {
             TargetLanguage::Sql(_) => false,
             TargetLanguage::Vue(_) => false,
             TargetLanguage::Toml(_) => false,
+            TargetLanguage::Php(_) => false,
         }
     }
 
@@ -661,6 +684,7 @@ impl TargetLanguage {
             | TargetLanguage::Rust(_)
             | TargetLanguage::Solidity(_)
             | TargetLanguage::Tsx(_)
+            | TargetLanguage::Php(_)
             | TargetLanguage::TypeScript(_) => format!("// {}\n", text),
             TargetLanguage::Python(_)
             | TargetLanguage::Hcl(_)
