@@ -20,7 +20,23 @@ A high level overview of tools you need to have installed:
 * Yarn package manager. You'll need [`yarn`](https://classic.yarnpkg.com/en/docs/install) (classic). Install v1.22.19 with `npm install --global yarn`.
 * Tree-Sitter CLI: provides [`tree-sitter`](https://github.com/tree-sitter/tree-sitter/tree/master/cli) binary for testing grammars. Install v0.22.2 with `npm install --global tree-sitter-cli`.
 
+## Building the Code
 
+Use `git` to clone this repository into a location of your choice. 
+```bash
+git clone https://github.com/getgrit/gritql.git
+```
+
+Change into the cloned repository and make sure all submodules are correctly set up, including any nested submodules:
+```bash
+cd gritql
+git submodule update --init --recursive
+```
+
+Before making any changes to the code, make sure you can run the tests and everything is initially passing:
+```bash
+cargo test --workspace
+```
 
 ## Feature Flags
 
