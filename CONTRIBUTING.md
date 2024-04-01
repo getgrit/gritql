@@ -13,12 +13,14 @@ Note that this codebase isn't yet extensively documented. If you get stuck, plea
 
 A high level overview of tools you need to have installed:
 
-* Rust compiler. You'll need [`rustc`](https://rustup.rs/) v1.74 or newer.
+* Rust toolchain: for compiling the codebase. You'll need [`rustc`](https://rustup.rs/) v1.74 or newer.
+  * In order to create WASM builds, you should run `rustup target install wasm32-unknown-unknown`.
 * C/C++ compiler. macOS: [Xcode Command Line Tools](https://download.developer.apple.com/Developer_Tools/Command_Line_Tools_for_Xcode_15.3/Command_Line_Tools_for_Xcode_15.3.dmg) via `xcode-select --install`, Linux: [gcc](https://learnubuntu.com/install-gcc/), Windows: [Microsoft Visual C++](https://visualstudio.microsoft.com/vs/features/cplusplus/).
 * Emscripten: a C/C++ compiler toolchain for WASM. Install v3.1.56 with [`emsdk`](https://emscripten.org/docs/getting_started/downloads.html).
-* Node.js runtime. You'll need [`node`](https://nodejs.org/en/download) v18.5.0 or newer.
+* Node.js runtime: `node`, `npm`, `npx` are used to generate parsers from `grammar.js` files. You'll need [`node`](https://nodejs.org/en/download) v18.5.0 or newer.
 * Yarn package manager. You'll need [`yarn`](https://classic.yarnpkg.com/en/docs/install) (classic). Install v1.22.19 with `npm install --global yarn`.
 * Tree-Sitter CLI: provides [`tree-sitter`](https://github.com/tree-sitter/tree-sitter/tree/master/cli) binary for testing grammars. Install v0.22.2 with `npm install --global tree-sitter-cli`.
+* Terraform CLI. Install [`terraform`](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) with `brew tap hashicorp/tap && brew install hashicorp/tap/terraform`. 
 
 ## Building the Code
 
@@ -98,12 +100,3 @@ These steps are done in our cloud environment and are not necessary for contribu
 - There are also `exhaustive` runtime checks that error if a switch case doesn’t handle a language, like `makeSingleLineComment`. Search for `exhaustive(lang` and fill those out too.
 - Regenerate both DB/prisma types to add it to the DB schema and GraphQL types.
 - Add the language to `language-selector.tsx`. Pick an icon from [https://react-icons.github.io](https://react-icons.github.io/), usually from the Simple Icons category.
-
-## Development Tools
-
-Make sure you have the following tools installed to guarantee everything works:
-
-- Rust Toolchain
-  - In order to create WASM builds, you should run `rustup target install wasm32-unknown-unknown`
-- `terraform` CLI. See https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
-- `npx`. Install with Node.js: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
