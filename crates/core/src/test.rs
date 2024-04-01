@@ -13038,32 +13038,11 @@ fn declaration_test() {
 engine marzano(0.1)
 language js
 
-// pattern exp_returns_moment($exp) {
-//   `$fn()` as $exp where {
-//     $fn <: or {
-//       `moment`,
-//       `$_.duration`,
-//       `$_.clone`,
-//       `$_.add`,
-//       `$_.subtract`,
-//       `$_.startOf`,
-//       `$_.endOf`,
-//       `$m.$min_or_max` where {
-//         !$m <: `Math`,
-//         $min_or_max <: or { `min`, `max` }
-//       },
-//     } 
-//   }
-// }
-
-`$varName = $moment` where {
-  $moment <: `$fn()`,
-//   $varName <: within `$declaration` where { $declaration <: `const $declarators` },
-}
+`$event.request.$prop`
 "#
         .to_owned(),
         source: r#"
-            |const then = new Date("2001-01-02");
+            |const upperLimit = request.request.intent.slots.UpperLimit.value || 100;
             |"#
         .trim_margin()
         .unwrap(),
