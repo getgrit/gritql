@@ -139,6 +139,22 @@ impl Tsx {
                     language.field_id_for_name("async").unwrap(),
                 ),
                 (
+                    language.id_for_node_kind("generator_function", true),
+                    language.field_id_for_name("async").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("generator_function_declaration", true),
+                    language.field_id_for_name("async").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("method_definition", true),
+                    language.field_id_for_name("async").unwrap(),
+                ),
+                (
+                    language.id_for_node_kind("function_declaration", true),
+                    language.field_id_for_name("async").unwrap(),
+                ),
+                (
                     language.id_for_node_kind("import_statement", true),
                     language.field_id_for_name("import").unwrap(),
                 ),
