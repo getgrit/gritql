@@ -12835,6 +12835,245 @@ fn go_package_type() {
 }
 
 #[test]
+fn php_no_match() {
+    run_test_no_match({
+        TestArg {
+            pattern: r#"
+                |language php
+                |
+                |`TEST`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |echo "hello world"
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+
+#[test]
+fn php_simple_match() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`echo ^x;` => `^x + ^x;`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |echo "duplicate this message";
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |"duplicate this message" + "duplicate this message";
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_until() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |contains bubble `foo(^x)` => `bar(^x)` until `foo(^_)`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |   foo(another(foo(x)));
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |   bar(another(foo(x)));
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_quote_snippet_rewrite() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |php"foo" => php"bar"
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"$a = $foo;"#.to_owned(),
+            expected: r#"$a = $bar;"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_if_statement() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`$a = 12;` => `$b=24;`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |#
+                |if (!$foo = $bar) {
+                |   $a = 12;
+                |}
+                |"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+                |#
+                |if (!$foo = $bar) {
+                |   $b=24;
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+#[test]
+fn php_delete_include() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`include ^package;` => .
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |include 'test.php';
+                |$test = "";
+                |"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+                |
+                |$test = "";
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+#[test]
+fn php_function_modifier() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`class ^_ { ^mod function ^name(){ ^_ } }` where {
+                |   ^mod => `private`,
+                |   ^name => `modified`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+            |class Log {
+            |   public function printHello()
+            |   {
+            |       echo $this->public;
+            |       echo $this->protected;
+            |       echo $this->private;
+            |   }
+            |}
+            |"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+            |class Log {
+            |   private function modified()
+            |   {
+            |       echo $this->public;
+            |       echo $this->protected;
+            |       echo $this->private;
+            |   }
+            |}
+            |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+#[test]
+fn php_rewrite_arrow_function() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`fn(^a) => ^_` => `fn(^a) => $x * $x`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: "$fn1 = fn($x) => $x + $y;"
+            .trim_margin().
+            unwrap(),
+            expected: "$fn1 = fn($x) => $x * $x;"
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+#[test]
+fn php_array() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`^a=>^_` => `^a=>24`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"$fn1 = array("a"=>1, "b"=>2, "c"=>3);"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"$fn1 = array("a"=>24, "b"=>24, "c"=>24);"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+
+#[test]
 fn css_property_value() {
     run_test_match(TestArg {
         pattern: r#"
@@ -12852,6 +13091,7 @@ fn css_property_value() {
             |"#
         .trim_margin()
         .unwrap(),
+
     })
     .unwrap();
 }

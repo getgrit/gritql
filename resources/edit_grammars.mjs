@@ -57,7 +57,8 @@ const allLanguages = [
   'typescript',
   'yaml',
   'toml',
-  'vue'
+  'vue',
+  'php'
 ];
 
 // For these languages, copyMvGrammar is optional
@@ -175,7 +176,11 @@ async function buildLanguage(language) {
   //Force cargo.toml to use the correct version of tree-sitter
   await execPromise(`for cargo in ${tsLangDir}/[Cc]argo.toml; do
     if [ -f "$cargo" ]; then
-      sed -i '' -e 's/tree-sitter = ".*"/tree-sitter = "~0.20"/g' "$cargo";
+      if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' -e 's/tree-sitter = ".*"/tree-sitter = "~0.20"/g' "$cargo";
+      else
+        sed -i -e 's/tree-sitter = ".*"/tree-sitter = "~0.20"/g' "$cargo";
+      fi
     fi;
   done`);
 
@@ -281,11 +286,40 @@ async function buildLanguage(language) {
     );
   } else if (language === 'toml') {
     await buildSimpleLanguage(log, language);
-    await fs.copyFile(
-      `${METAVARIABLE_GRAMMARS}/c_build.rs`,
-      `${tsLangDir}/bindings/rust/build.rs`,
+  } else if (language === 'php') {
+    //php has sub-grammars
+    log(`Copying  files`);  
+    await Promise.all([
+      await fs.copyFile(
+        `${METAVARIABLE_GRAMMARS}/${language}-common-metavariable-grammar.js`,
+        `tree-sitter-${language}/common/define-grammar.js`,
+      ),
+      // copyMvGrammar('php_only', 'php/php_only'),
+      // copyMvGrammar('php', 'php/php'),
+    ]);
+
+    log(`Running tree-sitter generate`);
+    await Promise.all([
+      treeSitterGenerate('php/php_only'),
+      treeSitterGenerate('php/php'),
+    ]);
+
+    log(`Copying output node types`);
+    await Promise.all([
+      copyNodeTypes('php/php_only', 'php_only'),
+      copyNodeTypes('php/php', `php`),
+    ]);
+
+    log(`Copying wasm parser`);
+    await fs.rename(
+      `tree-sitter-php/php_only/tree-sitter-php_only.wasm`,
+      `../../crates/wasm-bindings/wasm_parsers/tree-sitter-php_only.wasm`,
     );
-  } else {
+    await fs.rename(
+      `tree-sitter-php/php/tree-sitter-php.wasm`,
+      `../../crates/wasm-bindings/wasm_parsers/tree-sitter-php.wasm`,
+    );
+  }else {
     await buildSimpleLanguage(log, language);
   }
 

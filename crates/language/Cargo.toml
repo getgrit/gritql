@@ -27,6 +27,7 @@ tree-sitter-ruby = { path = "../../resources/language-metavariables/tree-sitter-
 tree-sitter-sql = { path = "../../resources/language-metavariables/tree-sitter-sql", optional = true }
 tree-sitter-vue = { path = "../../resources/language-metavariables/tree-sitter-vue", optional = true }
 tree-sitter-toml = { path = "../../resources/language-metavariables/tree-sitter-toml", optional = true }
+tree-sitter-php = { path = "../../resources/language-metavariables/tree-sitter-php", optional = true }
 serde = { version = "1.0.164", features = ["derive"] }
 serde_json = { version = "1.0.91", features = ["preserve_order"] }
 marzano-util = { path = "../util" }
@@ -65,5 +66,6 @@ builtin-parser = [
     "tree-sitter-sql",
     "tree-sitter-vue",
     "tree-sitter-toml",
+    "tree-sitter-php",
 ]
 finder = ["ignore"]

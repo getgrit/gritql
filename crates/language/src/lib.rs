@@ -12,6 +12,7 @@ pub mod language;
 pub mod markdown_block;
 pub mod markdown_inline;
 pub mod parent_traverse;
+pub mod php;
 pub mod python;
 pub mod ruby;
 pub mod rust;

@@ -34,12 +34,13 @@ use super::{
     r#where::Where, rewrite::Rewrite, some::Some, string_constant::StringConstant,
     variable::Variable, within::Within, Node, State,
 };
+use marzano_util::node_with_source::NodeWithSource;
 use crate::context::Context;
 use crate::pattern::register_variable;
 use crate::pattern::string_constant::AstLeafNode;
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
-use grit_util::{traverse, Order};
+use grit_util::{traverse, Order, AstNode};
 use marzano_language::language::{Field, GritMetaValue};
 use marzano_language::{language::Language, language::SnippetNode};
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -482,7 +483,7 @@ impl Pattern {
             }
             if node_types[sort as usize].is_empty() {
                 let content = node.utf8_text(text)?;
-                if node.named_child_count() == 0
+                if (node.named_child_count() == 0)
                     && lang.replaced_metavariable_regex().is_match(&content)
                 {
                     let regex = implicit_metavariable_regex(
@@ -539,14 +540,18 @@ impl Pattern {
                             )
                         })
                         .collect::<Result<Vec<Pattern>>>()?;
-                    // assumes that non multiple field has exactly one element
+
                     // TODO check if Pattern is Dots, and error at compile time,
                     // dots only makes sense in a list.
-                    if !field.multiple() {
-                        let lang = lang.get_ts_language();
-                        let field_name = lang.field_name_for_id(field_id).unwrap();
-                        let message = format!("field {} was empty!", field_name);
-                        return Ok((field_id, false, nodes_list.pop().expect(&message)));
+                    if !field.multiple() {    
+                        if nodes_list.len() == 1 {
+                            return Ok((field_id, false, nodes_list.pop().unwrap()));
+                        }
+                        let field_node = node.child_by_field_id(field_id).unwrap();
+                        let field_node_with_source = NodeWithSource::new(field_node.clone(), str::from_utf8(text).unwrap());
+                        return Ok((field_id, false,  Pattern::AstLeafNode(AstLeafNode::new(
+                            field_node.kind_id(), field_node_with_source.text(), lang,
+                        )?)));
                     }
                     if nodes_list.len() == 1
                         && matches!(
