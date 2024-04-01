@@ -162,6 +162,10 @@ impl Tsx {
                     language.id_for_node_kind("import_statement", true),
                     language.field_id_for_name("type").unwrap(),
                 ),
+                (
+                    language.id_for_node_kind("public_field_definition", true),
+                    language.field_id_for_name("static").unwrap(),
+                ),
             ]
         });
 

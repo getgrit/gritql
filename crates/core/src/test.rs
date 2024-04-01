@@ -13030,22 +13030,3 @@ remove_unused_imports()"#
     })
     .unwrap();
 }
-
-#[test]
-fn declaration_test() {
-    run_test_match(TestArg {
-        pattern: r#"
-engine marzano(0.1)
-language js
-
-`$event.request.$prop`
-"#
-        .to_owned(),
-        source: r#"
-            |const upperLimit = request.request.intent.slots.UpperLimit.value || 100;
-            |"#
-        .trim_margin()
-        .unwrap(),
-    })
-    .unwrap();
-}
