@@ -9,6 +9,19 @@ We welcome contributions in the form of pull requests and issues.
 
 Note that this codebase isn't yet extensively documented. If you get stuck, please ask for help [on Discord](https://docs.grit.io/discord).
 
+## Development Setup
+
+A high level overview of tools you need to have installed:
+
+* Rust compiler. You'll need [`rustc`](https://rustup.rs/) v1.74 or newer.
+* C/C++ compiler. macOS: [Xcode Command Line Tools](https://download.developer.apple.com/Developer_Tools/Command_Line_Tools_for_Xcode_15.3/Command_Line_Tools_for_Xcode_15.3.dmg) via `xcode-select --install`, Linux: [gcc](https://learnubuntu.com/install-gcc/), Windows: [Microsoft Visual C++](https://visualstudio.microsoft.com/vs/features/cplusplus/).
+* Emscripten: a C/C++ compiler toolchain for WASM. Install v3.1.56 with [`emsdk`](https://emscripten.org/docs/getting_started/downloads.html).
+* Node.js runtime. You'll need [`node`](https://nodejs.org/en/download) v18.5.0 or newer.
+* Yarn package manager. You'll need [`yarn`](https://classic.yarnpkg.com/en/docs/install) (classic). Install v1.22.19 with `npm install --global yarn`.
+* Tree-Sitter CLI: provides [`tree-sitter`](https://github.com/tree-sitter/tree-sitter/tree/master/cli) binary for testing grammars. Install v0.22.2 with `npm install --global tree-sitter-cli`.
+
+
+
 ## Feature Flags
 
 We use [feature flags](https://doc.rust-lang.org/cargo/reference/features.html) to control which parts of the codebase are compiled.
