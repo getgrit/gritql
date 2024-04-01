@@ -11,10 +11,10 @@ Note that this codebase isn't yet extensively documented. If you get stuck, plea
 
 ## Development Setup
 
-A high level overview of tools you need to have installed:
+A high-level overview of tools you need to have installed:
 
 * Rust toolchain: for compiling the codebase. You'll need [`rustc`](https://rustup.rs/) v1.74 or newer.
-  * In order to create WASM builds, you should run `rustup target install wasm32-unknown-unknown`.
+  * To create WASM builds, run `rustup target install wasm32-unknown-unknown`.
 * C/C++ compiler. macOS: [Xcode Command Line Tools](https://download.developer.apple.com/Developer_Tools/Command_Line_Tools_for_Xcode_15.3/Command_Line_Tools_for_Xcode_15.3.dmg) via `xcode-select --install`, Linux: [gcc](https://learnubuntu.com/install-gcc/), Windows: [Microsoft Visual C++](https://visualstudio.microsoft.com/vs/features/cplusplus/).
 * Emscripten: a C/C++ compiler toolchain for WASM. Install v3.1.56 with [`emsdk`](https://emscripten.org/docs/getting_started/downloads.html).
 * Node.js runtime: `node`, `npm`, `npx` are used to generate parsers from `grammar.js` files. You'll need [`node`](https://nodejs.org/en/download) v18.5.0 or newer.
