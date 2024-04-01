@@ -258,7 +258,7 @@ pub trait Language {
                 "..." => GritMetaValue::Dots,
                 _ => {
                     let mut s = s.to_owned();
-                    s.insert_str(0, GRIT_METAVARIABLE_PREFIX);
+                    s.insert_str(0, self.metavariable_prefix());
                     GritMetaValue::Variable(s)
                 }
             })
@@ -427,8 +427,7 @@ impl SnippetTree {
                 if snippet_root
                     .utf8_text(self.context.as_bytes())
                     .unwrap()
-                    .trim()
-                    != self.snippet.trim()
+                    .trim() != self.snippet.trim()
                 {
                     return None;
                 }

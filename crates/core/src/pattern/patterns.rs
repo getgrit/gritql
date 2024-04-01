@@ -39,11 +39,12 @@ use crate::pattern::register_variable;
 use crate::pattern::string_constant::AstLeafNode;
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
-use grit_util::{traverse, Order};
+use grit_util::{traverse, AstNode, Order};
 use marzano_language::language::{Field, GritMetaValue};
 use marzano_language::{language::Language, language::SnippetNode};
 use marzano_util::analysis_logs::AnalysisLogs;
 use marzano_util::cursor_wrapper::CursorWrapper;
+use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::position::{char_index_to_byte_index, Position, Range};
 use regex::Match;
 use std::collections::{BTreeMap, HashMap};
@@ -482,7 +483,7 @@ impl Pattern {
             }
             if node_types[sort as usize].is_empty() {
                 let content = node.utf8_text(text)?;
-                if node.named_child_count() == 0
+                if (node.named_child_count() == 0)
                     && lang.replaced_metavariable_regex().is_match(&content)
                 {
                     let regex = implicit_metavariable_regex(

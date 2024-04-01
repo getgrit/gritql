@@ -2252,25 +2252,9 @@
     "named": true,
     "fields": {
       "flavor": {
-        "multiple": true,
+        "multiple": false,
         "required": false,
         "types": [
-          {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
-          {
-            "type": ",",
-            "named": false
-          },
-          {
-            "type": ";",
-            "named": false
-          },
           {
             "type": "language_flavor",
             "named": true
@@ -14544,6 +14528,10 @@
     "named": false
   },
   {
+    "type": "php",
+    "named": false
+  },
+  {
     "type": "predicate ",
     "named": false
   },
@@ -14620,6 +14608,10 @@
     "named": true
   },
   {
+    "type": "toml",
+    "named": false
+  },
+  {
     "type": "top",
     "named": true
   },
@@ -14641,11 +14633,11 @@
   },
   {
     "type": "variable",
-    "named": false
+    "named": true
   },
   {
     "type": "variable",
-    "named": true
+    "named": false
   },
   {
     "type": "where",
