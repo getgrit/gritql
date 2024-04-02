@@ -36,8 +36,8 @@ pub fn parse_modified_ranges(diff_path: &PathBuf) -> Result<Vec<FileRange>> {
             results.push(FileRange {
                 file_path: current_file.clone(),
                 range: UtilRange::RangeWithoutByte(RangeWithoutByte {
-                    start: start_pos.clone(),
-                    end: end_pos.clone(),
+                    start: start_pos,
+                    end: end_pos,
                 }),
             });
         }
