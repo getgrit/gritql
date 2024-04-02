@@ -7,7 +7,7 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
-use crate::{context::Context, resolve};
+use crate::{binding::Binding, context::Context, resolve};
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use marzano_language::language::{FieldId, Language, SortId};
@@ -163,7 +163,12 @@ impl Matcher for ASTNode {
             return Ok(false);
         };
         if binding.is_list() {
-            return self.execute(&ResolvedPattern::from_node(node), init_state, context, logs);
+            return self.execute(
+                &ResolvedPattern::from_binding(Binding::from_node(node)),
+                init_state,
+                context,
+                logs,
+            );
         }
 
         let NodeWithSource { node, source } = node;
@@ -176,9 +181,10 @@ impl Matcher for ASTNode {
         if context.language().is_comment(self.sort) {
             let content = context.language().comment_text(&node, source);
             let content = resolve!(content);
+            let content = Binding::String(source, content.1);
 
             return self.args[0].2.execute(
-                &ResolvedPattern::from_range(content.1, source),
+                &ResolvedPattern::from_binding(content),
                 init_state,
                 context,
                 logs,

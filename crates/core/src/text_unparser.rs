@@ -1,4 +1,4 @@
-use crate::binding::linearize_binding;
+use crate::binding::{linearize_binding, Binding};
 use crate::pattern::resolved_pattern::CodeRange;
 use crate::pattern::state::FileRegistry;
 use crate::pattern::Effect;
@@ -46,8 +46,8 @@ pub(crate) fn apply_effects<'a>(
         logs,
     )?;
     for effect in effects.iter() {
-        if let Some(filename) = effect.binding.as_filename() {
-            if std::ptr::eq(filename, the_filename) {
+        if let Binding::FileName(c) = effect.binding {
+            if std::ptr::eq(c, the_filename) {
                 let snippet = effect
                     .pattern
                     .linearized_text(language, &effects, files, &mut memo, false, logs)?;
