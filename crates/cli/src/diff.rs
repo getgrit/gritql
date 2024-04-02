@@ -35,28 +35,3 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
 
     Ok(results)
 }
-
-/*
-pub fn parse_eslint_output(file_path: PathBuf) -> Result<Vec<FileRange>> {
-    let mut file = File::open(file_path)?;
-    let mut json = String::new();
-
-    // TODO(perf): skip reading the whole string into memory, parse the JSON iteratively
-    file.read_to_string(&mut json)?;
-
-    let output: Vec<EslintFile> = serde_json::from_str(&json)?;
-    let items = output
-        .into_iter()
-        .flat_map(|file| {
-            file.messages.into_iter().map(move |msg| {
-                let range: RangeWithoutByte = msg.into();
-                FileRange {
-                    file_path: file.file_path.clone(),
-                    range: range.into(),
-                }
-            })
-        })
-        .collect();
-    Ok(items)
-}
- */
