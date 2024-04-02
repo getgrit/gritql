@@ -1,15 +1,15 @@
-export const king = '9';
+export const king = "9";
 
 module.exports = {
-  queen: '8',
+  queen: "8",
 };
 
 export async function createTeam() {
-  console.log('cool');
+  console.log("cool");
 }
 
-export const addTeamToOrgSubscription = () => console.log('cool');
+export const addTeamToOrgSubscription = () => console.log("cool");
 
 module.exports = {};
 
-export const queen = '9';
+export const queen = "9";
