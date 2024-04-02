@@ -30,9 +30,9 @@ use std::collections::BTreeMap;
 use tokio::fs;
 
 use crate::{
-    analyze::par_apply_pattern, community::parse_eslint_output, error::GoodError,
-    flags::OutputFormat, messenger_variant::create_emitter, result_formatting::get_human_error,
-    updater::Updater,
+    analyze::par_apply_pattern, community::parse_eslint_output, diff::parse_modified_ranges,
+    error::GoodError, flags::OutputFormat, messenger_variant::create_emitter,
+    result_formatting::get_human_error, updater::Updater,
 };
 
 use marzano_messenger::{
@@ -197,6 +197,9 @@ pub(crate) async fn run_apply_pattern(
     let filter_range = if let Some(json_path) = arg.only_in_json.clone() {
         let json_ranges = flushable_unwrap!(emitter, parse_eslint_output(json_path));
         Some(json_ranges)
+    } else if let Some(diff_path) = arg.only_in_diff.clone() {
+        let diff_ranges = flushable_unwrap!(emitter, parse_modified_ranges(&diff_path));
+        Some(diff_ranges)
     } else {
         None
     };
