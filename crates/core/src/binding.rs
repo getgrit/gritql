@@ -80,16 +80,16 @@ pub enum Binding<'a> {
 impl PartialEq for Binding<'_> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Binding::Empty(_, _, _), Binding::Empty(_, _, _)) => true,
-            (Binding::Node(src1, n1), Binding::Node(src2, n2)) => {
+            (Self::Empty(_, _, _), Self::Empty(_, _, _)) => true,
+            (Self::Node(src1, n1), Self::Node(src2, n2)) => {
                 n1.utf8_text(src1.as_bytes()) == n2.utf8_text(src2.as_bytes())
             }
-            (Binding::String(src1, r1), Binding::String(src2, r2)) => {
+            (Self::String(src1, r1), Self::String(src2, r2)) => {
                 src1[r1.start_byte as usize..r1.end_byte as usize]
                     == src2[r2.start_byte as usize..r2.end_byte as usize]
             }
-            (Binding::List(_, n1, f1), Binding::List(_, n2, f2)) => n1 == n2 && f1 == f2,
-            (Binding::ConstantRef(c1), Binding::ConstantRef(c2)) => c1 == c2,
+            (Self::List(_, n1, f1), Self::List(_, n2, f2)) => n1 == n2 && f1 == f2,
+            (Self::ConstantRef(c1), Self::ConstantRef(c2)) => c1 == c2,
             _ => false,
         }
     }
@@ -307,8 +307,20 @@ pub(crate) fn linearize_binding<'a>(
 }
 
 impl<'a> Binding<'a> {
+    pub(crate) fn from_constant(constant: &'a Constant) -> Self {
+        Self::ConstantRef(constant)
+    }
+
     pub(crate) fn from_node(node: NodeWithSource<'a>) -> Self {
         Self::Node(node.source, node.node)
+    }
+
+    pub(crate) fn from_path(path: &'a Path) -> Self {
+        Self::FileName(path)
+    }
+
+    pub(crate) fn from_range(range: Range, source: &'a str) -> Self {
+        Self::String(source, range)
     }
 
     /// Returns the only node bound by this binding.
@@ -339,8 +351,8 @@ impl<'a> Binding<'a> {
 
     pub fn get_sexp(&self) -> Option<String> {
         match self {
-            Binding::Node(_, node) => Some(node.to_sexp().to_string()),
-            Binding::List(_, parent_node, field_id) => {
+            Self::Node(_, node) => Some(node.to_sexp().to_string()),
+            Self::List(_, parent_node, field_id) => {
                 let mut cursor = parent_node.walk();
                 let mut children = parent_node.children_by_field_id(*field_id, &mut cursor);
                 let mut result = String::new();
@@ -353,20 +365,17 @@ impl<'a> Binding<'a> {
                 }
                 Some(result)
             }
-            Binding::String(..)
-            | Binding::FileName(_)
-            | Binding::Empty(..)
-            | Binding::ConstantRef(_) => None,
+            Self::String(..) | Self::FileName(_) | Self::Empty(..) | Self::ConstantRef(_) => None,
         }
     }
 
     // todo implement for empty and empty list
     pub fn position(&self) -> Option<Range> {
         match self {
-            Binding::Empty(_, _, _) => None,
-            Binding::Node(_, node) => Some(Range::from(node.range())),
-            Binding::String(_, range) => Some(range.to_owned()),
-            Binding::List(_, parent_node, field_id) => {
+            Self::Empty(_, _, _) => None,
+            Self::Node(_, node) => Some(Range::from(node.range())),
+            Self::String(_, range) => Some(range.to_owned()),
+            Self::List(_, parent_node, field_id) => {
                 let mut cursor = parent_node.walk();
                 let mut children = parent_node.children_by_field_id(*field_id, &mut cursor);
 
@@ -408,8 +417,8 @@ impl<'a> Binding<'a> {
                     }
                 }
             }
-            Binding::FileName(_) => None,
-            Binding::ConstantRef(_) => None,
+            Self::FileName(_) => None,
+            Self::ConstantRef(_) => None,
         }
     }
 
@@ -423,8 +432,8 @@ impl<'a> Binding<'a> {
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<'a, str>> {
         let res: Result<Cow<'a, str>> = match self {
-            Binding::Empty(_, _, _) => Ok(Cow::Borrowed("")),
-            Binding::Node(source, node) => {
+            Self::Empty(_, _, _) => Ok(Cow::Borrowed("")),
+            Self::Node(source, node) => {
                 let range = CodeRange::from_node(source, node);
                 linearize_binding(
                     language,
@@ -440,11 +449,11 @@ impl<'a> Binding<'a> {
             }
             // can't linearize until we update source to point to the entire file
             // otherwise file file pointers won't match
-            Binding::String(s, r) => Ok(Cow::Owned(
+            Self::String(s, r) => Ok(Cow::Owned(
                 s[r.start_byte as usize..r.end_byte as usize].into(),
             )),
-            Binding::FileName(s) => Ok(Cow::Owned(s.to_string_lossy().into())),
-            Binding::List(source, _parent_node, _field_id) => {
+            Self::FileName(s) => Ok(Cow::Owned(s.to_string_lossy().into())),
+            Self::List(source, _parent_node, _field_id) => {
                 if let Some(pos) = self.position() {
                     let range = CodeRange::new(pos.start_byte, pos.end_byte, source);
                     linearize_binding(
@@ -462,37 +471,37 @@ impl<'a> Binding<'a> {
                     Ok("".into())
                 }
             }
-            Binding::ConstantRef(c) => Ok(Cow::Owned(c.to_string())),
+            Self::ConstantRef(c) => Ok(Cow::Owned(c.to_string())),
         };
         res
     }
 
     pub fn text(&self) -> String {
         match self {
-            Binding::Empty(_, _, _) => "".to_string(),
-            Binding::Node(source, node) => {
+            Self::Empty(_, _, _) => "".to_string(),
+            Self::Node(source, node) => {
                 NodeWithSource::new(node.clone(), source).text().to_string()
             }
-            Binding::String(s, r) => s[r.start_byte as usize..r.end_byte as usize].into(),
-            Binding::FileName(s) => s.to_string_lossy().into(),
-            Binding::List(source, _, _) => {
+            Self::String(s, r) => s[r.start_byte as usize..r.end_byte as usize].into(),
+            Self::FileName(s) => s.to_string_lossy().into(),
+            Self::List(source, _, _) => {
                 if let Some(pos) = self.position() {
                     source[pos.start_byte as usize..pos.end_byte as usize].to_string()
                 } else {
                     "".to_string()
                 }
             }
-            Binding::ConstantRef(c) => c.to_string(),
+            Self::ConstantRef(c) => c.to_string(),
         }
     }
 
     pub fn source(&self) -> Option<&'a str> {
         match self {
-            Binding::Empty(source, _, _) => Some(source),
-            Binding::Node(source, _) => Some(source),
-            Binding::String(source, _) => Some(source),
-            Binding::List(source, _, _) => Some(source),
-            Binding::FileName(..) | Binding::ConstantRef(..) => None,
+            Self::Empty(source, _, _) => Some(source),
+            Self::Node(source, _) => Some(source),
+            Self::String(source, _) => Some(source),
+            Self::List(source, _, _) => Some(source),
+            Self::FileName(..) | Self::ConstantRef(..) => None,
         }
     }
 

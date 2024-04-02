@@ -6,10 +6,9 @@ use super::{
     variable::{Variable, VariableSourceLocations},
     State,
 };
-use crate::{binding::Binding, context::Context};
+use crate::context::Context;
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
-use im::vector;
 use marzano_language::{language::Language, target_language::TargetLanguage};
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 use marzano_util::position::Range;
@@ -201,7 +200,7 @@ impl RegexPattern {
                             // have a Range<usize> for String bindings?
                             position.end_byte = position.start_byte + range.end as u32;
                             position.start_byte += range.start as u32;
-                            ResolvedPattern::Binding(vector![Binding::String(source, position)])
+                            ResolvedPattern::from_range(position, source)
                         } else {
                             ResolvedPattern::from_string(value.to_string())
                         }
