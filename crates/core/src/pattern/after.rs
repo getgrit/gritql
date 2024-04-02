@@ -5,12 +5,11 @@ use super::{
     variable::VariableSourceLocations,
     Node, State,
 };
-use crate::{binding::Binding, context::Context, resolve};
 use crate::{binding::Constant, errors::debug};
+use crate::{context::Context, resolve};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use grit_util::AstNode;
-use im::vector;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
 
@@ -61,7 +60,7 @@ impl After {
         };
 
         if let Some(next) = node.next_non_trivia_node() {
-            Ok(ResolvedPattern::Binding(vector![Binding::from_node(next)]))
+            Ok(ResolvedPattern::from_node(next))
         } else {
             debug(
                 logs,
