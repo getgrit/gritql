@@ -2,9 +2,9 @@ name: main
 
 on:
   push:
-    branches: [test-stdlib]
+    branches: [main]
   pull_request_target:
-    branches: [test-stdlib]
+    branches: [main]
 
 jobs:
   test-rust:
