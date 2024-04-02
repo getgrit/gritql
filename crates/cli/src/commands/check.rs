@@ -69,6 +69,12 @@ pub struct CheckArg {
     /// Output annotations for a GitHub actions workflow
     #[clap(long = "github-actions")]
     pub github_actions: bool,
+    #[clap(
+        long = "only-in-diff",
+        help = "Only check ranges that are inside the provided unified diff",
+        hide = true
+    )]
+    only_in_diff: Option<PathBuf>,
 }
 
 pub(crate) async fn run_check(
