@@ -99,3 +99,42 @@ jobs:
         working-directory: ./crates/wasm-bindings
         run: |
           wasm-pack build --target web
+  test-stdlib:
+    name: Test the standard library
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+    runs-on:
+      - nscloud-ubuntu-22.04-amd64-4x16
+    permissions:
+      contents: "read"
+      id-token: "write"
+    steps:
+      - name: clone code
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2023-11-16
+          override: true
+      - name: build
+        run: |
+          cargo build --release
+      - name: Checkout js repo
+        uses: actions/checkout@v4
+        with:
+          repository: getgrit/stdlib
+          path: stdlib
+      - name: install-ruff
+        run: |
+          pip install ruff
+      - name: Setup Go environment
+        uses: actions/setup-go@v5.0.0
+        with:
+          go-version: '^1.22.0'
+      - name: test stdlib
+        working-directory: ./stdlib
+        run: |
+          ../target/release/marzano patterns test --exclude ai
