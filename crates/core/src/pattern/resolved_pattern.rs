@@ -99,47 +99,21 @@ impl<'a> File<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct ListBinding<'a> {
-    pub(crate) src: &'a str,
-    pub(crate) parent_node: Node<'a>,
-    pub(crate) field: FieldId,
-}
-
-impl<'a> ListBinding<'a> {
-    pub(crate) fn new(src: &'a str, parent_node: Node<'a>, field: FieldId) -> Self {
-        Self {
-            src,
-            parent_node,
-            field,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub(crate) enum Lists<'a> {
-    Binding(ListBinding<'a>),
-    Resolved(Vector<ResolvedPattern<'a>>),
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub struct JoinFn<'a> {
-    pub(crate) list: Lists<'a>,
+    pub(crate) list: Vector<ResolvedPattern<'a>>,
     separator: String,
 }
 
 impl<'a> JoinFn<'a> {
     pub(crate) fn from_resolved(list: Vector<ResolvedPattern<'a>>, separator: String) -> Self {
-        Self {
-            list: Lists::Resolved(list),
-            separator,
-        }
+        Self { list, separator }
     }
 
-    pub(crate) fn from_binding(binding: ListBinding<'a>, separator: String) -> Self {
-        Self {
-            list: Lists::Binding(binding),
+    pub(crate) fn from_list_binding(binding: &'_ Binding<'a>, separator: String) -> Option<Self> {
+        binding.list_items().map(|list_items| Self {
+            list: list_items.map(ResolvedPattern::from_node).collect(),
             separator,
-        }
+        })
     }
 
     fn linearized_text(
@@ -151,65 +125,32 @@ impl<'a> JoinFn<'a> {
         distributed_indent: Option<usize>,
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<str>> {
-        Ok(match &self.list {
-            Lists::Resolved(list) => list
-                .iter()
-                .map(|pattern| {
-                    pattern.linearized_text(
-                        language,
-                        effects,
-                        files,
-                        memo,
-                        distributed_indent.is_some(),
-                        logs,
-                    )
-                })
-                .collect::<Result<Vec<_>>>()?
-                .join(&self.separator)
-                .into(),
-            Lists::Binding(ListBinding {
-                src,
-                parent_node,
-                field,
-            }) => parent_node
-                .children_by_field_id(*field, &mut parent_node.walk())
-                .filter(|child| child.is_named())
-                .map(|p| {
-                    ResolvedPattern::Binding(vector![Binding::Node(src, p)]).linearized_text(
-                        language,
-                        effects,
-                        files,
-                        memo,
-                        distributed_indent.is_some(),
-                        logs,
-                    )
-                })
-                .collect::<Result<Vec<_>>>()?
-                .join(&self.separator)
-                .into(),
-        })
+        Ok(self
+            .list
+            .iter()
+            .map(|pattern| {
+                pattern.linearized_text(
+                    language,
+                    effects,
+                    files,
+                    memo,
+                    distributed_indent.is_some(),
+                    logs,
+                )
+            })
+            .collect::<Result<Vec<_>>>()?
+            .join(&self.separator)
+            .into())
     }
 
     fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
-        Ok(match &self.list {
-            Lists::Resolved(list) => list
-                .iter()
-                .map(|pattern| pattern.text(state))
-                .collect::<Result<Vec<_>>>()?
-                .join(&self.separator)
-                .into(),
-            Lists::Binding(ListBinding {
-                src,
-                parent_node,
-                field,
-            }) => parent_node
-                .children_by_field_id(*field, &mut parent_node.walk())
-                .filter(|child| child.is_named())
-                .map(|p| ResolvedPattern::Binding(vector![Binding::Node(src, p)]).text(state))
-                .collect::<Result<Vec<_>>>()?
-                .join(&self.separator)
-                .into(),
-        })
+        Ok(self
+            .list
+            .iter()
+            .map(|pattern| pattern.text(state))
+            .collect::<Result<Vec<_>>>()?
+            .join(&self.separator)
+            .into())
     }
 }
 

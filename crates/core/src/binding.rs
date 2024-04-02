@@ -531,7 +531,7 @@ impl<'a> Binding<'a> {
     /// Returns an iterator over the items in a list.
     ///
     /// Returns `None` if the binding is not bound to a list.
-    pub(crate) fn list_items(&self) -> Option<impl Iterator<Item = NodeWithSource<'a>>> {
+    pub(crate) fn list_items(&self) -> Option<impl Iterator<Item = NodeWithSource<'a>> + Clone> {
         match self {
             Self::List(src, node, field_id) => {
                 let field_id = *field_id;
