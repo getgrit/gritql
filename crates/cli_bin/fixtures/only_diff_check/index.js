@@ -4,8 +4,12 @@ module.exports = {
   queen: '8',
 };
 
+export function wow() {
+  return;
+}
+
 export async function createTeam() {
-  console.log('really cool');
+  console.log('very cool');
 }
 
 export const addTeamToOrgSubscription = () => console.log('cool');

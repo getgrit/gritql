@@ -2,12 +2,17 @@ diff --git a/index.js b/index.js
 index adacd90..58e40c0 100644
 --- a/index.js
 +++ b/index.js
-@@ -5,7 +5,7 @@ module.exports = {
+@@ -4,8 +4,12 @@ module.exports = {
+   queen: '8',
  };
  
++export function wow() {
++  return;
++}
++
  export async function createTeam() {
--  console.log('cool');
-+  console.log('really cool');
+-  console.log('really cool');
++  console.log('very cool');
  }
  
  export const addTeamToOrgSubscription = () => console.log('cool');
