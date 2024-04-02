@@ -1,8 +1,7 @@
-use crate::binding::{linearize_binding, Binding};
+use crate::binding::linearize_binding;
 use crate::pattern::resolved_pattern::CodeRange;
 use crate::pattern::state::FileRegistry;
 use crate::pattern::Effect;
-use crate::suppress::is_binding_suppressed;
 use anyhow::Result;
 use im::Vector;
 use marzano_language::target_language::TargetLanguage;
@@ -30,7 +29,7 @@ pub(crate) fn apply_effects<'a>(
 ) -> Result<(String, Option<Vec<Range<usize>>>)> {
     let effects: Vec<_> = effects
         .into_iter()
-        .filter(|effect| !is_binding_suppressed(&effect.binding, language, current_name))
+        .filter(|effect| !effect.binding.is_suppressed(language, current_name))
         .collect();
     if effects.is_empty() {
         return Ok((code.to_string(), None));
@@ -47,8 +46,8 @@ pub(crate) fn apply_effects<'a>(
         logs,
     )?;
     for effect in effects.iter() {
-        if let Binding::FileName(c) = effect.binding {
-            if std::ptr::eq(c, the_filename) {
+        if let Some(filename) = effect.binding.as_filename() {
+            if std::ptr::eq(filename, the_filename) {
                 let snippet = effect
                     .pattern
                     .linearized_text(language, &effects, files, &mut memo, false, logs)?;
