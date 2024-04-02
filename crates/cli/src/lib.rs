@@ -2,6 +2,7 @@ mod analytics;
 mod analyze;
 pub mod commands;
 mod community;
+mod diff;
 pub mod error;
 mod flags;
 mod github;
