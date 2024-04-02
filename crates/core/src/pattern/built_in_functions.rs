@@ -1,7 +1,4 @@
-use crate::{
-    binding::{Binding, Constant},
-    context::Context,
-};
+use crate::{binding::Constant, context::Context};
 use itertools::Itertools;
 use marzano_util::analysis_logs::AnalysisLogs;
 use rand::prelude::SliceRandom;
@@ -14,7 +11,7 @@ use super::{
     paths::resolve,
     patterns::{Name, Pattern},
     resolved_pattern::{
-        patterns_to_resolved, JoinFn, LazyBuiltIn, ListBinding, ResolvedPattern, ResolvedSnippet,
+        patterns_to_resolved, JoinFn, LazyBuiltIn, ResolvedPattern, ResolvedSnippet,
     },
     variable::get_absolute_file_name,
     MarzanoContext, State,
@@ -369,13 +366,10 @@ fn join_fn<'a>(
         Some(ResolvedPattern::List(list)) => {
             JoinFn::from_resolved(list.to_owned(), separator.to_string())
         }
-        Some(ResolvedPattern::Binding(binding)) => match binding.last() {
-            Some(Binding::List(src, parent_node, field)) => {
-                let list = ListBinding::new(src, parent_node.clone(), *field);
-                JoinFn::from_binding(list, separator.to_string())
-            }
-            _ => bail!("join takes a list as the first argument"),
-        },
+        Some(ResolvedPattern::Binding(binding)) => binding
+            .last()
+            .and_then(|b| JoinFn::from_list_binding(b, separator.to_string()))
+            .ok_or_else(|| anyhow!("join takes a list as the first argument"))?,
         _ => bail!("join takes a list as the first argument"),
     };
     let snippet = ResolvedSnippet::LazyFn(Box::new(LazyBuiltIn::Join(join)));
@@ -484,16 +478,12 @@ fn length_fn<'a>(
             Ok(ResolvedPattern::Constant(Constant::Integer(length as i64)))
         }
         Some(ResolvedPattern::Binding(binding)) => match binding.last() {
-            Some(Binding::List(_, parent_node, field_id)) => {
-                let length = parent_node
-                    .children_by_field_id(*field_id, &mut parent_node.walk())
-                    .filter(|child| child.is_named())
-                    .count();
-                Ok(ResolvedPattern::Constant(Constant::Integer(length as i64)))
-            }
             Some(resolved_pattern) => {
-                let text = resolved_pattern.text();
-                let length = text.len();
+                let length = if let Some(list_items) = resolved_pattern.list_items() {
+                    list_items.count()
+                } else {
+                    resolved_pattern.text().len()
+                };
                 Ok(ResolvedPattern::Constant(Constant::Integer(length as i64)))
             }
             None => Err(anyhow!("length argument must be a list or string")),

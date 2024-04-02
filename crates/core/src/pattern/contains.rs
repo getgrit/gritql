@@ -1,12 +1,11 @@
-use crate::{binding::Binding, context::Context, resolve};
-
 use super::{
     compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
-    resolved_pattern::{LazyBuiltIn, ListBinding, Lists, ResolvedPattern, ResolvedSnippet},
+    resolved_pattern::{LazyBuiltIn, ResolvedPattern, ResolvedSnippet},
     variable::VariableSourceLocations,
     Node, State,
 };
+use crate::{context::Context, resolve};
 
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
@@ -270,18 +269,7 @@ impl Matcher for Contains {
                             ResolvedPattern::Binding(vector![b.to_owned()])
                         }
                         ResolvedSnippet::LazyFn(l) => match &**l {
-                            LazyBuiltIn::Join(j) => match &j.list {
-                                Lists::Binding(ListBinding {
-                                    src,
-                                    parent_node,
-                                    field,
-                                }) => ResolvedPattern::Binding(vector![Binding::List(
-                                    src,
-                                    parent_node.to_owned(),
-                                    *field
-                                )]),
-                                Lists::Resolved(l) => ResolvedPattern::List(l.to_owned()),
-                            },
+                            LazyBuiltIn::Join(j) => ResolvedPattern::List(j.list.clone()),
                         },
                     };
                     if self.execute(&resolved, &mut cur_state, context, logs)? {
