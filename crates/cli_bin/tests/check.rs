@@ -183,3 +183,27 @@ fn does_not_attempt_to_check_universal_pattern() -> Result<()> {
     assert!(output.contains("Fix available"));
     Ok(())
 }
+
+#[test]
+fn check_only_in_diff() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("only_diff_check", true)?;
+
+    let mut cmd = get_test_cmd()?;
+
+    cmd.arg("check").arg("--only-in-diff").arg("test.diff").current_dir(dir.clone());
+
+    let output = cmd.output()?;
+
+    assert!(
+        output.status.success(),
+        "Command failed"
+    );
+
+    assert!(String::from_utf8(output.stdout)?.contains("Processed 1 files and found 1 match"));
+    
+    let content = std::fs::read_to_string(dir.join("index.js"))?;
+    assert!(!content.contains("console.log('really cool')"));
+    assert!(content.contains("console.log('cool')"));
+
+    Ok(())
+}
