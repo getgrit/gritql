@@ -137,4 +137,4 @@ jobs:
       - name: test stdlib
         working-directory: ./stdlib
         run: |
-          ../target/release/marzano patterns test
+          ../target/release/marzano patterns test --exclude ai
