@@ -517,7 +517,7 @@ impl Pattern {
                         // `func name(args) {}` will match `async name(args) {}` because async is an optional_empty_field for tsx.
                         // to explicitly only match synchronous functions you could write:
                         // `$async func name(args)` where $async <: .
-                        !(node.child_by_field_id(field.id()).is_none() && lang.optional_empty_field_compilation(sort, field.id()))
+                        !((node.child_by_field_id(field.id()).is_none() && lang.optional_empty_field_compilation(sort, field.id()))
                         // we wanted to be able to match on the presence of parentheses in an arrow function manually
                         // using ast_node syntax, but we wanted snippets to match regardless of weather or not the
                         // parenthesis are present, so we made the parenthesis a  named node within a field, but
@@ -536,7 +536,7 @@ impl Pattern {
                         //         $props => .
                         //     }
                         // }
-                        && !lang.skip_snippet_compilation_of_field(sort, field.id())
+                        || lang.skip_snippet_compilation_of_field(sort, field.id()))
                     })
                     .map(|field| {
                         let field_id = field.id();
