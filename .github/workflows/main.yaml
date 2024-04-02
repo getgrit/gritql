@@ -2,7 +2,7 @@ name: main
 
 on:
   push:
-    branches: [main, wtf-modified]
+    branches: [main]
   pull_request:
     branches: [main]
 
