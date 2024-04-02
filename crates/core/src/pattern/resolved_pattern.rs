@@ -881,7 +881,7 @@ impl<'a> ResolvedPattern<'a> {
             ResolvedPattern::Binding(b) => b
                 .last()
                 .and_then(Binding::as_constant)
-                .map_or(false, |c| c == Constant::Undefined),
+                .map_or(false, |c| c == &Constant::Undefined),
             ResolvedPattern::Constant(Constant::Undefined) => true,
             ResolvedPattern::Constant(_)
             | ResolvedPattern::Snippets(_)
