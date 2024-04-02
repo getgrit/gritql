@@ -23,7 +23,6 @@ use marzano_util::{
 use std::{
     borrow::Cow,
     collections::{BTreeMap, HashMap},
-    path::Path,
 };
 use tree_sitter::Node;
 
@@ -57,7 +56,9 @@ impl<'a> File<'a> {
     pub(crate) fn name(&self, files: &FileRegistry<'a>) -> ResolvedPattern<'a> {
         match self {
             File::Resolved(resolved) => resolved.name.clone(),
-            File::Ptr(ptr) => ResolvedPattern::from_path(&files.get_file(*ptr).name),
+            File::Ptr(ptr) => {
+                ResolvedPattern::Binding(vector![Binding::FileName(&files.get_file(*ptr).name)])
+            }
         }
     }
 
@@ -68,9 +69,9 @@ impl<'a> File<'a> {
                 let absolute_path = absolutize(name.as_ref())?;
                 Ok(ResolvedPattern::Constant(Constant::String(absolute_path)))
             }
-            File::Ptr(ptr) => Ok(ResolvedPattern::from_path(
-                &files.get_file(*ptr).absolute_path,
-            )),
+            File::Ptr(ptr) => Ok(ResolvedPattern::Binding(vector![Binding::FileName(
+                &files.get_file(*ptr).absolute_path
+            )])),
         }
     }
 
@@ -80,7 +81,7 @@ impl<'a> File<'a> {
             File::Ptr(ptr) => {
                 let file = &files.get_file(*ptr);
                 let range = file.tree.root_node().range().into();
-                ResolvedPattern::from_range(range, &file.source)
+                ResolvedPattern::Binding(vector![Binding::String(&file.source, range)])
             }
         }
     }
@@ -91,7 +92,7 @@ impl<'a> File<'a> {
             File::Ptr(ptr) => {
                 let file = &files.get_file(*ptr);
                 let node = file.tree.root_node();
-                ResolvedPattern::from_node(NodeWithSource::new(node, &file.source))
+                ResolvedPattern::Binding(vector![Binding::Node(&file.source, node)])
             }
         }
     }
@@ -417,27 +418,19 @@ impl<'a> ResolvedPattern<'a> {
     }
 
     pub fn from_constant(constant: &'a Constant) -> Self {
-        Self::from_binding(Binding::from_constant(constant))
+        Self::Binding(vector![Binding::ConstantRef(constant)])
     }
 
     pub(crate) fn from_node(node: NodeWithSource<'a>) -> Self {
-        Self::from_binding(Binding::from_node(node))
+        Self::Binding(vector![Binding::Node(node.source, node.node)])
     }
 
     pub(crate) fn from_list(src: &'a str, node: Node<'a>, field_id: FieldId) -> Self {
-        Self::from_binding(Binding::List(src, node, field_id))
+        Self::Binding(vector![Binding::List(src, node, field_id)])
     }
 
     pub(crate) fn empty_field(src: &'a str, node: Node<'a>, field_id: FieldId) -> Self {
-        Self::from_binding(Binding::Empty(src, node, field_id))
-    }
-
-    pub(crate) fn from_path(path: &'a Path) -> Self {
-        Self::from_binding(Binding::from_path(path))
-    }
-
-    pub(crate) fn from_range(range: Range, src: &'a str) -> Self {
-        Self::from_binding(Binding::from_range(range, src))
+        Self::Binding(vector![Binding::Empty(src, node, field_id)])
     }
 
     pub fn from_string(string: String) -> Self {
@@ -878,10 +871,9 @@ impl<'a> ResolvedPattern<'a> {
 
     pub(crate) fn matches_undefined(&self) -> bool {
         match self {
-            ResolvedPattern::Binding(b) => b
-                .last()
-                .and_then(Binding::as_constant)
-                .map_or(false, |c| c == &Constant::Undefined),
+            ResolvedPattern::Binding(b) => {
+                matches!(b.last(), Some(Binding::ConstantRef(Constant::Undefined)))
+            }
             ResolvedPattern::Constant(Constant::Undefined) => true,
             ResolvedPattern::Constant(_)
             | ResolvedPattern::Snippets(_)

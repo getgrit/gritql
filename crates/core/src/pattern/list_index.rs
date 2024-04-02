@@ -168,9 +168,9 @@ impl ListIndex {
 
                     let len = list_items.clone().count();
                     let index = resolve_opt!(to_unsigned(index, len));
-                    Ok(list_items
+                    return Ok(list_items
                         .nth(index)
-                        .map(|_| PatternOrResolvedMut::_ResolvedBinding))
+                        .map(|_| PatternOrResolvedMut::_ResolvedBinding));
                 }
                 Some(PatternOrResolvedMut::Resolved(ResolvedPattern::List(l))) => {
                     let index = resolve_opt!(to_unsigned(index, l.len()));
