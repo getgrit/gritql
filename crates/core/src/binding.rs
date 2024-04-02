@@ -36,6 +36,10 @@ impl Constant {
             Constant::Undefined => false,
         }
     }
+
+    pub(crate) fn is_undefined(&self) -> bool {
+        matches!(self, Self::Undefined)
+    }
 }
 
 impl Display for Constant {
