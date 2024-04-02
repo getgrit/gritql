@@ -1,5 +1,6 @@
 use anyhow::Result;
-use marzano_util::position::FileRange;
+use marzano_util::position::{FileRange, Position, RangeWithoutByte, UtilRange};
+use std::str::FromStr;
 
 pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
     let mut results = Vec::new();

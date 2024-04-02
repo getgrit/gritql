@@ -95,13 +95,15 @@ pub struct ApplyPatternArgs {
     #[clap(
         long = "only-in-diff",
         help = "Only rewrite ranges that are inside the provided unified diff",
-        hide = true
+        hide = true,
+        conflicts_with = "only_in_json"
     )]
     only_in_diff: Option<PathBuf>,
     #[clap(
         long = "only-in-json",
         help = "Only rewrite ranges that are inside the provided eslint-style JSON file",
-        hide = true
+        hide = true,
+        conflicts_with = "only_in_diff"
     )]
     only_in_json: Option<PathBuf>,
     #[clap(
