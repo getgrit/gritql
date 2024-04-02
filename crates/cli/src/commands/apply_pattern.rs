@@ -93,6 +93,12 @@ pub struct ApplyPatternArgs {
         )]
     pub visibility: VisibilityLevels,
     #[clap(
+        long = "only-in-diff",
+        help = "Only rewrite ranges that are inside the provided unified diff",
+        hide = true
+    )]
+    only_in_diff: Option<PathBuf>,
+    #[clap(
         long = "only-in-json",
         help = "Only rewrite ranges that are inside the provided eslint-style JSON file",
         hide = true
@@ -109,7 +115,7 @@ pub struct ApplyPatternArgs {
     /// Clear cache before running apply
     #[clap(long = "refresh-cache", conflicts_with = "cache")]
     pub refresh_cache: bool,
-    #[clap(long = "language", alias="lang")]
+    #[clap(long = "language", alias = "lang")]
     pub language: Option<PatternLanguage>,
 }
 
@@ -123,6 +129,7 @@ impl Default for ApplyPatternArgs {
             format: Default::default(),
             interactive: Default::default(),
             visibility: VisibilityLevels::Hidden,
+            only_in_diff: Default::default(),
             only_in_json: Default::default(),
             output_file: Default::default(),
             cache: Default::default(),
@@ -230,7 +237,6 @@ pub(crate) async fn run_apply_pattern(
 
         let pattern_libs = flushable_unwrap!(emitter, get_grit_files_from_cwd().await);
         let (mut lang, pattern_body) = if pattern.ends_with(".grit") || pattern.ends_with(".md") {
-    
             match fs::read_to_string(pattern.clone()).await {
                 Ok(pb) => {
                     if pattern.ends_with(".grit") {

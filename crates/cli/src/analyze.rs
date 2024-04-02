@@ -13,13 +13,13 @@ use grit_cache::paths::cache_for_cwd;
 use ignore::Walk;
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 
+#[allow(unused_imports)]
+use marzano_core::pattern::built_in_functions::BuiltIns;
 use marzano_core::pattern::{
     api::{AnalysisLog, DoneFile, MatchResult},
     compiler::CompilationResult,
     Problem,
 };
-#[allow(unused_imports)]
-use marzano_core::pattern::built_in_functions::BuiltIns;
 use marzano_language::target_language::PatternLanguage;
 use marzano_util::cache::GritCache;
 use marzano_util::position::Position;

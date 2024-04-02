@@ -20,7 +20,11 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
             let range_parts: Vec<&str> = range_part.split(',').collect();
             if let Ok(line_num) = u32::from_str(range_parts[0].trim_start_matches('+')) {
                 start_pos.line = line_num;
-                end_pos.line = line_num + range_parts.get(1).map_or(0, |&x| x.parse::<u32>().unwrap_or(0)) - 1;
+                end_pos.line = line_num
+                    + range_parts
+                        .get(1)
+                        .map_or(0, |&x| x.parse::<u32>().unwrap_or(0))
+                    - 1;
             }
 
             results.push(FileRange {
