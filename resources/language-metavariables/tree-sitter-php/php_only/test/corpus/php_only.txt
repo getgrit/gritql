@@ -1,0 +1,59 @@
+==============================
+If statement
+==============================
+
+if ($a==0) {
+  echo "bad";
+} elseif ($a==3) {
+  echo "bad";
+} else {
+  echo "good";
+}
+
+---
+
+(program
+  (if_statement
+    condition: (parenthesized_expression (binary_expression
+      left: (variable_name (name))
+      right: (integer)))
+    body: (compound_statement (echo_statement (encapsed_string (string_value))))
+    alternative: (else_if_clause
+      condition: (parenthesized_expression (binary_expression
+        left: (variable_name (name))
+        right: (integer)))
+      body: (compound_statement (echo_statement (encapsed_string (string_value)))))
+    alternative: (else_clause
+      body: (compound_statement (echo_statement (encapsed_string (string_value)))))))
+
+=========================================
+Class
+=========================================
+
+class A {
+    public function a() {}
+    abstract public function b();
+}
+
+---
+
+(program
+  (class_declaration
+    (name)
+    (declaration_list
+      (method_declaration
+        (visibility_modifier)
+        (name)
+        (formal_parameters)
+        (compound_statement)
+      )
+      (method_declaration
+        (abstract_modifier)
+        (visibility_modifier)
+        (name)
+        (formal_parameters)
+      )
+    )
+  )
+)
+

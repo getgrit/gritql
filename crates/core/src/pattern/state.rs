@@ -245,10 +245,7 @@ impl<'a> State<'a> {
                     if let ResolvedPattern::Binding(bindings) = value {
                         for binding in bindings.iter() {
                             bindings_count += 1;
-                            if binding
-                                .is_suppressed(lang, current_name)
-                                .unwrap_or_default()
-                            {
+                            if binding.is_suppressed(lang, current_name) {
                                 suppressed_count += 1;
                                 continue;
                             }

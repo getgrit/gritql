@@ -73,7 +73,7 @@ impl Matcher for Every {
 
                 for item in list_items {
                     if !self.pattern.execute(
-                        &ResolvedPattern::from_node(item.source, item.node),
+                        &ResolvedPattern::from_node(item),
                         init_state,
                         context,
                         logs,

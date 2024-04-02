@@ -3,6 +3,7 @@ use crate::pattern::resolved_pattern::CodeRange;
 use crate::pattern::state::{get_top_level_effects, FileRegistry};
 use crate::pattern::{Effect, EffectKind};
 use anyhow::{anyhow, Result};
+use grit_util::AstNode;
 use marzano_language::language::{FieldId, Language};
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
@@ -104,6 +105,17 @@ fn pad_snippet(padding: &str, snippet: &str) -> String {
     result
 }
 
+fn adjust_ranges(substitutions: &mut [(EffectRange, String)], index: usize, delta: isize) {
+    for (EffectRange { range, .. }, _) in substitutions.iter_mut() {
+        if range.start >= index {
+            range.start = (range.start as isize + delta) as usize;
+        }
+        if range.end >= index {
+            range.end = (range.end as isize + delta) as usize;
+        }
+    }
+}
+
 // in multiline snippets, remove padding from every line equal to the padding of the first line,
 // such that the first line is left-aligned.
 pub(crate) fn adjust_padding<'a>(
@@ -137,14 +149,11 @@ pub(crate) fn adjust_padding<'a>(
         for line in lines {
             result.push('\n');
             index += 1;
-            for (EffectRange { range, .. }, _) in substitutions.iter_mut() {
-                if range.start >= index {
-                    range.start = (range.start as isize + delta) as usize;
-                }
-                if range.end >= index {
-                    range.end = (range.end as isize + delta) as usize;
-                }
+            if line.trim().is_empty() {
+                adjust_ranges(substitutions, index, -(line.len() as isize));
+                continue;
             }
+            adjust_ranges(substitutions, index, delta);
             let line = line.strip_prefix(&padding).ok_or_else(|| {
                 anyhow!(
                     "expected line \n{}\n to start with {} spaces, code is either not indented with spaces, or does not consistently indent code blocks",
@@ -461,7 +470,9 @@ impl<'a> Binding<'a> {
     pub fn text(&self) -> String {
         match self {
             Binding::Empty(_, _, _) => "".to_string(),
-            Binding::Node(source, node) => node_text(source, node).to_string(),
+            Binding::Node(source, node) => {
+                NodeWithSource::new(node.clone(), source).text().to_string()
+            }
             Binding::String(s, r) => s[r.start_byte as usize..r.end_byte as usize].into(),
             Binding::FileName(s) => s.to_string_lossy().into(),
             Binding::List(source, _, _) => {
@@ -471,13 +482,7 @@ impl<'a> Binding<'a> {
                     "".to_string()
                 }
             }
-            Binding::ConstantRef(c) => match c {
-                Constant::Boolean(b) => b.to_string(),
-                Constant::String(s) => s.to_string(),
-                Constant::Integer(i) => i.to_string(),
-                Constant::Float(d) => d.to_string(),
-                Constant::Undefined => String::new(),
-            },
+            Binding::ConstantRef(c) => c.to_string(),
         }
     }
 
@@ -535,6 +540,9 @@ impl<'a> Binding<'a> {
                 let mut done = false;
                 Some(
                     iter::from_fn(move || {
+                        // seems to me that the external loop is unnecessary, but was
+                        // getting an infinite loop without it.
+                        #[allow(clippy::never_loop)]
                         while !done {
                             while cursor.field_id() != Some(field_id) {
                                 if !cursor.goto_next_sibling() {
@@ -614,9 +622,4 @@ impl<'a> Binding<'a> {
 
         Ok(())
     }
-}
-
-pub(crate) fn node_text<'a>(source: &'a str, node: &Node) -> &'a str {
-    let range = Range::from(node.range());
-    &source[range.start_byte as usize..range.end_byte as usize]
 }

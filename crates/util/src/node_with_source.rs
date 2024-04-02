@@ -1,3 +1,4 @@
+use crate::position::Range;
 use grit_util::AstNode;
 use tree_sitter::Node;
 
@@ -33,5 +34,10 @@ impl<'a> AstNode for NodeWithSource<'a> {
             }
             current_node = current_node.parent()?;
         }
+    }
+
+    fn text(&self) -> &str {
+        let range = Range::from(self.node.range());
+        &self.source[range.start_byte as usize..range.end_byte as usize]
     }
 }

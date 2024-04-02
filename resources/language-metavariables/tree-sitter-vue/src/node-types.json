@@ -361,24 +361,37 @@
   {
     "type": "style_element",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "end_tag",
-          "named": true
-        },
-        {
-          "type": "raw_text",
-          "named": true
-        },
-        {
-          "type": "start_tag",
-          "named": true
-        }
-      ]
+    "fields": {
+      "end_tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "end_tag",
+            "named": true
+          }
+        ]
+      },
+      "start_tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "start_tag",
+            "named": true
+          }
+        ]
+      },
+      "text": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "raw_text",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {

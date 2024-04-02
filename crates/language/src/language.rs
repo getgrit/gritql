@@ -258,7 +258,7 @@ pub trait Language {
                 "..." => GritMetaValue::Dots,
                 _ => {
                     let mut s = s.to_owned();
-                    s.insert_str(0, GRIT_METAVARIABLE_PREFIX);
+                    s.insert_str(0, self.metavariable_prefix());
                     GritMetaValue::Variable(s)
                 }
             })
@@ -314,7 +314,7 @@ pub trait Language {
         body: &str,
         logs: &mut AnalysisLogs,
         new: bool,
-    ) -> Result<Tree> {
+    ) -> Result<Option<Tree>> {
         default_parse_file(self.get_ts_language(), name, body, logs, new)
     }
 }
@@ -325,7 +325,7 @@ pub(crate) fn default_parse_file(
     body: &str,
     logs: &mut AnalysisLogs,
     new: bool,
-) -> Result<Tree> {
+) -> Result<Option<Tree>> {
     let mut parser = Parser::new()?;
     parser.set_language(lang)?;
     let tree = parser
@@ -333,7 +333,7 @@ pub(crate) fn default_parse_file(
         .ok_or_else(|| anyhow!("failed to parse tree"))?;
     let mut errors = file_parsing_error(&tree, name, body, new)?;
     logs.append(&mut errors);
-    Ok(tree)
+    Ok(Some(tree))
 }
 
 fn file_parsing_error(
@@ -427,8 +427,7 @@ impl SnippetTree {
                 if snippet_root
                     .utf8_text(self.context.as_bytes())
                     .unwrap()
-                    .trim()
-                    != self.snippet.trim()
+                    .trim() != self.snippet.trim()
                 {
                     return None;
                 }

@@ -9,6 +9,37 @@ We welcome contributions in the form of pull requests and issues.
 
 Note that this codebase isn't yet extensively documented. If you get stuck, please ask for help [on Discord](https://docs.grit.io/discord).
 
+## Development Setup
+
+A high-level overview of tools you need to have installed:
+
+* Rust toolchain: for compiling the codebase. You'll need [`rustc`](https://rustup.rs/) v1.74 or newer.
+  * To create WASM builds, run `rustup target install wasm32-unknown-unknown`.
+* C/C++ compiler. macOS: [Xcode Command Line Tools](https://download.developer.apple.com/Developer_Tools/Command_Line_Tools_for_Xcode_15.3/Command_Line_Tools_for_Xcode_15.3.dmg) via `xcode-select --install`, Linux: [gcc](https://learnubuntu.com/install-gcc/), Windows: [Microsoft Visual C++](https://visualstudio.microsoft.com/vs/features/cplusplus/).
+* Emscripten: a C/C++ compiler toolchain for WASM. Install v3.1.56 with [`emsdk`](https://emscripten.org/docs/getting_started/downloads.html).
+* Node.js runtime: `node`, `npm`, `npx` are used to generate parsers from `grammar.js` files. You'll need [`node`](https://nodejs.org/en/download) v18.5.0 or newer.
+* Yarn package manager. You'll need [`yarn`](https://classic.yarnpkg.com/en/docs/install) (classic). Install v1.22.19 with `npm install --global yarn`.
+* Tree-Sitter CLI: provides [`tree-sitter`](https://github.com/tree-sitter/tree-sitter/tree/master/cli) binary for testing grammars. Install v0.22.2 with `npm install --global tree-sitter-cli`.
+* Terraform CLI. Install [`terraform`](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) with `brew tap hashicorp/tap && brew install hashicorp/tap/terraform`. 
+
+## Building the Code
+
+Use `git` to clone this repository into a location of your choice. 
+```bash
+git clone https://github.com/getgrit/gritql.git
+```
+
+Change into the cloned repository and make sure all submodules are correctly set up, including any nested submodules:
+```bash
+cd gritql
+git submodule update --init --recursive
+```
+
+Before making any changes to the code, make sure you can run the tests and everything is initially passing:
+```bash
+cargo test --workspace
+```
+
 ## Feature Flags
 
 We use [feature flags](https://doc.rust-lang.org/cargo/reference/features.html) to control which parts of the codebase are compiled.
@@ -53,7 +84,7 @@ Here are the steps for adding a new target language:
 3. Copy the grammar file into `resources/metavariable-grammars`. This alternative grammar is used for parsing `snippets` in GritQL.
 4. Patch the metavariable grammar to include  `$.grit_metavariable` anywhere we want to substitute a metavariable. This is usually at least `$identifier` and `$literal`.
     - For a snippet to match, it also needs to be a field. Often you’ll want to wrap `$thing` like: `field('thing', choice($.grit_metavariable, $thing))`
-5. Add a new language implementation in `crates/core/src/languages`. This involves implementing the `Language` trait and adding a new `Language` enum variant.
+5. Add a new language implementation in `crates/core/languages/src`. This involves implementing the `Language` trait and adding a new `Language` enum variant.
 6. Add `snippet_context_strings` [like this](https://github.com/getgrit/gritql/blob/main/crates/language/src/sql.rs#L52) to provide context for snippets to match in.
 7. Add test cases for the language in `crates/core/src/test.rs`. This is a good time to add a few dozen test cases to ensure that the language is parsed correctly, and that the metavariable grammar is working.
 
@@ -69,12 +100,3 @@ These steps are done in our cloud environment and are not necessary for contribu
 - There are also `exhaustive` runtime checks that error if a switch case doesn’t handle a language, like `makeSingleLineComment`. Search for `exhaustive(lang` and fill those out too.
 - Regenerate both DB/prisma types to add it to the DB schema and GraphQL types.
 - Add the language to `language-selector.tsx`. Pick an icon from [https://react-icons.github.io](https://react-icons.github.io/), usually from the Simple Icons category.
-
-## Development Tools
-
-Make sure you have the following tools installed to guarantee everything works:
-
-- Rust Toolchain
-  - In order to create WASM builds, you should run `rustup target install wasm32-unknown-unknown`
-- `terraform` CLI. See https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
-- `npx`. Install with Node.js: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
