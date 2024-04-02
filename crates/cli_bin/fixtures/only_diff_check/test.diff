@@ -6,7 +6,7 @@ index adacd90..58e40c0 100644
    queen: '8',
  };
  
-+export function wow() {
++export const wow() => {
 +  return;
 +}
 +

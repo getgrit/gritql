@@ -4,7 +4,7 @@ module.exports = {
   queen: '8',
 };
 
-export function wow() {
+export const wow = () => {
   return;
 }
 

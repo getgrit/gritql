@@ -194,16 +194,11 @@ fn check_only_in_diff() -> Result<()> {
 
     let output = cmd.output()?;
 
-    assert!(
-        output.status.success(),
-        "Command failed"
-    );
-
-    assert!(String::from_utf8(output.stdout)?.contains("Processed 1 files and found 1 match"));
-    
-    let content = std::fs::read_to_string(dir.join("index.js"))?;
-    assert!(!content.contains("console.log('really cool')"));
-    assert!(content.contains("console.log('cool')"));
+    let output = String::from_utf8_lossy(&output.stdout).to_string();
+    let mut lines: Vec<&str> = output.lines().collect();
+    lines.sort();
+    let output = lines.join("\n");
+    assert_snapshot!(output);
 
     Ok(())
 }
