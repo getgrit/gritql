@@ -5,6 +5,7 @@ use std::ops::Range as StdRange;
 use super::compiler::MATCH_VAR;
 use super::FileOwner;
 use crate::intervals::{earliest_deadline_sort, get_top_level_intervals_in_range, Interval};
+use crate::suppress::is_binding_suppressed;
 use anyhow::{anyhow, Result};
 use anyhow::{bail, Ok};
 use im::{vector, Vector};
@@ -245,7 +246,7 @@ impl<'a> State<'a> {
                     if let ResolvedPattern::Binding(bindings) = value {
                         for binding in bindings.iter() {
                             bindings_count += 1;
-                            if binding.is_suppressed(lang, current_name) {
+                            if is_binding_suppressed(binding, lang, current_name) {
                                 suppressed_count += 1;
                                 continue;
                             }
