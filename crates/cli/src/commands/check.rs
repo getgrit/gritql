@@ -33,6 +33,7 @@ use marzano_messenger::emit::{Messager, VisibilityLevels};
 use cli_server::check::CheckMessenger;
 
 use crate::{
+    diff::extract_modified_ranges,
     error::GoodError,
     flags::{GlobalFormatFlags, OutputFormat},
     github::{log_check_annotations, write_check_summary},
@@ -69,6 +70,12 @@ pub struct CheckArg {
     /// Output annotations for a GitHub actions workflow
     #[clap(long = "github-actions")]
     pub github_actions: bool,
+    #[clap(
+        long = "only-in-diff",
+        help = "Only check ranges that are inside the provided unified diff",
+        hide = true
+    )]
+    pub only_in_diff: Option<PathBuf>,
 }
 
 pub(crate) async fn run_check(
@@ -117,6 +124,13 @@ pub(crate) async fn run_check(
         std::env::current_dir()?
     };
 
+    let filter_range = if let Some(diff_path) = arg.only_in_diff.clone() {
+        let diff_ranges = extract_modified_ranges(&diff_path)?;
+        Some(diff_ranges)
+    } else {
+        None
+    };
+
     // Construct a resolver
     let resolver = GritModuleResolver::new(current_dir.to_str().unwrap());
 
@@ -132,7 +146,7 @@ pub(crate) async fn run_check(
                 .make_pattern(&body, Some(p.local_name.to_string()))
                 .unwrap();
             let lang = PatternLanguage::get_language(&p.body);
-            match rich_pattern.compile(&grit_files, lang, None) {
+            match rich_pattern.compile(&grit_files, lang, filter_range.clone()) {
                 Ok(c) => Ok((p.local_name.clone(), c.problem)),
                 Err(e) => {
                     bail!("Unable to compile pattern {}:\n{}", p.local_name, e);

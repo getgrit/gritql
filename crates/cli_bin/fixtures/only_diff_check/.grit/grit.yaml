@@ -1,0 +1,6 @@
+version: 0.0.3
+patterns:
+  - name: github.com/getgrit/stdlib#no_console_log
+    level: error
+  - name: github.com/getgrit/stdlib#es6_arrow_functions
+    level: error

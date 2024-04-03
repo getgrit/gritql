@@ -30,9 +30,9 @@ use std::collections::BTreeMap;
 use tokio::fs;
 
 use crate::{
-    analyze::par_apply_pattern, community::parse_eslint_output, error::GoodError,
-    flags::OutputFormat, messenger_variant::create_emitter, result_formatting::get_human_error,
-    updater::Updater,
+    analyze::par_apply_pattern, community::parse_eslint_output, diff::extract_modified_ranges,
+    error::GoodError, flags::OutputFormat, messenger_variant::create_emitter,
+    result_formatting::get_human_error, updater::Updater,
 };
 
 use marzano_messenger::{
@@ -93,9 +93,17 @@ pub struct ApplyPatternArgs {
         )]
     pub visibility: VisibilityLevels,
     #[clap(
+        long = "only-in-diff",
+        help = "Only rewrite ranges that are inside the provided unified diff",
+        hide = true,
+        conflicts_with = "only_in_json"
+    )]
+    only_in_diff: Option<PathBuf>,
+    #[clap(
         long = "only-in-json",
         help = "Only rewrite ranges that are inside the provided eslint-style JSON file",
-        hide = true
+        hide = true,
+        conflicts_with = "only_in_diff"
     )]
     only_in_json: Option<PathBuf>,
     #[clap(
@@ -109,7 +117,7 @@ pub struct ApplyPatternArgs {
     /// Clear cache before running apply
     #[clap(long = "refresh-cache", conflicts_with = "cache")]
     pub refresh_cache: bool,
-    #[clap(long = "language", alias="lang")]
+    #[clap(long = "language", alias = "lang")]
     pub language: Option<PatternLanguage>,
 }
 
@@ -123,6 +131,7 @@ impl Default for ApplyPatternArgs {
             format: Default::default(),
             interactive: Default::default(),
             visibility: VisibilityLevels::Hidden,
+            only_in_diff: Default::default(),
             only_in_json: Default::default(),
             output_file: Default::default(),
             cache: Default::default(),
@@ -188,6 +197,9 @@ pub(crate) async fn run_apply_pattern(
     let filter_range = if let Some(json_path) = arg.only_in_json.clone() {
         let json_ranges = flushable_unwrap!(emitter, parse_eslint_output(json_path));
         Some(json_ranges)
+    } else if let Some(diff_path) = arg.only_in_diff.clone() {
+        let diff_ranges = flushable_unwrap!(emitter, extract_modified_ranges(&diff_path));
+        Some(diff_ranges)
     } else {
         None
     };
@@ -230,7 +242,6 @@ pub(crate) async fn run_apply_pattern(
 
         let pattern_libs = flushable_unwrap!(emitter, get_grit_files_from_cwd().await);
         let (mut lang, pattern_body) = if pattern.ends_with(".grit") || pattern.ends_with(".md") {
-    
             match fs::read_to_string(pattern.clone()).await {
                 Ok(pb) => {
                     if pattern.ends_with(".grit") {

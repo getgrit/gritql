@@ -1,0 +1,18 @@
+diff --git a/index.js b/index.js
+index adacd90..58e40c0 100644
+--- a/index.js
++++ b/index.js
+@@ -4,8 +4,12 @@ module.exports = {
+   queen: '8',
+ };
+ 
++export const wow() => {
++  return;
++}
++
+ export async function createTeam() {
+-  console.log('really cool');
++  console.log('very cool');
+ }
+ 
+ export const addTeamToOrgSubscription = () => console.log('cool');
