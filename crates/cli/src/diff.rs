@@ -1,6 +1,23 @@
 use anyhow::Result;
 use marzano_util::position::{FileRange, Position, RangeWithoutByte, UtilRange};
 use std::{fs::File, io::Read, path::PathBuf, str::FromStr};
+use git2::Repository;
+use marzano_gritmodule::searcher::find_git_dir_from;
+
+pub async fn git_diff(path: &PathBuf) -> Result<String> {
+    let git_dir = find_git_dir_from(dir).await?;
+    let repo = Repository::open(git_dir)?;
+    let head = repo.find_tree(repo.refname_to_id("HEAD")?)?;
+    let diff = repo.diff_tree_to_workdir(head, None)?;
+    // let output = std::process::Command::new("git")
+    //     .arg("diff")
+    //     .arg("--no-prefix")
+    //     .arg("--unified=0")
+    //     .arg(path)
+    //     .output()?;
+    // Ok(String::from_utf8(output.stdout)?)
+
+}
 
 pub fn extract_modified_ranges(diff_path: &PathBuf) -> Result<Vec<FileRange>> {
     let mut file = File::open(diff_path)?;
