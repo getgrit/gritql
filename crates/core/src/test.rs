@@ -2877,9 +2877,10 @@ fn toml_within() {
                 |language toml
                 |`[dependencies]
                 |$deps` where {
-                |  $deps <: some bubble `$name = $version where {
+                |  $deps <: some bubble `$name = $version` where {
                 |    $version <: string(),
                 |    $version => `{ version = $version }`
+                |  }
                 |}
                 |"#
             .trim_margin()
