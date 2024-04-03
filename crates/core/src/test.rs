@@ -12883,6 +12883,74 @@ fn php_simple_match() {
 }
 
 #[test]
+fn php_html_simple_match() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language php(html)
+                |
+                |`<?php
+                |   echo ^x;
+                |?>` where {
+                |   ^x => `^x + ^x`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |<?php
+                |   echo "duplicate this message";
+                |?>
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |<?php
+                |   echo "duplicate this message" + "duplicate this message";
+                |?>
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_html_multi_arg() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language php(html)
+                |
+                |`<?php
+                |   $cost = Array(^x);
+                |?>` where {
+                |   ^x => `100, 399, 249`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |<?php
+                |   $cost = Array(20, 10);
+                |?>
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |<?php
+                |   $cost = Array(100, 399, 249);
+                |?>
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn php_until() {
     run_test_expected({
         TestArgExpected {
@@ -13071,7 +13139,6 @@ fn php_array() {
     )
     .unwrap();
 }
-
 
 #[test]
 fn css_property_value() {
