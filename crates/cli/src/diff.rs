@@ -109,5 +109,7 @@ index f6e1a2c..2c58ad2 100644
         assert_yaml_snapshot!(parsed);
     }
 
-    fn parse_with_created_file() {}
+    fn parse_with_created_file() {
+        let diff = r#""#;
+    }
 }
