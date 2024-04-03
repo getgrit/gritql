@@ -149,7 +149,7 @@ pub async fn maybe_test_pattern(
                     test_id: test_id.clone(),
                     parent_test_id: None,
                     test_display_name: our_pattern.local_name.clone(),
-                    test_result: GritTestResult::Completed(GritTestResultState::Fail),
+                    test_result: GritTestResult::Completed(GritTestResultState::FailedMatch),
                     test_message: Some(format!("{:?}", e)),
                     expected_output: None,
                     actual_output: None,
