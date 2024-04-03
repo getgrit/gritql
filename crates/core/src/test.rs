@@ -2816,6 +2816,162 @@ fn simple_toml() {
 }
 
 #[test]
+fn toml_key_replacement() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language toml
+                |`key = $value` => `new_key = $value`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"key = "original_value""#.to_owned(),
+            expected: r#"new_key = "original_value""#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn toml_nested_metavar() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language toml
+                |`name = $value` where {
+                |  $value <: `"marzano-cli"` => `"marzano-madness"`
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+            | [package]
+            | name = "marzano-cli"
+            | version = "0.1.1"
+            | edition = "2021"
+            | authors = ["Grit Developers <support@grit.io>"]
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+            | [package]
+            | name = "marzano-madness"
+            | version = "0.1.1"
+            | edition = "2021"
+            | authors = ["Grit Developers <support@grit.io>"]
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn toml_within() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language toml
+                |`[dependencies]
+                |$deps` where {
+                |  $deps <: some bubble `$name = $version` where {
+                |    $version <: string(),
+                |    $version => `{ version = $version }`
+                |  }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+            | [lib]
+            | path = "src/lib.rs"
+            |
+            | [dependencies]
+            | anyhow = "1.0.70"
+            | clap = { version = "4.1.13", features = ["derive"] }
+            | indicatif = "0.17.5"
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+            | [lib]
+            | path = "src/lib.rs"
+            |
+            | [dependencies]
+            | anyhow = { version = "1.0.70" }
+            | clap = { version = "4.1.13", features = ["derive"] }
+            | indicatif = { version = "0.17.5" }
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn toml_array_append() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language toml
+                |`array = [$values]` => `array = [$values, "new_element"]`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"array = ["one", "two"]"#.to_owned(),
+            expected: r#"array = ["one", "two", "new_element"]"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn toml_table_rename() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language toml
+                |`[$x]
+                |$values` where $x <: `other` => `renamed`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+            | [other]
+            | nest = "marzano-cli"
+            | [package]
+            | name = "marzano-cli"
+            | version = "0.1.1"
+            | edition = "2021"
+            | authors = ["Grit Developers <support@grit.io>"]
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+            | [renamed]
+            | nest = "marzano-cli"
+            | [package]
+            | name = "marzano-cli"
+            | version = "0.1.1"
+            | edition = "2021"
+            | authors = ["Grit Developers <support@grit.io>"]
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn multi_args_snippet() {
     run_test_match({
         TestArg {
@@ -12855,7 +13011,6 @@ fn php_no_match() {
     .unwrap();
 }
 
-
 #[test]
 fn php_simple_match() {
     run_test_expected({
@@ -12927,69 +13082,64 @@ fn php_quote_snippet_rewrite() {
 
 #[test]
 fn php_if_statement() {
-    run_test_expected(
-        TestArgExpected {
-            pattern: r#"
+    run_test_expected(TestArgExpected {
+        pattern: r#"
                 |language php
                 |
                 |`$a = 12;` => `$b=24;`
                 |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"
+        .trim_margin()
+        .unwrap(),
+        source: r#"
                 |#
                 |if (!$foo = $bar) {
                 |   $a = 12;
                 |}
                 |"#
-            .trim_margin().
-            unwrap(),
-            expected: r#"
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
                 |#
                 |if (!$foo = $bar) {
                 |   $b=24;
                 |}
                 |"#
-            .trim_margin()
-            .unwrap(),
-        }
-    )
+        .trim_margin()
+        .unwrap(),
+    })
     .unwrap();
 }
 
 #[test]
 fn php_delete_include() {
-    run_test_expected(
-        TestArgExpected {
-            pattern: r#"
+    run_test_expected(TestArgExpected {
+        pattern: r#"
                 |language php
                 |
                 |`include ^package;` => .
                 |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"
+        .trim_margin()
+        .unwrap(),
+        source: r#"
                 |include 'test.php';
                 |$test = "";
                 |"#
-            .trim_margin().
-            unwrap(),
-            expected: r#"
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
                 |
                 |$test = "";
                 |"#
-            .trim_margin()
-            .unwrap(),
-        }
-    )
+        .trim_margin()
+        .unwrap(),
+    })
     .unwrap();
 }
 
 #[test]
 fn php_function_modifier() {
-    run_test_expected(
-        TestArgExpected {
-            pattern: r#"
+    run_test_expected(TestArgExpected {
+        pattern: r#"
                 |language php
                 |
                 |`class ^_ { ^mod function ^name(){ ^_ } }` where {
@@ -12997,9 +13147,9 @@ fn php_function_modifier() {
                 |   ^name => `modified`,
                 |}
                 |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"
+        .trim_margin()
+        .unwrap(),
+        source: r#"
             |class Log {
             |   public function printHello()
             |   {
@@ -13009,9 +13159,9 @@ fn php_function_modifier() {
             |   }
             |}
             |"#
-            .trim_margin().
-            unwrap(),
-            expected: r#"
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
             |class Log {
             |   private function modified()
             |   {
@@ -13021,57 +13171,43 @@ fn php_function_modifier() {
             |   }
             |}
             |"#
-            .trim_margin()
-            .unwrap(),
-        }
-    )
+        .trim_margin()
+        .unwrap(),
+    })
     .unwrap();
 }
 
 #[test]
 fn php_rewrite_arrow_function() {
-    run_test_expected(
-        TestArgExpected {
-            pattern: r#"
+    run_test_expected(TestArgExpected {
+        pattern: r#"
                 |language php
                 |
                 |`fn(^a) => ^_` => `fn(^a) => $x * $x`
                 |"#
-            .trim_margin()
-            .unwrap(),
-            source: "$fn1 = fn($x) => $x + $y;"
-            .trim_margin().
-            unwrap(),
-            expected: "$fn1 = fn($x) => $x * $x;"
-            .trim_margin()
-            .unwrap(),
-        }
-    )
+        .trim_margin()
+        .unwrap(),
+        source: "$fn1 = fn($x) => $x + $y;".trim_margin().unwrap(),
+        expected: "$fn1 = fn($x) => $x * $x;".trim_margin().unwrap(),
+    })
     .unwrap();
 }
 
 #[test]
 fn php_array() {
-    run_test_expected(
-        TestArgExpected {
-            pattern: r#"
+    run_test_expected(TestArgExpected {
+        pattern: r#"
                 |language php
                 |
                 |`^a=>^_` => `^a=>24`
                 |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"$fn1 = array("a"=>1, "b"=>2, "c"=>3);"#
-            .trim_margin().
-            unwrap(),
-            expected: r#"$fn1 = array("a"=>24, "b"=>24, "c"=>24);"#
-            .trim_margin()
-            .unwrap(),
-        }
-    )
+        .trim_margin()
+        .unwrap(),
+        source: r#"$fn1 = array("a"=>1, "b"=>2, "c"=>3);"#.trim_margin().unwrap(),
+        expected: r#"$fn1 = array("a"=>24, "b"=>24, "c"=>24);"#.trim_margin().unwrap(),
+    })
     .unwrap();
 }
-
 
 #[test]
 fn css_property_value() {
@@ -13091,7 +13227,6 @@ fn css_property_value() {
             |"#
         .trim_margin()
         .unwrap(),
-
     })
     .unwrap();
 }
