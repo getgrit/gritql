@@ -2870,6 +2870,50 @@ fn toml_nested_metavar() {
 }
 
 #[test]
+fn toml_within() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language toml
+                |`[dependencies]
+                |$deps` where {
+                |  $deps <: some bubble `$name = $version where {
+                |    $version <: string(),
+                |    $version => `{ version = $version }`
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+            | [lib]
+            | path = "src/lib.rs"
+            |
+            | [dependencies]
+            | anyhow = "1.0.70"
+            | clap = { version = "4.1.13", features = ["derive"] }
+            | indicatif = "0.17.5"
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+            | [lib]
+            | path = "src/lib.rs"
+            |
+            | [dependencies]
+            | anyhow = "1.0.70"
+            | clap = { version = "4.1.13", features = ["derive"] }
+            | indicatif = "0.17.5"
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn toml_array_append() {
     run_test_expected({
         TestArgExpected {
