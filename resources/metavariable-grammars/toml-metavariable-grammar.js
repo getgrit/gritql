@@ -67,7 +67,7 @@ module.exports = grammar({
     inline_pair: $ => seq(field('key', choice($.dotted_key, $._key)), "=", field('value', $._inline_value)),
 
     _key: $ => choice($.bare_key, $.quoted_key, $.grit_metavariable),
-    dotted_key: $ => seq(field('key_prefix',choice($.dotted_key, $._key)), ".", field('key_suffix', $._key)),
+    dotted_key: $ => seq(choice($.dotted_key, $._key), ".", $._key),
     bare_key: $ => /[A-Za-z0-9_-]+/,
     quoted_key: $ => choice($._basic_string, $._literal_string),
 
