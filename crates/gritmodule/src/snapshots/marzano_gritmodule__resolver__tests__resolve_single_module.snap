@@ -26,6 +26,7 @@ NamedPattern:
     localName: NamedPattern
     body: "pattern NamedPattern() {\n    `$foo.named` => `$foo.replacement`\n}"
     kind: pattern
+    language: js
     visibility: public
 OtherPattern:
   js:
@@ -51,6 +52,7 @@ OtherPattern:
     localName: OtherPattern
     body: "pattern OtherPattern() {\n    `$foo.other` => `$foo.replacement`\n}"
     kind: pattern
+    language: js
     visibility: public
 PatternWithArgs:
   js:
@@ -76,6 +78,7 @@ PatternWithArgs:
     localName: PatternWithArgs
     body: "pattern PatternWithArgs($arg) {\n    `$foo.$arg` => `$foo.replacement`\n}"
     kind: pattern
+    language: js
     visibility: public
 ReactNode:
   js:
@@ -101,6 +104,7 @@ ReactNode:
     localName: ReactNode
     body: "language js\n\npattern ReactNode($name, $props, $children) {\n  or {\n    `<$name $props>$children</$name>`,\n    `<$name $props />`\n  }\n}"
     kind: pattern
+    language: js
     visibility: public
 no_eq_null:
   js:
@@ -226,6 +230,7 @@ no_eq_null:
     localName: no_eq_null
     body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n"
     kind: pattern
+    language: js
     visibility: public
 remove_console_error:
   js:
@@ -251,4 +256,5 @@ remove_console_error:
     localName: remove_console_error
     body: "engine marzano(0.1)\nlanguage js\n\n`console.error($_)` => .\n"
     kind: pattern
+    language: js
     visibility: public

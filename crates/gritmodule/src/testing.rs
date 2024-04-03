@@ -1,9 +1,9 @@
 use marzano_core::pattern::{
-        api::{derive_log_level, is_match, AnalysisLogLevel, MatchResult},
-        Problem,
-    };
-use marzano_util::runtime::ExecutionContext;
+    api::{derive_log_level, is_match, AnalysisLogLevel, MatchResult},
+    Problem,
+};
 use marzano_language::target_language::TargetLanguage;
+use marzano_util::runtime::ExecutionContext;
 
 use marzano_util::rich_path::RichFile;
 use serde::{Deserialize, Serialize};
@@ -106,12 +106,19 @@ fn infer_rich_files_from_content(language: &TargetLanguage, content: &str) -> Ve
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum GritTestResultState {
+    /// Passed, but the ouput required formatting to match the expected output
     PassWithFormat,
+    /// Output is an exact match with the expected output
     Pass,
-    Fail,
+    /// Match found, but output does not match the expected output
+    FailedOutput,
+    /// No match found in the input, or match found when none was expected
+    FailedMatch,
+    /// Compilation or execution error
+    FailedPattern,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Clone)]
 pub struct SampleTestResult {
     pub matches: Vec<MatchResult>,
     pub state: GritTestResultState,
@@ -150,7 +157,7 @@ impl SampleTestResult {
     }
 
     pub fn should_try_formatting(&self) -> bool {
-        self.state == GritTestResultState::Fail
+        self.state == GritTestResultState::FailedOutput
             && self.expected_outputs.is_some()
             && self.actual_outputs.is_some()
     }
@@ -185,7 +192,7 @@ pub fn test_pattern_sample(
                 AnalysisLogLevel::Error | AnalysisLogLevel::Warn => {
                     return SampleTestResult {
                         matches,
-                        state: GritTestResultState::Fail,
+                        state: GritTestResultState::FailedPattern,
                         message: Some(format!("Received error: {}", log.message)),
                         expected_output: None,
                         actual_output: None,
@@ -226,7 +233,7 @@ pub fn test_pattern_sample(
         } else {
             return SampleTestResult {
                 matches,
-                state: GritTestResultState::Fail,
+                state: GritTestResultState::FailedMatch,
                 message: Some("Expected output, but got none".to_string()),
                 expected_output: Some(sample.output.clone()),
                 actual_output: None,
@@ -255,7 +262,7 @@ pub fn test_pattern_sample(
     if raw_actual_outputs.len() != raw_expected_outputs.len() {
         return SampleTestResult {
             matches,
-            state: GritTestResultState::Fail,
+            state: GritTestResultState::FailedOutput,
             message: Some(format!(
                 "Expected {} output files, got {}",
                 raw_expected_outputs.len(),
@@ -273,7 +280,7 @@ pub fn test_pattern_sample(
         None => SampleTestResult::new_passing(matches, false),
         Some(MismatchInfo::Content(output)) => SampleTestResult {
             matches,
-            state: GritTestResultState::Fail,
+            state: GritTestResultState::FailedOutput,
             message: Some(
                 "Actual output doesn't match expected output and formatting is disabled"
                     .to_string(),
@@ -285,7 +292,7 @@ pub fn test_pattern_sample(
         },
         Some(MismatchInfo::Path(output)) => SampleTestResult {
             matches,
-            state: GritTestResultState::Fail,
+            state: GritTestResultState::FailedOutput,
             message: Some(format!(
                 "Expected output file {} but got {}",
                 output.expected, output.actual

@@ -11,14 +11,13 @@ use std::io::{stdin, Read};
 use std::path::Path;
 use std::path::PathBuf;
 
-use crate::analytics::{track_event_line};
+use crate::analytics::track_event_line;
 use crate::flags::GlobalFormatFlags;
 use crate::lister::list_applyables;
 use crate::resolver::{get_grit_files_from, resolve_from, Source};
 use crate::utils::is_pattern_name;
 
-
-use super::super::analytics::{AnalyticsArgs};
+use super::super::analytics::AnalyticsArgs;
 use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
 use super::check::{run_check, CheckArg};
 use super::init::{init_config_from_cwd, init_global_grit_modules};
@@ -257,7 +256,8 @@ pub(crate) async fn run_plumbing(
                     )
                 })?;
 
-            let libs = get_grit_files_from(None).await?;
+            let cwd = std::env::current_dir()?;
+            let libs = get_grit_files_from(Some(cwd)).await?;
             get_marzano_pattern_test_results(
                 patterns,
                 &libs,
@@ -267,6 +267,7 @@ pub(crate) async fn run_plumbing(
                     filter: None,
                     exclude: vec![],
                 },
+                parent.into(),
             )
             .await
         }

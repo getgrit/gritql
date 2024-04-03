@@ -1,0 +1,12 @@
+[{
+  "body": "`food` => `bar`",
+  "config": {
+    "samples": [
+      {
+        "input": "foo",
+        "output": "barf"
+      }
+    ]
+  }
+}
+]

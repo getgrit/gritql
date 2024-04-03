@@ -40,7 +40,7 @@ use crate::{
     flags::{GlobalFormatFlags, OutputFormat},
     updater::Updater,
 };
-use anyhow::{Result};
+use anyhow::Result;
 use apply::ApplyArgs;
 use auth::{Auth, AuthCommands};
 use check::CheckArg;
@@ -52,7 +52,7 @@ use indicatif_log_bridge::LogWrapper;
 use init::InitArgs;
 use install::InstallArgs;
 use list::ListArgs;
-use log::{LevelFilter};
+use log::LevelFilter;
 use lsp::LspArgs;
 use marzano_messenger::emit::ApplyDetails;
 use parse::ParseArgs;
@@ -339,7 +339,7 @@ pub async fn run_command() -> Result<()> {
         Commands::Parse(arg) => run_parse(arg, app.format_flags, None).await,
         Commands::Patterns(arg) => match arg.patterns_commands {
             PatternCommands::List(arg) => run_patterns_list(arg, app.format_flags).await,
-            PatternCommands::Test(arg) => run_patterns_test(arg).await,
+            PatternCommands::Test(arg) => run_patterns_test(arg, app.format_flags).await,
             PatternCommands::Edit(arg) => run_patterns_edit(arg).await,
             PatternCommands::Describe(arg) => run_patterns_describe(arg).await,
         },

@@ -24,6 +24,7 @@ expression: resolved_patterns
   localName: NamedPattern
   body: "pattern NamedPattern() {\n    `$foo.named` => `$foo.replacement`\n}"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: OtherPattern
@@ -47,6 +48,7 @@ expression: resolved_patterns
   localName: OtherPattern
   body: "pattern OtherPattern() {\n    `$foo.other` => `$foo.replacement`\n}"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: PatternWithArgs
@@ -70,6 +72,7 @@ expression: resolved_patterns
   localName: PatternWithArgs
   body: "pattern PatternWithArgs($arg) {\n    `$foo.$arg` => `$foo.replacement`\n}"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: ReactNode
@@ -93,6 +96,7 @@ expression: resolved_patterns
   localName: ReactNode
   body: "language js\n\npattern ReactNode($name, $props, $children) {\n  or {\n    `<$name $props>$children</$name>`,\n    `<$name $props />`\n  }\n}"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: es6_exports
@@ -207,6 +211,7 @@ expression: resolved_patterns
   localName: es6_exports
   body: "engine marzano(0.1)\nlanguage js\n\nor {\n    and {\n        // handle a default export of an object by exporting the individual original definitions\n        `module.exports = { $vals }` where {\n            $new_export = \"\",\n            // it's only safe to remove the overall export if every property is individually exported\n            $vals <: some bubble($new_export) $prop where {\n                $prop <: or {\n                    shorthand_property_identifier() as $name where { $value = $name },\n                    pair(key=$name, $value)\n                },\n                or {\n                    $program <: contains or {\n                        // does not handle difficult trying to match a sublist of the module.exports\n                        `const $name = require($val).$foo` => `export { $foo as $name } from $val`,\n                        `const $name = require($val)` => `export { default as $name } from $val`,\n                        `const $name = require($val).default` => `export { default as $name } from $val`,\n                        or {\n                            `let $name = $val`,\n                            `var $name = $val`,\n                            `const $name = $val`,\n                            function_declaration($name)\n                        } as $match => `export $match`\n                    },\n                    if ($value <: $name) {\n                        $new_export += `export { $name };\\n`\n                    } else {\n                        $new_export += `export const $name = $value;\\n`\n                    }\n                }\n            }\n        } => `$new_export`\n    },\n    // handle other default exports\n    `module.exports = $export` => `export default $export`,\n    // Handle individually named exports\n    `module.exports.$name = $export` => `export const $name = $export;\\n`\n}"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: function_like
@@ -230,6 +235,7 @@ expression: resolved_patterns
   localName: function_like
   body: "language js\n\npattern function_like($name, $args, $statements) {\n  or {\n    `function $name($args) { $statements }`,\n    `($args) => { $statements }`,\n    `($args) => $statements`\n  }\n}"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: literal_value
@@ -253,6 +259,7 @@ expression: resolved_patterns
   localName: literal_value
   body: "language js\n\npattern literal_value() {\n  or { number(), string(), `null`, `undefined`}\n}"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: no_console_log
@@ -276,6 +283,7 @@ expression: resolved_patterns
   localName: no_console_log
   body: "`console.log($x)`"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: no_dead_code
@@ -358,6 +366,7 @@ expression: resolved_patterns
   localName: no_dead_code
   body: "engine marzano(0.1)\nlanguage js\n\nstatement_block($statements) where {\n    $deleting = \"false\",\n    $statements <: some bubble($deleting) $s where {\n        if ($deleting <: \"true\") {\n            $s => .\n        } else {\n            // we start deleting\n            if ($s <: or { throw_statement() , continue_statement() , return_statement() }) {\n                $deleting = \"true\",\n            }\n        }\n    }\n}"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: no_eq_null
@@ -481,6 +490,7 @@ expression: resolved_patterns
   localName: no_eq_null
   body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: remove_console_error
@@ -504,6 +514,7 @@ expression: resolved_patterns
   localName: remove_console_error
   body: "engine marzano(0.1)\nlanguage js\n\n`console.error($_)` => .\n"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: strict_tsconfig
@@ -617,4 +628,5 @@ expression: resolved_patterns
   localName: strict_tsconfig
   body: "engine marzano(0.1)\nlanguage json\n\npair(key=`\"compilerOptions\"`, $value) where {\n    $value <: object($properties),\n    $newOptions = [],\n\n    $properties <: maybe contains pair(key=`\"noImplicitAny\"`, value=`false` => `true`),\n    $properties <: maybe contains pair(key=`\"strict\"`, value=`false` => `true`),\n    if ($properties <: contains pair(key=`\"strict\"`, value=$strict)) {\n        $strict <: maybe `false` => `true`\n    } else {\n        $newOptions += `\"strict\": true`\n    },\n\n    // These are all included by default; ideally we'd delete, but can't, so just mark as true\n    $properties <: maybe contains pair(key=`\"noImplicitThis\"`) => .,\n    $properties <: maybe contains pair(key=`\"alwaysStrict\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictBindCallApply\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictNullChecks\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictFunctionTypes\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictPropertyInitialization\"`) => .,\n\n    // allow JS\n    if ($properties <: contains pair(key=`\"allowJs\"`, value=$allow_js)) {\n        $allow_js <: maybe `false` => `true`\n    } else {\n        $newOptions += `\"allowJs\": true`\n    },\n\n    // check JS\n    if ($properties <: contains pair(key=`\"checkJs\"`, value=$check_js)) {\n        $check_js <: maybe `true` => `false`\n    } else {\n        $newOptions += `\"checkJs\": false`\n    },\n\n    if (!$newOptions <: []) {\n        $joined = join(list=$newOptions, separator=\", \"),\n        $properties => `$joined, $properties`\n    }\n}"
   kind: pattern
+  language: json
   visibility: public

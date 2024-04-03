@@ -183,3 +183,22 @@ fn does_not_attempt_to_check_universal_pattern() -> Result<()> {
     assert!(output.contains("Fix available"));
     Ok(())
 }
+
+#[test]
+fn check_only_in_diff() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("only_diff_check", true)?;
+
+    let mut cmd = get_test_cmd()?;
+
+    cmd.arg("check").arg("--only-in-diff").arg("test.diff").current_dir(dir.clone());
+
+    let output = cmd.output()?;
+
+    let output = String::from_utf8_lossy(&output.stdout).to_string();
+    let mut lines: Vec<&str> = output.lines().collect();
+    lines.sort();
+    let output = lines.join("\n");
+    assert_snapshot!(output);
+
+    Ok(())
+}

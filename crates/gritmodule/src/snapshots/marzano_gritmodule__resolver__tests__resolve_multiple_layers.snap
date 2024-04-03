@@ -24,6 +24,7 @@ expression: resolved_patterns
   localName: PatternWithBody
   body: "`sum($a, $b)` => `sum([$a, $b])`"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: RemovalPattern
@@ -47,6 +48,7 @@ expression: resolved_patterns
   localName: RemovalPattern
   body: "`sum($a, $b)` => ."
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: SwapPattern
@@ -70,4 +72,5 @@ expression: resolved_patterns
   localName: SwapPattern
   body: "`sum($a, $b)` => `sum($b, $a)`"
   kind: pattern
+  language: js
   visibility: public

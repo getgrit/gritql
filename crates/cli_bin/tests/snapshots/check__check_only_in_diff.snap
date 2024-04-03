@@ -1,0 +1,8 @@
+---
+source: crates/cli_bin/tests/check.rs
+expression: output
+---
+  12:3    rewrite    Remove `console.log` statements.    Fix available.    no_console_log
+  7:20    rewrite    Converts function expressions to ES6 arrow functions    Fix available.    es6_arrow_functions
+./index.js
+1 files with rewrites. Run grit check --fix to apply changes.

@@ -1924,6 +1924,7 @@ dependencies = [
  "ignore",
  "indicatif",
  "indicatif-log-bridge",
+ "insta",
  "lazy_static",
  "log",
  "marzano-auth",

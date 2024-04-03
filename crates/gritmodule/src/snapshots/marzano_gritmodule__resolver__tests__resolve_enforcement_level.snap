@@ -24,6 +24,7 @@ expression: resolved_patterns
   localName: hidden_pattern
   body: "language js\n`console.log($_)` => .\n"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: remove_console_error
@@ -47,6 +48,7 @@ expression: resolved_patterns
   localName: remove_console_error
   body: "engine marzano(0.1)\nlanguage js\n\n`console.error($_)` => .\n"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: remove_console_log
@@ -70,4 +72,5 @@ expression: resolved_patterns
   localName: remove_console_log
   body: "engine marzano(0.1)\nlanguage js\n\n`console.log($_)` => .\n"
   kind: pattern
+  language: js
   visibility: public
