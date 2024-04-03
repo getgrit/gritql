@@ -52,10 +52,62 @@ fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use insta::assert_yaml_snapshot;
 
     #[test]
-    fn test_parse_modified_ranges() {
-        let diff = r#""#;
+    fn parse_one_file_diff() {
+        let diff = r#"diff --git a/crates/cli_bin/fixtures/es6/empty_export_object.js b/crates/cli_bin/fixtures/es6/empty_export_object.js
+index adacd90..71b96e0 100644
+--- a/crates/cli_bin/fixtures/es6/empty_export_object.js
++++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
+@@ -5,7 +5,7 @@ module.exports = {
+    };
+    
+    export async function createTeam() {
+-  console.log('cool');
++  console.log('very cool');
+    }
+    
+    export const addTeamToOrgSubscription = () => console.log('cool');
+"#;
+        let parsed = parse_modified_ranges(diff).unwrap();
+        assert_yaml_snapshot!(parsed);
     }
 
+    #[test]
+    fn parse_with_multiple_files() {
+        let diff = r#"diff --git a/crates/cli_bin/fixtures/es6/empty_export_object.js b/crates/cli_bin/fixtures/es6/empty_export_object.js
+index adacd90..71b96e0 100644
+--- a/crates/cli_bin/fixtures/es6/empty_export_object.js
++++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
+@@ -5,7 +5,7 @@ module.exports = {
+    };
+    
+    export async function createTeam() {
+-  console.log('cool');
++  console.log('very cool');
+    }
+    
+    export const addTeamToOrgSubscription = () => console.log('cool');
+diff --git a/crates/cli_bin/fixtures/es6/export_object.js b/crates/cli_bin/fixtures/es6/export_object.js
+index f6e1a2c..2c58ad2 100644
+--- a/crates/cli_bin/fixtures/es6/export_object.js
++++ b/crates/cli_bin/fixtures/es6/export_object.js
+@@ -2,7 +2,9 @@ async function createTeam() {
+    console.log('cool');
+    }
+    
+-const addTeamToOrgSubscription = () => console.log('cool');
++const addTeamToOrgSubscription = () => {
++  console.log('cool')
++};
+    
+    module.exports = {
+    createTeam,
+"#;
+        let parsed = parse_modified_ranges(diff).unwrap();
+        assert_yaml_snapshot!(parsed);
+    }
+
+    fn parse_with_created_file() {}
 }
