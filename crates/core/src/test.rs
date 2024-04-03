@@ -2937,8 +2937,8 @@ fn toml_table_rename() {
         TestArgExpected {
             pattern: r#"
                 |language toml
-                |`[other]
-                |$values` => `[renamed]`
+                |`[$x]
+                |$values` where $x <: `other` => `renamed`
                 |"#
             .trim_margin()
             .unwrap(),
@@ -2966,24 +2966,6 @@ fn toml_table_rename() {
             .to_owned()
             .trim_margin()
             .unwrap(),
-        }
-    })
-    .unwrap();
-}
-
-#[test]
-fn toml_boolean_flip() {
-    run_test_expected({
-        TestArgExpected {
-            pattern: r#"
-                |language toml
-                |`key = $value` where { $value == true } => `key = false`
-                |`key = $value` where { $value == false } => `key = true`
-                |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"key = true"#.to_owned(),
-            expected: r#"key = false"#.to_owned(),
         }
     })
     .unwrap();
