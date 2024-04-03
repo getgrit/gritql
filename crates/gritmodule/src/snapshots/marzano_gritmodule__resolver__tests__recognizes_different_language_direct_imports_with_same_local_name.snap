@@ -24,6 +24,7 @@ expression: resolved_patterns
   localName: before_each_file_prep_imports
   body: "language js\n\npattern before_each_file_prep_imports() {\n    $_ where {\n        $GLOBAL_IMPORTED_SOURCES = [],\n        $GLOBAL_IMPORTED_NAMES = [],\n    }\n}"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: before_each_file_prep_imports
@@ -47,4 +48,5 @@ expression: resolved_patterns
   localName: before_each_file_prep_imports
   body: "language python\n\npattern before_each_file_prep_imports() {\n    $_ where {\n        $GLOBAL_IMPORTED_SOURCES = [],\n        $GLOBAL_IMPORTED_NAMES = [],\n        $GLOBAL_BARE_IMPORTS = [],\n    }\n}"
   kind: pattern
+  language: python
   visibility: public

@@ -1,5 +1,6 @@
 use anyhow::{bail, Result};
 use clap::Args;
+
 use dialoguer::Confirm;
 
 use tracing::instrument;
@@ -117,6 +118,9 @@ pub struct ApplyPatternArgs {
     /// Clear cache before running apply
     #[clap(long = "refresh-cache", conflicts_with = "cache")]
     pub refresh_cache: bool,
+    /// Interpret the request as a natural language request
+    #[clap(long)]
+    ai: bool,
     #[clap(long = "language", alias = "lang")]
     pub language: Option<PatternLanguage>,
 }
@@ -136,6 +140,7 @@ impl Default for ApplyPatternArgs {
             output_file: Default::default(),
             cache: Default::default(),
             refresh_cache: Default::default(),
+            ai: Default::default(),
             language: Default::default(),
         }
     }
@@ -154,9 +159,9 @@ macro_rules! flushable_unwrap {
 }
 
 #[instrument]
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, unused_mut)]
 pub(crate) async fn run_apply_pattern(
-    pattern: String,
+    mut pattern: String,
     paths: Vec<PathBuf>,
     arg: ApplyPatternArgs,
     multi: MultiProgress,
@@ -171,12 +176,26 @@ pub(crate) async fn run_apply_pattern(
         .unwrap()
         .get_context()
         .unwrap();
+
     if arg.ignore_limit {
         context.ignore_limit_pattern = true;
     }
 
     let interactive = arg.interactive;
     let min_level = &arg.visibility;
+
+    #[cfg(feature = "ai_querygen")]
+    if arg.ai {
+        log::info!("{}", style("Computing query...").bold());
+
+        pattern = ai_builtins::querygen::compute_pattern(&pattern, &context).await?;
+        log::info!("{}", style(&pattern).dim());
+        log::info!("{}", style("Executing query...").bold());
+    }
+    #[cfg(not(feature = "ai_querygen"))]
+    if arg.ai {
+        bail!("Natural language processing is not enabled in this build");
+    }
 
     // Get the current directory
     let cwd = std::env::current_dir().unwrap();

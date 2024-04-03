@@ -99,6 +99,7 @@ grit_tracing = [
   "marzano-core/grit_tracing",
 ]
 external_functions = ["marzano-core/external_functions"]
+ai_querygen = ["dep:ai_builtins"]
 ai_builtins = ["dep:ai_builtins"]
 embeddings = ["marzano-core/embeddings", "ai_builtins/embeddings"]
 docgen = ["dep:clap-markdown"]

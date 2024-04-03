@@ -24,6 +24,7 @@ expression: parsed
   localName: combined
   body: "pattern combined() {\n  or {\n    this_is_public(),\n    this_is_private()\n  }\n}"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: marky
@@ -49,6 +50,7 @@ expression: parsed
   localName: marky
   body: "pattern show_this_one() {\n  `foo` => `bar`\n}\n\nprivate pattern hide_this() {\n  `foods` => `calories`\n}\n\nor {\n  `foo` => `bar`,\n  show_this_one(),\n  hide_this()\n}"
   kind: pattern
+  language: js
   visibility: public
 - config:
     name: this_is_private
@@ -73,6 +75,7 @@ expression: parsed
   localName: this_is_private
   body: "private pattern this_is_private() {\n  `hidden` => `forbidden`\n}"
   kind: pattern
+  language: js
   visibility: private
 - config:
     name: this_is_public
@@ -96,4 +99,5 @@ expression: parsed
   localName: this_is_public
   body: "pattern this_is_public() {\n  `cool` => `fool`\n}"
   kind: pattern
+  language: js
   visibility: public

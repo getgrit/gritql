@@ -26,7 +26,7 @@ use crate::{
 use anyhow::Result;
 use clap::ValueEnum;
 use enum_dispatch::enum_dispatch;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::fmt;
 use std::hash::Hash;
@@ -45,8 +45,9 @@ use std::path::PathBuf;
 #[cfg(feature = "finder")]
 use std::str::FromStr;
 
-#[derive(ValueEnum, Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize)]
+#[derive(ValueEnum, Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[clap(rename_all = "lower")]
+#[serde(rename_all = "lowercase")]
 pub enum PatternLanguage {
     #[value(skip)]
     JavaScript,
@@ -54,12 +55,13 @@ pub enum PatternLanguage {
     TypeScript,
     #[default]
     #[value(name = "js")]
+    #[serde(rename = "js")]
     Tsx,
     Html,
     Css,
     Json,
     Java,
-    CSharp, // f
+    CSharp,
     Python,
     #[value(name = "markdown")]
     MarkdownBlock,

@@ -13,8 +13,11 @@ use marzano_gritmodule::testing::{
 };
 
 use marzano_language::target_language::PatternLanguage;
-use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use serde::Serialize;
+
+use crate::flags::{GlobalFormatFlags, OutputFormat};
 use crate::resolver::{get_grit_files_from_cwd, resolve_from_cwd, GritModuleResolver, Source};
 use crate::result_formatting::FormattedResult;
 use crate::updater::Updater;
@@ -29,6 +32,7 @@ pub async fn get_marzano_pattern_test_results(
     patterns: Vec<GritPatternTestInfo>,
     libs: &PatternsDirectory,
     args: PatternsTestArgs,
+    output: OutputFormat,
 ) -> Result<()> {
     let cwd = std::env::current_dir()?;
     let resolver = GritModuleResolver::new(cwd.to_str().unwrap());
@@ -38,14 +42,14 @@ pub async fn get_marzano_pattern_test_results(
 
     let runtime = Updater::from_current_bin().await?.get_context()?;
 
-    patterns
+    let test_reports = patterns
         .par_iter()
         .enumerate()
         .map(|(index, pattern)| {
             let lang = PatternLanguage::get_language(&pattern.body);
             let chosen_lang = lang.unwrap_or_default();
             if let PatternLanguage::Universal = chosen_lang {
-                return Ok(());
+                return Ok(None);
             }
             let libs = libs.get_language_directory_or_default(lang)?;
             let rich_pattern = resolver
@@ -95,12 +99,20 @@ pub async fn get_marzano_pattern_test_results(
                         }
                         final_results.insert(pattern_name, results);
                     }
-                    Ok(())
+                    Ok(None)
                 }
                 Err(e) => {
+                    if output == OutputFormat::Json {
+                        let report = TestReport {
+                            outcome: TestOutcome::CompilationFailure,
+                            message: Some(e.to_string()),
+                            samples: vec![],
+                        };
+                        return Ok(Some(report));
+                    }
                     // TODO: this is super hacky, replace with thiserror! codes
                     if e.to_string().contains("No pattern found") {
-                        Ok(())
+                        Ok(None)
                     } else {
                         Err(anyhow!(format!(
                             "Failed to compile pattern {}: {}",
@@ -112,6 +124,9 @@ pub async fn get_marzano_pattern_test_results(
             }
         })
         .collect::<Result<Vec<_>>>()?;
+
+    // Filter out the None values
+    let mut test_report = test_reports.into_iter().flatten().collect::<Vec<_>>();
 
     // Now let's attempt formatting the results that need it
     for (lang, lang_results) in unformatted_results.into_iter() {
@@ -146,7 +161,7 @@ pub async fn get_marzano_pattern_test_results(
                 Some(MismatchInfo::Content(outcome) | MismatchInfo::Path(outcome)) => {
                     SampleTestResult {
                         matches: wrapped.result.matches.clone(),
-                        state: GritTestResultState::Fail,
+                        state: GritTestResultState::FailedOutput,
                         message: Some(
                             "Actual output doesn't match expected output, even after formatting"
                                 .to_string(),
@@ -177,25 +192,61 @@ pub async fn get_marzano_pattern_test_results(
     let final_results = final_results.into_read_only();
     log_test_results(&final_results, args.verbose)?;
     let total = final_results.values().flatten().count();
-    if final_results
-        .values()
-        .any(|v| v.iter().any(|r| !r.result.is_pass()))
-    {
-        bail!(
-            "{} out of {} samples failed.",
-            final_results
+    match output {
+        OutputFormat::Standard => {
+            if final_results
                 .values()
-                .flatten()
-                .filter(|r| !r.result.is_pass())
-                .count(),
-            total
-        )
-    };
-    info!("✓ All {} samples passed.", total);
+                .any(|v| v.iter().any(|r| !r.result.is_pass()))
+            {
+                bail!(
+                    "{} out of {} samples failed.",
+                    final_results
+                        .values()
+                        .flatten()
+                        .filter(|r| !r.result.is_pass())
+                        .count(),
+                    total
+                )
+            };
+            info!("✓ All {} samples passed.", total);
+        }
+        OutputFormat::Json => {
+            // Collect the test reports
+            let mut sample_results = final_results
+                .values()
+                .map(|r| {
+                    let all_pass = r.iter().all(|r| r.result.is_pass());
+                    TestReport {
+                        outcome: if all_pass {
+                            TestOutcome::Success
+                        } else {
+                            TestOutcome::SampleFailure
+                        },
+                        message: if all_pass {
+                            None
+                        } else {
+                            Some("One or more samples failed".to_string())
+                        },
+                        samples: r.iter().map(|r| r.result.clone()).collect(),
+                    }
+                })
+                .collect::<Vec<_>>();
+            test_report.append(&mut sample_results);
+
+            println!("{}", serde_json::to_string(&test_report)?);
+        }
+        _ => {
+            bail!("Output format not supported for this command");
+        }
+    }
+
     Ok(())
 }
 
-pub(crate) async fn run_patterns_test(arg: PatternsTestArgs) -> Result<()> {
+pub(crate) async fn run_patterns_test(
+    arg: PatternsTestArgs,
+    flags: GlobalFormatFlags,
+) -> Result<()> {
     let (mut patterns, _) = resolve_from_cwd(&Source::Local).await?;
     let libs = get_grit_files_from_cwd().await?;
 
@@ -226,7 +277,23 @@ pub(crate) async fn run_patterns_test(arg: PatternsTestArgs) -> Result<()> {
         bail!("No testable patterns found. To test a pattern, make sure it is defined in .grit/grit.yaml or a .md file in your .grit/patterns directory.");
     }
     info!("Found {} testable patterns.", testable_patterns.len(),);
-    get_marzano_pattern_test_results(testable_patterns, &libs, arg).await
+    get_marzano_pattern_test_results(testable_patterns, &libs, arg, flags.into()).await
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+enum TestOutcome {
+    Success,
+    CompilationFailure,
+    SampleFailure,
+}
+
+#[derive(Debug, Serialize)]
+struct TestReport {
+    outcome: TestOutcome,
+    message: Option<String>,
+    /// Sample test details
+    samples: Vec<SampleTestResult>,
 }
 
 #[derive(Debug)]

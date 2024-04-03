@@ -26,6 +26,7 @@ ReactNode:
     localName: ReactNode
     body: "language js\n\npattern ReactNode($name, $props, $children) {\n  or {\n    `<$name $props>$children</$name>`,\n    `<$name $props />`\n  }\n}"
     kind: pattern
+    language: js
     visibility: public
 no_eq_null:
   js:
@@ -151,4 +152,5 @@ no_eq_null:
     localName: no_eq_null
     body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n"
     kind: pattern
+    language: js
     visibility: public

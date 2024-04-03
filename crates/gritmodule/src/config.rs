@@ -172,7 +172,6 @@ pub struct ResolvedGritDefinition {
     pub local_name: String,
     pub body: String,
     pub kind: DefinitionKind,
-    #[serde(skip)]
     pub language: PatternLanguage,
     pub visibility: PatternVisibility,
 }
