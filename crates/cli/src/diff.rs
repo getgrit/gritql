@@ -48,3 +48,14 @@ fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
 
     Ok(results)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_modified_ranges() {
+        let diff = r#""#;
+    }
+
+}
