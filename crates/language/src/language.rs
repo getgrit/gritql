@@ -143,6 +143,21 @@ pub(crate) fn normalize_double_quote_string(s: &str) -> Option<&str> {
     s.strip_prefix('"')?.strip_suffix('"')
 }
 
+pub(crate) fn kind_and_field_id_for_names(
+    lang: &TSLanguage,
+    names: Vec<(&str, &str)>,
+) -> Vec<(u16, u16)> {
+    names
+        .iter()
+        .map(|(kind, field)| {
+            (
+                lang.id_for_node_kind(kind, true),
+                lang.field_id_for_name(field).unwrap(),
+            )
+        })
+        .collect()
+}
+
 #[enum_dispatch(TargetLanguage)]
 pub trait Language {
     /// tree sitter language to parse the source
@@ -150,17 +165,14 @@ pub trait Language {
 
     fn language_name(&self) -> &'static str;
 
-    /// ignore trivial tokens in language matching
-    /// such as extras in the tree-sitter grammar
-    fn skippable_sorts(&self) -> &'static [u16] {
-        &[]
-    }
-
     fn skip_snippet_compilation_of_field(&self, _sort_id: SortId, _field_id: FieldId) -> bool {
         false
     }
 
-    fn mandatory_empty_field(&self, _sort_id: SortId, _field_id: FieldId) -> bool {
+    /// get a list fields which when not present in a snippet will not be matched against.
+    /// by default empty fields will be require the target field to also be empty to match, e.g.,
+    /// `function() { $body }` will only match functions with no arguments.
+    fn optional_empty_field_compilation(&self, _sort_id: SortId, _field_id: FieldId) -> bool {
         false
     }
 
@@ -427,7 +439,8 @@ impl SnippetTree {
                 if snippet_root
                     .utf8_text(self.context.as_bytes())
                     .unwrap()
-                    .trim() != self.snippet.trim()
+                    .trim()
+                    != self.snippet.trim()
                 {
                     return None;
                 }

@@ -5512,7 +5512,7 @@ language js
 `class $foo { $body }` where {
     $fns = [],
     $body <: contains bubble($fns) {
-        `$name() { $body }` as $fn where {
+        `$name($_) { $body }` as $fn where {
                 $body => `"foo"`,
                 $fns += $fn
             }
@@ -5560,13 +5560,13 @@ language js
 `class $foo { $body }` where {
     $fns = [],
     $body <: contains bubble($fns) {
-        `$name() { $body }` as $fn where {
+        `$name($_) { $body }` as $fn where {
                 $body => `"foo"`,
                 $fns += $fn
             }
         },
     $joined = join(list=$fns, separator=`\n`),
-    $joined <: contains bubble `$name() { $body }` where {
+    $joined <: contains bubble `$name($_) { $body }` where {
         $name => `hammering_time`
     },
     $body => $joined
@@ -13325,6 +13325,80 @@ fn python_support_empty_line() {
         |    result = 1 + 1
         |
         |    return result
+        |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
+
+#[test]
+fn delete_import_clause() {
+    run_test_expected(TestArgExpected {
+        pattern: r#"
+            |engine marzano(0.1)
+            |language js
+            |`import $_` => .
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |import * as React from "react";
+            |
+            |<div>Hi</div>;
+            |"#
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
+        |<div>Hi</div>;
+        |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
+
+#[test]
+fn remove_unused_import() {
+    run_test_expected(TestArgExpected {
+        pattern: r#"
+language js
+
+pattern remove_unused_imports($src) {
+or {
+    `import * as $import_clause from $src`,
+    `import $import_clause, { $named_imports } from $src` where {
+        $named_imports <: maybe some bubble($keep_named_import_list) or {`type $import`, `$import`} as $full where {
+            if($program <: contains `$import` until `import $_`) {
+                $keep_named_import_list = true
+             } else {
+                $full => .
+            }
+        }
+    },
+    `import $import_clause from $src` where { $import_clause <: not contains `{$_}`},
+} as $import_line where {
+    $import_clause <: or {`type $module_name`, `$module_name`},
+    $program <: not contains $module_name until `import $_`,
+    if($keep_named_import_list <: undefined) {
+        $import_line => .
+    } else {
+        $import_clause => .
+    }
+  } 
+}
+
+remove_unused_imports()"#
+        .to_owned(),
+        source: r#"
+            |import * as React from "react";
+            |
+            |<div>Hi</div>;
+            |"#
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
+        |<div>Hi</div>;
         |"#
         .trim_margin()
         .unwrap(),

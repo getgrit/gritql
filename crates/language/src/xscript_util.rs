@@ -8,7 +8,7 @@ use crate::{
     vue::get_vue_ranges,
 };
 
-pub static STATEMENT_NODE_NAMES: &[&str] = &[
+static STATEMENT_NODE_NAMES: &[&str] = &[
     "break_statement",
     "continue_statement",
     "debugger_statement",
@@ -38,11 +38,60 @@ pub static STATEMENT_NODE_NAMES: &[&str] = &[
     "with_statement",
 ];
 
-pub fn jslike_get_statement_sorts(lang: &TSLanguage) -> Vec<SortId> {
+pub(crate) fn js_like_get_statement_sorts(lang: &TSLanguage) -> Vec<SortId> {
     STATEMENT_NODE_NAMES
         .iter()
         .map(|kind| lang.id_for_node_kind(kind, true))
         .collect()
+}
+
+pub(crate) fn js_skip_snippet_compilation_sorts() -> Vec<(&'static str, &'static str)> {
+    vec![
+        ("method_definition", "parenthesis"),
+        ("function", "parenthesis"),
+        ("function_declaration", "parenthesis"),
+        ("generator_function", "parenthesis"),
+        ("generator_function_declaration", "parenthesis"),
+        ("arrow_function", "parenthesis"),
+    ]
+}
+
+pub(crate) fn js_like_skip_snippet_compilation_sorts() -> Vec<(&'static str, &'static str)> {
+    let mut res = vec![
+        ("constructor_type", "parenthesis"),
+        ("construct_signature", "parenthesis"),
+        ("function_type", "parenthesis"),
+        ("method_signature", "parenthesis"),
+        ("abstract_method_signature", "parenthesis"),
+        ("function_signature", "parenthesis"),
+    ];
+    res.extend(js_skip_snippet_compilation_sorts());
+    res
+}
+
+pub(crate) fn js_optional_empty_field_compilation() -> Vec<(&'static str, &'static str)> {
+    vec![
+        ("function", "async"),
+        ("arrow_function", "async"),
+        ("generator_function", "async"),
+        ("generator_function_declaration", "async"),
+        ("method_definition", "async"),
+        ("function_declaration", "async"),
+        ("import_statement", "import"),
+    ]
+}
+
+pub(crate) fn js_like_optional_empty_field_compilation() -> Vec<(&'static str, &'static str)> {
+    let mut res = vec![
+        ("call_expression", "type_arguments"),
+        ("new_expression", "type_arguments"),
+        ("function", "return_type"),
+        ("arrow_function", "return_type"),
+        ("import_statement", "type"),
+        ("public_field_definition", "static"),
+    ];
+    res.extend(js_optional_empty_field_compilation());
+    res
 }
 
 pub(crate) fn parse_file(
