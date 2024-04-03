@@ -2,12 +2,15 @@ use anyhow::Result;
 use marzano_util::position::{FileRange, Position, RangeWithoutByte, UtilRange};
 use std::{fs::File, io::Read, path::PathBuf, str::FromStr};
 
-pub fn parse_modified_ranges(diff_path: &PathBuf) -> Result<Vec<FileRange>> {
+pub fn extract_modified_ranges(diff_path: &PathBuf) -> Result<Vec<FileRange>> {
     let mut file = File::open(diff_path)?;
     let mut diff = String::new();
 
     file.read_to_string(&mut diff)?;
+    parse_modified_ranges(&diff)
+}
 
+fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
     let mut results = Vec::new();
     let lines = diff.lines();
 

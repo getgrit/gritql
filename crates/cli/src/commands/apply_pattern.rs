@@ -30,7 +30,7 @@ use std::collections::BTreeMap;
 use tokio::fs;
 
 use crate::{
-    analyze::par_apply_pattern, community::parse_eslint_output, diff::parse_modified_ranges,
+    analyze::par_apply_pattern, community::parse_eslint_output, diff::extract_modified_ranges,
     error::GoodError, flags::OutputFormat, messenger_variant::create_emitter,
     result_formatting::get_human_error, updater::Updater,
 };
@@ -198,7 +198,7 @@ pub(crate) async fn run_apply_pattern(
         let json_ranges = flushable_unwrap!(emitter, parse_eslint_output(json_path));
         Some(json_ranges)
     } else if let Some(diff_path) = arg.only_in_diff.clone() {
-        let diff_ranges = flushable_unwrap!(emitter, parse_modified_ranges(&diff_path));
+        let diff_ranges = flushable_unwrap!(emitter, extract_modified_ranges(&diff_path));
         Some(diff_ranges)
     } else {
         None

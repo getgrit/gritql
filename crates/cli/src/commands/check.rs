@@ -33,7 +33,7 @@ use marzano_messenger::emit::{Messager, VisibilityLevels};
 use cli_server::check::CheckMessenger;
 
 use crate::{
-    diff::parse_modified_ranges,
+    diff::extract_modified_ranges,
     error::GoodError,
     flags::{GlobalFormatFlags, OutputFormat},
     github::{log_check_annotations, write_check_summary},
@@ -125,7 +125,7 @@ pub(crate) async fn run_check(
     };
 
     let filter_range = if let Some(diff_path) = arg.only_in_diff.clone() {
-        let diff_ranges = parse_modified_ranges(&diff_path)?;
+        let diff_ranges = extract_modified_ranges(&diff_path)?;
         Some(diff_ranges)
     } else {
         None
