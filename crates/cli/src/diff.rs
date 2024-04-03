@@ -109,7 +109,56 @@ index f6e1a2c..2c58ad2 100644
         assert_yaml_snapshot!(parsed);
     }
 
+    #[test]
     fn parse_with_created_file() {
-        let diff = r#""#;
+        let diff = r#"diff --git a/crates/cli_bin/fixtures/es6/empty_export_object.js b/crates/cli_bin/fixtures/es6/empty_export_object.js
+index adacd90..71b96e0 100644
+--- a/crates/cli_bin/fixtures/es6/empty_export_object.js
++++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
+@@ -5,7 +5,7 @@ module.exports = {
+    };
+    
+    export async function createTeam() {
+-  console.log('cool');
++  console.log('very cool');
+    }
+    
+    export const addTeamToOrgSubscription = () => console.log('cool');
+diff --git a/crates/cli_bin/fixtures/es6/export_object.js b/crates/cli_bin/fixtures/es6/export_object.js
+index f6e1a2c..2c58ad2 100644
+--- a/crates/cli_bin/fixtures/es6/export_object.js
++++ b/crates/cli_bin/fixtures/es6/export_object.js
+@@ -2,7 +2,9 @@ async function createTeam() {
+    console.log('cool');
+    }
+    
+-const addTeamToOrgSubscription = () => console.log('cool');
++const addTeamToOrgSubscription = () => {
++  console.log('cool')
++};
+    
+    module.exports = {
+    createTeam,
+diff --git a/crates/cli_bin/fixtures/es6/index.js b/crates/cli_bin/fixtures/es6/index.js
+new file mode 100644
+index 0000000..7b232cd
+--- /dev/null
++++ b/crates/cli_bin/fixtures/es6/index.js
+@@ -0,0 +1,12 @@
++async function createTeam() {
++  console.log("cool");
++}
++
++const addTeamToOrgSubscription = () => {
++  console.log("cool");
++};
++
++module.exports = {
++  createTeam,
++  addTeamToOrgSubscription,
++};
+"#;
+        let parsed = parse_modified_ranges(diff).unwrap();
+        assert_yaml_snapshot!(parsed);
     }
 }
