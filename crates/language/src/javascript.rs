@@ -1,6 +1,11 @@
 use crate::{
-    language::{fields_for_nodes, Field, FieldId, Language, SortId, TSLanguage},
-    xscript_util::{self, jslike_check_orphaned, jslike_get_statement_sorts},
+    language::{
+        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, SortId, TSLanguage,
+    },
+    xscript_util::{
+        self, js_like_get_statement_sorts, js_optional_empty_field_compilation,
+        js_skip_snippet_compilation_sorts, jslike_check_orphaned,
+    },
 };
 use anyhow::Result;
 use marzano_util::position::Range;
@@ -45,68 +50,14 @@ impl JavaScript {
         let metavariable_sort = language.id_for_node_kind("grit_metavariable", true);
         let comment_sort = language.id_for_node_kind("comment", true);
 
-        let statement_sorts = STATEMENT_SORTS.get_or_init(|| jslike_get_statement_sorts(language));
+        let statement_sorts = STATEMENT_SORTS.get_or_init(|| js_like_get_statement_sorts(language));
 
         let skip_snippet_compilation_sorts = SKIP_SNIPPET_COMPILATION_SORTS.get_or_init(|| {
-            vec![
-                (
-                    language.id_for_node_kind("method_definition", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("function", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("function_declaration", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("generator_function", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("generator_function_declaration", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("arrow_function", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-            ]
+            kind_and_field_id_for_names(language, js_skip_snippet_compilation_sorts())
         });
 
         let optional_empty_field_compilation = OPTIONAL_EMPTY_FIELD_COMPILATION.get_or_init(|| {
-            vec![
-                (
-                    language.id_for_node_kind("function", true),
-                    language.field_id_for_name("async").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("arrow_function", true),
-                    language.field_id_for_name("async").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("generator_function", true),
-                    language.field_id_for_name("async").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("generator_function_declaration", true),
-                    language.field_id_for_name("async").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("method_definition", true),
-                    language.field_id_for_name("async").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("function_declaration", true),
-                    language.field_id_for_name("async").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("import_statement", true),
-                    language.field_id_for_name("import").unwrap(),
-                ),
-            ]
+            kind_and_field_id_for_names(language, js_optional_empty_field_compilation())
         });
 
         Self {
