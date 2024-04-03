@@ -25,6 +25,9 @@ fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
                 current_file = current_file[2..].to_string();
             }
         } else if line.starts_with("@@") {
+            if current_file == "/dev/null" {
+                continue;
+            }
             let range_part = line.split_whitespace().nth(2).unwrap_or("");
             let range_parts: Vec<&str> = range_part.split(',').collect();
             if let Ok(line_num) = u32::from_str(range_parts[0].trim_start_matches('+')) {
@@ -33,7 +36,7 @@ fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
                     + range_parts
                         .get(1)
                         .map_or(0, |&x| x.parse::<u32>().unwrap_or(0))
-                    - 1;
+                        .saturating_sub(1);
             }
 
             results.push(FileRange {
@@ -157,6 +160,66 @@ index 0000000..7b232cd
 +  createTeam,
 +  addTeamToOrgSubscription,
 +};
+"#;
+        let parsed = parse_modified_ranges(diff).unwrap();
+        assert_yaml_snapshot!(parsed);
+    }
+
+    #[test]
+    fn parse_with_deleted_file() {
+        let diff = r#"diff --git a/crates/cli_bin/fixtures/es6/empty_export_object.js b/crates/cli_bin/fixtures/es6/empty_export_object.js
+index adacd90..71b96e0 100644
+--- a/crates/cli_bin/fixtures/es6/empty_export_object.js
++++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
+@@ -5,7 +5,7 @@ module.exports = {
+    };
+    
+    export async function createTeam() {
+-  console.log('cool');
++  console.log('very cool');
+    }
+    
+    export const addTeamToOrgSubscription = () => console.log('cool');
+diff --git a/crates/cli_bin/fixtures/es6/export.js b/crates/cli_bin/fixtures/es6/export.js
+deleted file mode 100644
+index 52de8a9..0000000
+--- a/crates/cli_bin/fixtures/es6/export.js
++++ /dev/null
+@@ -1,19 +0,0 @@
+-const king = '9';
+-
+-module.exports = {
+-  king,
+-  queen: '8',
+-};
+-
+-async function createTeam() {
+-  console.log('cool');
+-}
+-
+-const addTeamToOrgSubscription = () => console.log('cool');
+-
+-module.exports = {
+-  createTeam,
+-  addTeamToOrgSubscription,
+-};
+-
+-module.exports.queen = '9';
+diff --git a/crates/cli_bin/fixtures/es6/export_object.js b/crates/cli_bin/fixtures/es6/export_object.js
+index f6e1a2c..2c58ad2 100644
+--- a/crates/cli_bin/fixtures/es6/export_object.js
++++ b/crates/cli_bin/fixtures/es6/export_object.js
+@@ -2,7 +2,9 @@ async function createTeam() {
+    console.log('cool');
+    }
+    
+-const addTeamToOrgSubscription = () => console.log('cool');
++const addTeamToOrgSubscription = () => {
++  console.log('cool')
++};
+    
+    module.exports = {
+    createTeam,
 "#;
         let parsed = parse_modified_ranges(diff).unwrap();
         assert_yaml_snapshot!(parsed);
