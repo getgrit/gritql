@@ -2839,7 +2839,7 @@ fn toml_nested_metavar() {
             pattern: r#"
                 |language toml
                 |`name = $value` where {
-                |  $value <: "marzano-cli" => "marzano-madness"
+                |  $value <: `"marzano-cli"` => `"marzano-madness"`
                 |}
                 |"#
             .trim_margin()
@@ -2856,7 +2856,7 @@ fn toml_nested_metavar() {
             .unwrap(),
             expected: r#"
             | [package]
-            | name = "marzano-cli"
+            | name = "marzano-madness"
             | version = "0.1.1"
             | edition = "2021"
             | authors = ["Grit Developers <support@grit.io>"]
@@ -2902,9 +2902,9 @@ fn toml_within() {
             | path = "src/lib.rs"
             |
             | [dependencies]
-            | anyhow = "1.0.70"
+            | anyhow = { version = "1.0.70" }
             | clap = { version = "4.1.13", features = ["derive"] }
-            | indicatif = "0.17.5"
+            | indicatif = { version = "0.17.5" }
             "#
             .to_owned()
             .trim_margin()
@@ -2937,12 +2937,35 @@ fn toml_table_rename() {
         TestArgExpected {
             pattern: r#"
                 |language toml
-                |`[old_table]` => `[new_table]`
+                |`[other]
+                |$values` => `[renamed]`
                 |"#
             .trim_margin()
             .unwrap(),
-            source: r#"[old_table]"#.to_owned(),
-            expected: r#"[new_table]"#.to_owned(),
+            source: r#"
+            | [other]
+            | nest = "marzano-cli"
+            | [package]
+            | name = "marzano-cli"
+            | version = "0.1.1"
+            | edition = "2021"
+            | authors = ["Grit Developers <support@grit.io>"]
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+            | [renamed]
+            | nest = "marzano-cli"
+            | [package]
+            | name = "marzano-cli"
+            | version = "0.1.1"
+            | edition = "2021"
+            | authors = ["Grit Developers <support@grit.io>"]
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
         }
     })
     .unwrap();
