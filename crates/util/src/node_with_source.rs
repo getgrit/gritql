@@ -72,7 +72,7 @@ impl<'a> Iterator for AncestorIterator<'a> {
         self.node = node
             .node
             .parent()
-            .map(|parent| NodeWithSource::new(parent, &node.source));
+            .map(|parent| NodeWithSource::new(parent, node.source));
         Some(node)
     }
 }

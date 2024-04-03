@@ -41,7 +41,7 @@ fn is_suppress_comment(
         && child_range.end_point().row() <= target_range.end_point().row();
     if !inline_suppress {
         let pre_suppress = comment_applies_to_range(comment_node, target_range, lang)
-            && comment_occupies_entire_line(text, &comment_node);
+            && comment_occupies_entire_line(text, comment_node);
         if !pre_suppress {
             return false;
         }
