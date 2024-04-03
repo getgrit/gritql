@@ -12273,136 +12273,137 @@
   {
     "type": "program",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "break_statement",
-          "named": true
-        },
-        {
-          "type": "class_declaration",
-          "named": true
-        },
-        {
-          "type": "compound_statement",
-          "named": true
-        },
-        {
-          "type": "const_declaration",
-          "named": true
-        },
-        {
-          "type": "continue_statement",
-          "named": true
-        },
-        {
-          "type": "declare_statement",
-          "named": true
-        },
-        {
-          "type": "do_statement",
-          "named": true
-        },
-        {
-          "type": "echo_statement",
-          "named": true
-        },
-        {
-          "type": "empty_statement",
-          "named": true
-        },
-        {
-          "type": "enum_declaration",
-          "named": true
-        },
-        {
-          "type": "exit_statement",
-          "named": true
-        },
-        {
-          "type": "expression_statement",
-          "named": true
-        },
-        {
-          "type": "for_statement",
-          "named": true
-        },
-        {
-          "type": "foreach_statement",
-          "named": true
-        },
-        {
-          "type": "function_definition",
-          "named": true
-        },
-        {
-          "type": "function_static_declaration",
-          "named": true
-        },
-        {
-          "type": "global_declaration",
-          "named": true
-        },
-        {
-          "type": "goto_statement",
-          "named": true
-        },
-        {
-          "type": "if_statement",
-          "named": true
-        },
-        {
-          "type": "interface_declaration",
-          "named": true
-        },
-        {
-          "type": "named_label_statement",
-          "named": true
-        },
-        {
-          "type": "namespace_definition",
-          "named": true
-        },
-        {
-          "type": "namespace_use_declaration",
-          "named": true
-        },
-        {
-          "type": "php_tag",
-          "named": true
-        },
-        {
-          "type": "return_statement",
-          "named": true
-        },
-        {
-          "type": "switch_statement",
-          "named": true
-        },
-        {
-          "type": "text",
-          "named": true
-        },
-        {
-          "type": "trait_declaration",
-          "named": true
-        },
-        {
-          "type": "try_statement",
-          "named": true
-        },
-        {
-          "type": "unset_statement",
-          "named": true
-        },
-        {
-          "type": "while_statement",
-          "named": true
-        }
-      ]
+    "fields": {
+      "html": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "break_statement",
+            "named": true
+          },
+          {
+            "type": "class_declaration",
+            "named": true
+          },
+          {
+            "type": "compound_statement",
+            "named": true
+          },
+          {
+            "type": "const_declaration",
+            "named": true
+          },
+          {
+            "type": "continue_statement",
+            "named": true
+          },
+          {
+            "type": "declare_statement",
+            "named": true
+          },
+          {
+            "type": "do_statement",
+            "named": true
+          },
+          {
+            "type": "echo_statement",
+            "named": true
+          },
+          {
+            "type": "empty_statement",
+            "named": true
+          },
+          {
+            "type": "enum_declaration",
+            "named": true
+          },
+          {
+            "type": "exit_statement",
+            "named": true
+          },
+          {
+            "type": "expression_statement",
+            "named": true
+          },
+          {
+            "type": "for_statement",
+            "named": true
+          },
+          {
+            "type": "foreach_statement",
+            "named": true
+          },
+          {
+            "type": "function_definition",
+            "named": true
+          },
+          {
+            "type": "function_static_declaration",
+            "named": true
+          },
+          {
+            "type": "global_declaration",
+            "named": true
+          },
+          {
+            "type": "goto_statement",
+            "named": true
+          },
+          {
+            "type": "if_statement",
+            "named": true
+          },
+          {
+            "type": "interface_declaration",
+            "named": true
+          },
+          {
+            "type": "named_label_statement",
+            "named": true
+          },
+          {
+            "type": "namespace_definition",
+            "named": true
+          },
+          {
+            "type": "namespace_use_declaration",
+            "named": true
+          },
+          {
+            "type": "php_tag",
+            "named": true
+          },
+          {
+            "type": "return_statement",
+            "named": true
+          },
+          {
+            "type": "switch_statement",
+            "named": true
+          },
+          {
+            "type": "text",
+            "named": true
+          },
+          {
+            "type": "trait_declaration",
+            "named": true
+          },
+          {
+            "type": "try_statement",
+            "named": true
+          },
+          {
+            "type": "unset_statement",
+            "named": true
+          },
+          {
+            "type": "while_statement",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
