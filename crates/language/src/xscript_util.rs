@@ -64,10 +64,6 @@ pub(crate) fn js_like_skip_snippet_compilation_sorts() -> Vec<(&'static str, &'s
         ("method_signature", "parenthesis"),
         ("abstract_method_signature", "parenthesis"),
         ("function_signature", "parenthesis"),
-        ("function_signature", "parenthesis"),
-        ("function_signature", "parenthesis"),
-        ("function_signature", "parenthesis"),
-        ("function_signature", "parenthesis"),
     ];
     res.extend(js_skip_snippet_compilation_sorts());
     res
