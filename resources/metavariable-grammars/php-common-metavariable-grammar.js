@@ -125,20 +125,22 @@ module.exports = function defineGrammar(dialect) {
     rules: {
       program: $ => {
         if (dialect === 'php') {
-          return seq(
-            optional($.text),
-            optional(seq(
-              $.php_tag,
-              repeat($._statement),
-            )),
+          return field('html', 
+            seq(
+              optional($.text),
+              optional(seq(
+                $.php_tag,
+                repeat($._statement),
+              )),
+            )
           );
         }
 
-        return seq(
+        return field('no_html', seq(
           optional($.php_tag),
           repeat($._statement),
           optional('?>'),
-        );
+        ));
       },
 
       php_tag: _ => /<\?([pP][hH][pP]|=)?/,
