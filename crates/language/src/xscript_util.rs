@@ -1,12 +1,13 @@
-use anyhow::anyhow;
-use marzano_util::tree_sitter_util::children_by_field_name_count;
-use tree_sitter::{Node, Parser, Tree};
-
 use crate::{
     language::{default_parse_file, Language, SortId, TSLanguage},
-    parent_traverse::{ParentTraverse, TreeSitterParentCursor},
     vue::get_vue_ranges,
 };
+use anyhow::anyhow;
+use grit_util::AstNode;
+use marzano_util::{
+    node_with_source::NodeWithSource, tree_sitter_util::children_by_field_name_count,
+};
+use tree_sitter::{Node, Parser, Tree};
 
 pub static STATEMENT_NODE_NAMES: &[&str] = &[
     "break_statement",
@@ -95,8 +96,8 @@ pub(crate) fn jslike_check_orphaned(
             }
         }
     } else if n.is_error() && n.utf8_text(src.as_bytes()).unwrap() == "," {
-        for ancestor in ParentTraverse::new(TreeSitterParentCursor::new(n.clone())) {
-            if ancestor.kind() == "class_body" {
+        for ancestor in NodeWithSource::new(n.clone(), src).ancestors() {
+            if ancestor.node.kind() == "class_body" {
                 orphan_ranges.push(n.range());
                 break;
             }

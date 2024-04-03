@@ -41,29 +41,6 @@ pub trait AstCursor {
     fn node(&self) -> Self::Node;
 }
 
-impl<'a, T> AstCursor for &'a mut T
-where
-    T: AstCursor,
-{
-    type Node = T::Node;
-
-    fn goto_first_child(&mut self) -> bool {
-        T::goto_first_child(self)
-    }
-
-    fn goto_parent(&mut self) -> bool {
-        T::goto_parent(self)
-    }
-
-    fn goto_next_sibling(&mut self) -> bool {
-        T::goto_next_sibling(self)
-    }
-
-    fn node(&self) -> Self::Node {
-        T::node(self)
-    }
-}
-
 /// Order to iterate through a n-ary tree; for n-ary trees only
 /// Pre-order and Post-order make sense.
 #[derive(Eq, PartialEq, Hash, Debug, Copy, Clone)]
