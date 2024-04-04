@@ -644,7 +644,6 @@ async fn resolve_patterns_for_module(
                 };
                 let language_string = language.to_string();
                 let local_name = referenced_pattern.local_name.to_string();
-                println!("{} is valid name: {}", local_name, is_valid_pattern_name(&local_name));
                 if !is_valid_pattern_name(&local_name) {
                     bail!("Invalid pattern name: {}. Grit patterns must match the regex /[\\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", local_name);
                 }
