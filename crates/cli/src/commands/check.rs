@@ -72,10 +72,10 @@ pub struct CheckArg {
     pub github_actions: bool,
     #[clap(
         long = "only-in-diff",
-        help = "Only check ranges that are inside the provided unified diff",
+        help = "Only check ranges that are inside the unified diff if a path to the diff is provided, or the results of git diff HEAD if no path is provided.",
         hide = true
     )]
-    pub only_in_diff: Option<PathBuf>,
+    pub only_in_diff: Option<Option<PathBuf>>,
 }
 
 pub(crate) async fn run_check(
@@ -124,7 +124,7 @@ pub(crate) async fn run_check(
         std::env::current_dir()?
     };
 
-    let filter_range = if let Some(diff_path) = arg.only_in_diff.clone() {
+    let filter_range = if let Some(Some(diff_path)) = arg.only_in_diff.clone() {
         let diff_ranges = extract_modified_ranges(&diff_path)?;
         Some(diff_ranges)
     } else {

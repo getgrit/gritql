@@ -1,8 +1,6 @@
 use anyhow::Result;
 use marzano_util::position::{FileRange, Position, RangeWithoutByte, UtilRange};
 use std::{fs::File, io::Read, path::PathBuf, str::FromStr};
-use git2::Repository;
-use marzano_gritmodule::searcher::find_git_dir_from;
 
 pub fn git_diff(path: &PathBuf) -> Result<String> {
     let output = std::process::Command::new("git")
