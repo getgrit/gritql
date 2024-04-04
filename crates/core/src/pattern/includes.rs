@@ -61,9 +61,13 @@ fn execute<'a>(
     logs: &mut AnalysisLogs,
 ) -> Result<bool> {
     let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)
-        .context("includes can only be used with patterns that resolve to a string")?;
-    let substring = resolved.text(&state.files)?;
-    let string = binding.text(&state.files)?;
+        .context("includes can only be used with patterns that can be resolved")?;
+    let substring = resolved
+        .text(&state.files)
+        .context("includes can only be used with patterns that can be resolved to a string")?;
+    let string = binding
+        .text(&state.files)
+        .context("includes can only be used with patterns that can be resolved to a string")?;
     if string.contains(&*substring) {
         Ok(true)
     } else {
