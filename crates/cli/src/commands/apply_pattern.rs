@@ -380,12 +380,7 @@ pub(crate) async fn run_apply_pattern(
         emitter,
         resolver.make_pattern(&my_input.pattern_body, current_name)
     );
-
-    println!(
-        "Trying to compile with pattern {:?} and libs {:?}",
-        pattern, my_input.pattern_libs
-    );
-
+    
     let CompilationResult {
         problem: compiled,
         compilation_warnings,
