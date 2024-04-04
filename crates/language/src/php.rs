@@ -75,6 +75,8 @@ impl Language for Php {
             ("<?php class GRIT_CLASS { ", " function GRIT_FN(); } ?>"),
             ("<?php GRIT_FN(", ") { } ?>"),
             ("<?php [", "]; ?>"),
+            ("<?php ", "{} ?>"),
+            ("<?php foreach(", "); ?>"),
         ]
     }
 

@@ -742,10 +742,10 @@ module.exports = function defineGrammar(dialect) {
         '(',
         field('expression', $._expression),
         keyword('as'),
-        choice(
+        field('value', choice(
           alias($.foreach_pair, $.pair),
           $._foreach_value,
-        ),
+        )),
         ')',
         choice(
           $._semicolon,
@@ -961,7 +961,7 @@ module.exports = function defineGrammar(dialect) {
       ),
 
       print_intrinsic: $ => seq(
-        keyword('print'), $._expression,
+        keyword('print'), field("expression", $._expression),
       ),
 
       anonymous_function_creation_expression: $ => seq(

@@ -3891,22 +3891,26 @@
           "value": "as"
         },
         {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "ALIAS",
-              "content": {
-                "type": "SYMBOL",
-                "name": "foreach_pair"
+          "type": "FIELD",
+          "name": "value",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "ALIAS",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "foreach_pair"
+                },
+                "named": true,
+                "value": "pair"
               },
-              "named": true,
-              "value": "pair"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "_foreach_value"
-            }
-          ]
+              {
+                "type": "SYMBOL",
+                "name": "_foreach_value"
+              }
+            ]
+          }
         },
         {
           "type": "STRING",
@@ -4992,8 +4996,12 @@
           "value": "print"
         },
         {
-          "type": "SYMBOL",
-          "name": "_expression"
+          "type": "FIELD",
+          "name": "expression",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_expression"
+          }
         }
       ]
     },

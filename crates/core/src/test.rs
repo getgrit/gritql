@@ -13139,6 +13139,37 @@ fn php_array() {
     )
     .unwrap();
 }
+#[test]
+fn php_echo() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`echo ^_;` => `print "modified;`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |$arr = array(1, 2, 3, 4);
+                |foreach($arr as &$value) {
+                |    echo $value * 2;
+                |}
+                |"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+                |$arr = array(1, 2, 3, 4);
+                |foreach($arr as &$value) {
+                |    print $value * 2;
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
 
 #[test]
 fn css_property_value() {
