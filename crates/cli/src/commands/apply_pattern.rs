@@ -380,7 +380,7 @@ pub(crate) async fn run_apply_pattern(
         emitter,
         resolver.make_pattern(&my_input.pattern_body, current_name)
     );
-    
+
     let CompilationResult {
         problem: compiled,
         compilation_warnings,
