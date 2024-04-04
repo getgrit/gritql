@@ -64,17 +64,17 @@ fn execute<'a>(
         Pattern::Regex(pattern) => pattern.execute_matching(binding, state, context, logs, false),
         Pattern::Or(pattern) => {
             for p in pattern.patterns.iter() {
-                if execute(&p, binding, state, context, logs)? {
+                if execute(p, binding, state, context, logs)? {
                     return Ok(true);
                 }
             }
             Ok(false)
         }
         Pattern::Any(pattern) => {
-            // Any is subtly different from true in that it will not short-circuit
+            // Any is subtly different from or in that it will not short-circuit so we *must* execute all patterns
             let mut any_matched = false;
             for p in pattern.patterns.iter() {
-                if execute(&p, binding, state, context, logs)? {
+                if execute(p, binding, state, context, logs)? {
                     any_matched = true;
                 }
             }
