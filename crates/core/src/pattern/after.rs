@@ -59,7 +59,7 @@ impl After {
             bail!("cannot get the node after this binding")
         };
 
-        if let Some(next) = node.next_non_trivia_node() {
+        if let Some(next) = node.next_named_sibling() {
             Ok(ResolvedPattern::from_node(next))
         } else {
             debug(
@@ -100,7 +100,7 @@ impl Matcher for After {
         let Some(node) = binding.as_node() else {
             return Ok(true);
         };
-        let prev_node = resolve!(node.previous_non_trivia_node());
+        let prev_node = resolve!(node.previous_named_sibling());
         if !self
             .after
             .execute(

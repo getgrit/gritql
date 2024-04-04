@@ -9,7 +9,7 @@ expression: parsed
         line: 5
         column: 0
       end:
-        line: 11
+        line: 12
         column: 0
 - filePath: crates/cli_bin/fixtures/es6/export_object.js
   range:
@@ -18,5 +18,5 @@ expression: parsed
         line: 2
         column: 0
       end:
-        line: 10
+        line: 11
         column: 0

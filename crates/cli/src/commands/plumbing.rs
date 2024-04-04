@@ -5,6 +5,7 @@ use marzano_gritmodule::config::GritPatternTestInfo;
 use marzano_gritmodule::fetcher::KeepFetcherKind;
 use marzano_gritmodule::patterns_directory::PatternsDirectory;
 use marzano_gritmodule::searcher::find_grit_modules_dir;
+use marzano_gritmodule::utils::is_pattern_name;
 use marzano_messenger::emit::ApplyDetails;
 use serde::{Deserialize, Serialize};
 use std::io::{stdin, Read};
@@ -15,7 +16,6 @@ use crate::analytics::track_event_line;
 use crate::flags::GlobalFormatFlags;
 use crate::lister::list_applyables;
 use crate::resolver::{get_grit_files_from, resolve_from, Source};
-use crate::utils::is_pattern_name;
 
 use super::super::analytics::AnalyticsArgs;
 use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
