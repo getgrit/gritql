@@ -12,7 +12,9 @@ export async function createTeam() {
   console.log('very cool');
 }
 
-export const addTeamToOrgSubscription = () => console.log('cool');
+export const addTeamToOrgSubscription = () => {
+  console.log('cool');
+}
 
 module.exports = {};
 

@@ -31,9 +31,14 @@ use std::collections::BTreeMap;
 use tokio::fs;
 
 use crate::{
-    analyze::par_apply_pattern, community::parse_eslint_output, diff::extract_modified_ranges,
-    error::GoodError, flags::OutputFormat, messenger_variant::create_emitter,
-    result_formatting::get_human_error, updater::Updater,
+    analyze::par_apply_pattern,
+    community::parse_eslint_output,
+    diff::{extract_modified_ranges, git_diff, parse_modified_ranges},
+    error::GoodError,
+    flags::OutputFormat,
+    messenger_variant::create_emitter,
+    result_formatting::get_human_error,
+    updater::Updater,
 };
 
 use marzano_messenger::{
@@ -95,11 +100,11 @@ pub struct ApplyPatternArgs {
     pub visibility: VisibilityLevels,
     #[clap(
         long = "only-in-diff",
-        help = "Only rewrite ranges that are inside the provided unified diff",
+        help = "Only rewrite ranges that are inside the unified diff if a path to the diff is provided, or the results of git diff HEAD if no path is provided.",
         hide = true,
         conflicts_with = "only_in_json"
     )]
-    only_in_diff: Option<PathBuf>,
+    only_in_diff: Option<Option<PathBuf>>,
     #[clap(
         long = "only-in-json",
         help = "Only rewrite ranges that are inside the provided eslint-style JSON file",
@@ -216,8 +221,12 @@ pub(crate) async fn run_apply_pattern(
     let filter_range = if let Some(json_path) = arg.only_in_json.clone() {
         let json_ranges = flushable_unwrap!(emitter, parse_eslint_output(json_path));
         Some(json_ranges)
-    } else if let Some(diff_path) = arg.only_in_diff.clone() {
-        let diff_ranges = flushable_unwrap!(emitter, extract_modified_ranges(&diff_path));
+    } else if let Some(Some(diff_path)) = &arg.only_in_diff {
+        let diff_ranges = flushable_unwrap!(emitter, extract_modified_ranges(diff_path));
+        Some(diff_ranges)
+    } else if let Some(None) = &arg.only_in_diff {
+        let diff = git_diff(&std::env::current_dir()?)?;
+        let diff_ranges = flushable_unwrap!(emitter, parse_modified_ranges(&diff));
         Some(diff_ranges)
     } else {
         None
