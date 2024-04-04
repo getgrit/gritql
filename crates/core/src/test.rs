@@ -13139,6 +13139,7 @@ fn php_array() {
     )
     .unwrap();
 }
+
 #[test]
 fn php_echo() {
     run_test_expected(
@@ -13146,7 +13147,7 @@ fn php_echo() {
             pattern: r#"
                 |language php
                 |
-                |`echo ^_;` => `print "modified;`
+                |`echo ^_;` => `print "modified";`
                 |"#
             .trim_margin()
             .unwrap(),
@@ -13161,7 +13162,7 @@ fn php_echo() {
             expected: r#"
                 |$arr = array(1, 2, 3, 4);
                 |foreach($arr as &$value) {
-                |    print $value * 2;
+                |    print "modified";
                 |}
                 |"#
             .trim_margin()
