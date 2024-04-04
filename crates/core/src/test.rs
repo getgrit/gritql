@@ -3125,7 +3125,7 @@ fn includes_and() {
                 |console.log("Hello world!");
                 |console.log("Goodbye world!");
                 |console.log("But not me, handsome.");
-                |console.log("Hello world!");
+                |console.log("Hi, Hello world!");
                 |"#
             .trim_margin()
             .unwrap(),
