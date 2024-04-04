@@ -9,7 +9,7 @@ rust.unused_crate_dependencies = "warn"
 [dependencies]
 marzano-gritmodule = { path = "../gritmodule", features = [
 ], default-features = false }
-anyhow = "1.0.70"
+anyhow = { version = "1.0.70" }
 marzano-util = { path = "../util", features = [], default-features = false }
 
 [dev-dependencies]

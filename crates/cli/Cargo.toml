@@ -11,24 +11,24 @@ rust.unused_crate_dependencies = "warn"
 path = "src/lib.rs"
 
 [dependencies]
-anyhow = "1.0.70"
+anyhow = { version = "1.0.70" }
 clap = { version = "4.1.13", features = ["derive"] }
-indicatif = "0.17.5"
-ignore = "0.4.20"
+indicatif = { version = "0.17.5" }
+ignore = { version = "0.4.20" }
 # Do *NOT* upgrade beyond 1.0.171 until https://github.com/serde-rs/serde/issues/2538 is fixed
 serde = { version = "1.0.164", features = ["derive"] }
-serde_json = "1.0.96"
+serde_json = { version = "1.0.96" }
 uuid = { version = "1.1", features = ["v4", "serde"] }
 tokio = { version = "1", features = ["full"] }
 chrono = { version = "0.4.26", features = ["serde"] }
 reqwest = { version = "0.11", features = ["json"] }
-lazy_static = "1.4.0"
-indicatif-log-bridge = "0.2.1"
-colored = "2.0.4"
+lazy_static = { version = "1.4.0" }
+indicatif-log-bridge = { version = "0.2.1" }
+colored = { version = "2.0.4" }
 log = { version = "0.4.19" }
-env_logger = "0.10.0"
-git2 = "0.17.2"
-regex = "1.7.3"
+env_logger = { version = "0.10.0" }
+git2 = { version = "0.17.2" }
+regex = { version = "1.7.3" }
 openssl = { version = "0.10", features = ["vendored"] }
 marzano-core = { path = "../core", features = [
   "non_wasm",
@@ -42,12 +42,12 @@ marzano_messenger = { path = "../marzano_messenger" }
 cli_server = { git = "https://github.com/getgrit/cli_server.git", optional = true }
 ai_builtins = { git = "https://github.com/getgrit/ai_builtins.git", optional = true }
 grit_cache = { path = "../gritcache" }
-tempfile = "3.1"
-similar = "2.2.1"
-dialoguer = "0.10.4"
-console = "0.15.7"
-rayon = "1.8.0"
-dashmap = "5.5.3"
+tempfile = { version = "3.1" }
+similar = { version = "2.2.1" }
+dialoguer = { version = "0.10.4" }
+console = { version = "0.15.7" }
+rayon = { version = "1.8.0" }
+dashmap = { version = "5.5.3" }
 clap-markdown = { git = "https://github.com/getgrit/clap-markdown", optional = true }
 flate2 = { version = "1.0.17", features = [
   "rust_backend",
