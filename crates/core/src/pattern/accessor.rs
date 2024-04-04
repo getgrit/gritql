@@ -167,7 +167,7 @@ impl Name for Accessor {
 }
 
 impl Matcher for Accessor {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -181,7 +181,7 @@ impl Matcher for Accessor {
             Some(PatternOrResolved::ResolvedBinding(r)) => {
                 execute_resolved_with_binding(&r, binding, state)
             }
-            Some(PatternOrResolved::Pattern(p)) => p.execute(binding, state, context, logs),
+            Some(PatternOrResolved::Pattern(p)) => p.execute(binding, state, context, logs).await,
             None => Ok(
                 matches!(binding, ResolvedPattern::Constant(Constant::Boolean(false)))
                     || binding.matches_undefined(),

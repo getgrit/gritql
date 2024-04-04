@@ -54,7 +54,7 @@ pub(crate) trait Matcher: Debug {
     // it is important that any implementors of Pattern
     // do not compute-expensive things in execute
     // it should be stored somewhere in the struct of the implementor
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -604,24 +604,27 @@ impl Pattern {
     }
 
     // todo this should return a cow, but currently can't figure out lifetimes
-    pub fn text<'a>(
+    pub async fn text<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<String> {
-        Ok(ResolvedPattern::from_pattern(self, state, context, logs)?
+        Ok(ResolvedPattern::from_pattern(self, state, context, logs)
+            .await?
             .text(&state.files)?
             .to_string())
     }
 
-    pub(crate) fn float<'a>(
+    pub(crate) async fn float<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<f64> {
-        ResolvedPattern::from_pattern(self, state, context, logs)?.float(&state.files)
+        ResolvedPattern::from_pattern(self, state, context, logs)
+            .await?
+            .float(&state.files)
     }
 
     // use a struct
@@ -1069,7 +1072,7 @@ impl Name for Pattern {
 }
 
 impl Matcher for Pattern {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -1086,19 +1089,25 @@ impl Matcher for Pattern {
         }
 
         match self {
-            Pattern::ASTNode(ast_node) => ast_node.execute(binding, state, context, logs),
-            Pattern::Some(some) => some.execute(binding, state, context, logs),
-            Pattern::Every(every) => every.execute(binding, state, context, logs),
-            Pattern::List(patterns) => patterns.execute(binding, state, context, logs),
-            Pattern::ListIndex(index) => index.execute(binding, state, context, logs),
-            Pattern::Map(map) => map.execute(binding, state, context, logs),
-            Pattern::Accessor(accessor) => accessor.execute(binding, state, context, logs),
-            Pattern::Files(files) => files.execute(binding, state, context, logs),
-            Pattern::Call(pattern_call) => pattern_call.execute(binding, state, context, logs),
-            Pattern::Regex(regex) => regex.execute(binding, state, context, logs),
-            Pattern::File(file_pattern) => file_pattern.execute(binding, state, context, logs),
-            Pattern::Bubble(pattern_call) => pattern_call.execute(binding, state, context, logs),
-            Pattern::Limit(limit) => limit.execute(binding, state, context, logs),
+            Pattern::ASTNode(ast_node) => ast_node.execute(binding, state, context, logs).await,
+            Pattern::Some(some) => some.execute(binding, state, context, logs).await,
+            Pattern::Every(every) => every.execute(binding, state, context, logs).await,
+            Pattern::List(patterns) => patterns.execute(binding, state, context, logs).await,
+            Pattern::ListIndex(index) => index.execute(binding, state, context, logs).await,
+            Pattern::Map(map) => map.execute(binding, state, context, logs).await,
+            Pattern::Accessor(accessor) => accessor.execute(binding, state, context, logs).await,
+            Pattern::Files(files) => files.execute(binding, state, context, logs).await,
+            Pattern::Call(pattern_call) => {
+                pattern_call.execute(binding, state, context, logs).await
+            }
+            Pattern::Regex(regex) => regex.execute(binding, state, context, logs).await,
+            Pattern::File(file_pattern) => {
+                file_pattern.execute(binding, state, context, logs).await
+            }
+            Pattern::Bubble(pattern_call) => {
+                pattern_call.execute(binding, state, context, logs).await
+            }
+            Pattern::Limit(limit) => limit.execute(binding, state, context, logs).await,
             Pattern::CallBuiltIn(_) => bail!("CallBuiltIn cannot be executed at the moment"),
             Pattern::CallFunction(_) => {
                 bail!("CallFunction cannot be executed at the moment")
@@ -1106,53 +1115,63 @@ impl Matcher for Pattern {
             Pattern::CallForeignFunction(_) => {
                 bail!("CallForeignFunction cannot be executed at the moment")
             }
-            Pattern::Assignment(assignment) => assignment.execute(binding, state, context, logs),
-            Pattern::Accumulate(accumulate) => accumulate.execute(binding, state, context, logs),
-            Pattern::StringConstant(string_constant) => {
-                string_constant.execute(binding, state, context, logs)
+            Pattern::Assignment(assignment) => {
+                assignment.execute(binding, state, context, logs).await
             }
-            Pattern::AstLeafNode(leaf_node) => leaf_node.execute(binding, state, context, logs),
+            Pattern::Accumulate(accumulate) => {
+                accumulate.execute(binding, state, context, logs).await
+            }
+            Pattern::StringConstant(string_constant) => {
+                string_constant.execute(binding, state, context, logs).await
+            }
+            Pattern::AstLeafNode(leaf_node) => {
+                leaf_node.execute(binding, state, context, logs).await
+            }
             Pattern::IntConstant(int_constant) => {
-                int_constant.execute(binding, state, context, logs)
+                int_constant.execute(binding, state, context, logs).await
             }
             Pattern::FloatConstant(double_constant) => {
-                double_constant.execute(binding, state, context, logs)
+                double_constant.execute(binding, state, context, logs).await
             }
             Pattern::BooleanConstant(boolean_constant) => {
-                boolean_constant.execute(binding, state, context, logs)
+                boolean_constant
+                    .execute(binding, state, context, logs)
+                    .await
             }
-            Pattern::Variable(variable) => variable.execute(binding, state, context, logs),
-            Pattern::Add(add) => add.execute(binding, state, context, logs),
-            Pattern::Subtract(subtract) => subtract.execute(binding, state, context, logs),
-            Pattern::Multiply(multiply) => multiply.execute(binding, state, context, logs),
-            Pattern::Divide(divide) => divide.execute(binding, state, context, logs),
-            Pattern::Modulo(modulo) => modulo.execute(binding, state, context, logs),
-            Pattern::And(and) => and.execute(binding, state, context, logs),
-            Pattern::Or(or) => or.execute(binding, state, context, logs),
-            Pattern::Maybe(maybe) => maybe.execute(binding, state, context, logs),
-            Pattern::Any(any) => any.execute(binding, state, context, logs),
+            Pattern::Variable(variable) => variable.execute(binding, state, context, logs).await,
+            Pattern::Add(add) => add.execute(binding, state, context, logs).await,
+            Pattern::Subtract(subtract) => subtract.execute(binding, state, context, logs).await,
+            Pattern::Multiply(multiply) => multiply.execute(binding, state, context, logs).await,
+            Pattern::Divide(divide) => divide.execute(binding, state, context, logs).await,
+            Pattern::Modulo(modulo) => modulo.execute(binding, state, context, logs).await,
+            Pattern::And(and) => and.execute(binding, state, context, logs).await,
+            Pattern::Or(or) => or.execute(binding, state, context, logs).await,
+            Pattern::Maybe(maybe) => maybe.execute(binding, state, context, logs).await,
+            Pattern::Any(any) => any.execute(binding, state, context, logs).await,
             Pattern::CodeSnippet(code_snippet) => {
-                code_snippet.execute(binding, state, context, logs)
+                code_snippet.execute(binding, state, context, logs).await
             }
-            Pattern::Rewrite(rewrite) => rewrite.execute(binding, state, context, logs),
-            Pattern::Log(log) => log.execute(binding, state, context, logs),
-            Pattern::Range(range) => range.execute(binding, state, context, logs),
-            Pattern::Contains(contains) => contains.execute(binding, state, context, logs),
-            Pattern::Includes(includes) => includes.execute(binding, state, context, logs),
-            Pattern::Within(within) => within.execute(binding, state, context, logs),
-            Pattern::After(after) => after.execute(binding, state, context, logs),
-            Pattern::Before(before) => before.execute(binding, state, context, logs),
-            Pattern::Where(where_) => where_.execute(binding, state, context, logs),
+            Pattern::Rewrite(rewrite) => rewrite.execute(binding, state, context, logs).await,
+            Pattern::Log(log) => log.execute(binding, state, context, logs).await,
+            Pattern::Range(range) => range.execute(binding, state, context, logs).await,
+            Pattern::Contains(contains) => contains.execute(binding, state, context, logs).await,
+            Pattern::Includes(includes) => includes.execute(binding, state, context, logs).await,
+            Pattern::Within(within) => within.execute(binding, state, context, logs).await,
+            Pattern::After(after) => after.execute(binding, state, context, logs).await,
+            Pattern::Before(before) => before.execute(binding, state, context, logs).await,
+            Pattern::Where(where_) => where_.execute(binding, state, context, logs).await,
             Pattern::Undefined => Undefined::execute(binding, state, context, logs),
             Pattern::Top => Ok(true),
             Pattern::Underscore => Ok(true),
             Pattern::Bottom => Ok(false),
-            Pattern::Not(not) => not.execute(binding, state, context, logs),
-            Pattern::If(if_) => if_.execute(binding, state, context, logs),
+            Pattern::Not(not) => not.execute(binding, state, context, logs).await,
+            Pattern::If(if_) => if_.execute(binding, state, context, logs).await,
             Pattern::Dots => bail!("Dots should only be directly within a list pattern."),
-            Pattern::Dynamic(pattern) => pattern.execute(binding, state, context, logs),
-            Pattern::Sequential(sequential) => sequential.execute(binding, state, context, logs),
-            Pattern::Like(like) => like.execute(binding, state, context, logs),
+            Pattern::Dynamic(pattern) => pattern.execute(binding, state, context, logs).await,
+            Pattern::Sequential(sequential) => {
+                sequential.execute(binding, state, context, logs).await
+            }
+            Pattern::Like(like) => like.execute(binding, state, context, logs).await,
         }
     }
 }

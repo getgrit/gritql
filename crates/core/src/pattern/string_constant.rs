@@ -38,7 +38,7 @@ impl Name for StringConstant {
 // this does what a raw string should do
 // TODO: rename this, and implement StringConstant that checks sort.
 impl Matcher for StringConstant {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -82,7 +82,7 @@ impl Name for AstLeafNode {
 }
 
 impl Matcher for AstLeafNode {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         _state: &mut State<'a>,

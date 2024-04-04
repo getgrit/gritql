@@ -225,22 +225,24 @@ impl Name for Predicate {
 }
 
 impl Evaluator for Predicate {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         match self {
-            Predicate::Call(call) => call.execute_func(state, context, logs),
-            Predicate::Or(or) => or.execute_func(state, context, logs),
-            Predicate::And(and) => and.execute_func(state, context, logs),
-            Predicate::Maybe(maybe) => maybe.execute_func(state, context, logs),
-            Predicate::Any(any) => any.execute_func(state, context, logs),
-            Predicate::Rewrite(rewrite) => rewrite.execute_func(state, context, logs),
-            Predicate::Log(log) => log.execute_func(state, context, logs),
-            Predicate::Match(match_) => match_.execute_func(state, context, logs),
-            Predicate::Equal(equal) => equal.execute_func(state, context, logs),
+            Predicate::Call(call) => Box::pin(call.execute_func(state, context, logs)).await,
+            Predicate::Or(or) => Box::pin(or.execute_func(state, context, logs)).await,
+            Predicate::And(and) => Box::pin(and.execute_func(state, context, logs)).await,
+            Predicate::Maybe(maybe) => Box::pin(maybe.execute_func(state, context, logs)).await,
+            Predicate::Any(any) => Box::pin(any.execute_func(state, context, logs)).await,
+            Predicate::Rewrite(rewrite) => {
+                Box::pin(rewrite.execute_func(state, context, logs)).await
+            }
+            Predicate::Log(log) => Box::pin(log.execute_func(state, context, logs)).await,
+            Predicate::Match(match_) => Box::pin(match_.execute_func(state, context, logs)).await,
+            Predicate::Equal(equal) => Box::pin(equal.execute_func(state, context, logs)).await,
             Predicate::True => Ok(FuncEvaluation {
                 predicator: true,
                 ret_val: None,
@@ -249,11 +251,17 @@ impl Evaluator for Predicate {
                 predicator: false,
                 ret_val: None,
             }),
-            Predicate::Not(not) => not.execute_func(state, context, logs),
-            Predicate::If(if_) => if_.execute_func(state, context, logs),
-            Predicate::Assignment(assignment) => assignment.execute_func(state, context, logs),
-            Predicate::Accumulate(accumulate) => accumulate.execute_func(state, context, logs),
-            Predicate::Return(return_) => return_.execute_func(state, context, logs),
+            Predicate::Not(not) => Box::pin(not.execute_func(state, context, logs)).await,
+            Predicate::If(if_) => Box::pin(if_.execute_func(state, context, logs)).await,
+            Predicate::Assignment(assignment) => {
+                Box::pin(assignment.execute_func(state, context, logs)).await
+            }
+            Predicate::Accumulate(accumulate) => {
+                Box::pin(accumulate.execute_func(state, context, logs)).await
+            }
+            Predicate::Return(return_) => {
+                Box::pin(return_.execute_func(state, context, logs)).await
+            }
         }
     }
 }

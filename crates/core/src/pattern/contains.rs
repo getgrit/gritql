@@ -70,7 +70,7 @@ impl Name for Contains {
     }
 }
 
-fn execute_until<'a>(
+async fn execute_until<'a>(
     init_state: &mut State<'a>,
     node: &Node<'a>,
     src: &'a str,
@@ -88,7 +88,10 @@ fn execute_until<'a>(
         let node_lhs = ResolvedPattern::from_node(NodeWithSource::new(node, src));
 
         let state = cur_state.clone();
-        if the_contained.execute(&node_lhs, &mut cur_state, context, logs)? {
+        if the_contained
+            .execute(&node_lhs, &mut cur_state, context, logs)
+            .await?
+        {
             did_match = true;
         } else {
             cur_state = state;
@@ -96,7 +99,7 @@ fn execute_until<'a>(
 
         let mut state = cur_state.clone();
         let skip_children = if let Some(until) = until {
-            until.execute(&node_lhs, &mut state, context, logs)?
+            until.execute(&node_lhs, &mut state, context, logs).await?
         } else {
             false
         };
@@ -126,7 +129,7 @@ fn execute_until<'a>(
 // Contains and within should call the same function taking an iterator as an argument
 // even better two arguments an accumulator and an iterator.
 impl Matcher for Contains {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
@@ -146,17 +149,21 @@ impl Matcher for Contains {
                         &self.contains,
                         &self.until,
                     )
+                    .await
                 } else if let Some(list_items) = binding.list_items() {
                     let mut did_match = false;
                     let mut cur_state = init_state.clone();
                     for item in list_items {
                         let state = cur_state.clone();
-                        if self.execute(
-                            &ResolvedPattern::from_node(item),
-                            &mut cur_state,
-                            context,
-                            logs,
-                        )? {
+                        if self
+                            .execute(
+                                &ResolvedPattern::from_node(item),
+                                &mut cur_state,
+                                context,
+                                logs,
+                            )
+                            .await?
+                        {
                             did_match = true;
                         } else {
                             cur_state = state;
@@ -171,6 +178,7 @@ impl Matcher for Contains {
                     // this seems like an infinite loop, todo return false?
                     self.contains
                         .execute(resolved_pattern, init_state, context, logs)
+                        .await
                 } else {
                     Ok(false)
                 }
@@ -180,7 +188,7 @@ impl Matcher for Contains {
                 let mut did_match = false;
                 for element in elements {
                     let state = cur_state.clone();
-                    if self.execute(element, &mut cur_state, context, logs)? {
+                    if self.execute(element, &mut cur_state, context, logs).await? {
                         did_match = true;
                     } else {
                         cur_state = state;
@@ -198,30 +206,33 @@ impl Matcher for Contains {
                 let prev_state = cur_state.clone();
                 if self
                     .contains
-                    .execute(resolved_pattern, &mut cur_state, context, logs)?
+                    .execute(resolved_pattern, &mut cur_state, context, logs)
+                    .await?
                 {
                     did_match = true;
                 } else {
                     cur_state = prev_state;
                 }
                 let prev_state = cur_state.clone();
-                if self.contains.execute(
-                    &file.name(&cur_state.files),
-                    &mut cur_state,
-                    context,
-                    logs,
-                )? {
+                if self
+                    .contains
+                    .execute(&file.name(&cur_state.files), &mut cur_state, context, logs)
+                    .await?
+                {
                     did_match = true;
                 } else {
                     cur_state = prev_state;
                 }
                 let prev_state = cur_state.clone();
-                if self.execute(
-                    &file.binding(&cur_state.files),
-                    &mut cur_state,
-                    context,
-                    logs,
-                )? {
+                if self
+                    .execute(
+                        &file.binding(&cur_state.files),
+                        &mut cur_state,
+                        context,
+                        logs,
+                    )
+                    .await?
+                {
                     did_match = true;
                 } else {
                     cur_state = prev_state;
@@ -238,14 +249,15 @@ impl Matcher for Contains {
                 let prev_state = cur_state.clone();
                 if self
                     .contains
-                    .execute(resolved_pattern, &mut cur_state, context, logs)?
+                    .execute(resolved_pattern, &mut cur_state, context, logs)
+                    .await?
                 {
                     did_match = true;
                 } else {
                     cur_state = prev_state;
                 }
                 let prev_state = cur_state.clone();
-                if self.execute(files, &mut cur_state, context, logs)? {
+                if self.execute(files, &mut cur_state, context, logs).await? {
                     did_match = true;
                 } else {
                     cur_state = prev_state;
@@ -272,7 +284,10 @@ impl Matcher for Contains {
                             LazyBuiltIn::Join(j) => ResolvedPattern::List(j.list.clone()),
                         },
                     };
-                    if self.execute(&resolved, &mut cur_state, context, logs)? {
+                    if self
+                        .execute(&resolved, &mut cur_state, context, logs)
+                        .await?
+                    {
                         did_match = true;
                     } else {
                         cur_state = state;

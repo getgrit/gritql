@@ -73,14 +73,14 @@ impl Name for Equal {
 }
 
 impl Evaluator for Equal {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let lhs_text = self.var.text(state)?;
-        let rhs_text = self.pattern.text(state, context, logs)?;
+        let rhs_text = self.pattern.text(state, context, logs).await?;
         Ok(FuncEvaluation {
             predicator: lhs_text == rhs_text,
             ret_val: None,

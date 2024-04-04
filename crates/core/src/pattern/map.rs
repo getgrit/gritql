@@ -71,7 +71,7 @@ impl Name for GritMap {
 }
 
 impl Matcher for GritMap {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut super::state::State<'a>,
@@ -81,7 +81,7 @@ impl Matcher for GritMap {
         if let ResolvedPattern::Map(map) = binding {
             for element in map.iter() {
                 if let Some(pattern) = self.elements.get(element.0) {
-                    if !pattern.execute(element.1, state, context, logs)? {
+                    if !pattern.execute(element.1, state, context, logs).await? {
                         return Ok(false);
                     }
                 } else {

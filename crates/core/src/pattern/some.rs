@@ -55,7 +55,7 @@ impl Name for Some {
 }
 
 impl Matcher for Some {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
@@ -73,12 +73,16 @@ impl Matcher for Some {
                 let mut cur_state = init_state.clone();
                 for item in list_items {
                     let state = cur_state.clone();
-                    if self.pattern.execute(
-                        &ResolvedPattern::from_node(item),
-                        &mut cur_state,
-                        context,
-                        logs,
-                    )? {
+                    if self
+                        .pattern
+                        .execute(
+                            &ResolvedPattern::from_node(item),
+                            &mut cur_state,
+                            context,
+                            logs,
+                        )
+                        .await?
+                    {
                         did_match = true;
                     } else {
                         cur_state = state;
@@ -93,7 +97,10 @@ impl Matcher for Some {
                 let mut did_match = false;
                 for element in elements {
                     let state = cur_state.clone();
-                    if pattern.execute(element, &mut cur_state, context, logs)? {
+                    if pattern
+                        .execute(element, &mut cur_state, context, logs)
+                        .await?
+                    {
                         did_match = true;
                     } else {
                         cur_state = state;
@@ -111,7 +118,10 @@ impl Matcher for Some {
                     let key =
                         ResolvedPattern::Constant(crate::binding::Constant::String(key.clone()));
                     let resolved = ResolvedPattern::List(vector![key, value.clone()]);
-                    if pattern.execute(&resolved, &mut cur_state, context, logs)? {
+                    if pattern
+                        .execute(&resolved, &mut cur_state, context, logs)
+                        .await?
+                    {
                         did_match = true;
                     } else {
                         cur_state = state;

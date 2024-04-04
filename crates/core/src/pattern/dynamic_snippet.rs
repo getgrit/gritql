@@ -49,13 +49,13 @@ pub enum DynamicPattern {
 }
 
 impl DynamicPattern {
-    pub fn text<'a>(
+    pub async fn text<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<String> {
-        let resolved = ResolvedPattern::from_dynamic_pattern(self, state, context, logs)?;
+        let resolved = ResolvedPattern::from_dynamic_pattern(self, state, context, logs).await?;
         Ok(resolved.text(&state.files)?.to_string())
     }
 }
@@ -67,14 +67,14 @@ impl Name for DynamicPattern {
 }
 
 impl Matcher for DynamicPattern {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        if binding.text(&state.files)? == self.text(state, context, logs)? {
+        if binding.text(&state.files)? == self.text(state, context, logs).await? {
             Ok(true)
         } else {
             Ok(false)

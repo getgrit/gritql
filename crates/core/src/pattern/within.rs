@@ -56,7 +56,7 @@ impl Name for Within {
 }
 
 impl Matcher for Within {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
@@ -69,7 +69,8 @@ impl Matcher for Within {
         let state = cur_state.clone();
         if self
             .pattern
-            .execute(binding, &mut cur_state, context, logs)?
+            .execute(binding, &mut cur_state, context, logs)
+            .await?
         {
             did_match = true;
         } else {
@@ -87,12 +88,16 @@ impl Matcher for Within {
         };
         for n in ParentTraverse::new(TreeSitterParentCursor::new(node.node)) {
             let state = cur_state.clone();
-            if self.pattern.execute(
-                &ResolvedPattern::from_node(NodeWithSource::new(n, node.source)),
-                &mut cur_state,
-                context,
-                logs,
-            )? {
+            if self
+                .pattern
+                .execute(
+                    &ResolvedPattern::from_node(NodeWithSource::new(n, node.source)),
+                    &mut cur_state,
+                    context,
+                    logs,
+                )
+                .await?
+            {
                 did_match = true;
             } else {
                 cur_state = state;

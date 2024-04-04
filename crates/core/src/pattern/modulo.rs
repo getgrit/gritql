@@ -62,24 +62,24 @@ impl Modulo {
         Ok(Self::new(left, right))
     }
 
-    pub(crate) fn call<'a>(
+    pub(crate) async fn call<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
-        let res = self.evaluate(state, context, logs)?;
+        let res = self.evaluate(state, context, logs).await?;
         Ok(ResolvedPattern::Constant(Constant::Integer(res)))
     }
 
-    fn evaluate<'a>(
+    async fn evaluate<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<i64> {
-        let lhs = self.lhs.text(state, context, logs)?;
-        let rhs = self.rhs.text(state, context, logs)?;
+        let lhs = self.lhs.text(state, context, logs).await?;
+        let rhs = self.rhs.text(state, context, logs).await?;
         let lhs_int = lhs.parse::<i64>()?;
         let rhs_int = rhs.parse::<i64>()?;
         let res = lhs_int % rhs_int;
@@ -94,7 +94,7 @@ impl Name for Modulo {
 }
 
 impl Matcher for Modulo {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -103,7 +103,7 @@ impl Matcher for Modulo {
     ) -> Result<bool> {
         let binding_text = binding.text(&state.files)?;
         let binding_int = binding_text.parse::<i64>()?;
-        let target = self.evaluate(state, context, logs)?;
+        let target = self.evaluate(state, context, logs).await?;
         Ok(binding_int == target)
     }
 }

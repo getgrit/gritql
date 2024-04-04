@@ -56,7 +56,7 @@ impl Name for Includes {
 // Includes and within should call the same function taking an iterator as an argument
 // even better two arguments an accumulator and an iterator.
 impl Matcher for Includes {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -65,7 +65,9 @@ impl Matcher for Includes {
     ) -> Result<bool> {
         match &self.includes {
             Pattern::Regex(pattern) => {
-                pattern.execute_matching(binding, state, context, logs, false)
+                pattern
+                    .execute_matching(binding, state, context, logs, false)
+                    .await
             }
             Pattern::ASTNode(_)
             | Pattern::List(_)
@@ -119,7 +121,8 @@ impl Matcher for Includes {
             | Pattern::Dots
             | Pattern::Sequential(_)
             | Pattern::Like(_) => {
-                let resolved = ResolvedPattern::from_pattern(&self.includes, state, context, logs)?;
+                let resolved =
+                    ResolvedPattern::from_pattern(&self.includes, state, context, logs).await?;
                 let substring = resolved.text(&state.files)?;
                 let string = binding.text(&state.files)?;
                 if string.contains(&*substring) {

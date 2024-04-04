@@ -185,7 +185,7 @@ fn extract_file_pointers(binding: &ResolvedPattern) -> Option<Vec<FilePtr>> {
 }
 
 impl Matcher for Step {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -214,7 +214,7 @@ impl Matcher for Step {
                     .collect(),
             )))
         };
-        if !self.pattern.execute(&binding, state, context, logs)? {
+        if !self.pattern.execute(&binding, state, context, logs).await? {
             return Ok(false);
         }
 

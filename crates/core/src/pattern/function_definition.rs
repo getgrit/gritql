@@ -19,7 +19,7 @@ use super::{
 };
 
 pub(crate) trait FunctionDefinition {
-    fn call<'a>(
+    async fn call<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -109,7 +109,7 @@ impl GritFunctionDefinition {
 }
 
 impl FunctionDefinition for GritFunctionDefinition {
-    fn call<'a>(
+    async fn call<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -117,7 +117,7 @@ impl FunctionDefinition for GritFunctionDefinition {
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         state.reset_vars(self.scope, args);
-        self.function.execute_func(state, context, logs)
+        self.function.execute_func(state, context, logs).await
     }
 }
 
@@ -199,7 +199,7 @@ impl ForeignFunctionDefinition {
 
 impl FunctionDefinition for ForeignFunctionDefinition {
     #[cfg(not(feature = "external_functions_common"))]
-    fn call<'a>(
+    async fn call<'a>(
         &'a self,
         _state: &mut State<'a>,
         _context: &'a impl Context,
@@ -209,7 +209,7 @@ impl FunctionDefinition for ForeignFunctionDefinition {
         bail!("External functions are not enabled in your environment")
     }
     #[cfg(feature = "external_functions_common")]
-    fn call<'a>(
+    async fn call<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,

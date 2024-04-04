@@ -131,7 +131,7 @@ impl RegexPattern {
         ))))
     }
 
-    pub(crate) fn execute_matching<'a>(
+    pub(crate) async fn execute_matching<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -146,7 +146,7 @@ impl RegexPattern {
                 false => regex.to_string(),
             },
             RegexLike::Pattern(ref pattern) => {
-                let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)?;
+                let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs).await?;
                 let text = resolved.text(&state.files)?;
                 match must_match_entire_string {
                     true => format!("^{}$", text),
@@ -211,7 +211,7 @@ impl RegexPattern {
                     ResolvedPattern::from_string(value.to_string())
                 };
                 if let Some(pattern) = variable_content.pattern {
-                    if !pattern.execute(&res, state, context, logs)? {
+                    if !pattern.execute(&res, state, context, logs).await? {
                         return Ok(false);
                     }
                 }
@@ -232,7 +232,7 @@ impl Name for RegexPattern {
 }
 
 impl Matcher for RegexPattern {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -240,5 +240,6 @@ impl Matcher for RegexPattern {
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         self.execute_matching(binding, state, context, logs, true)
+            .await
     }
 }

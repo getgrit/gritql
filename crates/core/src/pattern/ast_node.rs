@@ -147,7 +147,7 @@ impl Name for ASTNode {
 }
 
 impl Matcher for ASTNode {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
@@ -163,7 +163,13 @@ impl Matcher for ASTNode {
             return Ok(false);
         };
         if binding.is_list() {
-            return self.execute(&ResolvedPattern::from_node(node), init_state, context, logs);
+            return Box::pin(self.execute(
+                &ResolvedPattern::from_node(node),
+                init_state,
+                context,
+                logs,
+            ))
+            .await;
         }
 
         let NodeWithSource { node, source } = node;
@@ -177,38 +183,42 @@ impl Matcher for ASTNode {
             let content = context.language().comment_text(&node, source);
             let content = resolve!(content);
 
-            return self.args[0].2.execute(
+            return Box::pin(self.args[0].2.execute(
                 &ResolvedPattern::from_range(content.1, source),
                 init_state,
                 context,
                 logs,
-            );
+            ))
+            .await;
         }
         let mut running_state = init_state.clone();
         for (field_id, is_list, pattern) in &self.args {
             let mut cur_state = running_state.clone();
 
             let res = if *is_list {
-                pattern.execute(
+                Box::pin(pattern.execute(
                     &ResolvedPattern::from_list(source, node.clone(), *field_id),
                     &mut cur_state,
                     context,
                     logs,
-                )
+                ))
+                .await
             } else if let Some(child) = node.child_by_field_id(*field_id) {
-                pattern.execute(
+                Box::pin(pattern.execute(
                     &ResolvedPattern::from_node(NodeWithSource::new(child, source)),
                     &mut cur_state,
                     context,
                     logs,
-                )
+                ))
+                .await
             } else {
-                pattern.execute(
+                Box::pin(pattern.execute(
                     &ResolvedPattern::empty_field(source, node.clone(), *field_id),
                     &mut cur_state,
                     context,
                     logs,
-                )
+                ))
+                .await
             };
             if res? {
                 running_state = cur_state;

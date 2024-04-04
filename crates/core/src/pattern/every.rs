@@ -55,7 +55,7 @@ impl Name for Every {
 }
 
 impl Matcher for Every {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
@@ -72,12 +72,11 @@ impl Matcher for Every {
                 };
 
                 for item in list_items {
-                    if !self.pattern.execute(
-                        &ResolvedPattern::from_node(item),
-                        init_state,
-                        context,
-                        logs,
-                    )? {
+                    if !self
+                        .pattern
+                        .execute(&ResolvedPattern::from_node(item), init_state, context, logs)
+                        .await?
+                    {
                         return Ok(false);
                     }
                 }
@@ -86,7 +85,7 @@ impl Matcher for Every {
             ResolvedPattern::List(elements) => {
                 let pattern = &self.pattern;
                 for element in elements {
-                    if !pattern.execute(element, init_state, context, logs)? {
+                    if !pattern.execute(element, init_state, context, logs).await? {
                         return Ok(false);
                     }
                 }
@@ -98,7 +97,10 @@ impl Matcher for Every {
                     let key =
                         ResolvedPattern::Constant(crate::binding::Constant::String(key.clone()));
                     let resolved = ResolvedPattern::List(vector![key, value.clone()]);
-                    if !pattern.execute(&resolved, init_state, context, logs)? {
+                    if !pattern
+                        .execute(&resolved, init_state, context, logs)
+                        .await?
+                    {
                         return Ok(false);
                     }
                 }

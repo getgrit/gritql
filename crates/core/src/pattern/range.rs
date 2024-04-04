@@ -85,7 +85,7 @@ impl From<UtilRange> for Range {
 }
 
 impl Matcher for Range {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         _state: &mut state::State<'a>,

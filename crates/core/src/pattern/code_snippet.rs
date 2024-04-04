@@ -97,7 +97,7 @@ impl Name for CodeSnippet {
 
 impl Matcher for CodeSnippet {
     // wrong, but whatever for now
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -125,7 +125,9 @@ impl Matcher for CodeSnippet {
             .iter()
             .find(|(id, _)| *id == node.node.kind_id())
         {
-            pattern.execute(resolved_pattern, state, context, logs)
+            pattern
+                .execute(resolved_pattern, state, context, logs)
+                .await
         } else {
             Ok(false)
         }

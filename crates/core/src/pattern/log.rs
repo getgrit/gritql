@@ -29,7 +29,7 @@ impl Log {
         Self { variable, message }
     }
 
-    fn add_log<'a>(
+    async fn add_log<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -37,7 +37,8 @@ impl Log {
     ) -> Result<bool> {
         let mut message = String::new();
         if let Some(user_message) = &self.message {
-            let resolved = ResolvedPattern::from_pattern(user_message, state, context, logs)?;
+            let resolved =
+                ResolvedPattern::from_pattern(user_message, state, context, logs).await?;
             let text = resolved.text(&state.files)?;
             message.push_str(&format!("{}\n", text));
         }
@@ -122,25 +123,25 @@ impl Log {
 }
 
 impl Matcher for Log {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         _binding: &super::resolved_pattern::ResolvedPattern<'a>,
         state: &mut super::state::State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        self.add_log(state, context, logs)
+        self.add_log(state, context, logs).await
     }
 }
 
 impl Evaluator for Log {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
-        let predicator = self.add_log(state, context, logs)?;
+        let predicator = self.add_log(state, context, logs).await?;
         Ok(FuncEvaluation {
             predicator,
             ret_val: None,

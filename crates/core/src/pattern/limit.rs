@@ -71,7 +71,7 @@ impl Name for Limit {
 }
 
 impl Matcher for Limit {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -79,13 +79,13 @@ impl Matcher for Limit {
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if context.ignore_limit_pattern() {
-            let res = self.pattern.execute(binding, state, context, logs)?;
+            let res = self.pattern.execute(binding, state, context, logs).await?;
             return Ok(res);
         }
         if self.invocation_count.load(Ordering::Relaxed) >= self.limit {
             return Ok(false);
         }
-        let res = self.pattern.execute(binding, state, context, logs)?;
+        let res = self.pattern.execute(binding, state, context, logs).await?;
         if !res {
             return Ok(false);
         }

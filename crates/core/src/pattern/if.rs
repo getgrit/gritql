@@ -89,7 +89,7 @@ impl Name for If {
 }
 
 impl Matcher for If {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
@@ -97,11 +97,16 @@ impl Matcher for If {
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut state = init_state.clone();
-        if self.if_.execute_func(&mut state, context, logs)?.predicator {
+        if self
+            .if_
+            .execute_func(&mut state, context, logs)
+            .await?
+            .predicator
+        {
             *init_state = state;
-            self.then.execute(binding, init_state, context, logs)
+            self.then.execute(binding, init_state, context, logs).await
         } else {
-            self.else_.execute(binding, init_state, context, logs)
+            self.else_.execute(binding, init_state, context, logs).await
         }
     }
 }
@@ -179,22 +184,22 @@ impl Name for PrIf {
 }
 
 impl Evaluator for PrIf {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         init_state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let mut state = init_state.clone();
-        let condition = self.if_.execute_func(&mut state, context, logs)?;
+        let condition = self.if_.execute_func(&mut state, context, logs).await?;
         if condition.ret_val.is_some() {
             bail!("Cannot return from within if condition");
         }
         if condition.predicator {
             *init_state = state;
-            self.then.execute_func(init_state, context, logs)
+            self.then.execute_func(init_state, context, logs).await
         } else {
-            self.else_.execute_func(init_state, context, logs)
+            self.else_.execute_func(init_state, context, logs).await
         }
     }
 }

@@ -20,7 +20,7 @@ impl Files {
 }
 
 impl Matcher for Files {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -28,10 +28,12 @@ impl Matcher for Files {
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match resolved_pattern {
-            ResolvedPattern::Files(files) => self.pattern.execute(files, state, context, logs),
+            ResolvedPattern::Files(files) => {
+                self.pattern.execute(files, state, context, logs).await
+            }
             ResolvedPattern::File(_) => {
                 let files = ResolvedPattern::List(vector![resolved_pattern.to_owned()]);
-                self.pattern.execute(&files, state, context, logs)
+                self.pattern.execute(&files, state, context, logs).await
             }
             ResolvedPattern::Binding(_)
             | ResolvedPattern::Snippets(_)

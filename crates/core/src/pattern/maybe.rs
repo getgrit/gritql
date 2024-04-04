@@ -49,7 +49,7 @@ impl Maybe {
 }
 
 impl Matcher for Maybe {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
@@ -57,7 +57,11 @@ impl Matcher for Maybe {
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut state = init_state.clone();
-        if self.pattern.execute(binding, &mut state, context, logs)? {
+        if self
+            .pattern
+            .execute(binding, &mut state, context, logs)
+            .await?
+        {
             *init_state = state;
         }
         Ok(true)
@@ -105,7 +109,7 @@ impl PrMaybe {
 }
 
 impl Evaluator for PrMaybe {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         init_state: &mut State<'a>,
         context: &'a impl Context,
@@ -114,7 +118,8 @@ impl Evaluator for PrMaybe {
         let mut state = init_state.clone();
         if self
             .predicate
-            .execute_func(&mut state, context, logs)?
+            .execute_func(&mut state, context, logs)
+            .await?
             .predicator
         {
             *init_state = state;

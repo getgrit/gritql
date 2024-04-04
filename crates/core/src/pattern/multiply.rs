@@ -62,24 +62,24 @@ impl Multiply {
         Ok(Self::new(left, right))
     }
 
-    pub(crate) fn call<'a>(
+    pub(crate) async fn call<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
-        let res = self.evaluate(state, context, logs)?;
+        let res = self.evaluate(state, context, logs).await?;
         Ok(ResolvedPattern::Constant(Constant::Float(res)))
     }
 
-    fn evaluate<'a>(
+    async fn evaluate<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<f64> {
-        let lhs = self.lhs.float(state, context, logs)?;
-        let rhs = self.rhs.float(state, context, logs)?;
+        let lhs = self.lhs.float(state, context, logs).await?;
+        let rhs = self.rhs.float(state, context, logs).await?;
         let res = lhs * rhs;
         Ok(res)
     }
@@ -92,7 +92,7 @@ impl Name for Multiply {
 }
 
 impl Matcher for Multiply {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -101,7 +101,7 @@ impl Matcher for Multiply {
     ) -> Result<bool> {
         let binding_text = binding.text(&state.files)?;
         let binding_int = binding_text.parse::<f64>()?;
-        let target = self.evaluate(state, context, logs)?;
+        let target = self.evaluate(state, context, logs).await?;
         Ok(binding_int == target)
     }
 }

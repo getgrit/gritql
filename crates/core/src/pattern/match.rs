@@ -68,7 +68,7 @@ impl Name for Match {
 }
 
 impl Evaluator for Match {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -80,17 +80,24 @@ impl Evaluator for Match {
                 let var_content = &state.bindings[var.scope].last().unwrap()[var.index];
                 let predicator = if let Some(pattern) = &self.pattern {
                     if let Some(important_binding) = &var_content.value {
-                        pattern.execute(&important_binding.clone(), state, context, logs)?
+                        pattern
+                            .execute(&important_binding.clone(), state, context, logs)
+                            .await?
                     } else if let Some(var_pattern) = var_content.pattern {
                         let resolved_pattern =
-                            ResolvedPattern::from_pattern(var_pattern, state, context, logs)?;
-                        pattern.execute(&resolved_pattern, state, context, logs)?
+                            ResolvedPattern::from_pattern(var_pattern, state, context, logs)
+                                .await?;
+                        pattern
+                            .execute(&resolved_pattern, state, context, logs)
+                            .await?
                     } else if let Some(Pattern::BooleanConstant(b)) = &self.pattern {
                         if !b.value {
                             true
                         } else {
                             let resolved_pattern = ResolvedPattern::undefined();
-                            let res = pattern.execute(&resolved_pattern, state, context, logs)?;
+                            let res = pattern
+                                .execute(&resolved_pattern, state, context, logs)
+                                .await?;
                             if !res {
                                 let message = format!(
                                     "Attempted to match against undefined variable {}",
@@ -102,7 +109,9 @@ impl Evaluator for Match {
                         }
                     } else {
                         let resolved_pattern = ResolvedPattern::undefined();
-                        let res = pattern.execute(&resolved_pattern, state, context, logs)?;
+                        let res = pattern
+                            .execute(&resolved_pattern, state, context, logs)
+                            .await?;
                         if !res {
                             let message = format!(
                                 "Attempted to match against undefined variable {}",
@@ -126,9 +135,11 @@ impl Evaluator for Match {
             }
             Container::Accessor(accessor) => {
                 let resolved_accessor =
-                    ResolvedPattern::from_accessor(accessor, state, context, logs)?;
+                    ResolvedPattern::from_accessor(accessor, state, context, logs).await?;
                 let predicator = if let Some(pattern) = &self.pattern {
-                    pattern.execute(&resolved_accessor, state, context, logs)?
+                    pattern
+                        .execute(&resolved_accessor, state, context, logs)
+                        .await?
                 } else {
                     resolved_accessor.matches_undefined()
                 };
@@ -139,9 +150,11 @@ impl Evaluator for Match {
             }
             Container::ListIndex(index) => {
                 let resolved_accessor =
-                    ResolvedPattern::from_list_index(index, state, context, logs)?;
+                    ResolvedPattern::from_list_index(index, state, context, logs).await?;
                 let predicator = if let Some(pattern) = &self.pattern {
-                    pattern.execute(&resolved_accessor, state, context, logs)?
+                    pattern
+                        .execute(&resolved_accessor, state, context, logs)
+                        .await?
                 } else {
                     resolved_accessor.matches_undefined()
                 };

@@ -95,7 +95,7 @@ impl PredicateDefinition {
         Ok(())
     }
 
-    pub fn call<'a>(
+    pub async fn call<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -103,7 +103,7 @@ impl PredicateDefinition {
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         state.reset_vars(self.scope, args);
-        let res = self.predicate.execute_func(state, context, logs)?;
+        let res = self.predicate.execute_func(state, context, logs).await?;
         Ok(res.predicator)
     }
 }

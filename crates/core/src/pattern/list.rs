@@ -112,7 +112,7 @@ impl Name for List {
 }
 
 impl Matcher for List {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut super::state::State<'a>,
@@ -130,12 +130,12 @@ impl Matcher for List {
                     .map(Cow::Owned)
                     .collect();
 
-                execute_assoc(&self.patterns, &children, state, context, logs)
+                execute_assoc(&self.patterns, &children, state, context, logs).await
             }
             ResolvedPattern::List(patterns) => {
                 let patterns: Vec<Cow<ResolvedPattern<'_>>> =
                     patterns.into_iter().map(Cow::Borrowed).collect();
-                execute_assoc(&self.patterns, &patterns, state, context, logs)
+                execute_assoc(&self.patterns, &patterns, state, context, logs).await
             }
             ResolvedPattern::Snippets(_)
             | ResolvedPattern::File(_)
@@ -146,9 +146,9 @@ impl Matcher for List {
     }
 }
 
-fn execute_assoc<'a>(
+async fn execute_assoc<'a>(
     patterns: &'a [Pattern],
-    children: &[Cow<ResolvedPattern<'a>>],
+    children: &[Cow<'_, ResolvedPattern<'a>>],
     current_state: &mut State<'a>,
     context: &'a impl Context,
     logs: &mut AnalysisLogs,
@@ -161,7 +161,10 @@ fn execute_assoc<'a>(
                 return Ok(false);
             }
             let first_node = children[0].clone();
-            if pattern_for_first_node.execute(&first_node, &mut working_state, context, logs)? {
+            if pattern_for_first_node
+                .execute(&first_node, &mut working_state, context, logs)
+                .await?
+            {
                 *current_state = working_state;
                 Ok(true)
             } else {
@@ -171,7 +174,10 @@ fn execute_assoc<'a>(
         // short circuit for common case
         [Pattern::Dots, pattern_for_last_node] => {
             if let Some(last_node) = children.last() {
-                if pattern_for_last_node.execute(last_node, &mut working_state, context, logs)? {
+                if pattern_for_last_node
+                    .execute(last_node, &mut working_state, context, logs)
+                    .await?
+                {
                     *current_state = working_state;
                     Ok(true)
                 } else {
@@ -186,14 +192,17 @@ fn execute_assoc<'a>(
                 return Err(anyhow!("Multiple subsequent dots are not allowed."));
             }
             for index in 0..children.len() {
-                if head_pattern.execute(&children[index], &mut working_state, context, logs)?
+                if head_pattern
+                    .execute(&children[index], &mut working_state, context, logs)
+                    .await?
                     && execute_assoc(
                         tail_patterns,
                         &children[index + 1..],
                         &mut working_state,
                         context,
                         logs,
-                    )?
+                    )
+                    .await?
                 {
                     *current_state = working_state;
                     return Ok(true);
@@ -204,7 +213,10 @@ fn execute_assoc<'a>(
         [Pattern::Dots] => Ok(true),
         [only_pattern] => {
             if children.len() == 1 {
-                if only_pattern.execute(&children[0], &mut working_state, context, logs)? {
+                if only_pattern
+                    .execute(&children[0], &mut working_state, context, logs)
+                    .await?
+                {
                     *current_state = working_state;
                     Ok(true)
                 } else {
@@ -216,9 +228,13 @@ fn execute_assoc<'a>(
         }
         [head_pattern, tail_patterns @ ..] => match children {
             [head_node, tail_nodes @ ..] => {
-                if head_pattern.execute(head_node, &mut working_state, context, logs)? {
+                if head_pattern
+                    .execute(head_node, &mut working_state, context, logs)
+                    .await?
+                {
                     if let Ok(true) =
                         execute_assoc(tail_patterns, tail_nodes, &mut working_state, context, logs)
+                            .await
                     {
                         *current_state = working_state;
                         Ok(true)

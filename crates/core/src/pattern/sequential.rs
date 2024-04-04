@@ -82,7 +82,7 @@ impl Sequential {
 }
 
 impl Matcher for Sequential {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -90,7 +90,7 @@ impl Matcher for Sequential {
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         for step in &self.0 {
-            if !step.execute(binding, state, context, logs)? {
+            if !step.execute(binding, state, context, logs).await? {
                 return Ok(false);
             }
         }

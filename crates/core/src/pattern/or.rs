@@ -64,7 +64,7 @@ impl Name for Or {
 }
 
 impl Matcher for Or {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
@@ -82,7 +82,7 @@ impl Matcher for Or {
                     }
                 }
                 let mut state = init_state.clone();
-                let res = p.execute(binding, &mut state, context, logs)?;
+                let res = p.execute(binding, &mut state, context, logs).await?;
                 if res {
                     *init_state = state;
                     return Ok(true);
@@ -91,7 +91,7 @@ impl Matcher for Or {
         } else {
             for p in self.patterns.iter() {
                 let mut state = init_state.clone();
-                let res = p.execute(binding, &mut state, context, logs)?;
+                let res = p.execute(binding, &mut state, context, logs).await?;
                 if res {
                     *init_state = state;
                     return Ok(true);
@@ -152,7 +152,7 @@ impl Name for PrOr {
 }
 
 impl Evaluator for PrOr {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         init_state: &mut State<'a>,
         context: &'a impl Context,
@@ -160,7 +160,7 @@ impl Evaluator for PrOr {
     ) -> Result<FuncEvaluation> {
         for p in self.predicates.iter() {
             let mut state = init_state.clone();
-            let res = p.execute_func(&mut state, context, logs)?;
+            let res = p.execute_func(&mut state, context, logs).await?;
             if res.predicator || res.ret_val.is_some() {
                 *init_state = state;
                 return Ok(res);

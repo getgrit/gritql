@@ -48,13 +48,13 @@ impl Before {
         Ok(Self::new(pattern))
     }
 
-    pub(crate) fn prev_pattern<'a>(
+    pub(crate) async fn prev_pattern<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
-        let binding = pattern_to_binding(&self.before, state, context, logs)?;
+        let binding = pattern_to_binding(&self.before, state, context, logs).await?;
         let Some(node) = binding.as_node() else {
             bail!("cannot get the node before this binding")
         };
@@ -79,7 +79,7 @@ impl Name for Before {
 }
 
 impl Matcher for Before {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
@@ -101,12 +101,16 @@ impl Matcher for Before {
             return Ok(true);
         };
         let next_node = resolve!(node.next_non_trivia_node());
-        if !self.before.execute(
-            &ResolvedPattern::from_node(next_node),
-            &mut cur_state,
-            context,
-            logs,
-        )? {
+        if !self
+            .before
+            .execute(
+                &ResolvedPattern::from_node(next_node),
+                &mut cur_state,
+                context,
+                logs,
+            )
+            .await?
+        {
             return Ok(false);
         }
         *init_state = cur_state;

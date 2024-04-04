@@ -75,28 +75,28 @@ impl Name for Assignment {
 }
 
 impl Matcher for Assignment {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         _context_node: &ResolvedPattern<'a>,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let resolved = ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
+        let resolved = ResolvedPattern::from_pattern(&self.pattern, state, context, logs).await?;
         self.container.set_resolved(state, resolved)?;
         Ok(true)
     }
 }
 
 impl Evaluator for Assignment {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let resolved: ResolvedPattern<'_> =
-            ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
+            ResolvedPattern::from_pattern(&self.pattern, state, context, logs).await?;
         self.container.set_resolved(state, resolved)?;
         Ok(FuncEvaluation {
             predicator: true,

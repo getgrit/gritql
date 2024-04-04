@@ -150,7 +150,7 @@ impl Name for Where {
 impl Matcher for Where {
     // order here is pattern then side condition, do we prefer side condition then pattern?
     // should the state be reset on failure?
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
@@ -160,13 +160,15 @@ impl Matcher for Where {
         let mut cur_state = init_state.clone();
         if !self
             .pattern
-            .execute(binding, &mut cur_state, context, logs)?
+            .execute(binding, &mut cur_state, context, logs)
+            .await?
         {
             return Ok(false);
         }
         if self
             .side_condition
-            .execute_func(&mut cur_state, context, logs)?
+            .execute_func(&mut cur_state, context, logs)
+            .await?
             .predicator
         {
             *init_state = cur_state;

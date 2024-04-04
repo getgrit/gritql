@@ -176,7 +176,7 @@ impl Rewrite {
      *
      * If called from a rewrite pattern, the binding should be Some(the current node).
      */
-    pub(crate) fn execute_generalized<'a>(
+    async fn execute_generalized<'a>(
         &'a self,
         resolved: Option<&ResolvedPattern<'a>>,
         state: &mut State<'a>,
@@ -185,7 +185,7 @@ impl Rewrite {
     ) -> Result<bool> {
         let resolved = match resolved {
             Some(b) => {
-                if !self.left.execute(b, state, context, logs)? {
+                if !self.left.execute(b, state, context, logs).await? {
                     return Ok(false);
                 } else {
                     Cow::Borrowed(b)
@@ -235,7 +235,7 @@ impl Rewrite {
             }
         };
         let replacement: ResolvedPattern<'_> =
-            ResolvedPattern::from_dynamic_pattern(&self.right, state, context, logs)?;
+            ResolvedPattern::from_dynamic_pattern(&self.right, state, context, logs).await?;
         let effects = bindings.iter().map(|b| Effect {
             binding: b.clone(),
             pattern: replacement.clone(),
@@ -253,7 +253,7 @@ impl Name for Rewrite {
 }
 
 impl Matcher for Rewrite {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -261,17 +261,18 @@ impl Matcher for Rewrite {
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         self.execute_generalized(Some(binding), state, context, logs)
+            .await
     }
 }
 
 impl Evaluator for Rewrite {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
-        let predicator = self.execute_generalized(None, state, context, logs)?;
+        let predicator = self.execute_generalized(None, state, context, logs).await?;
         Ok(FuncEvaluation {
             predicator,
             ret_val: None,

@@ -53,7 +53,7 @@ impl CallBuiltIn {
 }
 
 impl GritCall for CallBuiltIn {
-    fn call<'a>(
+    async fn call<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,

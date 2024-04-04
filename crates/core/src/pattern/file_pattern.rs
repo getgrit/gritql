@@ -20,7 +20,7 @@ impl FilePattern {
 }
 
 impl Matcher for FilePattern {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -31,13 +31,15 @@ impl Matcher for FilePattern {
             ResolvedPattern::File(file) => {
                 if !self
                     .name
-                    .execute(&file.name(&state.files), state, context, logs)?
+                    .execute(&file.name(&state.files), state, context, logs)
+                    .await?
                 {
                     return Ok(false);
                 }
                 if !self
                     .body
-                    .execute(&file.binding(&state.files), state, context, logs)?
+                    .execute(&file.binding(&state.files), state, context, logs)
+                    .await?
                 {
                     return Ok(false);
                 }

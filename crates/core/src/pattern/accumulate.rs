@@ -139,7 +139,7 @@ impl Name for Accumulate {
 }
 
 impl Matcher for Accumulate {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         context_node: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -148,7 +148,7 @@ impl Matcher for Accumulate {
     ) -> Result<bool> {
         if let Pattern::Variable(var) = &self.left {
             let var = state.trace_var(var);
-            let append = ResolvedPattern::from_pattern(&self.right, state, context, logs)?;
+            let append = ResolvedPattern::from_pattern(&self.right, state, context, logs).await?;
             if let Some(base) = state.bindings[var.scope].back_mut().unwrap()[var.index]
                 .value
                 .as_mut()
@@ -162,7 +162,11 @@ impl Matcher for Accumulate {
                 )
             }
         } else {
-            let resolved = if !self.left.execute(context_node, state, context, logs)? {
+            let resolved = if !self
+                .left
+                .execute(context_node, state, context, logs)
+                .await?
+            {
                 return Ok(false);
             } else {
                 Cow::Borrowed(context_node)
@@ -197,7 +201,7 @@ impl Matcher for Accumulate {
                 }
             };
             let mut replacement: ResolvedPattern<'_> =
-                ResolvedPattern::from_dynamic_pattern(dynamic_right, state, context, logs)?;
+                ResolvedPattern::from_dynamic_pattern(dynamic_right, state, context, logs).await?;
             let effects: Result<Vec<Effect>> = bindings
                 .iter()
                 .map(|b| {
@@ -218,7 +222,7 @@ impl Matcher for Accumulate {
 }
 
 impl Evaluator for Accumulate {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -226,7 +230,7 @@ impl Evaluator for Accumulate {
     ) -> Result<FuncEvaluation> {
         if let Pattern::Variable(var) = &self.left {
             let var = state.trace_var(var);
-            let append = ResolvedPattern::from_pattern(&self.right, state, context, logs)?;
+            let append = ResolvedPattern::from_pattern(&self.right, state, context, logs).await?;
             if let Some(base) = state.bindings[var.scope].back_mut().unwrap()[var.index]
                 .value
                 .as_mut()

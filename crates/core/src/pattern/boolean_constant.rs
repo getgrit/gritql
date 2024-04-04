@@ -36,7 +36,7 @@ impl Name for BooleanConstant {
 }
 
 impl Matcher for BooleanConstant {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,

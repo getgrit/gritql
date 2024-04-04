@@ -276,7 +276,7 @@ impl Name for Call {
 // todo parameters, and name should both be usize references
 // argument should throw an error if its not a parameter at compile time
 impl Matcher for Call {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -285,7 +285,9 @@ impl Matcher for Call {
     ) -> Result<bool> {
         let pattern_definition = &context.pattern_definitions()[self.index];
 
-        pattern_definition.call(state, binding, context, logs, &self.args)
+        pattern_definition
+            .call(state, binding, context, logs, &self.args)
+            .await
     }
 }
 
@@ -363,7 +365,7 @@ impl Name for PrCall {
 }
 
 impl Evaluator for PrCall {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -371,7 +373,9 @@ impl Evaluator for PrCall {
     ) -> Result<FuncEvaluation> {
         let predicate_definition = &context.predicate_definitions().get(self.index);
         if let Some(predicate_definition) = predicate_definition {
-            let predicator = predicate_definition.call(state, context, &self.args, logs)?;
+            let predicator = predicate_definition
+                .call(state, context, &self.args, logs)
+                .await?;
             Ok(FuncEvaluation {
                 predicator,
                 ret_val: None,
@@ -379,7 +383,8 @@ impl Evaluator for PrCall {
         } else {
             let function_definition = &context.function_definitions().get(self.index);
             if let Some(function_definition) = function_definition {
-                let res = function_definition.call(state, context, &self.args, logs)?;
+                let res =
+                    Box::pin(function_definition.call(state, context, &self.args, logs)).await?;
                 Ok(res)
             } else {
                 bail!(

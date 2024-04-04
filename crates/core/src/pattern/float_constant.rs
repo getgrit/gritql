@@ -32,7 +32,7 @@ impl Name for FloatConstant {
 }
 
 impl Matcher for FloatConstant {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,

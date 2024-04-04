@@ -76,7 +76,7 @@ impl Name for Not {
 }
 
 impl Matcher for Not {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -85,7 +85,8 @@ impl Matcher for Not {
     ) -> Result<bool> {
         Ok(!self
             .pattern
-            .execute(binding, &mut state.clone(), context, logs)?)
+            .execute(binding, &mut state.clone(), context, logs)
+            .await?)
     }
 }
 
@@ -148,7 +149,7 @@ impl Name for PrNot {
 }
 
 impl Evaluator for PrNot {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -156,7 +157,8 @@ impl Evaluator for PrNot {
     ) -> Result<FuncEvaluation> {
         let res = self
             .predicate
-            .execute_func(&mut state.clone(), context, logs)?;
+            .execute_func(&mut state.clone(), context, logs)
+            .await?;
         if res.ret_val.is_some() {
             bail!("Cannot return from within not clause");
         }

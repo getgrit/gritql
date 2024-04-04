@@ -68,7 +68,7 @@ impl Name for And {
 }
 
 impl Matcher for And {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -76,7 +76,7 @@ impl Matcher for And {
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         for p in self.patterns.iter() {
-            if !p.execute(binding, state, context, logs)? {
+            if !p.execute(binding, state, context, logs).await? {
                 return Ok(false);
             };
         }
@@ -132,14 +132,14 @@ impl Name for PrAnd {
 }
 
 impl Evaluator for PrAnd {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         for p in self.predicates.iter() {
-            let res = p.execute_func(state, context, logs)?;
+            let res = p.execute_func(state, context, logs).await?;
             match res.predicator {
                 true => {}
                 false => return Ok(res),

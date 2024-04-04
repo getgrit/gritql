@@ -74,7 +74,7 @@ impl Name for Like {
 
 impl Matcher for Like {
     #[cfg(feature = "embeddings")]
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -92,7 +92,7 @@ impl Matcher for Like {
     }
 
     #[cfg(not(feature = "embeddings"))]
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         _binding: &ResolvedPattern<'a>,
         _state: &mut State<'a>,

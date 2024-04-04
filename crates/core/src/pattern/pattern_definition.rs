@@ -95,7 +95,7 @@ impl PatternDefinition {
         Ok(())
     }
 
-    pub(crate) fn call<'a>(
+    pub(crate) async fn call<'a>(
         &'a self,
         state: &mut State<'a>,
         binding: &ResolvedPattern<'a>,
@@ -104,7 +104,7 @@ impl PatternDefinition {
         args: &'a [Option<Pattern>],
     ) -> Result<bool> {
         state.reset_vars(self.scope, args);
-        let res = self.pattern.execute(binding, state, context, logs);
+        let res = self.pattern.execute(binding, state, context, logs).await;
 
         let fn_state = state.bindings[self.scope].pop_back().unwrap();
         let cur_fn_state = state.bindings[self.scope].back_mut().unwrap();

@@ -309,7 +309,7 @@ impl Name for Variable {
 }
 
 impl Matcher for Variable {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -333,7 +333,10 @@ impl Matcher for Variable {
             .get_mut(self.index)
             .unwrap());
         if let Some(pattern) = variable_content.pattern {
-            if !pattern.execute(resolved_pattern, state, context, logs)? {
+            if !pattern
+                .execute(resolved_pattern, state, context, logs)
+                .await?
+            {
                 return Ok(false);
             }
         }

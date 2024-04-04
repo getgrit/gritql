@@ -16,7 +16,7 @@ pub(crate) struct FuncEvaluation<'a> {
 }
 
 pub(crate) trait Evaluator: Debug {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -31,7 +31,7 @@ pub struct CallFunction {
 }
 
 pub(crate) trait GritCall {
-    fn call<'a>(
+    async fn call<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -46,7 +46,7 @@ impl CallFunction {
 }
 
 impl GritCall for CallFunction {
-    fn call<'a>(
+    async fn call<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -55,7 +55,8 @@ impl GritCall for CallFunction {
         let function_definition = &context.function_definitions()[self.index];
 
         match function_definition
-            .call(state, context, &self.args, logs)?
+            .call(state, context, &self.args, logs)
+            .await?
             .ret_val
         {
             Some(pattern) => Ok(pattern),
@@ -83,7 +84,7 @@ impl CallForeignFunction {
 }
 
 impl GritCall for CallForeignFunction {
-    fn call<'a>(
+    async fn call<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -92,7 +93,8 @@ impl GritCall for CallForeignFunction {
         let function_definition = &context.foreign_function_definitions()[self.index];
 
         match function_definition
-            .call(state, context, &self.args, logs)?
+            .call(state, context, &self.args, logs)
+            .await?
             .ret_val
         {
             Some(pattern) => Ok(pattern),

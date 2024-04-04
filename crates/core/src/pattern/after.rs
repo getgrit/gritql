@@ -48,13 +48,13 @@ impl After {
         Ok(Self::new(pattern))
     }
 
-    pub(crate) fn next_pattern<'a>(
+    pub(crate) async fn next_pattern<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
-        let binding = pattern_to_binding(&self.after, state, context, logs)?;
+        let binding = pattern_to_binding(&self.after, state, context, logs).await?;
         let Some(node) = binding.as_node() else {
             bail!("cannot get the node after this binding")
         };
@@ -79,7 +79,7 @@ impl Name for After {
 }
 
 impl Matcher for After {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
@@ -101,12 +101,16 @@ impl Matcher for After {
             return Ok(true);
         };
         let prev_node = resolve!(node.previous_non_trivia_node());
-        if !self.after.execute(
-            &ResolvedPattern::from_node(prev_node),
-            &mut cur_state,
-            context,
-            logs,
-        )? {
+        if !self
+            .after
+            .execute(
+                &ResolvedPattern::from_node(prev_node),
+                &mut cur_state,
+                context,
+                logs,
+            )
+            .await?
+        {
             return Ok(false);
         }
         *init_state = cur_state;

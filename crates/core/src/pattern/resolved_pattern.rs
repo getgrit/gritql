@@ -501,7 +501,7 @@ impl<'a> ResolvedPattern<'a> {
         }
     }
 
-    pub fn from_dynamic_snippet(
+    pub async fn from_dynamic_snippet(
         snippet: &'a DynamicSnippet,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -520,7 +520,7 @@ impl<'a> ResolvedPattern<'a> {
                     let value = if let Some(value) = &content.value {
                         value.clone()
                     } else if let Some(pattern) = content.pattern {
-                        Self::from_pattern(pattern, state, context, logs)?
+                        Self::from_pattern(pattern, state, context, logs).await?
                     } else {
                         bail!(
                             "cannot create resolved snippet from unresolved variable {}",
@@ -535,7 +535,7 @@ impl<'a> ResolvedPattern<'a> {
         Ok(Self::Snippets(parts.into()))
     }
 
-    pub fn from_dynamic_pattern(
+    pub async fn from_dynamic_pattern(
         pattern: &'a DynamicPattern,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -549,7 +549,7 @@ impl<'a> ResolvedPattern<'a> {
                 if let Some(value) = &content.value {
                     Ok(value.clone())
                 } else if let Some(pattern) = content.pattern {
-                    Self::from_pattern(pattern, state, context, logs)
+                    Self::from_pattern(pattern, state, context, logs).await
                 } else {
                     bail!(
                         "cannot create resolved snippet from unresolved variable {}",
@@ -558,26 +558,28 @@ impl<'a> ResolvedPattern<'a> {
                 }
             }
             DynamicPattern::Accessor(accessor) => {
-                Self::from_accessor(accessor, state, context, logs)
+                Self::from_accessor(accessor, state, context, logs).await
             }
-            DynamicPattern::ListIndex(index) => Self::from_list_index(index, state, context, logs),
+            DynamicPattern::ListIndex(index) => {
+                Self::from_list_index(index, state, context, logs).await
+            }
             DynamicPattern::List(list) => {
                 let mut elements = Vec::new();
                 for element in &list.elements {
-                    elements.push(Self::from_dynamic_pattern(element, state, context, logs)?);
+                    elements.push(Self::from_dynamic_pattern(element, state, context, logs).await?);
                 }
                 Ok(Self::List(elements.into()))
             }
             DynamicPattern::Snippet(snippet) => {
-                Self::from_dynamic_snippet(snippet, state, context, logs)
+                Self::from_dynamic_snippet(snippet, state, context, logs).await
             }
-            DynamicPattern::CallBuiltIn(built_in) => built_in.call(state, context, logs),
-            DynamicPattern::CallFunction(func) => func.call(state, context, logs),
-            DynamicPattern::CallForeignFunction(func) => func.call(state, context, logs),
+            DynamicPattern::CallBuiltIn(built_in) => built_in.call(state, context, logs).await,
+            DynamicPattern::CallFunction(func) => func.call(state, context, logs).await,
+            DynamicPattern::CallForeignFunction(func) => func.call(state, context, logs).await,
         }
     }
 
-    pub(crate) fn from_accessor(
+    pub(crate) async fn from_accessor(
         accessor: &'a Accessor,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -585,7 +587,7 @@ impl<'a> ResolvedPattern<'a> {
     ) -> Result<Self> {
         match accessor.get(state)? {
             Some(PatternOrResolved::Pattern(pattern)) => {
-                ResolvedPattern::from_pattern(pattern, state, context, logs)
+                ResolvedPattern::from_pattern(pattern, state, context, logs).await
             }
             Some(PatternOrResolved::ResolvedBinding(resolved)) => Ok(resolved),
             Some(PatternOrResolved::Resolved(resolved)) => Ok(resolved.clone()),
@@ -593,7 +595,7 @@ impl<'a> ResolvedPattern<'a> {
         }
     }
 
-    pub(crate) fn from_list_index(
+    pub(crate) async fn from_list_index(
         index: &'a ListIndex,
         state: &mut State<'a>,
         context: &'a impl Context,
@@ -601,7 +603,7 @@ impl<'a> ResolvedPattern<'a> {
     ) -> Result<Self> {
         match index.get(state)? {
             Some(PatternOrResolved::Pattern(pattern)) => {
-                ResolvedPattern::from_pattern(pattern, state, context, logs)
+                ResolvedPattern::from_pattern(pattern, state, context, logs).await
             }
             Some(PatternOrResolved::ResolvedBinding(resolved)) => Ok(resolved),
             Some(PatternOrResolved::Resolved(resolved)) => Ok(resolved.clone()),
@@ -609,21 +611,23 @@ impl<'a> ResolvedPattern<'a> {
         }
     }
 
-    pub fn from_pattern(
+    pub async fn from_pattern(
         pattern: &'a Pattern,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         match pattern {
-            Pattern::Dynamic(pattern) => Self::from_dynamic_pattern(pattern, state, context, logs),
+            Pattern::Dynamic(pattern) => {
+                Self::from_dynamic_pattern(pattern, state, context, logs).await
+            }
             Pattern::CodeSnippet(CodeSnippet {
                 dynamic_snippet: Some(pattern),
                 ..
-            }) => Self::from_dynamic_pattern(pattern, state, context, logs),
-            Pattern::CallBuiltIn(built_in) => built_in.call(state, context, logs),
-            Pattern::CallFunction(func) => func.call(state, context, logs),
-            Pattern::CallForeignFunction(func) => func.call(state, context, logs),
+            }) => Self::from_dynamic_pattern(pattern, state, context, logs).await,
+            Pattern::CallBuiltIn(built_in) => built_in.call(state, context, logs).await,
+            Pattern::CallFunction(func) => func.call(state, context, logs).await,
+            Pattern::CallForeignFunction(func) => func.call(state, context, logs).await,
             Pattern::StringConstant(string) => Ok(Self::Snippets(vector![ResolvedSnippet::Text(
                 (&string.text).into(),
             )])),
@@ -643,7 +647,7 @@ impl<'a> ResolvedPattern<'a> {
                 if let Some(value) = &content.value {
                     Ok(value.clone())
                 } else if let Some(pattern) = content.pattern {
-                    Self::from_pattern(pattern, state, context, logs)
+                    Self::from_pattern(pattern, state, context, logs).await
                 } else {
                     bail!(
                         "cannot create resolved snippet from unresolved variable {}",
@@ -657,7 +661,7 @@ impl<'a> ResolvedPattern<'a> {
                 .map(|pattern| Self::from_pattern(pattern, state, context, logs))
                 .collect::<Result<Vector<_>>>()
                 .map(Self::List),
-            Pattern::ListIndex(index) => Self::from_list_index(index, state, context, logs),
+            Pattern::ListIndex(index) => Self::from_list_index(index, state, context, logs).await,
             Pattern::Map(map) => map
                 .elements
                 .iter()
@@ -669,27 +673,33 @@ impl<'a> ResolvedPattern<'a> {
                 })
                 .collect::<Result<BTreeMap<_, _>>>()
                 .map(Self::Map),
-            Pattern::Accessor(accessor) => Self::from_accessor(accessor, state, context, logs),
+            Pattern::Accessor(accessor) => {
+                Self::from_accessor(accessor, state, context, logs).await
+            }
             Pattern::File(file_pattern) => {
                 let name = &file_pattern.name;
                 let body = &file_pattern.body;
-                let name = ResolvedPattern::from_pattern(name, state, context, logs)?;
+                let name = ResolvedPattern::from_pattern(name, state, context, logs).await?;
                 let name = name.text(&state.files)?;
                 let name = ResolvedPattern::Constant(Constant::String(name.to_string()));
-                let body = ResolvedPattern::from_pattern(body, state, context, logs)?;
+                let body = ResolvedPattern::from_pattern(body, state, context, logs).await?;
                 // todo: replace GENERATED_SOURCE with a computed source once linearization and
                 // on-the-fly rewrites are in place
                 Ok(ResolvedPattern::File(File::Resolved(Box::new(
                     ResolvedFile { name, body },
                 ))))
             }
-            Pattern::Add(add_pattern) => add_pattern.call(state, context, logs),
-            Pattern::Subtract(subtract_pattern) => subtract_pattern.call(state, context, logs),
-            Pattern::Multiply(multiply_pattern) => multiply_pattern.call(state, context, logs),
-            Pattern::Divide(divide_pattern) => divide_pattern.call(state, context, logs),
-            Pattern::Modulo(modulo_pattern) => modulo_pattern.call(state, context, logs),
-            Pattern::Before(before) => before.prev_pattern(state, context, logs),
-            Pattern::After(after) => after.next_pattern(state, context, logs),
+            Pattern::Add(add_pattern) => add_pattern.call(state, context, logs).await,
+            Pattern::Subtract(subtract_pattern) => {
+                subtract_pattern.call(state, context, logs).await
+            }
+            Pattern::Multiply(multiply_pattern) => {
+                multiply_pattern.call(state, context, logs).await
+            }
+            Pattern::Divide(divide_pattern) => divide_pattern.call(state, context, logs).await,
+            Pattern::Modulo(modulo_pattern) => modulo_pattern.call(state, context, logs).await,
+            Pattern::Before(before) => before.prev_pattern(state, context, logs).await,
+            Pattern::After(after) => after.next_pattern(state, context, logs).await,
             Pattern::ASTNode(_)
             | Pattern::CodeSnippet(_)
             | Pattern::Call(_)
@@ -977,13 +987,13 @@ impl<'a> ResolvedPattern<'a> {
     }
 }
 
-pub(crate) fn pattern_to_binding<'a>(
+pub(crate) async fn pattern_to_binding<'a>(
     pattern: &'a Pattern,
     state: &mut State<'a>,
     context: &'a impl Context,
     logs: &mut AnalysisLogs,
 ) -> Result<Binding<'a>> {
-    let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)?;
+    let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs).await?;
     if let ResolvedPattern::Binding(binding) = resolved {
         Ok(binding
             .last()

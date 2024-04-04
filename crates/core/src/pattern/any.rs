@@ -68,7 +68,7 @@ impl Matcher for Any {
     // apply all successful updates to the state
     // must have at least one successful match
     // return soft and failed on failure
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         init_state: &mut State<'a>,
@@ -79,7 +79,10 @@ impl Matcher for Any {
         let mut cur_state = init_state.clone();
         for pattern in &self.patterns {
             let state = cur_state.clone();
-            if pattern.execute(binding, &mut cur_state, context, logs)? {
+            if pattern
+                .execute(binding, &mut cur_state, context, logs)
+                .await?
+            {
                 matched = true;
             } else {
                 cur_state = state;
@@ -143,7 +146,7 @@ impl Name for PrAny {
 }
 
 impl Evaluator for PrAny {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         init_state: &mut State<'a>,
         context: &'a impl Context,
@@ -154,7 +157,8 @@ impl Evaluator for PrAny {
         for predicate in &self.predicates {
             let state = cur_state.clone();
             if predicate
-                .execute_func(&mut cur_state, context, logs)?
+                .execute_func(&mut cur_state, context, logs)
+                .await?
                 .predicator
             {
                 matched = true;

@@ -113,7 +113,7 @@ impl Name for Bubble {
 }
 
 impl Matcher for Bubble {
-    fn execute<'a>(
+    async fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a>,
@@ -122,5 +122,6 @@ impl Matcher for Bubble {
     ) -> Result<bool> {
         self.pattern_def
             .call(state, binding, context, logs, &self.args)
+            .await
     }
 }

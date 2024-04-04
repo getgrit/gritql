@@ -49,13 +49,13 @@ impl PrReturn {
 }
 
 impl Evaluator for PrReturn {
-    fn execute_func<'a>(
+    async fn execute_func<'a>(
         &'a self,
         state: &mut State<'a>,
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
-        let resolved = ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
+        let resolved = ResolvedPattern::from_pattern(&self.pattern, state, context, logs).await?;
         Ok(FuncEvaluation {
             predicator: false,
             ret_val: Some(resolved),
