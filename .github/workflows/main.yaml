@@ -2,7 +2,7 @@ name: main
 
 on:
   push:
-    branches: [main, optional-path]
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -133,7 +133,7 @@ jobs:
       - name: Setup Go environment
         uses: actions/setup-go@v5.0.0
         with:
-          go-version: "^1.22.0"
+          go-version: '^1.22.0'
       - name: test stdlib
         working-directory: ./stdlib
         run: |
