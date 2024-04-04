@@ -23,6 +23,10 @@ impl<'a> NodeWithSource<'a> {
         ChildrenByFieldIterator::new(self, field_id)
     }
 
+    pub fn named_children_by_field_id(&self, field_id: u16) -> impl Iterator<Item = Self> + Clone {
+        ChildrenByFieldIterator::new(self, field_id).filter(|child| child.node.is_named())
+    }
+
     pub fn named_children(&self) -> impl Iterator<Item = Self> {
         ChildrenIterator::new(self).filter(|child| child.node.is_named())
     }

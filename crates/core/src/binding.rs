@@ -332,7 +332,7 @@ impl<'a> Binding<'a> {
         match self {
             Self::Node(node) => Some(node.clone()),
             Self::List(parent_node, field_id) => {
-                let mut children = parent_node.children_by_field_id(*field_id);
+                let mut children = parent_node.named_children_by_field_id(*field_id);
                 children.next().filter(|_| children.next().is_none())
             }
             Self::String(..) | Self::FileName(..) | Self::Empty(..) | Self::ConstantRef(..) => None,
@@ -528,11 +528,9 @@ impl<'a> Binding<'a> {
     /// Returns `None` if the binding is not bound to a list.
     pub(crate) fn list_items(&self) -> Option<impl Iterator<Item = NodeWithSource<'a>> + Clone> {
         match self {
-            Self::List(parent_node, field_id) => Some(
-                parent_node
-                    .children_by_field_id(*field_id)
-                    .filter(|item| item.node.is_named()),
-            ),
+            Self::List(parent_node, field_id) => {
+                Some(parent_node.named_children_by_field_id(*field_id))
+            }
             Self::Empty(..)
             | Self::Node(..)
             | Self::String(..)
@@ -557,10 +555,7 @@ impl<'a> Binding<'a> {
         match self {
             Self::Empty(..) => false,
             Self::List(node, field_id) => {
-                let child_count = node
-                    .children_by_field_id(*field_id)
-                    .filter(|child| child.node.is_named())
-                    .count();
+                let child_count = node.named_children_by_field_id(*field_id).count();
                 child_count > 0
             }
             Self::Node(..) => true,

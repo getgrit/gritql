@@ -26,8 +26,8 @@ impl<'a> Binding<'a> {
             },
             Self::List(parent_node1, field1) => match other {
                 Self::List(parent_node2, field2) => parent_node1
-                    .children_by_field_id(*field1)
-                    .zip_longest(parent_node2.children_by_field_id(*field2))
+                    .named_children_by_field_id(*field1)
+                    .zip_longest(parent_node2.named_children_by_field_id(*field2))
                     .all(|zipped| match zipped {
                         EitherOrBoth::Both(node1, node2) => are_equivalent(&node1, &node2),
                         EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => false,
