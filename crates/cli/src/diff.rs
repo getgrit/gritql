@@ -6,6 +6,7 @@ pub fn git_diff(path: &PathBuf) -> Result<String> {
     let output = std::process::Command::new("git")
         .arg("diff")
         .arg("HEAD")
+        .arg("--relative")
         .arg("--unified=0")
         .arg(path)
         .output()?;
