@@ -273,7 +273,7 @@ pub fn pattern_config_to_model(
     let defined_local_name = split_name.next();
     let local_name = defined_local_name.unwrap_or(&pattern.name).to_string();
 
-    if !is_pattern_name(&local_name) {
+    if !is_pattern_name(&local_name) && local_name == NAMESPACE_IMPORT_INDICATOR {
         bail!("Invalid pattern name: {}. Grit patterns must match the regex /[\\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", local_name);
     }
 
