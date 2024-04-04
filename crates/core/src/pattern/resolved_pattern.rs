@@ -566,7 +566,9 @@ impl<'a> ResolvedPattern<'a> {
             DynamicPattern::List(list) => {
                 let mut elements = Vec::new();
                 for element in &list.elements {
-                    elements.push(Self::from_dynamic_pattern(element, state, context, logs).await?);
+                    elements.push(
+                        Box::pin(Self::from_dynamic_pattern(element, state, context, logs)).await?,
+                    );
                 }
                 Ok(Self::List(elements.into()))
             }
@@ -619,15 +621,15 @@ impl<'a> ResolvedPattern<'a> {
     ) -> Result<Self> {
         match pattern {
             Pattern::Dynamic(pattern) => {
-                Self::from_dynamic_pattern(pattern, state, context, logs).await
+                Box::pin(Self::from_dynamic_pattern(pattern, state, context, logs)).await
             }
             Pattern::CodeSnippet(CodeSnippet {
                 dynamic_snippet: Some(pattern),
                 ..
-            }) => Self::from_dynamic_pattern(pattern, state, context, logs).await,
+            }) => Box::pin(Self::from_dynamic_pattern(pattern, state, context, logs)).await,
             Pattern::CallBuiltIn(built_in) => built_in.call(state, context, logs).await,
             Pattern::CallFunction(func) => func.call(state, context, logs).await,
-            Pattern::CallForeignFunction(func) => func.call(state, context, logs).await,
+            Pattern::CallForeignFunction(func) => Box::pin(func.call(state, context, logs)).await,
             Pattern::StringConstant(string) => Ok(Self::Snippets(vector![ResolvedSnippet::Text(
                 (&string.text).into(),
             )])),
@@ -647,7 +649,7 @@ impl<'a> ResolvedPattern<'a> {
                 if let Some(value) = &content.value {
                     Ok(value.clone())
                 } else if let Some(pattern) = content.pattern {
-                    Self::from_pattern(pattern, state, context, logs).await
+                    Box::pin(Self::from_pattern(pattern, state, context, logs)).await
                 } else {
                     bail!(
                         "cannot create resolved snippet from unresolved variable {}",
@@ -655,51 +657,60 @@ impl<'a> ResolvedPattern<'a> {
                     )
                 }
             }
-            Pattern::List(list) => list
-                .patterns
-                .iter()
-                .map(|pattern| Self::from_pattern(pattern, state, context, logs))
-                .collect::<Result<Vector<_>>>()
-                .map(Self::List),
-            Pattern::ListIndex(index) => Self::from_list_index(index, state, context, logs).await,
-            Pattern::Map(map) => map
-                .elements
-                .iter()
-                .map(|(key, value)| {
-                    Ok((
-                        key.clone(),
-                        Self::from_pattern(value, state, context, logs)?,
-                    ))
-                })
-                .collect::<Result<BTreeMap<_, _>>>()
-                .map(Self::Map),
+            Pattern::List(list) => {
+                let mut resolved_patterns = Vec::with_capacity(list.patterns.len());
+                for pattern in &list.patterns {
+                    let resolved =
+                        Box::pin(Self::from_pattern(pattern, state, context, logs)).await?;
+                    resolved_patterns.push(resolved);
+                }
+                Ok(Self::List(resolved_patterns.into()))
+            }
+            Pattern::ListIndex(index) => {
+                Box::pin(Self::from_list_index(index, state, context, logs)).await
+            }
+            Pattern::Map(map) => {
+                let mut resolved_map = BTreeMap::new();
+                for (key, value) in &map.elements {
+                    let resolved_value =
+                        Box::pin(Self::from_pattern(value, state, context, logs)).await?;
+                    resolved_map.insert(key.clone(), resolved_value);
+                }
+                Ok(Self::Map(resolved_map))
+            }
             Pattern::Accessor(accessor) => {
-                Self::from_accessor(accessor, state, context, logs).await
+                Box::pin(Self::from_accessor(accessor, state, context, logs)).await
             }
             Pattern::File(file_pattern) => {
                 let name = &file_pattern.name;
                 let body = &file_pattern.body;
-                let name = ResolvedPattern::from_pattern(name, state, context, logs).await?;
+                let name =
+                    Box::pin(ResolvedPattern::from_pattern(name, state, context, logs)).await?;
                 let name = name.text(&state.files)?;
                 let name = ResolvedPattern::Constant(Constant::String(name.to_string()));
-                let body = ResolvedPattern::from_pattern(body, state, context, logs).await?;
+                let body =
+                    Box::pin(ResolvedPattern::from_pattern(body, state, context, logs)).await?;
                 // todo: replace GENERATED_SOURCE with a computed source once linearization and
                 // on-the-fly rewrites are in place
                 Ok(ResolvedPattern::File(File::Resolved(Box::new(
                     ResolvedFile { name, body },
                 ))))
             }
-            Pattern::Add(add_pattern) => add_pattern.call(state, context, logs).await,
+            Pattern::Add(add_pattern) => Box::pin(add_pattern.call(state, context, logs)).await,
             Pattern::Subtract(subtract_pattern) => {
-                subtract_pattern.call(state, context, logs).await
+                Box::pin(subtract_pattern.call(state, context, logs)).await
             }
             Pattern::Multiply(multiply_pattern) => {
-                multiply_pattern.call(state, context, logs).await
+                Box::pin(multiply_pattern.call(state, context, logs)).await
             }
-            Pattern::Divide(divide_pattern) => divide_pattern.call(state, context, logs).await,
-            Pattern::Modulo(modulo_pattern) => modulo_pattern.call(state, context, logs).await,
-            Pattern::Before(before) => before.prev_pattern(state, context, logs).await,
-            Pattern::After(after) => after.next_pattern(state, context, logs).await,
+            Pattern::Divide(divide_pattern) => {
+                Box::pin(divide_pattern.call(state, context, logs)).await
+            }
+            Pattern::Modulo(modulo_pattern) => {
+                Box::pin(modulo_pattern.call(state, context, logs)).await
+            }
+            Pattern::Before(before) => Box::pin(before.prev_pattern(state, context, logs)).await,
+            Pattern::After(after) => Box::pin(after.next_pattern(state, context, logs)).await,
             Pattern::ASTNode(_)
             | Pattern::CodeSnippet(_)
             | Pattern::Call(_)
@@ -1006,21 +1017,23 @@ pub(crate) async fn pattern_to_binding<'a>(
 
 // borrow here seems off I think we want Vec<&ResolvedPattern>
 // since we'll be getting pointers to var_content
-pub fn patterns_to_resolved<'a>(
+pub async fn patterns_to_resolved<'a>(
     patterns: &'a [Option<Pattern>],
     state: &mut State<'a>,
     context: &'a impl Context,
     logs: &mut AnalysisLogs,
 ) -> Result<Vec<Option<ResolvedPattern<'a>>>> {
-    patterns
-        .iter()
-        .map(|p| match p {
-            Some(pattern) => Ok(Some(ResolvedPattern::from_pattern(
-                pattern, state, context, logs,
-            )?)),
-            None => Ok(None),
-        })
-        .collect::<Result<Vec<_>>>()
+    let mut resolved_patterns = Vec::with_capacity(patterns.len());
+    for p in patterns {
+        let resolved = match p {
+            Some(pattern) => {
+                Some(ResolvedPattern::from_pattern(pattern, state, context, logs).await?)
+            }
+            None => None,
+        };
+        resolved_patterns.push(resolved);
+    }
+    Ok(resolved_patterns)
 }
 
 /*

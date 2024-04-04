@@ -222,7 +222,7 @@ impl FunctionDefinition for ForeignFunctionDefinition {
             .map(|(name, _)| name.clone())
             .collect::<Vec<_>>();
 
-        let resolved = patterns_to_resolved(args, state, context, logs)?;
+        let resolved = patterns_to_resolved(args, state, context, logs).await?;
         let mut cow_resolved = Vec::with_capacity(resolved.len());
 
         for r in resolved.iter() {

@@ -1,4 +1,5 @@
 use crate::{binding::Constant, context::Context};
+use futures::Future;
 use itertools::Itertools;
 use marzano_util::analysis_logs::AnalysisLogs;
 use rand::prelude::SliceRandom;
@@ -78,7 +79,7 @@ type F = dyn for<'a> Fn(
         &'a MarzanoContext<'a>,
         &mut State<'a>,
         &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a>>
+    ) -> (impl Future<Output = Result<ResolvedPattern<'a>>>)
     + Send
     + Sync;
 
@@ -179,13 +180,13 @@ impl From<Vec<BuiltInFunction>> for BuiltIns {
 }
 
 /// Turn an arbitrary path into a resolved and normalized absolute path
-fn resolve_path_fn<'a>(
+async fn resolve_path_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs)?;
+    let args = patterns_to_resolved(args, state, context, logs).await?;
 
     let current_file = get_absolute_file_name(state)?;
     let target_path = match &args[0] {
@@ -206,13 +207,13 @@ fn capitalize(s: &str) -> String {
     }
 }
 
-fn capitalize_fn<'a>(
+async fn capitalize_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs)?;
+    let args = patterns_to_resolved(args, state, context, logs).await?;
 
     let s = match &args[0] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
@@ -221,13 +222,13 @@ fn capitalize_fn<'a>(
     Ok(ResolvedPattern::from_string(capitalize(&s)))
 }
 
-fn lowercase_fn<'a>(
+async fn lowercase_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs)?;
+    let args = patterns_to_resolved(args, state, context, logs).await?;
 
     let s = match &args[0] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
@@ -236,13 +237,13 @@ fn lowercase_fn<'a>(
     Ok(ResolvedPattern::from_string(s.to_lowercase()))
 }
 
-fn uppercase_fn<'a>(
+async fn uppercase_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs)?;
+    let args = patterns_to_resolved(args, state, context, logs).await?;
 
     let s = match &args[0] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
@@ -251,13 +252,13 @@ fn uppercase_fn<'a>(
     Ok(ResolvedPattern::from_string(s.to_uppercase()))
 }
 
-fn text_fn<'a>(
+async fn text_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs)?;
+    let args = patterns_to_resolved(args, state, context, logs).await?;
 
     let s = match args.first() {
         Some(Some(resolved_pattern)) => resolved_pattern.text(&state.files)?,
@@ -266,13 +267,13 @@ fn text_fn<'a>(
     Ok(ResolvedPattern::from_string(s.to_string()))
 }
 
-fn trim_fn<'a>(
+async fn trim_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs)?;
+    let args = patterns_to_resolved(args, state, context, logs).await?;
 
     let trim_chars = match &args[1] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
@@ -290,13 +291,13 @@ fn trim_fn<'a>(
     Ok(ResolvedPattern::from_string(s))
 }
 
-fn split_fn<'a>(
+async fn split_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs)?;
+    let args = patterns_to_resolved(args, state, context, logs).await?;
 
     let string = if let Some(string) = &args[0] {
         string.text(&state.files)?
@@ -315,13 +316,13 @@ fn split_fn<'a>(
     Ok(ResolvedPattern::List(parts))
 }
 
-fn random_fn<'a>(
+async fn random_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs)?;
+    let args = patterns_to_resolved(args, state, context, logs).await?;
 
     match args.as_slice() {
         [Some(start), Some(end)] => {
@@ -347,13 +348,13 @@ fn random_fn<'a>(
     }
 }
 
-fn join_fn<'a>(
+async fn join_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs)?;
+    let args = patterns_to_resolved(args, state, context, logs).await?;
 
     let separator = &args[1];
     let separator = match separator {
@@ -376,13 +377,13 @@ fn join_fn<'a>(
     Ok(ResolvedPattern::from_resolved_snippet(snippet))
 }
 
-fn distinct_fn<'a>(
+async fn distinct_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs)?;
+    let args = patterns_to_resolved(args, state, context, logs).await?;
 
     let list = args.into_iter().next().unwrap();
     match list {
@@ -417,13 +418,13 @@ fn distinct_fn<'a>(
 }
 
 // Shuffle a list
-fn shuffle_fn<'a>(
+async fn shuffle_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs)?;
+    let args = patterns_to_resolved(args, state, context, logs).await?;
 
     let list = args
         .into_iter()
@@ -463,13 +464,13 @@ fn shuffle_fn<'a>(
     }
 }
 
-fn length_fn<'a>(
+async fn length_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs)?;
+    let args = patterns_to_resolved(args, state, context, logs).await?;
 
     let list = args.into_iter().next().unwrap();
     match &list {

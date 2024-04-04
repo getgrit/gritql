@@ -35,6 +35,7 @@ path-absolutize = { version = "3.1.1", optional = false, features = [
   "use_unix_paths_on_wasm",
 ] }
 getrandom = { version = "0.2.11", optional = true }
+futures = "0.3.30"
 
 [dev-dependencies]
 similar = "2.2.1"

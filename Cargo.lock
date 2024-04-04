@@ -1960,6 +1960,7 @@ dependencies = [
  "anyhow",
  "elsa",
  "embeddings",
+ "futures",
  "getrandom",
  "grit-util",
  "im",
