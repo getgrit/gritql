@@ -1,0 +1,9 @@
+version: 0.0.1
+patterns:
+  - name: test-bad
+    tags:
+      - style
+      - debugging
+    level: error
+    body: |
+      `$a = $b` => `console.log($b)`
