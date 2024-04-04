@@ -12,6 +12,7 @@ use crate::{
     config::{GritDefinitionConfig, GritPatternSample, ModuleGritPattern},
     fetcher::ModuleRepo,
     parser::extract_relative_file_path,
+    utils::is_pattern_name,
 };
 
 use anyhow::{anyhow, bail, Result};
@@ -402,6 +403,9 @@ pub fn get_patterns_from_md(
         .file_stem()
         .and_then(|stem| stem.to_str())
         .unwrap_or_else(|| file.path.trim_end_matches(".md"));
+    if !is_pattern_name(&name) {
+        bail!("Invalid pattern name: {}. Grit patterns must match the regex /[\\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", name);
+    }
 
     let mut grit_parser = make_grit_parser()?;
     let src_tree = grit_parser
