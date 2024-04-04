@@ -1,7 +1,7 @@
 use crate::binding::Binding;
-use itertools::Itertools;
+use grit_util::AstNode;
 use marzano_language::{language::Language, target_language::TargetLanguage};
-use tree_sitter::Node;
+use marzano_util::node_with_source::NodeWithSource;
 
 impl<'a> Binding<'a> {
     /// Returns the padding to use for inserting the given text.
@@ -12,20 +12,16 @@ impl<'a> Binding<'a> {
         language: &TargetLanguage,
     ) -> Option<String> {
         match self {
-            Self::List(src, node, field_id) => {
-                let mut cursor = node.walk();
-                let children = node
-                    .children_by_field_id(*field_id, &mut cursor)
-                    .collect_vec();
+            Self::List(node, field_id) => {
+                let children: Vec<_> = node.children_by_field_id(*field_id).collect();
                 if children.is_empty() {
                     return None;
                 }
-                calculate_padding(src, &children, text, is_first, language).or_else(|| {
+                calculate_padding(&children, text, is_first, language).or_else(|| {
                     if children.len() == 1 {
                         let child = children.first().unwrap();
-                        let child_text = child.utf8_text(src.as_bytes()).ok()?;
-                        if child.end_position().row() > child.start_position().row()
-                            && !child_text.ends_with('\n')
+                        if child.node.end_position().row() > child.node.start_position().row()
+                            && !child.text().ends_with('\n')
                             && !text.starts_with('\n')
                         {
                             return Some("\n".to_string());
@@ -34,10 +30,9 @@ impl<'a> Binding<'a> {
                     None
                 })
             }
-            Self::Node(src, node) => {
-                let node_text = node.utf8_text(src.as_bytes()).ok()?;
-                if language.is_statement(node.kind_id())
-                    && !node_text.ends_with('\n')
+            Self::Node(node) => {
+                if language.is_statement(node.node.kind_id())
+                    && !node.text().ends_with('\n')
                     && !text.starts_with('\n')
                 {
                     Some("\n".to_string())
@@ -51,20 +46,23 @@ impl<'a> Binding<'a> {
 }
 
 fn calculate_padding(
-    src: &str,
-    children: &[Node],
+    children: &[NodeWithSource],
     insert: &str,
     is_first: bool,
     language: &TargetLanguage,
 ) -> Option<String> {
-    let named_children: Vec<_> = children.iter().filter(|child| child.is_named()).collect();
+    let named_children: Vec<_> = children
+        .iter()
+        .filter(|child| child.node.is_named())
+        .collect();
     let mut separator: Option<String> = None;
 
     if named_children.len() == 1 {
         let last_named = named_children.last().unwrap();
         let last_child = children.last().unwrap();
-        let trailing =
-            src[last_named.end_byte() as usize..last_child.end_byte() as usize].to_string();
+        let trailing = last_child.source
+            [last_named.node.end_byte() as usize..last_child.node.end_byte() as usize]
+            .to_string();
         separator = if !trailing.is_empty() {
             Some(trailing)
         } else {
@@ -74,11 +72,12 @@ fn calculate_padding(
         for i in 0..named_children.len() - 1 {
             let child = named_children.get(i).unwrap();
             let next_child = named_children.get(i + 1).unwrap();
-            let range_between = child.end_byte()..next_child.start_byte();
+            let range_between = child.node.end_byte()..next_child.node.start_byte();
             if range_between.start == range_between.end {
                 return None;
             }
-            let curr = src[range_between.start as usize..range_between.end as usize].to_string();
+            let curr =
+                child.source[range_between.start as usize..range_between.end as usize].to_string();
             if let Some(ref sep) = separator {
                 if curr == *sep || curr.contains(sep) {
                     continue;
@@ -98,7 +97,9 @@ fn calculate_padding(
     let separator = separator.unwrap();
     let last_named = named_children.last().unwrap();
     let last_child = children.last().unwrap();
-    let trailing = src[last_named.end_byte() as usize..last_child.end_byte() as usize].to_string();
+    let trailing = last_child.source
+        [last_named.node.end_byte() as usize..last_child.node.end_byte() as usize]
+        .to_string();
     let separator = if is_first {
         adjust_separator_start(&separator, &trailing)
     } else {

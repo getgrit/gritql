@@ -2,6 +2,7 @@ use crate::node_with_source::NodeWithSource;
 use grit_util::AstCursor;
 use tree_sitter::TreeCursor;
 
+#[derive(Clone)]
 pub struct CursorWrapper<'a> {
     cursor: TreeCursor<'a>,
     source: &'a str,
@@ -10,6 +11,10 @@ pub struct CursorWrapper<'a> {
 impl<'a> CursorWrapper<'a> {
     pub fn new(cursor: TreeCursor<'a>, source: &'a str) -> Self {
         Self { cursor, source }
+    }
+
+    pub(crate) fn field_id(&self) -> Option<u16> {
+        self.cursor.field_id()
     }
 }
 

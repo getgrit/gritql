@@ -59,7 +59,7 @@ impl After {
             bail!("cannot get the node after this binding")
         };
 
-        if let Some(next) = node.next_named_sibling() {
+        if let Some(next) = node.next_named_node() {
             Ok(ResolvedPattern::from_node(next))
         } else {
             debug(
@@ -100,7 +100,7 @@ impl Matcher for After {
         let Some(node) = binding.as_node() else {
             return Ok(true);
         };
-        let prev_node = resolve!(node.previous_named_sibling());
+        let prev_node = resolve!(node.previous_named_node());
         if !self.after.execute(
             &ResolvedPattern::from_node(prev_node),
             &mut cur_state,

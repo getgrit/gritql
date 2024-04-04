@@ -8,9 +8,7 @@ use tree_sitter::Range;
 impl<'a> Binding<'a> {
     pub(crate) fn is_suppressed(&self, lang: &impl Language, current_name: Option<&str>) -> bool {
         let node = match self {
-            Self::Node(src, node) | Self::List(src, node, _) | Self::Empty(src, node, _) => {
-                NodeWithSource::new(node.clone(), src)
-            }
+            Self::Node(node) | Self::List(node, _) | Self::Empty(node, _) => node.clone(),
             Self::String(_, _) | Self::FileName(_) | Self::ConstantRef(_) => return false,
         };
         let target_range = node.node.range();
@@ -79,10 +77,10 @@ fn comment_applies_to_range(
     range: &Range,
     lang: &impl Language,
 ) -> bool {
-    let Some(mut applicable) = comment_node.next_named_sibling() else {
+    let Some(mut applicable) = comment_node.next_named_node() else {
         return false;
     };
-    while let Some(next) = applicable.next_named_sibling() {
+    while let Some(next) = applicable.next_named_node() {
         if !lang.is_comment(applicable.node.kind_id())
             && !lang.is_comment_wrapper(&applicable.node)
             // Some languages have significant whitespace; continue until we find a non-whitespace non-comment node
