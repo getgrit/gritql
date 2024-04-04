@@ -6,7 +6,7 @@ use super::{
     Node, State,
 };
 use crate::context::Context;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context as _, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
