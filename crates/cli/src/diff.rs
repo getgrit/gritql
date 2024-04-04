@@ -41,13 +41,12 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
             }
             let range_part = line.split_whitespace().nth(2).unwrap_or("");
             let range_parts: Vec<&str> = range_part.split(',').collect();
-            println!("Range parts are {:?}", range_parts);
             if let Ok(line_num) = u32::from_str(range_parts[0].trim_start_matches('+')) {
                 start_pos.line = line_num;
                 end_pos.line = line_num
                     + range_parts
                         .get(1)
-                        .map_or(0, |&x| x.parse::<u32>().unwrap_or(0));
+                        .map_or(1, |&x| x.parse::<u32>().unwrap_or(0));
             }
 
             results.push(FileRange {
