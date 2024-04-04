@@ -643,14 +643,10 @@ async fn resolve_patterns_for_module(
                     };
                 };
                 let language_string = language.to_string();
-                let local_name = referenced_pattern.local_name.to_string();
-                if !is_valid_pattern_name(&local_name) {
-                    bail!("Invalid pattern name: {}. Grit patterns must match the regex /[\\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", local_name);
-                }
                 let resolved_pattern = ResolvedGritDefinition {
                     config: referenced_pattern.config.clone(),
                     module: DefinitionSource::Module(module.clone()),
-                    local_name,
+                    local_name: referenced_pattern.local_name.to_string(),
                     body,
                     language,
                     kind: referenced_pattern
@@ -690,14 +686,6 @@ async fn resolve_patterns_for_module(
     }
 
     Ok(module_patterns)
-}
-
-fn is_valid_pattern_name(name: &str) -> bool {
-    // /[\^#A-Za-z_][A-Za-z0-9_]*/ as defined in GritQL grammar
-    name.chars()
-        .next()
-        .map_or(false, |c| c.is_ascii_alphabetic())
-        && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
 fn merge_local_with_remote(
