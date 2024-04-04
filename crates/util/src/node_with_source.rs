@@ -60,27 +60,7 @@ impl<'a> AstNode for NodeWithSource<'a> {
             .map(|parent| Self::new(parent, self.source))
     }
 
-    fn next_sibling(&self) -> Option<Self> {
-        let mut current_node = self.node.clone();
-        loop {
-            if let Some(sibling) = current_node.next_sibling() {
-                return Some(Self::new(sibling, self.source));
-            }
-            current_node = current_node.parent()?;
-        }
-    }
-
-    fn previous_sibling(&self) -> Option<Self> {
-        let mut current_node = self.node.clone();
-        loop {
-            if let Some(sibling) = current_node.prev_sibling() {
-                return Some(Self::new(sibling, self.source));
-            }
-            current_node = current_node.parent()?;
-        }
-    }
-
-    fn next_named_sibling(&self) -> Option<Self> {
+    fn next_named_node(&self) -> Option<Self> {
         let mut current_node = self.node.clone();
         loop {
             if let Some(sibling) = current_node.next_named_sibling() {
@@ -90,7 +70,7 @@ impl<'a> AstNode for NodeWithSource<'a> {
         }
     }
 
-    fn previous_named_sibling(&self) -> Option<Self> {
+    fn previous_named_node(&self) -> Option<Self> {
         let mut current_node = self.node.clone();
         loop {
             if let Some(sibling) = current_node.prev_named_sibling() {
@@ -98,6 +78,18 @@ impl<'a> AstNode for NodeWithSource<'a> {
             }
             current_node = current_node.parent()?;
         }
+    }
+
+    fn next_sibling(&self) -> Option<Self> {
+        self.node
+            .next_sibling()
+            .map(|sibling| Self::new(sibling, self.source))
+    }
+
+    fn previous_sibling(&self) -> Option<Self> {
+        self.node
+            .prev_sibling()
+            .map(|sibling| Self::new(sibling, self.source))
     }
 
     fn text(&self) -> &str {
