@@ -53,6 +53,23 @@ impl Name for Includes {
     }
 }
 
+fn execute<'a>(
+    pattern: &'a Pattern,
+    binding: &ResolvedPattern<'a>,
+    state: &mut State<'a>,
+    context: &'a impl Context,
+    logs: &mut AnalysisLogs,
+) -> Result<bool> {
+    let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)?;
+    let substring = resolved.text(&state.files)?;
+    let string = binding.text(&state.files)?;
+    if string.contains(&*substring) {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
 // Includes and within should call the same function taking an iterator as an argument
 // even better two arguments an accumulator and an iterator.
 impl Matcher for Includes {
@@ -66,6 +83,14 @@ impl Matcher for Includes {
         match &self.includes {
             Pattern::Regex(pattern) => {
                 pattern.execute_matching(binding, state, context, logs, false)
+            }
+            Pattern::Or(pattern) => {
+                for p in pattern.patterns.iter() {
+                    if execute(&p, binding, state, context, logs)? {
+                        return Ok(true);
+                    }
+                }
+                Ok(false)
             }
             Pattern::ASTNode(_)
             | Pattern::List(_)
@@ -83,7 +108,6 @@ impl Matcher for Includes {
             | Pattern::Assignment(_)
             | Pattern::Accumulate(_)
             | Pattern::And(_)
-            | Pattern::Or(_)
             | Pattern::Maybe(_)
             | Pattern::Any(_)
             | Pattern::Not(_)
@@ -118,16 +142,7 @@ impl Matcher for Includes {
             | Pattern::Modulo(_)
             | Pattern::Dots
             | Pattern::Sequential(_)
-            | Pattern::Like(_) => {
-                let resolved = ResolvedPattern::from_pattern(&self.includes, state, context, logs)?;
-                let substring = resolved.text(&state.files)?;
-                let string = binding.text(&state.files)?;
-                if string.contains(&*substring) {
-                    Ok(true)
-                } else {
-                    Ok(false)
-                }
-            }
+            | Pattern::Like(_) => execute(&self.includes, binding, state, context, logs),
         }
     }
 }
