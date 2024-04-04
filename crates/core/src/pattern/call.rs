@@ -16,7 +16,7 @@ use anyhow::{anyhow, bail, Result};
 use itertools::Itertools;
 use marzano_language::language::Language;
 use marzano_util::{
-    analysis_logs::AnalysisLogs, position::Range, tree_sitter_util::children_by_field_name_count,
+    analysis_logs::AnalysisLogs, node_with_source::NodeWithSource, position::Range,
 };
 use std::collections::BTreeMap;
 use tree_sitter::Node;
@@ -137,7 +137,9 @@ impl Call {
                 .get(kind)
                 .map(|info| collect_params(&info.parameters))
         };
-        let named_args_count = children_by_field_name_count(node, "named_args");
+        let named_args_count = NodeWithSource::new(node.clone(), context.src)
+            .named_children_by_field_name("named_args")
+            .count();
         let mut cursor = node.walk();
         let named_args = node
             .children_by_field_name("named_args", &mut cursor)
@@ -314,7 +316,9 @@ impl PrCall {
             .ok_or_else(|| anyhow!("missing pattern, predicate, or sort name"))?;
         let name = name.utf8_text(context.src.as_bytes())?;
         let name = name.trim();
-        let named_args_count = children_by_field_name_count(node, "named_args");
+        let named_args_count = NodeWithSource::new(node.clone(), context.src)
+            .named_children_by_field_name("named_args")
+            .count();
         let info = if let Some(info) = context.predicate_definition_info.get(name) {
             info
         } else if let Some(info) = context.function_definition_info.get(name) {
