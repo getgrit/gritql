@@ -403,7 +403,7 @@ pub fn get_patterns_from_md(
         .file_stem()
         .and_then(|stem| stem.to_str())
         .unwrap_or_else(|| file.path.trim_end_matches(".md"));
-    if !is_pattern_name(&name) {
+    if !is_pattern_name(name) {
         bail!("Invalid pattern name: {}. Grit patterns must match the regex /[\\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", name);
     }
 
