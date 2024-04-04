@@ -9,12 +9,9 @@ use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::position::{Position, Range};
-use marzano_util::tree_sitter_util::children_by_field_id_count;
-use std::iter;
 use std::ops::Range as StdRange;
 use std::path::Path;
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
-use tree_sitter::Node;
 
 // the inner references hold the mutable state
 #[derive(Debug, Clone)]
@@ -73,26 +70,24 @@ pub enum Binding<'a> {
     // currently only comment content.
     String(&'a str, Range),
     FileName(&'a Path),
-    Node(&'a str, Node<'a>),
+    Node(NodeWithSource<'a>),
     // tree-sitter lists ("multiple" fields of nodes) do not have a unique identity
     // so we represent them by the parent node and a field id
-    List(&'a str, Node<'a>, FieldId),
-    Empty(&'a str, Node<'a>, FieldId),
+    List(NodeWithSource<'a>, FieldId),
+    Empty(NodeWithSource<'a>, FieldId),
     ConstantRef(&'a Constant),
 }
 
 impl PartialEq for Binding<'_> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::Empty(_, _, _), Self::Empty(_, _, _)) => true,
-            (Self::Node(src1, n1), Self::Node(src2, n2)) => {
-                n1.utf8_text(src1.as_bytes()) == n2.utf8_text(src2.as_bytes())
-            }
+            (Self::Empty(_, _), Self::Empty(_, _)) => true,
+            (Self::Node(n1), Self::Node(n2)) => n1.text() == n2.text(),
             (Self::String(src1, r1), Self::String(src2, r2)) => {
                 src1[r1.start_byte as usize..r1.end_byte as usize]
                     == src2[r2.start_byte as usize..r2.end_byte as usize]
             }
-            (Self::List(_, n1, f1), Self::List(_, n2, f2)) => n1 == n2 && f1 == f2,
+            (Self::List(n1, f1), Self::List(n2, f2)) => n1 == n2 && f1 == f2,
             (Self::ConstantRef(c1), Self::ConstantRef(c2)) => c1 == c2,
             _ => false,
         }
@@ -316,7 +311,7 @@ impl<'a> Binding<'a> {
     }
 
     pub(crate) fn from_node(node: NodeWithSource<'a>) -> Self {
-        Self::Node(node.source, node.node)
+        Self::Node(node)
     }
 
     pub(crate) fn from_path(path: &'a Path) -> Self {
@@ -335,19 +330,10 @@ impl<'a> Binding<'a> {
     /// more than one associated node.
     pub(crate) fn singleton(&self) -> Option<NodeWithSource<'a>> {
         match self {
-            Self::Node(src, node) => Some(NodeWithSource::new(node.clone(), src)),
-            Self::List(src, parent_node, field_id) => {
-                let mut cursor = parent_node.walk();
-                let mut children = parent_node.children_by_field_id(*field_id, &mut cursor);
-                if let Some(node) = children.next() {
-                    if children.next().is_none() {
-                        Some(NodeWithSource::new(node.clone(), src))
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
+            Self::Node(node) => Some(node.clone()),
+            Self::List(parent_node, field_id) => {
+                let mut children = parent_node.children_by_field_id(*field_id);
+                children.next().filter(|_| children.next().is_none())
             }
             Self::String(..) | Self::FileName(..) | Self::Empty(..) | Self::ConstantRef(..) => None,
         }
@@ -355,16 +341,15 @@ impl<'a> Binding<'a> {
 
     pub fn get_sexp(&self) -> Option<String> {
         match self {
-            Self::Node(_, node) => Some(node.to_sexp().to_string()),
-            Self::List(_, parent_node, field_id) => {
-                let mut cursor = parent_node.walk();
-                let mut children = parent_node.children_by_field_id(*field_id, &mut cursor);
+            Self::Node(node) => Some(node.node.to_sexp().to_string()),
+            Self::List(parent_node, field_id) => {
+                let mut children = parent_node.children_by_field_id(*field_id);
                 let mut result = String::new();
                 if let Some(node) = children.next() {
-                    result.push_str(&node.to_sexp());
+                    result.push_str(&node.node.to_sexp());
                     for node in children {
                         result.push_str(",\n");
-                        result.push_str(&node.to_sexp());
+                        result.push_str(&node.node.to_sexp());
                     }
                 }
                 Some(result)
@@ -376,23 +361,22 @@ impl<'a> Binding<'a> {
     // todo implement for empty and empty list
     pub fn position(&self) -> Option<Range> {
         match self {
-            Self::Empty(_, _, _) => None,
-            Self::Node(_, node) => Some(Range::from(node.range())),
+            Self::Empty(_, _) => None,
+            Self::Node(node) => Some(node.range()),
             Self::String(_, range) => Some(range.to_owned()),
-            Self::List(_, parent_node, field_id) => {
-                let mut cursor = parent_node.walk();
-                let mut children = parent_node.children_by_field_id(*field_id, &mut cursor);
+            Self::List(parent_node, field_id) => {
+                let mut children = parent_node.children_by_field_id(*field_id);
 
                 match children.next() {
                     None => None,
                     Some(first_node) => {
-                        let end_node: Node = match children.last() {
+                        let end_node = match children.last() {
                             None => first_node.clone(),
                             Some(last_node) => last_node,
                         };
                         let mut leading_comment = first_node.clone();
-                        while let Some(comment) = leading_comment.prev_sibling() {
-                            if comment.kind() == "comment" {
+                        while let Some(comment) = leading_comment.previous_sibling() {
+                            if comment.node.kind() == "comment" {
                                 leading_comment = comment;
                             } else {
                                 break;
@@ -400,7 +384,7 @@ impl<'a> Binding<'a> {
                         }
                         let mut trailing_comment = end_node;
                         while let Some(comment) = trailing_comment.next_sibling() {
-                            if comment.kind() == "comment" {
+                            if comment.node.kind() == "comment" {
                                 trailing_comment = comment;
                             } else {
                                 break;
@@ -408,15 +392,15 @@ impl<'a> Binding<'a> {
                         }
                         Some(Range {
                             start: Position::new(
-                                first_node.start_position().row() + 1,
-                                first_node.start_position().column() + 1,
+                                first_node.node.start_position().row() + 1,
+                                first_node.node.start_position().column() + 1,
                             ),
                             end: Position::new(
-                                trailing_comment.end_position().row() + 1,
-                                trailing_comment.end_position().column() + 1,
+                                trailing_comment.node.end_position().row() + 1,
+                                trailing_comment.node.end_position().column() + 1,
                             ),
-                            start_byte: leading_comment.start_byte(),
-                            end_byte: trailing_comment.end_byte(),
+                            start_byte: leading_comment.node.start_byte(),
+                            end_byte: trailing_comment.node.end_byte(),
                         })
                     }
                 }
@@ -436,15 +420,15 @@ impl<'a> Binding<'a> {
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<'a, str>> {
         let res: Result<Cow<'a, str>> = match self {
-            Self::Empty(_, _, _) => Ok(Cow::Borrowed("")),
-            Self::Node(source, node) => {
-                let range = CodeRange::from_node(source, node);
+            Self::Empty(_, _) => Ok(Cow::Borrowed("")),
+            Self::Node(node) => {
+                let range = CodeRange::from_node(node.source, &node.node);
                 linearize_binding(
                     language,
                     effects,
                     files,
                     memo,
-                    source,
+                    node.source,
                     range,
                     distributed_indent,
                     logs,
@@ -457,15 +441,15 @@ impl<'a> Binding<'a> {
                 s[r.start_byte as usize..r.end_byte as usize].into(),
             )),
             Self::FileName(s) => Ok(Cow::Owned(s.to_string_lossy().into())),
-            Self::List(source, _parent_node, _field_id) => {
+            Self::List(parent_node, _field_id) => {
                 if let Some(pos) = self.position() {
-                    let range = CodeRange::new(pos.start_byte, pos.end_byte, source);
+                    let range = CodeRange::new(pos.start_byte, pos.end_byte, parent_node.source);
                     linearize_binding(
                         language,
                         effects,
                         files,
                         memo,
-                        source,
+                        parent_node.source,
                         range,
                         distributed_indent,
                         logs,
@@ -482,15 +466,13 @@ impl<'a> Binding<'a> {
 
     pub fn text(&self) -> String {
         match self {
-            Self::Empty(_, _, _) => "".to_string(),
-            Self::Node(source, node) => {
-                NodeWithSource::new(node.clone(), source).text().to_string()
-            }
+            Self::Empty(_, _) => "".to_string(),
+            Self::Node(node) => node.text().to_string(),
             Self::String(s, r) => s[r.start_byte as usize..r.end_byte as usize].into(),
             Self::FileName(s) => s.to_string_lossy().into(),
-            Self::List(source, _, _) => {
+            Self::List(node, _) => {
                 if let Some(pos) = self.position() {
-                    source[pos.start_byte as usize..pos.end_byte as usize].to_string()
+                    node.source[pos.start_byte as usize..pos.end_byte as usize].to_string()
                 } else {
                     "".to_string()
                 }
@@ -501,10 +483,10 @@ impl<'a> Binding<'a> {
 
     pub fn source(&self) -> Option<&'a str> {
         match self {
-            Self::Empty(source, _, _) => Some(source),
-            Self::Node(source, _) => Some(source),
+            Self::Empty(node, _) => Some(node.source),
+            Self::Node(node) => Some(node.source),
             Self::String(source, _) => Some(source),
-            Self::List(source, _, _) => Some(source),
+            Self::List(node, _) => Some(node.source),
             Self::FileName(..) | Self::ConstantRef(..) => None,
         }
     }
@@ -529,8 +511,8 @@ impl<'a> Binding<'a> {
 
     /// Returns the node of this binding, if and only if it is a node binding.
     pub(crate) fn as_node(&self) -> Option<NodeWithSource<'a>> {
-        if let Self::Node(source, node) = self {
-            Some(NodeWithSource::new(node.clone(), source))
+        if let Self::Node(node) = self {
+            Some(node.clone())
         } else {
             None
         }
@@ -546,34 +528,11 @@ impl<'a> Binding<'a> {
     /// Returns `None` if the binding is not bound to a list.
     pub(crate) fn list_items(&self) -> Option<impl Iterator<Item = NodeWithSource<'a>> + Clone> {
         match self {
-            Self::List(src, node, field_id) => {
-                let field_id = *field_id;
-                let mut cursor = node.walk();
-                cursor.goto_first_child();
-                let mut done = false;
-                Some(
-                    iter::from_fn(move || {
-                        // seems to me that the external loop is unnecessary, but was
-                        // getting an infinite loop without it.
-                        #[allow(clippy::never_loop)]
-                        while !done {
-                            while cursor.field_id() != Some(field_id) {
-                                if !cursor.goto_next_sibling() {
-                                    return None;
-                                }
-                            }
-                            let result = cursor.node();
-                            if !cursor.goto_next_sibling() {
-                                done = true;
-                            }
-                            return Some(result);
-                        }
-                        None
-                    })
-                    .filter(|child| child.is_named())
-                    .map(|named_child| NodeWithSource::new(named_child, src)),
-                )
-            }
+            Self::List(parent_node, field_id) => Some(
+                parent_node
+                    .children_by_field_id(*field_id)
+                    .filter(|item| item.node.is_named()),
+            ),
             Self::Empty(..)
             | Self::Node(..)
             | Self::String(..)
@@ -587,9 +546,9 @@ impl<'a> Binding<'a> {
     /// Returns `None` if the binding has no relation to a node.
     pub(crate) fn parent_node(&self) -> Option<NodeWithSource<'a>> {
         match self {
-            Self::Node(src, node) => node.parent().map(|parent| NodeWithSource::new(parent, src)),
-            Self::List(src, node, _) => Some(NodeWithSource::new(node.clone(), src)),
-            Self::Empty(src, node, _) => Some(NodeWithSource::new(node.clone(), src)),
+            Self::Node(node) => node.parent(),
+            Self::List(node, _) => Some(node.clone()),
+            Self::Empty(node, _) => Some(node.clone()),
             Self::String(..) | Self::FileName(..) | Self::ConstantRef(..) => None,
         }
     }
@@ -597,8 +556,11 @@ impl<'a> Binding<'a> {
     pub fn is_truthy(&self) -> bool {
         match self {
             Self::Empty(..) => false,
-            Self::List(_, node, field_id) => {
-                let child_count = children_by_field_id_count(node, *field_id);
+            Self::List(node, field_id) => {
+                let child_count = node
+                    .children_by_field_id(*field_id)
+                    .filter(|child| child.node.is_named())
+                    .count();
                 child_count > 0
             }
             Self::Node(..) => true,
@@ -615,22 +577,22 @@ impl<'a> Binding<'a> {
         logs: &mut AnalysisLogs,
     ) -> Result<()> {
         match self {
-            Self::Empty(src, node, field) | Self::List(src, node, field) => {
+            Self::Empty(node, field) | Self::List(node, field) => {
                 let range: Range = node.range().into();
                 let log = AnalysisLogBuilder::default()
                         .level(441_u16)
-                        .source(*src)
+                        .source(node.source)
                         .position(range.start)
                         .range(range)
                         .message(format!(
                             "Error: failed to rewrite binding, cannot derive range of empty field {} of node {}",
                             language.get_ts_language().field_name_for_id(*field).unwrap(),
-                            node.kind()
+                            node.node.kind()
                         ))
                         .build()?;
                 logs.push(log);
             }
-            Self::String(_, _) | Self::FileName(_) | Self::Node(_, _) | Self::ConstantRef(_) => {}
+            Self::String(_, _) | Self::FileName(_) | Self::Node(_) | Self::ConstantRef(_) => {}
         }
 
         Ok(())

@@ -8,9 +8,7 @@ use tree_sitter::Range;
 impl<'a> Binding<'a> {
     pub(crate) fn is_suppressed(&self, lang: &impl Language, current_name: Option<&str>) -> bool {
         let node = match self {
-            Self::Node(src, node) | Self::List(src, node, _) | Self::Empty(src, node, _) => {
-                NodeWithSource::new(node.clone(), src)
-            }
+            Self::Node(node) | Self::List(node, _) | Self::Empty(node, _) => node.clone(),
             Self::String(_, _) | Self::FileName(_) | Self::ConstantRef(_) => return false,
         };
         let target_range = node.node.range();
