@@ -2283,3 +2283,23 @@ fn config_pattern_with_invalid_name() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn markdown_pattern_with_invalid_name() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("markdown_invalid_name", true)?;
+
+    let mut cmd = get_test_cmd()?;
+
+    cmd.arg("apply").arg("invalid-name").current_dir(dir.clone());
+
+    let output = cmd.output()?;
+
+    assert!(
+        !output.status.success(),
+        "Command should have failed"
+    );
+
+    assert_snapshot!(String::from_utf8(output.stderr)?);
+
+    Ok(())
+}
