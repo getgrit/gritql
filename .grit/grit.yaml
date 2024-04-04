@@ -1,6 +1,15 @@
 version: 0.0.1
 patterns:
   - name: github.com/getgrit/stdlib#*
+  - name: our_cargo_use_long_dependency
+    level: error
+    body: |
+      language toml
+
+      cargo_use_long_dependency() where $filename <: not includes or {
+        "language-submodules",
+        "language-metavariables"
+      }
   - name: no_println_in_lsp
     description: Don't use println!() in LSP code, it breaks the LSP stdio protocol.
     level: error
