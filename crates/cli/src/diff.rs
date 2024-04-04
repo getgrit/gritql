@@ -46,8 +46,7 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
                 end_pos.line = line_num
                     + range_parts
                         .get(1)
-                        .map_or(0, |&x| x.parse::<u32>().unwrap_or(0))
-                        .saturating_sub(1);
+                        .map_or(0, |&x| x.parse::<u32>().unwrap_or(0));
             }
 
             results.push(FileRange {
