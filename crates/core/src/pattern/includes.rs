@@ -97,6 +97,16 @@ impl Matcher for Includes {
                 }
                 Ok(false)
             }
+            Pattern::Any(pattern) => {
+                // Any is subtly different from true in that it will not short-circuit
+                let mut any_matched = false;
+                for p in pattern.patterns.iter() {
+                    if execute(&p, binding, state, context, logs)? {
+                        any_matched = true;
+                    }
+                }
+                Ok(any_matched)
+            }
             Pattern::And(pattern) => {
                 for p in pattern.patterns.iter() {
                     if !execute(p, binding, state, context, logs)? {
@@ -120,7 +130,6 @@ impl Matcher for Includes {
             | Pattern::CallForeignFunction(_)
             | Pattern::Assignment(_)
             | Pattern::Accumulate(_)
-            | Pattern::Any(_)
             | Pattern::Maybe(_)
             | Pattern::Not(_)
             | Pattern::If(_)
