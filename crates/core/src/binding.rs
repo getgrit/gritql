@@ -578,7 +578,7 @@ impl<'a> Binding<'a> {
     ) -> Result<()> {
         match self {
             Self::Empty(node, field) | Self::List(node, field) => {
-                let range: Range = node.range().into();
+                let range = node.range();
                 let log = AnalysisLogBuilder::default()
                         .level(441_u16)
                         .source(node.source)

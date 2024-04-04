@@ -30,7 +30,7 @@ impl<'a> Binding<'a> {
                     .zip_longest(parent_node2.children_by_field_id(*field2))
                     .all(|zipped| match zipped {
                         EitherOrBoth::Both(node1, node2) => are_equivalent(&node1, &node2),
-                        _ => false,
+                        EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => false,
                     }),
                 Self::String(..)
                 | Self::FileName(_)
@@ -109,7 +109,7 @@ pub fn are_equivalent(node1: &NodeWithSource, node2: &NodeWithSource) -> bool {
                 is_empty = false;
                 are_equivalent(&child1, &child2)
             }
-            _ => false,
+            EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => false,
         });
 
     are_equivalent && !is_empty
