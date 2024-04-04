@@ -18,6 +18,7 @@ use marzano_core::pattern::{
 use marzano_gritmodule::fetcher::KeepFetcherKind;
 use marzano_gritmodule::markdown::get_body_from_md_content;
 use marzano_gritmodule::searcher::find_grit_modules_dir;
+use marzano_gritmodule::utils::is_pattern_name;
 use marzano_language::target_language::{expand_paths, PatternLanguage};
 
 use marzano_util::position::Position;
@@ -47,7 +48,7 @@ use marzano_messenger::{
 };
 
 use crate::resolver::{get_grit_files_from_cwd, GritModuleResolver};
-use crate::utils::{has_uncommitted_changes, is_pattern_name};
+use crate::utils::has_uncommitted_changes;
 
 use super::init::init_config_from_cwd;
 

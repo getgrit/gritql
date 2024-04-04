@@ -2263,3 +2263,23 @@ fn apply_only_in_diff() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn config_pattern_with_invalid_name() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("config_invalid_name", true)?;
+
+    let mut cmd = get_test_cmd()?;
+
+    cmd.arg("apply").arg("test-bad").current_dir(dir.clone());
+
+    let output = cmd.output()?;
+
+    assert!(
+        !output.status.success(),
+        "Command should have failed"
+    );
+
+    assert_snapshot!(String::from_utf8(output.stderr)?);
+
+    Ok(())
+}
