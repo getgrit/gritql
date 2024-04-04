@@ -425,11 +425,11 @@ impl<'a> ResolvedPattern<'a> {
     }
 
     pub(crate) fn from_list(src: &'a str, node: Node<'a>, field_id: FieldId) -> Self {
-        Self::from_binding(Binding::List(src, node, field_id))
+        Self::from_binding(Binding::List(NodeWithSource::new(node, src), field_id))
     }
 
     pub(crate) fn empty_field(src: &'a str, node: Node<'a>, field_id: FieldId) -> Self {
-        Self::from_binding(Binding::Empty(src, node, field_id))
+        Self::from_binding(Binding::Empty(NodeWithSource::new(node, src), field_id))
     }
 
     pub(crate) fn from_path(path: &'a Path) -> Self {

@@ -59,7 +59,7 @@ impl Before {
             bail!("cannot get the node before this binding")
         };
 
-        if let Some(prev) = node.previous_named_sibling() {
+        if let Some(prev) = node.previous_named_node() {
             Ok(ResolvedPattern::from_node(prev))
         } else {
             debug(
@@ -100,7 +100,7 @@ impl Matcher for Before {
         let Some(node) = binding.as_node() else {
             return Ok(true);
         };
-        let next_node = resolve!(node.next_named_sibling());
+        let next_node = resolve!(node.next_named_node());
         if !self
             .before
             .execute(
