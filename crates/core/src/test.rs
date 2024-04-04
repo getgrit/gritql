@@ -3101,6 +3101,40 @@ fn includes_or() {
 }
 
 #[test]
+fn includes_and() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |`console.log($_)` as $haystack where {
+                |   $haystack <: includes and { "Hello", "handsome" }
+                |} => `console.log("Goodbye world!")`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |console.log("Hello world!");
+                |console.log("Hello handsome!");
+                |console.log("But not me, handsome.");
+                |console.log("Hi, Hello world!");
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |console.log("Hello world!");
+                |console.log("Goodbye world!");
+                |console.log("But not me, handsome.");
+                |console.log("Hello world!");
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn includes_regex() {
     run_test_expected({
         TestArgExpected {

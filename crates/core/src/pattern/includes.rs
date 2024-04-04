@@ -92,6 +92,14 @@ impl Matcher for Includes {
                 }
                 Ok(false)
             }
+            Pattern::And(pattern) => {
+                for p in pattern.patterns.iter() {
+                    if !execute(p, binding, state, context, logs)? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
             Pattern::ASTNode(_)
             | Pattern::List(_)
             | Pattern::ListIndex(_)
@@ -107,9 +115,8 @@ impl Matcher for Includes {
             | Pattern::CallForeignFunction(_)
             | Pattern::Assignment(_)
             | Pattern::Accumulate(_)
-            | Pattern::And(_)
-            | Pattern::Maybe(_)
             | Pattern::Any(_)
+            | Pattern::Maybe(_)
             | Pattern::Not(_)
             | Pattern::If(_)
             | Pattern::Undefined
