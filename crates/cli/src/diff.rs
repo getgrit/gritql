@@ -20,7 +20,7 @@ pub fn extract_modified_ranges(diff_path: &PathBuf) -> Result<Vec<FileRange>> {
     parse_modified_ranges(&diff)
 }
 
-fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
+pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
     let mut results = Vec::new();
     let lines = diff.lines();
 
