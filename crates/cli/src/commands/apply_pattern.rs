@@ -226,9 +226,7 @@ pub(crate) async fn run_apply_pattern(
         Some(diff_ranges)
     } else if let Some(None) = &arg.only_in_diff {
         let diff = git_diff(&std::env::current_dir()?)?;
-        println!("Diff is {:?}", diff);
         let diff_ranges = flushable_unwrap!(emitter, parse_modified_ranges(&diff));
-        println!("Diff ranges are {:?}", diff_ranges);
         Some(diff_ranges)
     } else {
         None
