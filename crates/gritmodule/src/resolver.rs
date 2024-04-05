@@ -558,8 +558,8 @@ async fn get_grit_files_for_module(
     let (md_patterns, grit_patterns) = join!(md_patterns, grit_patterns);
     let patterns = yaml_patterns
         .into_iter()
-        .chain(md_patterns.unwrap_or_default())
-        .chain(grit_patterns.unwrap_or_default());
+        .chain(md_patterns?)
+        .chain(grit_patterns?);
 
     for referenced_pattern in patterns {
         if let Some(body) = referenced_pattern.config.body {

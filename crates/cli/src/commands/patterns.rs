@@ -105,7 +105,11 @@ pub(crate) async fn run_patterns_describe(arg: PatternsDescribeArgs) -> Result<(
                 }
 
                 let input_lines = sample.input.lines().collect::<Vec<_>>();
-                let output_lines = sample.output.lines().collect::<Vec<_>>();
+                let output_lines = if let Some(output) = &sample.output {
+                    output.lines().collect::<Vec<_>>()
+                } else {
+                    vec!["None"]
+                };
 
                 let width = input_lines.iter().map(|line| line.len()).max().unwrap_or(0);
                 let output_width = output_lines
