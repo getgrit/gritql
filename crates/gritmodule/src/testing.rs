@@ -224,7 +224,7 @@ pub fn test_pattern_sample(
             }
             MatchResult::Match(r) => {
                 if sample.input.contains("// @filename:")
-                    && !sample.output.is_some_and(|o| o == sample.input)
+                    && !sample.output.as_ref().is_some_and(|o| o == &sample.input)
                 {
                     continue;
                 }
