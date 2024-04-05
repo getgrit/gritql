@@ -172,7 +172,7 @@ expression: v
           endByte: 1191
       - name: "Do not change `$val === null` not change"
         input: "if (val === null) {\n  done();\n}"
-        output: "if (val === null) {\n  done();\n}"
+        output: ~
         input_range:
           start:
             line: 69
@@ -193,7 +193,7 @@ expression: v
           endByte: 1287
       - name: "Do not change `$val !== null` not change"
         input: "while (val !== null) {\n  doSomething();\n}"
-        output: "while (val !== null) {\n  doSomething();\n}"
+        output: ~
         input_range:
           start:
             line: 77
@@ -321,7 +321,7 @@ expression: v
           endByte: 1265
       - name: "Do not change `$val === null` not change"
         input: "if (val === null) {\n  done();\n}"
-        output: "if (val === null) {\n  done();\n}"
+        output: ~
         input_range:
           start:
             line: 73
@@ -342,7 +342,7 @@ expression: v
           endByte: 1361
       - name: "Do not change `$val !== null` not change"
         input: "while (val !== null) {\n  doSomething();\n}"
-        output: "while (val !== null) {\n  doSomething();\n}"
+        output: ~
         input_range:
           start:
             line: 81
@@ -446,7 +446,7 @@ expression: v
           endByte: 1106
       - name: "Do not change `$val === null`"
         input: "if (val === null) {\n  done();\n}"
-        output: "if (val === null) {\n  done();\n}"
+        output: ~
         input_range:
           start:
             line: 71
@@ -467,7 +467,7 @@ expression: v
           endByte: 1191
       - name: "Do not change `$val !== null`"
         input: "while (val !== null) {\n  doSomething();\n}"
-        output: "while (val !== null) {\n  doSomething();\n}"
+        output: ~
         input_range:
           start:
             line: 79
