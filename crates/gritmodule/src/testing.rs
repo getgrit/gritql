@@ -223,9 +223,28 @@ pub fn test_pattern_sample(
                 });
             }
             MatchResult::Match(r) => {
+                let mut content = String::new();
+                let mut our_file = false;
+                let mut sample_input = sample.input.lines();
+                while let Some(line) = sample_input.next() {
+                    if line.starts_with("// @filename: ") {
+                        if r.source_file == line[14..] {
+                            our_file = true;
+                        } else {
+                            our_file = false;
+                        }
+                    }
+                    if our_file {
+                        if line.starts_with("// @filename: ") {
+                            break;
+                        }
+                        content.push_str(line);
+                        content.push('\n');
+                    }
+                }
                 raw_actual_outputs.push(RichFile {
                     path: r.source_file.clone(),
-                    content: sample.input.clone(),
+                    content,
                 });
             }
             _ => {}
