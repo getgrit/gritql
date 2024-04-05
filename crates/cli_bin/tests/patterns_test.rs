@@ -263,3 +263,20 @@ fn checks_non_matching_yaml_sample() -> Result<()> {
 
     Ok(())
 }
+
+
+#[test]
+fn tests_match_only_with_file_name() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("match_filename", false)?;
+
+    let mut test = get_test_cmd()?;
+    test.arg("patterns")
+        .arg("test")
+        .current_dir(dir);
+
+    let output = test.output()?;
+
+    assert!(output.status.success());
+
+    Ok(())
+}
