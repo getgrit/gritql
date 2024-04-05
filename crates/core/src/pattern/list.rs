@@ -5,7 +5,7 @@ use super::{
     state::State,
     variable::VariableSourceLocations,
 };
-use crate::{context::Context, pattern_factory::compiler::CompilationContext};
+use crate::{context::Context, pattern_compiler::CompilationContext};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_language::language::Field;

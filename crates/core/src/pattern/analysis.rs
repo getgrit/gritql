@@ -1,4 +1,4 @@
-use crate::pattern_factory::compiler::parse_one;
+use crate::pattern_compiler::parse_one;
 use anyhow::{anyhow, Result};
 use grit_util::{traverse, Order};
 use marzano_util::cursor_wrapper::CursorWrapper;

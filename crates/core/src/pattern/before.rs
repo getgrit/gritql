@@ -5,8 +5,8 @@ use super::{
     Node, State,
 };
 use crate::{
-    binding::Constant, context::Context, errors::debug,
-    pattern_factory::compiler::CompilationContext, resolve,
+    binding::Constant, context::Context, errors::debug, pattern_compiler::CompilationContext,
+    resolve,
 };
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;

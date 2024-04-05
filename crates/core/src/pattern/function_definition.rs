@@ -7,7 +7,7 @@ use super::{
     state::State,
     variable::{get_variables, Variable, VariableSourceLocations},
 };
-use crate::{binding::Constant, context::Context, pattern_factory::compiler::CompilationContext};
+use crate::{binding::Constant, context::Context, pattern_compiler::CompilationContext};
 use anyhow::{anyhow, bail, Result};
 #[cfg(feature = "external_functions")]
 use marzano_externals::function::ExternalFunction;

@@ -5,7 +5,7 @@ use super::{
     variable::{get_variables, Variable, VariableSourceLocations},
     State,
 };
-use crate::{context::Context, pattern_factory::compiler::CompilationContext};
+use crate::{context::Context, pattern_compiler::CompilationContext};
 use anyhow::{anyhow, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;

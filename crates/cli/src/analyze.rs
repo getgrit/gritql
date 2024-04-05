@@ -19,7 +19,7 @@ use marzano_core::pattern::{
     api::{AnalysisLog, DoneFile, MatchResult},
     Problem,
 };
-use marzano_core::pattern_factory::compiler::{src_to_problem_libs, CompilationResult};
+use marzano_core::pattern_compiler::{src_to_problem_libs, CompilationResult};
 use marzano_language::target_language::PatternLanguage;
 use marzano_util::cache::GritCache;
 use marzano_util::position::{FileRange, Position};

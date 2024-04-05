@@ -8,7 +8,7 @@ use super::{
 };
 use crate::{
     context::Context,
-    pattern_factory::{compiler::CompilationContext, step_factory::step_from_node},
+    pattern_compiler::{step_compiler::StepCompiler, CompilationContext, NodeCompiler},
 };
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -34,7 +34,7 @@ impl Sequential {
             .children_by_field_name("sequential", &mut cursor)
             .filter(|n| n.is_named())
         {
-            let step = step_from_node(
+            let step = StepCompiler::from_node(
                 &n,
                 context,
                 vars,
@@ -63,7 +63,7 @@ impl Sequential {
             .children_by_field_name("files", &mut cursor)
             .filter(|n| n.is_named())
         {
-            let step = step_from_node(
+            let step = StepCompiler::from_node(
                 &n,
                 context,
                 vars,

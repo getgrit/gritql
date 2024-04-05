@@ -3,8 +3,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use marzano_core::{
-    parse::make_grit_parser, pattern::api::MatchResult,
-    pattern_factory::compiler::src_to_problem_libs,
+    parse::make_grit_parser, pattern::api::MatchResult, pattern_compiler::src_to_problem_libs,
 };
 use marzano_gritmodule::{
     markdown::get_patterns_from_md,

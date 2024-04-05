@@ -4,7 +4,7 @@ use super::{
     variable::VariableSourceLocations,
     Node, State,
 };
-use crate::{context::Context, pattern_factory::compiler::CompilationContext, resolve};
+use crate::{context::Context, pattern_compiler::CompilationContext, resolve};
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use im::vector;

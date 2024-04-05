@@ -53,7 +53,7 @@ use super::{
 };
 use crate::{
     context::Context,
-    pattern_factory::{accessor_factory::accessor_from_node, compiler::CompilationContext},
+    pattern_compiler::{accessor_compiler::AccessorCompiler, CompilationContext, NodeCompiler},
 };
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
@@ -928,7 +928,7 @@ impl Pattern {
                 is_rhs,
                 logs,
             )?))),
-            "mapAccessor" => Ok(Pattern::Accessor(Box::new(accessor_from_node(
+            "mapAccessor" => Ok(Pattern::Accessor(Box::new(AccessorCompiler::from_node(
                 node,
                 context,
                 vars,

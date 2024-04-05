@@ -5,7 +5,7 @@ use super::{
     variable::VariableSourceLocations,
     Node, State,
 };
-use crate::{context::Context, pattern_factory::compiler::CompilationContext};
+use crate::{context::Context, pattern_compiler::CompilationContext};
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;

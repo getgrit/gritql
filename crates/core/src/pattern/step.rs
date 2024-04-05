@@ -19,7 +19,13 @@ use tree_sitter::Parser;
 
 #[derive(Debug, Clone)]
 pub struct Step {
-    pub(crate) pattern: Pattern,
+    pub pattern: Pattern,
+}
+
+impl Step {
+    pub fn new(pattern: Pattern) -> Self {
+        Self { pattern }
+    }
 }
 
 fn extract_file_pointer(file: &File) -> Option<FilePtr> {

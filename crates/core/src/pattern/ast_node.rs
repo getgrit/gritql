@@ -6,7 +6,7 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
-use crate::{context::Context, pattern_factory::compiler::CompilationContext, resolve};
+use crate::{context::Context, pattern_compiler::CompilationContext, resolve};
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use marzano_language::language::{FieldId, Language, SortId};

@@ -10,7 +10,7 @@ use super::{
 use crate::{
     binding::{Binding, Constant},
     context::Context,
-    pattern_factory::compiler::CompilationContext,
+    pattern_compiler::CompilationContext,
     resolve_opt,
 };
 use anyhow::{anyhow, bail, Result};

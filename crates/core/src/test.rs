@@ -1,4 +1,4 @@
-use crate::pattern_factory::compiler::src_to_problem_libs;
+use crate::pattern_compiler::src_to_problem_libs;
 use anyhow::{anyhow, Context, Result};
 use insta::{assert_debug_snapshot, assert_snapshot, assert_yaml_snapshot};
 use lazy_static::lazy_static;

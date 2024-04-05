@@ -6,7 +6,9 @@ use super::{
     state::State,
     variable::{Variable, VariableSourceLocations},
 };
-use crate::pattern_factory::{accessor_factory::accessor_from_node, compiler::CompilationContext};
+use crate::pattern_compiler::{
+    accessor_compiler::AccessorCompiler, CompilationContext, NodeCompiler,
+};
 use anyhow::{bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
@@ -58,7 +60,7 @@ impl Container {
                 vars_array,
                 scope_index,
             )?)),
-            "mapAccessor" => Ok(Self::Accessor(Box::new(accessor_from_node(
+            "mapAccessor" => Ok(Self::Accessor(Box::new(AccessorCompiler::from_node(
                 node,
                 context,
                 vars,

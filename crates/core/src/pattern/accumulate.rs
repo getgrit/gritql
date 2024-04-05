@@ -7,7 +7,7 @@ use super::{
     variable::VariableSourceLocations,
     Effect, EffectKind, State,
 };
-use crate::{context::Context, pattern_factory::compiler::CompilationContext};
+use crate::{context::Context, pattern_compiler::CompilationContext};
 use anyhow::{anyhow, bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::borrow::Cow;

@@ -11,7 +11,7 @@ mod intervals;
 mod orphan;
 pub mod parse;
 pub mod pattern;
-pub mod pattern_factory;
+pub mod pattern_compiler;
 mod resolve;
 mod smart_insert;
 mod split_snippet;
