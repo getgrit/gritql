@@ -223,7 +223,9 @@ pub fn test_pattern_sample(
                 });
             }
             MatchResult::Match(r) => {
-                if sample.input.contains("// @filename:") {
+                if sample.input.contains("// @filename:")
+                    && !sample.output.is_some_and(|o| o == sample.input)
+                {
                     continue;
                 }
                 raw_actual_outputs.push(RichFile {
