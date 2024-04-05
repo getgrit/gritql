@@ -225,7 +225,7 @@ pub fn test_pattern_sample(
             MatchResult::Match(r) => {
                 raw_actual_outputs.push(RichFile {
                     path: r.source_file.clone(),
-                    content: sample.input,
+                    content: sample.input.clone(),
                 });
             }
             _ => {}
