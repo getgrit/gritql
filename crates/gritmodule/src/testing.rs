@@ -223,9 +223,7 @@ pub fn test_pattern_sample(
                 });
             }
             MatchResult::Match(r) => {
-                if sample.input.contains("// @filename:")
-                    && !sample.output.as_ref().is_some_and(|o| o == &sample.input)
-                {
+                if sample.input.contains("// @filename:") {
                     continue;
                 }
                 raw_actual_outputs.push(RichFile {
@@ -270,7 +268,9 @@ pub fn test_pattern_sample(
 
     let mut raw_expected_outputs = infer_rich_files_from_content(&compiled.language, sample_output);
 
-    if raw_actual_outputs.len() < raw_expected_outputs.len() && compiled.is_multifile {
+    if raw_actual_outputs.len() < raw_expected_outputs.len()
+        && sample.input.contains("// @filename:")
+    {
         for file in rich_files.iter() {
             if raw_actual_outputs.iter().any(|f| f.path == file.path) {
                 continue;
