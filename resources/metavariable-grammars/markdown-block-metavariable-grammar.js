@@ -51,43 +51,43 @@ module.exports = grammar({
         ),
         section: $ => choice($._section1, $._section2, $._section3, $._section4, $._section5, $._section6),
         _section1: $ => prec.right(seq(
-            alias($._atx_heading1, $.atx_heading),
-            repeat(choice(
+            field('heading', alias($._atx_heading1, $.atx_heading)),
+            field('content', repeat(choice(
                 alias(choice($._section6, $._section5, $._section4, $._section3, $._section2), $.section),
                 $._block_not_section
-            ))
+            )))
         )),
         _section2: $ => prec.right(seq(
-            alias($._atx_heading2, $.atx_heading),
-            repeat(choice(
+          field('heading', alias($._atx_heading2, $.atx_heading)),
+          field('content', repeat(choice(
                 alias(choice($._section6, $._section5, $._section4, $._section3), $.section),
                 $._block_not_section
-            ))
+            )))
         )),
         _section3: $ => prec.right(seq(
-            alias($._atx_heading3, $.atx_heading),
-            repeat(choice(
+          field('heading', alias($._atx_heading3, $.atx_heading)),
+          field('content', repeat(choice(
                 alias(choice($._section6, $._section5, $._section4), $.section),
                 $._block_not_section
-            ))
+            )))
         )),
         _section4: $ => prec.right(seq(
-            alias($._atx_heading4, $.atx_heading),
-            repeat(choice(
+          field('heading', alias($._atx_heading4, $.atx_heading)),
+          field('content', repeat(choice(
                 alias(choice($._section6, $._section5), $.section),
                 $._block_not_section
-            ))
+            )))
         )),
         _section5: $ => prec.right(seq(
-            alias($._atx_heading5, $.atx_heading),
-            repeat(choice(
+          field('heading', alias($._atx_heading5, $.atx_heading)),
+          field('content', repeat(choice(
                 alias($._section6, $.section),
                 $._block_not_section
-            ))
+            )))
         )),
         _section6: $ => prec.right(seq(
-            alias($._atx_heading6, $.atx_heading),
-            repeat($._block_not_section)
+          field('heading', alias($._atx_heading6, $.atx_heading)),
+          field('content', repeat($._block_not_section))
         )),
 
         // LEAF BLOCKS
