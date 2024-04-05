@@ -223,7 +223,7 @@ pub fn test_pattern_sample(
                 });
             }
             MatchResult::Match(r) => {
-                if sample.input.contains("// @filename:") {
+                if is_multifile_sample(&sample.input) {
                     continue;
                 }
                 raw_actual_outputs.push(RichFile {
@@ -239,7 +239,7 @@ pub fn test_pattern_sample(
     if raw_actual_outputs.is_empty() {
         if sample.output.is_none() {
             return SampleTestResult::new_passing(matches, false);
-        } else {
+        } else if !is_multifile_sample(&sample.input) {
             return SampleTestResult {
                 matches,
                 state: GritTestResultState::FailedMatch,
@@ -269,7 +269,7 @@ pub fn test_pattern_sample(
     let mut raw_expected_outputs = infer_rich_files_from_content(&compiled.language, sample_output);
 
     if raw_actual_outputs.len() < raw_expected_outputs.len()
-        && sample.input.contains("// @filename:")
+        && is_multifile_sample(&sample.input)
     {
         for file in rich_files.iter() {
             if raw_actual_outputs.iter().any(|f| f.path == file.path) {
@@ -327,6 +327,10 @@ pub fn test_pattern_sample(
             actual_outputs: None,
         },
     }
+}
+
+fn is_multifile_sample(input: &str) -> bool {
+    input.contains("// @filename:")
 }
 
 #[derive(Debug)]
