@@ -8503,6 +8503,47 @@ fn code_span() {
 }
 
 #[test]
+fn markdown_heading_rewrite() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: "
+                language markdown(block)
+
+                atx_heading($heading_content, $level) where {
+                    $level <: \"##\"
+                } => `HEADING 2: $heading_content\n`
+                "
+            .to_owned(),
+            source: r#"
+                |# File with two secionds
+                |Some content
+                |## subheading
+                |More content
+                |## Subheading two
+                |Even more content
+                |### Subheading three
+                |Even more content
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |# File with two secionds
+                |Some content
+                |HEADING 2:  subheading
+                |More content
+                |HEADING 2:  Subheading two
+                |Even more content
+                |### Subheading three
+                |Even more content
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn parses_java_constructor() {
     run_test_expected({
         TestArgExpected {
