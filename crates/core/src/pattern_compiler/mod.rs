@@ -1,4 +1,5 @@
 pub(crate) mod accessor_compiler;
+pub(crate) mod accumulate_compiler;
 mod auto_wrap;
 pub mod compiler;
 mod node_compiler;

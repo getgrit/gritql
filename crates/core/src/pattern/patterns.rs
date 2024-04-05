@@ -53,7 +53,10 @@ use super::{
 };
 use crate::{
     context::Context,
-    pattern_compiler::{accessor_compiler::AccessorCompiler, CompilationContext, NodeCompiler},
+    pattern_compiler::{
+        accessor_compiler::AccessorCompiler, accumulate_compiler::AccumulateCompiler,
+        CompilationContext, NodeCompiler,
+    },
 };
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
@@ -726,15 +729,17 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternAccumulate" => Ok(Pattern::Accumulate(Box::new(Accumulate::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?))),
+            "patternAccumulate" => Ok(Pattern::Accumulate(Box::new(
+                AccumulateCompiler::from_node(
+                    node,
+                    context,
+                    vars,
+                    vars_array,
+                    scope_index,
+                    global_vars,
+                    logs,
+                )?,
+            ))),
             "patternWhere" => Ok(Pattern::Where(Box::new(Where::from_node(
                 node,
                 context,
