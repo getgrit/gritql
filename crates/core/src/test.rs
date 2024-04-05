@@ -8510,8 +8510,11 @@ fn markdown_heading_rewrite() {
                 language markdown(block)
 
                 atx_heading($heading_content, $level) where {
-                    $level <: \"##\"
-                } => `HEADING 2: $heading_content\n`
+                    $level <: or {
+                        \"##\",
+                        atx_h4_marker()
+                    }
+                } => `HEADING: $heading_content\n`
                 "
             .to_owned(),
             source: r#"
@@ -8523,17 +8526,21 @@ fn markdown_heading_rewrite() {
                 |Even more content
                 |### Subheading three
                 |Even more content
+                |#### Subheading four
+                |Even more content
                 |"#
             .trim_margin()
             .unwrap(),
             expected: r#"
                 |# File with two secionds
                 |Some content
-                |HEADING 2:  subheading
+                |HEADING:  subheading
                 |More content
-                |HEADING 2:  Subheading two
+                |HEADING:  Subheading two
                 |Even more content
                 |### Subheading three
+                |Even more content
+                |HEADING:  Subheading four
                 |Even more content
                 |"#
             .trim_margin()
