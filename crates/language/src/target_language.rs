@@ -407,79 +407,16 @@ pub fn expand_paths(
         Some(languages) => {
             for &target_language in languages {
                 match target_language {
-                    PatternLanguage::Python => {
-                        file_types.select("py");
-                    }
-                    PatternLanguage::TypeScript => {
-                        file_types.select("ts");
-                        file_types.select("js");
-                    }
-                    PatternLanguage::JavaScript => {
-                        file_types.select("ts");
-                        file_types.select("js");
-                    }
-                    PatternLanguage::Tsx => {
-                        file_types.select("ts");
-                        file_types.select("js");
-                    }
-                    PatternLanguage::CSharp => {
-                        file_types.select("cs");
-                    }
-                    PatternLanguage::Java => {
-                        file_types.select("java");
-                    }
-                    PatternLanguage::Go => {
-                        file_types.select("go");
-                    }
-                    PatternLanguage::Rust => {
-                        file_types.select("rust");
-                    }
-                    PatternLanguage::Html => {
-                        file_types.select("html");
-                    }
-                    PatternLanguage::Css => {
-                        file_types.select("css");
-                        file_types.select("vue");
-                    }
-                    PatternLanguage::Json => {
-                        file_types.select("json");
-                    }
                     PatternLanguage::Yaml => {
                         // This covers both .yaml and .yml
                         file_types.select("yaml");
                     }
-                    PatternLanguage::MarkdownBlock => {
-                        file_types.select("md");
-                    }
-                    PatternLanguage::MarkdownInline => {
-                        file_types.select("md");
-                    }
-                    PatternLanguage::Hcl => {
-                        file_types.select("tf");
-                    }
-                    PatternLanguage::Ruby => {
-                        file_types.select("ruby");
-                    }
-                    PatternLanguage::Solidity => {
-                        file_types.select("solidity");
-                    }
-                    PatternLanguage::Sql => {
-                        file_types.select("sql");
-                    }
-                    PatternLanguage::Vue => {
-                        file_types.select("vue");
-                    }
-                    PatternLanguage::Toml => {
-                        file_types.select("toml");
-                    }
-                    PatternLanguage::Php => {
-                        file_types.select("php");
-                        file_types.select("phtml");
-                        file_types.select("phar");
-                        file_types.select("pht");
-                        file_types.select("phps");
-                    }
                     PatternLanguage::Universal => {}
+                    _ => {
+                        for ext in target_language.get_file_extensions() {
+                            file_types.select(ext);
+                        }
+                    }
                 }
             }
         }
