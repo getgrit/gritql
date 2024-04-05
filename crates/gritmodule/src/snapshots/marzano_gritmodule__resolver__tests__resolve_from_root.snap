@@ -339,7 +339,7 @@ expression: resolved_patterns
           endByte: 873
       - name: "Don't exit a scope"
         input: "function f() {\n  if (a) {\n    return 3;\n  }\n  1 + 1;\n}"
-        output: "function f() {\n  if (a) {\n    return 3;\n  }\n  1 + 1;\n}"
+        output: ~
         input_range:
           start:
             line: 63
@@ -442,7 +442,7 @@ expression: resolved_patterns
           endByte: 1095
       - name: "Do not change `$val === null`"
         input: "if (val === null) {\n  done();\n}"
-        output: "if (val === null) {\n  done();\n}"
+        output: ~
         input_range:
           start:
             line: 71
@@ -463,7 +463,7 @@ expression: resolved_patterns
           endByte: 1180
       - name: "Do not change `$val !== null`"
         input: "while (val !== null) {\n  doSomething();\n}"
-        output: "while (val !== null) {\n  doSomething();\n}"
+        output: ~
         input_range:
           start:
             line: 79
