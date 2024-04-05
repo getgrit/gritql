@@ -8503,6 +8503,105 @@ fn code_span() {
 }
 
 #[test]
+fn markdown_heading_rewrite() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: "
+                language markdown(block)
+
+                atx_heading($heading_content, $level) where {
+                    $level <: or {
+                        \"##\",
+                        atx_h4_marker()
+                    }
+                } => `HEADING: $heading_content\n`
+                "
+            .to_owned(),
+            source: r#"
+                |# File with two secionds
+                |Some content
+                |## subheading
+                |More content
+                |## Subheading two
+                |Even more content
+                |### Subheading three
+                |Even more content
+                |#### Subheading four
+                |Even more content
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |# File with two secionds
+                |Some content
+                |HEADING:  subheading
+                |More content
+                |HEADING:  Subheading two
+                |Even more content
+                |### Subheading three
+                |Even more content
+                |HEADING:  Subheading four
+                |Even more content
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn markdown_sections() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: "
+                language markdown(block)
+
+                section($heading, $content) where {
+                    $heading <: atx_heading(level=atx_h2_marker()),
+                    $content <: not includes \"skip\"
+                } => raw`---
+                SECTION 2 HEADER: $heading`
+                "
+            .to_owned(),
+            source: r#"
+                |# File with two secionds
+                |Some content
+                |## level 2
+                |More content
+                |## level 2 (do not skip)
+                |Even more content
+                |### level 3
+                |Even more content
+                |#### level 4
+                |Even more content
+                |## Now we go back to section two
+                |Content only here
+                |## Skip this one...
+                |skip me
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |# File with two secionds
+                |Some content
+                |---
+                |                SECTION 2 HEADER: ## level 2
+                |---
+                |                SECTION 2 HEADER: ## level 2 (do not skip)
+                |---
+                |                SECTION 2 HEADER: ## Now we go back to section two
+                |## Skip this one...
+                |skip me
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn parses_java_constructor() {
     run_test_expected({
         TestArgExpected {
