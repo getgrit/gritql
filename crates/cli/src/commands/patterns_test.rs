@@ -78,7 +78,7 @@ pub async fn get_marzano_pattern_test_results(
                                         "Sample output: {:?}, {:?}",
                                         result.message, result.expected_output
                                     );
-                                    actual_sample.output = output.clone()
+                                    actual_sample.output = Some(output.clone())
                                 }
                                 None => (),
                             }
