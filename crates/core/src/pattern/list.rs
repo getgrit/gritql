@@ -1,12 +1,11 @@
 use super::{
-    compiler::CompilationContext,
     list_index,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     state::State,
     variable::VariableSourceLocations,
 };
-use crate::context::Context;
+use crate::{context::Context, pattern_factory::compiler::CompilationContext};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_language::language::Field;

@@ -1,12 +1,13 @@
 use super::{
-    compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::{pattern_to_binding, ResolvedPattern},
     variable::VariableSourceLocations,
     Node, State,
 };
-use crate::{binding::Constant, errors::debug};
-use crate::{context::Context, resolve};
+use crate::{
+    binding::Constant, context::Context, errors::debug,
+    pattern_factory::compiler::CompilationContext, resolve,
+};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use grit_util::AstNode;

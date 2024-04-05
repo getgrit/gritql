@@ -1,5 +1,5 @@
 use super::{
-    compiler::{ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX},
+    constants::{ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX},
     container::{PatternOrResolved, PatternOrResolvedMut},
     patterns::{Matcher, Name},
     resolved_pattern::ResolvedPattern,
@@ -30,8 +30,6 @@ use std::{
     collections::{BTreeMap, BTreeSet},
 };
 use tree_sitter::Node;
-
-pub(crate) const GLOBAL_VARS_SCOPE_INDEX: usize = 0;
 
 struct VariableMirror<'a> {
     scope: usize,

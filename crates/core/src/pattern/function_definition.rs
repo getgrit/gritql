@@ -1,15 +1,5 @@
-use crate::{binding::Constant, context::Context};
-use anyhow::{anyhow, bail, Result};
-#[cfg(feature = "external_functions")]
-use marzano_externals::function::ExternalFunction;
-use marzano_language::foreign_language::ForeignLanguage;
-use marzano_util::analysis_logs::AnalysisLogs;
-use std::{borrow::Cow, collections::BTreeMap};
-use tree_sitter::Node;
-
 use super::{
     and::PrAnd,
-    compiler::CompilationContext,
     functions::{Evaluator, FuncEvaluation},
     patterns::Pattern,
     predicates::Predicate,
@@ -17,6 +7,14 @@ use super::{
     state::State,
     variable::{get_variables, Variable, VariableSourceLocations},
 };
+use crate::{binding::Constant, context::Context, pattern_factory::compiler::CompilationContext};
+use anyhow::{anyhow, bail, Result};
+#[cfg(feature = "external_functions")]
+use marzano_externals::function::ExternalFunction;
+use marzano_language::foreign_language::ForeignLanguage;
+use marzano_util::analysis_logs::AnalysisLogs;
+use std::{borrow::Cow, collections::BTreeMap};
+use tree_sitter::Node;
 
 pub(crate) trait FunctionDefinition {
     fn call<'a>(

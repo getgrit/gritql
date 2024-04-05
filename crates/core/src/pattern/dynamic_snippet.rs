@@ -1,25 +1,23 @@
-use std::collections::BTreeMap;
-
+use super::{
+    accessor::Accessor,
+    built_in_functions::CallBuiltIn,
+    constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
+    functions::{CallForeignFunction, CallFunction},
+    list_index::ListIndex,
+    patterns::{Matcher, Name},
+    resolved_pattern::ResolvedPattern,
+    variable::{register_variable, Variable, VariableSourceLocations},
+    State,
+};
+use crate::{context::Context, split_snippet::split_snippet};
 use anyhow::{bail, Result};
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::{
     analysis_logs::AnalysisLogs,
     position::{Position, Range},
 };
+use std::collections::BTreeMap;
 
-use crate::{context::Context, split_snippet::split_snippet};
-
-use super::{
-    accessor::Accessor,
-    built_in_functions::CallBuiltIn,
-    compiler::DEFAULT_FILE_NAME,
-    functions::{CallForeignFunction, CallFunction},
-    list_index::ListIndex,
-    patterns::{Matcher, Name},
-    resolved_pattern::ResolvedPattern,
-    variable::{register_variable, Variable, VariableSourceLocations, GLOBAL_VARS_SCOPE_INDEX},
-    State,
-};
 #[derive(Debug, Clone)]
 pub enum DynamicSnippetPart {
     String(String),

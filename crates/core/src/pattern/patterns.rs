@@ -1,42 +1,60 @@
-use super::accessor::Accessor;
-use super::add::Add;
-use super::before::Before;
-use super::boolean_constant::BooleanConstant;
-use super::compiler::{CompilationContext, ABSOLUTE_PATH_INDEX, FILENAME_INDEX, PROGRAM_INDEX};
-use super::divide::Divide;
-use super::dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart};
-use super::every::Every;
-use super::file_pattern::FilePattern;
-use super::files::Files;
-use super::float_constant::FloatConstant;
-use super::functions::{CallForeignFunction, CallFunction};
-use super::includes::Includes;
-use super::int_constant::IntConstant;
-use super::like::Like;
-use super::limit::Limit;
-use super::list_index::ListIndex;
-use super::log::Log;
-use super::map::GritMap;
-use super::maybe::Maybe;
-use super::modulo::Modulo;
-use super::multiply::Multiply;
-use super::range::Range as PRange;
-use super::regex::{RegexLike, RegexPattern};
-use super::resolved_pattern::ResolvedPattern;
-use super::sequential::Sequential;
-use super::subtract::Subtract;
-use super::undefined::Undefined;
-use super::variable::{is_reserved_metavariable, VariableSourceLocations, GLOBAL_VARS_SCOPE_INDEX};
 use super::{
-    accumulate::Accumulate, after::After, and::And, any::Any, assignment::Assignment,
-    ast_node::ASTNode, bubble::Bubble, built_in_functions::CallBuiltIn, call::Call,
-    code_snippet::CodeSnippet, contains::Contains, list::List, not::Not, or::Or, r#if::If,
-    r#where::Where, rewrite::Rewrite, some::Some, string_constant::StringConstant,
-    variable::Variable, within::Within, Node, State,
+    accessor::Accessor,
+    accumulate::Accumulate,
+    add::Add,
+    after::After,
+    and::And,
+    any::Any,
+    assignment::Assignment,
+    ast_node::ASTNode,
+    before::Before,
+    boolean_constant::BooleanConstant,
+    bubble::Bubble,
+    built_in_functions::CallBuiltIn,
+    call::Call,
+    code_snippet::CodeSnippet,
+    constants::{ABSOLUTE_PATH_INDEX, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX, PROGRAM_INDEX},
+    contains::Contains,
+    divide::Divide,
+    dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
+    every::Every,
+    file_pattern::FilePattern,
+    files::Files,
+    float_constant::FloatConstant,
+    functions::{CallForeignFunction, CallFunction},
+    includes::Includes,
+    int_constant::IntConstant,
+    like::Like,
+    limit::Limit,
+    list::List,
+    list_index::ListIndex,
+    log::Log,
+    map::GritMap,
+    maybe::Maybe,
+    modulo::Modulo,
+    multiply::Multiply,
+    not::Not,
+    or::Or,
+    r#if::If,
+    r#where::Where,
+    range::Range as PRange,
+    regex::{RegexLike, RegexPattern},
+    register_variable,
+    resolved_pattern::ResolvedPattern,
+    rewrite::Rewrite,
+    sequential::Sequential,
+    some::Some,
+    string_constant::{AstLeafNode, StringConstant},
+    subtract::Subtract,
+    undefined::Undefined,
+    variable::{is_reserved_metavariable, Variable, VariableSourceLocations},
+    within::Within,
+    Node, State,
 };
-use crate::context::Context;
-use crate::pattern::register_variable;
-use crate::pattern::string_constant::AstLeafNode;
+use crate::{
+    context::Context,
+    pattern_factory::{accessor_factory::accessor_from_node, compiler::CompilationContext},
+};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use grit_util::{traverse, Order};
@@ -47,8 +65,6 @@ use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::position::{char_index_to_byte_index, Position, Range};
 use regex::Match;
 use std::collections::{BTreeMap, HashMap};
-use std::str;
-use std::vec;
 
 pub(crate) trait Matcher: Debug {
     // it is important that any implementors of Pattern
@@ -912,7 +928,7 @@ impl Pattern {
                 is_rhs,
                 logs,
             )?))),
-            "mapAccessor" => Ok(Pattern::Accessor(Box::new(Accessor::from_node(
+            "mapAccessor" => Ok(Pattern::Accessor(Box::new(accessor_from_node(
                 node,
                 context,
                 vars,

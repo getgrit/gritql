@@ -1,17 +1,14 @@
 use super::{
-    compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::{LazyBuiltIn, ResolvedPattern, ResolvedSnippet},
     variable::VariableSourceLocations,
     Node, State,
 };
-use crate::{context::Context, resolve};
-
+use crate::{context::Context, pattern_factory::compiler::CompilationContext, resolve};
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use im::vector;
 use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource};
-
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]

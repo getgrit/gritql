@@ -1,5 +1,4 @@
 use super::{
-    compiler::CompilationContext,
     container::Container,
     functions::{Evaluator, FuncEvaluation},
     patterns::{Matcher, Name, Pattern},
@@ -7,7 +6,7 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
-use crate::{context::Context, errors::debug};
+use crate::{context::Context, errors::debug, pattern_factory::compiler::CompilationContext};
 use anyhow::{anyhow, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;

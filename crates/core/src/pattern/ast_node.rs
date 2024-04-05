@@ -1,5 +1,4 @@
 use super::{
-    compiler::CompilationContext,
     list::List,
     patterns::Matcher,
     patterns::{Name, Pattern},
@@ -7,7 +6,7 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
-use crate::{context::Context, resolve};
+use crate::{context::Context, pattern_factory::compiler::CompilationContext, resolve};
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use marzano_language::language::{FieldId, Language, SortId};

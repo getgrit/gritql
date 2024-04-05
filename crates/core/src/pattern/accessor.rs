@@ -1,101 +1,43 @@
 use super::{
-    compiler::CompilationContext,
     container::{Container, PatternOrResolved, PatternOrResolvedMut},
     map::GritMap,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     state::State,
-    variable::{Variable, VariableSourceLocations},
+    variable::Variable,
 };
 use crate::{binding::Constant, context::Context};
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
-use std::{borrow::Cow, collections::BTreeMap};
-use tree_sitter::Node;
+use std::borrow::Cow;
 
 #[derive(Debug, Clone)]
-pub(crate) enum AccessorMap {
+pub enum AccessorMap {
     Container(Container),
     Map(GritMap),
 }
 
 #[derive(Debug, Clone)]
 pub struct Accessor {
-    pub(crate) map: AccessorMap,
-    key: Key,
+    pub map: AccessorMap,
+    pub key: AccessorKey,
 }
 
 #[derive(Debug, Clone)]
-enum Key {
+pub enum AccessorKey {
     String(String),
     Variable(Variable),
 }
 
 impl Accessor {
-    fn new(map: AccessorMap, key: Key) -> Self {
+    pub fn new(map: AccessorMap, key: AccessorKey) -> Self {
         Self { map, key }
-    }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let map = node
-            .child_by_field_name("map")
-            .ok_or_else(|| anyhow!("missing map of accessor"))?;
-        let map = if map.kind() == "map" {
-            AccessorMap::Map(GritMap::from_node(
-                &map,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                false,
-                logs,
-            )?)
-        } else {
-            AccessorMap::Container(Container::from_node(
-                &map,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?)
-        };
-
-        let key = node
-            .child_by_field_name("key")
-            .ok_or_else(|| anyhow!("missing key of accessor"))?;
-
-        let key = if key.kind() == "variable" {
-            Key::Variable(Variable::from_node(
-                &key,
-                context.file,
-                context.src,
-                vars,
-                global_vars,
-                vars_array,
-                scope_index,
-            )?)
-        } else {
-            Key::String(key.utf8_text(context.src.as_bytes())?.to_string())
-        };
-
-        Ok(Self::new(map, key))
     }
 
     fn get_key<'a>(&'a self, state: &State<'a>) -> Result<Cow<'a, str>> {
         match &self.key {
-            Key::String(s) => Ok(Cow::Borrowed(s)),
-            Key::Variable(v) => v.text(state),
+            AccessorKey::String(s) => Ok(Cow::Borrowed(s)),
+            AccessorKey::Variable(v) => v.text(state),
         }
     }
 

@@ -1,5 +1,4 @@
 use super::{
-    compiler::CompilationContext,
     functions::{Evaluator, FuncEvaluation},
     iter_pattern::PatternOrPredicate,
     patterns::{Matcher, Name, Pattern},
@@ -8,7 +7,7 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
-use crate::context::Context;
+use crate::{context::Context, pattern_factory::compiler::CompilationContext};
 use anyhow::{anyhow, bail, Ok, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};

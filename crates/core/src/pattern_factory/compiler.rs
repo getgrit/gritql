@@ -1,18 +1,27 @@
+use super::auto_wrap::auto_wrap_pattern;
 use crate::{
     parse::make_grit_parser,
     pattern::{
-        built_in_functions::BuiltIns, pattern_definition::PatternDefinition, patterns::Pattern,
-        predicate_definition::PredicateDefinition, Problem,
+        analysis::{has_limit, is_multifile},
+        built_in_functions::BuiltIns,
+        constants::{
+            ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
+        },
+        function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
+        pattern_definition::PatternDefinition,
+        patterns::Pattern,
+        predicate_definition::PredicateDefinition,
+        variable::VariableSourceLocations,
+        Problem, VariableLocations,
     },
 };
 use anyhow::{anyhow, bail, Result};
 use grit_util::{traverse, Order};
 use itertools::Itertools;
 use marzano_language::{self, target_language::TargetLanguage};
-use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::{
-    analysis_logs::AnalysisLogBuilder,
-    analysis_logs::AnalysisLogs,
+    analysis_logs::{AnalysisLogBuilder, AnalysisLogs},
+    cursor_wrapper::CursorWrapper,
     position::{FileRange, Position, Range},
 };
 use regex::Regex;
@@ -26,24 +35,6 @@ use tree_sitter::{Node, Parser, Tree};
 #[cfg(feature = "grit_tracing")]
 use tracing::instrument;
 
-use super::{
-    analysis::{has_limit, is_multifile},
-    auto_wrap::auto_wrap_pattern,
-    function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
-    variable::VariableSourceLocations,
-    VariableLocations,
-};
-
-pub(crate) const MATCH_VAR: &str = "$match";
-pub(crate) const GRIT_RANGE_VAR: &str = "$grit_range";
-pub(crate) const NEW_FILES_INDEX: usize = 0;
-pub(crate) const PROGRAM_INDEX: usize = 1;
-pub(crate) const FILENAME_INDEX: usize = 2;
-pub(crate) const ABSOLUTE_PATH_INDEX: usize = 3;
-pub const DEFAULT_FILE_NAME: &str = "PlaygroundPattern";
-
-// mode public after being moved out of pattern.rs
-// sign it should compiler.rs should be in the pattern module
 pub(crate) struct CompilationContext<'a> {
     pub src: &'a str,
     pub file: &'a str,

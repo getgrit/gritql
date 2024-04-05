@@ -1,6 +1,5 @@
 use super::{
     accessor::execute_resolved_with_binding,
-    compiler::CompilationContext,
     container::{Container, PatternOrResolved, PatternOrResolvedMut},
     list::List,
     patterns::{Matcher, Name, Pattern},
@@ -8,9 +7,12 @@ use super::{
     state::State,
     variable::VariableSourceLocations,
 };
-use crate::binding::{Binding, Constant};
-use crate::context::Context;
-use crate::resolve_opt;
+use crate::{
+    binding::{Binding, Constant},
+    context::Context,
+    pattern_factory::compiler::CompilationContext,
+    resolve_opt,
+};
 use anyhow::{anyhow, bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;

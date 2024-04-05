@@ -17,12 +17,12 @@ use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 use marzano_core::pattern::built_in_functions::BuiltIns;
 use marzano_core::pattern::{
     api::{AnalysisLog, DoneFile, MatchResult},
-    compiler::CompilationResult,
     Problem,
 };
+use marzano_core::pattern_factory::compiler::{src_to_problem_libs, CompilationResult};
 use marzano_language::target_language::PatternLanguage;
 use marzano_util::cache::GritCache;
-use marzano_util::position::Position;
+use marzano_util::position::{FileRange, Position};
 use marzano_util::runtime::ExecutionContext;
 
 use std::collections::HashMap;
@@ -30,10 +30,6 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::mpsc;
 use std::sync::mpsc::channel;
-
-use marzano_core::pattern::compiler::src_to_problem_libs;
-
-use marzano_util::position::FileRange;
 
 use crate::commands::apply_pattern::ApplyInput;
 use crate::commands::apply_pattern::ApplyPatternArgs;
