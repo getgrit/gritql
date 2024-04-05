@@ -22,7 +22,7 @@ pub trait Context {
 
     fn ignore_limit_pattern(&self) -> bool;
 
-    fn call_built_in<'a>(
+    async fn call_built_in<'a>(
         &self,
         call: &'a CallBuiltIn,
         context: &'a Self,

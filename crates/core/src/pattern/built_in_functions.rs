@@ -22,7 +22,7 @@ use im::vector;
 use im::Vector;
 use marzano_language::language::Language;
 
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, pin::Pin};
 
 #[derive(Debug, Clone)]
 pub struct CallBuiltIn {
@@ -60,7 +60,7 @@ impl GritCall for CallBuiltIn {
         context: &'a impl Context,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
-        context.call_built_in(self, context, state, logs)
+        context.call_built_in(self, context, state, logs).await
     }
 }
 
@@ -74,13 +74,33 @@ impl Name for CallBuiltIn {
 // eg. capitalize returns an owned string_constant pattern, but unique would return a borrowed
 // value.
 
+// type F = dyn for<'a, 'b, 'c> Fn(
+//         &'a [std::option::Option<Pattern>],
+//         &'a MarzanoContext<'a>,
+//         &'b mut State<'a>,
+//         &'c mut AnalysisLogs,
+//     ) -> Pin<
+//         Box<(dyn futures::Future<Output = Result<ResolvedPattern<'a>, anyhow::Error>>)>,
+//     > + Send
+//     + Sync;
+
+// type F = dyn for<'a> Fn(
+//         &'a [Option<Pattern>],
+//         &'a MarzanoContext<'a>,
+//         &mut State<'a>,
+//         &mut AnalysisLogs,
+//     ) -> (impl Future<Output = Result<ResolvedPattern<'_>, Error>>)
+//     + Send
+//     + Sync;
+
 type F = dyn for<'a> Fn(
         &'a [Option<Pattern>],
         &'a MarzanoContext<'a>,
         &mut State<'a>,
         &mut AnalysisLogs,
-    ) -> (impl Future<Output = Result<ResolvedPattern<'a>>>)
-    + Send
+    ) -> Pin<
+        Box<(dyn futures::Future<Output = Result<ResolvedPattern<'a>, anyhow::Error>>)>,
+    > + Send
     + Sync;
 
 pub struct BuiltInFunction {
@@ -90,14 +110,14 @@ pub struct BuiltInFunction {
 }
 
 impl BuiltInFunction {
-    fn call<'a>(
+    async fn call<'a>(
         &self,
         args: &'a [Option<Pattern>],
         context: &'a MarzanoContext<'a>,
         state: &mut State<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
-        (self.func)(args, context, state, logs)
+        (self.func)(args, context, state, logs).await
     }
 
     pub fn new(name: &'static str, params: Vec<&'static str>, func: Box<F>) -> Self {
@@ -118,14 +138,16 @@ impl std::fmt::Debug for BuiltInFunction {
 pub struct BuiltIns(Vec<BuiltInFunction>);
 
 impl BuiltIns {
-    pub(crate) fn call<'a>(
+    pub(crate) async fn call<'a>(
         &self,
         call: &'a CallBuiltIn,
         context: &'a MarzanoContext<'a>,
         state: &mut State<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
-        self.0[call.index].call(&call.args, context, state, logs)
+        self.0[call.index]
+            .call(&call.args, context, state, logs)
+            .await
     }
 
     pub fn extend_builtins(&mut self, other: BuiltIns) -> Result<()> {
@@ -179,24 +201,27 @@ impl From<Vec<BuiltInFunction>> for BuiltIns {
     }
 }
 
+// Pin<Box<(dyn futures::Future<Output = Result<ResolvedPattern<'a>, anyhow::Error>>)>>
 /// Turn an arbitrary path into a resolved and normalized absolute path
-async fn resolve_path_fn<'a>(
+fn resolve_path_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs).await?;
+) -> Pin<Box<(dyn Future<Output = Result<ResolvedPattern<'a>>>)>> {
+    Box::pin(async {
+        let args = patterns_to_resolved(args, state, context, logs).await?;
 
-    let current_file = get_absolute_file_name(state)?;
-    let target_path = match &args[0] {
-        Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
-        None => return Err(anyhow!("No path argument provided for resolve function")),
-    };
+        let current_file = get_absolute_file_name(state)?;
+        let target_path = match &args[0] {
+            Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
+            None => return Err(anyhow!("No path argument provided for resolve function")),
+        };
 
-    let resolved_path = resolve(target_path, current_file.into())?;
+        let resolved_path = resolve(target_path, current_file.into())?;
 
-    Ok(ResolvedPattern::from_string(resolved_path))
+        Ok(ResolvedPattern::from_string(resolved_path))
+    })
 }
 
 fn capitalize(s: &str) -> String {
@@ -207,296 +232,324 @@ fn capitalize(s: &str) -> String {
     }
 }
 
-async fn capitalize_fn<'a>(
+fn capitalize_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs).await?;
+) -> Pin<Box<(dyn Future<Output = Result<ResolvedPattern<'a>>>)>> {
+    Box::pin(async {
+        let args = patterns_to_resolved(args, state, context, logs).await?;
 
-    let s = match &args[0] {
-        Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
-        None => return Err(anyhow!("No argument provided for capitalize function")),
-    };
-    Ok(ResolvedPattern::from_string(capitalize(&s)))
+        let s = match &args[0] {
+            Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
+            None => return Err(anyhow!("No argument provided for capitalize function")),
+        };
+        Ok(ResolvedPattern::from_string(capitalize(&s)))
+    })
 }
 
-async fn lowercase_fn<'a>(
+fn lowercase_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs).await?;
+) -> Pin<Box<(dyn Future<Output = Result<ResolvedPattern<'a>>>)>> {
+    Box::pin(async {
+        let args = patterns_to_resolved(args, state, context, logs).await?;
 
-    let s = match &args[0] {
-        Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
-        None => return Err(anyhow!("lowercase takes 1 argument")),
-    };
-    Ok(ResolvedPattern::from_string(s.to_lowercase()))
+        let s = match &args[0] {
+            Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
+            None => return Err(anyhow!("lowercase takes 1 argument")),
+        };
+        Ok(ResolvedPattern::from_string(s.to_lowercase()))
+    })
 }
 
-async fn uppercase_fn<'a>(
+fn uppercase_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs).await?;
+) -> Pin<Box<(dyn Future<Output = Result<ResolvedPattern<'a>>>)>> {
+    Box::pin(async {
+        let args = patterns_to_resolved(args, state, context, logs).await?;
 
-    let s = match &args[0] {
-        Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
-        None => return Err(anyhow!("uppercase takes 1 argument")),
-    };
-    Ok(ResolvedPattern::from_string(s.to_uppercase()))
+        let s = match &args[0] {
+            Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
+            None => return Err(anyhow!("uppercase takes 1 argument")),
+        };
+        Ok(ResolvedPattern::from_string(s.to_uppercase()))
+    })
 }
 
-async fn text_fn<'a>(
+fn text_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs).await?;
+) -> Pin<Box<(dyn Future<Output = Result<ResolvedPattern<'a>>>)>> {
+    Box::pin(async {
+        let args = patterns_to_resolved(args, state, context, logs).await?;
 
-    let s = match args.first() {
-        Some(Some(resolved_pattern)) => resolved_pattern.text(&state.files)?,
-        _ => return Err(anyhow!("text takes 1 argument")),
-    };
-    Ok(ResolvedPattern::from_string(s.to_string()))
+        let s = match args.first() {
+            Some(Some(resolved_pattern)) => resolved_pattern.text(&state.files)?,
+            _ => return Err(anyhow!("text takes 1 argument")),
+        };
+        Ok(ResolvedPattern::from_string(s.to_string()))
+    })
 }
 
-async fn trim_fn<'a>(
+fn trim_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs).await?;
+) -> Pin<Box<(dyn Future<Output = Result<ResolvedPattern<'a>>>)>> {
+    Box::pin(async {
+        let args = patterns_to_resolved(args, state, context, logs).await?;
 
-    let trim_chars = match &args[1] {
-        Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
-        None => return Err(anyhow!("trim takes 2 arguments: string and trim_chars")),
-    };
+        let trim_chars = match &args[1] {
+            Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
+            None => return Err(anyhow!("trim takes 2 arguments: string and trim_chars")),
+        };
 
-    let s = match &args[0] {
-        Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
-        None => return Err(anyhow!("trim takes 2 arguments: string and trim_chars")),
-    };
+        let s = match &args[0] {
+            Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
+            None => return Err(anyhow!("trim takes 2 arguments: string and trim_chars")),
+        };
 
-    let trim_chars = trim_chars.chars().collect::<Vec<char>>();
-    let trim_chars = trim_chars.as_slice();
-    let s = s.trim_matches(trim_chars).to_string();
-    Ok(ResolvedPattern::from_string(s))
+        let trim_chars = trim_chars.chars().collect::<Vec<char>>();
+        let trim_chars = trim_chars.as_slice();
+        let s = s.trim_matches(trim_chars).to_string();
+        Ok(ResolvedPattern::from_string(s))
+    })
 }
 
-async fn split_fn<'a>(
+fn split_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs).await?;
+) -> Pin<Box<(dyn Future<Output = Result<ResolvedPattern<'a>>>)>> {
+    Box::pin(async {
+        let args = patterns_to_resolved(args, state, context, logs).await?;
 
-    let string = if let Some(string) = &args[0] {
-        string.text(&state.files)?
-    } else {
-        bail!("split requires parameter string")
-    };
-    let separator = if let Some(separator) = &args[1] {
-        separator.text(&state.files)?
-    } else {
-        bail!("split requires parameter separator")
-    };
-    let parts: Vector<ResolvedPattern> = string
-        .split(&separator.as_ref())
-        .map(|s| ResolvedPattern::Snippets(vector![ResolvedSnippet::Text(s.to_string().into())]))
-        .collect();
-    Ok(ResolvedPattern::List(parts))
+        let string = if let Some(string) = &args[0] {
+            string.text(&state.files)?
+        } else {
+            bail!("split requires parameter string")
+        };
+        let separator = if let Some(separator) = &args[1] {
+            separator.text(&state.files)?
+        } else {
+            bail!("split requires parameter separator")
+        };
+        let parts: Vector<ResolvedPattern> = string
+            .split(&separator.as_ref())
+            .map(|s| {
+                ResolvedPattern::Snippets(vector![ResolvedSnippet::Text(s.to_string().into())])
+            })
+            .collect();
+        Ok(ResolvedPattern::List(parts))
+    })
 }
 
-async fn random_fn<'a>(
+fn random_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs).await?;
+) -> Pin<Box<(dyn Future<Output = Result<ResolvedPattern<'a>>>)>> {
+    Box::pin(async {
+        let args = patterns_to_resolved(args, state, context, logs).await?;
 
-    match args.as_slice() {
-        [Some(start), Some(end)] => {
-            let start = start.text(&state.files)?;
-            let end = end.text(&state.files)?;
-            let start = start.parse::<i64>().unwrap();
-            let end = end.parse::<i64>().unwrap();
-            // Inclusive range
-            let value = state.get_rng().gen_range(start..=end);
-            Ok(ResolvedPattern::Constant(Constant::Integer(value)))
-        }
-        [Some(_), None] => {
-            bail!("If you provide a start argument to random(), you must provide an end argument")
-        }
-        [None, Some(_)] => {
-            bail!("If you provide an end argument to random(), you must provide a start argument")
-        }
-        [None, None] => {
-            let value = state.get_rng().gen::<f64>();
-            Ok(ResolvedPattern::Constant(Constant::Float(value)))
-        }
-        _ => bail!("random() takes 0 or 2 arguments"),
-    }
-}
-
-async fn join_fn<'a>(
-    args: &'a [Option<Pattern>],
-    context: &'a MarzanoContext<'a>,
-    state: &mut State<'a>,
-    logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs).await?;
-
-    let separator = &args[1];
-    let separator = match separator {
-        Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
-        None => return Err(anyhow!("trim takes 2 arguments: list and separator")),
-    };
-
-    let list = &args[0];
-    let join = match list {
-        Some(ResolvedPattern::List(list)) => {
-            JoinFn::from_resolved(list.to_owned(), separator.to_string())
-        }
-        Some(ResolvedPattern::Binding(binding)) => binding
-            .last()
-            .and_then(|b| JoinFn::from_list_binding(b, separator.to_string()))
-            .ok_or_else(|| anyhow!("join takes a list as the first argument"))?,
-        _ => bail!("join takes a list as the first argument"),
-    };
-    let snippet = ResolvedSnippet::LazyFn(Box::new(LazyBuiltIn::Join(join)));
-    Ok(ResolvedPattern::from_resolved_snippet(snippet))
-}
-
-async fn distinct_fn<'a>(
-    args: &'a [Option<Pattern>],
-    context: &'a MarzanoContext<'a>,
-    state: &mut State<'a>,
-    logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs).await?;
-
-    let list = args.into_iter().next().unwrap();
-    match list {
-        Some(ResolvedPattern::List(list)) => {
-            let mut unique_list = Vector::new();
-            for item in list {
-                if !unique_list.contains(&item) {
-                    unique_list.push_back(item);
-                }
+        match args.as_slice() {
+            [Some(start), Some(end)] => {
+                let start = start.text(&state.files)?;
+                let end = end.text(&state.files)?;
+                let start = start.parse::<i64>().unwrap();
+                let end = end.parse::<i64>().unwrap();
+                // Inclusive range
+                let value = state.get_rng().gen_range(start..=end);
+                Ok(ResolvedPattern::Constant(Constant::Integer(value)))
             }
-            Ok(ResolvedPattern::List(unique_list))
+            [Some(_), None] => {
+                bail!(
+                    "If you provide a start argument to random(), you must provide an end argument"
+                )
+            }
+            [None, Some(_)] => {
+                bail!(
+                    "If you provide an end argument to random(), you must provide a start argument"
+                )
+            }
+            [None, None] => {
+                let value = state.get_rng().gen::<f64>();
+                Ok(ResolvedPattern::Constant(Constant::Float(value)))
+            }
+            _ => bail!("random() takes 0 or 2 arguments"),
         }
-        Some(ResolvedPattern::Binding(binding)) => match binding.last() {
-            Some(b) => {
-                if let Some(list_items) = b.list_items() {
-                    let mut unique_list = Vector::new();
-                    for item in list_items {
-                        let resolved = ResolvedPattern::from_node(item);
-                        if !unique_list.contains(&resolved) {
-                            unique_list.push_back(resolved);
-                        }
+    })
+}
+
+fn join_fn<'a>(
+    args: &'a [Option<Pattern>],
+    context: &'a MarzanoContext<'a>,
+    state: &mut State<'a>,
+    logs: &mut AnalysisLogs,
+) -> Pin<Box<(dyn Future<Output = Result<ResolvedPattern<'a>>>)>> {
+    Box::pin(async {
+        let args = patterns_to_resolved(args, state, context, logs).await?;
+
+        let separator = &args[1];
+        let separator = match separator {
+            Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
+            None => return Err(anyhow!("trim takes 2 arguments: list and separator")),
+        };
+
+        let list = &args[0];
+        let join = match list {
+            Some(ResolvedPattern::List(list)) => {
+                JoinFn::from_resolved(list.to_owned(), separator.to_string())
+            }
+            Some(ResolvedPattern::Binding(binding)) => binding
+                .last()
+                .and_then(|b| JoinFn::from_list_binding(b, separator.to_string()))
+                .ok_or_else(|| anyhow!("join takes a list as the first argument"))?,
+            _ => bail!("join takes a list as the first argument"),
+        };
+        let snippet = ResolvedSnippet::LazyFn(Box::new(LazyBuiltIn::Join(join)));
+        Ok(ResolvedPattern::from_resolved_snippet(snippet))
+    })
+}
+
+fn distinct_fn<'a>(
+    args: &'a [Option<Pattern>],
+    context: &'a MarzanoContext<'a>,
+    state: &mut State<'a>,
+    logs: &mut AnalysisLogs,
+) -> Pin<Box<(dyn Future<Output = Result<ResolvedPattern<'a>>>)>> {
+    Box::pin(async {
+        let args = patterns_to_resolved(args, state, context, logs).await?;
+
+        let list = args.into_iter().next().unwrap();
+        match list {
+            Some(ResolvedPattern::List(list)) => {
+                let mut unique_list = Vector::new();
+                for item in list {
+                    if !unique_list.contains(&item) {
+                        unique_list.push_back(item);
                     }
-                    Ok(ResolvedPattern::List(unique_list))
-                } else {
-                    bail!("distinct takes a list as the first argument")
                 }
+                Ok(ResolvedPattern::List(unique_list))
             }
-            None => Ok(ResolvedPattern::Binding(binding)),
-        },
-        _ => Err(anyhow!("distinct takes a list as the first argument")),
-    }
+            Some(ResolvedPattern::Binding(binding)) => match binding.last() {
+                Some(b) => {
+                    if let Some(list_items) = b.list_items() {
+                        let mut unique_list = Vector::new();
+                        for item in list_items {
+                            let resolved = ResolvedPattern::from_node(item);
+                            if !unique_list.contains(&resolved) {
+                                unique_list.push_back(resolved);
+                            }
+                        }
+                        Ok(ResolvedPattern::List(unique_list))
+                    } else {
+                        bail!("distinct takes a list as the first argument")
+                    }
+                }
+                None => Ok(ResolvedPattern::Binding(binding)),
+            },
+            _ => Err(anyhow!("distinct takes a list as the first argument")),
+        }
+    })
 }
 
 // Shuffle a list
-async fn shuffle_fn<'a>(
+fn shuffle_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs).await?;
+) -> Pin<Box<(dyn Future<Output = Result<ResolvedPattern<'a>>>)>> {
+    Box::pin(async {
+        let args = patterns_to_resolved(args, state, context, logs).await?;
 
-    let list = args
-        .into_iter()
-        .next()
-        .ok_or(anyhow!("shuffle requires one argument"))?
-        .ok_or(anyhow!(
-            "shuffle requires a non-null list as the first argument"
-        ))?;
-    match list {
-        ResolvedPattern::List(list) => {
-            let mut shuffled_list = list.iter().cloned().collect::<Vec<_>>();
-            shuffled_list.shuffle(state.get_rng());
+        let list = args
+            .into_iter()
+            .next()
+            .ok_or(anyhow!("shuffle requires one argument"))?
+            .ok_or(anyhow!(
+                "shuffle requires a non-null list as the first argument"
+            ))?;
+        match list {
+            ResolvedPattern::List(list) => {
+                let mut shuffled_list = list.iter().cloned().collect::<Vec<_>>();
+                shuffled_list.shuffle(state.get_rng());
 
-            Ok(ResolvedPattern::List(shuffled_list.into()))
-        }
-        ResolvedPattern::Binding(binding) => match binding.last() {
-            Some(b) => {
-                if let Some(list_items) = b.list_items() {
-                    let mut list: Vec<_> = list_items.collect();
-                    list.shuffle(state.get_rng());
-                    let list: Vector<_> =
-                        list.into_iter().map(ResolvedPattern::from_node).collect();
-                    Ok(ResolvedPattern::List(list))
-                } else {
-                    Err(anyhow!("shuffle takes a list as the first argument"))
-                }
+                Ok(ResolvedPattern::List(shuffled_list.into()))
             }
-            None => Err(anyhow!("shuffle argument must be bound")),
-        },
-        ResolvedPattern::Snippets(_)
-        | ResolvedPattern::Map(_)
-        | ResolvedPattern::File(_)
-        | ResolvedPattern::Files(_)
-        | ResolvedPattern::Constant(_) => {
-            Err(anyhow!("shuffle takes a list as the first argument"))
+            ResolvedPattern::Binding(binding) => match binding.last() {
+                Some(b) => {
+                    if let Some(list_items) = b.list_items() {
+                        let mut list: Vec<_> = list_items.collect();
+                        list.shuffle(state.get_rng());
+                        let list: Vector<_> =
+                            list.into_iter().map(ResolvedPattern::from_node).collect();
+                        Ok(ResolvedPattern::List(list))
+                    } else {
+                        Err(anyhow!("shuffle takes a list as the first argument"))
+                    }
+                }
+                None => Err(anyhow!("shuffle argument must be bound")),
+            },
+            ResolvedPattern::Snippets(_)
+            | ResolvedPattern::Map(_)
+            | ResolvedPattern::File(_)
+            | ResolvedPattern::Files(_)
+            | ResolvedPattern::Constant(_) => {
+                Err(anyhow!("shuffle takes a list as the first argument"))
+            }
         }
-    }
+    })
 }
 
-async fn length_fn<'a>(
+fn length_fn<'a>(
     args: &'a [Option<Pattern>],
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
-    let args = patterns_to_resolved(args, state, context, logs).await?;
+) -> Pin<Box<(dyn Future<Output = Result<ResolvedPattern<'a>>>)>> {
+    Box::pin(async {
+        let args = patterns_to_resolved(args, state, context, logs).await?;
 
-    let list = args.into_iter().next().unwrap();
-    match &list {
-        Some(ResolvedPattern::List(list)) => {
-            let length = list.len();
-            Ok(ResolvedPattern::Constant(Constant::Integer(length as i64)))
-        }
-        Some(ResolvedPattern::Binding(binding)) => match binding.last() {
-            Some(resolved_pattern) => {
-                let length = if let Some(list_items) = resolved_pattern.list_items() {
-                    list_items.count()
-                } else {
-                    resolved_pattern.text().len()
-                };
+        let list = args.into_iter().next().unwrap();
+        match &list {
+            Some(ResolvedPattern::List(list)) => {
+                let length = list.len();
                 Ok(ResolvedPattern::Constant(Constant::Integer(length as i64)))
+            }
+            Some(ResolvedPattern::Binding(binding)) => match binding.last() {
+                Some(resolved_pattern) => {
+                    let length = if let Some(list_items) = resolved_pattern.list_items() {
+                        list_items.count()
+                    } else {
+                        resolved_pattern.text().len()
+                    };
+                    Ok(ResolvedPattern::Constant(Constant::Integer(length as i64)))
+                }
+                None => Err(anyhow!("length argument must be a list or string")),
+            },
+            Some(resolved_pattern) => {
+                if let Ok(text) = resolved_pattern.text(&state.files) {
+                    let length = text.len();
+                    Ok(ResolvedPattern::Constant(Constant::Integer(length as i64)))
+                } else {
+                    Err(anyhow!("length argument must be a list or string"))
+                }
             }
             None => Err(anyhow!("length argument must be a list or string")),
-        },
-        Some(resolved_pattern) => {
-            if let Ok(text) = resolved_pattern.text(&state.files) {
-                let length = text.len();
-                Ok(ResolvedPattern::Constant(Constant::Integer(length as i64)))
-            } else {
-                Err(anyhow!("length argument must be a list or string"))
-            }
         }
-        None => Err(anyhow!("length argument must be a list or string")),
-    }
+    })
 }

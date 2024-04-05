@@ -840,14 +840,14 @@ impl<'a> Context for MarzanoContext<'a> {
         self.runtime.ignore_limit_pattern
     }
 
-    fn call_built_in<'b>(
+    async fn call_built_in<'b>(
         &self,
         call: &'b CallBuiltIn,
         context: &'b Self,
         state: &mut State<'b>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'b>> {
-        self.built_ins.call(call, context, state, logs)
+        self.built_ins.call(call, context, state, logs).await
     }
 
     #[cfg(all(
