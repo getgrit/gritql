@@ -267,8 +267,6 @@ fn checks_non_matching_yaml_sample() -> Result<()> {
 
     let output = test.output()?;
 
-    println!("Stderr is {}", String::from_utf8(output.stderr.clone())?);
-
     assert!(output.status.success());
 
     Ok(())

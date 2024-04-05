@@ -228,14 +228,14 @@ pub fn test_pattern_sample(
 
     // First handle the case where we have no output
     if raw_actual_outputs.is_empty() {
-        if sample.input == sample.output {
+        if sample.output.is_none() {
             return SampleTestResult::new_passing(matches, false);
         } else {
             return SampleTestResult {
                 matches,
                 state: GritTestResultState::FailedMatch,
                 message: Some("Expected output, but got none".to_string()),
-                expected_output: Some(sample.output.clone()),
+                expected_output: sample.output.clone(),
                 actual_output: None,
                 expected_outputs: None,
                 actual_outputs: None,
@@ -243,8 +243,23 @@ pub fn test_pattern_sample(
         }
     }
 
+    let sample_output = if let Some(output) = sample.output.as_ref() {
+        output
+    } else {
+        return SampleTestResult {
+            matches,
+            state: GritTestResultState::FailedMatch,
+            message: Some("Expected no matches, but got one".to_string()),
+            expected_output: None,
+            actual_output: None,
+            expected_outputs: None,
+            actual_outputs: None,
+        };
+    };
+
+   
     let mut raw_expected_outputs =
-        infer_rich_files_from_content(&compiled.language, &sample.output);
+        infer_rich_files_from_content(&compiled.language, sample_output);
 
     if raw_actual_outputs.len() < raw_expected_outputs.len() && compiled.is_multifile {
         for file in rich_files.iter() {
