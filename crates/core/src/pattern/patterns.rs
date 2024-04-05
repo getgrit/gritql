@@ -55,7 +55,8 @@ use crate::{
     context::Context,
     pattern_compiler::{
         accessor_compiler::AccessorCompiler, accumulate_compiler::AccumulateCompiler,
-        add_compiler::AddCompiler, after_compiler::AfterCompiler, CompilationContext, NodeCompiler,
+        add_compiler::AddCompiler, after_compiler::AfterCompiler, and_compiler::AndCompiler,
+        CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -767,7 +768,7 @@ impl Pattern {
                 global_vars,
                 logs,
             ),
-            "patternAnd" => And::from_node(
+            "patternAnd" => AndCompiler::from_node(
                 node,
                 context,
                 vars,
