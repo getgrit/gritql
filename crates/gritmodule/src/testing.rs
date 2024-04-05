@@ -223,25 +223,30 @@ pub fn test_pattern_sample(
                 });
             }
             MatchResult::Match(r) => {
-                let mut content = String::new();
-                let mut our_file = false;
-                let mut sample_input = sample.input.lines();
-                while let Some(line) = sample_input.next() {
-                    if line.starts_with("// @filename: ") {
-                        if r.source_file == line[14..] {
-                            our_file = true;
-                        } else {
-                            our_file = false;
-                        }
-                    }
-                    if our_file {
+                let content = if sample.input.contains("// @filename:") {
+                    let mut content = String::new();
+                    let mut our_file = false;
+                    let mut sample_input = sample.input.lines();
+                    while let Some(line) = sample_input.next() {
                         if line.starts_with("// @filename: ") {
-                            break;
+                            if r.source_file == line[14..] {
+                                our_file = true;
+                            } else {
+                                our_file = false;
+                            }
                         }
-                        content.push_str(line);
-                        content.push('\n');
+                        if our_file {
+                            if line.starts_with("// @filename: ") {
+                                break;
+                            }
+                            content.push_str(line);
+                            content.push('\n');
+                        }
                     }
-                }
+                    content
+                } else {
+                    sample.input.clone()
+                };
                 raw_actual_outputs.push(RichFile {
                     path: r.source_file.clone(),
                     content,
@@ -282,9 +287,7 @@ pub fn test_pattern_sample(
         };
     };
 
-   
-    let mut raw_expected_outputs =
-        infer_rich_files_from_content(&compiled.language, sample_output);
+    let mut raw_expected_outputs = infer_rich_files_from_content(&compiled.language, sample_output);
 
     if raw_actual_outputs.len() < raw_expected_outputs.len() && compiled.is_multifile {
         for file in rich_files.iter() {
