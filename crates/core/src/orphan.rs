@@ -6,7 +6,7 @@ use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::position::Range;
 use tree_sitter::{Parser, Tree};
 
-fn merge_treesitter_ranges(ranges: Vec<Range>) -> Vec<Range> {
+fn merge_ranges(ranges: Vec<Range>) -> Vec<Range> {
     if ranges.is_empty() {
         return vec![];
     }
@@ -35,7 +35,7 @@ pub(crate) fn remove_orphaned_ranges(
     orphan_ranges: Vec<Range>,
     src: &str,
 ) -> Result<(Option<Tree>, Option<String>)> {
-    let removable_ranges = merge_treesitter_ranges(orphan_ranges);
+    let removable_ranges = merge_ranges(orphan_ranges);
     let mut src = src.to_string();
     for range in &removable_ranges {
         src.drain(range.start_byte as usize..range.end_byte as usize);
