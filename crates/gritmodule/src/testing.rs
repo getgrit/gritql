@@ -222,6 +222,12 @@ pub fn test_pattern_sample(
                     content: r.rewritten.content.clone(),
                 });
             }
+            MatchResult::Match(r) => {
+                raw_actual_outputs.push(RichFile {
+                    path: r.source_file.clone(),
+                    content: sample.input,
+                });
+            }
             _ => {}
         }
     }
