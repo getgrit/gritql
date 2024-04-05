@@ -255,19 +255,3 @@ fn lists_imported_patterns() -> Result<()> {
 
     Ok(())
 }
-
-#[test]
-fn checks_non_matching_yaml_sample() -> Result<()> {
-    let (_temp_dir, dir) = get_fixture("yaml_unmatched", false)?;
-
-    let mut test = get_test_cmd()?;
-    test.arg("patterns")
-        .arg("test")
-        .current_dir(dir);
-
-    let output = test.output()?;
-
-    assert!(output.status.success());
-
-    Ok(())
-}

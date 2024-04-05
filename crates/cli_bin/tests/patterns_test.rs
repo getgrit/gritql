@@ -247,3 +247,36 @@ fn tests_patterns_with_foreign_function_call_from_dot_grit_lib() -> Result<()> {
     assert!(output.status.success());
     Ok(())
 }
+
+#[test]
+fn checks_non_matching_yaml_sample() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("yaml_unmatched", false)?;
+
+    let mut test = get_test_cmd()?;
+    test.arg("patterns")
+        .arg("test")
+        .current_dir(dir);
+
+    let output = test.output()?;
+
+    assert!(output.status.success());
+
+    Ok(())
+}
+
+
+#[test]
+fn tests_match_only_with_file_name() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("match_filename", false)?;
+
+    let mut test = get_test_cmd()?;
+    test.arg("patterns")
+        .arg("test")
+        .current_dir(dir);
+
+    let output = test.output()?;
+
+    assert!(output.status.success());
+
+    Ok(())
+}
