@@ -55,7 +55,7 @@ use crate::{
     context::Context,
     pattern_compiler::{
         accessor_compiler::AccessorCompiler, accumulate_compiler::AccumulateCompiler,
-        CompilationContext, NodeCompiler,
+        add_compiler::AddCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -684,7 +684,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "addOperation" => Ok(Pattern::Add(Box::new(Add::from_node(
+            "addOperation" => Ok(Pattern::Add(Box::new(AddCompiler::from_node(
                 node,
                 context,
                 vars,
