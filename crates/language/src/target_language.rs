@@ -414,7 +414,7 @@ pub fn expand_paths(
                     PatternLanguage::Universal => {}
                     _ => {
                         for ext in target_language.get_file_extensions() {
-                            file_types.select(ext);
+                            file_types.add(ext, &format!("*.{}", ext)).unwrap();
                         }
                     }
                 }
