@@ -13,5 +13,6 @@ members = [
   "crates/wasm-bindings",
   "crates/marzano_messenger",
   "crates/cli_bin",
+  "crates/yaml_syntax"
 ]
 exclude = ["resources", "vendor/web-tree-sitter", "vendor/tree-sitter-facade"]
