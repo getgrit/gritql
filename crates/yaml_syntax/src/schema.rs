@@ -9,6 +9,7 @@ pub struct GritSerializedSnippet {
 
 /// Different kinds of patterns
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(untagged)]
 pub enum GritSerializedPattern {
     Snippet(GritSerializedSnippet),
 }
