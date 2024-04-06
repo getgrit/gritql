@@ -13141,6 +13141,43 @@ fn php_array() {
 }
 
 #[test]
+fn php_html_foreach() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php(html)
+                |
+                |`foreach(^x as ^y){^_}` where {
+                |   ^x => `$x`,
+                |   ^y => `$y`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |<?php
+                |    $arr = array(1, 2, 3, 4);
+                |    foreach($arr as &$value) {
+                |        $value = $value * 2;
+                |    }
+                |?>"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+                |<?php
+                |    $arr = array(1, 2, 3, 4);
+                |    foreach($x as $y) {
+                |        $value = $value * 2;
+                |    }
+                |?>"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+#[test]
 fn php_echo() {
     run_test_expected(
         TestArgExpected {

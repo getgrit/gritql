@@ -75,7 +75,6 @@ impl Language for PhpOnly {
             (" GRIT_FN(", ") { }"),
             ("[", "];"),
             ("", "{}"),
-            ("foreach(", ");"),
         ]
     }
 
