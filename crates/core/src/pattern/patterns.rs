@@ -34,13 +34,12 @@ use super::{
     r#where::Where, rewrite::Rewrite, some::Some, string_constant::StringConstant,
     variable::Variable, within::Within, Node, State,
 };
-use marzano_util::node_with_source::NodeWithSource;
 use crate::context::Context;
 use crate::pattern::register_variable;
 use crate::pattern::string_constant::AstLeafNode;
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
-use grit_util::{traverse, Order, AstNode};
+use grit_util::{traverse, Order};
 use marzano_language::language::{Field, GritMetaValue};
 use marzano_language::{language::Language, language::SnippetNode};
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -507,92 +506,86 @@ impl Pattern {
                 )?));
             }
             let fields: &Vec<Field> = &node_types[sort as usize];
-            let mut args = fields
-                .iter()
-                .filter(|field| {
-                    node.child_by_field_id(field.id()).is_some()
-                        // sometimes we want to be able to manually match on fields, but
-                        // not have snippets include those fields, for example
-                        // we don't want to match on the parenthesis of parameters
-                        // by default, but we want to be able to manually check
-                        // for parenthesis. see react-to-hooks for an example
-                        && !lang.skip_snippet_compilation_of_field(sort, field.id())
-                })
-                .map(|field| {
-                    let field_id = field.id();
-                    let mut cursor = node.walk();
-                    let mut nodes_list = node
-                        .children_by_field_id(field_id, &mut cursor)
-                        .filter(|n| n.is_named())
-                        .map(|n| {
-                            node_to_astnode(
-                                n,
-                                context_range,
-                                file,
-                                text,
-                                lang,
-                                range_map,
-                                vars,
-                                global_vars,
-                                vars_array,
-                                scope_index,
-                                is_rhs,
-                            )
-                        })
-                        .collect::<Result<Vec<Pattern>>>()?;
-
-                    // TODO check if Pattern is Dots, and error at compile time,
-                    // dots only makes sense in a list.
-                    if !field.multiple() {    
-                        if nodes_list.len() == 1 {
-                            return Ok((field_id, false, nodes_list.pop().unwrap()));
+            let args =
+                fields
+                    .iter()
+                    .filter(|field| {
+                        // Ordinarily, we want to match on all possible fields, including the absence of nodes within a field.
+                        // e.g., `func_call()` should not match `func_call(arg)`, however, sometimes we want to allow people to
+                        // save some boilerplate and by default match a node even if a field is present in the code but not
+                        // in the snippet. e.g.,
+                        // `func name(args) {}` will match `async name(args) {}` because async is an optional_empty_field for tsx.
+                        // To explicitly only match synchronous functions, you could write:
+                        // `$async func name(args)` where $async <: .
+                        !((node.child_by_field_id(field.id()).is_none() && lang.optional_empty_field_compilation(sort, field.id()))
+                        // we wanted to be able to match on the presence of parentheses in an arrow function manually
+                        // using ast_node syntax, but we wanted snippets to match regardless of weather or not the
+                        // parenthesis are present, so we made the parenthesis a  named node within a field, but
+                        // added then to this list so that they wont be compiled. fields in this list are
+                        // destinguished by fields in the above list in that they will NEVER prevent a match
+                        // while fields in the above list wont prevent a match if they are absent in the snippet,
+                        // but they will prevent a match if present in the snippet, and not present in the target
+                        // file.
+                        // in react to hooks we manually match the parenthesis like so:
+                        // arrow_function(parameters=$props, $body, $parenthesis) where {
+                        //     $props <: contains or { `props`, `inputProps` },
+                        //     $body <: not contains `props`,
+                        //     if ($parenthesis <: .) {
+                        //         $props => `()`
+                        //     } else {
+                        //         $props => .
+                        //     }
+                        // }
+                        || lang.skip_snippet_compilation_of_field(sort, field.id()))
+                    })
+                    .map(|field| {
+                        let field_id = field.id();
+                        let mut cursor = node.walk();
+                        let mut nodes_list = node
+                            .children_by_field_id(field_id, &mut cursor)
+                            .filter(|n| n.is_named())
+                            .map(|n| {
+                                node_to_astnode(
+                                    n,
+                                    context_range,
+                                    file,
+                                    text,
+                                    lang,
+                                    range_map,
+                                    vars,
+                                    global_vars,
+                                    vars_array,
+                                    scope_index,
+                                    is_rhs,
+                                )
+                            })
+                            .collect::<Result<Vec<Pattern>>>()?;
+                        if !field.multiple() {
+                            return Ok((
+                                field_id,
+                                false,
+                                nodes_list.pop().unwrap_or(Pattern::Dynamic(
+                                    DynamicPattern::Snippet(DynamicSnippet {
+                                        parts: vec![DynamicSnippetPart::String("".to_string())],
+                                    }),
+                                )),
+                            ));
                         }
-                        let field_node = node.child_by_field_id(field_id).unwrap();
-                        let field_node_with_source = NodeWithSource::new(field_node.clone(), str::from_utf8(text).unwrap());
-                        return Ok((field_id, false,  Pattern::AstLeafNode(AstLeafNode::new(
-                            field_node.kind_id(), field_node_with_source.text(), lang,
-                        )?)));
-                    }
-                    if nodes_list.len() == 1
-                        && matches!(
-                            nodes_list.first(),
-                            Some(Pattern::Variable(_)) | Some(Pattern::Underscore)
-                        )
-                    {
-                        return Ok((field_id, true, nodes_list.pop().unwrap()));
-                    }
-                    Ok((
-                        field_id,
-                        true,
-                        Pattern::List(Box::new(List::new(nodes_list))),
-                    ))
-                })
-                .collect::<Result<Vec<(u16, bool, Pattern)>>>()?;
-            let mut mandatory_empty_args = fields
-                .iter()
-                .filter(|field| {
-                    node.child_by_field_id(field.id()).is_none()
-                        && lang.mandatory_empty_field(sort, field.id())
-                })
-                .map(|field| {
-                    if field.multiple() {
-                        (
-                            field.id(),
+                        if nodes_list.len() == 1
+                            && matches!(
+                                nodes_list.first(),
+                                Some(Pattern::Variable(_)) | Some(Pattern::Underscore)
+                            )
+                        {
+                            return Ok((field_id, true, nodes_list.pop().unwrap()));
+                        }
+                        Ok((
+                            field_id,
                             true,
-                            Pattern::List(Box::new(List::new(Vec::new()))),
-                        )
-                    } else {
-                        (
-                            field.id(),
-                            false,
-                            Pattern::Dynamic(DynamicPattern::Snippet(DynamicSnippet {
-                                parts: vec![DynamicSnippetPart::String("".to_string())],
-                            })),
-                        )
-                    }
-                })
-                .collect::<Vec<(u16, bool, Pattern)>>();
-            args.append(&mut mandatory_empty_args);
+                            Pattern::List(Box::new(List::new(nodes_list))),
+                        ))
+                    })
+                    .collect::<Result<Vec<(u16, bool, Pattern)>>>()?;
             Ok(Pattern::ASTNode(Box::new(ASTNode { sort, args })))
         }
         node_to_astnode(

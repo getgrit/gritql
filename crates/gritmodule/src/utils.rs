@@ -2,6 +2,7 @@ use std::{env::current_exe, fs::canonicalize, path::Path};
 
 use anyhow::{bail, Result};
 use marzano_core::pattern::api::MatchResult;
+use regex::Regex;
 
 /// Extracts the *rewritten* (after applying a pattern) path from a `MatchResult`.
 pub fn extract_path(result: &MatchResult) -> Option<&String> {
@@ -24,4 +25,9 @@ pub fn remove_dir_all_safe(dir: &Path) -> Result<()> {
     }
     std::fs::remove_dir_all(dir)?;
     Ok(())
+}
+
+pub fn is_pattern_name(pattern: &str) -> bool {
+    let regex = Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]*(\(\))?$").unwrap();
+    regex.is_match(pattern)
 }

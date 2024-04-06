@@ -1,8 +1,13 @@
 use std::borrow::Cow;
 use std::sync::OnceLock;
 
-use crate::language::{fields_for_nodes, Field, FieldId, Language, SortId, TSLanguage};
-use crate::xscript_util::{self, jslike_check_orphaned, jslike_get_statement_sorts};
+use crate::language::{
+    fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, SortId, TSLanguage,
+};
+use crate::xscript_util::{
+    self, js_like_get_statement_sorts, js_like_optional_empty_field_compilation,
+    js_like_skip_snippet_compilation_sorts, jslike_check_orphaned,
+};
 use marzano_util::position::Range;
 use tree_sitter::{Node, Parser};
 
@@ -12,6 +17,7 @@ static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static SKIP_SNIPPET_COMPILATION_SORTS: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
 static STATEMENT_SORTS: OnceLock<Vec<SortId>> = OnceLock::new();
+static OPTIONAL_EMPTY_FIELD_COMPILATION: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
 
 #[cfg(not(feature = "builtin-parser"))]
 fn language() -> TSLanguage {
@@ -32,6 +38,7 @@ pub struct TypeScript {
     statement_sorts: &'static [SortId],
     language: &'static TSLanguage,
     skip_snippet_compilation_sorts: &'static Vec<(SortId, FieldId)>,
+    optional_empty_field_compilation: &'static Vec<(SortId, FieldId)>,
 }
 
 impl TypeScript {
@@ -40,76 +47,16 @@ impl TypeScript {
         let node_types = NODE_TYPES.get_or_init(|| fields_for_nodes(language, NODE_TYPES_STRING));
         let metavariable_sort = language.id_for_node_kind("grit_metavariable", true);
         let comment_sort = language.id_for_node_kind("comment", true);
+
         let skip_snippet_compilation_sorts = SKIP_SNIPPET_COMPILATION_SORTS.get_or_init(|| {
-            vec![
-                (
-                    language.id_for_node_kind("method_definition", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("function", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("function_declaration", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("generator_function", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("generator_function_declaration", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("arrow_function", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("constructor_type", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("construct_signature", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("function_type", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("method_signature", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("abstract_method_signature", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("function_signature", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("function_signature", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("function_signature", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("function_signature", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-                (
-                    language.id_for_node_kind("function_signature", true),
-                    language.field_id_for_name("parenthesis").unwrap(),
-                ),
-            ]
+            kind_and_field_id_for_names(language, js_like_skip_snippet_compilation_sorts())
         });
 
-        let statement_sorts = STATEMENT_SORTS.get_or_init(|| jslike_get_statement_sorts(language));
+        let optional_empty_field_compilation = OPTIONAL_EMPTY_FIELD_COMPILATION.get_or_init(|| {
+            kind_and_field_id_for_names(language, js_like_optional_empty_field_compilation())
+        });
+
+        let statement_sorts = STATEMENT_SORTS.get_or_init(|| js_like_get_statement_sorts(language));
 
         Self {
             node_types,
@@ -118,6 +65,7 @@ impl TypeScript {
             statement_sorts,
             language,
             skip_snippet_compilation_sorts,
+            optional_empty_field_compilation,
         }
     }
     pub(crate) fn is_initialized() -> bool {
@@ -128,6 +76,16 @@ impl TypeScript {
 impl Language for TypeScript {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
+    }
+
+    fn optional_empty_field_compilation(
+        &self,
+        sort_id: SortId,
+        field_id: crate::language::FieldId,
+    ) -> bool {
+        self.optional_empty_field_compilation
+            .iter()
+            .any(|(s, f)| *s == sort_id && *f == field_id)
     }
 
     fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {

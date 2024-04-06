@@ -12,6 +12,7 @@ use crate::{
     config::{GritDefinitionConfig, GritPatternSample, ModuleGritPattern},
     fetcher::ModuleRepo,
     parser::extract_relative_file_path,
+    utils::is_pattern_name,
 };
 
 use anyhow::{anyhow, bail, Result};
@@ -157,7 +158,7 @@ fn parse_samples(tree: &Node, source_lines: &[&str]) -> Result<Vec<GritPatternSa
                     let sample = GritPatternSample {
                         name: Some(subheading.to_string()),
                         input: input.to_string(),
-                        output: input.to_string(),
+                        output: None,
                         input_range: Some(*input_range),
                         output_range: Some(*input_range),
                     };
@@ -180,7 +181,7 @@ fn parse_samples(tree: &Node, source_lines: &[&str]) -> Result<Vec<GritPatternSa
                     let sample = GritPatternSample {
                         name: Some(subheading.to_string()),
                         input: input.to_string(),
-                        output: n.value.to_string(),
+                        output: Some(n.value.to_string()),
                         input_range: Some(*input_range),
                         output_range,
                     };
@@ -244,7 +245,7 @@ fn parse_samples(tree: &Node, source_lines: &[&str]) -> Result<Vec<GritPatternSa
     {
         let sample = GritPatternSample {
             name: Some(subheading),
-            output: input.to_string(),
+            output: None,
             input,
             input_range: Some(input_range),
             output_range: None,
@@ -348,7 +349,7 @@ pub fn replace_sample_in_md_file(sample: &GritPatternSample, file_path: &String)
                     let start = source_lines[..start_line].join("\n").len() + 1;
                     let end = source_lines[..(end_line - 1)].join("\n").len();
                     content.replace_range(start..end, &sample.input);
-                } else if code_blocks_replaced == 2 {
+                } else if code_blocks_replaced == 2 && sample.output.is_some() {
                     let start_line = match &code.position {
                         Some(position) => position.start.line,
                         None => bail!("Failed to get start line"),
@@ -359,7 +360,7 @@ pub fn replace_sample_in_md_file(sample: &GritPatternSample, file_path: &String)
                     };
                     let start = source_lines[..start_line].join("\n").len() + 1;
                     let end = source_lines[..(end_line - 1)].join("\n").len();
-                    content.replace_range(start..end, &sample.output);
+                    content.replace_range(start..end, sample.output.as_ref().unwrap());
                     found_subheading = false;
                 }
             }
@@ -402,6 +403,9 @@ pub fn get_patterns_from_md(
         .file_stem()
         .and_then(|stem| stem.to_str())
         .unwrap_or_else(|| file.path.trim_end_matches(".md"));
+    if !is_pattern_name(name) {
+        bail!("Invalid pattern name: {}. Grit patterns must match the regex /[\\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", name);
+    }
 
     let mut grit_parser = make_grit_parser()?;
     let src_tree = grit_parser

@@ -1,7 +1,6 @@
 use clap::ValueEnum;
 use git2::{Repository, StatusOptions};
 use marzano_gritmodule::searcher::find_git_dir_from;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::{
     fmt::{Display, Formatter},
@@ -71,11 +70,6 @@ pub fn get_random_port() -> Option<u16> {
     let port = listener.local_addr().ok()?.port();
     drop(listener);
     Some(port)
-}
-
-pub fn is_pattern_name(pattern: &str) -> bool {
-    let regex = Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]*(\(\))?$").unwrap();
-    regex.is_match(pattern)
 }
 
 pub async fn has_uncommitted_changes(dir: PathBuf) -> bool {

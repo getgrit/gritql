@@ -12,36 +12,42 @@
             "named": true
           }
         ]
+      },
+      "level": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "atx_h1_marker",
+            "named": true
+          },
+          {
+            "type": "atx_h2_marker",
+            "named": true
+          },
+          {
+            "type": "atx_h3_marker",
+            "named": true
+          },
+          {
+            "type": "atx_h4_marker",
+            "named": true
+          },
+          {
+            "type": "atx_h5_marker",
+            "named": true
+          },
+          {
+            "type": "atx_h6_marker",
+            "named": true
+          }
+        ]
       }
     },
     "children": {
-      "multiple": true,
-      "required": true,
+      "multiple": false,
+      "required": false,
       "types": [
-        {
-          "type": "atx_h1_marker",
-          "named": true
-        },
-        {
-          "type": "atx_h2_marker",
-          "named": true
-        },
-        {
-          "type": "atx_h3_marker",
-          "named": true
-        },
-        {
-          "type": "atx_h4_marker",
-          "named": true
-        },
-        {
-          "type": "atx_h5_marker",
-          "named": true
-        },
-        {
-          "type": "atx_h6_marker",
-          "named": true
-        },
         {
           "type": "block_continuation",
           "named": true
@@ -805,15 +811,76 @@
   {
     "type": "section",
     "named": true,
-    "fields": {},
+    "fields": {
+      "content": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "block_continuation",
+            "named": true
+          },
+          {
+            "type": "block_quote",
+            "named": true
+          },
+          {
+            "type": "fenced_code_block",
+            "named": true
+          },
+          {
+            "type": "html_block",
+            "named": true
+          },
+          {
+            "type": "indented_code_block",
+            "named": true
+          },
+          {
+            "type": "link_reference_definition",
+            "named": true
+          },
+          {
+            "type": "list",
+            "named": true
+          },
+          {
+            "type": "paragraph",
+            "named": true
+          },
+          {
+            "type": "pipe_table",
+            "named": true
+          },
+          {
+            "type": "section",
+            "named": true
+          },
+          {
+            "type": "setext_heading",
+            "named": true
+          },
+          {
+            "type": "thematic_break",
+            "named": true
+          }
+        ]
+      },
+      "heading": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "atx_heading",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
       "required": false,
       "types": [
-        {
-          "type": "atx_heading",
-          "named": true
-        },
         {
           "type": "block_continuation",
           "named": true
@@ -848,10 +915,6 @@
         },
         {
           "type": "pipe_table",
-          "named": true
-        },
-        {
-          "type": "section",
           "named": true
         },
         {

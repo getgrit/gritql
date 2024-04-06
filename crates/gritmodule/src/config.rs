@@ -9,8 +9,8 @@ use std::{
 };
 use tree_sitter::Parser;
 
-use crate::{fetcher::ModuleRepo, parser::PatternFileExt};
-use anyhow::Result;
+use crate::{fetcher::ModuleRepo, parser::PatternFileExt, utils::is_pattern_name};
+use anyhow::{bail, Result};
 
 #[derive(Debug, Deserialize)]
 pub struct GritGitHubConfig {
@@ -273,6 +273,10 @@ pub fn pattern_config_to_model(
     let defined_local_name = split_name.next();
     let local_name = defined_local_name.unwrap_or(&pattern.name).to_string();
 
+    if !is_pattern_name(&local_name) && local_name != NAMESPACE_IMPORT_INDICATOR {
+        bail!("Invalid pattern name: {}. Grit patterns must match the regex /[\\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", local_name);
+    }
+
     let module: Option<ModuleRepo> = match repo {
         None => None,
         Some(_) => {
@@ -310,7 +314,7 @@ pub fn pattern_config_to_model(
 pub struct GritPatternSample {
     pub name: Option<String>,
     pub input: String,
-    pub output: String,
+    pub output: Option<String>,
     pub input_range: Option<Range>,
     pub output_range: Option<Range>,
 }

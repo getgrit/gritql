@@ -1,10 +1,5 @@
 # Contributing to GritQL
 
-Welcome! We'd love to help you contribute to GritQL.
-
-
-## Welcome
-
 We welcome contributions in the form of pull requests and issues.
 
 Note that this codebase isn't yet extensively documented. If you get stuck, please ask for help [on Discord](https://docs.grit.io/discord).
@@ -100,3 +95,11 @@ These steps are done in our cloud environment and are not necessary for contribu
 - There are also `exhaustive` runtime checks that error if a switch case doesn’t handle a language, like `makeSingleLineComment`. Search for `exhaustive(lang` and fill those out too.
 - Regenerate both DB/prisma types to add it to the DB schema and GraphQL types.
 - Add the language to `language-selector.tsx`. Pick an icon from [https://react-icons.github.io](https://react-icons.github.io/), usually from the Simple Icons category.
+
+## Troubleshooting
+
+### Tests failing due to pattern errors
+
+Many tests depend on the [standard library](https://github.com/getgrit/stdlib). If you see unexpected failures, you might have an outated copy of the standard library.
+
+Try deleting `target/.grit` and running `cargo test --workspace` again.

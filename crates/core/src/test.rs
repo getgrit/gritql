@@ -2816,6 +2816,162 @@ fn simple_toml() {
 }
 
 #[test]
+fn toml_key_replacement() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language toml
+                |`key = $value` => `new_key = $value`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"key = "original_value""#.to_owned(),
+            expected: r#"new_key = "original_value""#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn toml_nested_metavar() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language toml
+                |`name = $value` where {
+                |  $value <: `"marzano-cli"` => `"marzano-madness"`
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+            | [package]
+            | name = "marzano-cli"
+            | version = "0.1.1"
+            | edition = "2021"
+            | authors = ["Grit Developers <support@grit.io>"]
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+            | [package]
+            | name = "marzano-madness"
+            | version = "0.1.1"
+            | edition = "2021"
+            | authors = ["Grit Developers <support@grit.io>"]
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn toml_within() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language toml
+                |`[dependencies]
+                |$deps` where {
+                |  $deps <: some bubble `$name = $version` where {
+                |    $version <: string(),
+                |    $version => `{ version = $version }`
+                |  }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+            | [lib]
+            | path = "src/lib.rs"
+            |
+            | [dependencies]
+            | anyhow = "1.0.70"
+            | clap = { version = "4.1.13", features = ["derive"] }
+            | indicatif = "0.17.5"
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+            | [lib]
+            | path = "src/lib.rs"
+            |
+            | [dependencies]
+            | anyhow = { version = "1.0.70" }
+            | clap = { version = "4.1.13", features = ["derive"] }
+            | indicatif = { version = "0.17.5" }
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn toml_array_append() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language toml
+                |`array = [$values]` => `array = [$values, "new_element"]`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"array = ["one", "two"]"#.to_owned(),
+            expected: r#"array = ["one", "two", "new_element"]"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn toml_table_rename() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language toml
+                |`[$x]
+                |$values` where $x <: `other` => `renamed`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+            | [other]
+            | nest = "marzano-cli"
+            | [package]
+            | name = "marzano-cli"
+            | version = "0.1.1"
+            | edition = "2021"
+            | authors = ["Grit Developers <support@grit.io>"]
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+            | [renamed]
+            | nest = "marzano-cli"
+            | [package]
+            | name = "marzano-cli"
+            | version = "0.1.1"
+            | edition = "2021"
+            | authors = ["Grit Developers <support@grit.io>"]
+            "#
+            .to_owned()
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn multi_args_snippet() {
     run_test_match({
         TestArg {
@@ -2902,6 +3058,110 @@ fn hcl_implicit_regex() {
                 |    required_version = "~> v1.5.0"
                 |  }
                 |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn includes_or() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |`console.log($_)` as $haystack where {
+                |   $haystack <: includes or { "world", "handsome" }
+                |} => `console.log("Goodbye world!")`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |console.log("Hello world!");
+                |console.log("Hello handsome!");
+                |console.log("But not me, sadly.");
+                |console.log("Hi, Hello world!");
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |console.log("Goodbye world!");
+                |console.log("Goodbye world!");
+                |console.log("But not me, sadly.");
+                |console.log("Goodbye world!");
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn includes_and() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |`console.log($_)` as $haystack where {
+                |   $haystack <: includes and { "Hello", "handsome" }
+                |} => `console.log("Goodbye world!")`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |console.log("Hello world!");
+                |console.log("Hello handsome!");
+                |console.log("But not me, handsome.");
+                |console.log("Hi, Hello world!");
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |console.log("Hello world!");
+                |console.log("Goodbye world!");
+                |console.log("But not me, handsome.");
+                |console.log("Hi, Hello world!");
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn includes_any() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |`console.log($_)` as $haystack where {
+                |   $haystack <: includes any { "Hello", "handsome" }
+                |} => `console.log("Goodbye world!")`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |console.log("Hello world!");
+                |console.log("Hello handsome!");
+                |console.log("But not me, handsome.");
+                |console.log("Hi, Hello world!");
+                |console.log("Just not this....");
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |console.log("Goodbye world!");
+                |console.log("Goodbye world!");
+                |console.log("Goodbye world!");
+                |console.log("Goodbye world!");
+                |console.log("Just not this....");
                 |"#
             .trim_margin()
             .unwrap(),
@@ -5356,7 +5616,7 @@ language js
 `class $foo { $body }` where {
     $fns = [],
     $body <: contains bubble($fns) {
-        `$name() { $body }` as $fn where {
+        `$name($_) { $body }` as $fn where {
                 $body => `"foo"`,
                 $fns += $fn
             }
@@ -5404,13 +5664,13 @@ language js
 `class $foo { $body }` where {
     $fns = [],
     $body <: contains bubble($fns) {
-        `$name() { $body }` as $fn where {
+        `$name($_) { $body }` as $fn where {
                 $body => `"foo"`,
                 $fns += $fn
             }
         },
     $joined = join(list=$fns, separator=`\n`),
-    $joined <: contains bubble `$name() { $body }` where {
+    $joined <: contains bubble `$name($_) { $body }` where {
         $name => `hammering_time`
     },
     $body => $joined
@@ -8240,6 +8500,105 @@ fn code_span() {
     let results =
         pattern.execute_file(&RichFile::new(file.to_owned(), source.to_owned()), &context);
     assert_yaml_snapshot!(results);
+}
+
+#[test]
+fn markdown_heading_rewrite() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: "
+                language markdown(block)
+
+                atx_heading($heading_content, $level) where {
+                    $level <: or {
+                        \"##\",
+                        atx_h4_marker()
+                    }
+                } => `HEADING: $heading_content\n`
+                "
+            .to_owned(),
+            source: r#"
+                |# File with two secionds
+                |Some content
+                |## subheading
+                |More content
+                |## Subheading two
+                |Even more content
+                |### Subheading three
+                |Even more content
+                |#### Subheading four
+                |Even more content
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |# File with two secionds
+                |Some content
+                |HEADING:  subheading
+                |More content
+                |HEADING:  Subheading two
+                |Even more content
+                |### Subheading three
+                |Even more content
+                |HEADING:  Subheading four
+                |Even more content
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn markdown_sections() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: "
+                language markdown(block)
+
+                section($heading, $content) where {
+                    $heading <: atx_heading(level=atx_h2_marker()),
+                    $content <: not includes \"skip\"
+                } => raw`---
+                SECTION 2 HEADER: $heading`
+                "
+            .to_owned(),
+            source: r#"
+                |# File with two secionds
+                |Some content
+                |## level 2
+                |More content
+                |## level 2 (do not skip)
+                |Even more content
+                |### level 3
+                |Even more content
+                |#### level 4
+                |Even more content
+                |## Now we go back to section two
+                |Content only here
+                |## Skip this one...
+                |skip me
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |# File with two secionds
+                |Some content
+                |---
+                |                SECTION 2 HEADER: ## level 2
+                |---
+                |                SECTION 2 HEADER: ## level 2 (do not skip)
+                |---
+                |                SECTION 2 HEADER: ## Now we go back to section two
+                |## Skip this one...
+                |skip me
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
 }
 
 #[test]
@@ -12855,7 +13214,6 @@ fn php_no_match() {
     .unwrap();
 }
 
-
 #[test]
 fn php_simple_match() {
     run_test_expected({
@@ -12995,69 +13353,64 @@ fn php_quote_snippet_rewrite() {
 
 #[test]
 fn php_if_statement() {
-    run_test_expected(
-        TestArgExpected {
-            pattern: r#"
+    run_test_expected(TestArgExpected {
+        pattern: r#"
                 |language php
                 |
                 |`$a = 12;` => `$b=24;`
                 |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"
+        .trim_margin()
+        .unwrap(),
+        source: r#"
                 |#
                 |if (!$foo = $bar) {
                 |   $a = 12;
                 |}
                 |"#
-            .trim_margin().
-            unwrap(),
-            expected: r#"
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
                 |#
                 |if (!$foo = $bar) {
                 |   $b=24;
                 |}
                 |"#
-            .trim_margin()
-            .unwrap(),
-        }
-    )
+        .trim_margin()
+        .unwrap(),
+    })
     .unwrap();
 }
 
 #[test]
 fn php_delete_include() {
-    run_test_expected(
-        TestArgExpected {
-            pattern: r#"
+    run_test_expected(TestArgExpected {
+        pattern: r#"
                 |language php
                 |
                 |`include ^package;` => .
                 |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"
+        .trim_margin()
+        .unwrap(),
+        source: r#"
                 |include 'test.php';
                 |$test = "";
                 |"#
-            .trim_margin().
-            unwrap(),
-            expected: r#"
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
                 |
                 |$test = "";
                 |"#
-            .trim_margin()
-            .unwrap(),
-        }
-    )
+        .trim_margin()
+        .unwrap(),
+    })
     .unwrap();
 }
 
 #[test]
 fn php_function_modifier() {
-    run_test_expected(
-        TestArgExpected {
-            pattern: r#"
+    run_test_expected(TestArgExpected {
+        pattern: r#"
                 |language php
                 |
                 |`class ^_ { ^mod function ^name(){ ^_ } }` where {
@@ -13065,9 +13418,9 @@ fn php_function_modifier() {
                 |   ^name => `modified`,
                 |}
                 |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"
+        .trim_margin()
+        .unwrap(),
+        source: r#"
             |class Log {
             |   public function printHello()
             |   {
@@ -13077,9 +13430,9 @@ fn php_function_modifier() {
             |   }
             |}
             |"#
-            .trim_margin().
-            unwrap(),
-            expected: r#"
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
             |class Log {
             |   private function modified()
             |   {
@@ -13089,54 +13442,41 @@ fn php_function_modifier() {
             |   }
             |}
             |"#
-            .trim_margin()
-            .unwrap(),
-        }
-    )
+        .trim_margin()
+        .unwrap(),
+    })
     .unwrap();
 }
 
 #[test]
 fn php_rewrite_arrow_function() {
-    run_test_expected(
-        TestArgExpected {
-            pattern: r#"
+    run_test_expected(TestArgExpected {
+        pattern: r#"
                 |language php
                 |
                 |`fn(^a) => ^_` => `fn(^a) => $x * $x`
                 |"#
-            .trim_margin()
-            .unwrap(),
-            source: "$fn1 = fn($x) => $x + $y;"
-            .trim_margin().
-            unwrap(),
-            expected: "$fn1 = fn($x) => $x * $x;"
-            .trim_margin()
-            .unwrap(),
-        }
-    )
+        .trim_margin()
+        .unwrap(),
+        source: "$fn1 = fn($x) => $x + $y;".trim_margin().unwrap(),
+        expected: "$fn1 = fn($x) => $x * $x;".trim_margin().unwrap(),
+    })
     .unwrap();
 }
 
 #[test]
 fn php_array() {
-    run_test_expected(
-        TestArgExpected {
-            pattern: r#"
+    run_test_expected(TestArgExpected {
+        pattern: r#"
                 |language php
                 |
                 |`^a=>^_` => `^a=>24`
                 |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"$fn1 = array("a"=>1, "b"=>2, "c"=>3);"#
-            .trim_margin().
-            unwrap(),
-            expected: r#"$fn1 = array("a"=>24, "b"=>24, "c"=>24);"#
-            .trim_margin()
-            .unwrap(),
-        }
-    )
+        .trim_margin()
+        .unwrap(),
+        source: r#"$fn1 = array("a"=>1, "b"=>2, "c"=>3);"#.trim_margin().unwrap(),
+        expected: r#"$fn1 = array("a"=>24, "b"=>24, "c"=>24);"#.trim_margin().unwrap(),
+    })
     .unwrap();
 }
 
@@ -13227,7 +13567,6 @@ fn css_property_value() {
             |"#
         .trim_margin()
         .unwrap(),
-
     })
     .unwrap();
 }
@@ -13326,6 +13665,80 @@ fn python_support_empty_line() {
         |    result = 1 + 1
         |
         |    return result
+        |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
+
+#[test]
+fn delete_import_clause() {
+    run_test_expected(TestArgExpected {
+        pattern: r#"
+            |engine marzano(0.1)
+            |language js
+            |`import $_` => .
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |import * as React from "react";
+            |
+            |<div>Hi</div>;
+            |"#
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
+        |<div>Hi</div>;
+        |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
+
+#[test]
+fn remove_unused_import() {
+    run_test_expected(TestArgExpected {
+        pattern: r#"
+language js
+
+pattern remove_unused_imports($src) {
+or {
+    `import * as $import_clause from $src`,
+    `import $import_clause, { $named_imports } from $src` where {
+        $named_imports <: maybe some bubble($keep_named_import_list) or {`type $import`, `$import`} as $full where {
+            if($program <: contains `$import` until `import $_`) {
+                $keep_named_import_list = true
+             } else {
+                $full => .
+            }
+        }
+    },
+    `import $import_clause from $src` where { $import_clause <: not contains `{$_}`},
+} as $import_line where {
+    $import_clause <: or {`type $module_name`, `$module_name`},
+    $program <: not contains $module_name until `import $_`,
+    if($keep_named_import_list <: undefined) {
+        $import_line => .
+    } else {
+        $import_clause => .
+    }
+  }
+}
+
+remove_unused_imports()"#
+        .to_owned(),
+        source: r#"
+            |import * as React from "react";
+            |
+            |<div>Hi</div>;
+            |"#
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
+        |<div>Hi</div>;
         |"#
         .trim_margin()
         .unwrap(),

@@ -1,0 +1,5 @@
+---
+source: crates/cli_bin/tests/apply.rs
+expression: "String::from_utf8(output.stderr)?"
+---
+Error: Invalid pattern name: test-bad. Grit patterns must match the regex /[\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.

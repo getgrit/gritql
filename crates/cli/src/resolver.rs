@@ -32,6 +32,7 @@ pub struct GritModuleResolver<'a> {
     _root_directory: &'a str,
 }
 
+#[derive(Debug)]
 pub struct RichPattern<'b> {
     pub body: &'b str,
     pub name: Option<String>,

@@ -1,11 +1,10 @@
 use std::sync::OnceLock;
 
-use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage, FieldId};
+use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/json-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
-static MANDATORY_EMPTY_FIELD_SORTS: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
 
 #[cfg(not(feature = "builtin-parser"))]
 fn language() -> TSLanguage {
@@ -23,7 +22,6 @@ pub struct Json {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,
     language: &'static TSLanguage,
-    mandatory_empty_field_sorts: &'static Vec<(SortId, FieldId)>,
 }
 
 impl Json {
@@ -31,19 +29,10 @@ impl Json {
         let language = LANGUAGE.get_or_init(|| lang.unwrap_or_else(language));
         let node_types = NODE_TYPES.get_or_init(|| fields_for_nodes(language, NODE_TYPES_STRING));
         let metavariable_sort = language.id_for_node_kind("grit_metavariable", true);
-        let mandatory_empty_field_sorts = MANDATORY_EMPTY_FIELD_SORTS.get_or_init(|| {
-            vec![
-                (
-                    language.id_for_node_kind("string", true),
-                    language.field_id_for_name("content").unwrap(),
-                ),
-            ]
-        });
         Self {
             node_types,
             metavariable_sort,
             language,
-            mandatory_empty_field_sorts,
         }
     }
     pub(crate) fn is_initialized() -> bool {
@@ -54,12 +43,6 @@ impl Json {
 impl Language for Json {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
-    }
-
-    fn mandatory_empty_field(&self, sort_id:SortId, field_id:crate::language::FieldId) -> bool {
-        self.mandatory_empty_field_sorts
-            .iter()
-            .any(|(s, f)| *s == sort_id && *f == field_id)
     }
 
     fn language_name(&self) -> &'static str {

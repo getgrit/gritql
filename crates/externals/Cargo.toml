@@ -9,6 +9,6 @@ rust.unused_crate_dependencies = "warn"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.70"
-extism = "^1.0.0-rc7"
-serde_json = "1.0.96"
+anyhow = { version = "1.0.70" }
+extism = { version = "^1.0.0-rc7" }
+serde_json = { version = "1.0.96" }
