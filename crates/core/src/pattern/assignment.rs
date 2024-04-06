@@ -1,5 +1,4 @@
 use super::{
-    compiler::CompilationContext,
     container::Container,
     functions::{Evaluator, FuncEvaluation},
     patterns::{Matcher, Name, Pattern},
@@ -7,7 +6,7 @@ use super::{
     variable::{is_reserved_metavariable, VariableSourceLocations},
     State,
 };
-use crate::context::Context;
+use crate::{context::Context, pattern_compiler::CompilationContext};
 use anyhow::{anyhow, bail, Result};
 use marzano_language::{language::GRIT_METAVARIABLE_PREFIX, target_language::TargetLanguage};
 use marzano_util::analysis_logs::AnalysisLogs;

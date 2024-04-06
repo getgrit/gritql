@@ -1,87 +1,97 @@
-mod accessor;
-mod accumulate;
-mod add;
-mod after;
+pub mod accessor;
+pub mod accumulate;
+pub mod add;
+pub mod after;
 pub mod analysis;
-mod and;
-mod any;
+pub mod and;
+pub mod any;
 pub mod api;
-mod assignment;
-mod ast_node;
-mod auto_wrap;
-mod before;
-mod boolean_constant;
-mod bubble;
+pub mod assignment;
+pub mod ast_node;
+pub mod before;
+pub mod boolean_constant;
+pub mod bubble;
 pub mod built_in_functions;
-mod call;
-mod code_snippet;
-pub mod compiler;
-mod container;
-mod contains;
-mod divide;
-mod dynamic_snippet;
-mod equal;
-mod every;
-mod file_pattern;
-mod files;
-mod float_constant;
+pub mod call;
+pub mod code_snippet;
+pub mod constants;
+pub mod container;
+pub mod contains;
+pub mod divide;
+pub mod dynamic_snippet;
+pub mod equal;
+pub mod every;
+pub mod file_pattern;
+pub mod files;
+pub mod float_constant;
 pub mod function_definition;
-mod functions;
-mod r#if;
-mod includes;
-mod int_constant;
-mod iter_pattern;
-mod like;
-mod limit;
-mod list;
-mod list_index;
-mod log;
-mod map;
-mod r#match;
-mod maybe;
-mod modulo;
-mod multiply;
+pub mod functions;
+pub mod r#if;
+pub mod includes;
+pub mod int_constant;
+pub mod iter_pattern;
+pub mod like;
+pub mod limit;
+pub mod list;
+pub mod list_index;
+pub mod log;
+pub mod map;
+pub mod r#match;
+pub mod maybe;
+pub mod modulo;
+pub mod multiply;
 pub mod not;
 pub mod or;
-mod paths;
+pub mod paths;
 pub mod pattern_definition;
 pub mod patterns;
 pub mod predicate_definition;
-mod predicate_return;
-mod predicates;
-mod range;
-mod regex;
+pub mod predicate_return;
+pub mod predicates;
+pub mod range;
+pub mod regex;
 pub mod resolved_pattern;
-mod rewrite;
-mod sequential;
-mod some;
+pub mod rewrite;
+pub mod sequential;
+pub mod some;
 pub mod state;
-mod step;
-mod string_constant;
-mod subtract;
-mod undefined;
+pub mod step;
+pub mod string_constant;
+pub mod subtract;
+pub mod undefined;
 pub mod variable;
-mod variable_content;
-mod r#where;
-mod within;
-use crate::{
-    binding::Binding,
-    context::Context,
-    pattern::{compiler::DEFAULT_FILE_NAME, patterns::Matcher, resolved_pattern::ResolvedPattern},
+pub mod variable_content;
+pub mod r#where;
+pub mod within;
+
+use self::{
+    api::{is_match, AnalysisLog, ByteRange, DoneFile, MatchResult},
+    built_in_functions::{BuiltIns, CallBuiltIn},
+    constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
+    function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
+    paths::absolutize,
+    pattern_definition::PatternDefinition,
+    patterns::{Matcher, Pattern},
+    predicate_definition::PredicateDefinition,
+    resolved_pattern::{File, ResolvedPattern},
+    state::{FilePtr, State},
+    variable::register_variable,
+    variable_content::VariableContent,
 };
+use crate::{binding::Binding, context::Context};
 use ::log::error;
 use anyhow::{bail, Ok, Result};
 use elsa::FrozenVec;
 use im::vector;
 use itertools::Itertools;
 use marzano_language::{language::Language, target_language::TargetLanguage};
-use marzano_util::analysis_logs::AnalysisLogs;
-use marzano_util::runtime::ExecutionContext;
 use marzano_util::{
+    analysis_logs::AnalysisLogs,
     cache::{GritCache, NullCache},
     hasher::hash,
     position::{Position, Range, VariableMatch},
     rich_path::{FileName, RichFile, RichPath, TryIntoInputFile},
+    runtime::ExecutionContext,
 };
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use sha2::{Digest, Sha256};
@@ -93,35 +103,14 @@ use std::{
     sync::mpsc::{self, Sender},
 };
 use std::{ops, vec};
-
 use tracing::{event, Level};
-
-#[cfg(feature = "grit_tracing")]
-use tracing::instrument;
-
-#[cfg(feature = "grit_tracing")]
-use tracing::span;
-#[cfg(feature = "grit_tracing")]
-use tracing_opentelemetry::OpenTelemetrySpanExt as _;
-
 use tree_sitter::{Node, Tree};
 use variable::VariableSourceLocations;
 
-use self::{
-    api::{is_match, AnalysisLog, ByteRange, DoneFile, MatchResult},
-    built_in_functions::{BuiltIns, CallBuiltIn},
-    compiler::NEW_FILES_INDEX,
-    function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
-    paths::absolutize,
-    pattern_definition::PatternDefinition,
-    patterns::Pattern,
-    predicate_definition::PredicateDefinition,
-    resolved_pattern::File,
-    state::{FilePtr, State},
-    step::Step,
-    variable::{register_variable, GLOBAL_VARS_SCOPE_INDEX},
-    variable_content::VariableContent,
-};
+#[cfg(feature = "grit_tracing")]
+use tracing::{instrument, span};
+#[cfg(feature = "grit_tracing")]
+use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 
 pub const MAX_FILE_SIZE: usize = 1_000_000;
 

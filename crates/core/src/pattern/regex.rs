@@ -1,12 +1,11 @@
 use super::{
     code_snippet::from_back_tick_node,
-    compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::{Variable, VariableSourceLocations},
     State,
 };
-use crate::context::Context;
+use crate::{context::Context, pattern_compiler::CompilationContext};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_language::{language::Language, target_language::TargetLanguage};

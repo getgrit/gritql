@@ -1,20 +1,21 @@
-use std::collections::BTreeMap;
-
 use super::{
     accessor::Accessor,
-    compiler::CompilationContext,
     list_index::ListIndex,
     patterns::Pattern,
     resolved_pattern::ResolvedPattern,
     state::State,
     variable::{Variable, VariableSourceLocations},
 };
+use crate::pattern_compiler::{
+    accessor_compiler::AccessorCompiler, CompilationContext, NodeCompiler,
+};
 use anyhow::{bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
+use std::collections::BTreeMap;
 use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
-pub(crate) enum Container {
+pub enum Container {
     Variable(Variable),
     Accessor(Box<Accessor>),
     ListIndex(Box<ListIndex>),
@@ -59,7 +60,7 @@ impl Container {
                 vars_array,
                 scope_index,
             )?)),
-            "mapAccessor" => Ok(Self::Accessor(Box::new(Accessor::from_node(
+            "mapAccessor" => Ok(Self::Accessor(Box::new(AccessorCompiler::from_node(
                 node,
                 context,
                 vars,

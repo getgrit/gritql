@@ -4,7 +4,6 @@ use super::{
     any::PrAny,
     assignment::Assignment,
     call::PrCall,
-    compiler::CompilationContext,
     equal::Equal,
     functions::{Evaluator, FuncEvaluation},
     log::Log,
@@ -19,7 +18,7 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
-use crate::context::Context;
+use crate::{context::Context, pattern_compiler::CompilationContext};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;

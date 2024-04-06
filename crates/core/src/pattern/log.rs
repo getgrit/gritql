@@ -1,12 +1,11 @@
 use super::{
-    compiler::CompilationContext,
     functions::{Evaluator, FuncEvaluation},
-    patterns::{Matcher, Name},
+    patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     state::State,
     variable::{get_file_name, Variable, VariableSourceLocations},
 };
-use crate::{binding::Binding, context::Context, pattern::patterns::Pattern};
+use crate::{binding::Binding, context::Context, pattern_compiler::CompilationContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 use std::collections::BTreeMap;

@@ -1,21 +1,17 @@
+use super::{
+    code_snippet::CodeSnippet,
+    dynamic_snippet::DynamicPattern,
+    functions::{Evaluator, FuncEvaluation},
+    patterns::{Matcher, Name, Pattern},
+    resolved_pattern::ResolvedPattern,
+    variable::VariableSourceLocations,
+    Effect, EffectKind, State,
+};
+use crate::{context::Context, pattern_compiler::CompilationContext};
 use anyhow::{anyhow, bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::borrow::Cow;
 use std::collections::BTreeMap;
-
-use super::code_snippet::CodeSnippet;
-use super::compiler::CompilationContext;
-use super::dynamic_snippet::DynamicPattern;
-use super::functions::{Evaluator, FuncEvaluation};
-use super::variable::VariableSourceLocations;
-use super::{
-    patterns::Pattern,
-    patterns::{Matcher, Name},
-    resolved_pattern::ResolvedPattern,
-    State,
-};
-use super::{Effect, EffectKind};
-use crate::context::Context;
 use tree_sitter::Node;
 
 #[derive(Debug, Clone)]

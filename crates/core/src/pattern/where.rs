@@ -1,5 +1,4 @@
 use super::{
-    compiler::CompilationContext,
     container::Container,
     functions::Evaluator,
     patterns::{Matcher, Name, Pattern},
@@ -10,7 +9,7 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
-use crate::{context::Context, split_snippet::split_snippet};
+use crate::{context::Context, pattern_compiler::CompilationContext, split_snippet::split_snippet};
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use grit_util::{traverse, Order};

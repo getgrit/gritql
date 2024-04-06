@@ -1,11 +1,10 @@
 use super::{
-    compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::VariableSourceLocations,
     Node, State,
 };
-use crate::context::Context;
+use crate::{context::Context, pattern_compiler::CompilationContext};
 use anyhow::{anyhow, Context as _, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;

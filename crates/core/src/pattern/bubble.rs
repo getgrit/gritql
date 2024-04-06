@@ -1,16 +1,13 @@
-use std::collections::BTreeMap;
-
-use crate::context::Context;
-
-use super::compiler::CompilationContext;
 use super::patterns::Name;
 use super::resolved_pattern::ResolvedPattern;
 use super::variable::{get_variables, register_variable, VariableSourceLocations};
 use super::{patterns::Matcher, patterns::Pattern, PatternDefinition, State};
+use crate::{context::Context, pattern_compiler::CompilationContext};
 use anyhow::{anyhow, bail, Result};
 use itertools::Itertools;
 use marzano_util::analysis_logs::AnalysisLogs;
 use marzano_util::position::Range;
+use std::collections::BTreeMap;
 use tree_sitter::Node;
 
 #[derive(Debug, Clone)]

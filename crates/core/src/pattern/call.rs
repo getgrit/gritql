@@ -1,7 +1,6 @@
 use super::{
     ast_node::ASTNode,
     built_in_functions::CallBuiltIn,
-    compiler::CompilationContext,
     file_pattern::FilePattern,
     function_definition::FunctionDefinition,
     functions::{CallForeignFunction, CallFunction, Evaluator, FuncEvaluation},
@@ -11,7 +10,7 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
-use crate::context::Context;
+use crate::{context::Context, pattern_compiler::CompilationContext};
 use anyhow::{anyhow, bail, Result};
 use itertools::Itertools;
 use marzano_language::language::Language;

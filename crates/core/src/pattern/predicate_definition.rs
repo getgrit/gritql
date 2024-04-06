@@ -1,13 +1,12 @@
 use super::{
     and::PrAnd,
-    compiler::CompilationContext,
     functions::Evaluator,
     patterns::Pattern,
     predicates::Predicate,
     variable::{get_variables, Variable, VariableSourceLocations},
     State,
 };
-use crate::context::Context;
+use crate::{context::Context, pattern_compiler::CompilationContext};
 use anyhow::{anyhow, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;

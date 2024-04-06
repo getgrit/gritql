@@ -1,18 +1,16 @@
-use std::collections::BTreeMap;
-
-use crate::pattern::{and::PrAnd, compiler::MATCH_VAR, or::PrOr, string_constant::StringConstant};
-
-use super::{
-    and::And,
+use super::compiler::{CompilationContext, DefinitionInfo};
+use crate::pattern::{
+    and::{And, PrAnd},
     bubble::Bubble,
     call::Call,
-    compiler::{CompilationContext, DefinitionInfo, GRIT_RANGE_VAR},
+    constants::{GRIT_RANGE_VAR, MATCH_VAR},
     container::Container,
     contains::Contains,
     file_pattern::FilePattern,
     includes::Includes,
     limit::Limit,
     maybe::Maybe,
+    or::PrOr,
     pattern_definition::PatternDefinition,
     patterns::Pattern,
     predicates::Predicate,
@@ -21,13 +19,15 @@ use super::{
     range::Range as PRange,
     rewrite::Rewrite,
     step::Step,
+    string_constant::StringConstant,
     variable::{Variable, VariableSourceLocations},
 };
 use anyhow::Result;
 use marzano_util::position::FileRange;
+use std::collections::BTreeMap;
 
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn auto_wrap_pattern(
+pub(super) fn auto_wrap_pattern(
     pattern: Pattern,
     pattern_definitions: &mut [PatternDefinition],
     vars: &mut BTreeMap<String, usize>,

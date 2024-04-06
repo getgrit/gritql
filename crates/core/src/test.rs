@@ -1,3 +1,4 @@
+use crate::pattern_compiler::src_to_problem_libs;
 use anyhow::{anyhow, Context, Result};
 use insta::{assert_debug_snapshot, assert_snapshot, assert_yaml_snapshot};
 use lazy_static::lazy_static;
@@ -8,7 +9,6 @@ use marzano_util::position::{Range, VariableMatch};
 use marzano_util::rich_path::RichFile;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
 use pattern::api::MatchResult;
-use pattern::compiler::src_to_problem_libs;
 use pattern::Problem;
 use similar::{ChangeTag, TextDiff};
 use std::collections::{BTreeMap, HashMap};
