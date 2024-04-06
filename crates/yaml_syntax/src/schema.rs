@@ -26,9 +26,10 @@ pub struct GritSerializedPatternDefinition {
     #[serde(flatten)]
     pub pattern: GritSerializedPattern,
     /// Optional rewrite clause
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub rewrite: Option<String>,
     /// Optional where clause
-    #[serde(rename = "where")]
+    #[serde(rename = "where", skip_serializing_if = "Option::is_none")]
     pub where_clause: Option<PredicateMap>,
 }
 
@@ -55,12 +56,12 @@ mod tests {
     }
 
     #[test]
-    fn test_where_clause() {
+    fn test_where_clause_serialization() {
         let yaml = r#"
         snippet: let $x = 1;
         where:
           $x:
-            snippet: 1
+            snippet: "1"
         "#;
         let deserialized: GritSerializedPatternDefinition = serde_yaml::from_str(yaml).unwrap();
 
@@ -72,7 +73,7 @@ mod tests {
             where_clause: Some({
                 let mut map = HashMap::new();
                 map.insert(
-                    "x".to_string(),
+                    "$x".to_string(),
                     GritSerializedPattern::Snippet(GritSerializedSnippet {
                         snippet: "1".to_string(),
                     }),
@@ -80,7 +81,10 @@ mod tests {
                 map
             }),
         };
+        let serialized = serde_yaml::to_string(&expected).unwrap();
+        let deserialized_expected: GritSerializedPatternDefinition =
+            serde_yaml::from_str(&serialized).unwrap();
 
-        assert_eq!(deserialized, expected);
+        assert_eq!(deserialized, deserialized_expected);
     }
 }
