@@ -82,6 +82,25 @@ fn test_excludes_patterns() -> Result<()> {
 }
 
 #[test]
+fn does_not_exclude_substring_name_match() -> Result<()> {
+    let (_temp_dir, _) = get_fixture("patterns_list", true)?;
+    let mut cmd = get_test_cmd()?;
+
+    cmd.arg("patterns")
+        .arg("test")
+        .arg("--exclude")
+        .arg("pattern")
+        .current_dir(_temp_dir.path().join("patterns_list"));
+
+    let stdout = String::from_utf8(cmd.output()?.stdout)?;
+
+    assert!(stdout.contains("multiple_broken_patterns"));
+    assert!(stdout.contains("broken_pattern"));
+
+    Ok(())
+}
+
+#[test]
 fn updates_multiple_invalid_patterns() -> Result<()> {
     let (_temp_dir, _) = get_fixture("patterns_list", true)?;
 
