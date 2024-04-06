@@ -41,8 +41,11 @@ pub struct PatternsTestArgs {
     /// Regex of a specific pattern to test
     #[clap(long = "filter")]
     pub filter: Option<String>,
-    /// Regex of tags and pattern names to exclude
-    #[clap(long = "exclude")]
+    /// Tags and pattern names to exclude
+    #[clap(
+        long = "exclude",
+        help = "Tags and pattern names to exclude. Only direct matches will be excluded."
+    )]
     pub exclude: Vec<String>,
     /// Show verbose output
     #[clap(long = "verbose")]
