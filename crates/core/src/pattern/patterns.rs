@@ -58,7 +58,8 @@ use crate::{
         add_compiler::AddCompiler, after_compiler::AfterCompiler, and_compiler::AndCompiler,
         any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler,
         if_compiler::IfCompiler, includes_compiler::IncludesCompiler, like_compiler::LikeCompiler,
-        limit_compiler::LimitCompiler, CompilationContext, NodeCompiler,
+        limit_compiler::LimitCompiler, list_index_compiler::ListIndexCompiler, CompilationContext,
+        NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -919,7 +920,7 @@ impl Pattern {
                 is_rhs,
                 logs,
             )?))),
-            "listIndex" => Ok(Pattern::ListIndex(Box::new(ListIndex::from_node(
+            "listIndex" => Ok(Pattern::ListIndex(Box::new(ListIndexCompiler::from_node(
                 node,
                 context,
                 vars,

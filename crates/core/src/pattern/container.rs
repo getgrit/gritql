@@ -7,7 +7,8 @@ use super::{
     variable::{Variable, VariableSourceLocations},
 };
 use crate::pattern_compiler::{
-    accessor_compiler::AccessorCompiler, CompilationContext, NodeCompiler,
+    accessor_compiler::AccessorCompiler, list_index_compiler::ListIndexCompiler,
+    CompilationContext, NodeCompiler,
 };
 use anyhow::{bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -69,7 +70,7 @@ impl Container {
                 global_vars,
                 logs,
             )?))),
-            "listIndex" => Ok(Self::ListIndex(Box::new(ListIndex::from_node(
+            "listIndex" => Ok(Self::ListIndex(Box::new(ListIndexCompiler::from_node(
                 node,
                 context,
                 vars,
