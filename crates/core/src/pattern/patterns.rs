@@ -58,7 +58,7 @@ use crate::{
         add_compiler::AddCompiler, after_compiler::AfterCompiler, and_compiler::AndCompiler,
         any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler,
         if_compiler::IfCompiler, includes_compiler::IncludesCompiler, like_compiler::LikeCompiler,
-        CompilationContext, NodeCompiler,
+        limit_compiler::LimitCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -714,7 +714,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternLimit" => Limit::from_node(
+            "patternLimit" => LimitCompiler::from_node(
                 node,
                 context,
                 vars,

@@ -10,6 +10,7 @@ pub mod compiler;
 pub(crate) mod if_compiler;
 pub(crate) mod includes_compiler;
 pub(crate) mod like_compiler;
+pub(crate) mod limit_compiler;
 mod node_compiler;
 pub(crate) mod step_compiler;
 
