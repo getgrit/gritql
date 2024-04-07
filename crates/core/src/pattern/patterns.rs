@@ -57,8 +57,8 @@ use crate::{
         accessor_compiler::AccessorCompiler, accumulate_compiler::AccumulateCompiler,
         add_compiler::AddCompiler, after_compiler::AfterCompiler, and_compiler::AndCompiler,
         any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler,
-        if_compiler::IfCompiler, includes_compiler::IncludesCompiler, CompilationContext,
-        NodeCompiler,
+        if_compiler::IfCompiler, includes_compiler::IncludesCompiler, like_compiler::LikeCompiler,
+        CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -983,7 +983,7 @@ impl Pattern {
                 context.lang,
                 is_rhs,
             ),
-            "like" => Ok(Pattern::Like(Box::new(Like::from_node(
+            "like" => Ok(Pattern::Like(Box::new(LikeCompiler::from_node(
                 node,
                 context,
                 vars,

@@ -1,67 +1,23 @@
 use super::{
-    float_constant::FloatConstant,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
-    variable::VariableSourceLocations,
-    Node, State,
+    State,
 };
-use crate::{context::Context, pattern_compiler::CompilationContext};
+use crate::context::Context;
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct Like {
-    pub(crate) like: Pattern,
-    pub(crate) threshold: Pattern,
+    pub like: Pattern,
+    pub threshold: Pattern,
 }
 
 impl Like {
     pub fn new(like: Pattern, threshold: Pattern) -> Self {
         Self { like, threshold }
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let threshold = node
-            .child_by_field_name("threshold")
-            .map(|n| {
-                Pattern::from_node(
-                    &n,
-                    context,
-                    vars,
-                    vars_array,
-                    scope_index,
-                    global_vars,
-                    true,
-                    logs,
-                )
-            })
-            .unwrap_or(Result::Ok(Pattern::FloatConstant(FloatConstant::new(0.9))))?;
-        let like = node
-            .child_by_field_name("example")
-            .ok_or_else(|| anyhow!("missing field example of patternLike"))?;
-        let like = Pattern::from_node(
-            &like,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            true,
-            logs,
-        )?;
-        Ok(Self::new(like, threshold))
     }
 }
 
