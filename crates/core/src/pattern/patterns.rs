@@ -56,7 +56,8 @@ use crate::{
     pattern_compiler::{
         accessor_compiler::AccessorCompiler, accumulate_compiler::AccumulateCompiler,
         add_compiler::AddCompiler, after_compiler::AfterCompiler, and_compiler::AndCompiler,
-        any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler, CompilationContext,
+        any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler,
+        before_compiler::BeforeCompiler, bubble_compiler::BubbleCompiler, CompilationContext,
         NodeCompiler,
     },
 };
@@ -807,7 +808,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternBefore" => Ok(Pattern::Before(Box::new(Before::from_node(
+            "patternBefore" => Ok(Pattern::Before(Box::new(BeforeCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -871,7 +872,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "bubble" => Bubble::from_node(
+            "bubble" => Ok(Pattern::Bubble(Box::new(BubbleCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -879,7 +880,7 @@ impl Pattern {
                 scope_index,
                 global_vars,
                 logs,
-            ),
+            )?))),
             "some" => Ok(Pattern::Some(Box::new(Some::from_node(
                 node,
                 context,

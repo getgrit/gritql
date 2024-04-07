@@ -6,6 +6,8 @@ pub(crate) mod and_compiler;
 pub(crate) mod any_compiler;
 pub(crate) mod assignment_compiler;
 mod auto_wrap;
+pub(crate) mod before_compiler;
+pub(crate) mod bubble_compiler;
 pub mod compiler;
 mod node_compiler;
 pub(crate) mod step_compiler;
