@@ -35,7 +35,10 @@ impl Yaml {
         let node_types = NODE_TYPES.get_or_init(|| fields_for_nodes(language, NODE_TYPES_STRING));
         let equivalent_leaf_nodes = EQUIVALENT_LEAF_NODES.get_or_init(|| {
             vec![vec![
-                LeafNormalizer::new(language.id_for_node_kind("string_scalar", true), normalize_identity),
+                LeafNormalizer::new(
+                    language.id_for_node_kind("string_scalar", true),
+                    normalize_identity,
+                ),
                 LeafNormalizer::new(
                     language.id_for_node_kind("double_quote_scalar", true),
                     normalize_double_quote_string,
