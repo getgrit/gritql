@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use marzano_core::pattern::api::AnalysisLog;
+use marzano_core::pattern::api::{AnalysisLog, MatchResult};
 use marzano_messenger::{
     emit::Messager, output_mode::OutputMode, workflows::PackagedWorkflowOutcome,
 };
@@ -21,6 +21,7 @@ use crate::{flags::OutputFormat, jsonl::JSONLineMessenger, result_formatting::Fo
 pub enum MessengerVariant<'a> {
     Formatted(FormattedMessager<'a>),
     JsonLine(JSONLineMessenger<'a>),
+    Multi(MultiMessenger<'a>),
     #[cfg(feature = "remote_redis")]
     Redis(RedisMessenger),
     #[cfg(feature = "remote_pubsub")]
@@ -37,6 +38,7 @@ impl<'a> Messager for MessengerVariant<'a> {
         match self {
             MessengerVariant::Formatted(m) => m.raw_emit(message),
             MessengerVariant::JsonLine(m) => m.raw_emit(message),
+            MessengerVariant::Multi(m) => m.raw_emit(message),
             #[cfg(feature = "remote_redis")]
             MessengerVariant::Redis(m) => m.raw_emit(message),
             #[cfg(feature = "remote_pubsub")]
@@ -50,6 +52,7 @@ impl<'a> Messager for MessengerVariant<'a> {
         match self {
             MessengerVariant::Formatted(m) => m.emit_estimate(count),
             MessengerVariant::JsonLine(m) => m.emit_estimate(count),
+            MessengerVariant::Multi(m) => m.emit_estimate(count),
             #[cfg(feature = "remote_redis")]
             MessengerVariant::Redis(m) => m.emit_estimate(count),
             #[cfg(feature = "remote_pubsub")]
@@ -63,6 +66,7 @@ impl<'a> Messager for MessengerVariant<'a> {
         match self {
             MessengerVariant::Formatted(m) => m.start_workflow(),
             MessengerVariant::JsonLine(m) => m.start_workflow(),
+            MessengerVariant::Multi(m) => m.start_workflow(),
             #[cfg(feature = "remote_redis")]
             MessengerVariant::Redis(m) => m.start_workflow(),
             #[cfg(feature = "remote_pubsub")]
@@ -76,6 +80,7 @@ impl<'a> Messager for MessengerVariant<'a> {
         match self {
             MessengerVariant::Formatted(m) => m.finish_workflow(outcome),
             MessengerVariant::JsonLine(m) => m.finish_workflow(outcome),
+            MessengerVariant::Multi(m) => m.finish_workflow(outcome),
             #[cfg(feature = "remote_redis")]
             MessengerVariant::Redis(m) => m.finish_workflow(outcome),
             #[cfg(feature = "remote_pubsub")]
@@ -196,4 +201,61 @@ pub async fn create_emitter<'a>(
     };
 
     Ok(emitter)
+}
+
+pub struct MultiMessenger<'a> {
+    children: Vec<MessengerVariant<'a>>,
+    pub fatal_error: Option<AnalysisLog>,
+}
+
+impl<'a> MultiMessenger<'a> {
+    pub async fn create(mode: OutputMode, root_path: Option<&PathBuf>) -> Result<Self> {
+        let step = WorkflowStepMessage::new_for_apply(StepStatus::Pending);
+        let pubsub =
+            GooglePubSubMessenger::create(mode.clone(), Some(step.clone()), root_path).await?;
+        let redis = RedisMessenger::create(mode, Some(step), root_path)?;
+
+        Ok(Self {
+            pubsub,
+            redis,
+            fatal_error: None,
+        })
+    }
+
+    pub async fn flush(&mut self) -> Result<()> {
+        for child in self.children.iter_mut() {
+            child.flush().await?;
+        }
+        Ok(())
+    }
+}
+
+impl<'a> Messager for MultiMessenger<'a> {
+    fn raw_emit(&mut self, message: &MatchResult) -> anyhow::Result<()> {
+        for child in self.children.iter_mut() {
+            child.raw_emit(message)?;
+        }
+        Ok(())
+    }
+
+    fn emit_estimate(&mut self, total: usize) -> anyhow::Result<()> {
+        for child in self.children.iter_mut() {
+            child.emit_estimate(total)?;
+        }
+        Ok(())
+    }
+
+    fn start_workflow(&mut self) -> anyhow::Result<()> {
+        for child in self.children.iter_mut() {
+            child.start_workflow()?;
+        }
+        Ok(())
+    }
+
+    fn finish_workflow(&mut self, outcome: &PackagedWorkflowOutcome) -> anyhow::Result<()> {
+        for child in self.children.iter_mut() {
+            child.finish_workflow(outcome)?;
+        }
+        Ok(())
+    }
 }
