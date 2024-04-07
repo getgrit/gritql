@@ -294,3 +294,17 @@ fn tests_match_only_with_file_name() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn tests_python_pattern_with_file_name() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("python_filename", false)?;
+
+    let mut test = get_test_cmd()?;
+    test.arg("patterns").arg("test").current_dir(dir);
+
+    let output = test.output()?;
+
+    assert!(output.status.success());
+
+    Ok(())
+}
