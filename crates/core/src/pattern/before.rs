@@ -1,52 +1,21 @@
 use super::{
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::{pattern_to_binding, ResolvedPattern},
-    variable::VariableSourceLocations,
-    Node, State,
+    State,
 };
-use crate::{
-    binding::Constant, context::Context, errors::debug, pattern_compiler::CompilationContext,
-    resolve,
-};
-use anyhow::{anyhow, bail, Result};
-use core::fmt::Debug;
+use crate::{binding::Constant, context::Context, errors::debug, resolve};
+use anyhow::{bail, Result};
 use grit_util::AstNode;
 use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]
 pub struct Before {
-    pub(crate) before: Pattern,
+    pub before: Pattern,
 }
 
 impl Before {
     pub fn new(before: Pattern) -> Self {
         Self { before }
-    }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let pattern = node
-            .child_by_field_name("pattern")
-            .ok_or_else(|| anyhow!("missing pattern of patternBefore"))?;
-        let pattern = Pattern::from_node(
-            &pattern,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            false,
-            logs,
-        )?;
-        Ok(Self::new(pattern))
     }
 
     pub(crate) fn prev_pattern<'a>(

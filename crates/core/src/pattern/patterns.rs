@@ -53,7 +53,10 @@ use super::{
 };
 use crate::{
     context::Context,
-    pattern_compiler::{accessor_compiler::AccessorCompiler, CompilationContext, NodeCompiler},
+    pattern_compiler::{
+        accessor_compiler::AccessorCompiler, before_compiler::BeforeCompiler, CompilationContext,
+        NodeCompiler,
+    },
 };
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
@@ -798,7 +801,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternBefore" => Ok(Pattern::Before(Box::new(Before::from_node(
+            "patternBefore" => Ok(Pattern::Before(Box::new(BeforeCompiler::from_node(
                 node,
                 context,
                 vars,
