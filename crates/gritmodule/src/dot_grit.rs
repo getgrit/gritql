@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{
     config::{
         DefinitionKind, GritDefinitionConfig, GritPatternMetadata, ModuleGritPattern,
@@ -9,13 +7,15 @@ use crate::{
     parser::extract_relative_file_path,
 };
 use anyhow::{anyhow, bail, Result};
+use grit_util::AstNode;
 use marzano_core::parse::make_grit_parser;
 use marzano_language::target_language::PatternLanguage;
 use marzano_util::{
+    node_with_source::NodeWithSource,
     position::{map_zero_indexed_position_to_one_indexed, Position},
     rich_path::RichFile,
-    tree_sitter_util::named_children_by_field_name,
 };
+use std::collections::HashMap;
 
 pub fn get_patterns_from_grit(
     file: &RichFile,
@@ -28,13 +28,11 @@ pub fn get_patterns_from_grit(
         Some(tree) => tree,
         None => bail!("parse error"),
     };
-    let source = source.as_bytes();
-    let root_node = tree.root_node();
-    let language = PatternLanguage::from_tree(&tree, &file.content);
+    let root_node = NodeWithSource::new(tree.root_node(), source);
+    let language = PatternLanguage::from_tree(&tree, source);
     let mut pattern_definitions: HashMap<String, ModuleGritPattern> = HashMap::new();
 
-    let mut cursor = root_node.walk();
-    for definition in named_children_by_field_name(&root_node, &mut cursor, "definitions") {
+    for definition in root_node.named_children_by_field_name("definitions") {
         // when grammar is updated to remove these field we can also remove this condition
         if let Some(pattern_definition) = definition
             .child_by_field_name("pattern")
@@ -44,21 +42,16 @@ pub fn get_patterns_from_grit(
         {
             let is_public = match pattern_definition.child_by_field_name("visibility") {
                 None => true,
-                Some(visibility) => {
-                    let visibility = visibility.utf8_text(source)?;
-                    visibility == "public"
-                }
+                Some(visibility) => visibility.text() == "public",
             };
 
             let name_node = pattern_definition
                 .child_by_field_name("name")
                 .ok_or_else(|| anyhow!("missing name of patternDefinition"))?;
-            let name = name_node.utf8_text(source)?;
-            let name = name.trim();
-            let body = pattern_definition.utf8_text(source)?;
-            let plain_body = body.trim();
+            let name = name_node.text().trim();
+            let plain_body = pattern_definition.text().trim();
 
-            let kind = match pattern_definition.kind().as_ref() {
+            let kind = match pattern_definition.node.kind().as_ref() {
                 "patternDefinition" => Some(DefinitionKind::Pattern),
                 "predicateDefinition" => Some(DefinitionKind::Predicate),
                 "functionDefinition" => Some(DefinitionKind::Function),
@@ -74,8 +67,8 @@ pub fn get_patterns_from_grit(
                 None => plain_body.to_string(),
             };
             let position = map_zero_indexed_position_to_one_indexed(&Position::new(
-                name_node.start_position().row(),
-                name_node.start_position().column(),
+                name_node.node.start_position().row(),
+                name_node.node.start_position().column(),
             ));
 
             let module_grit_pattern = ModuleGritPattern {

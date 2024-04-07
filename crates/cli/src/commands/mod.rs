@@ -133,6 +133,9 @@ pub enum Commands {
     #[cfg(feature = "docgen")]
     #[clap(hide = true)]
     Docgen(DocGenArgs),
+    /// Server-only commands (for Grit Cloud)
+    #[cfg(feature = "server")]
+    Server(cli_server::commands::ServerArgs),
 }
 
 impl fmt::Display for Commands {
@@ -165,6 +168,8 @@ impl fmt::Display for Commands {
             Commands::Version(_) => write!(f, "version"),
             #[cfg(feature = "docgen")]
             Commands::Docgen(_) => write!(f, "docgen"),
+            #[cfg(feature = "server")]
+            Commands::Server(_) => write!(f, "server"),
         }
     }
 }
@@ -353,6 +358,8 @@ pub async fn run_command() -> Result<()> {
         Commands::Version(arg) => run_version(arg).await,
         #[cfg(feature = "docgen")]
         Commands::Docgen(arg) => run_docgen(arg).await,
+        #[cfg(feature = "server")]
+        Commands::Server(arg) => cli_server::commands::run_server_command(arg).await,
     };
     let elapsed = start.elapsed();
     let details = if command == "apply" {

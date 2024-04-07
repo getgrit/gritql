@@ -10,5 +10,4 @@ pub mod position;
 pub mod print_node;
 pub mod rich_path;
 pub mod runtime;
-pub mod tree_sitter_util;
 pub mod url;

@@ -10,6 +10,7 @@ rust.unused_crate_dependencies = "warn"
 marzano-core = { path = "../core", features = [], default-features = true }
 marzano-language = { path = "../language" }
 marzano-util = { path = "../util", features = ["finder"] }
+grit-util = { path = "../grit-util" }
 tree-sitter = { path = "../../vendor/tree-sitter-facade", package = "tree-sitter-facade-sg" }
 serde = { version = "1.0.164", features = ["derive"] }
 serde_yaml = { version = "0.9.25" }

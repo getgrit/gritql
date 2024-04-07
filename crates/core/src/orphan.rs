@@ -4,16 +4,15 @@ use itertools::Itertools;
 use marzano_language::{language::Language, target_language::TargetLanguage};
 use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::position::Range;
-use tree_sitter::{Parser, Range as TSRange, Tree};
+use tree_sitter::{Parser, Tree};
 
-fn merge_treesitter_ranges(ranges: Vec<TSRange>) -> Vec<Range> {
+fn merge_ranges(ranges: Vec<Range>) -> Vec<Range> {
     if ranges.is_empty() {
         return vec![];
     }
 
     let sorted: Vec<Range> = ranges
         .into_iter()
-        .map(Range::from)
         .sorted_by(|a, b| b.start_byte.cmp(&a.start_byte))
         .collect_vec();
     let mut result = vec![];
@@ -33,10 +32,10 @@ fn merge_treesitter_ranges(ranges: Vec<TSRange>) -> Vec<Range> {
 
 pub(crate) fn remove_orphaned_ranges(
     parser: &mut Parser,
-    orphan_ranges: Vec<TSRange>,
+    orphan_ranges: Vec<Range>,
     src: &str,
 ) -> Result<(Option<Tree>, Option<String>)> {
-    let removable_ranges = merge_treesitter_ranges(orphan_ranges);
+    let removable_ranges = merge_ranges(orphan_ranges);
     let mut src = src.to_string();
     for range in &removable_ranges {
         src.drain(range.start_byte as usize..range.end_byte as usize);
@@ -50,11 +49,11 @@ pub(crate) fn remove_orphaned_ranges(
     Ok((new_tree, new_src))
 }
 
-pub fn get_orphaned_ranges(tree: &Tree, src: &str, lang: &TargetLanguage) -> Vec<TSRange> {
+pub fn get_orphaned_ranges(tree: &Tree, src: &str, lang: &TargetLanguage) -> Vec<Range> {
     let mut orphan_ranges = vec![];
     let cursor = tree.walk();
     for n in traverse(CursorWrapper::new(cursor, src), Order::Pre) {
-        lang.check_orphaned(n.node, src, &mut orphan_ranges);
+        lang.check_orphaned(n, &mut orphan_ranges);
     }
     orphan_ranges
 }

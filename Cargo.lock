@@ -2002,6 +2002,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "git2",
+ "grit-util",
  "homedir",
  "ignore",
  "insta",
