@@ -2,7 +2,7 @@ use marzano_core::pattern::{
     api::{derive_log_level, is_match, AnalysisLogLevel, MatchResult},
     Problem,
 };
-use marzano_language::target_language::TargetLanguage;
+use marzano_language::{language::Language, target_language::TargetLanguage};
 use marzano_util::runtime::ExecutionContext;
 
 use marzano_util::rich_path::RichFile;
@@ -65,7 +65,10 @@ fn infer_rich_files_from_content(language: &TargetLanguage, content: &str) -> Ve
     }
 
     for line in content.lines() {
-        if let Some(stripped) = line.strip_prefix("// @filename: ") {
+        if let Some(stripped) = language
+            .extract_single_line_comment(line)
+            .map(|c| c.strip_prefix("@filename: "))
+        {
             // Finish up the current file (if any)
             if let Some(filename) = current_filename.take() {
                 files.push(RichFile {
@@ -223,7 +226,7 @@ pub fn test_pattern_sample(
                 });
             }
             MatchResult::Match(r) => {
-                if is_multifile_sample(&sample.input) {
+                if is_multifile_sample(&sample.input, &compiled.language) {
                     continue;
                 }
                 raw_actual_outputs.push(RichFile {
@@ -239,7 +242,7 @@ pub fn test_pattern_sample(
     if raw_actual_outputs.is_empty() {
         if sample.output.is_none() {
             return SampleTestResult::new_passing(matches, false);
-        } else if !is_multifile_sample(&sample.input) {
+        } else if !is_multifile_sample(&sample.input, &compiled.language) {
             return SampleTestResult {
                 matches,
                 state: GritTestResultState::FailedMatch,
@@ -269,7 +272,7 @@ pub fn test_pattern_sample(
     let mut raw_expected_outputs = infer_rich_files_from_content(&compiled.language, sample_output);
 
     if raw_actual_outputs.len() < raw_expected_outputs.len()
-        && is_multifile_sample(&sample.input)
+        && is_multifile_sample(&sample.input, &compiled.language)
     {
         for file in rich_files.iter() {
             if raw_actual_outputs.iter().any(|f| f.path == file.path) {
@@ -329,8 +332,9 @@ pub fn test_pattern_sample(
     }
 }
 
-fn is_multifile_sample(input: &str) -> bool {
-    input.contains("// @filename:")
+fn is_multifile_sample(input: &str, lang: &TargetLanguage) -> bool {
+    lang.extract_single_line_comment(input)
+        .is_some_and(|c| c.contains("@filename:"))
 }
 
 #[derive(Debug)]
