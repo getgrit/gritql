@@ -2,6 +2,7 @@ pub(crate) mod accessor_compiler;
 mod auto_wrap;
 pub mod compiler;
 pub(crate) mod container_compiler;
+pub(crate) mod contains_compiler;
 mod node_compiler;
 pub(crate) mod step_compiler;
 

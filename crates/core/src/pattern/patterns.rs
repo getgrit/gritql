@@ -53,7 +53,10 @@ use super::{
 };
 use crate::{
     context::Context,
-    pattern_compiler::{accessor_compiler::AccessorCompiler, CompilationContext, NodeCompiler},
+    pattern_compiler::{
+        accessor_compiler::AccessorCompiler, contains_compiler::ContainsCompiler,
+        CompilationContext, NodeCompiler,
+    },
 };
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
@@ -807,7 +810,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternContains" => Ok(Pattern::Contains(Box::new(Contains::from_node(
+            "patternContains" => Ok(Pattern::Contains(Box::new(ContainsCompiler::from_node(
                 node,
                 context,
                 vars,
