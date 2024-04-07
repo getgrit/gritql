@@ -664,7 +664,10 @@ impl TargetLanguage {
             TargetLanguage::Css(_) => Regex::new(r"/\*\s*(.*?)\s*\*/").unwrap(),
             TargetLanguage::Sql(_) => Regex::new(r"--\s*(.*)").unwrap(),
         };
-        let comment = re.captures(&text).and_then(|c| c.get(1)).map(|m| m.as_str().to_string());
+        let comment = re
+            .captures(&text)
+            .and_then(|c| c.get(1))
+            .map(|m| m.as_str().to_string());
         comment
     }
 }

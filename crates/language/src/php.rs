@@ -1,11 +1,11 @@
-use std::sync::OnceLock;
 use lazy_static::lazy_static;
 use regex::Regex;
-
+use std::sync::OnceLock;
 
 use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
 
-static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/php_only-node-types.json");
+static NODE_TYPES_STRING: &str =
+    include_str!("../../../resources/node-types/php_only-node-types.json");
 
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
@@ -105,7 +105,7 @@ impl Language for Php {
 mod tests {
     use crate::{language::Language, php::Php};
 
-#[test]
+    #[test]
     fn test_php_substitute_variable() {
         let snippet = "^foo$('^bar')";
         let lang = Php::new(None);
