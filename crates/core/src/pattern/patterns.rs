@@ -54,8 +54,10 @@ use super::{
 use crate::{
     context::Context,
     pattern_compiler::{
-        accessor_compiler::AccessorCompiler, contains_compiler::ContainsCompiler,
-        CompilationContext, NodeCompiler,
+        accessor_compiler::AccessorCompiler, accumulate_compiler::AccumulateCompiler,
+        add_compiler::AddCompiler, after_compiler::AfterCompiler, and_compiler::AndCompiler,
+        any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler,
+        contains_compiler::ContainsCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -684,7 +686,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "addOperation" => Ok(Pattern::Add(Box::new(Add::from_node(
+            "addOperation" => Ok(Pattern::Add(Box::new(AddCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -720,24 +722,28 @@ impl Pattern {
                 global_vars,
                 logs,
             ),
-            "assignmentAsPattern" => Ok(Pattern::Assignment(Box::new(Assignment::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?))),
-            "patternAccumulate" => Ok(Pattern::Accumulate(Box::new(Accumulate::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?))),
+            "assignmentAsPattern" => Ok(Pattern::Assignment(Box::new(
+                AssignmentCompiler::from_node(
+                    node,
+                    context,
+                    vars,
+                    vars_array,
+                    scope_index,
+                    global_vars,
+                    logs,
+                )?,
+            ))),
+            "patternAccumulate" => Ok(Pattern::Accumulate(Box::new(
+                AccumulateCompiler::from_node(
+                    node,
+                    context,
+                    vars,
+                    vars_array,
+                    scope_index,
+                    global_vars,
+                    logs,
+                )?,
+            ))),
             "patternWhere" => Ok(Pattern::Where(Box::new(Where::from_node(
                 node,
                 context,
@@ -765,7 +771,7 @@ impl Pattern {
                 global_vars,
                 logs,
             ),
-            "patternAnd" => And::from_node(
+            "patternAnd" => AndCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -774,7 +780,7 @@ impl Pattern {
                 global_vars,
                 logs,
             ),
-            "patternAny" => Any::from_node(
+            "patternAny" => AnyCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -792,7 +798,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternAfter" => Ok(Pattern::After(Box::new(After::from_node(
+            "patternAfter" => Ok(Pattern::After(Box::new(AfterCompiler::from_node(
                 node,
                 context,
                 vars,

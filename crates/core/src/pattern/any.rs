@@ -22,39 +22,6 @@ impl Any {
     pub fn new(patterns: Vec<Pattern>) -> Self {
         Self { patterns }
     }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Pattern> {
-        let mut cursor = node.walk();
-        let children = node
-            .children_by_field_name("patterns", &mut cursor)
-            .filter(|n| n.is_named());
-        let mut patterns = Vec::new();
-        for pattern in children {
-            patterns.push(Pattern::from_node(
-                &pattern,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                false,
-                logs,
-            )?);
-        }
-        if patterns.len() == 1 {
-            Ok(patterns.remove(0))
-        } else {
-            Ok(Pattern::Any(Box::new(Self::new(patterns))))
-        }
-    }
 }
 
 impl Name for Any {
