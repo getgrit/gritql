@@ -1,7 +1,9 @@
-use super::{compiler::CompilationContext, node_compiler::NodeCompiler};
+use super::{
+    compiler::CompilationContext, container_compiler::ContainerCompiler,
+    node_compiler::NodeCompiler,
+};
 use crate::pattern::{
     accessor::{Accessor, AccessorKey, AccessorMap},
-    container::Container,
     map::GritMap,
     variable::{Variable, VariableSourceLocations},
 };
@@ -39,7 +41,7 @@ impl NodeCompiler for AccessorCompiler {
                 logs,
             )?)
         } else {
-            AccessorMap::Container(Container::from_node(
+            AccessorMap::Container(ContainerCompiler::from_node(
                 &map,
                 context,
                 vars,

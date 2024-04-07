@@ -6,7 +6,11 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
-use crate::{context::Context, errors::debug, pattern_compiler::CompilationContext};
+use crate::{
+    context::Context,
+    errors::debug,
+    pattern_compiler::{container_compiler::ContainerCompiler, CompilationContext, NodeCompiler},
+};
 use anyhow::{anyhow, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
@@ -34,7 +38,7 @@ impl Match {
         let value = node
             .child_by_field_name("left")
             .ok_or_else(|| anyhow!("missing lhs of predicateMatch"))?;
-        let value = Container::from_node(
+        let value = ContainerCompiler::from_node(
             &value,
             context,
             vars,

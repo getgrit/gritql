@@ -6,7 +6,10 @@ use super::{
     variable::{is_reserved_metavariable, VariableSourceLocations},
     State,
 };
-use crate::{context::Context, pattern_compiler::CompilationContext};
+use crate::{
+    context::Context,
+    pattern_compiler::{container_compiler::ContainerCompiler, CompilationContext, NodeCompiler},
+};
 use anyhow::{anyhow, bail, Result};
 use marzano_language::{language::GRIT_METAVARIABLE_PREFIX, target_language::TargetLanguage};
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -54,7 +57,7 @@ impl Assignment {
         if is_reserved_metavariable(&var_text, None::<&TargetLanguage>) {
             bail!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", var_text.trim_start_matches(GRIT_METAVARIABLE_PREFIX));
         }
-        let variable = Container::from_node(
+        let variable = ContainerCompiler::from_node(
             &container,
             context,
             vars,
