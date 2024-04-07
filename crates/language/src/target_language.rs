@@ -653,10 +653,11 @@ impl TargetLanguage {
             | TargetLanguage::Php(_)
             | TargetLanguage::TypeScript(_) => Regex::new(r"//\s*(.*)").unwrap(),
             TargetLanguage::Python(_)
-            | TargetLanguage::Hcl(_)
+            // | TargetLanguage::Hcl(_)
             | TargetLanguage::Ruby(_)
             | TargetLanguage::Toml(_)
             | TargetLanguage::Yaml(_) => Regex::new(r"#\s*(.*)").unwrap(),
+            TargetLanguage::Hcl(_) => Regex::new(r"(#|//)\s*(.*)").unwrap(),
             TargetLanguage::Html(_)
             | TargetLanguage::Vue(_)
             | TargetLanguage::MarkdownBlock(_)
@@ -666,7 +667,13 @@ impl TargetLanguage {
         };
         let comment = re
             .captures(text)
-            .and_then(|c| c.get(1))
+            .and_then(|c| {
+                c.get(if matches!(self, TargetLanguage::Hcl(_)) {
+                    2
+                } else {
+                    1
+                })
+            })
             .map(|m| m.as_str().to_string());
         comment
     }
@@ -720,5 +727,16 @@ mod tests {
         let lang = TargetLanguage::Sql(Sql::new(None));
         let comment = lang.extract_single_line_comment(text).unwrap();
         assert_eq!(comment, "this is a comment");
+    }
+
+    #[test]
+    fn extract_hcl_comment() {
+        let text = "# this is a comment\nvariable \"name\" {}";
+        let lang = TargetLanguage::Hcl(Hcl::new(None));
+        let comment = lang.extract_single_line_comment(text).unwrap();
+        assert_eq!(comment, "this is a comment");
+        let other_text = "// this is a comment\nvariable \"name\" {}";
+        let other_comment = lang.extract_single_line_comment(other_text).unwrap();
+        assert_eq!(other_comment, "this is a comment");
     }
 }
