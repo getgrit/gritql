@@ -2,7 +2,7 @@ use marzano_core::pattern::{
     api::{derive_log_level, is_match, AnalysisLogLevel, MatchResult},
     Problem,
 };
-use marzano_language::{language::Language, target_language::TargetLanguage};
+use marzano_language::target_language::TargetLanguage;
 use marzano_util::runtime::ExecutionContext;
 
 use marzano_util::rich_path::RichFile;
@@ -65,9 +65,9 @@ fn infer_rich_files_from_content(language: &TargetLanguage, content: &str) -> Ve
     }
 
     for line in content.lines() {
-        if let Some(stripped) = language
+        if let Some(Some(stripped)) = language
             .extract_single_line_comment(line)
-            .map(|c| c.strip_prefix("@filename: "))
+            .map(|c| c.strip_prefix("@filename: ").map(|s| s.to_string()))
         {
             // Finish up the current file (if any)
             if let Some(filename) = current_filename.take() {

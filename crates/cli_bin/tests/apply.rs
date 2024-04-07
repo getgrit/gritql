@@ -2246,17 +2246,18 @@ fn apply_only_in_diff() -> Result<()> {
 
     let mut cmd = get_test_cmd()?;
 
-    cmd.arg("apply").arg("no_console_log").arg("--only-in-diff").arg("test.diff").current_dir(dir.clone());
+    cmd.arg("apply")
+        .arg("no_console_log")
+        .arg("--only-in-diff")
+        .arg("test.diff")
+        .current_dir(dir.clone());
 
     let output = cmd.output()?;
 
-    assert!(
-        output.status.success(),
-        "Command failed"
-    );
+    assert!(output.status.success(), "Command failed");
 
     assert!(String::from_utf8(output.stdout)?.contains("Processed 1 files and found 1 match"));
-    
+
     let content = std::fs::read_to_string(dir.join("index.js"))?;
     assert!(!content.contains("console.log('really cool')"));
     assert!(content.contains("console.log('cool')"));
@@ -2274,10 +2275,7 @@ fn config_pattern_with_invalid_name() -> Result<()> {
 
     let output = cmd.output()?;
 
-    assert!(
-        !output.status.success(),
-        "Command should have failed"
-    );
+    assert!(!output.status.success(), "Command should have failed");
 
     assert_snapshot!(String::from_utf8(output.stderr)?);
 
@@ -2290,14 +2288,13 @@ fn markdown_pattern_with_invalid_name() -> Result<()> {
 
     let mut cmd = get_test_cmd()?;
 
-    cmd.arg("apply").arg("invalid-name").current_dir(dir.clone());
+    cmd.arg("apply")
+        .arg("invalid-name")
+        .current_dir(dir.clone());
 
     let output = cmd.output()?;
 
-    assert!(
-        !output.status.success(),
-        "Command should have failed"
-    );
+    assert!(!output.status.success(), "Command should have failed");
 
     assert_snapshot!(String::from_utf8(output.stderr)?);
 
