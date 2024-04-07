@@ -58,8 +58,8 @@ use crate::{
         add_compiler::AddCompiler, after_compiler::AfterCompiler, and_compiler::AndCompiler,
         any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler,
         if_compiler::IfCompiler, includes_compiler::IncludesCompiler, like_compiler::LikeCompiler,
-        limit_compiler::LimitCompiler, list_index_compiler::ListIndexCompiler, CompilationContext,
-        NodeCompiler,
+        limit_compiler::LimitCompiler, list_index_compiler::ListIndexCompiler,
+        log_compiler::LogCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -845,7 +845,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "log" => Ok(Pattern::Log(Box::new(Log::from_node(
+            "log" => Ok(Pattern::Log(Box::new(LogCompiler::from_node(
                 node,
                 context,
                 vars,

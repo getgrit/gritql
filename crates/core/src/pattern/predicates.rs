@@ -22,7 +22,7 @@ use crate::{
     context::Context,
     pattern_compiler::{
         accumulate_compiler::AccumulateCompiler, assignment_compiler::AssignmentCompiler,
-        CompilationContext, NodeCompiler,
+        log_compiler::LogCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -127,7 +127,7 @@ impl Predicate {
                 global_vars,
                 logs,
             )?))),
-            "log" => Ok(Predicate::Log(Log::from_node(
+            "log" => Ok(Predicate::Log(LogCompiler::from_node(
                 node,
                 context,
                 vars,
