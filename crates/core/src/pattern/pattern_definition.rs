@@ -1,11 +1,13 @@
 use super::{
-    and::And,
     patterns::{Matcher, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::{get_variables, Variable, VariableSourceLocations},
     State,
 };
-use crate::{context::Context, pattern_compiler::CompilationContext};
+use crate::{
+    context::Context,
+    pattern_compiler::{and_compiler::AndCompiler, CompilationContext, NodeCompiler},
+};
 use anyhow::{anyhow, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
@@ -73,7 +75,7 @@ impl PatternDefinition {
         let body = node
             .child_by_field_name("body")
             .ok_or_else(|| anyhow!("missing body of patternDefinition"))?;
-        let body = And::from_node(
+        let body = AndCompiler::from_node(
             &body,
             context,
             &mut local_vars,

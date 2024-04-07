@@ -18,7 +18,13 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
-use crate::{context::Context, pattern_compiler::CompilationContext};
+use crate::{
+    context::Context,
+    pattern_compiler::{
+        accumulate_compiler::AccumulateCompiler, assignment_compiler::AssignmentCompiler,
+        CompilationContext, NodeCompiler,
+    },
+};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -168,24 +174,28 @@ impl Predicate {
                     Err(anyhow!("invalid booleanConstant"))
                 }
             }
-            "predicateAssignment" => Ok(Predicate::Assignment(Box::new(Assignment::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?))),
-            "predicateAccumulate" => Ok(Predicate::Accumulate(Box::new(Accumulate::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?))),
+            "predicateAssignment" => Ok(Predicate::Assignment(Box::new(
+                AssignmentCompiler::from_node(
+                    node,
+                    context,
+                    vars,
+                    vars_array,
+                    scope_index,
+                    global_vars,
+                    logs,
+                )?,
+            ))),
+            "predicateAccumulate" => Ok(Predicate::Accumulate(Box::new(
+                AccumulateCompiler::from_node(
+                    node,
+                    context,
+                    vars,
+                    vars_array,
+                    scope_index,
+                    global_vars,
+                    logs,
+                )?,
+            ))),
             "predicateReturn" => Ok(Predicate::Return(Box::new(PrReturn::from_node(
                 node,
                 context,
