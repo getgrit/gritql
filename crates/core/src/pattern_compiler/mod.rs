@@ -1,6 +1,7 @@
 pub(crate) mod accessor_compiler;
 mod auto_wrap;
 pub(crate) mod before_compiler;
+pub(crate) mod bubble_compiler;
 pub mod compiler;
 mod node_compiler;
 pub(crate) mod step_compiler;

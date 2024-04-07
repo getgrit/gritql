@@ -54,8 +54,8 @@ use super::{
 use crate::{
     context::Context,
     pattern_compiler::{
-        accessor_compiler::AccessorCompiler, before_compiler::BeforeCompiler, CompilationContext,
-        NodeCompiler,
+        accessor_compiler::AccessorCompiler, before_compiler::BeforeCompiler,
+        bubble_compiler::BubbleCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -865,7 +865,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "bubble" => Bubble::from_node(
+            "bubble" => Ok(Pattern::Bubble(Box::new(BubbleCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -873,7 +873,7 @@ impl Pattern {
                 scope_index,
                 global_vars,
                 logs,
-            ),
+            )?))),
             "some" => Ok(Pattern::Some(Box::new(Some::from_node(
                 node,
                 context,
