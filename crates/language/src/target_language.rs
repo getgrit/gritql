@@ -653,7 +653,6 @@ impl TargetLanguage {
             | TargetLanguage::Php(_)
             | TargetLanguage::TypeScript(_) => Regex::new(r"//\s*(.*)").unwrap(),
             TargetLanguage::Python(_)
-            // | TargetLanguage::Hcl(_)
             | TargetLanguage::Ruby(_)
             | TargetLanguage::Toml(_)
             | TargetLanguage::Yaml(_) => Regex::new(r"#\s*(.*)").unwrap(),
