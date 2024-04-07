@@ -56,8 +56,8 @@ use crate::{
     pattern_compiler::{
         accessor_compiler::AccessorCompiler, accumulate_compiler::AccumulateCompiler,
         add_compiler::AddCompiler, after_compiler::AfterCompiler, and_compiler::AndCompiler,
-        any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler, CompilationContext,
-        NodeCompiler,
+        any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler,
+        if_compiler::IfCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -853,7 +853,7 @@ impl Pattern {
                 logs,
             )?))),
             "range" => Ok(Pattern::Range(PRange::from_node(node, context.src)?)),
-            "patternIfElse" => Ok(Pattern::If(Box::new(If::from_node(
+            "patternIfElse" => Ok(Pattern::If(Box::new(IfCompiler::from_node(
                 node,
                 context,
                 vars,
