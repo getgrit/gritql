@@ -56,7 +56,8 @@ use crate::{
     pattern_compiler::{
         accessor_compiler::AccessorCompiler, accumulate_compiler::AccumulateCompiler,
         add_compiler::AddCompiler, after_compiler::AfterCompiler, and_compiler::AndCompiler,
-        any_compiler::AnyCompiler, CompilationContext, NodeCompiler,
+        any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler, CompilationContext,
+        NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -721,15 +722,17 @@ impl Pattern {
                 global_vars,
                 logs,
             ),
-            "assignmentAsPattern" => Ok(Pattern::Assignment(Box::new(Assignment::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?))),
+            "assignmentAsPattern" => Ok(Pattern::Assignment(Box::new(
+                AssignmentCompiler::from_node(
+                    node,
+                    context,
+                    vars,
+                    vars_array,
+                    scope_index,
+                    global_vars,
+                    logs,
+                )?,
+            ))),
             "patternAccumulate" => Ok(Pattern::Accumulate(Box::new(
                 AccumulateCompiler::from_node(
                     node,

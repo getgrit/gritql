@@ -20,7 +20,10 @@ use super::{
 };
 use crate::{
     context::Context,
-    pattern_compiler::{accumulate_compiler::AccumulateCompiler, CompilationContext, NodeCompiler},
+    pattern_compiler::{
+        accumulate_compiler::AccumulateCompiler, assignment_compiler::AssignmentCompiler,
+        CompilationContext, NodeCompiler,
+    },
 };
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
@@ -171,15 +174,17 @@ impl Predicate {
                     Err(anyhow!("invalid booleanConstant"))
                 }
             }
-            "predicateAssignment" => Ok(Predicate::Assignment(Box::new(Assignment::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?))),
+            "predicateAssignment" => Ok(Predicate::Assignment(Box::new(
+                AssignmentCompiler::from_node(
+                    node,
+                    context,
+                    vars,
+                    vars_array,
+                    scope_index,
+                    global_vars,
+                    logs,
+                )?,
+            ))),
             "predicateAccumulate" => Ok(Predicate::Accumulate(Box::new(
                 AccumulateCompiler::from_node(
                     node,
