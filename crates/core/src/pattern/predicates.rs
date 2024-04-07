@@ -22,7 +22,7 @@ use crate::{
     context::Context,
     pattern_compiler::{
         accumulate_compiler::AccumulateCompiler, assignment_compiler::AssignmentCompiler,
-        CompilationContext, NodeCompiler,
+        equal_compiler::EqualCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -145,7 +145,7 @@ impl Predicate {
                 global_vars,
                 logs,
             )?))),
-            "predicateEqual" => Ok(Predicate::Equal(Box::new(Equal::from_node(
+            "predicateEqual" => Ok(Predicate::Equal(Box::new(EqualCompiler::from_node(
                 node,
                 context,
                 vars,

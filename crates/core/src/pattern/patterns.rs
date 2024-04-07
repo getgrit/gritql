@@ -56,8 +56,8 @@ use crate::{
     pattern_compiler::{
         accessor_compiler::AccessorCompiler, accumulate_compiler::AccumulateCompiler,
         add_compiler::AddCompiler, after_compiler::AfterCompiler, and_compiler::AndCompiler,
-        any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler, CompilationContext,
-        NodeCompiler,
+        any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler,
+        divide_compiler::DivideCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -668,7 +668,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "divOperation" => Ok(Pattern::Divide(Box::new(Divide::from_node(
+            "divOperation" => Ok(Pattern::Divide(Box::new(DivideCompiler::from_node(
                 node,
                 context,
                 vars,
