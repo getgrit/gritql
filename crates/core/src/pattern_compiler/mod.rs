@@ -9,6 +9,8 @@ mod auto_wrap;
 pub mod compiler;
 pub(crate) mod divide_compiler;
 pub(crate) mod equal_compiler;
+pub(crate) mod every_compiler;
+pub(crate) mod function_definition_compiler;
 mod node_compiler;
 pub(crate) mod step_compiler;
 

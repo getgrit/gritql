@@ -1,4 +1,10 @@
-use super::auto_wrap::auto_wrap_pattern;
+use super::{
+    auto_wrap::auto_wrap_pattern,
+    function_definition_compiler::{
+        ForeignFunctionDefinitionCompiler, GritFunctionDefinitionCompiler,
+    },
+    NodeCompiler,
+};
 use crate::{
     parse::make_grit_parser,
     pattern::{
@@ -307,22 +313,25 @@ fn node_to_definitions(
                 logs,
             )?;
         } else if let Some(function_definition) = definition.child_by_field_name("function") {
-            GritFunctionDefinition::from_node(
+            function_definitions.push(GritFunctionDefinitionCompiler::from_node(
                 &function_definition,
                 context,
+                &mut BTreeMap::new(),
                 vars_array,
-                function_definitions,
+                0, // FIXME: Unused argument.
                 global_vars,
                 logs,
-            )?;
+            )?);
         } else if let Some(function_definition) = definition.child_by_field_name("foreign") {
-            ForeignFunctionDefinition::from_node(
+            foreign_function_definitions.push(ForeignFunctionDefinitionCompiler::from_node(
                 &function_definition,
                 context,
+                &mut BTreeMap::new(),
                 vars_array,
-                foreign_function_definitions,
+                0, // FIXME: Unused argument.
                 global_vars,
-            )?;
+                logs,
+            )?);
         } else {
             bail!(anyhow!(
                 "definition must be either a pattern, a predicate or a function"

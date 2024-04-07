@@ -57,7 +57,8 @@ use crate::{
         accessor_compiler::AccessorCompiler, accumulate_compiler::AccumulateCompiler,
         add_compiler::AddCompiler, after_compiler::AfterCompiler, and_compiler::AndCompiler,
         any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler,
-        divide_compiler::DivideCompiler, CompilationContext, NodeCompiler,
+        divide_compiler::DivideCompiler, every_compiler::EveryCompiler, CompilationContext,
+        NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -889,7 +890,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "every" => Ok(Pattern::Every(Box::new(Every::from_node(
+            "every" => Ok(Pattern::Every(Box::new(EveryCompiler::from_node(
                 node,
                 context,
                 vars,
