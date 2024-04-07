@@ -1,14 +1,12 @@
 use super::{
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
-    variable::VariableSourceLocations,
-    Node, State,
+    State,
 };
-use crate::{context::Context, pattern_compiler::CompilationContext};
-use anyhow::{anyhow, Context as _, Result};
+use crate::context::Context;
+use anyhow::{Context as _, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]
 pub struct Includes {
@@ -18,31 +16,6 @@ pub struct Includes {
 impl Includes {
     pub fn new(includes: Pattern) -> Self {
         Self { includes }
-    }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let includes = node
-            .child_by_field_name("includes")
-            .ok_or_else(|| anyhow!("missing includes of patternIncludes"))?;
-        let includes = Pattern::from_node(
-            &includes,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            false,
-            logs,
-        )?;
-        Ok(Self::new(includes))
     }
 }
 
