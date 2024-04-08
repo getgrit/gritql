@@ -14,18 +14,10 @@ use marzano_util::analysis_logs::AnalysisLogs;
 pub struct StringConstant {
     pub text: String,
 }
-use tree_sitter::Node;
 
 impl StringConstant {
     pub fn new(text: String) -> Self {
         Self { text }
-    }
-
-    pub(crate) fn from_node(node: &Node, src: &str) -> Result<Self> {
-        let text = node.utf8_text(src.as_bytes())?.trim().to_string();
-        let text = text.strip_prefix('\"').unwrap().strip_suffix('\"').unwrap();
-        let text = text.replace("\\\"", "\"").replace("\\\\", "\\");
-        Ok(Self::new(text))
     }
 }
 

@@ -3,18 +3,10 @@ use std::{
     borrow::Cow,
     fmt::{Display, Formatter},
 };
-use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub enum ForeignLanguage {
     JavaScript,
-}
-
-impl ForeignLanguage {
-    pub fn from_node(node: Node<'_>, src: &str) -> Result<Self> {
-        let lang = node.utf8_text(src.as_bytes())?;
-        lang.try_into()
-    }
 }
 
 impl Display for ForeignLanguage {

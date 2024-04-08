@@ -1,43 +1,42 @@
 use super::{
-    compiler::CompilationContext, node_compiler::NodeCompiler, step_compiler::StepCompiler,
+    compiler::NodeCompilationContext, node_compiler::NodeCompiler, step_compiler::StepCompiler,
 };
-use crate::pattern::{sequential::Sequential, variable::VariableSourceLocations};
+use crate::pattern::{
+    files::Files, patterns::Pattern, sequential::Sequential, some::Some, step::Step,
+};
 use anyhow::Result;
-use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
-use tree_sitter::Node;
+use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct SequentialCompiler;
+
+impl SequentialCompiler {
+    pub(crate) fn from_files_node(
+        node: NodeWithSource,
+        context: &mut NodeCompilationContext,
+    ) -> Result<Sequential> {
+        node.named_children_by_field_name("files")
+            .map(|n| {
+                let step = StepCompiler::from_node(n, context)?;
+                let some = Pattern::Some(Box::new(Some::new(step.pattern)));
+                let files = Pattern::Files(Box::new(Files::new(some)));
+                Ok(Step { pattern: files })
+            })
+            .collect::<Result<Vec<_>>>()
+            .map(Into::into)
+    }
+}
 
 impl NodeCompiler for SequentialCompiler {
     type TargetPattern = Sequential;
 
-    fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
+    fn from_node_with_rhs(
+        node: NodeWithSource,
+        context: &mut NodeCompilationContext,
+        _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
-        let mut sequential = vec![];
-        let mut cursor = node.walk();
-        for n in node
-            .children_by_field_name("sequential", &mut cursor)
-            .filter(|n| n.is_named())
-        {
-            let step = StepCompiler::from_node(
-                &n,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?;
-            sequential.push(step);
-        }
-        Ok(sequential.into())
+        node.named_children_by_field_name("sequential")
+            .map(|n| StepCompiler::from_node(n, context))
+            .collect::<Result<Vec<_>>>()
+            .map(Into::into)
     }
 }

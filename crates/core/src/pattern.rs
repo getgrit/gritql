@@ -75,7 +75,6 @@ use self::{
     predicate_definition::PredicateDefinition,
     resolved_pattern::{File, ResolvedPattern},
     state::{FilePtr, State},
-    variable::register_variable,
     variable_content::VariableContent,
 };
 use crate::{binding::Binding, context::Context};
@@ -83,7 +82,6 @@ use ::log::error;
 use anyhow::{bail, Ok, Result};
 use elsa::FrozenVec;
 use im::vector;
-use itertools::Itertools;
 use marzano_language::{language::Language, target_language::TargetLanguage};
 use marzano_util::{
     analysis_logs::AnalysisLogs,
@@ -146,7 +144,7 @@ impl VariableLocations {
                     variables.push(VariableMatch {
                         name: var.name.clone(),
                         scoped_name: format!("{}_{}_{}", i, j, var.name),
-                        ranges: var.locations.clone().into_iter().collect_vec(),
+                        ranges: var.locations.iter().cloned().collect(),
                     });
                 }
             }
