@@ -57,8 +57,8 @@ use crate::{
         accessor_compiler::AccessorCompiler, accumulate_compiler::AccumulateCompiler,
         add_compiler::AddCompiler, after_compiler::AfterCompiler, and_compiler::AndCompiler,
         any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler,
-        before_compiler::BeforeCompiler, bubble_compiler::BubbleCompiler, CompilationContext,
-        NodeCompiler,
+        before_compiler::BeforeCompiler, bubble_compiler::BubbleCompiler,
+        contains_compiler::ContainsCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -817,7 +817,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternContains" => Ok(Pattern::Contains(Box::new(Contains::from_node(
+            "patternContains" => Ok(Pattern::Contains(Box::new(ContainsCompiler::from_node(
                 node,
                 context,
                 vars,

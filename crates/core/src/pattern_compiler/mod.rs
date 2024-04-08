@@ -9,6 +9,8 @@ mod auto_wrap;
 pub(crate) mod before_compiler;
 pub(crate) mod bubble_compiler;
 pub mod compiler;
+pub(crate) mod container_compiler;
+pub(crate) mod contains_compiler;
 mod node_compiler;
 pub(crate) mod step_compiler;
 

@@ -10,7 +10,7 @@ use super::{
 use crate::{
     binding::{Binding, Constant},
     context::Context,
-    pattern_compiler::CompilationContext,
+    pattern_compiler::{container_compiler::ContainerCompiler, CompilationContext, NodeCompiler},
     resolve_opt,
 };
 use anyhow::{anyhow, bail, Result};
@@ -61,7 +61,7 @@ impl ListIndex {
                 logs,
             )?)
         } else {
-            ListOrContainer::Container(Container::from_node(
+            ListOrContainer::Container(ContainerCompiler::from_node(
                 &list,
                 context,
                 vars,
@@ -84,7 +84,7 @@ impl ListIndex {
                     .map_err(|_| anyhow!("list index must be an integer"))?,
             )
         } else {
-            ContainerOrIndex::Container(Container::from_node(
+            ContainerOrIndex::Container(ContainerCompiler::from_node(
                 &index_node,
                 context,
                 vars,
