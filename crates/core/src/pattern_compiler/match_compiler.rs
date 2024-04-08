@@ -1,7 +1,8 @@
-use super::{compiler::CompilationContext, node_compiler::NodeCompiler};
-use crate::pattern::{
-    container::Container, patterns::Pattern, r#match::Match, variable::VariableSourceLocations,
+use super::{
+    compiler::CompilationContext, container_compiler::ContainerCompiler,
+    node_compiler::NodeCompiler,
 };
+use crate::pattern::{patterns::Pattern, r#match::Match, variable::VariableSourceLocations};
 use anyhow::{anyhow, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
@@ -24,7 +25,7 @@ impl NodeCompiler for MatchCompiler {
         let value = node
             .child_by_field_name("left")
             .ok_or_else(|| anyhow!("missing lhs of predicateMatch"))?;
-        let value = Container::from_node(
+        let value = ContainerCompiler::from_node(
             &value,
             context,
             vars,

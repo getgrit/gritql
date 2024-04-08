@@ -22,7 +22,8 @@ use crate::{
     context::Context,
     pattern_compiler::{
         accumulate_compiler::AccumulateCompiler, assignment_compiler::AssignmentCompiler,
-        equal_compiler::EqualCompiler, log_compiler::LogCompiler, CompilationContext, NodeCompiler,
+        equal_compiler::EqualCompiler, log_compiler::LogCompiler, match_compiler::MatchCompiler,
+        CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -136,7 +137,7 @@ impl Predicate {
                 global_vars,
                 logs,
             )?)),
-            "predicateMatch" => Ok(Predicate::Match(Box::new(Match::from_node(
+            "predicateMatch" => Ok(Predicate::Match(Box::new(MatchCompiler::from_node(
                 node,
                 context,
                 vars,
