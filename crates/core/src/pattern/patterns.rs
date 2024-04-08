@@ -65,7 +65,8 @@ use crate::{
         log_compiler::LogCompiler, maybe_compiler::MaybeCompiler, modulo_compiler::ModuloCompiler,
         multiply_compiler::MultiplyCompiler, not_compiler::NotCompiler, or_compiler::OrCompiler,
         rewrite_compiler::RewriteCompiler, sequential_compiler::SequentialCompiler,
-        some_compiler::SomeCompiler, CompilationContext, NodeCompiler,
+        some_compiler::SomeCompiler, subtract_compiler::SubtractCompiler, CompilationContext,
+        NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -703,7 +704,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "subOperation" => Ok(Pattern::Subtract(Box::new(Subtract::from_node(
+            "subOperation" => Ok(Pattern::Subtract(Box::new(SubtractCompiler::from_node(
                 node,
                 context,
                 vars,

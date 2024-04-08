@@ -36,6 +36,7 @@ pub(crate) mod rewrite_compiler;
 pub(crate) mod sequential_compiler;
 pub(crate) mod some_compiler;
 pub(crate) mod step_compiler;
+pub(crate) mod subtract_compiler;
 
 pub(crate) use compiler::{parse_one, CompilationContext};
 pub use compiler::{src_to_problem_libs, src_to_problem_libs_for_language, CompilationResult};
