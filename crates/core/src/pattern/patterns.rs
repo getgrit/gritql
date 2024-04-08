@@ -64,7 +64,7 @@ use crate::{
         limit_compiler::LimitCompiler, list_index_compiler::ListIndexCompiler,
         log_compiler::LogCompiler, maybe_compiler::MaybeCompiler, modulo_compiler::ModuloCompiler,
         multiply_compiler::MultiplyCompiler, not_compiler::NotCompiler, or_compiler::OrCompiler,
-        CompilationContext, NodeCompiler,
+        rewrite_compiler::RewriteCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -841,7 +841,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "rewrite" => Ok(Pattern::Rewrite(Box::new(Rewrite::from_node(
+            "rewrite" => Ok(Pattern::Rewrite(Box::new(RewriteCompiler::from_node(
                 node,
                 context,
                 vars,

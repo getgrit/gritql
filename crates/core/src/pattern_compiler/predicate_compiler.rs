@@ -4,10 +4,10 @@ use super::{
     compiler::CompilationContext, equal_compiler::EqualCompiler, log_compiler::LogCompiler,
     match_compiler::MatchCompiler, maybe_compiler::PrMaybeCompiler, node_compiler::NodeCompiler,
     or_compiler::PrOrCompiler, predicate_return_compiler::PredicateReturnCompiler,
+    rewrite_compiler::RewriteCompiler,
 };
 use crate::pattern::{
-    call::PrCall, not::PrNot, predicates::Predicate, r#if::PrIf, rewrite::Rewrite,
-    variable::VariableSourceLocations,
+    call::PrCall, not::PrNot, predicates::Predicate, r#if::PrIf, variable::VariableSourceLocations,
 };
 use anyhow::{anyhow, bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -85,7 +85,7 @@ impl NodeCompiler for PredicateCompiler {
                 global_vars,
                 logs,
             )?))),
-            "predicateRewrite" => Ok(Predicate::Rewrite(Box::new(Rewrite::from_node(
+            "predicateRewrite" => Ok(Predicate::Rewrite(Box::new(RewriteCompiler::from_node(
                 node,
                 context,
                 vars,
