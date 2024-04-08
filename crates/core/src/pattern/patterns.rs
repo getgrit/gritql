@@ -1,42 +1,75 @@
-use super::accessor::Accessor;
-use super::add::Add;
-use super::before::Before;
-use super::boolean_constant::BooleanConstant;
-use super::compiler::{CompilationContext, ABSOLUTE_PATH_INDEX, FILENAME_INDEX, PROGRAM_INDEX};
-use super::divide::Divide;
-use super::dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart};
-use super::every::Every;
-use super::file_pattern::FilePattern;
-use super::files::Files;
-use super::float_constant::FloatConstant;
-use super::functions::{CallForeignFunction, CallFunction};
-use super::includes::Includes;
-use super::int_constant::IntConstant;
-use super::like::Like;
-use super::limit::Limit;
-use super::list_index::ListIndex;
-use super::log::Log;
-use super::map::GritMap;
-use super::maybe::Maybe;
-use super::modulo::Modulo;
-use super::multiply::Multiply;
-use super::range::Range as PRange;
-use super::regex::{RegexLike, RegexPattern};
-use super::resolved_pattern::ResolvedPattern;
-use super::sequential::Sequential;
-use super::subtract::Subtract;
-use super::undefined::Undefined;
-use super::variable::{is_reserved_metavariable, VariableSourceLocations, GLOBAL_VARS_SCOPE_INDEX};
 use super::{
-    accumulate::Accumulate, after::After, and::And, any::Any, assignment::Assignment,
-    ast_node::ASTNode, bubble::Bubble, built_in_functions::CallBuiltIn, call::Call,
-    code_snippet::CodeSnippet, contains::Contains, list::List, not::Not, or::Or, r#if::If,
-    r#where::Where, rewrite::Rewrite, some::Some, string_constant::StringConstant,
-    variable::Variable, within::Within, Node, State,
+    accessor::Accessor,
+    accumulate::Accumulate,
+    add::Add,
+    after::After,
+    and::And,
+    any::Any,
+    assignment::Assignment,
+    ast_node::ASTNode,
+    before::Before,
+    boolean_constant::BooleanConstant,
+    bubble::Bubble,
+    built_in_functions::CallBuiltIn,
+    call::Call,
+    code_snippet::CodeSnippet,
+    constants::{ABSOLUTE_PATH_INDEX, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX, PROGRAM_INDEX},
+    contains::Contains,
+    divide::Divide,
+    dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
+    every::Every,
+    file_pattern::FilePattern,
+    files::Files,
+    float_constant::FloatConstant,
+    functions::{CallForeignFunction, CallFunction},
+    includes::Includes,
+    int_constant::IntConstant,
+    like::Like,
+    limit::Limit,
+    list::List,
+    list_index::ListIndex,
+    log::Log,
+    map::GritMap,
+    maybe::Maybe,
+    modulo::Modulo,
+    multiply::Multiply,
+    not::Not,
+    or::Or,
+    r#if::If,
+    r#where::Where,
+    range::Range as PRange,
+    regex::{RegexLike, RegexPattern},
+    register_variable,
+    resolved_pattern::ResolvedPattern,
+    rewrite::Rewrite,
+    sequential::Sequential,
+    some::Some,
+    string_constant::{AstLeafNode, StringConstant},
+    subtract::Subtract,
+    undefined::Undefined,
+    variable::{is_reserved_metavariable, Variable, VariableSourceLocations},
+    within::Within,
+    Node, State,
 };
-use crate::context::Context;
-use crate::pattern::register_variable;
-use crate::pattern::string_constant::AstLeafNode;
+use crate::{
+    context::Context,
+    pattern_compiler::{
+        accessor_compiler::AccessorCompiler, accumulate_compiler::AccumulateCompiler,
+        add_compiler::AddCompiler, after_compiler::AfterCompiler, and_compiler::AndCompiler,
+        any_compiler::AnyCompiler, as_compiler::AsCompiler,
+        assignment_compiler::AssignmentCompiler, before_compiler::BeforeCompiler,
+        bubble_compiler::BubbleCompiler, contains_compiler::ContainsCompiler,
+        divide_compiler::DivideCompiler, every_compiler::EveryCompiler, if_compiler::IfCompiler,
+        includes_compiler::IncludesCompiler, like_compiler::LikeCompiler,
+        limit_compiler::LimitCompiler, list_index_compiler::ListIndexCompiler,
+        log_compiler::LogCompiler, maybe_compiler::MaybeCompiler, modulo_compiler::ModuloCompiler,
+        multiply_compiler::MultiplyCompiler, not_compiler::NotCompiler, or_compiler::OrCompiler,
+        rewrite_compiler::RewriteCompiler, sequential_compiler::SequentialCompiler,
+        some_compiler::SomeCompiler, subtract_compiler::SubtractCompiler,
+        variable_compiler::VariableCompiler, where_compiler::WhereCompiler,
+        within_compiler::WithinCompiler, CompilationContext, NodeCompiler,
+    },
+};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use grit_util::{traverse, Order};
@@ -47,8 +80,6 @@ use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::position::{char_index_to_byte_index, Position, Range};
 use regex::Match;
 use std::collections::{BTreeMap, HashMap};
-use std::str;
-use std::vec;
 
 pub(crate) trait Matcher: Debug {
     // it is important that any implementors of Pattern
@@ -638,7 +669,7 @@ impl Pattern {
     ) -> Result<Self> {
         let kind = node.kind();
         match kind.as_ref() {
-            "mulOperation" => Ok(Pattern::Multiply(Box::new(Multiply::from_node(
+            "mulOperation" => Ok(Pattern::Multiply(Box::new(MultiplyCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -647,7 +678,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "divOperation" => Ok(Pattern::Divide(Box::new(Divide::from_node(
+            "divOperation" => Ok(Pattern::Divide(Box::new(DivideCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -656,7 +687,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "modOperation" => Ok(Pattern::Modulo(Box::new(Modulo::from_node(
+            "modOperation" => Ok(Pattern::Modulo(Box::new(ModuloCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -665,7 +696,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "addOperation" => Ok(Pattern::Add(Box::new(Add::from_node(
+            "addOperation" => Ok(Pattern::Add(Box::new(AddCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -674,7 +705,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "subOperation" => Ok(Pattern::Subtract(Box::new(Subtract::from_node(
+            "subOperation" => Ok(Pattern::Subtract(Box::new(SubtractCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -683,7 +714,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternAs" => Ok(Pattern::Where(Box::new(Where::as_from_node(
+            "patternAs" => Ok(Pattern::Where(Box::new(AsCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -692,7 +723,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternLimit" => Limit::from_node(
+            "patternLimit" => LimitCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -701,7 +732,29 @@ impl Pattern {
                 global_vars,
                 logs,
             ),
-            "assignmentAsPattern" => Ok(Pattern::Assignment(Box::new(Assignment::from_node(
+            "assignmentAsPattern" => Ok(Pattern::Assignment(Box::new(
+                AssignmentCompiler::from_node(
+                    node,
+                    context,
+                    vars,
+                    vars_array,
+                    scope_index,
+                    global_vars,
+                    logs,
+                )?,
+            ))),
+            "patternAccumulate" => Ok(Pattern::Accumulate(Box::new(
+                AccumulateCompiler::from_node(
+                    node,
+                    context,
+                    vars,
+                    vars_array,
+                    scope_index,
+                    global_vars,
+                    logs,
+                )?,
+            ))),
+            "patternWhere" => Ok(Pattern::Where(Box::new(WhereCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -710,7 +763,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternAccumulate" => Ok(Pattern::Accumulate(Box::new(Accumulate::from_node(
+            "patternNot" => Ok(Pattern::Not(Box::new(NotCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -719,25 +772,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternWhere" => Ok(Pattern::Where(Box::new(Where::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?))),
-            "patternNot" => Ok(Pattern::Not(Box::new(Not::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?))),
-            "patternOr" => Or::from_node(
+            "patternOr" => OrCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -746,7 +781,7 @@ impl Pattern {
                 global_vars,
                 logs,
             ),
-            "patternAnd" => And::from_node(
+            "patternAnd" => AndCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -755,7 +790,7 @@ impl Pattern {
                 global_vars,
                 logs,
             ),
-            "patternAny" => Any::from_node(
+            "patternAny" => AnyCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -764,7 +799,7 @@ impl Pattern {
                 global_vars,
                 logs,
             ),
-            "patternMaybe" => Ok(Pattern::Maybe(Box::new(Maybe::maybe_from_node(
+            "patternMaybe" => Ok(Pattern::Maybe(Box::new(MaybeCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -773,7 +808,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternAfter" => Ok(Pattern::After(Box::new(After::from_node(
+            "patternAfter" => Ok(Pattern::After(Box::new(AfterCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -782,7 +817,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternBefore" => Ok(Pattern::Before(Box::new(Before::from_node(
+            "patternBefore" => Ok(Pattern::Before(Box::new(BeforeCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -791,7 +826,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternContains" => Ok(Pattern::Contains(Box::new(Contains::from_node(
+            "patternContains" => Ok(Pattern::Contains(Box::new(ContainsCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -800,7 +835,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternIncludes" => Ok(Pattern::Includes(Box::new(Includes::from_node(
+            "patternIncludes" => Ok(Pattern::Includes(Box::new(IncludesCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -809,7 +844,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "rewrite" => Ok(Pattern::Rewrite(Box::new(Rewrite::from_node(
+            "rewrite" => Ok(Pattern::Rewrite(Box::new(RewriteCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -818,7 +853,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "log" => Ok(Pattern::Log(Box::new(Log::from_node(
+            "log" => Ok(Pattern::Log(Box::new(LogCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -828,7 +863,7 @@ impl Pattern {
                 logs,
             )?))),
             "range" => Ok(Pattern::Range(PRange::from_node(node, context.src)?)),
-            "patternIfElse" => Ok(Pattern::If(Box::new(If::from_node(
+            "patternIfElse" => Ok(Pattern::If(Box::new(IfCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -837,7 +872,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "within" => Ok(Pattern::Within(Box::new(Within::from_node(
+            "within" => Ok(Pattern::Within(Box::new(WithinCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -846,16 +881,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "bubble" => Bubble::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            ),
-            "some" => Ok(Pattern::Some(Box::new(Some::from_node(
+            "bubble" => Ok(Pattern::Bubble(Box::new(BubbleCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -864,7 +890,16 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "every" => Ok(Pattern::Every(Box::new(Every::from_node(
+            "some" => Ok(Pattern::Some(Box::new(SomeCompiler::from_node(
+                node,
+                context,
+                vars,
+                vars_array,
+                scope_index,
+                global_vars,
+                logs,
+            )?))),
+            "every" => Ok(Pattern::Every(Box::new(EveryCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -893,7 +928,7 @@ impl Pattern {
                 is_rhs,
                 logs,
             )?))),
-            "listIndex" => Ok(Pattern::ListIndex(Box::new(ListIndex::from_node(
+            "listIndex" => Ok(Pattern::ListIndex(Box::new(ListIndexCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -912,7 +947,7 @@ impl Pattern {
                 is_rhs,
                 logs,
             )?))),
-            "mapAccessor" => Ok(Pattern::Accessor(Box::new(Accessor::from_node(
+            "mapAccessor" => Ok(Pattern::Accessor(Box::new(AccessorCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -937,14 +972,14 @@ impl Pattern {
                 is_rhs,
                 logs,
             ),
-            "variable" => Ok(Pattern::Variable(Variable::from_node(
+            "variable" => Ok(Pattern::Variable(VariableCompiler::from_node(
                 node,
-                context.file,
-                context.src,
+                context,
                 vars,
-                global_vars,
                 vars_array,
                 scope_index,
+                global_vars,
+                logs,
             )?)),
             "codeSnippet" => CodeSnippet::from_node(
                 node,
@@ -957,7 +992,7 @@ impl Pattern {
                 context.lang,
                 is_rhs,
             ),
-            "like" => Ok(Pattern::Like(Box::new(Like::from_node(
+            "like" => Ok(Pattern::Like(Box::new(LikeCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -973,7 +1008,7 @@ impl Pattern {
                 node,
                 context.src,
             )?)),
-            "sequential" => Ok(Pattern::Sequential(Sequential::from_node(
+            "sequential" => Ok(Pattern::Sequential(SequentialCompiler::from_node(
                 node,
                 context,
                 vars,

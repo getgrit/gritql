@@ -41,8 +41,11 @@ pub struct PatternsTestArgs {
     /// Regex of a specific pattern to test
     #[clap(long = "filter")]
     pub filter: Option<String>,
-    /// Regex of tags and pattern names to exclude
-    #[clap(long = "exclude")]
+    /// Tags and pattern names to exclude
+    #[clap(
+        long = "exclude",
+        help = "Tags and pattern names to exclude. Only direct matches will be excluded."
+    )]
     pub exclude: Vec<String>,
     /// Show verbose output
     #[clap(long = "verbose")]
@@ -105,7 +108,11 @@ pub(crate) async fn run_patterns_describe(arg: PatternsDescribeArgs) -> Result<(
                 }
 
                 let input_lines = sample.input.lines().collect::<Vec<_>>();
-                let output_lines = sample.output.lines().collect::<Vec<_>>();
+                let output_lines = if let Some(output) = &sample.output {
+                    output.lines().collect::<Vec<_>>()
+                } else {
+                    vec!["None"]
+                };
 
                 let width = input_lines.iter().map(|line| line.len()).max().unwrap_or(0);
                 let output_width = output_lines

@@ -1,50 +1,21 @@
 use super::{
-    compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
-    variable::VariableSourceLocations,
     State,
 };
 use crate::{context::Context, resolve};
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use im::vector;
 use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
-use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub struct Some {
-    pub(crate) pattern: Pattern,
+    pub pattern: Pattern,
 }
 
 impl Some {
     pub fn new(pattern: Pattern) -> Self {
         Self { pattern }
-    }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let within = node
-            .child_by_field_name("pattern")
-            .ok_or_else(|| anyhow!("missing pattern of pattern some"))?;
-        let within = Pattern::from_node(
-            &within,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            false,
-            logs,
-        )?;
-        Ok(Some::new(within))
     }
 }
 

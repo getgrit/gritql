@@ -1,53 +1,24 @@
-use std::{collections::BTreeMap, ops};
-
-use marzano_util::analysis_logs::AnalysisLogs;
-use tree_sitter::Node;
-
-use crate::{context::Context, pattern::Step};
-
 use super::{
-    compiler::CompilationContext,
     files::Files,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     state::State,
+    step::Step,
     variable::VariableSourceLocations,
 };
+use crate::{
+    context::Context,
+    pattern_compiler::{step_compiler::StepCompiler, CompilationContext, NodeCompiler},
+};
 use anyhow::Result;
+use marzano_util::analysis_logs::AnalysisLogs;
+use std::{collections::BTreeMap, ops};
+use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
-pub struct Sequential(pub(crate) Vec<Step>);
+pub struct Sequential(pub Vec<Step>);
 
 impl Sequential {
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let mut sequential = vec![];
-        let mut cursor = node.walk();
-        for n in node
-            .children_by_field_name("sequential", &mut cursor)
-            .filter(|n| n.is_named())
-        {
-            let step = Step::from_node(
-                &n,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?;
-            sequential.push(step);
-        }
-        Ok(sequential.into())
-    }
-
     pub(crate) fn from_files_node(
         node: &Node,
         context: &CompilationContext,
@@ -63,7 +34,7 @@ impl Sequential {
             .children_by_field_name("files", &mut cursor)
             .filter(|n| n.is_named())
         {
-            let step = Step::from_node(
+            let step = StepCompiler::from_node(
                 &n,
                 context,
                 vars,

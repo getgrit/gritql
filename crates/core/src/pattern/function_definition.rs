@@ -1,22 +1,18 @@
-use crate::{binding::Constant, context::Context};
-use anyhow::{anyhow, bail, Result};
-#[cfg(feature = "external_functions")]
-use marzano_externals::function::ExternalFunction;
-use marzano_language::foreign_language::ForeignLanguage;
-use marzano_util::analysis_logs::AnalysisLogs;
-use std::{borrow::Cow, collections::BTreeMap};
-use tree_sitter::Node;
-
 use super::{
-    and::PrAnd,
-    compiler::CompilationContext,
     functions::{Evaluator, FuncEvaluation},
     patterns::Pattern,
     predicates::Predicate,
     resolved_pattern::patterns_to_resolved,
     state::State,
-    variable::{get_variables, Variable, VariableSourceLocations},
+    variable::Variable,
 };
+use crate::{binding::Constant, context::Context};
+use anyhow::{bail, Result};
+#[cfg(feature = "external_functions")]
+use marzano_externals::function::ExternalFunction;
+use marzano_language::foreign_language::ForeignLanguage;
+use marzano_util::analysis_logs::AnalysisLogs;
+use std::borrow::Cow;
 
 pub(crate) trait FunctionDefinition {
     fn call<'a>(
@@ -31,7 +27,7 @@ pub(crate) trait FunctionDefinition {
 #[derive(Clone, Debug)]
 pub struct GritFunctionDefinition {
     pub name: String,
-    scope: usize,
+    pub scope: usize,
     pub params: Vec<(String, Variable)>,
     pub local_vars: Vec<usize>,
     pub function: Predicate,
@@ -52,59 +48,6 @@ impl GritFunctionDefinition {
             local_vars,
             function,
         }
-    }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        function_definitions: &mut Vec<GritFunctionDefinition>,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<()> {
-        let name = node
-            .child_by_field_name("name")
-            .ok_or_else(|| anyhow!("missing name of function definition"))?;
-        let name = name.utf8_text(context.src.as_bytes())?;
-        let name = name.trim();
-        let scope_index = vars_array.len();
-        vars_array.push(vec![]);
-        let mut local_vars = BTreeMap::new();
-
-        let params = get_variables(
-            &context
-                .function_definition_info
-                .get(name)
-                .ok_or_else(|| anyhow!("cannot get info for function {}", name))?
-                .parameters,
-            context.file,
-            vars_array,
-            scope_index,
-            &mut local_vars,
-            global_vars,
-        )?;
-
-        let body = node
-            .child_by_field_name("body")
-            .ok_or_else(|| anyhow!("missing body of grit function definition"))?;
-        let body = PrAnd::from_node(
-            &body,
-            context,
-            &mut local_vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            logs,
-        )?;
-        let function_definition = GritFunctionDefinition::new(
-            name.to_owned(),
-            scope_index,
-            params,
-            local_vars.values().cloned().collect(),
-            body,
-        );
-        function_definitions.push(function_definition);
-        Ok(())
     }
 }
 
@@ -143,57 +86,6 @@ impl ForeignFunctionDefinition {
             language,
             code: code.to_vec(),
         }
-    }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        function_definitions: &mut Vec<ForeignFunctionDefinition>,
-        global_vars: &mut BTreeMap<String, usize>,
-    ) -> Result<()> {
-        let name = node
-            .child_by_field_name("name")
-            .ok_or_else(|| anyhow!("missing name of function definition"))?;
-        let name = name.utf8_text(context.src.as_bytes())?;
-        let name = name.trim();
-        let scope_index = vars_array.len();
-        vars_array.push(vec![]);
-        let mut local_vars = BTreeMap::new();
-        let params = get_variables(
-            &context
-                .foreign_function_definition_info
-                .get(name)
-                .ok_or_else(|| anyhow!("cannot get info for function {}", name))?
-                .parameters,
-            context.file,
-            vars_array,
-            scope_index,
-            &mut local_vars,
-            global_vars,
-        )?;
-        let body = node
-            .child_by_field_name("body")
-            .ok_or_else(|| anyhow!("missing body of foreign function definition"))?
-            .child_by_field_name("code")
-            .ok_or_else(|| anyhow!("missing code of foreign function body"))?;
-        let byte_range = body.byte_range();
-        let byte_range = byte_range.start as usize..byte_range.end as usize;
-        let body = &context.src.as_bytes()[byte_range];
-        let foreign_language = ForeignLanguage::from_node(
-            node.child_by_field_name("language")
-                .ok_or_else(|| anyhow!("missing language of foreign function definition"))?,
-            context.src,
-        )?;
-        let function_definition = ForeignFunctionDefinition::new(
-            name.to_owned(),
-            scope_index,
-            params,
-            foreign_language,
-            body,
-        );
-        function_definitions.push(function_definition);
-        Ok(())
     }
 }
 

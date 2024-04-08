@@ -1,8 +1,7 @@
-use std::sync::OnceLock;
-
-use tree_sitter::Node;
-
 use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
+use grit_util::AstNode;
+use marzano_util::{node_with_source::NodeWithSource, position::Range};
+use std::sync::OnceLock;
 
 static NODE_TYPES_STRING: &str =
     include_str!("../../../resources/node-types/python-node-types.json");
@@ -80,14 +79,9 @@ impl Language for Python {
         id == self.comment_sort
     }
 
-    fn check_orphaned(&self, n: Node<'_>, src: &str, orphan_ranges: &mut Vec<tree_sitter::Range>) {
-        if n.is_error() {
-            let Ok(text) = n.utf8_text(src.as_bytes()) else {
-                return;
-            };
-            if &text == "->" {
-                orphan_ranges.push(n.range());
-            }
+    fn check_orphaned(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Range>) {
+        if n.node.is_error() && n.text() == "->" {
+            orphan_ranges.push(n.range());
         }
     }
 }

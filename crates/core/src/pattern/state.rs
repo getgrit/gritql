@@ -1,25 +1,21 @@
-use rand::SeedableRng;
-use std::collections::HashMap;
-use std::ops::Range as StdRange;
-
-use super::compiler::MATCH_VAR;
-use super::FileOwner;
+use super::{
+    constants::MATCH_VAR,
+    patterns::Pattern,
+    resolved_pattern::{CodeRange, ResolvedPattern},
+    variable::Variable,
+    variable_content::VariableContent,
+    Effect, FileOwner,
+};
 use crate::intervals::{earliest_deadline_sort, get_top_level_intervals_in_range, Interval};
-use anyhow::{anyhow, Result};
-use anyhow::{bail, Ok};
+use anyhow::{anyhow, bail, Result};
 use im::{vector, Vector};
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::AnalysisLogs;
 use marzano_util::position::Range;
 use marzano_util::position::VariableMatch;
-
-use super::{
-    patterns::Pattern,
-    resolved_pattern::{CodeRange, ResolvedPattern},
-    variable::Variable,
-    variable_content::VariableContent,
-    Effect,
-};
+use rand::SeedableRng;
+use std::collections::HashMap;
+use std::ops::Range as StdRange;
 
 #[derive(Debug, Clone)]
 pub struct EffectRange<'a> {

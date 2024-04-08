@@ -1,18 +1,35 @@
+use super::{
+    auto_wrap::auto_wrap_pattern,
+    function_definition_compiler::{
+        ForeignFunctionDefinitionCompiler, GritFunctionDefinitionCompiler,
+    },
+    pattern_definition_compiler::PatternDefinitionCompiler,
+    predicate_definition_compiler::PredicateDefinitionCompiler,
+    NodeCompiler,
+};
 use crate::{
     parse::make_grit_parser,
     pattern::{
-        built_in_functions::BuiltIns, pattern_definition::PatternDefinition, patterns::Pattern,
-        predicate_definition::PredicateDefinition, Problem,
+        analysis::{has_limit, is_multifile},
+        built_in_functions::BuiltIns,
+        constants::{
+            ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
+        },
+        function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
+        pattern_definition::PatternDefinition,
+        patterns::Pattern,
+        predicate_definition::PredicateDefinition,
+        variable::VariableSourceLocations,
+        Problem, VariableLocations,
     },
 };
 use anyhow::{anyhow, bail, Result};
 use grit_util::{traverse, Order};
 use itertools::Itertools;
 use marzano_language::{self, target_language::TargetLanguage};
-use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::{
-    analysis_logs::AnalysisLogBuilder,
-    analysis_logs::AnalysisLogs,
+    analysis_logs::{AnalysisLogBuilder, AnalysisLogs},
+    cursor_wrapper::CursorWrapper,
     position::{FileRange, Position, Range},
 };
 use regex::Regex;
@@ -26,24 +43,6 @@ use tree_sitter::{Node, Parser, Tree};
 #[cfg(feature = "grit_tracing")]
 use tracing::instrument;
 
-use super::{
-    analysis::{has_limit, is_multifile},
-    auto_wrap::auto_wrap_pattern,
-    function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
-    variable::VariableSourceLocations,
-    VariableLocations,
-};
-
-pub(crate) const MATCH_VAR: &str = "$match";
-pub(crate) const GRIT_RANGE_VAR: &str = "$grit_range";
-pub(crate) const NEW_FILES_INDEX: usize = 0;
-pub(crate) const PROGRAM_INDEX: usize = 1;
-pub(crate) const FILENAME_INDEX: usize = 2;
-pub(crate) const ABSOLUTE_PATH_INDEX: usize = 3;
-pub const DEFAULT_FILE_NAME: &str = "PlaygroundPattern";
-
-// mode public after being moved out of pattern.rs
-// sign it should compiler.rs should be in the pattern module
 pub(crate) struct CompilationContext<'a> {
     pub src: &'a str,
     pub file: &'a str,
@@ -292,46 +291,57 @@ fn node_to_definitions(
     global_vars: &mut BTreeMap<String, usize>,
     logs: &mut AnalysisLogs,
 ) -> Result<()> {
+    // FIXME: These only exist to satisfy `from_node()` signature.
+    let unused_scope_index = 0;
+    let mut unused_vars = BTreeMap::new();
+
     let mut cursor = node.walk();
     for definition in node
         .children_by_field_name("definitions", &mut cursor)
         .filter(|n| n.is_named())
     {
         if let Some(pattern_definition) = definition.child_by_field_name("pattern") {
-            PatternDefinition::from_node(
+            // todo check for duplicate names
+            pattern_definitions.push(PatternDefinitionCompiler::from_node(
                 &pattern_definition,
                 context,
+                &mut unused_vars,
                 vars_array,
-                pattern_definitions,
+                unused_scope_index,
                 global_vars,
                 logs,
-            )?;
+            )?);
         } else if let Some(predicate_definition) = definition.child_by_field_name("predicate") {
-            PredicateDefinition::from_node(
+            // todo check for duplicate names
+            predicate_definitions.push(PredicateDefinitionCompiler::from_node(
                 &predicate_definition,
                 context,
+                &mut unused_vars,
                 vars_array,
-                predicate_definitions,
+                unused_scope_index,
                 global_vars,
                 logs,
-            )?;
+            )?);
         } else if let Some(function_definition) = definition.child_by_field_name("function") {
-            GritFunctionDefinition::from_node(
+            function_definitions.push(GritFunctionDefinitionCompiler::from_node(
                 &function_definition,
                 context,
+                &mut unused_vars,
                 vars_array,
-                function_definitions,
+                unused_scope_index,
                 global_vars,
                 logs,
-            )?;
+            )?);
         } else if let Some(function_definition) = definition.child_by_field_name("foreign") {
-            ForeignFunctionDefinition::from_node(
+            foreign_function_definitions.push(ForeignFunctionDefinitionCompiler::from_node(
                 &function_definition,
                 context,
+                &mut unused_vars,
                 vars_array,
-                foreign_function_definitions,
+                unused_scope_index,
                 global_vars,
-            )?;
+                logs,
+            )?);
         } else {
             bail!(anyhow!(
                 "definition must be either a pattern, a predicate or a function"

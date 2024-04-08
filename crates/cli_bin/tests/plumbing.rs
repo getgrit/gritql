@@ -103,7 +103,11 @@ fn returns_check_results_for_level() -> Result<()> {
 
     let input = format!(r#"{{ "paths" : [{:?}] }}"#, "check.ts");
 
-    cmd.arg("plumbing").arg("check").arg("--level").arg("error").current_dir(fixtures_root);
+    cmd.arg("plumbing")
+        .arg("check")
+        .arg("--level")
+        .arg("error")
+        .current_dir(fixtures_root);
     cmd.write_stdin(input);
 
     let output = cmd.output()?;

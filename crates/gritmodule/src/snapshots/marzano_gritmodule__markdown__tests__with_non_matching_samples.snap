@@ -76,7 +76,7 @@ expression: patterns
           endByte: 1095
       - name: "Do not change `$val === null`"
         input: "if (val === null) {\n  done();\n}"
-        output: "if (val === null) {\n  done();\n}"
+        output: ~
         input_range:
           start:
             line: 71
@@ -97,7 +97,7 @@ expression: patterns
           endByte: 1180
       - name: "Do not change `$val !== null`"
         input: "while (val !== null) {\n  doSomething();\n}"
-        output: "while (val !== null) {\n  doSomething();\n}"
+        output: ~
         input_range:
           start:
             line: 79

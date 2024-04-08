@@ -1,66 +1,23 @@
 use super::{
-    compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::{LazyBuiltIn, ResolvedPattern, ResolvedSnippet},
-    variable::VariableSourceLocations,
     Node, State,
 };
 use crate::{context::Context, resolve};
-
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use core::fmt::Debug;
 use im::vector;
 use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource};
 
-use std::collections::BTreeMap;
-
 #[derive(Debug, Clone)]
 pub struct Contains {
-    pub(crate) contains: Pattern,
-    pub(crate) until: Option<Pattern>,
+    pub contains: Pattern,
+    pub until: Option<Pattern>,
 }
 
 impl Contains {
     pub fn new(contains: Pattern, until: Option<Pattern>) -> Self {
         Self { contains, until }
-    }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let contains = node
-            .child_by_field_name("contains")
-            .ok_or_else(|| anyhow!("missing contains of patternContains"))?;
-        let contains = Pattern::from_node(
-            &contains,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            false,
-            logs,
-        )?;
-        let until = node.child_by_field_name("until").map(|n| {
-            Pattern::from_node(
-                &n,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                false,
-                logs,
-            )
-        });
-        let until = until.map_or(Ok(None), |v| v.map(Some))?;
-        Ok(Self::new(contains, until))
     }
 }
 

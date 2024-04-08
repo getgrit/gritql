@@ -1,3 +1,4 @@
+use crate::pattern_compiler::src_to_problem_libs;
 use anyhow::{anyhow, Context, Result};
 use insta::{assert_debug_snapshot, assert_snapshot, assert_yaml_snapshot};
 use lazy_static::lazy_static;
@@ -8,7 +9,6 @@ use marzano_util::position::{Range, VariableMatch};
 use marzano_util::rich_path::RichFile;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
 use pattern::api::MatchResult;
-use pattern::compiler::src_to_problem_libs;
 use pattern::Problem;
 use similar::{ChangeTag, TextDiff};
 use std::collections::{BTreeMap, HashMap};
@@ -8500,6 +8500,105 @@ fn code_span() {
     let results =
         pattern.execute_file(&RichFile::new(file.to_owned(), source.to_owned()), &context);
     assert_yaml_snapshot!(results);
+}
+
+#[test]
+fn markdown_heading_rewrite() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: "
+                language markdown(block)
+
+                atx_heading($heading_content, $level) where {
+                    $level <: or {
+                        \"##\",
+                        atx_h4_marker()
+                    }
+                } => `HEADING: $heading_content\n`
+                "
+            .to_owned(),
+            source: r#"
+                |# File with two secionds
+                |Some content
+                |## subheading
+                |More content
+                |## Subheading two
+                |Even more content
+                |### Subheading three
+                |Even more content
+                |#### Subheading four
+                |Even more content
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |# File with two secionds
+                |Some content
+                |HEADING:  subheading
+                |More content
+                |HEADING:  Subheading two
+                |Even more content
+                |### Subheading three
+                |Even more content
+                |HEADING:  Subheading four
+                |Even more content
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn markdown_sections() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: "
+                language markdown(block)
+
+                section($heading, $content) where {
+                    $heading <: atx_heading(level=atx_h2_marker()),
+                    $content <: not includes \"skip\"
+                } => raw`---
+                SECTION 2 HEADER: $heading`
+                "
+            .to_owned(),
+            source: r#"
+                |# File with two secionds
+                |Some content
+                |## level 2
+                |More content
+                |## level 2 (do not skip)
+                |Even more content
+                |### level 3
+                |Even more content
+                |#### level 4
+                |Even more content
+                |## Now we go back to section two
+                |Content only here
+                |## Skip this one...
+                |skip me
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |# File with two secionds
+                |Some content
+                |---
+                |                SECTION 2 HEADER: ## level 2
+                |---
+                |                SECTION 2 HEADER: ## level 2 (do not skip)
+                |---
+                |                SECTION 2 HEADER: ## Now we go back to section two
+                |## Skip this one...
+                |skip me
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
 }
 
 #[test]

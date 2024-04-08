@@ -1,6 +1,5 @@
-use super::compiler::parse_one;
-use anyhow::anyhow;
-use anyhow::Result;
+use crate::pattern_compiler::parse_one;
+use anyhow::{anyhow, Result};
 use grit_util::{traverse, Order};
 use marzano_util::cursor_wrapper::CursorWrapper;
 use std::collections::BTreeMap;

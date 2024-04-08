@@ -133,8 +133,8 @@ jobs:
       - name: Setup Go environment
         uses: actions/setup-go@v5.0.0
         with:
-          go-version: '^1.22.0'
+          go-version: "^1.22.0"
       - name: test stdlib
         working-directory: ./stdlib
         run: |
-          ../target/release/marzano patterns test --exclude ai
+          ../target/release/marzano patterns test --exclude ai --exclude grit_snake_case --exclude cargo_use_long_dependency

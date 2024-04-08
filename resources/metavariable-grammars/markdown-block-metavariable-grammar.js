@@ -51,43 +51,43 @@ module.exports = grammar({
         ),
         section: $ => choice($._section1, $._section2, $._section3, $._section4, $._section5, $._section6),
         _section1: $ => prec.right(seq(
-            alias($._atx_heading1, $.atx_heading),
-            repeat(choice(
+            field('heading', alias($._atx_heading1, $.atx_heading)),
+            field('content', repeat(choice(
                 alias(choice($._section6, $._section5, $._section4, $._section3, $._section2), $.section),
                 $._block_not_section
-            ))
+            )))
         )),
         _section2: $ => prec.right(seq(
-            alias($._atx_heading2, $.atx_heading),
-            repeat(choice(
+          field('heading', alias($._atx_heading2, $.atx_heading)),
+          field('content', repeat(choice(
                 alias(choice($._section6, $._section5, $._section4, $._section3), $.section),
                 $._block_not_section
-            ))
+            )))
         )),
         _section3: $ => prec.right(seq(
-            alias($._atx_heading3, $.atx_heading),
-            repeat(choice(
+          field('heading', alias($._atx_heading3, $.atx_heading)),
+          field('content', repeat(choice(
                 alias(choice($._section6, $._section5, $._section4), $.section),
                 $._block_not_section
-            ))
+            )))
         )),
         _section4: $ => prec.right(seq(
-            alias($._atx_heading4, $.atx_heading),
-            repeat(choice(
+          field('heading', alias($._atx_heading4, $.atx_heading)),
+          field('content', repeat(choice(
                 alias(choice($._section6, $._section5), $.section),
                 $._block_not_section
-            ))
+            )))
         )),
         _section5: $ => prec.right(seq(
-            alias($._atx_heading5, $.atx_heading),
-            repeat(choice(
+          field('heading', alias($._atx_heading5, $.atx_heading)),
+          field('content', repeat(choice(
                 alias($._section6, $.section),
                 $._block_not_section
-            ))
+            )))
         )),
         _section6: $ => prec.right(seq(
-            alias($._atx_heading6, $.atx_heading),
-            repeat($._block_not_section)
+          field('heading', alias($._atx_heading6, $.atx_heading)),
+          field('content', repeat($._block_not_section))
         )),
 
         // LEAF BLOCKS
@@ -103,32 +103,32 @@ module.exports = grammar({
         //
         // https://github.github.com/gfm/#atx-headings
         _atx_heading1: $ => prec(1, seq(
-            $.atx_h1_marker,
+            field('level', $.atx_h1_marker),
             optional(field('heading_content', alias($._line, $.inline))),
             $._newline
         )),
         _atx_heading2: $ => prec(1, seq(
-            $.atx_h2_marker,
+            field('level', $.atx_h2_marker),
             optional(field('heading_content', alias($._line, $.inline))),
             $._newline
         )),
         _atx_heading3: $ => prec(1, seq(
-            $.atx_h3_marker,
+            field('level', $.atx_h3_marker),
             optional(field('heading_content', alias($._line, $.inline))),
             $._newline
         )),
         _atx_heading4: $ => prec(1, seq(
-            $.atx_h4_marker,
+          field('level', $.atx_h4_marker),
             optional(field('heading_content', alias($._line, $.inline))),
             $._newline
         )),
         _atx_heading5: $ => prec(1, seq(
-            $.atx_h5_marker,
+          field('level', $.atx_h5_marker),
             optional(field('heading_content', alias($._line, $.inline))),
             $._newline
         )),
         _atx_heading6: $ => prec(1, seq(
-            $.atx_h6_marker,
+            field('level', $.atx_h6_marker),
             optional(field('heading_content', alias($._line, $.inline))),
             $._newline
         )),
@@ -283,7 +283,7 @@ module.exports = grammar({
         // https://github.github.com/gfm/#blank-lines
         _blank_line: $ => seq($._blank_line_start, choice($._newline, $._eof)),
 
-        
+
         // CONTAINER BLOCKS
 
         // A block quote. This is the most basic example of a container block handled by the
@@ -402,7 +402,7 @@ module.exports = grammar({
             task_list_marker_checked: $ => prec(1, '[x]'),
             task_list_marker_unchecked: $ => prec(1, /\[[ \t]\]/),
         } : {}),
-        
+
         ...(common.EXTENSION_PIPE_TABLE ? {
             pipe_table: $ => prec.right(seq(
                 $._pipe_table_start,
@@ -412,12 +412,12 @@ module.exports = grammar({
                 repeat(seq($._pipe_table_newline, optional($.pipe_table_row))),
                 choice($._newline, $._eof),
             )),
-            
+
             _pipe_table_newline: $ => seq(
                 $._pipe_table_line_ending,
                 optional($.block_continuation)
             ),
-            
+
             pipe_table_delimiter_row: $ => seq(
                 optional(seq(
                     optional($._whitespace),
@@ -435,13 +435,13 @@ module.exports = grammar({
                     optional($._whitespace)
                 )),
             ),
-            
+
             pipe_table_delimiter_cell: $ => seq(
                 optional(alias(':', $.pipe_table_align_left)),
                 repeat1('-'),
                 optional(alias(':', $.pipe_table_align_right)),
             ),
-            
+
             pipe_table_row: $ => seq(
                 optional(seq(
                     optional($._whitespace),
@@ -570,7 +570,7 @@ module.exports = grammar({
 
         $.minus_metadata,
         $.plus_metadata,
-        
+
         $._pipe_table_start,
         $._pipe_table_line_ending,
     ],

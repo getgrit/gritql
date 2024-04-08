@@ -8,9 +8,8 @@ use crate::{
     },
 };
 use anyhow::Result;
-use marzano_util::position::Range;
+use marzano_util::{node_with_source::NodeWithSource, position::Range};
 use std::{borrow::Cow, sync::OnceLock};
-use tree_sitter::Node;
 use tree_sitter::Parser;
 
 static NODE_TYPES_STRING: &str =
@@ -165,8 +164,8 @@ impl Language for JavaScript {
         self.metavariable_sort
     }
 
-    fn check_orphaned(&self, n: Node<'_>, src: &str, orphan_ranges: &mut Vec<tree_sitter::Range>) {
-        jslike_check_orphaned(n, src, orphan_ranges)
+    fn check_orphaned(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Range>) {
+        jslike_check_orphaned(n, orphan_ranges)
     }
 
     /// This needs a special implementation to parse only the JS ranges inside a vue file

@@ -8,7 +8,7 @@ use crate::{
         self, js_like_optional_empty_field_compilation, js_like_skip_snippet_compilation_sorts,
     },
 };
-use marzano_util::position::Range;
+use marzano_util::{node_with_source::NodeWithSource, position::Range};
 use tree_sitter::{Node, Parser};
 use xscript_util::{js_like_get_statement_sorts, jslike_check_orphaned};
 
@@ -177,8 +177,8 @@ impl Language for Tsx {
         self.metavariable_sort
     }
 
-    fn check_orphaned(&self, n: Node<'_>, src: &str, orphan_ranges: &mut Vec<tree_sitter::Range>) {
-        jslike_check_orphaned(n, src, orphan_ranges)
+    fn check_orphaned(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Range>) {
+        jslike_check_orphaned(n, orphan_ranges)
     }
 
     fn parse_file(
