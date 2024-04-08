@@ -63,8 +63,8 @@ use crate::{
         includes_compiler::IncludesCompiler, like_compiler::LikeCompiler,
         limit_compiler::LimitCompiler, list_index_compiler::ListIndexCompiler,
         log_compiler::LogCompiler, maybe_compiler::MaybeCompiler, modulo_compiler::ModuloCompiler,
-        multiply_compiler::MultiplyCompiler, not_compiler::NotCompiler, CompilationContext,
-        NodeCompiler,
+        multiply_compiler::MultiplyCompiler, not_compiler::NotCompiler, or_compiler::OrCompiler,
+        CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -769,7 +769,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternOr" => Or::from_node(
+            "patternOr" => OrCompiler::from_node(
                 node,
                 context,
                 vars,
