@@ -1,19 +1,15 @@
 use super::{
-    accessor::Accessor,
-    list_index::ListIndex,
-    patterns::Pattern,
-    resolved_pattern::ResolvedPattern,
-    state::State,
-    variable::{Variable, VariableSourceLocations},
+    accessor::Accessor, list_index::ListIndex, patterns::Pattern,
+    resolved_pattern::ResolvedPattern, state::State, variable::Variable,
 };
-use crate::pattern_compiler::{
-    accessor_compiler::AccessorCompiler, CompilationContext, NodeCompiler,
-};
-use anyhow::{bail, Result};
-use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
-use tree_sitter::Node;
+use anyhow::Result;
 
+/// A `Container` represents anything which "contains" a reference to a Pattern.
+///
+/// We have three types of containers:
+/// - Variable: a variable reference (ex. `$foo`)
+/// - Accessor: a map accessor (ex. `$foo.bar`)
+/// - ListIndex: a list index (ex. `$foo[0]`)
 #[derive(Debug, Clone)]
 pub enum Container {
     Variable(Variable),
@@ -35,53 +31,7 @@ pub(crate) enum PatternOrResolvedMut<'a, 'b> {
     _ResolvedBinding,
 }
 
-// A Container represents anything which "contains" a reference to a Pattern
-// We have three types of containers:
-// - Variable: a variable reference (ex. $foo)
-// - Accessor: a map accessor (ex. $foo.bar)
-// - ListIndex: a list index (ex. $foo[0])
 impl Container {
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        match node.kind().as_ref() {
-            "variable" => Ok(Self::Variable(Variable::from_node(
-                node,
-                context.file,
-                context.src,
-                vars,
-                global_vars,
-                vars_array,
-                scope_index,
-            )?)),
-            "mapAccessor" => Ok(Self::Accessor(Box::new(AccessorCompiler::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?))),
-            "listIndex" => Ok(Self::ListIndex(Box::new(ListIndex::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?))),
-            s => bail!("Invalid kind for container: {}", s),
-        }
-    }
-
     pub(crate) fn set_resolved<'a>(
         &'a self,
         state: &mut State<'a>,

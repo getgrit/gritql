@@ -3,60 +3,20 @@ use super::{
     functions::{Evaluator, FuncEvaluation},
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
-    variable::VariableSourceLocations,
     State,
 };
-use crate::{context::Context, errors::debug, pattern_compiler::CompilationContext};
-use anyhow::{anyhow, Result};
+use crate::{context::Context, errors::debug};
+use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
-use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub struct Match {
-    val: Container,
-    pub(crate) pattern: Option<Pattern>,
+    pub val: Container,
+    pub pattern: Option<Pattern>,
 }
 impl Match {
-    pub(crate) fn new(val: Container, pattern: Option<Pattern>) -> Self {
+    pub fn new(val: Container, pattern: Option<Pattern>) -> Self {
         Self { val, pattern }
-    }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let value = node
-            .child_by_field_name("left")
-            .ok_or_else(|| anyhow!("missing lhs of predicateMatch"))?;
-        let value = Container::from_node(
-            &value,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            logs,
-        )?;
-        let pattern = node
-            .child_by_field_name("right")
-            .ok_or_else(|| anyhow!("missing rhs of predicateMatch"))?;
-        let pattern = Some(Pattern::from_node(
-            &pattern,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            false,
-            logs,
-        )?);
-        Ok(Match::new(value, pattern))
     }
 }
 

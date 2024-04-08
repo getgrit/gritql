@@ -3,47 +3,19 @@ use super::{
     patterns::{Name, Pattern},
     resolved_pattern::ResolvedPattern,
     state::State,
-    variable::VariableSourceLocations,
 };
-use crate::{context::Context, pattern_compiler::CompilationContext};
-use anyhow::{anyhow, Result};
+use crate::context::Context;
+use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
-use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub struct PrReturn {
-    pub(crate) pattern: Pattern,
+    pub pattern: Pattern,
 }
 
 impl PrReturn {
     pub fn new(pattern: Pattern) -> Self {
         Self { pattern }
-    }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let pattern = node
-            .child_by_field_name("pattern")
-            .ok_or_else(|| anyhow!("missing pattern of return"))?;
-        let pattern = Pattern::from_node(
-            &pattern,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            true,
-            logs,
-        )?;
-        Ok(Self::new(pattern))
     }
 }
 

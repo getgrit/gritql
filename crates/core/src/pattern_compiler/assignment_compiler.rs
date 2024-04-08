@@ -1,7 +1,9 @@
-use super::{compiler::CompilationContext, node_compiler::NodeCompiler};
+use super::{
+    compiler::CompilationContext, container_compiler::ContainerCompiler,
+    node_compiler::NodeCompiler,
+};
 use crate::pattern::{
     assignment::Assignment,
-    container::Container,
     patterns::Pattern,
     variable::{is_reserved_metavariable, VariableSourceLocations},
 };
@@ -46,7 +48,7 @@ impl NodeCompiler for AssignmentCompiler {
         if is_reserved_metavariable(&var_text, None::<&TargetLanguage>) {
             bail!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", var_text.trim_start_matches(GRIT_METAVARIABLE_PREFIX));
         }
-        let variable = Container::from_node(
+        let variable = ContainerCompiler::from_node(
             &container,
             context,
             vars,

@@ -3,28 +3,32 @@ use super::{
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     state::State,
-    variable::{get_file_name, Variable, VariableSourceLocations},
+    variable::{get_file_name, Variable},
 };
-use crate::{binding::Binding, context::Context, pattern_compiler::CompilationContext};
+use crate::{binding::Binding, context::Context};
 use anyhow::Result;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
-use std::collections::BTreeMap;
-use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
-struct VariableInfo {
+pub struct VariableInfo {
     name: String,
     variable: Variable,
 }
 
+impl VariableInfo {
+    pub fn new(name: String, variable: Variable) -> Self {
+        Self { name, variable }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Log {
-    variable: Option<VariableInfo>,
-    pub(crate) message: Option<Pattern>,
+    pub variable: Option<VariableInfo>,
+    pub message: Option<Pattern>,
 }
 
 impl Log {
-    fn new(variable: Option<VariableInfo>, message: Option<Pattern>) -> Self {
+    pub fn new(variable: Option<VariableInfo>, message: Option<Pattern>) -> Self {
         Self { variable, message }
     }
 
@@ -73,50 +77,6 @@ impl Log {
         log_builder.message(message);
         logs.push(log_builder.build()?);
         Ok(true)
-    }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let message = node.child_by_field_name("message");
-        let message = if let Some(message) = message {
-            Some(Pattern::from_node(
-                &message,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                false,
-                logs,
-            )?)
-        } else {
-            None
-        };
-        let variable_node = node.child_by_field_name("variable");
-        let variable = variable_node
-            .map(|n| {
-                let name = n.utf8_text(context.src.as_bytes()).unwrap().to_string();
-                let variable = Variable::from_node(
-                    &n,
-                    context.file,
-                    context.src,
-                    vars,
-                    global_vars,
-                    vars_array,
-                    scope_index,
-                )?;
-                Ok(VariableInfo { name, variable })
-            })
-            .map_or(Ok(None), |v: Result<VariableInfo>| v.map(Some))?;
-
-        Ok(Self::new(variable, message))
     }
 }
 

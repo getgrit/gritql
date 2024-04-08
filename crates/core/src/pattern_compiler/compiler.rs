@@ -1,4 +1,12 @@
-use super::auto_wrap::auto_wrap_pattern;
+use super::{
+    auto_wrap::auto_wrap_pattern,
+    function_definition_compiler::{
+        ForeignFunctionDefinitionCompiler, GritFunctionDefinitionCompiler,
+    },
+    pattern_definition_compiler::PatternDefinitionCompiler,
+    predicate_definition_compiler::PredicateDefinitionCompiler,
+    NodeCompiler,
+};
 use crate::{
     parse::make_grit_parser,
     pattern::{
@@ -283,46 +291,57 @@ fn node_to_definitions(
     global_vars: &mut BTreeMap<String, usize>,
     logs: &mut AnalysisLogs,
 ) -> Result<()> {
+    // FIXME: These only exist to satisfy `from_node()` signature.
+    let unused_scope_index = 0;
+    let mut unused_vars = BTreeMap::new();
+
     let mut cursor = node.walk();
     for definition in node
         .children_by_field_name("definitions", &mut cursor)
         .filter(|n| n.is_named())
     {
         if let Some(pattern_definition) = definition.child_by_field_name("pattern") {
-            PatternDefinition::from_node(
+            // todo check for duplicate names
+            pattern_definitions.push(PatternDefinitionCompiler::from_node(
                 &pattern_definition,
                 context,
+                &mut unused_vars,
                 vars_array,
-                pattern_definitions,
+                unused_scope_index,
                 global_vars,
                 logs,
-            )?;
+            )?);
         } else if let Some(predicate_definition) = definition.child_by_field_name("predicate") {
-            PredicateDefinition::from_node(
+            // todo check for duplicate names
+            predicate_definitions.push(PredicateDefinitionCompiler::from_node(
                 &predicate_definition,
                 context,
+                &mut unused_vars,
                 vars_array,
-                predicate_definitions,
+                unused_scope_index,
                 global_vars,
                 logs,
-            )?;
+            )?);
         } else if let Some(function_definition) = definition.child_by_field_name("function") {
-            GritFunctionDefinition::from_node(
+            function_definitions.push(GritFunctionDefinitionCompiler::from_node(
                 &function_definition,
                 context,
+                &mut unused_vars,
                 vars_array,
-                function_definitions,
+                unused_scope_index,
                 global_vars,
                 logs,
-            )?;
+            )?);
         } else if let Some(function_definition) = definition.child_by_field_name("foreign") {
-            ForeignFunctionDefinition::from_node(
+            foreign_function_definitions.push(ForeignFunctionDefinitionCompiler::from_node(
                 &function_definition,
                 context,
+                &mut unused_vars,
                 vars_array,
-                foreign_function_definitions,
+                unused_scope_index,
                 global_vars,
-            )?;
+                logs,
+            )?);
         } else {
             bail!(anyhow!(
                 "definition must be either a pattern, a predicate or a function"
