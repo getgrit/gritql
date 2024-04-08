@@ -3,18 +3,12 @@ use super::{
     patterns::{Matcher, Name, Pattern},
     predicates::Predicate,
     resolved_pattern::ResolvedPattern,
-    variable::VariableSourceLocations,
     State,
 };
-use crate::{
-    context::Context,
-    pattern_compiler::{predicate_compiler::PredicateCompiler, CompilationContext, NodeCompiler},
-};
-use anyhow::{anyhow, bail, Result};
+use crate::context::Context;
+use anyhow::{bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
-use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub struct If {
@@ -58,9 +52,9 @@ impl Matcher for If {
 
 #[derive(Debug, Clone)]
 pub struct PrIf {
-    pub(crate) if_: Predicate,
-    pub(crate) then: Predicate,
-    pub(crate) else_: Predicate,
+    pub if_: Predicate,
+    pub then: Predicate,
+    pub else_: Predicate,
 }
 
 impl PrIf {
@@ -70,55 +64,6 @@ impl PrIf {
             then,
             else_: else_.unwrap_or(Predicate::True),
         }
-    }
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let if_ = node
-            .child_by_field_name("if")
-            .ok_or_else(|| anyhow!("missing condition of if"))?;
-        let if_ = PredicateCompiler::from_node(
-            &if_,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            logs,
-        )?;
-        let then = node
-            .child_by_field_name("then")
-            .ok_or_else(|| anyhow!("missing consequence of if"))?;
-        let then = PredicateCompiler::from_node(
-            &then,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            logs,
-        )?;
-        let else_ = node
-            .child_by_field_name("else")
-            .map(|e| {
-                PredicateCompiler::from_node(
-                    &e,
-                    context,
-                    vars,
-                    vars_array,
-                    scope_index,
-                    global_vars,
-                    logs,
-                )
-            })
-            .map_or(Ok(None), |v| v.map(Some))?;
-        Ok(PrIf::new(if_, then, else_))
     }
 }
 

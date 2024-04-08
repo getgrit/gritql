@@ -1,14 +1,12 @@
 use super::{
     accumulate_compiler::AccumulateCompiler, and_compiler::PrAndCompiler,
     any_compiler::PrAnyCompiler, assignment_compiler::AssignmentCompiler,
-    compiler::CompilationContext, equal_compiler::EqualCompiler, log_compiler::LogCompiler,
-    match_compiler::MatchCompiler, maybe_compiler::PrMaybeCompiler, node_compiler::NodeCompiler,
-    or_compiler::PrOrCompiler, predicate_return_compiler::PredicateReturnCompiler,
-    rewrite_compiler::RewriteCompiler,
+    compiler::CompilationContext, equal_compiler::EqualCompiler, if_compiler::PrIfCompiler,
+    log_compiler::LogCompiler, match_compiler::MatchCompiler, maybe_compiler::PrMaybeCompiler,
+    node_compiler::NodeCompiler, not_compiler::PrNotCompiler, or_compiler::PrOrCompiler,
+    predicate_return_compiler::PredicateReturnCompiler, rewrite_compiler::RewriteCompiler,
 };
-use crate::pattern::{
-    call::PrCall, not::PrNot, predicates::Predicate, r#if::PrIf, variable::VariableSourceLocations,
-};
+use crate::pattern::{call::PrCall, predicates::Predicate, variable::VariableSourceLocations};
 use anyhow::{anyhow, bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
@@ -31,7 +29,7 @@ impl NodeCompiler for PredicateCompiler {
         let kind = node.kind();
         let kind = kind.as_ref();
         match kind {
-            "predicateNot" => Ok(Predicate::Not(Box::new(PrNot::from_node(
+            "predicateNot" => Ok(Predicate::Not(Box::new(PrNotCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -76,7 +74,7 @@ impl NodeCompiler for PredicateCompiler {
                 global_vars,
                 logs,
             ),
-            "predicateIfElse" => Ok(Predicate::If(Box::new(PrIf::from_node(
+            "predicateIfElse" => Ok(Predicate::If(Box::new(PrIfCompiler::from_node(
                 node,
                 context,
                 vars,
