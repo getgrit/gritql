@@ -65,7 +65,7 @@ use crate::{
         log_compiler::LogCompiler, maybe_compiler::MaybeCompiler, modulo_compiler::ModuloCompiler,
         multiply_compiler::MultiplyCompiler, not_compiler::NotCompiler, or_compiler::OrCompiler,
         rewrite_compiler::RewriteCompiler, sequential_compiler::SequentialCompiler,
-        CompilationContext, NodeCompiler,
+        some_compiler::SomeCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -888,7 +888,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "some" => Ok(Pattern::Some(Box::new(Some::from_node(
+            "some" => Ok(Pattern::Some(Box::new(SomeCompiler::from_node(
                 node,
                 context,
                 vars,
