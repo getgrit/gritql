@@ -33,6 +33,7 @@ pub(crate) mod predicate_compiler;
 pub(crate) mod predicate_definition_compiler;
 pub(crate) mod predicate_return_compiler;
 pub(crate) mod rewrite_compiler;
+pub(crate) mod sequential_compiler;
 pub(crate) mod step_compiler;
 
 pub(crate) use compiler::{parse_one, CompilationContext};

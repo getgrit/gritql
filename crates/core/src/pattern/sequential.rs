@@ -16,38 +16,9 @@ use std::{collections::BTreeMap, ops};
 use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
-pub struct Sequential(pub(crate) Vec<Step>);
+pub struct Sequential(pub Vec<Step>);
 
 impl Sequential {
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let mut sequential = vec![];
-        let mut cursor = node.walk();
-        for n in node
-            .children_by_field_name("sequential", &mut cursor)
-            .filter(|n| n.is_named())
-        {
-            let step = StepCompiler::from_node(
-                &n,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?;
-            sequential.push(step);
-        }
-        Ok(sequential.into())
-    }
-
     pub(crate) fn from_files_node(
         node: &Node,
         context: &CompilationContext,

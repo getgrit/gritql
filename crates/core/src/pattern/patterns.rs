@@ -64,7 +64,8 @@ use crate::{
         limit_compiler::LimitCompiler, list_index_compiler::ListIndexCompiler,
         log_compiler::LogCompiler, maybe_compiler::MaybeCompiler, modulo_compiler::ModuloCompiler,
         multiply_compiler::MultiplyCompiler, not_compiler::NotCompiler, or_compiler::OrCompiler,
-        rewrite_compiler::RewriteCompiler, CompilationContext, NodeCompiler,
+        rewrite_compiler::RewriteCompiler, sequential_compiler::SequentialCompiler,
+        CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -1005,7 +1006,7 @@ impl Pattern {
                 node,
                 context.src,
             )?)),
-            "sequential" => Ok(Pattern::Sequential(Sequential::from_node(
+            "sequential" => Ok(Pattern::Sequential(SequentialCompiler::from_node(
                 node,
                 context,
                 vars,
