@@ -4,6 +4,7 @@ pub(crate) mod add_compiler;
 pub(crate) mod after_compiler;
 pub(crate) mod and_compiler;
 pub(crate) mod any_compiler;
+pub(crate) mod as_compiler;
 pub(crate) mod assignment_compiler;
 mod auto_wrap;
 pub(crate) mod before_compiler;

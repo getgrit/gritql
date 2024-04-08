@@ -56,10 +56,10 @@ use crate::{
     pattern_compiler::{
         accessor_compiler::AccessorCompiler, accumulate_compiler::AccumulateCompiler,
         add_compiler::AddCompiler, after_compiler::AfterCompiler, and_compiler::AndCompiler,
-        any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler,
-        before_compiler::BeforeCompiler, bubble_compiler::BubbleCompiler,
-        contains_compiler::ContainsCompiler, divide_compiler::DivideCompiler,
-        every_compiler::EveryCompiler, if_compiler::IfCompiler,
+        any_compiler::AnyCompiler, as_compiler::AsCompiler,
+        assignment_compiler::AssignmentCompiler, before_compiler::BeforeCompiler,
+        bubble_compiler::BubbleCompiler, contains_compiler::ContainsCompiler,
+        divide_compiler::DivideCompiler, every_compiler::EveryCompiler, if_compiler::IfCompiler,
         includes_compiler::IncludesCompiler, like_compiler::LikeCompiler,
         limit_compiler::LimitCompiler, list_index_compiler::ListIndexCompiler,
         log_compiler::LogCompiler, maybe_compiler::MaybeCompiler, modulo_compiler::ModuloCompiler,
@@ -714,7 +714,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternAs" => Ok(Pattern::Where(Box::new(Where::as_from_node(
+            "patternAs" => Ok(Pattern::Where(Box::new(AsCompiler::from_node(
                 node,
                 context,
                 vars,
