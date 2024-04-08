@@ -63,7 +63,7 @@ use crate::{
         includes_compiler::IncludesCompiler, like_compiler::LikeCompiler,
         limit_compiler::LimitCompiler, list_index_compiler::ListIndexCompiler,
         log_compiler::LogCompiler, maybe_compiler::MaybeCompiler, modulo_compiler::ModuloCompiler,
-        CompilationContext, NodeCompiler,
+        multiply_compiler::MultiplyCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -665,7 +665,7 @@ impl Pattern {
     ) -> Result<Self> {
         let kind = node.kind();
         match kind.as_ref() {
-            "mulOperation" => Ok(Pattern::Multiply(Box::new(Multiply::from_node(
+            "mulOperation" => Ok(Pattern::Multiply(Box::new(MultiplyCompiler::from_node(
                 node,
                 context,
                 vars,
