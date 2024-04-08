@@ -22,6 +22,7 @@ pub(crate) mod limit_compiler;
 pub(crate) mod list_index_compiler;
 pub(crate) mod log_compiler;
 pub(crate) mod match_compiler;
+pub(crate) mod maybe_compiler;
 mod node_compiler;
 pub(crate) mod step_compiler;
 

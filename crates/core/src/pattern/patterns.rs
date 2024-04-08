@@ -62,7 +62,7 @@ use crate::{
         every_compiler::EveryCompiler, if_compiler::IfCompiler,
         includes_compiler::IncludesCompiler, like_compiler::LikeCompiler,
         limit_compiler::LimitCompiler, list_index_compiler::ListIndexCompiler,
-        log_compiler::LogCompiler, CompilationContext, NodeCompiler,
+        log_compiler::LogCompiler, maybe_compiler::MaybeCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -794,7 +794,7 @@ impl Pattern {
                 global_vars,
                 logs,
             ),
-            "patternMaybe" => Ok(Pattern::Maybe(Box::new(Maybe::maybe_from_node(
+            "patternMaybe" => Ok(Pattern::Maybe(Box::new(MaybeCompiler::from_node(
                 node,
                 context,
                 vars,
