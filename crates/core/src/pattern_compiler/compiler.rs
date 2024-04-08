@@ -3,6 +3,7 @@ use super::{
     function_definition_compiler::{
         ForeignFunctionDefinitionCompiler, GritFunctionDefinitionCompiler,
     },
+    pattern_definition_compiler::PatternDefinitionCompiler,
     NodeCompiler,
 };
 use crate::{
@@ -295,14 +296,16 @@ fn node_to_definitions(
         .filter(|n| n.is_named())
     {
         if let Some(pattern_definition) = definition.child_by_field_name("pattern") {
-            PatternDefinition::from_node(
+            // todo check for duplicate names
+            pattern_definitions.push(PatternDefinitionCompiler::from_node(
                 &pattern_definition,
                 context,
+                &mut BTreeMap::new(),
                 vars_array,
-                pattern_definitions,
+                0, // FIXME: Unused argument.
                 global_vars,
                 logs,
-            )?;
+            )?);
         } else if let Some(predicate_definition) = definition.child_by_field_name("predicate") {
             PredicateDefinition::from_node(
                 &predicate_definition,
