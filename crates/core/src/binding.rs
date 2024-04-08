@@ -137,12 +137,22 @@ pub(crate) fn adjust_padding<'a>(
         };
         let mut result = String::new();
         let snippet = &src[range.start as usize..range.end as usize];
-        let mut lines = snippet.split('\n');
+        let mut lines = snippet.split('\n').peekable();
         // assumes codebase uses spaces for indentation
         let delta: isize = (new_padding as isize) - (pad_strip_amount as isize);
         let padding = " ".repeat(pad_strip_amount);
         let new_padding = " ".repeat(new_padding);
         let mut index = offset;
+        if src[newline_index.unwrap_or_default()..range.start as usize]
+            .trim()
+            .is_empty()
+            && lines.peek().is_some()
+        {
+            result.push('\n');
+            result.push_str(&new_padding);
+            adjust_ranges(substitutions, index, new_padding.len() as isize + 1);
+        }
+
         result.push_str(lines.next().unwrap_or_default());
         index += result.len();
         for line in lines {

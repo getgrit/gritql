@@ -13630,8 +13630,8 @@ fn preserves_python_blocks() {
             .unwrap(),
             expected: r#"
             |def foo(args):
-            |    print("bar")
-            |    print("thing")
+            | print("bar")
+            | print("thing")
             |"#
             .trim_margin()
             .unwrap(),
