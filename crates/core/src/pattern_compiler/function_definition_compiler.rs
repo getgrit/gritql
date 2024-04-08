@@ -1,6 +1,7 @@
-use super::{compiler::CompilationContext, node_compiler::NodeCompiler};
+use super::{
+    and_compiler::PrAndCompiler, compiler::CompilationContext, node_compiler::NodeCompiler,
+};
 use crate::pattern::{
-    and::PrAnd,
     function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
     variable::{get_variables, VariableSourceLocations},
 };
@@ -49,7 +50,7 @@ impl NodeCompiler for GritFunctionDefinitionCompiler {
         let body = node
             .child_by_field_name("body")
             .ok_or_else(|| anyhow!("missing body of grit function definition"))?;
-        let body = PrAnd::from_node(
+        let body = PrAndCompiler::from_node(
             &body,
             context,
             &mut local_vars,

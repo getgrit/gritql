@@ -6,7 +6,10 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
-use crate::{context::Context, pattern_compiler::CompilationContext};
+use crate::{
+    context::Context,
+    pattern_compiler::{predicate_compiler::PredicateCompiler, CompilationContext, NodeCompiler},
+};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -80,7 +83,7 @@ impl PrIf {
         let if_ = node
             .child_by_field_name("if")
             .ok_or_else(|| anyhow!("missing condition of if"))?;
-        let if_ = Predicate::from_node(
+        let if_ = PredicateCompiler::from_node(
             &if_,
             context,
             vars,
@@ -92,7 +95,7 @@ impl PrIf {
         let then = node
             .child_by_field_name("then")
             .ok_or_else(|| anyhow!("missing consequence of if"))?;
-        let then = Predicate::from_node(
+        let then = PredicateCompiler::from_node(
             &then,
             context,
             vars,
@@ -104,7 +107,7 @@ impl PrIf {
         let else_ = node
             .child_by_field_name("else")
             .map(|e| {
-                Predicate::from_node(
+                PredicateCompiler::from_node(
                     &e,
                     context,
                     vars,

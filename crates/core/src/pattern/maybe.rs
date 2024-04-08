@@ -4,13 +4,10 @@ use super::{
     predicates::Predicate,
     resolved_pattern::ResolvedPattern,
     state::State,
-    variable::VariableSourceLocations,
 };
-use crate::{context::Context, pattern_compiler::CompilationContext};
-use anyhow::{anyhow, Result};
+use crate::context::Context;
+use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
-use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub struct Maybe {
@@ -51,30 +48,6 @@ pub struct PrMaybe {
 impl PrMaybe {
     pub fn new(predicate: Predicate) -> Self {
         Self { predicate }
-    }
-
-    pub(crate) fn maybe_from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let predicate = node
-            .child_by_field_name("predicate")
-            .ok_or_else(|| anyhow!("missing predicate of predicateMaybe"))?;
-        let predicate = Predicate::from_node(
-            &predicate,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            logs,
-        )?;
-        Ok(Self::new(predicate))
     }
 }
 

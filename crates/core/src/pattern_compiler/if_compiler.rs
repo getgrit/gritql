@@ -1,7 +1,8 @@
-use super::{compiler::CompilationContext, node_compiler::NodeCompiler};
-use crate::pattern::{
-    patterns::Pattern, predicates::Predicate, r#if::If, variable::VariableSourceLocations,
+use super::{
+    compiler::CompilationContext, node_compiler::NodeCompiler,
+    predicate_compiler::PredicateCompiler,
 };
+use crate::pattern::{patterns::Pattern, r#if::If, variable::VariableSourceLocations};
 use anyhow::{anyhow, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
@@ -24,7 +25,7 @@ impl NodeCompiler for IfCompiler {
         let if_ = node
             .child_by_field_name("if")
             .ok_or_else(|| anyhow!("missing condition of if"))?;
-        let if_ = Predicate::from_node(
+        let if_ = PredicateCompiler::from_node(
             &if_,
             context,
             vars,

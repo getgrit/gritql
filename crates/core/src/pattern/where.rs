@@ -9,7 +9,11 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
-use crate::{context::Context, pattern_compiler::CompilationContext, split_snippet::split_snippet};
+use crate::{
+    context::Context,
+    pattern_compiler::{predicate_compiler::PredicateCompiler, CompilationContext, NodeCompiler},
+    split_snippet::split_snippet,
+};
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use grit_util::{traverse, Order};
@@ -59,7 +63,7 @@ impl Where {
         let side_condition = node
             .child_by_field_name("side_condition")
             .ok_or_else(|| anyhow!("missing side condition of patternWhere"))?;
-        let side_condition = Predicate::from_node(
+        let side_condition = PredicateCompiler::from_node(
             &side_condition,
             context,
             vars,

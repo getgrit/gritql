@@ -7,7 +7,10 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
-use crate::{context::Context, pattern_compiler::CompilationContext};
+use crate::{
+    context::Context,
+    pattern_compiler::{predicate_compiler::PredicateCompiler, CompilationContext, NodeCompiler},
+};
 use anyhow::{anyhow, bail, Ok, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
@@ -67,7 +70,7 @@ impl PrNot {
             .child_by_field_name("predicate")
             .ok_or_else(|| anyhow!("predicateNot missing predicate"))?;
         let range: Range = not.range().into();
-        let not = Predicate::from_node(
+        let not = PredicateCompiler::from_node(
             &not,
             context,
             vars,
