@@ -62,7 +62,8 @@ use crate::{
         every_compiler::EveryCompiler, if_compiler::IfCompiler,
         includes_compiler::IncludesCompiler, like_compiler::LikeCompiler,
         limit_compiler::LimitCompiler, list_index_compiler::ListIndexCompiler,
-        log_compiler::LogCompiler, maybe_compiler::MaybeCompiler, CompilationContext, NodeCompiler,
+        log_compiler::LogCompiler, maybe_compiler::MaybeCompiler, modulo_compiler::ModuloCompiler,
+        CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -682,7 +683,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "modOperation" => Ok(Pattern::Modulo(Box::new(Modulo::from_node(
+            "modOperation" => Ok(Pattern::Modulo(Box::new(ModuloCompiler::from_node(
                 node,
                 context,
                 vars,
