@@ -4,6 +4,7 @@ use super::{
         ForeignFunctionDefinitionCompiler, GritFunctionDefinitionCompiler,
     },
     pattern_definition_compiler::PatternDefinitionCompiler,
+    predicate_definition_compiler::PredicateDefinitionCompiler,
     NodeCompiler,
 };
 use crate::{
@@ -290,6 +291,10 @@ fn node_to_definitions(
     global_vars: &mut BTreeMap<String, usize>,
     logs: &mut AnalysisLogs,
 ) -> Result<()> {
+    // FIXME: These only exist to satisfy `from_node()` signature.
+    let unused_scope_index = 0;
+    let mut unused_vars = BTreeMap::new();
+
     let mut cursor = node.walk();
     for definition in node
         .children_by_field_name("definitions", &mut cursor)
@@ -300,28 +305,30 @@ fn node_to_definitions(
             pattern_definitions.push(PatternDefinitionCompiler::from_node(
                 &pattern_definition,
                 context,
-                &mut BTreeMap::new(),
+                &mut unused_vars,
                 vars_array,
-                0, // FIXME: Unused argument.
+                unused_scope_index,
                 global_vars,
                 logs,
             )?);
         } else if let Some(predicate_definition) = definition.child_by_field_name("predicate") {
-            PredicateDefinition::from_node(
+            // todo check for duplicate names
+            predicate_definitions.push(PredicateDefinitionCompiler::from_node(
                 &predicate_definition,
                 context,
+                &mut unused_vars,
                 vars_array,
-                predicate_definitions,
+                unused_scope_index,
                 global_vars,
                 logs,
-            )?;
+            )?);
         } else if let Some(function_definition) = definition.child_by_field_name("function") {
             function_definitions.push(GritFunctionDefinitionCompiler::from_node(
                 &function_definition,
                 context,
-                &mut BTreeMap::new(),
+                &mut unused_vars,
                 vars_array,
-                0, // FIXME: Unused argument.
+                unused_scope_index,
                 global_vars,
                 logs,
             )?);
@@ -329,9 +336,9 @@ fn node_to_definitions(
             foreign_function_definitions.push(ForeignFunctionDefinitionCompiler::from_node(
                 &function_definition,
                 context,
-                &mut BTreeMap::new(),
+                &mut unused_vars,
                 vars_array,
-                0, // FIXME: Unused argument.
+                unused_scope_index,
                 global_vars,
                 logs,
             )?);
