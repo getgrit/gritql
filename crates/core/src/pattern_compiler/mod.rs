@@ -30,6 +30,7 @@ pub(crate) mod not_compiler;
 pub(crate) mod or_compiler;
 pub(crate) mod pattern_definition_compiler;
 pub(crate) mod predicate_definition_compiler;
+pub(crate) mod predicate_return_compiler;
 pub(crate) mod step_compiler;
 
 pub(crate) use compiler::{parse_one, CompilationContext};

@@ -23,7 +23,7 @@ use crate::{
     pattern_compiler::{
         accumulate_compiler::AccumulateCompiler, assignment_compiler::AssignmentCompiler,
         equal_compiler::EqualCompiler, log_compiler::LogCompiler, match_compiler::MatchCompiler,
-        CompilationContext, NodeCompiler,
+        predicate_return_compiler::PredicateReturnCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -197,15 +197,17 @@ impl Predicate {
                     logs,
                 )?,
             ))),
-            "predicateReturn" => Ok(Predicate::Return(Box::new(PrReturn::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?))),
+            "predicateReturn" => Ok(Predicate::Return(Box::new(
+                PredicateReturnCompiler::from_node(
+                    node,
+                    context,
+                    vars,
+                    vars_array,
+                    scope_index,
+                    global_vars,
+                    logs,
+                )?,
+            ))),
             _ => bail!("unknown predicate kind: {}", kind),
         }
     }
