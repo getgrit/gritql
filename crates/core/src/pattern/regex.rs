@@ -5,7 +5,10 @@ use super::{
     variable::{Variable, VariableSourceLocations},
     State,
 };
-use crate::{context::Context, pattern_compiler::CompilationContext};
+use crate::{
+    context::Context,
+    pattern_compiler::{variable_compiler::VariableCompiler, CompilationContext, NodeCompiler},
+};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_language::{language::Language, target_language::TargetLanguage};
@@ -111,14 +114,14 @@ impl RegexPattern {
             .children_by_field_name("variables", &mut cursor)
             .filter(|n| n.is_named())
             .map(|n| {
-                Variable::from_node(
+                VariableCompiler::from_node(
                     &n,
-                    context.file,
-                    context.src,
+                    context,
                     vars,
-                    global_vars,
                     vars_array,
                     scope_index,
+                    global_vars,
+                    logs,
                 )
                 .unwrap()
             });

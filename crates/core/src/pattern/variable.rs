@@ -29,7 +29,6 @@ use std::{
     borrow::Cow,
     collections::{BTreeMap, BTreeSet},
 };
-use tree_sitter::Node;
 
 struct VariableMirror<'a> {
     scope: usize,
@@ -73,28 +72,6 @@ impl Variable {
 
     pub(crate) fn file_name() -> Self {
         Self::new(GLOBAL_VARS_SCOPE_INDEX, FILENAME_INDEX)
-    }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        file: &str,
-        src: &str,
-        vars: &mut BTreeMap<String, usize>,
-        global_vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut [Vec<VariableSourceLocations>],
-        scope_index: usize,
-    ) -> Result<Self> {
-        let name = node.utf8_text(src.as_bytes())?.trim().to_string();
-        let range = node.range().into();
-        register_variable(
-            &name,
-            file,
-            range,
-            vars,
-            global_vars,
-            vars_array,
-            scope_index,
-        )
     }
 
     pub(crate) fn from_name(

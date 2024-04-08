@@ -1,8 +1,10 @@
-use super::{compiler::CompilationContext, node_compiler::NodeCompiler};
+use super::{
+    compiler::CompilationContext, node_compiler::NodeCompiler, variable_compiler::VariableCompiler,
+};
 use crate::pattern::{
     log::{Log, VariableInfo},
     patterns::Pattern,
-    variable::{Variable, VariableSourceLocations},
+    variable::VariableSourceLocations,
 };
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -42,14 +44,14 @@ impl NodeCompiler for LogCompiler {
         let variable = variable_node
             .map(|n| {
                 let name = n.utf8_text(context.src.as_bytes()).unwrap().to_string();
-                let variable = Variable::from_node(
+                let variable = VariableCompiler::from_node(
                     &n,
-                    context.file,
-                    context.src,
+                    context,
                     vars,
-                    global_vars,
                     vars_array,
                     scope_index,
+                    global_vars,
+                    logs,
                 )?;
                 Ok(VariableInfo::new(name, variable))
             })

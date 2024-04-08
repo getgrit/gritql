@@ -1,11 +1,9 @@
 use super::{
     accessor_compiler::AccessorCompiler, compiler::CompilationContext,
     list_index_compiler::ListIndexCompiler, node_compiler::NodeCompiler,
+    variable_compiler::VariableCompiler,
 };
-use crate::pattern::{
-    container::Container,
-    variable::{Variable, VariableSourceLocations},
-};
+use crate::pattern::{container::Container, variable::VariableSourceLocations};
 use anyhow::{bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
@@ -26,14 +24,14 @@ impl NodeCompiler for ContainerCompiler {
         logs: &mut AnalysisLogs,
     ) -> Result<Self::TargetPattern> {
         match node.kind().as_ref() {
-            "variable" => Ok(Container::Variable(Variable::from_node(
+            "variable" => Ok(Container::Variable(VariableCompiler::from_node(
                 node,
-                context.file,
-                context.src,
+                context,
                 vars,
-                global_vars,
                 vars_array,
                 scope_index,
+                global_vars,
+                logs,
             )?)),
             "mapAccessor" => Ok(Container::Accessor(Box::new(AccessorCompiler::from_node(
                 node,

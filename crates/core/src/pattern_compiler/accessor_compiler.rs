@@ -1,11 +1,11 @@
 use super::{
     compiler::CompilationContext, container_compiler::ContainerCompiler,
-    node_compiler::NodeCompiler,
+    node_compiler::NodeCompiler, variable_compiler::VariableCompiler,
 };
 use crate::pattern::{
     accessor::{Accessor, AccessorKey, AccessorMap},
     map::GritMap,
-    variable::{Variable, VariableSourceLocations},
+    variable::VariableSourceLocations,
 };
 use anyhow::{anyhow, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -57,14 +57,14 @@ impl NodeCompiler for AccessorCompiler {
             .ok_or_else(|| anyhow!("missing key of accessor"))?;
 
         let key = if key.kind() == "variable" {
-            AccessorKey::Variable(Variable::from_node(
+            AccessorKey::Variable(VariableCompiler::from_node(
                 &key,
-                context.file,
-                context.src,
+                context,
                 vars,
-                global_vars,
                 vars_array,
                 scope_index,
+                global_vars,
+                logs,
             )?)
         } else {
             AccessorKey::String(key.utf8_text(context.src.as_bytes())?.to_string())

@@ -65,8 +65,8 @@ use crate::{
         log_compiler::LogCompiler, maybe_compiler::MaybeCompiler, modulo_compiler::ModuloCompiler,
         multiply_compiler::MultiplyCompiler, not_compiler::NotCompiler, or_compiler::OrCompiler,
         rewrite_compiler::RewriteCompiler, sequential_compiler::SequentialCompiler,
-        some_compiler::SomeCompiler, subtract_compiler::SubtractCompiler, CompilationContext,
-        NodeCompiler,
+        some_compiler::SomeCompiler, subtract_compiler::SubtractCompiler,
+        variable_compiler::VariableCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -971,14 +971,14 @@ impl Pattern {
                 is_rhs,
                 logs,
             ),
-            "variable" => Ok(Pattern::Variable(Variable::from_node(
+            "variable" => Ok(Pattern::Variable(VariableCompiler::from_node(
                 node,
-                context.file,
-                context.src,
+                context,
                 vars,
-                global_vars,
                 vars_array,
                 scope_index,
+                global_vars,
+                logs,
             )?)),
             "codeSnippet" => CodeSnippet::from_node(
                 node,

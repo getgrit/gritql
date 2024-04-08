@@ -5,13 +5,15 @@ use super::{
     predicates::Predicate,
     r#match::Match,
     resolved_pattern::ResolvedPattern,
-    variable::Variable,
     variable::VariableSourceLocations,
     State,
 };
 use crate::{
     context::Context,
-    pattern_compiler::{predicate_compiler::PredicateCompiler, CompilationContext, NodeCompiler},
+    pattern_compiler::{
+        predicate_compiler::PredicateCompiler, variable_compiler::VariableCompiler,
+        CompilationContext, NodeCompiler,
+    },
     split_snippet::split_snippet,
 };
 use anyhow::{anyhow, Result};
@@ -125,14 +127,14 @@ impl Where {
             logs,
         )?;
 
-        let variable = Variable::from_node(
+        let variable = VariableCompiler::from_node(
             &variable,
-            context.file,
-            context.src,
+            context,
             vars,
-            global_vars,
             vars_array,
             scope_index,
+            global_vars,
+            logs,
         )?;
         Ok(Self::new(
             Pattern::Variable(variable),
