@@ -59,7 +59,10 @@ use crate::{
         any_compiler::AnyCompiler, assignment_compiler::AssignmentCompiler,
         before_compiler::BeforeCompiler, bubble_compiler::BubbleCompiler,
         contains_compiler::ContainsCompiler, divide_compiler::DivideCompiler,
-        every_compiler::EveryCompiler, CompilationContext, NodeCompiler,
+        every_compiler::EveryCompiler, if_compiler::IfCompiler,
+        includes_compiler::IncludesCompiler, like_compiler::LikeCompiler,
+        limit_compiler::LimitCompiler, list_index_compiler::ListIndexCompiler,
+        log_compiler::LogCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -715,7 +718,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternLimit" => Limit::from_node(
+            "patternLimit" => LimitCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -827,7 +830,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "patternIncludes" => Ok(Pattern::Includes(Box::new(Includes::from_node(
+            "patternIncludes" => Ok(Pattern::Includes(Box::new(IncludesCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -845,7 +848,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "log" => Ok(Pattern::Log(Box::new(Log::from_node(
+            "log" => Ok(Pattern::Log(Box::new(LogCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -855,7 +858,7 @@ impl Pattern {
                 logs,
             )?))),
             "range" => Ok(Pattern::Range(PRange::from_node(node, context.src)?)),
-            "patternIfElse" => Ok(Pattern::If(Box::new(If::from_node(
+            "patternIfElse" => Ok(Pattern::If(Box::new(IfCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -920,7 +923,7 @@ impl Pattern {
                 is_rhs,
                 logs,
             )?))),
-            "listIndex" => Ok(Pattern::ListIndex(Box::new(ListIndex::from_node(
+            "listIndex" => Ok(Pattern::ListIndex(Box::new(ListIndexCompiler::from_node(
                 node,
                 context,
                 vars,
@@ -984,7 +987,7 @@ impl Pattern {
                 context.lang,
                 is_rhs,
             ),
-            "like" => Ok(Pattern::Like(Box::new(Like::from_node(
+            "like" => Ok(Pattern::Like(Box::new(LikeCompiler::from_node(
                 node,
                 context,
                 vars,

@@ -15,6 +15,12 @@ pub(crate) mod divide_compiler;
 pub(crate) mod equal_compiler;
 pub(crate) mod every_compiler;
 pub(crate) mod function_definition_compiler;
+pub(crate) mod if_compiler;
+pub(crate) mod includes_compiler;
+pub(crate) mod like_compiler;
+pub(crate) mod limit_compiler;
+pub(crate) mod list_index_compiler;
+pub(crate) mod log_compiler;
 mod node_compiler;
 pub(crate) mod step_compiler;
 

@@ -1,9 +1,9 @@
 use super::{
-    accessor_compiler::AccessorCompiler, compiler::CompilationContext, node_compiler::NodeCompiler,
+    accessor_compiler::AccessorCompiler, compiler::CompilationContext,
+    list_index_compiler::ListIndexCompiler, node_compiler::NodeCompiler,
 };
 use crate::pattern::{
     container::Container,
-    list_index::ListIndex,
     variable::{Variable, VariableSourceLocations},
 };
 use anyhow::{bail, Result};
@@ -44,15 +44,17 @@ impl NodeCompiler for ContainerCompiler {
                 global_vars,
                 logs,
             )?))),
-            "listIndex" => Ok(Container::ListIndex(Box::new(ListIndex::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?))),
+            "listIndex" => Ok(Container::ListIndex(Box::new(
+                ListIndexCompiler::from_node(
+                    node,
+                    context,
+                    vars,
+                    vars_array,
+                    scope_index,
+                    global_vars,
+                    logs,
+                )?,
+            ))),
             s => bail!("Invalid kind for container: {}", s),
         }
     }
