@@ -10,10 +10,7 @@ use super::{
 };
 use crate::{
     context::Context,
-    pattern_compiler::{
-        predicate_compiler::PredicateCompiler, variable_compiler::VariableCompiler,
-        CompilationContext, NodeCompiler,
-    },
+    pattern_compiler::{variable_compiler::VariableCompiler, CompilationContext, NodeCompiler},
     split_snippet::split_snippet,
 };
 use anyhow::{anyhow, Result};
@@ -38,43 +35,6 @@ impl Where {
             pattern,
             side_condition,
         }
-    }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let pattern = node
-            .child_by_field_name("pattern")
-            .ok_or_else(|| anyhow!("missing pattern of patternWhere"))?;
-        let pattern = Pattern::from_node(
-            &pattern,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            false,
-            logs,
-        )?;
-        let side_condition = node
-            .child_by_field_name("side_condition")
-            .ok_or_else(|| anyhow!("missing side condition of patternWhere"))?;
-        let side_condition = PredicateCompiler::from_node(
-            &side_condition,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            logs,
-        )?;
-        Ok(Self::new(pattern, side_condition))
     }
 
     // todo make as it's own pattern

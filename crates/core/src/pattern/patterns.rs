@@ -66,7 +66,8 @@ use crate::{
         multiply_compiler::MultiplyCompiler, not_compiler::NotCompiler, or_compiler::OrCompiler,
         rewrite_compiler::RewriteCompiler, sequential_compiler::SequentialCompiler,
         some_compiler::SomeCompiler, subtract_compiler::SubtractCompiler,
-        variable_compiler::VariableCompiler, CompilationContext, NodeCompiler,
+        variable_compiler::VariableCompiler, where_compiler::WhereCompiler, CompilationContext,
+        NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -753,7 +754,7 @@ impl Pattern {
                     logs,
                 )?,
             ))),
-            "patternWhere" => Ok(Pattern::Where(Box::new(Where::from_node(
+            "patternWhere" => Ok(Pattern::Where(Box::new(WhereCompiler::from_node(
                 node,
                 context,
                 vars,
