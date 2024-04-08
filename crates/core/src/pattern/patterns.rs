@@ -66,8 +66,8 @@ use crate::{
         multiply_compiler::MultiplyCompiler, not_compiler::NotCompiler, or_compiler::OrCompiler,
         rewrite_compiler::RewriteCompiler, sequential_compiler::SequentialCompiler,
         some_compiler::SomeCompiler, subtract_compiler::SubtractCompiler,
-        variable_compiler::VariableCompiler, where_compiler::WhereCompiler, CompilationContext,
-        NodeCompiler,
+        variable_compiler::VariableCompiler, where_compiler::WhereCompiler,
+        within_compiler::WithinCompiler, CompilationContext, NodeCompiler,
     },
 };
 use anyhow::{anyhow, bail, Result};
@@ -872,7 +872,7 @@ impl Pattern {
                 global_vars,
                 logs,
             )?))),
-            "within" => Ok(Pattern::Within(Box::new(Within::from_node(
+            "within" => Ok(Pattern::Within(Box::new(WithinCompiler::from_node(
                 node,
                 context,
                 vars,

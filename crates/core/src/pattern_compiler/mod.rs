@@ -39,6 +39,7 @@ pub(crate) mod step_compiler;
 pub(crate) mod subtract_compiler;
 pub(crate) mod variable_compiler;
 pub(crate) mod where_compiler;
+pub(crate) mod within_compiler;
 
 pub(crate) use compiler::{parse_one, CompilationContext};
 pub use compiler::{src_to_problem_libs, src_to_problem_libs_for_language, CompilationResult};
