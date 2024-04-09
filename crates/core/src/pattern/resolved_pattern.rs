@@ -742,7 +742,6 @@ impl<'a> ResolvedPattern<'a> {
         should_pad_snippet: bool,
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<'a, str>> {
-        println!("linearized_text {:?}, pad? {}", self, should_pad_snippet);
         match self {
             // if whitespace is significant we need to distribute indentations
             // across lines within the snippet

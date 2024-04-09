@@ -67,7 +67,8 @@ pub fn naive_distribute_indentation(
     distributed_indent: Option<usize>,
 ) -> Cow<str> {
     if let Some(distributed_indent) = distributed_indent {
-        original_string
+        let trailing_newline = original_string.ends_with('\n');
+        let new_string = original_string
             .lines()
             .enumerate()
             .map(|(i, line)| {
@@ -78,8 +79,12 @@ pub fn naive_distribute_indentation(
                 }
             })
             .collect::<Vec<_>>()
-            .join("\n")
-            .into()
+            .join("\n");
+        if trailing_newline {
+            (format!("{}\n", new_string)).into()
+        } else {
+            new_string.into()
+        }
     } else {
         original_string
     }

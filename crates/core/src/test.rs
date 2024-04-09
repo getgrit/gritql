@@ -11981,8 +11981,8 @@ fn yaml_list_add_indentation_with_linearization() {
                 |    // IF we linearize it first, it works.
                 |    $linear_foo = text($foo),
                 |    $task => `in_parallel:
-                |  nested:
-                |    $linear_foo`
+                |nested:
+                |  $linear_foo`
                 |}
                 |
                 |"
@@ -12059,8 +12059,8 @@ fn yaml_list_add_indentation() {
                 |    },
                 |    $foo = join(list=$subtasks, separator=`\n\n`),
                 |    $task => `in_parallel:
-                |nested:
-                |  $foo`
+                |  nested:
+                |    $foo`
                 |}
                 |
                 |"
@@ -12091,21 +12091,21 @@ fn yaml_list_add_indentation() {
             .unwrap(),
             expected: r#"
                 |  - in_parallel:
-                |    nested:
-                |      - foo: other
-                |        foo: other
-                |        foo: other
-                |        foo: other
+                |      nested:
+                |        - foo: other
+                |          foo: other
+                |          foo: other
+                |          foo: other
                 |
-                |      - foo: other
-                |        foo: other
-                |        foo: other
-                |        foo: other
+                |        - foo: other
+                |          foo: other
+                |          foo: other
+                |          foo: other
                 |
-                |      - foo: other
-                |        foo: other
-                |        foo: other
-                |        foo: other
+                |        - foo: other
+                |          foo: other
+                |          foo: other
+                |          foo: other
                 |"#
             .trim_margin()
             .unwrap(),
