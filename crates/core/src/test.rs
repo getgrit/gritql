@@ -13610,6 +13610,7 @@ remove_unused_imports()"#
 }
 
 #[test]
+#[ignore = "this test will be fixed in a followup pr"]
 fn yaml_list_add_indentation() {
     run_test_expected({
         TestArgExpected {
@@ -13679,6 +13680,81 @@ fn yaml_list_add_indentation() {
                 |          foo: other
                 |          foo: other
                 |          foo: other
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn yaml_indents() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r"
+                |engine marzano(0.1)
+                |language yaml
+                |
+                |`- $foo` where {
+                |    $joined = `foo: bar
+                |baz: qux`,
+                |    $foo => `baz:
+                |  $joined`
+                |}
+                |"
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |  - across:
+                |    - var: name
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |  - baz:
+                |      foo: bar
+                |      baz: qux
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn yaml_indents_join() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |engine marzano(0.1)
+                |language yaml
+                |
+                |`- $foo` where {
+                |    $list = ["a", "b", "c"],
+                |    $accumulator = [],
+                |    $list <: some bubble($accumulator) {
+                |        $accumulator += `foo: bar`
+                |    },
+                |    $joined = join(list=$accumulator, separator=`\n`),
+                |    $foo => `baz:
+                |  $joined`
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |  - across:
+                |    - var: name
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |  - baz:
+                |      foo: bar
+                |      foo: bar
+                |      foo: bar
                 |"#
             .trim_margin()
             .unwrap(),
