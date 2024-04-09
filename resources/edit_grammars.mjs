@@ -288,7 +288,7 @@ async function buildLanguage(language) {
     await buildSimpleLanguage(log, language);
   } else if (language === 'php') {
     //php has sub-grammars
-    log(`Copying  files`);  
+    log(`Copying  files`);
     await Promise.all([
       await fs.copyFile(
         `${METAVARIABLE_GRAMMARS}/${language}-common-metavariable-grammar.js`,
@@ -319,7 +319,7 @@ async function buildLanguage(language) {
       `tree-sitter-php/php/tree-sitter-php.wasm`,
       `../../crates/wasm-bindings/wasm_parsers/tree-sitter-php.wasm`,
     );
-  }else {
+  } else {
     await buildSimpleLanguage(log, language);
   }
 
