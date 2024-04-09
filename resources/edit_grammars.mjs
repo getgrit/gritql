@@ -324,6 +324,10 @@ async function buildLanguage(language) {
     await buildSimpleLanguage(log, language);
   }
 
+  await execPromise(
+    `find "${tsLangDir}" -name "build.rs" -exec sed -i '' -e 's/Wno-unused-parameter/w/g' {} \\;`,
+  );
+
   log(`Done`);
 }
 
@@ -343,9 +347,7 @@ async function run() {
   }
   process.chdir(LANGUAGE_METAVARIABLES);
   await Promise.all(languagesTobuild.map(buildLanguage));
-  await execPromise(
-    `find . -name "build.rs" -exec sed -i '' -e 's/Wno-unused-parameter/w/g' {} \\;`,
-  );
+
 }
 
 run().catch(console.error);
