@@ -10,7 +10,7 @@ use super::{
     Effect, EffectKind,
 };
 use crate::{
-    binding::{Binding, Constant},
+    binding::{adjust_padding, Binding, Constant},
     context::Context,
     pattern::{container::PatternOrResolved, patterns::Name},
 };
@@ -124,40 +124,28 @@ impl<'a> JoinFn<'a> {
         distributed_indent: Option<usize>,
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<str>> {
-        if true {
-            let mut res = String::new();
-            let mut padding = 0;
-            for pattern in self.list.iter() {
-                let text = pattern.linearized_text(
-                    language,
-                    effects,
-                    files,
-                    memo,
-                    distributed_indent.is_some(),
-                    logs,
-                )?;
-                pattern = pattern.padding(files)?;
-                res.push_str(&text);
-            }
-            Ok(res.into())
-        } else {
-            Ok(self
-                .list
-                .iter()
-                .map(|pattern| {
-                    pattern.linearized_text(
-                        language,
-                        effects,
-                        files,
-                        memo,
-                        distributed_indent.is_some(),
-                        logs,
-                    )
-                })
-                .collect::<Result<Vec<_>>>()?
-                .join(&self.separator)
-                .into())
-        }
+        let raw_text: Cow<str> = self
+            .list
+            .iter()
+            .map(|pattern| pattern.linearized_text(language, effects, files, memo, false, logs))
+            .collect::<Result<Vec<_>>>()?
+            .join(&self.separator)
+            .into();
+
+        let padded_text = raw_text
+            .lines()
+            .enumerate()
+            .map(|(i, line)| {
+                if i == 0 {
+                    line.to_string()
+                } else {
+                    format!("{}{}", " ".repeat(distributed_indent.unwrap_or(0)), line)
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        Ok(padded_text.into())
     }
 
     fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
@@ -755,6 +743,7 @@ impl<'a> ResolvedPattern<'a> {
         should_pad_snippet: bool,
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<'a, str>> {
+        println!("linearized_text {:?}, pad? {}", self, should_pad_snippet);
         match self {
             // if whitespace is significant we need to distribute indentations
             // across lines within the snippet

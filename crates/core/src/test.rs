@@ -11957,6 +11957,86 @@ fn yaml_list_accumulate_indentation() {
 }
 
 #[test]
+fn yaml_list_add_indentation_with_linearization() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r"
+                |engine marzano(0.1)
+                |language yaml
+                |
+                |`- $task` where {
+                |    $task <: block_mapping($items),
+                |    $subtasks = [],
+                |    $items <: some block_mapping_pair(key=contains `across`, $value),
+                |    $value <: contains `values: $values`,
+                |    $values <: some bubble($items, $subtasks) `- $val` where {
+                |        $new_task = [],
+                |        $items <: some bubble($new_task) $_ where {
+                |                $new_task += `foo: other`,
+                |            },
+                |        $bar = join(list=$new_task, separator=`\n  `),
+                |        $subtasks += `- $bar`
+                |    },
+                |    $foo = join(list=$subtasks, separator=`\n\n`),
+                |    // IF we linearize it first, it works.
+                |    $linear_foo = text($foo),
+                |    $task => `in_parallel:
+                |  nested:
+                |    $linear_foo`
+                |}
+                |
+                |"
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |  - across:
+                |    - var: name
+                |      values:
+                |      - file1
+                |      - file2
+                |      - file3
+                |    task: create-file
+                |    config:
+                |      platform: linux
+                |      image_resource:
+                |        type: registry-image
+                |        source: {repository: busybox}
+                |      run:
+                |        path: touch
+                |        args:
+                |        - manifests/((.:name))
+                |      outputs:
+                |      - name: manifests
+                |    file: input.yaml
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |  - in_parallel:
+                |    nested:
+                |      - foo: other
+                |        foo: other
+                |        foo: other
+                |        foo: other
+                |
+                |      - foo: other
+                |        foo: other
+                |        foo: other
+                |        foo: other
+                |
+                |      - foo: other
+                |        foo: other
+                |        foo: other
+                |        foo: other
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn yaml_list_add_indentation() {
     run_test_expected({
         TestArgExpected {
@@ -11979,8 +12059,8 @@ fn yaml_list_add_indentation() {
                 |    },
                 |    $foo = join(list=$subtasks, separator=`\n\n`),
                 |    $task => `in_parallel:
-                |  nested:
-                |    $foo`
+                |nested:
+                |  $foo`
                 |}
                 |
                 |"
