@@ -1,11 +1,12 @@
+use super::auto_wrap::wrap_pattern_in_before_and_after_each_file;
+use super::compiler::NodeCompilationContext;
+use super::pattern_compiler::PatternCompiler;
 use super::NodeCompiler;
-use super::{auto_wrap::wrap_pattern_in_before_and_after_each_file, compiler::CompilationContext};
-use crate::pattern::{patterns::Pattern, step::Step, variable::VariableSourceLocations};
+use crate::pattern::{patterns::Pattern, step::Step};
 use anyhow::Result;
-use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
+use marzano_util::analysis_logs::AnalysisLogBuilder;
+use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::position::Range;
-use std::collections::BTreeMap;
-use tree_sitter::Node;
 
 const SEQUENTIAL_WARNING: &str = "Warning: sequential matches at the top of the file. If a pattern matched outside of a sequential, but no longer matches, it is likely because naked patterns are automatically wrapped with `contains bubble <pattern>`";
 
@@ -14,25 +15,12 @@ pub(crate) struct StepCompiler;
 impl NodeCompiler for StepCompiler {
     type TargetPattern = Step;
 
-    fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
+    fn from_node_with_rhs(
+        node: &NodeWithSource,
+        context: &mut NodeCompilationContext,
+        _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
-        let pattern = Pattern::from_node(
-            node,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            false,
-            logs,
-        )?;
+        let pattern = PatternCompiler::from_node(&node, context)?;
         match pattern {
             Pattern::File(_)
             | Pattern::Files(_)
@@ -89,13 +77,13 @@ impl NodeCompiler for StepCompiler {
                 let range: Range = node.range().into();
                 let log = AnalysisLogBuilder::default()
                     .level(441_u16)
-                    .file(context.file)
-                    .source(context.src)
+                    .file(context.compilation.file)
+                    .source(node.source)
                     .position(range.start)
                     .range(range)
                     .message(SEQUENTIAL_WARNING)
                     .build()?;
-                logs.push(log);
+                context.logs.push(log);
             }
             Pattern::Sequential(ref s) => {
                 for step in s.iter() {
@@ -112,20 +100,22 @@ impl NodeCompiler for StepCompiler {
                         let range: Range = node.range().into();
                         let log = AnalysisLogBuilder::default()
                             .level(441_u16)
-                            .file(context.file)
-                            .source(context.src)
+                            .file(context.compilation.file)
+                            .source(node.source)
                             .position(range.start)
                             .range(range)
                             .message(SEQUENTIAL_WARNING)
                             .build()?;
-                        logs.push(log);
+                        context.logs.push(log);
                         break;
                     }
                 }
             }
         }
-        let pattern =
-            wrap_pattern_in_before_and_after_each_file(pattern, context.pattern_definition_info)?;
+        let pattern = wrap_pattern_in_before_and_after_each_file(
+            pattern,
+            context.compilation.pattern_definition_info,
+        )?;
 
         Ok(Step::new(pattern))
     }
