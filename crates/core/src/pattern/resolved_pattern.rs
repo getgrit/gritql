@@ -124,22 +124,40 @@ impl<'a> JoinFn<'a> {
         distributed_indent: Option<usize>,
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<str>> {
-        Ok(self
-            .list
-            .iter()
-            .map(|pattern| {
-                pattern.linearized_text(
+        if true {
+            let mut res = String::new();
+            let mut padding = 0;
+            for pattern in self.list.iter() {
+                let text = pattern.linearized_text(
                     language,
                     effects,
                     files,
                     memo,
                     distributed_indent.is_some(),
                     logs,
-                )
-            })
-            .collect::<Result<Vec<_>>>()?
-            .join(&self.separator)
-            .into())
+                )?;
+                pattern = pattern.padding(files)?;
+                res.push_str(&text);
+            }
+            Ok(res.into())
+        } else {
+            Ok(self
+                .list
+                .iter()
+                .map(|pattern| {
+                    pattern.linearized_text(
+                        language,
+                        effects,
+                        files,
+                        memo,
+                        distributed_indent.is_some(),
+                        logs,
+                    )
+                })
+                .collect::<Result<Vec<_>>>()?
+                .join(&self.separator)
+                .into())
+        }
     }
 
     fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
