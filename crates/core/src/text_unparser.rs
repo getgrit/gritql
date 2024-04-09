@@ -6,6 +6,7 @@ use anyhow::Result;
 use im::Vector;
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::AnalysisLogs;
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ops::Range;
 use std::path::{Path, PathBuf};
@@ -56,4 +57,30 @@ pub(crate) fn apply_effects<'a>(
         }
     }
     Ok((from_inline.to_string(), Some(ranges)))
+}
+
+/**
+ * This is a naive implementation of distributing indentation to a string, for cases where we don't have more context to do it well.
+ */
+pub fn naive_distribute_indentation(
+    original_string: Cow<str>,
+    distributed_indent: Option<usize>,
+) -> Cow<str> {
+    if let Some(distributed_indent) = distributed_indent {
+        original_string
+            .lines()
+            .enumerate()
+            .map(|(i, line)| {
+                if i == 0 {
+                    line.to_string()
+                } else {
+                    format!("{}{}", " ".repeat(distributed_indent), line)
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+            .into()
+    } else {
+        original_string
+    }
 }

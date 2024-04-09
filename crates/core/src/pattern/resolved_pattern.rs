@@ -13,6 +13,7 @@ use crate::{
     binding::{adjust_padding, Binding, Constant},
     context::Context,
     pattern::{container::PatternOrResolved, patterns::Name},
+    text_unparser::naive_distribute_indentation,
 };
 use anyhow::{anyhow, bail, Result};
 use im::{vector, Vector};
@@ -23,6 +24,7 @@ use marzano_util::{
 use std::{
     borrow::Cow,
     collections::{BTreeMap, HashMap},
+    os::macos::raw,
     path::Path,
 };
 use tree_sitter::Node;
@@ -124,7 +126,7 @@ impl<'a> JoinFn<'a> {
         distributed_indent: Option<usize>,
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<str>> {
-        let raw_text: Cow<str> = self
+        let output_text: Cow<str> = self
             .list
             .iter()
             .map(|pattern| pattern.linearized_text(language, effects, files, memo, false, logs))
@@ -132,20 +134,9 @@ impl<'a> JoinFn<'a> {
             .join(&self.separator)
             .into();
 
-        let padded_text = raw_text
-            .lines()
-            .enumerate()
-            .map(|(i, line)| {
-                if i == 0 {
-                    line.to_string()
-                } else {
-                    format!("{}{}", " ".repeat(distributed_indent.unwrap_or(0)), line)
-                }
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
+        let output_text = naive_distribute_indentation(output_text, distributed_indent);
 
-        Ok(padded_text.into())
+        Ok(output_text.into())
     }
 
     fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
@@ -293,6 +284,11 @@ impl<'a> ResolvedSnippet<'a> {
         distributed_indent: Option<usize>,
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<str>> {
+        println!(
+            "I am being linearized: {:?} indent: {}",
+            self,
+            distributed_indent.unwrap_or(0)
+        );
         let res = match self {
             ResolvedSnippet::Text(text) => Ok(text.clone()),
             ResolvedSnippet::Binding(binding) => {
