@@ -53,6 +53,7 @@ pub(crate) mod multiply_compiler;
 mod node_compiler;
 pub(crate) mod not_compiler;
 pub(crate) mod or_compiler;
+#[allow(clippy::module_inception)]
 pub(crate) mod pattern_compiler;
 pub(crate) mod pattern_definition_compiler;
 pub(crate) mod predicate_compiler;

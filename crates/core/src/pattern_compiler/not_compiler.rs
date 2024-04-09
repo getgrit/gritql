@@ -9,9 +9,7 @@ use crate::pattern::{
     predicates::Predicate,
 };
 use anyhow::{anyhow, Result};
-use marzano_util::{
-    analysis_logs::AnalysisLogBuilder, node_with_source::NodeWithSource, position::Range,
-};
+use marzano_util::{analysis_logs::AnalysisLogBuilder, node_with_source::NodeWithSource};
 
 pub(crate) struct NotCompiler;
 
@@ -26,7 +24,7 @@ impl NodeCompiler for NotCompiler {
         let pattern = node
             .child_by_field_name("pattern")
             .ok_or_else(|| anyhow!("missing pattern of patternNot"))?;
-        let range: Range = pattern.range().into();
+        let range = pattern.range();
         let pattern = PatternCompiler::from_node(&pattern, context)?;
         if pattern.iter().any(|p| {
             matches!(
@@ -62,7 +60,7 @@ impl NodeCompiler for PrNotCompiler {
         let not = node
             .child_by_field_name("predicate")
             .ok_or_else(|| anyhow!("predicateNot missing predicate"))?;
-        let range: Range = not.range().into();
+        let range = not.range();
         let not = PredicateCompiler::from_node(&not, context)?;
         if not.iter().any(|p| {
             matches!(

@@ -25,29 +25,29 @@ impl NodeCompiler for PredicateCompiler {
         let kind = node.node.kind();
         match kind.as_ref() {
             "predicateNot" => Ok(Predicate::Not(Box::new(PrNotCompiler::from_node(
-                &node, context,
+                node, context,
             )?))),
-            "predicateAnd" => PrAndCompiler::from_node(&node, context),
-            "predicateOr" => PrOrCompiler::from_node(&node, context),
+            "predicateAnd" => PrAndCompiler::from_node(node, context),
+            "predicateOr" => PrOrCompiler::from_node(node, context),
             "predicateMaybe" => Ok(Predicate::Maybe(Box::new(PrMaybeCompiler::from_node(
-                &node, context,
+                node, context,
             )?))),
-            "predicateAny" => PrAnyCompiler::from_node(&node, context),
+            "predicateAny" => PrAnyCompiler::from_node(node, context),
             "predicateIfElse" => Ok(Predicate::If(Box::new(PrIfCompiler::from_node(
-                &node, context,
+                node, context,
             )?))),
             "predicateRewrite" => Ok(Predicate::Rewrite(Box::new(RewriteCompiler::from_node(
-                &node, context,
+                node, context,
             )?))),
-            "log" => Ok(Predicate::Log(LogCompiler::from_node(&node, context)?)),
+            "log" => Ok(Predicate::Log(LogCompiler::from_node(node, context)?)),
             "predicateMatch" => Ok(Predicate::Match(Box::new(MatchCompiler::from_node(
-                &node, context,
+                node, context,
             )?))),
             "predicateEqual" => Ok(Predicate::Equal(Box::new(EqualCompiler::from_node(
-                &node, context,
+                node, context,
             )?))),
             "predicateCall" => Ok(Predicate::Call(Box::new(PrCallCompiler::from_node(
-                &node, context,
+                node, context,
             )?))),
             "booleanConstant" => match node.text().trim() {
                 "true" => Ok(Predicate::True),
@@ -55,13 +55,13 @@ impl NodeCompiler for PredicateCompiler {
                 _ => Err(anyhow!("invalid booleanConstant")),
             },
             "predicateAssignment" => Ok(Predicate::Assignment(Box::new(
-                AssignmentCompiler::from_node(&node, context)?,
+                AssignmentCompiler::from_node(node, context)?,
             ))),
             "predicateAccumulate" => Ok(Predicate::Accumulate(Box::new(
-                AccumulateCompiler::from_node(&node, context)?,
+                AccumulateCompiler::from_node(node, context)?,
             ))),
             "predicateReturn" => Ok(Predicate::Return(Box::new(
-                PredicateReturnCompiler::from_node(&node, context)?,
+                PredicateReturnCompiler::from_node(node, context)?,
             ))),
             _ => bail!("unknown predicate kind: {}", kind),
         }

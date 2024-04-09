@@ -32,9 +32,9 @@ impl NodeCompiler for BubbleCompiler {
 
         let parameters: Vec<_> = node
             .named_children_by_field_name("variables")
-            .map(|n| (n.text().trim().to_string(), n.range().into()))
+            .map(|n| (n.text().trim().to_string(), n.range()))
             .collect();
-        if parameters.iter().unique_by(|n| n.0.clone()).count() != parameters.len() {
+        if parameters.iter().unique_by(|n| &n.0).count() != parameters.len() {
             bail!("bubble parameters must be unique, but had a repeated name in its parameters.")
         }
         let params = get_variables(

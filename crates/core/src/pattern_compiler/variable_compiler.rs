@@ -14,12 +14,11 @@ impl NodeCompiler for VariableCompiler {
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
-        let name = node.text().trim().to_string();
-        let range = node.range().into();
+        let name = node.text().trim();
         register_variable(
-            &name,
+            name,
             context.compilation.file,
-            range,
+            node.range(),
             context.vars,
             context.global_vars,
             context.vars_array,

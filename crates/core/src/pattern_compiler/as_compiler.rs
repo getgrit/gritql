@@ -15,7 +15,7 @@ use grit_util::{traverse, Order};
 use marzano_language::language::Language;
 use marzano_util::{
     analysis_logs::AnalysisLogBuilder, cursor_wrapper::CursorWrapper,
-    node_with_source::NodeWithSource, position::Range,
+    node_with_source::NodeWithSource,
 };
 
 pub(crate) struct AsCompiler;
@@ -43,7 +43,7 @@ impl NodeCompiler for AsCompiler {
         // could possible lead to some false positives, but more precise solutions
         // require much greater changes.
         if pattern_repeated_variable(&pattern, name, context.compilation.lang)? {
-            let range: Range = node.range().into();
+            let range = node.range();
             let log = AnalysisLogBuilder::default()
                 .level(441_u16)
                 .file(context.compilation.file)
