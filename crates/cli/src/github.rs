@@ -68,22 +68,18 @@ pub fn log_check_annotations(check_results: &Vec<&CheckResult<'_>>) {
             None => (None, pattern.name()),
         };
 
-        if extract_ranges(result).is_some_and(|r| !r.is_empty()) {
-            for range in ranges {
-                print_one(file, Some(*range), message, title, &level);
+        match extract_ranges(result) {
+            Some(ranges) => {
+                if ranges.is_empty() {
+                    print_one(file, None, message, title, &level);
+                } else {
+                    for range in ranges {
+                        print_one(file, Some(*range), message, title, &level);
+                    }
+                }
             }
-        } else {
-            print_one(file, None, message, title, &level);
-        }
-
-        // match extract_ranges(result) {
-        //     Some(ranges) => {
-        //         for range in ranges {
-        //             print_one(file, Some(*range), message, title, &level);
-        //         }
-        //     }
-        //     None => print_one(file, None, message, title, &level),
-        // };
+            None => print_one(file, None, message, title, &level),
+        };
     }
 }
 
