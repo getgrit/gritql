@@ -192,9 +192,6 @@ pub fn get_check_summary(
 
     for result in results.iter() {
         let key = result.pattern.level();
-        if matches!(key, EnforcementLevel::Error) {
-            println!("Got error result {:?}", result);
-        }
         *grouped_results.entry(key).or_default() += 1;
     }
 

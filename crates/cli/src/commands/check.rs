@@ -342,7 +342,7 @@ pub(crate) async fn run_check(
         if grouped.get(&EnforcementLevel::Error).unwrap_or(&0) > &0 {
             return Err(anyhow::anyhow!(message));
         }
-        println!("{}", message);
+        info!("{}", message);
         return Ok(());
     }
 
