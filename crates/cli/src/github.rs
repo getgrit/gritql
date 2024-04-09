@@ -27,6 +27,9 @@ fn print_one(
     title: Option<&str>,
     level: &EnforcementLevel,
 ) {
+    if matches!(level, EnforcementLevel::Error) {
+        println!("Here printing one for file {}", file);
+    }
     let level = format_level(level);
     let mut params = format!("file={}", file);
     if let Some(range) = range {
