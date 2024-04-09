@@ -1,78 +1,44 @@
 use super::{
-    compiler::CompilationContext, container_compiler::ContainerCompiler,
-    node_compiler::NodeCompiler,
+    compiler::NodeCompilationContext, container_compiler::ContainerCompiler,
+    list_compiler::ListCompiler, node_compiler::NodeCompiler,
 };
-use crate::pattern::{
-    list::List,
-    list_index::{ContainerOrIndex, ListIndex, ListOrContainer},
-    variable::VariableSourceLocations,
-};
+use crate::pattern::list_index::{ContainerOrIndex, ListIndex, ListOrContainer};
 use anyhow::{anyhow, Result};
-use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
-use tree_sitter::Node;
+use grit_util::AstNode;
+use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct ListIndexCompiler;
 
 impl NodeCompiler for ListIndexCompiler {
     type TargetPattern = ListIndex;
 
-    fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
+    fn from_node_with_rhs(
+        node: &NodeWithSource,
+        context: &mut NodeCompilationContext,
+        _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let list = node
             .child_by_field_name("list")
             .ok_or_else(|| anyhow!("missing list of listIndex"))?;
-        let list = if list.kind() == "list" {
-            ListOrContainer::List(List::from_node(
-                &list,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                false,
-                logs,
-            )?)
+        let list = if list.node.kind() == "list" {
+            ListOrContainer::List(ListCompiler::from_node(&list, context)?)
         } else {
-            ListOrContainer::Container(ContainerCompiler::from_node(
-                &list,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?)
+            ListOrContainer::Container(ContainerCompiler::from_node(&list, context)?)
         };
 
         let index_node = node
             .child_by_field_name("index")
             .ok_or_else(|| anyhow!("missing index of listIndex"))?;
 
-        let index = if let "signedIntConstant" = index_node.kind().as_ref() {
+        let index = if index_node.node.kind() == "signedIntConstant" {
             ContainerOrIndex::Index(
                 index_node
-                    .utf8_text(context.src.as_bytes())?
+                    .text()
                     .parse::<isize>()
                     .map_err(|_| anyhow!("list index must be an integer"))?,
             )
         } else {
-            ContainerOrIndex::Container(ContainerCompiler::from_node(
-                &index_node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?)
+            ContainerOrIndex::Container(ContainerCompiler::from_node(&index_node, context)?)
         };
 
         Ok(ListIndex { list, index })

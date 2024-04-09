@@ -1,4 +1,4 @@
-use super::compiler::{CompilationContext, DefinitionInfo};
+use super::compiler::{DefinitionInfo, NodeCompilationContext};
 use crate::pattern::{
     and::{And, PrAnd},
     bubble::Bubble,
@@ -20,7 +20,7 @@ use crate::pattern::{
     rewrite::Rewrite,
     step::Step,
     string_constant::StringConstant,
-    variable::{Variable, VariableSourceLocations},
+    variable::Variable,
 };
 use anyhow::Result;
 use marzano_util::position::FileRange;
@@ -30,13 +30,9 @@ use std::collections::BTreeMap;
 pub(super) fn auto_wrap_pattern(
     pattern: Pattern,
     pattern_definitions: &mut [PatternDefinition],
-    vars: &mut BTreeMap<String, usize>,
-    vars_array: &mut [Vec<VariableSourceLocations>],
-    scope_index: usize,
     is_not_multifile: bool,
     file_ranges: Option<Vec<FileRange>>,
-    context: &CompilationContext,
-    global_vars: &mut BTreeMap<String, usize>,
+    context: &mut NodeCompilationContext,
 ) -> Result<Pattern> {
     let is_sequential = is_sequential(&pattern, pattern_definitions);
     let should_wrap_in_sequential = !is_sequential;
@@ -50,15 +46,7 @@ pub(super) fn auto_wrap_pattern(
     let pattern = if is_not_multifile {
         let pattern = if let Some(ranges) = file_ranges {
             if should_wrap_in_sequential {
-                wrap_pattern_in_range(
-                    GRIT_RANGE_VAR,
-                    pattern,
-                    ranges,
-                    vars,
-                    vars_array,
-                    scope_index,
-                    global_vars,
-                )?
+                wrap_pattern_in_range(GRIT_RANGE_VAR, pattern, ranges, context)?
             } else {
                 pattern
             }
@@ -66,14 +54,7 @@ pub(super) fn auto_wrap_pattern(
             pattern
         };
         let first_wrap = if should_wrap_in_contains {
-            wrap_pattern_in_contains(
-                MATCH_VAR,
-                pattern,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-            )?
+            wrap_pattern_in_contains(MATCH_VAR, pattern, context)?
         } else {
             pattern
         };
@@ -87,7 +68,10 @@ pub(super) fn auto_wrap_pattern(
         } else {
             second_wrap
         };
-        wrap_pattern_in_before_and_after_each_file(third_wrap, context.pattern_definition_info)?
+        wrap_pattern_in_before_and_after_each_file(
+            third_wrap,
+            context.compilation.pattern_definition_info,
+        )?
     } else {
         pattern
     };
@@ -382,12 +366,15 @@ fn wrap_pattern_in_range(
     var_name: &str,
     pattern: Pattern,
     ranges: Vec<FileRange>,
-    vars: &mut BTreeMap<String, usize>,
-    vars_array: &mut [Vec<VariableSourceLocations>],
-    scope_index: usize,
-    global_vars: &mut BTreeMap<String, usize>,
+    context: &mut NodeCompilationContext,
 ) -> Result<Pattern> {
-    let var = Variable::from_name(var_name, vars, vars_array, scope_index, global_vars)?;
+    let var = Variable::from_name(
+        var_name,
+        context.vars,
+        context.vars_array,
+        context.scope_index,
+        context.global_vars,
+    )?;
     let mut predicates = Vec::new();
     for file_range in ranges {
         let range = file_range.range.clone();
@@ -424,12 +411,15 @@ fn wrap_pattern_in_range(
 fn wrap_pattern_in_contains(
     var_name: &str,
     pattern: Pattern,
-    vars: &mut BTreeMap<String, usize>,
-    vars_array: &mut [Vec<VariableSourceLocations>],
-    scope_index: usize,
-    global_vars: &mut BTreeMap<String, usize>,
+    context: &mut NodeCompilationContext,
 ) -> Result<Pattern> {
-    let var = Variable::from_name(var_name, vars, vars_array, scope_index, global_vars)?;
+    let var = Variable::from_name(
+        var_name,
+        context.vars,
+        context.vars_array,
+        context.scope_index,
+        context.global_vars,
+    )?;
     let pattern = Pattern::Where(Box::new(Where::new(
         Pattern::Variable(var),
         Predicate::Match(Box::new(Match::new(
@@ -439,9 +429,9 @@ fn wrap_pattern_in_contains(
     )));
     let pattern_definition = PatternDefinition::new(
         "<bubble>".to_string(),
-        scope_index,
+        context.scope_index,
         vec![],
-        vars.values().cloned().collect(),
+        context.vars.values().cloned().collect(),
         pattern,
     );
     let bubble = Pattern::Bubble(Box::new(Bubble::new(pattern_definition, vec![])));

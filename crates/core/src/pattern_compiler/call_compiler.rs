@@ -1,28 +1,27 @@
 use super::{compiler::NodeCompilationContext, node_compiler::NodeCompiler};
-use crate::pattern::variable::{register_variable, Variable};
+use crate::pattern::call::PrCall;
 use anyhow::Result;
-use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 
-pub(crate) struct VariableCompiler;
+pub(crate) struct PrCallCompiler;
 
-impl NodeCompiler for VariableCompiler {
-    type TargetPattern = Variable;
+impl NodeCompiler for PrCallCompiler {
+    type TargetPattern = PrCall;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
-        let name = node.text().trim();
-        register_variable(
-            name,
-            context.compilation.file,
-            node.range(),
+        // TODO: Move the PrCall compiler logic here instead of forwarding.
+        PrCall::from_node(
+            &node.node,
+            context.compilation,
             context.vars,
-            context.global_vars,
             context.vars_array,
             context.scope_index,
+            context.global_vars,
+            context.logs,
         )
     }
 }

@@ -7,13 +7,19 @@ use super::{
 };
 use crate::{
     context::Context,
-    pattern_compiler::{variable_compiler::VariableCompiler, CompilationContext, NodeCompiler},
+    pattern_compiler::{
+        compiler::NodeCompilationContext, variable_compiler::VariableCompiler, CompilationContext,
+        NodeCompiler,
+    },
 };
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_language::{language::Language, target_language::TargetLanguage};
-use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 use marzano_util::position::Range;
+use marzano_util::{
+    analysis_logs::{AnalysisLogBuilder, AnalysisLogs},
+    node_with_source::NodeWithSource,
+};
 use regex::Regex;
 use std::collections::BTreeMap;
 use tree_sitter::Node;
@@ -115,13 +121,15 @@ impl RegexPattern {
             .filter(|n| n.is_named())
             .map(|n| {
                 VariableCompiler::from_node(
-                    &n,
-                    context,
-                    vars,
-                    vars_array,
-                    scope_index,
-                    global_vars,
-                    logs,
+                    &NodeWithSource::new(n, context.src),
+                    &mut NodeCompilationContext {
+                        compilation: context,
+                        vars,
+                        vars_array,
+                        scope_index,
+                        global_vars,
+                        logs,
+                    },
                 )
                 .unwrap()
             });

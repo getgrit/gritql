@@ -1,51 +1,30 @@
-use super::{compiler::CompilationContext, node_compiler::NodeCompiler};
-use crate::pattern::{modulo::Modulo, patterns::Pattern, variable::VariableSourceLocations};
+use super::{
+    compiler::NodeCompilationContext, node_compiler::NodeCompiler,
+    pattern_compiler::PatternCompiler,
+};
+use crate::pattern::modulo::Modulo;
 use anyhow::{anyhow, Result};
-use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
-use tree_sitter::Node;
+use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct ModuloCompiler;
 
 impl NodeCompiler for ModuloCompiler {
     type TargetPattern = Modulo;
 
-    fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
+    fn from_node_with_rhs(
+        node: &NodeWithSource,
+        context: &mut NodeCompilationContext,
+        _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let left = node
             .child_by_field_name("left")
             .ok_or_else(|| anyhow!("missing left of modulo"))?;
-        let left = Pattern::from_node(
-            &left,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            false,
-            logs,
-        )?;
+        let left = PatternCompiler::from_node(&left, context)?;
 
         let right = node
             .child_by_field_name("right")
             .ok_or_else(|| anyhow!("missing right of modulo"))?;
-        let right = Pattern::from_node(
-            &right,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            false,
-            logs,
-        )?;
+        let right = PatternCompiler::from_node(&right, context)?;
 
         Ok(Modulo::new(left, right))
     }
