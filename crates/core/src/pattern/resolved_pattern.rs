@@ -271,7 +271,7 @@ fn pad_text(text: &str, padding: usize) -> String {
             String::new()
         };
         res.push_str(&text.lines().join(&format!("\n{}", " ".repeat(padding))));
-        if text.ends_with("\n") {
+        if text.ends_with('\n') {
             res.push('\n')
         };
         res
