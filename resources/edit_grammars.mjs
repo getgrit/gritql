@@ -1,5 +1,6 @@
 import { exec } from 'child_process';
 import fs from 'fs/promises';
+import path from 'path';
 
 ///////////////////////////////////////////////////
 // Scripting helpers
@@ -288,7 +289,7 @@ async function buildLanguage(language) {
     await buildSimpleLanguage(log, language);
   } else if (language === 'php') {
     //php has sub-grammars
-    log(`Copying  files`);  
+    log(`Copying  files`);
     await Promise.all([
       await fs.copyFile(
         `${METAVARIABLE_GRAMMARS}/${language}-common-metavariable-grammar.js`,
@@ -319,17 +320,24 @@ async function buildLanguage(language) {
       `tree-sitter-php/php/tree-sitter-php.wasm`,
       `../../crates/wasm-bindings/wasm_parsers/tree-sitter-php.wasm`,
     );
-  }else {
+  } else {
     await buildSimpleLanguage(log, language);
   }
+
+  await execPromise(
+    `find "${tsLangDir}" -name "build.rs" -exec sed -i '' -e 's/Wno-unused-parameter/w/g' {} \\;`,
+  );
 
   log(`Done`);
 }
 
 async function run() {
+  const wd = path.dirname(process.argv[1]);
   const args = process.argv.slice(2);
   const buildAll = args.length == 0;
   const languagesTobuild = buildAll ? allLanguages : args;
+
+  process.chdir(wd);
 
   console.log('Syncing upstream grammars');
   if (buildAll) {
@@ -339,9 +347,7 @@ async function run() {
   }
   process.chdir(LANGUAGE_METAVARIABLES);
   await Promise.all(languagesTobuild.map(buildLanguage));
-  await execPromise(
-    `find . -name "build.rs" -exec sed -i '' -e 's/Wno-unused-parameter/w/g' {} \\;`,
-  );
+
 }
 
 run().catch(console.error);

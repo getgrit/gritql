@@ -1,73 +1,51 @@
 use super::{
-    compiler::CompilationContext, container_compiler::ContainerCompiler,
+    compiler::NodeCompilationContext, container_compiler::ContainerCompiler,
     node_compiler::NodeCompiler, variable_compiler::VariableCompiler,
 };
 use crate::pattern::{
     accessor::{Accessor, AccessorKey, AccessorMap},
     map::GritMap,
-    variable::VariableSourceLocations,
 };
 use anyhow::{anyhow, Result};
-use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
-use tree_sitter::Node;
+use grit_util::AstNode;
+use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct AccessorCompiler;
 
 impl NodeCompiler for AccessorCompiler {
     type TargetPattern = Accessor;
 
-    fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
+    fn from_node_with_rhs(
+        node: &NodeWithSource,
+        context: &mut NodeCompilationContext,
+        _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let map = node
             .child_by_field_name("map")
             .ok_or_else(|| anyhow!("missing map of accessor"))?;
-        let map = if map.kind() == "map" {
+        let map = if map.node.kind() == "map" {
             AccessorMap::Map(GritMap::from_node(
-                &map,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
+                &map.node,
+                context.compilation,
+                context.vars,
+                context.vars_array,
+                context.scope_index,
+                context.global_vars,
                 false,
-                logs,
+                context.logs,
             )?)
         } else {
-            AccessorMap::Container(ContainerCompiler::from_node(
-                &map,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?)
+            AccessorMap::Container(ContainerCompiler::from_node(&map, context)?)
         };
 
         let key = node
             .child_by_field_name("key")
             .ok_or_else(|| anyhow!("missing key of accessor"))?;
 
-        let key = if key.kind() == "variable" {
-            AccessorKey::Variable(VariableCompiler::from_node(
-                &key,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?)
+        let key = if key.node.kind() == "variable" {
+            AccessorKey::Variable(VariableCompiler::from_node(&key, context)?)
         } else {
-            AccessorKey::String(key.utf8_text(context.src.as_bytes())?.to_string())
+            AccessorKey::String(key.text().to_string())
         };
 
         Ok(Accessor::new(map, key))

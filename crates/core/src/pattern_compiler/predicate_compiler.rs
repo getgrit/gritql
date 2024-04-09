@@ -1,176 +1,67 @@
 use super::{
     accumulate_compiler::AccumulateCompiler, and_compiler::PrAndCompiler,
     any_compiler::PrAnyCompiler, assignment_compiler::AssignmentCompiler,
-    compiler::CompilationContext, equal_compiler::EqualCompiler, if_compiler::PrIfCompiler,
-    log_compiler::LogCompiler, match_compiler::MatchCompiler, maybe_compiler::PrMaybeCompiler,
-    node_compiler::NodeCompiler, not_compiler::PrNotCompiler, or_compiler::PrOrCompiler,
-    predicate_return_compiler::PredicateReturnCompiler, rewrite_compiler::RewriteCompiler,
+    call_compiler::PrCallCompiler, compiler::NodeCompilationContext, equal_compiler::EqualCompiler,
+    if_compiler::PrIfCompiler, log_compiler::LogCompiler, match_compiler::MatchCompiler,
+    maybe_compiler::PrMaybeCompiler, node_compiler::NodeCompiler, not_compiler::PrNotCompiler,
+    or_compiler::PrOrCompiler, predicate_return_compiler::PredicateReturnCompiler,
+    rewrite_compiler::RewriteCompiler,
 };
-use crate::pattern::{call::PrCall, predicates::Predicate, variable::VariableSourceLocations};
+use crate::pattern::predicates::Predicate;
 use anyhow::{anyhow, bail, Result};
-use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
-use tree_sitter::Node;
+use grit_util::AstNode;
+use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct PredicateCompiler;
 
 impl NodeCompiler for PredicateCompiler {
     type TargetPattern = Predicate;
 
-    fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
+    fn from_node_with_rhs(
+        node: &NodeWithSource,
+        context: &mut NodeCompilationContext,
+        _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
-        let kind = node.kind();
-        let kind = kind.as_ref();
-        match kind {
+        let kind = node.node.kind();
+        match kind.as_ref() {
             "predicateNot" => Ok(Predicate::Not(Box::new(PrNotCompiler::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
+                node, context,
             )?))),
-            "predicateAnd" => PrAndCompiler::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            ),
-            "predicateOr" => PrOrCompiler::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            ),
+            "predicateAnd" => PrAndCompiler::from_node(node, context),
+            "predicateOr" => PrOrCompiler::from_node(node, context),
             "predicateMaybe" => Ok(Predicate::Maybe(Box::new(PrMaybeCompiler::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
+                node, context,
             )?))),
-            "predicateAny" => PrAnyCompiler::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            ),
+            "predicateAny" => PrAnyCompiler::from_node(node, context),
             "predicateIfElse" => Ok(Predicate::If(Box::new(PrIfCompiler::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
+                node, context,
             )?))),
             "predicateRewrite" => Ok(Predicate::Rewrite(Box::new(RewriteCompiler::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
+                node, context,
             )?))),
-            "log" => Ok(Predicate::Log(LogCompiler::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?)),
+            "log" => Ok(Predicate::Log(LogCompiler::from_node(node, context)?)),
             "predicateMatch" => Ok(Predicate::Match(Box::new(MatchCompiler::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
+                node, context,
             )?))),
             "predicateEqual" => Ok(Predicate::Equal(Box::new(EqualCompiler::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
+                node, context,
             )?))),
-            "predicateCall" => Ok(Predicate::Call(Box::new(PrCall::from_node(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
+            "predicateCall" => Ok(Predicate::Call(Box::new(PrCallCompiler::from_node(
+                node, context,
             )?))),
-            "booleanConstant" => {
-                let value = node.utf8_text(context.src.as_bytes())?;
-                let value = value.trim();
-                if value == "true" {
-                    Ok(Predicate::True)
-                } else if value == "false" {
-                    Ok(Predicate::False)
-                } else {
-                    Err(anyhow!("invalid booleanConstant"))
-                }
-            }
+            "booleanConstant" => match node.text().trim() {
+                "true" => Ok(Predicate::True),
+                "false" => Ok(Predicate::False),
+                _ => Err(anyhow!("invalid booleanConstant")),
+            },
             "predicateAssignment" => Ok(Predicate::Assignment(Box::new(
-                AssignmentCompiler::from_node(
-                    node,
-                    context,
-                    vars,
-                    vars_array,
-                    scope_index,
-                    global_vars,
-                    logs,
-                )?,
+                AssignmentCompiler::from_node(node, context)?,
             ))),
             "predicateAccumulate" => Ok(Predicate::Accumulate(Box::new(
-                AccumulateCompiler::from_node(
-                    node,
-                    context,
-                    vars,
-                    vars_array,
-                    scope_index,
-                    global_vars,
-                    logs,
-                )?,
+                AccumulateCompiler::from_node(node, context)?,
             ))),
             "predicateReturn" => Ok(Predicate::Return(Box::new(
-                PredicateReturnCompiler::from_node(
-                    node,
-                    context,
-                    vars,
-                    vars_array,
-                    scope_index,
-                    global_vars,
-                    logs,
-                )?,
+                PredicateReturnCompiler::from_node(node, context)?,
             ))),
             _ => bail!("unknown predicate kind: {}", kind),
         }
