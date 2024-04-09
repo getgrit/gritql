@@ -136,7 +136,7 @@ impl<'a> JoinFn<'a> {
 
         let output_text = naive_distribute_indentation(output_text, distributed_indent);
 
-        Ok(output_text.into())
+        Ok(output_text)
     }
 
     fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
@@ -284,13 +284,16 @@ impl<'a> ResolvedSnippet<'a> {
         distributed_indent: Option<usize>,
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<str>> {
-        println!(
-            "I am being linearized: {:?} indent: {}",
-            self,
-            distributed_indent.unwrap_or(0)
-        );
         let res = match self {
-            ResolvedSnippet::Text(text) => Ok(text.clone()),
+            ResolvedSnippet::Text(text) => {
+                println!(
+                    "I am being linearized: {:?} indent: {}",
+                    self,
+                    distributed_indent.unwrap_or(0)
+                );
+                let text = naive_distribute_indentation(text.clone(), distributed_indent);
+                Ok(text)
+            }
             ResolvedSnippet::Binding(binding) => {
                 // we are now taking the unmodified source code, and replacing the binding with the snippet
                 // we will want to apply effects next
