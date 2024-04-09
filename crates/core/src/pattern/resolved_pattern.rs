@@ -147,33 +147,6 @@ impl<'a> JoinFn<'a> {
         }
     }
 
-    // fn linearized_text(
-    //     &self,
-    //     language: &TargetLanguage,
-    //     effects: &[Effect<'a>],
-    //     files: &FileRegistry<'a>,
-    //     memo: &mut HashMap<CodeRange, Option<String>>,
-    //     distributed_indent: Option<usize>,
-    //     logs: &mut AnalysisLogs,
-    // ) -> Result<Cow<str>> {
-    //     Ok(self
-    //         .list
-    //         .iter()
-    //         .map(|pattern| {
-    //             pattern.linearized_text(
-    //                 language,
-    //                 effects,
-    //                 files,
-    //                 memo,
-    //                 distributed_indent.is_some(),
-    //                 logs,
-    //             )
-    //         })
-    //         .collect::<Result<Vec<_>>>()?
-    //         .join(&self.separator)
-    //         .into())
-    // }
-
     fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
         Ok(self
             .list
