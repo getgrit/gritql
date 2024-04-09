@@ -50,6 +50,12 @@ pub fn log_check_annotations(check_results: &Vec<&CheckResult<'_>>) {
         let result = &result.result;
 
         let level = pattern.level();
+        if pattern.local_name == "bun_types" {
+            println!(
+                "Logging check annotation for bun type with file {:?}",
+                extract_path(result).map(|p| p.as_str())
+            )
+        }
         let file = match extract_path(result).map(|p| p.as_str()) {
             Some(path) => path,
             None => continue,
