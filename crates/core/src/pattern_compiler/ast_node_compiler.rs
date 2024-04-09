@@ -22,6 +22,7 @@ impl AstNodeCompiler {
         named_args: Vec<(String, NodeWithSource)>,
         sort: SortId,
         context: &mut NodeCompilationContext,
+        is_rhs: bool,
     ) -> Result<ASTNode> {
         let mut args = Vec::new();
         if context.compilation.lang.is_comment(sort) {
@@ -92,7 +93,7 @@ impl AstNodeCompiler {
                 )
             })?;
 
-            let pattern = ListCompiler::from_node_in_context(&node, field, context)?;
+            let pattern = ListCompiler::from_node_in_context(&node, field, context, is_rhs)?;
             args.push((id, field.multiple(), pattern));
         }
         if args.len() != args.iter().unique_by(|a| a.0).count() {

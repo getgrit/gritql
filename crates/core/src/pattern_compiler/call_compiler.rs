@@ -66,7 +66,7 @@ impl NodeCompiler for CallCompiler {
         // tree-sitter returns 0 for sorts/kinds it doesn't know about
         if sort != 0 {
             return Ok(Pattern::ASTNode(Box::new(AstNodeCompiler::from_args(
-                named_args, sort, context,
+                named_args, sort, context, is_rhs,
             )?)));
         }
         let mut args = named_args_to_hash_map(named_args, context)?;

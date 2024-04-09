@@ -16,7 +16,7 @@ impl NodeCompiler for MapCompiler {
     fn from_node_with_rhs(
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
-        _is_rhs: bool,
+        is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let children = node.named_children_by_field_name("elements");
         let mut elements = BTreeMap::new();
@@ -29,7 +29,7 @@ impl NodeCompiler for MapCompiler {
             let value = element
                 .child_by_field_name("value")
                 .ok_or_else(|| anyhow!("value not found in map element"))?;
-            let pattern = PatternCompiler::from_node(&value, context)?;
+            let pattern = PatternCompiler::from_node_with_rhs(&value, context, is_rhs)?;
             elements.insert(key, pattern);
         }
         Ok(GritMap::new(elements))

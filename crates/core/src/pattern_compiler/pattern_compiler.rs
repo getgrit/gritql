@@ -298,8 +298,8 @@ impl NodeCompiler for PatternCompiler {
             "regexPattern" => Ok(Pattern::Regex(Box::new(RegexCompiler::from_node_with_rhs(
                 node, context, is_rhs,
             )?))),
-            "variable" => Ok(Pattern::Variable(VariableCompiler::from_node_with_rhs(
-                node, context, is_rhs,
+            "variable" => Ok(Pattern::Variable(VariableCompiler::from_node(
+                node, context,
             )?)),
             "codeSnippet" => CodeSnippetCompiler::from_node_with_rhs(node, context, is_rhs),
             "like" => Ok(Pattern::Like(Box::new(LikeCompiler::from_node_with_rhs(

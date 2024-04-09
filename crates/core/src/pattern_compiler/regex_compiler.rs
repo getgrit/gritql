@@ -65,7 +65,7 @@ impl NodeCompiler for RegexCompiler {
                 .build()?;
                 context.logs.push(log);
             }
-            let pattern = BackTickCompiler::from_node(&back_tick_node, context)?;
+            let pattern = BackTickCompiler::from_node_with_rhs(&back_tick_node, context, is_rhs)?;
             RegexLike::Pattern(Box::new(pattern))
         };
 
