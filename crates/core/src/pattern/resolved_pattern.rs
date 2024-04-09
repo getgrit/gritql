@@ -125,15 +125,7 @@ impl<'a> JoinFn<'a> {
         distributed_indent: Option<usize>,
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<str>> {
-        let separator = if let Some(padding) = distributed_indent {
-            let padding = " ".repeat(padding);
-            let mut replacement = "\n".to_owned();
-            replacement.push_str(&padding);
-            str::replace(&self.separator, '\n', &replacement)
-        } else {
-            self.separator.to_owned()
-        };
-        Ok(self
+        let res = self
             .list
             .iter()
             .map(|pattern| {
@@ -147,9 +139,40 @@ impl<'a> JoinFn<'a> {
                 )
             })
             .collect::<Result<Vec<_>>>()?
-            .join(&separator)
-            .into())
+            .join(&self.separator);
+        if let Some(padding) = distributed_indent {
+            Ok(pad_text(&res, padding).into())
+        } else {
+            Ok(res.into())
+        }
     }
+
+    // fn linearized_text(
+    //     &self,
+    //     language: &TargetLanguage,
+    //     effects: &[Effect<'a>],
+    //     files: &FileRegistry<'a>,
+    //     memo: &mut HashMap<CodeRange, Option<String>>,
+    //     distributed_indent: Option<usize>,
+    //     logs: &mut AnalysisLogs,
+    // ) -> Result<Cow<str>> {
+    //     Ok(self
+    //         .list
+    //         .iter()
+    //         .map(|pattern| {
+    //             pattern.linearized_text(
+    //                 language,
+    //                 effects,
+    //                 files,
+    //                 memo,
+    //                 distributed_indent.is_some(),
+    //                 logs,
+    //             )
+    //         })
+    //         .collect::<Result<Vec<_>>>()?
+    //         .join(&self.separator)
+    //         .into())
+    // }
 
     fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
         Ok(self

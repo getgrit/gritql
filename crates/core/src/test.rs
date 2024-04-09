@@ -11818,7 +11818,7 @@ fn yaml_list_indentation() {
                 |        $items <: some bubble($new_task) $_ where {
                 |                $new_task += `foo: other`,
                 |            },
-                |        $bar = join(list=$new_task, separator=`\n  `),
+                |        $bar = join(list=$new_task, separator=`\n `),
                 |        $subtasks += `- $bar`
                 |    },
                 |    $foo = join(list=$subtasks, separator=`\n\n`),
@@ -13628,7 +13628,7 @@ fn yaml_list_add_indentation() {
                 |        $items <: some bubble($new_task) $_ where {
                 |                $new_task += `foo: other`,
                 |            },
-                |        $bar = join(list=$new_task, separator=`\n  `),
+                |        $bar = join(list=$new_task, separator=`\n `),
                 |        $subtasks += `- $bar`
                 |    },
                 |    $foo = join(list=$subtasks, separator=`\n\n`),
