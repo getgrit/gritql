@@ -11877,6 +11877,52 @@ fn yaml_list_indentation() {
 }
 
 #[test]
+fn yaml_output_indentation() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r"
+                |engine marzano(0.1)
+                |language yaml
+                |
+                |`- $block` where { $block <: contains `target: $_`, $block => `nest_this:
+                |  $block` }
+                |
+                |"
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |my_list:
+                |  - item: other
+                |  - item: other
+                |  - item: foo
+                |    target: this
+                |    indented:
+                |       somewhat:
+                |         deeply: true
+                |  - item: other
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+            |my_list:
+            |  - item: other
+            |  - item: other
+            |  - nest_this:
+            |       item: foo
+            |       target: this
+            |       indented:
+            |           somewhat:
+            |           deeply: true
+            |  - item: other
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn linearizes_overlapping_rewrite_and_insert() {
     run_test_expected({
         TestArgExpected {
