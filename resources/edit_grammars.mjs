@@ -1,5 +1,6 @@
 import { exec } from 'child_process';
 import fs from 'fs/promises';
+import path from 'path';
 
 ///////////////////////////////////////////////////
 // Scripting helpers
@@ -327,9 +328,12 @@ async function buildLanguage(language) {
 }
 
 async function run() {
+  const wd = path.dirname(process.argv[1]);
   const args = process.argv.slice(2);
   const buildAll = args.length == 0;
   const languagesTobuild = buildAll ? allLanguages : args;
+
+  process.chdir(wd);
 
   console.log('Syncing upstream grammars');
   if (buildAll) {
