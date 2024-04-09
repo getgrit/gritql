@@ -125,6 +125,7 @@ pub struct ApplyPatternArgs {
     /// Interpret the request as a natural language request
     #[clap(long)]
     ai: bool,
+    /// Change the default language to use for the pattern (if unset, JavaScript is used by default)
     #[clap(long = "language", alias = "lang")]
     pub language: Option<PatternLanguage>,
 }
