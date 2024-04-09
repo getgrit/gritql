@@ -5,7 +5,7 @@ use super::{
 use crate::pattern::patterns::Pattern;
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
-use marzano_util::{node_with_source::NodeWithSource, position::Range};
+use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct BackTickCompiler;
 
@@ -18,7 +18,7 @@ impl NodeCompiler for BackTickCompiler {
         is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let source = node.text().to_string();
-        let mut range: Range = node.range().into();
+        let mut range = node.range();
         range.adjust_columns(1, -1);
         let content = source
             .strip_prefix('`')
@@ -43,7 +43,7 @@ impl NodeCompiler for RawBackTickCompiler {
             bail!("raw snippets are only allowed on the right hand side of a rule");
         }
         let source = node.text().to_string();
-        let mut range: Range = node.range().into();
+        let mut range = node.range();
         // adjust range by "raw`" and "`"
         range.adjust_columns(4, -1);
         let content = source

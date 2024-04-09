@@ -14,10 +14,10 @@ impl NodeCompiler for RangeCompiler {
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
-        let start_line = node_to_int(&node, "start_line")?;
-        let start_column = node_to_int(&node, "start_column")?;
-        let end_line = node_to_int(&node, "end_line")?;
-        let end_column = node_to_int(&node, "end_column")?;
+        let start_line = node_to_int(node, "start_line")?;
+        let start_column = node_to_int(node, "start_column")?;
+        let end_line = node_to_int(node, "end_line")?;
+        let end_column = node_to_int(node, "end_column")?;
         Ok(Range {
             start: Point::new(start_line, start_column)?,
             end: Point::new(end_line, end_column)?,

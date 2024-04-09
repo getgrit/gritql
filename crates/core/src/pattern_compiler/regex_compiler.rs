@@ -6,9 +6,7 @@ use crate::pattern::regex::{RegexLike, RegexPattern};
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
 use marzano_language::language::Language;
-use marzano_util::{
-    analysis_logs::AnalysisLogBuilder, node_with_source::NodeWithSource, position::Range,
-};
+use marzano_util::{analysis_logs::AnalysisLogBuilder, node_with_source::NodeWithSource};
 
 pub(crate) struct RegexCompiler;
 
@@ -47,7 +45,7 @@ impl NodeCompiler for RegexCompiler {
                 .metavariable_regex()
                 .is_match(&regex)
             {
-                let range: Range = regex_node.range().into();
+                let range = regex_node.range();
                 let alternative = format!(
                     "r\"{}\"",
                     regex

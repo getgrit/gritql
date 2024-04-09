@@ -109,7 +109,7 @@ impl PatternCompiler {
                         .compilation
                         .lang
                         .replaced_metavariable_regex()
-                        .is_match(&content)
+                        .is_match(content)
                 {
                     let regex =
                         implicit_metavariable_regex(&node, context_range, range_map, context)?;
@@ -119,7 +119,7 @@ impl PatternCompiler {
                 }
                 return Ok(Pattern::AstLeafNode(AstLeafNode::new(
                     sort,
-                    &content,
+                    content,
                     context.compilation.lang,
                 )?));
             }
@@ -349,7 +349,7 @@ fn implicit_metavariable_regex(
     range_map: &HashMap<Range, Range>,
     context: &mut NodeCompilationContext,
 ) -> Result<Option<RegexPattern>> {
-    let range: Range = node.range().into();
+    let range = node.range();
     let offset = range.start_byte;
     let mut last = if cfg!(target_arch = "wasm32") {
         char_index_to_byte_index(offset, node.source)
@@ -423,8 +423,8 @@ fn metavariable_descendent(
             if is_reserved_metavariable(name.trim(), Some(context.compilation.lang)) && !is_rhs {
                 bail!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", name.trim_start_matches(context.compilation.lang.metavariable_prefix_substitute()));
             }
-            let range: Range = node.range().into();
-            return text_to_var(&name, range, context_range, range_map, context)
+            let range = node.range();
+            return text_to_var(name, range, context_range, range_map, context)
                 .map(|s| Some(s.into()));
         }
         if node.node.child_count() == 1 {
@@ -441,8 +441,7 @@ fn metavariable_ranges(node: &NodeWithSource, lang: &impl Language) -> Vec<Range
         .flat_map(|n| {
             let child = NodeWithSource::new(n.node.clone(), node.source);
             if is_metavariable(&child, lang) {
-                let range: Range = n.node.range().into();
-                vec![range]
+                vec![n.range()]
             } else {
                 node_sub_variables(child, lang)
             }

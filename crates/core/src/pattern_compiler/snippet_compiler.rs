@@ -66,7 +66,7 @@ impl NodeCompiler for LanguageSpecificSnippetCompiler {
             .child_by_field_name("snippet")
             .ok_or_else(|| anyhow!("missing snippet of languageSpecificSnippet"))?;
         let source = snippet_node.text().to_string();
-        let mut range: Range = node.range().into();
+        let mut range = node.range();
         range.adjust_columns(1, -1);
         let content = source
             .strip_prefix('"')
