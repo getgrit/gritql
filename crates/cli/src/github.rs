@@ -3,6 +3,7 @@ use std::io::prelude::*;
 
 use anyhow::{Context as _, Result};
 
+use log::info;
 use marzano_core::{fs::extract_ranges, pattern::api::EnforcementLevel};
 use marzano_gritmodule::config::ResolvedGritDefinition;
 use marzano_gritmodule::utils::extract_path;
@@ -27,9 +28,6 @@ fn print_one(
     title: Option<&str>,
     level: &EnforcementLevel,
 ) {
-    if matches!(level, EnforcementLevel::Error) {
-        println!("Here printing one for file {}", file);
-    }
     let level = format_level(level);
     let mut params = format!("file={}", file);
     if let Some(range) = range {
@@ -44,7 +42,7 @@ fn print_one(
     if let Some(title) = title {
         params.push_str(format!(",title={}", title).as_str());
     }
-    println!("::{} {}::{}", level, params, message);
+    info!("::{} {}::{}", level, params, message);
 }
 
 pub fn log_check_annotations(check_results: &Vec<&CheckResult<'_>>) {
@@ -53,12 +51,6 @@ pub fn log_check_annotations(check_results: &Vec<&CheckResult<'_>>) {
         let result = &result.result;
 
         let level = pattern.level();
-        if pattern.local_name == "bun_types" {
-            println!(
-                "Logging check annotation for bun type with file {:?}",
-                extract_path(result).map(|p| p.as_str())
-            )
-        }
         let file = match extract_path(result).map(|p| p.as_str()) {
             Some(path) => path,
             None => continue,
