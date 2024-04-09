@@ -13608,3 +13608,34 @@ remove_unused_imports()"#
     })
     .unwrap();
 }
+
+#[test]
+fn preserves_python_blocks() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |engine marzano(0.1)
+                |language python
+                |
+                |`def $method($args): $body` => `def $method($args): $body`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |def foo(args):
+                |    print("bar")
+                |    print("thing")
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+            |def foo(args):
+            | print("bar")
+            | print("thing")
+            |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
