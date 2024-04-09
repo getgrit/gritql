@@ -14,8 +14,7 @@ use crate::{
         analysis::{has_limit, is_multifile},
         built_in_functions::BuiltIns,
         constants::{
-            ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX,
-            NEW_FILES_INDEX, PROGRAM_INDEX,
+            ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
         },
         function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
         pattern_definition::PatternDefinition,
@@ -388,11 +387,11 @@ fn get_definitions(
                 file,
                 ..*context
             },
-            // This is the global scope, but we cannot pass `global_vars` due to aliasing.
-            // Thankfully, we don't really have global variables, so this map is never accessed.
+            // We're not in a local scope yet, so this map is kinda useless.
+            // It's just there because all node compilers expect one.
             vars: &mut BTreeMap::new(),
             vars_array: &mut vars_array,
-            scope_index: GLOBAL_VARS_SCOPE_INDEX,
+            scope_index: 0,
             global_vars,
             logs,
         };
@@ -434,11 +433,11 @@ fn get_definitions(
         source_file.clone(),
         &mut NodeCompilationContext {
             compilation: context,
-            // This is the global scope, but we cannot pass `global_vars` due to aliasing.
-            // Thankfully, we don't really have global variables, so this map is never accessed.
+            // We're not in a local scope yet, so this map is kinda useless.
+            // It's just there because all node compilers expect one.
             vars: &mut BTreeMap::new(),
             vars_array: &mut vars_array,
-            scope_index: GLOBAL_VARS_SCOPE_INDEX,
+            scope_index: 0,
             global_vars,
             logs,
         },
