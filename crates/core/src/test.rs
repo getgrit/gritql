@@ -11823,7 +11823,8 @@ fn yaml_list_indentation() {
                 |    },
                 |    $foo = join(list=$subtasks, separator=`\n\n`),
                 |    $task => `in_parallel:
-                |$foo`
+                |nested:
+                |  $foo`
                 |}
                 |
                 |"
@@ -11854,20 +11855,21 @@ fn yaml_list_indentation() {
             .unwrap(),
             expected: r#"
                 |  - in_parallel:
-                |    - foo: other
-                |      foo: other
-                |      foo: other
-                |      foo: other
+                |    nested:
+                |      - foo: other
+                |        foo: other
+                |        foo: other
+                |        foo: other
                 |
-                |    - foo: other
-                |      foo: other
-                |      foo: other
-                |      foo: other
+                |      - foo: other
+                |        foo: other
+                |        foo: other
+                |        foo: other
                 |
-                |    - foo: other
-                |      foo: other
-                |      foo: other
-                |      foo: other
+                |      - foo: other
+                |        foo: other
+                |        foo: other
+                |        foo: other
                 |"#
             .trim_margin()
             .unwrap(),
