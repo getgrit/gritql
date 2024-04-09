@@ -137,4 +137,4 @@ jobs:
       - name: test stdlib
         working-directory: ./stdlib
         run: |
-          ../target/release/marzano patterns test --exclude ai --exclude grit_snake_case --exclude cargo_use_long_dependency
+          ../target/release/marzano patterns test --exclude ai
