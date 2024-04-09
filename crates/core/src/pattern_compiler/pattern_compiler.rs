@@ -198,7 +198,7 @@ impl NodeCompiler for PatternCompiler {
     type TargetPattern = Pattern;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
     ) -> Result<Self::TargetPattern> {

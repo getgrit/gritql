@@ -10,7 +10,7 @@ impl NodeCompiler for ForeignLanguageCompiler {
     type TargetPattern = ForeignLanguage;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {

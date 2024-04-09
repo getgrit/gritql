@@ -13,14 +13,14 @@ impl NodeCompiler for LimitCompiler {
     type TargetPattern = Pattern;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let body = node
             .child_by_field_name("pattern")
             .ok_or_else(|| anyhow!("missing pattern in limit"))?;
-        let body = PatternCompiler::from_node(body, context)?;
+        let body = PatternCompiler::from_node(&body, context)?;
         let limit = node
             .child_by_field_name("limit")
             .ok_or_else(|| anyhow!("missing limit in limit"))?;

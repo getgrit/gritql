@@ -11,7 +11,7 @@ pub(crate) struct ListCompiler;
 
 impl ListCompiler {
     pub(crate) fn from_node_in_context(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context_field: &Field,
         context: &mut NodeCompilationContext,
     ) -> Result<Pattern> {
@@ -35,13 +35,13 @@ impl NodeCompiler for ListCompiler {
     type TargetPattern = List;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let patterns = node
             .named_children_by_field_name("patterns")
-            .map(|pattern| PatternCompiler::from_node(pattern, context))
+            .map(|pattern| PatternCompiler::from_node(&pattern, context))
             .collect::<Result<Vec<_>>>()?;
         Ok(List::new(patterns))
     }

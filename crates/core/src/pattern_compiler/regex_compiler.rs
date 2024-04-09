@@ -16,7 +16,7 @@ impl NodeCompiler for RegexCompiler {
     type TargetPattern = RegexPattern;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -67,13 +67,13 @@ impl NodeCompiler for RegexCompiler {
                 .build()?;
                 context.logs.push(log);
             }
-            let pattern = BackTickCompiler::from_node(back_tick_node, context)?;
+            let pattern = BackTickCompiler::from_node(&back_tick_node, context)?;
             RegexLike::Pattern(Box::new(pattern))
         };
 
         let variables = node
             .named_children_by_field_name("variables")
-            .map(|n| VariableCompiler::from_node(n, context).unwrap());
+            .map(|n| VariableCompiler::from_node(&n, context).unwrap());
 
         let variables: Vec<_> = variables.collect();
 

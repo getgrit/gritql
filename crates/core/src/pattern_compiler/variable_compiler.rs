@@ -10,12 +10,12 @@ impl NodeCompiler for VariableCompiler {
     type TargetPattern = Variable;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
-        let name = node.text().trim().to_string();
-        let range = node.range().into();
+        let name = node.text().trim();
+        let range = node.range();
         register_variable(&name, range, context)
     }
 }

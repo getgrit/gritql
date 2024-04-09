@@ -12,14 +12,14 @@ impl NodeCompiler for BeforeCompiler {
     type TargetPattern = Before;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let pattern = node
             .child_by_field_name("pattern")
             .ok_or_else(|| anyhow!("missing pattern of patternBefore"))?;
-        let pattern = PatternCompiler::from_node(pattern, context)?;
+        let pattern = PatternCompiler::from_node(&pattern, context)?;
         Ok(Before::new(pattern))
     }
 }

@@ -14,7 +14,7 @@ impl NodeCompiler for MapCompiler {
     type TargetPattern = GritMap;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -29,7 +29,7 @@ impl NodeCompiler for MapCompiler {
             let value = element
                 .child_by_field_name("value")
                 .ok_or_else(|| anyhow!("value not found in map element"))?;
-            let pattern = PatternCompiler::from_node(value, context)?;
+            let pattern = PatternCompiler::from_node(&value, context)?;
             elements.insert(key, pattern);
         }
         Ok(GritMap::new(elements))

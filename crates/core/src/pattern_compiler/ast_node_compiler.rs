@@ -35,7 +35,7 @@ impl AstNodeCompiler {
             if *name != "content" {
                 return Err(anyhow!("unknown field name {} for comment node", name));
             }
-            let pattern = PatternCompiler::from_node(node.clone(), context)?;
+            let pattern = PatternCompiler::from_node(node, context)?;
             args.push((COMMENT_CONTENT_FIELD_ID, false, pattern));
             return Ok(ASTNode::new(sort, args));
         }
@@ -92,7 +92,7 @@ impl AstNodeCompiler {
                 )
             })?;
 
-            let pattern = ListCompiler::from_node_in_context(node, field, context)?;
+            let pattern = ListCompiler::from_node_in_context(&node, field, context)?;
             args.push((id, field.multiple(), pattern));
         }
         if args.len() != args.iter().unique_by(|a| a.0).count() {

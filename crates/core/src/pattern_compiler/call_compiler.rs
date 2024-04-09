@@ -22,7 +22,7 @@ impl NodeCompiler for CallCompiler {
     type TargetPattern = Pattern;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -159,7 +159,7 @@ impl NodeCompiler for PrCallCompiler {
     type TargetPattern = PrCall;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -222,7 +222,7 @@ fn named_args_to_hash_map(
         .into_iter()
         .map(|(name, node)| {
             let name = context.compilation.lang.metavariable_prefix().to_owned() + &name;
-            let pattern = PatternCompiler::from_node_with_rhs(node, context, true)?;
+            let pattern = PatternCompiler::from_node_with_rhs(&node, context, true)?;
             Ok((name, pattern))
         })
         .collect()

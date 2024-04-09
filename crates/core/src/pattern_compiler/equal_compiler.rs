@@ -12,18 +12,18 @@ impl NodeCompiler for EqualCompiler {
     type TargetPattern = Equal;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let variable = node
             .child_by_field_name("left")
             .ok_or_else(|| anyhow!("missing lhs of predicateEqual"))?;
-        let variable = PatternCompiler::from_node(variable, context)?;
+        let variable = PatternCompiler::from_node_with_rhs(&variable, context, true)?;
         let pattern = node
             .child_by_field_name("right")
             .ok_or_else(|| anyhow!("missing rhs of predicateEqual"))?;
-        let pattern = PatternCompiler::from_node(pattern, context)?;
+        let pattern = PatternCompiler::from_node_with_rhs(&pattern, context, true)?;
         if let Pattern::Variable(var) = variable {
             Ok(Equal::new(var, pattern))
         } else {

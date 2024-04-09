@@ -12,14 +12,14 @@ impl NodeCompiler for WithinCompiler {
     type TargetPattern = Within;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let within = node
             .child_by_field_name("pattern")
             .ok_or_else(|| anyhow!("missing pattern of pattern within"))?;
-        let within = PatternCompiler::from_node(within, context)?;
+        let within = PatternCompiler::from_node(&within, context)?;
         Ok(Within::new(within))
     }
 }

@@ -319,23 +319,23 @@ fn node_to_definitions(
         if let Some(pattern_definition) = definition.child_by_field_name("pattern") {
             // todo check for duplicate names
             pattern_definitions.push(PatternDefinitionCompiler::from_node(
-                pattern_definition,
+                &pattern_definition,
                 context,
             )?);
         } else if let Some(predicate_definition) = definition.child_by_field_name("predicate") {
             // todo check for duplicate names
             predicate_definitions.push(PredicateDefinitionCompiler::from_node(
-                predicate_definition,
+                &predicate_definition,
                 context,
             )?);
         } else if let Some(function_definition) = definition.child_by_field_name("function") {
             function_definitions.push(GritFunctionDefinitionCompiler::from_node(
-                function_definition,
+                &function_definition,
                 context,
             )?);
         } else if let Some(function_definition) = definition.child_by_field_name("foreign") {
             foreign_function_definitions.push(ForeignFunctionDefinitionCompiler::from_node(
-                function_definition,
+                &function_definition,
                 context,
             )?);
         } else {
@@ -378,16 +378,18 @@ fn get_definitions(
             .collect(),
     );
 
-    let mut node_context = NodeCompilationContext {
-        compilation: context,
-        vars: &mut BTreeMap::new(), // Unused; definitions define their own local vars.
-        vars_array: &mut vars_array,
-        scope_index: 0, // Unused; will be initialized by the definition nodes.
-        global_vars,
-        logs,
-    };
-
     for (file, pattern) in libs.iter() {
+        let mut node_context = NodeCompilationContext {
+            compilation: &CompilationContext { file, ..*context },
+            // We're not in a local scope yet, so this map is kinda useless.
+            // It's just there because all node compilers expect one.
+            vars: &mut BTreeMap::new(),
+            vars_array: &mut vars_array,
+            scope_index: 0,
+            global_vars,
+            logs,
+        };
+
         let tree = parse_one(parser, pattern, file)?;
         let source_file = tree.root_node();
         node_to_definitions(
@@ -408,7 +410,7 @@ fn get_definitions(
             };
 
             let body = PatternCompiler::from_node(
-                NodeWithSource::new(bare_pattern, pattern),
+                &NodeWithSource::new(bare_pattern, pattern),
                 &mut local_context,
             )?;
             let pattern_def = PatternDefinition::new(
@@ -423,7 +425,16 @@ fn get_definitions(
     }
     node_to_definitions(
         source_file.clone(),
-        &mut node_context,
+        &mut NodeCompilationContext {
+            compilation: context,
+            // We're not in a local scope yet, so this map is kinda useless.
+            // It's just there because all node compilers expect one.
+            vars: &mut BTreeMap::new(),
+            vars_array: &mut vars_array,
+            scope_index: 0,
+            global_vars,
+            logs,
+        },
         &mut pattern_definitions,
         &mut predicate_definitions,
         &mut function_definitions,
@@ -748,13 +759,22 @@ pub fn src_to_problem_libs_for_language(
     };
 
     let pattern = if let Some(node) = source_file.child_by_field_name("pattern") {
-        PatternCompiler::from_node(NodeWithSource::new(node, &src), &mut node_context)?
+        PatternCompiler::from_node(&NodeWithSource::new(node, &src), &mut node_context)?
     } else {
         let long_message = "No pattern found.
         If you have written a pattern definition in the form `pattern myPattern() {{ }}`,
         try calling it by adding `myPattern()` to the end of your file.
         Check out the docs at https://docs.grit.io for help with writing patterns.";
         bail!("{}", long_message);
+    };
+
+    let mut node_context = NodeCompilationContext {
+        compilation: &context,
+        vars: &mut vars,
+        vars_array: &mut vars_array,
+        scope_index,
+        global_vars: &mut global_vars,
+        logs: &mut logs,
     };
 
     let pattern = auto_wrap_pattern(

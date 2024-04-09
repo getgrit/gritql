@@ -13,7 +13,7 @@ impl NodeCompiler for BooleanConstantCompiler {
     type TargetPattern = BooleanConstant;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -33,7 +33,7 @@ impl NodeCompiler for FloatConstantCompiler {
     type TargetPattern = FloatConstant;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -49,7 +49,7 @@ impl NodeCompiler for IntConstantCompiler {
     type TargetPattern = IntConstant;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -65,7 +65,7 @@ impl NodeCompiler for StringConstantCompiler {
     type TargetPattern = StringConstant;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {

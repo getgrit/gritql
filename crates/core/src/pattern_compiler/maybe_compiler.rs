@@ -12,14 +12,14 @@ impl NodeCompiler for MaybeCompiler {
     type TargetPattern = Maybe;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let pattern = node
             .child_by_field_name("pattern")
             .ok_or_else(|| anyhow!("missing pattern of patternMaybe"))?;
-        let pattern = PatternCompiler::from_node(pattern, context)?;
+        let pattern = PatternCompiler::from_node(&pattern, context)?;
         Ok(Maybe::new(pattern))
     }
 }
@@ -30,14 +30,14 @@ impl NodeCompiler for PrMaybeCompiler {
     type TargetPattern = PrMaybe;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let predicate = node
             .child_by_field_name("predicate")
             .ok_or_else(|| anyhow!("missing predicate of predicateMaybe"))?;
-        let predicate = PredicateCompiler::from_node(predicate, context)?;
+        let predicate = PredicateCompiler::from_node(&predicate, context)?;
         Ok(PrMaybe::new(predicate))
     }
 }

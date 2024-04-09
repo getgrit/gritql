@@ -13,7 +13,7 @@ impl NodeCompiler for PatternDefinitionCompiler {
     type TargetPattern = PatternDefinition;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -39,7 +39,7 @@ impl NodeCompiler for PatternDefinitionCompiler {
         let body = node
             .child_by_field_name("body")
             .ok_or_else(|| anyhow!("missing body of patternDefinition"))?;
-        let body = AndCompiler::from_node(body, &mut context)?;
+        let body = AndCompiler::from_node(&body, &mut context)?;
         let pattern_def = PatternDefinition::new(
             name.to_owned(),
             scope_index,

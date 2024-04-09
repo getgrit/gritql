@@ -13,7 +13,7 @@ impl NodeCompiler for ListIndexCompiler {
     type TargetPattern = ListIndex;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -21,9 +21,9 @@ impl NodeCompiler for ListIndexCompiler {
             .child_by_field_name("list")
             .ok_or_else(|| anyhow!("missing list of listIndex"))?;
         let list = if list.node.kind() == "list" {
-            ListOrContainer::List(ListCompiler::from_node(list, context)?)
+            ListOrContainer::List(ListCompiler::from_node(&list, context)?)
         } else {
-            ListOrContainer::Container(ContainerCompiler::from_node(list, context)?)
+            ListOrContainer::Container(ContainerCompiler::from_node(&list, context)?)
         };
 
         let index_node = node
@@ -38,7 +38,7 @@ impl NodeCompiler for ListIndexCompiler {
                     .map_err(|_| anyhow!("list index must be an integer"))?,
             )
         } else {
-            ContainerOrIndex::Container(ContainerCompiler::from_node(index_node, context)?)
+            ContainerOrIndex::Container(ContainerCompiler::from_node(&index_node, context)?)
         };
 
         Ok(ListIndex { list, index })

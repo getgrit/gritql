@@ -13,7 +13,7 @@ impl NodeCompiler for ContainerCompiler {
     type TargetPattern = Container;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {

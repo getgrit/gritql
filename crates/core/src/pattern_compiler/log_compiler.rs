@@ -13,13 +13,13 @@ impl NodeCompiler for LogCompiler {
     type TargetPattern = Log;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let message = node.child_by_field_name("message");
         let message = if let Some(message) = message {
-            Some(PatternCompiler::from_node(message, context)?)
+            Some(PatternCompiler::from_node(&message, context)?)
         } else {
             None
         };
@@ -27,7 +27,7 @@ impl NodeCompiler for LogCompiler {
         let variable = variable_node
             .map(|n| {
                 let name = n.text().to_string();
-                let variable = VariableCompiler::from_node(n, context)?;
+                let variable = VariableCompiler::from_node(&n, context)?;
                 Ok(VariableInfo::new(name, variable))
             })
             .map_or(Ok(None), |v: Result<VariableInfo>| v.map(Some))?;

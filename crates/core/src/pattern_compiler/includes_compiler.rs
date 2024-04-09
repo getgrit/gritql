@@ -12,14 +12,14 @@ impl NodeCompiler for IncludesCompiler {
     type TargetPattern = Includes;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let includes = node
             .child_by_field_name("includes")
             .ok_or_else(|| anyhow!("missing includes of patternIncludes"))?;
-        let includes = PatternCompiler::from_node(includes, context)?;
+        let includes = PatternCompiler::from_node(&includes, context)?;
         Ok(Includes::new(includes))
     }
 }

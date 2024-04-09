@@ -17,7 +17,7 @@ impl NodeCompiler for GritFunctionDefinitionCompiler {
     type TargetPattern = GritFunctionDefinition;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -26,22 +26,22 @@ impl NodeCompiler for GritFunctionDefinitionCompiler {
             .ok_or_else(|| anyhow!("missing name of function definition"))?;
         let name = name.text().trim();
         let mut local_vars = BTreeMap::new();
-        let (scope_index, mut context) = create_scope!(context, local_vars);
+        let (scope_index, mut local_context) = create_scope!(context, local_vars);
 
         let params = get_variables(
-            &context
+            &local_context
                 .compilation
                 .function_definition_info
                 .get(name)
                 .ok_or_else(|| anyhow!("cannot get info for function {}", name))?
                 .parameters,
-            &mut context,
+            &mut local_context,
         )?;
 
         let body = node
             .child_by_field_name("body")
             .ok_or_else(|| anyhow!("missing body of grit function definition"))?;
-        let body = PrAndCompiler::from_node(body, &mut context)?;
+        let body = PrAndCompiler::from_node(&body, &mut local_context)?;
         let function_definition = GritFunctionDefinition::new(
             name.to_owned(),
             scope_index,
@@ -59,7 +59,7 @@ impl NodeCompiler for ForeignFunctionDefinitionCompiler {
     type TargetPattern = ForeignFunctionDefinition;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -84,7 +84,8 @@ impl NodeCompiler for ForeignFunctionDefinitionCompiler {
             .child_by_field_name("code")
             .ok_or_else(|| anyhow!("missing code of foreign function body"))?;
         let foreign_language = ForeignLanguageCompiler::from_node(
-            node.child_by_field_name("language")
+            &node
+                .child_by_field_name("language")
                 .ok_or_else(|| anyhow!("missing language of foreign function definition"))?,
             context,
         )?;

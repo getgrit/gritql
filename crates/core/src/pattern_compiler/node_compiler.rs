@@ -6,14 +6,14 @@ pub(crate) trait NodeCompiler {
     type TargetPattern;
 
     fn from_node(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
     ) -> Result<Self::TargetPattern> {
         Self::from_node_with_rhs(node, context, false)
     }
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
     ) -> Result<Self::TargetPattern>;

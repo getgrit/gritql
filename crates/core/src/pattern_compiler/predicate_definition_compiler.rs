@@ -13,7 +13,7 @@ impl NodeCompiler for PredicateDefinitionCompiler {
     type TargetPattern = PredicateDefinition;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -22,7 +22,7 @@ impl NodeCompiler for PredicateDefinitionCompiler {
             .ok_or_else(|| anyhow!("missing name of pattern definition"))?;
         let name = name.text().trim();
         let mut local_vars = BTreeMap::new();
-        let (scope_index, mut context) = create_scope!(context, local_vars);
+        let (scope_index, mut local_context) = create_scope!(context, local_vars);
         // important that this occurs first, as calls assume
         // that parameters are registered first
         let params = get_variables(
@@ -32,13 +32,13 @@ impl NodeCompiler for PredicateDefinitionCompiler {
                 .get(name)
                 .ok_or_else(|| anyhow!("cannot get info for pattern {}", name))?
                 .parameters,
-            &mut context,
+            &mut local_context,
         )?;
 
         let body = node
             .child_by_field_name("body")
             .ok_or_else(|| anyhow!("missing body of pattern definition"))?;
-        let body = PrAndCompiler::from_node(body, &mut context)?;
+        let body = PrAndCompiler::from_node(&body, &mut local_context)?;
         let predicate_def = PredicateDefinition::new(
             name.to_owned(),
             scope_index,

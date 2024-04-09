@@ -18,7 +18,7 @@ impl NodeCompiler for PredicateCompiler {
     type TargetPattern = Predicate;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -49,16 +49,11 @@ impl NodeCompiler for PredicateCompiler {
             "predicateCall" => Ok(Predicate::Call(Box::new(PrCallCompiler::from_node(
                 node, context,
             )?))),
-            "booleanConstant" => {
-                let value = node.text().trim();
-                if value == "true" {
-                    Ok(Predicate::True)
-                } else if value == "false" {
-                    Ok(Predicate::False)
-                } else {
-                    Err(anyhow!("invalid booleanConstant"))
-                }
-            }
+            "booleanConstant" => match node.text().trim() {
+                "true" => Ok(Predicate::True),
+                "false" => Ok(Predicate::False),
+                _ => Err(anyhow!("invalid booleanConstant")),
+            },
             "predicateAssignment" => Ok(Predicate::Assignment(Box::new(
                 AssignmentCompiler::from_node(node, context)?,
             ))),

@@ -3,6 +3,7 @@ use std::io::prelude::*;
 
 use anyhow::{Context as _, Result};
 
+use log::info;
 use marzano_core::{fs::extract_ranges, pattern::api::EnforcementLevel};
 use marzano_gritmodule::config::ResolvedGritDefinition;
 use marzano_gritmodule::utils::extract_path;
@@ -41,7 +42,7 @@ fn print_one(
     if let Some(title) = title {
         params.push_str(format!(",title={}", title).as_str());
     }
-    println!("::{} {}::{}", level, params, message);
+    info!("::{} {}::{}", level, params, message);
 }
 
 pub fn log_check_annotations(check_results: &Vec<&CheckResult<'_>>) {
@@ -61,8 +62,12 @@ pub fn log_check_annotations(check_results: &Vec<&CheckResult<'_>>) {
 
         match extract_ranges(result) {
             Some(ranges) => {
-                for range in ranges {
-                    print_one(file, Some(*range), message, title, &level);
+                if ranges.is_empty() {
+                    print_one(file, None, message, title, &level);
+                } else {
+                    for range in ranges {
+                        print_one(file, Some(*range), message, title, &level);
+                    }
                 }
             }
             None => print_one(file, None, message, title, &level),

@@ -12,14 +12,14 @@ impl NodeCompiler for PredicateReturnCompiler {
     type TargetPattern = PrReturn;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let pattern = node
             .child_by_field_name("pattern")
             .ok_or_else(|| anyhow!("missing pattern of return"))?;
-        let pattern = PatternCompiler::from_node_with_rhs(pattern, context, true)?;
+        let pattern = PatternCompiler::from_node_with_rhs(&pattern, context, true)?;
         Ok(PrReturn::new(pattern))
     }
 }

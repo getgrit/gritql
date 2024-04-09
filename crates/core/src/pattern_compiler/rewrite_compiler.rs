@@ -16,7 +16,7 @@ impl NodeCompiler for RewriteCompiler {
 
     // do we want to add support for annotations?
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -27,8 +27,8 @@ impl NodeCompiler for RewriteCompiler {
             .child_by_field_name("right")
             .ok_or_else(|| anyhow!("missing rhs of rewrite"))?;
         let annotation = node.child_by_field_name("annotation");
-        let left = PatternCompiler::from_node(left, context)?;
-        let right = PatternCompiler::from_node(right, context)?;
+        let left = PatternCompiler::from_node(&left, context)?;
+        let right = PatternCompiler::from_node_with_rhs(&right, context, true)?;
 
         match (&left, &right) {
             (

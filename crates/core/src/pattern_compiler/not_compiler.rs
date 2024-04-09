@@ -9,9 +9,7 @@ use crate::pattern::{
     predicates::Predicate,
 };
 use anyhow::{anyhow, Result};
-use marzano_util::{
-    analysis_logs::AnalysisLogBuilder, node_with_source::NodeWithSource, position::Range,
-};
+use marzano_util::{analysis_logs::AnalysisLogBuilder, node_with_source::NodeWithSource};
 
 pub(crate) struct NotCompiler;
 
@@ -19,15 +17,15 @@ impl NodeCompiler for NotCompiler {
     type TargetPattern = Not;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let pattern = node
             .child_by_field_name("pattern")
             .ok_or_else(|| anyhow!("missing pattern of patternNot"))?;
-        let range: Range = pattern.range().into();
-        let pattern = PatternCompiler::from_node(pattern, context)?;
+        let range = pattern.range();
+        let pattern = PatternCompiler::from_node(&pattern, context)?;
         if pattern.iter().any(|p| {
             matches!(
                 p,
@@ -55,15 +53,15 @@ impl NodeCompiler for PrNotCompiler {
     type TargetPattern = PrNot;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let not = node
             .child_by_field_name("predicate")
             .ok_or_else(|| anyhow!("predicateNot missing predicate"))?;
-        let range: Range = not.range().into();
-        let not = PredicateCompiler::from_node(not, context)?;
+        let range = not.range();
+        let not = PredicateCompiler::from_node(&not, context)?;
         if not.iter().any(|p| {
             matches!(
                 p,

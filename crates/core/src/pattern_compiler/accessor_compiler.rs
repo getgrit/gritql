@@ -13,7 +13,7 @@ impl NodeCompiler for AccessorCompiler {
     type TargetPattern = Accessor;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -21,9 +21,9 @@ impl NodeCompiler for AccessorCompiler {
             .child_by_field_name("map")
             .ok_or_else(|| anyhow!("missing map of accessor"))?;
         let map = if map.node.kind() == "map" {
-            AccessorMap::Map(MapCompiler::from_node(map, context)?)
+            AccessorMap::Map(MapCompiler::from_node(&map, context)?)
         } else {
-            AccessorMap::Container(ContainerCompiler::from_node(map, context)?)
+            AccessorMap::Container(ContainerCompiler::from_node(&map, context)?)
         };
 
         let key = node
@@ -31,7 +31,7 @@ impl NodeCompiler for AccessorCompiler {
             .ok_or_else(|| anyhow!("missing key of accessor"))?;
 
         let key = if key.node.kind() == "variable" {
-            AccessorKey::Variable(VariableCompiler::from_node(key, context)?)
+            AccessorKey::Variable(VariableCompiler::from_node(&key, context)?)
         } else {
             AccessorKey::String(key.text().to_string())
         };

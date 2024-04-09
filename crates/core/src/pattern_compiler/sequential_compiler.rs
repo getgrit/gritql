@@ -11,12 +11,12 @@ pub(crate) struct SequentialCompiler;
 
 impl SequentialCompiler {
     pub(crate) fn from_files_node(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
     ) -> Result<Sequential> {
         node.named_children_by_field_name("files")
             .map(|n| {
-                let step = StepCompiler::from_node(n, context)?;
+                let step = StepCompiler::from_node(&n, context)?;
                 let some = Pattern::Some(Box::new(Some::new(step.pattern)));
                 let files = Pattern::Files(Box::new(Files::new(some)));
                 Ok(Step { pattern: files })
@@ -30,12 +30,12 @@ impl NodeCompiler for SequentialCompiler {
     type TargetPattern = Sequential;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         node.named_children_by_field_name("sequential")
-            .map(|n| StepCompiler::from_node(n, context))
+            .map(|n| StepCompiler::from_node(&n, context))
             .collect::<Result<Vec<_>>>()
             .map(Into::into)
     }

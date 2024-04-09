@@ -6,7 +6,6 @@ use crate::pattern::{patterns::Pattern, step::Step};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogBuilder;
 use marzano_util::node_with_source::NodeWithSource;
-use marzano_util::position::Range;
 
 const SEQUENTIAL_WARNING: &str = "Warning: sequential matches at the top of the file. If a pattern matched outside of a sequential, but no longer matches, it is likely because naked patterns are automatically wrapped with `contains bubble <pattern>`";
 
@@ -16,11 +15,11 @@ impl NodeCompiler for StepCompiler {
     type TargetPattern = Step;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
-        let pattern = PatternCompiler::from_node(node.clone(), context)?;
+        let pattern = PatternCompiler::from_node(node, context)?;
         match pattern {
             Pattern::File(_)
             | Pattern::Files(_)
@@ -74,7 +73,7 @@ impl NodeCompiler for StepCompiler {
             | Pattern::Modulo(_)
             | Pattern::Dots
             | Pattern::Like(_) => {
-                let range: Range = node.range().into();
+                let range = node.range();
                 let log = AnalysisLogBuilder::default()
                     .level(441_u16)
                     .file(context.compilation.file)
@@ -97,7 +96,7 @@ impl NodeCompiler for StepCompiler {
                             | Pattern::Call(_)
                             | Pattern::Where(_)
                     ) {
-                        let range: Range = node.range().into();
+                        let range = node.range();
                         let log = AnalysisLogBuilder::default()
                             .level(441_u16)
                             .file(context.compilation.file)

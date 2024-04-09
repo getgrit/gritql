@@ -15,7 +15,7 @@ use grit_util::{traverse, Order};
 use marzano_language::language::Language;
 use marzano_util::{
     analysis_logs::AnalysisLogBuilder, cursor_wrapper::CursorWrapper,
-    node_with_source::NodeWithSource, position::Range,
+    node_with_source::NodeWithSource,
 };
 
 pub(crate) struct AsCompiler;
@@ -25,7 +25,7 @@ impl NodeCompiler for AsCompiler {
     type TargetPattern = Where;
 
     fn from_node_with_rhs(
-        node: NodeWithSource,
+        node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
@@ -43,7 +43,7 @@ impl NodeCompiler for AsCompiler {
         // could possible lead to some false positives, but more precise solutions
         // require much greater changes.
         if pattern_repeated_variable(&pattern, name, context.compilation.lang)? {
-            let range: Range = node.range().into();
+            let range = node.range();
             let log = AnalysisLogBuilder::default()
                 .level(441_u16)
                 .file(context.compilation.file)
@@ -57,8 +57,8 @@ impl NodeCompiler for AsCompiler {
             context.logs.push(log);
         }
 
-        let pattern = PatternCompiler::from_node(pattern, context)?;
-        let variable = VariableCompiler::from_node(variable, context)?;
+        let pattern = PatternCompiler::from_node(&pattern, context)?;
+        let variable = VariableCompiler::from_node(&variable, context)?;
         Ok(Where::new(
             Pattern::Variable(variable),
             Predicate::Match(Box::new(Match::new(

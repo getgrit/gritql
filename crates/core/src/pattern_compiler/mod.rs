@@ -1,3 +1,8 @@
+/// Creates a new scope within the given `context`.
+///
+/// This is implemented as a macro instead of method to avoid capturing the
+/// entire `context` instance, which would run afoul of the borrow-checking due
+/// to its mutable references.
 macro_rules! create_scope {
     ($context: expr, $local_vars: expr) => {{
         let scope_index = $context.vars_array.len();
@@ -52,6 +57,7 @@ pub(crate) mod multiply_compiler;
 mod node_compiler;
 pub(crate) mod not_compiler;
 pub(crate) mod or_compiler;
+#[allow(clippy::module_inception)]
 pub(crate) mod pattern_compiler;
 pub(crate) mod pattern_definition_compiler;
 pub(crate) mod predicate_compiler;
