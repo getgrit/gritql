@@ -13550,6 +13550,34 @@ fn php_echo() {
 }
 
 #[test]
+fn php_cast() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`(^x) $a` => `(string) $a`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |$i = (int) $a;
+                |$f = (float) $a;
+                |"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+                |$i = (string) $a;
+                |$f = (string) $a;
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+#[test]
 fn css_property_value() {
     run_test_match(TestArg {
         pattern: r#"
