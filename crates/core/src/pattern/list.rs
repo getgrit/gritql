@@ -16,11 +16,11 @@ pub struct List {
 }
 
 impl List {
-    pub(crate) fn new(patterns: Vec<Pattern>) -> Self {
+    pub fn new(patterns: Vec<Pattern>) -> Self {
         Self { patterns }
     }
 
-    pub(crate) fn get(&self, index: isize) -> Option<&Pattern> {
+    pub fn get(&self, index: isize) -> Option<&Pattern> {
         self.patterns
             .get(list_index::to_unsigned(index, self.patterns.len())?)
     }

@@ -37,14 +37,7 @@ impl NodeCompiler for BubbleCompiler {
         if parameters.iter().unique_by(|n| &n.0).count() != parameters.len() {
             bail!("bubble parameters must be unique, but had a repeated name in its parameters.")
         }
-        let params = get_variables(
-            &parameters,
-            local_context.compilation.file,
-            local_context.vars_array,
-            local_scope_index,
-            local_context.vars,
-            local_context.global_vars,
-        )?;
+        let params = get_variables(&parameters, &mut local_context)?;
 
         let body = node
             .child_by_field_name("pattern")
@@ -54,15 +47,7 @@ impl NodeCompiler for BubbleCompiler {
         let args = parameters
             .iter()
             .map(|(name, range)| {
-                let v = Pattern::Variable(register_variable(
-                    name,
-                    context.compilation.file,
-                    *range,
-                    context.vars,
-                    context.global_vars,
-                    context.vars_array,
-                    context.scope_index,
-                )?);
+                let v = Pattern::Variable(register_variable(name, *range, context)?);
                 Ok(v)
             })
             .collect::<Result<Vec<Pattern>>>()?;

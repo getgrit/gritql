@@ -24,7 +24,6 @@ impl NodeCompiler for PatternDefinitionCompiler {
         let name = name.text().trim();
         let mut local_vars = BTreeMap::new();
         let (scope_index, mut context) = create_scope!(context, local_vars);
-
         // important that this occurs first, as calls assume
         // that parameters are registered first
         let params = get_variables(
@@ -34,11 +33,7 @@ impl NodeCompiler for PatternDefinitionCompiler {
                 .get(name)
                 .ok_or_else(|| anyhow!("cannot get info for pattern {name}"))?
                 .parameters,
-            context.compilation.file,
-            context.vars_array,
-            scope_index,
-            context.vars,
-            context.global_vars,
+            &mut context,
         )?;
 
         let body = node

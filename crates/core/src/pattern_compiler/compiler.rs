@@ -46,7 +46,6 @@ use tree_sitter::{Node, Parser, Tree};
 use tracing::instrument;
 
 pub(crate) struct CompilationContext<'a> {
-    pub src: &'a str,
     pub file: &'a str,
     pub built_ins: &'a BuiltIns,
     pub lang: &'a TargetLanguage,
@@ -381,11 +380,7 @@ fn get_definitions(
 
     for (file, pattern) in libs.iter() {
         let mut node_context = NodeCompilationContext {
-            compilation: &CompilationContext {
-                src: pattern,
-                file,
-                ..*context
-            },
+            compilation: &CompilationContext { file, ..*context },
             // We're not in a local scope yet, so this map is kinda useless.
             // It's just there because all node compilers expect one.
             vars: &mut BTreeMap::new(),
@@ -727,7 +722,6 @@ pub fn src_to_problem_libs_for_language(
     } = get_definition_info(&libs, &source_file, &src, grit_parser)?;
 
     let context = CompilationContext {
-        src: &src,
         file: DEFAULT_FILE_NAME,
         built_ins: &built_ins,
         lang: &lang,

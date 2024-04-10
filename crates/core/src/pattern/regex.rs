@@ -1,28 +1,14 @@
 use super::{
-    code_snippet::from_back_tick_node,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
-    variable::{Variable, VariableSourceLocations},
+    variable::Variable,
     State,
 };
-use crate::{
-    context::Context,
-    pattern_compiler::{
-        compiler::NodeCompilationContext, variable_compiler::VariableCompiler, CompilationContext,
-        NodeCompiler,
-    },
-};
+use crate::context::Context;
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
-use marzano_language::{language::Language, target_language::TargetLanguage};
-use marzano_util::position::Range;
-use marzano_util::{
-    analysis_logs::{AnalysisLogBuilder, AnalysisLogs},
-    node_with_source::NodeWithSource,
-};
+use marzano_util::analysis_logs::AnalysisLogs;
 use regex::Regex;
-use std::collections::BTreeMap;
-use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub struct RegexPattern {
@@ -39,106 +25,6 @@ pub enum RegexLike {
 impl RegexPattern {
     pub fn new(regex: RegexLike, variables: Vec<Variable>) -> Self {
         Self { regex, variables }
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        global_vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        lang: &TargetLanguage,
-        is_rhs: bool,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Pattern> {
-        if is_rhs {
-            bail!("regex patterns are not allowed on the right-hand side of a rule")
-        }
-        let regex_node = node
-            .child_by_field_name("regex")
-            .ok_or_else(|| anyhow!("malformed regex, check the parser"))?;
-
-        let regex = if regex_node.kind() == "regex" {
-            let regex = regex_node
-                .utf8_text(context.src.as_bytes())?
-                .trim()
-                .to_string();
-            let regex = regex
-                .strip_prefix("r\"")
-                .ok_or_else(|| anyhow!("invalid regex prefix"))?
-                .strip_suffix('\"')
-                .ok_or_else(|| anyhow!("invalid regex postfix"))?;
-
-            RegexLike::Regex(regex.to_string())
-        } else {
-            let back_tick_node = regex_node
-                .child_by_field_name("snippet")
-                .ok_or_else(|| anyhow!("malformed regex, check the parser"))?;
-            let regex = regex_node
-                .utf8_text(context.src.as_bytes())?
-                .trim()
-                .to_string();
-            if !lang.metavariable_regex().is_match(&regex) {
-                let range: Range = regex_node.range().into();
-                let alternative = format!(
-                    "r\"{}\"",
-                    regex
-                        .strip_prefix("r`")
-                        .ok_or_else(|| anyhow!("invalid regex prefix"))?
-                        .strip_suffix('`')
-                        .ok_or_else(|| anyhow!("invalid regex postfix"))?
-                );
-                let log = AnalysisLogBuilder::default()
-                .level(441_u16)
-                .file(context.file)
-                .source(context.src)
-                .position(range.start)
-                .range(range)
-                .message(
-                    format!("Warning: unnecessary use of metavariable snippet syntax without metavariables. Replace {regex} with {alternative}"))
-                .build()?;
-                logs.push(log);
-            }
-            let pattern = from_back_tick_node(
-                back_tick_node,
-                context.file,
-                context.src,
-                vars,
-                global_vars,
-                vars_array,
-                scope_index,
-                lang,
-                is_rhs,
-            )?;
-            RegexLike::Pattern(Box::new(pattern))
-        };
-
-        let mut cursor = node.walk();
-        let variables = node
-            .children_by_field_name("variables", &mut cursor)
-            .filter(|n| n.is_named())
-            .map(|n| {
-                VariableCompiler::from_node(
-                    &NodeWithSource::new(n, context.src),
-                    &mut NodeCompilationContext {
-                        compilation: context,
-                        vars,
-                        vars_array,
-                        scope_index,
-                        global_vars,
-                        logs,
-                    },
-                )
-                .unwrap()
-            });
-
-        let variables: Vec<_> = variables.collect();
-
-        Ok(Pattern::Regex(Box::new(RegexPattern::new(
-            regex, variables,
-        ))))
     }
 
     pub(crate) fn execute_matching<'a>(
