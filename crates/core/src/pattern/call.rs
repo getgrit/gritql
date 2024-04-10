@@ -10,7 +10,13 @@ use super::{
     variable::VariableSourceLocations,
     State,
 };
-use crate::{context::Context, pattern_compiler::CompilationContext};
+use crate::{
+    context::Context,
+    pattern_compiler::{
+        compiler::NodeCompilationContext, pattern_compiler::PatternCompiler, CompilationContext,
+        NodeCompiler,
+    },
+};
 use anyhow::{anyhow, bail, Result};
 use itertools::Itertools;
 use marzano_language::language::Language;
@@ -250,15 +256,17 @@ fn named_args_to_hash_map(
 ) -> Result<BTreeMap<String, Pattern>> {
     let mut args = BTreeMap::new();
     for (name, node) in named_args {
-        let pattern = Pattern::from_node(
-            &node,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
+        let pattern = PatternCompiler::from_node_with_rhs(
+            &NodeWithSource::new(node, context.src),
+            &mut NodeCompilationContext {
+                compilation: context,
+                vars,
+                vars_array,
+                scope_index,
+                global_vars,
+                logs,
+            },
             true,
-            logs,
         )?;
         args.insert(
             context.lang.metavariable_prefix().to_owned() + &name,

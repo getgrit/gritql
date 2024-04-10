@@ -18,7 +18,6 @@ use crate::{
         },
         function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
         pattern_definition::PatternDefinition,
-        patterns::Pattern,
         predicate_definition::PredicateDefinition,
         variable::VariableSourceLocations,
         Problem, VariableLocations,
@@ -756,25 +755,6 @@ pub fn src_to_problem_libs_for_language(
     vars_array.push(vec![]);
     let mut vars = BTreeMap::new();
 
-    let pattern = if let Some(node) = source_file.child_by_field_name("pattern") {
-        Pattern::from_node(
-            &node,
-            &context,
-            &mut vars,
-            &mut vars_array,
-            scope_index,
-            &mut global_vars,
-            false,
-            &mut logs,
-        )?
-    } else {
-        let long_message = "No pattern found.
-        If you have written a pattern definition in the form `pattern myPattern() {{ }}`,
-        try calling it by adding `myPattern()` to the end of your file.
-        Check out the docs at https://docs.grit.io for help with writing patterns.";
-        bail!("{}", long_message);
-    };
-
     let mut node_context = NodeCompilationContext {
         compilation: &context,
         vars: &mut vars,
@@ -782,6 +762,16 @@ pub fn src_to_problem_libs_for_language(
         scope_index,
         global_vars: &mut global_vars,
         logs: &mut logs,
+    };
+
+    let pattern = if let Some(node) = source_file.child_by_field_name("pattern") {
+        PatternCompiler::from_node(&NodeWithSource::new(node, &src), &mut node_context)?
+    } else {
+        let long_message = "No pattern found.
+        If you have written a pattern definition in the form `pattern myPattern() {{ }}`,
+        try calling it by adding `myPattern()` to the end of your file.
+        Check out the docs at https://docs.grit.io for help with writing patterns.";
+        bail!("{}", long_message);
     };
 
     let pattern = auto_wrap_pattern(

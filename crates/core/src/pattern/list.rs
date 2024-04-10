@@ -3,15 +3,12 @@ use super::{
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     state::State,
-    variable::VariableSourceLocations,
 };
-use crate::{context::Context, pattern_compiler::CompilationContext};
-use anyhow::{anyhow, bail, Result};
+use crate::context::Context;
+use anyhow::{anyhow, Result};
 use core::fmt::Debug;
-use marzano_language::language::Field;
 use marzano_util::analysis_logs::AnalysisLogs;
-use std::{borrow::Cow, collections::BTreeMap};
-use tree_sitter::Node;
+use std::borrow::Cow;
 
 #[derive(Debug, Clone)]
 pub struct List {
@@ -26,81 +23,6 @@ impl List {
     pub(crate) fn get(&self, index: isize) -> Option<&Pattern> {
         self.patterns
             .get(list_index::to_unsigned(index, self.patterns.len())?)
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    pub(crate) fn from_node_in_context(
-        node: Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        context_field: &Field,
-        global_vars: &mut BTreeMap<String, usize>,
-        is_rhs: bool,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Pattern> {
-        let kind = node.kind();
-        match kind.as_ref() {
-            "assocNode" => {
-                if !context_field.multiple() {
-                    bail!(
-                        "Field {} does not accept list patterns",
-                        context_field.name()
-                    )
-                }
-                Ok(Pattern::List(Box::new(Self::from_node(
-                    &node,
-                    context,
-                    vars,
-                    vars_array,
-                    scope_index,
-                    global_vars,
-                    is_rhs,
-                    logs,
-                )?)))
-            }
-            _ => Pattern::from_node(
-                &node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                false,
-                logs,
-            ),
-        }
-    }
-    #[allow(clippy::too_many_arguments)]
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        is_rhs: bool,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let mut cursor = node.walk();
-        let children = node
-            .children_by_field_name("patterns", &mut cursor)
-            .filter(|n| n.is_named());
-        let mut patterns = Vec::new();
-        for pattern in children {
-            patterns.push(Pattern::from_node(
-                &pattern,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                is_rhs,
-                logs,
-            )?);
-        }
-        Ok(Self::new(patterns))
     }
 }
 

@@ -6,7 +6,6 @@ use super::{
 use crate::context::Context;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
-use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub struct BooleanConstant {
@@ -16,16 +15,6 @@ pub struct BooleanConstant {
 impl BooleanConstant {
     pub fn new(value: bool) -> Self {
         Self { value }
-    }
-
-    pub(crate) fn from_node(node: &Node, src: &str) -> Result<Self> {
-        let text = node.utf8_text(src.as_bytes())?.trim().to_string();
-        let value = match text.as_str() {
-            "true" => true,
-            "false" => false,
-            _ => return Err(anyhow::anyhow!("Invalid boolean value")),
-        };
-        Ok(Self::new(value))
     }
 }
 

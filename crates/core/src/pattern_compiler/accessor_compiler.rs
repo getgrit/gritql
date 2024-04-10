@@ -1,11 +1,8 @@
 use super::{
     compiler::NodeCompilationContext, container_compiler::ContainerCompiler,
-    node_compiler::NodeCompiler, variable_compiler::VariableCompiler,
+    map_compiler::MapCompiler, node_compiler::NodeCompiler, variable_compiler::VariableCompiler,
 };
-use crate::pattern::{
-    accessor::{Accessor, AccessorKey, AccessorMap},
-    map::GritMap,
-};
+use crate::pattern::accessor::{Accessor, AccessorKey, AccessorMap};
 use anyhow::{anyhow, Result};
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
@@ -24,16 +21,7 @@ impl NodeCompiler for AccessorCompiler {
             .child_by_field_name("map")
             .ok_or_else(|| anyhow!("missing map of accessor"))?;
         let map = if map.node.kind() == "map" {
-            AccessorMap::Map(GritMap::from_node(
-                &map.node,
-                context.compilation,
-                context.vars,
-                context.vars_array,
-                context.scope_index,
-                context.global_vars,
-                false,
-                context.logs,
-            )?)
+            AccessorMap::Map(MapCompiler::from_node(&map, context)?)
         } else {
             AccessorMap::Container(ContainerCompiler::from_node(&map, context)?)
         };
