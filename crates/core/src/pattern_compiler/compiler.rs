@@ -306,7 +306,6 @@ fn get_definition_info(
     })
 }
 
-#[allow(clippy::too_many_arguments)]
 fn node_to_definitions(
     node: NodeWithSource,
     context: &mut NodeCompilationContext,
