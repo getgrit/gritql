@@ -34,19 +34,20 @@ pub(crate) fn remove_orphaned_ranges(
     parser: &mut Parser,
     orphan_ranges: Vec<Range>,
     src: &str,
-) -> Result<(Option<Tree>, Option<String>)> {
+) -> Result<Option<(Tree, String)>> {
     let removable_ranges = merge_ranges(orphan_ranges);
     let mut src = src.to_string();
     for range in &removable_ranges {
         src.drain(range.start_byte as usize..range.end_byte as usize);
     }
-    let new_tree = if !removable_ranges.is_empty() {
-        Some(parser.parse(src.as_bytes(), None).unwrap().unwrap())
+    if !removable_ranges.is_empty() {
+        Ok(Some((
+            parser.parse(src.as_bytes(), None).unwrap().unwrap(),
+            src,
+        )))
     } else {
-        None
-    };
-    let new_src = if new_tree.is_some() { Some(src) } else { None };
-    Ok((new_tree, new_src))
+        Ok(None)
+    }
 }
 
 pub fn get_orphaned_ranges(tree: &Tree, src: &str, lang: &TargetLanguage) -> Vec<Range> {

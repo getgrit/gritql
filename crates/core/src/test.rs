@@ -13504,6 +13504,48 @@ fn limit_export_default_match() {
     .unwrap();
 }
 
+/// In Python, we can apply some simple heuristics to heal functions.
+/// See https://github.com/getgrit/gritql/issues/154
+#[test]
+fn python_heal_functions() {
+    run_test_expected(TestArgExpected {
+        pattern: r#"
+            |engine marzano(0.1)
+            |language python
+            |`def $method($args): $body` => `def this_was_changed($args): $body`
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |def function(self):
+            |    var = 1 + 1
+            |    result = 1 + 1 + var
+            |    return result
+            |class MyClass:
+            |    def function(self):
+            |        result = 1 + 1
+            |
+            |        return result
+            |"#
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
+        |def this_was_changed(self):
+        |    var = 1 + 1
+        |    result = 1 + 1 + var
+        |    return result
+        |class MyClass:
+        |    def this_was_changed(self):
+        |        result = 1 + 1
+        |
+        |        return result
+        |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
+
 #[test]
 fn python_support_empty_line() {
     run_test_expected(TestArgExpected {

@@ -6,6 +6,7 @@ mod effects_dependency_graph;
 mod equivalence;
 pub mod errors;
 pub mod fs;
+mod heal;
 mod inline_snippets;
 mod intervals;
 mod orphan;
