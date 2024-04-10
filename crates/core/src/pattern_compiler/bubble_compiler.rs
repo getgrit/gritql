@@ -47,7 +47,7 @@ impl NodeCompiler for BubbleCompiler {
         let args = parameters
             .iter()
             .map(|(name, range)| {
-                let v = Pattern::Variable(register_variable(name, *range, &mut local_context)?);
+                let v = Pattern::Variable(register_variable(name, *range, context)?);
                 Ok(v)
             })
             .collect::<Result<Vec<Pattern>>>()?;
@@ -56,7 +56,7 @@ impl NodeCompiler for BubbleCompiler {
             "<bubble>".to_string(),
             local_scope_index,
             params,
-            local_context.vars.values().cloned().collect(),
+            local_vars.values().cloned().collect(),
             body,
         );
 
