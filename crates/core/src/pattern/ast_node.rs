@@ -1,17 +1,23 @@
 use super::{
-    list::List,
     patterns::Matcher,
     patterns::{Name, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::VariableSourceLocations,
     State,
 };
-use crate::{context::Context, pattern_compiler::CompilationContext, resolve};
+use crate::{
+    context::Context,
+    pattern_compiler::{
+        compiler::NodeCompilationContext, list_compiler::ListCompiler,
+        pattern_compiler::PatternCompiler, CompilationContext, NodeCompiler,
+    },
+    resolve,
+};
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use marzano_language::language::{FieldId, Language, SortId};
 use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource};
-use std::collections::BTreeMap;
+use std::{cmp::Ordering, collections::BTreeMap};
 use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
@@ -35,7 +41,7 @@ impl ASTNode {
 
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn from_args(
-        named_args: Vec<(String, Node)>,
+        mut named_args: Vec<(String, Node)>,
         context: &CompilationContext,
         vars: &mut BTreeMap<String, usize>,
         vars_array: &mut Vec<Vec<VariableSourceLocations>>,
@@ -47,27 +53,30 @@ impl ASTNode {
     ) -> Result<Self> {
         let mut args = Vec::new();
         if context.lang.is_comment(sort) {
-            if named_args.len() > 1 {
-                return Err(anyhow!("comment node has more than one field"));
+            match named_args.len().cmp(&1) {
+                Ordering::Equal => {
+                    let (name, node) = named_args.remove(0);
+                    if name != "content" {
+                        return Err(anyhow!("unknown field name {name} for comment node"));
+                    }
+                    let pattern = PatternCompiler::from_node(
+                        &NodeWithSource::new(node, context.src),
+                        &mut NodeCompilationContext {
+                            compilation: context,
+                            vars,
+                            vars_array,
+                            scope_index,
+                            global_vars,
+                            logs,
+                        },
+                    )?;
+                    args.push((COMMENT_CONTENT_FIELD_ID, false, pattern));
+                }
+                Ordering::Greater => {
+                    return Err(anyhow!("comment node has more than one field"));
+                }
+                Ordering::Less => { /* continue */ }
             }
-            if named_args.is_empty() {
-                return Ok(Self::new(sort, args));
-            }
-            let (name, node) = &named_args[0];
-            if *name != "content" {
-                return Err(anyhow!("unknown field name {} for comment node", name));
-            }
-            let pattern = Pattern::from_node(
-                &node.clone(),
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                false,
-                logs,
-            )?;
-            args.push((COMMENT_CONTENT_FIELD_ID, false, pattern));
             return Ok(Self::new(sort, args));
         }
         for (name, node) in named_args {
@@ -119,16 +128,18 @@ impl ASTNode {
                 )
             })?;
 
-            let pattern = List::from_node_in_context(
-                node,
-                context,
-                vars,
-                vars_array,
-                scope_index,
+            let pattern = ListCompiler::from_node_in_context(
+                &NodeWithSource::new(node, context.src),
                 field,
-                global_vars,
+                &mut NodeCompilationContext {
+                    compilation: context,
+                    vars,
+                    vars_array,
+                    scope_index,
+                    global_vars,
+                    logs,
+                },
                 is_rhs,
-                logs,
             )?;
             args.push((id, field.multiple(), pattern));
         }
