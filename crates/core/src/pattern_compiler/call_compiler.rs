@@ -202,14 +202,15 @@ fn named_args_to_hash_map(
     named_args: Vec<(String, NodeWithSource)>,
     context: &mut NodeCompilationContext,
 ) -> Result<BTreeMap<String, Pattern>> {
-    named_args
-        .into_iter()
-        .map(|(name, node)| {
-            let name = context.compilation.lang.metavariable_prefix().to_owned() + &name;
-            let pattern = PatternCompiler::from_node_with_rhs(&node, context, true)?;
-            Ok((name, pattern))
-        })
-        .collect()
+    let mut args = BTreeMap::new();
+    for (name, node) in named_args {
+        let pattern = PatternCompiler::from_node_with_rhs(&node, context, true)?;
+        args.insert(
+            context.compilation.lang.metavariable_prefix().to_owned() + &name,
+            pattern,
+        );
+    }
+    Ok(args)
 }
 
 fn node_to_args_pairs<'a>(
@@ -237,9 +238,9 @@ fn node_to_args_pairs<'a>(
                         None => None,
                     })
                     .ok_or_else(|| if let Some(exp) = expected_params {
-                        anyhow!("Too many params for {kind}: expected maximum {}", exp.len())
+                        anyhow!("Too many params for {}: expected maximum {}", kind, exp.len())
                     } else {
-                        anyhow!("Variable {name} in params is missing a prefix. Try prepending an attribute name: for example, instead of `ensure_import_from(js\"'package'\")`, try `ensure_import_from(source=js\"'package'\")`")
+                        anyhow!("Variable {} in params is missing a prefix. Try prepending an attribute name: for example, instead of `ensure_import_from(js\"'package'\")`, try `ensure_import_from(source=js\"'package'\")`", name)
                     })?;
                 Ok((name.to_owned(), var))
             } else {

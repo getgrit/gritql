@@ -30,16 +30,18 @@ impl NodeCompiler for CodeSnippetCompiler {
     fn from_node_with_rhs(
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
-        _is_rhs: bool,
+        is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         let snippet = node
             .child_by_field_name("source")
             .ok_or_else(|| anyhow!("missing content of codeSnippet"))?;
         match snippet.node.kind().as_ref() {
-            "backtickSnippet" => BackTickCompiler::from_node(&snippet, context),
-            "rawBacktickSnippet" => RawBackTickCompiler::from_node(&snippet, context),
+            "backtickSnippet" => BackTickCompiler::from_node_with_rhs(&snippet, context, is_rhs),
+            "rawBacktickSnippet" => {
+                RawBackTickCompiler::from_node_with_rhs(&snippet, context, is_rhs)
+            }
             "languageSpecificSnippet" => {
-                LanguageSpecificSnippetCompiler::from_node(&snippet, context)
+                LanguageSpecificSnippetCompiler::from_node_with_rhs(&snippet, context, is_rhs)
             }
             _ => bail!("invalid code snippet kind: {}", snippet.node.kind()),
         }
