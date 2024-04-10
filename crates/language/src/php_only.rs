@@ -73,6 +73,8 @@ impl Language for PhpOnly {
             ("class GRIT_CLASS {", "}"),
             ("class GRIT_CLASS { ", " function GRIT_FN(); }"),
             (" GRIT_FN(", ") { }"),
+            ("$GRIT_VAR = ", ";"),
+            ("$GRIT_VAR = ", ""),
             ("[", "];"),
             ("", "{}"),
         ]
