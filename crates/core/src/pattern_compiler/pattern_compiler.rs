@@ -30,6 +30,7 @@ use super::{
     node_compiler::NodeCompiler,
     not_compiler::NotCompiler,
     or_compiler::OrCompiler,
+    range_compiler::RangeCompiler,
     rewrite_compiler::RewriteCompiler,
     sequential_compiler::SequentialCompiler,
     some_compiler::SomeCompiler,
@@ -43,7 +44,6 @@ use crate::pattern::{
     code_snippet::CodeSnippet,
     dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
     patterns::Pattern,
-    range::Range as PRange,
     regex::RegexPattern,
 };
 use anyhow::{bail, Result};
@@ -116,7 +116,7 @@ impl NodeCompiler for PatternCompiler {
             "log" => Ok(Pattern::Log(Box::new(LogCompiler::from_node(
                 node, context,
             )?))),
-            "range" => Ok(Pattern::Range(PRange::from_node(&node.node, node.source)?)),
+            "range" => Ok(Pattern::Range(RangeCompiler::from_node(node, context)?)),
             "patternIfElse" => Ok(Pattern::If(Box::new(IfCompiler::from_node(node, context)?))),
             "within" => Ok(Pattern::Within(Box::new(WithinCompiler::from_node(
                 node, context,
