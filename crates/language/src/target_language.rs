@@ -670,6 +670,7 @@ impl TargetLanguage {
             | TargetLanguage::Solidity(_)
             | TargetLanguage::Tsx(_)
             | TargetLanguage::Php(_)
+            | TargetLanguage::PhpOnly(_)
             | TargetLanguage::TypeScript(_) => Regex::new(r"//\s*(.*)").unwrap(),
             TargetLanguage::Python(_)
             | TargetLanguage::Ruby(_)
