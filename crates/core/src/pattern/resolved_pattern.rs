@@ -309,6 +309,14 @@ impl<'a> ResolvedSnippet<'a> {
         distributed_indent: Option<usize>,
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<str>> {
+        println!(
+            "LINEARIZE ME
+                BINDING: {:?}
+                EFFECTS: {:?}
+                MEMO: {:?},
+                INTENT: {:?}",
+            self, effects, memo, distributed_indent
+        );
         let res = match self {
             ResolvedSnippet::Text(text) => {
                 if let Some(indent) = distributed_indent {

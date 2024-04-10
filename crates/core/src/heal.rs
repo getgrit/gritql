@@ -12,7 +12,9 @@ pub(crate) fn heal_invalid_ast(
 ) -> Result<String> {
     let cursor = tree.walk();
     for n in traverse(CursorWrapper::new(cursor, &src), Order::Pre) {
-        println!("Checking orphaned node: {:?}", n);
+        if n.node.kind() == "function_definition" {
+            println!("Checking orphaned node: {:?}", n.node.kind());
+        }
     }
 
     // Heal the tree
