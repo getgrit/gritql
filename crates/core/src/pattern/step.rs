@@ -152,7 +152,7 @@ impl Matcher for Step {
                             None => (new_src, tree),
                         };
 
-                    // let new_src = heal_invalid_ast(&cleaned_tree, &new_src, context.language())?;
+                    let new_src = heal_invalid_ast(&cleaned_tree, &new_src, context.language())?;
 
                     let ranges =
                         MatchRanges::new(new_ranges.into_iter().map(|r| r.into()).collect());
