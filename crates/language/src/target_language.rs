@@ -27,14 +27,14 @@ use crate::{
 use anyhow::Result;
 use clap::ValueEnum;
 use enum_dispatch::enum_dispatch;
+use marzano_util::analysis_logs::AnalysisLogs;
+use marzano_util::node_with_source::NodeWithSource;
+use marzano_util::position::Range;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::fmt;
 use std::hash::Hash;
-
-use marzano_util::analysis_logs::AnalysisLogs;
-use marzano_util::position::Range;
-use regex::Regex;
 use tree_sitter::{Parser, Tree};
 
 #[cfg(feature = "finder")]
@@ -658,10 +658,103 @@ impl TargetLanguage {
             TargetLanguage::Sql(_) => format!("-- {}\n", text),
         }
     }
+
+    pub fn extract_single_line_comment(&self, text: &str) -> Option<String> {
+        let re = match self {
+            TargetLanguage::CSharp(_)
+            | TargetLanguage::Go(_)
+            | TargetLanguage::Java(_)
+            | TargetLanguage::JavaScript(_)
+            | TargetLanguage::Json(_)
+            | TargetLanguage::Rust(_)
+            | TargetLanguage::Solidity(_)
+            | TargetLanguage::Tsx(_)
+            | TargetLanguage::Php(_)
+            | TargetLanguage::TypeScript(_) => Regex::new(r"//\s*(.*)").unwrap(),
+            TargetLanguage::Python(_)
+            | TargetLanguage::Ruby(_)
+            | TargetLanguage::Toml(_)
+            | TargetLanguage::Yaml(_) => Regex::new(r"#\s*(.*)").unwrap(),
+            TargetLanguage::Hcl(_) => Regex::new(r"(#|//)\s*(.*)").unwrap(),
+            TargetLanguage::Html(_)
+            | TargetLanguage::Vue(_)
+            | TargetLanguage::MarkdownBlock(_)
+            | TargetLanguage::MarkdownInline(_) => Regex::new(r"<!--\s*(.*?)\s*-->").unwrap(),
+            TargetLanguage::Css(_) => Regex::new(r"/\*\s*(.*?)\s*\*/").unwrap(),
+            TargetLanguage::Sql(_) => Regex::new(r"--\s*(.*)").unwrap(),
+        };
+        let comment = re
+            .captures(text)
+            .and_then(|c| {
+                c.get(if matches!(self, TargetLanguage::Hcl(_)) {
+                    2
+                } else {
+                    1
+                })
+            })
+            .map(|m| m.as_str().to_string());
+        comment
+    }
 }
 
 impl Default for TargetLanguage {
     fn default() -> Self {
         TargetLanguage::JavaScript(JavaScript::new(None))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extract_javascript_comment() {
+        let text = "// this is a comment\nconsole.log('hello')";
+        let lang = TargetLanguage::JavaScript(JavaScript::new(None));
+        let comment = lang.extract_single_line_comment(text).unwrap();
+        assert_eq!(comment, "this is a comment");
+    }
+
+    #[test]
+    fn extract_python_comment() {
+        let text = "# this is a comment\nprint('hello')";
+        let lang = TargetLanguage::Python(Python::new(None));
+        let comment = lang.extract_single_line_comment(text).unwrap();
+        assert_eq!(comment, "this is a comment");
+    }
+
+    #[test]
+    fn extract_html_comment() {
+        let text = "<!-- this is a comment -->\n<p>hello</p>";
+        let lang = TargetLanguage::Html(Html::new(None));
+        let comment = lang.extract_single_line_comment(text).unwrap();
+        assert_eq!(comment, "this is a comment");
+    }
+
+    #[test]
+    fn extract_css_comment() {
+        let text = "/* this is a comment */\np { color: red; }";
+        let lang = TargetLanguage::Css(Css::new(None));
+        let comment = lang.extract_single_line_comment(text).unwrap();
+        assert_eq!(comment, "this is a comment");
+    }
+
+    #[test]
+    fn extract_sql_comment() {
+        let text = "-- this is a comment\nSELECT * FROM table";
+        let lang = TargetLanguage::Sql(Sql::new(None));
+        let comment = lang.extract_single_line_comment(text).unwrap();
+        assert_eq!(comment, "this is a comment");
+    }
+
+    #[test]
+    fn extract_hcl_comment() {
+        let text = "# this is a comment\nvariable \"name\" {}";
+        let lang = TargetLanguage::Hcl(Hcl::new(None));
+        let comment = lang.extract_single_line_comment(text).unwrap();
+        assert_eq!(comment, "this is a comment");
+        let other_text = "// this is a comment\nvariable \"name\" {}";
+        let other_comment = lang.extract_single_line_comment(other_text).unwrap();
+        assert_eq!(other_comment, "this is a comment");
     }
 }

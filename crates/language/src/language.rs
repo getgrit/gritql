@@ -6,6 +6,7 @@ use lazy_static::lazy_static;
 use marzano_util::{
     analysis_logs::{AnalysisLogBuilder, AnalysisLogs},
     cursor_wrapper::CursorWrapper,
+    node_with_source::NodeWithSource,
     position::{len, Position, Range},
 };
 use regex::Regex;
@@ -296,13 +297,7 @@ pub trait Language {
 
     fn metavariable_sort(&self) -> SortId;
 
-    fn check_orphaned(
-        &self,
-        _n: tree_sitter::Node<'_>,
-        _src: &str,
-        _orphan_ranges: &mut Vec<tree_sitter::Range>,
-    ) {
-    }
+    fn check_orphaned(&self, _n: NodeWithSource<'_>, _orphan_ranges: &mut Vec<Range>) {}
 
     fn get_equivalence_class(
         &self,

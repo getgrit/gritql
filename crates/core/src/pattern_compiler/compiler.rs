@@ -1,23 +1,43 @@
+use super::{
+    auto_wrap::auto_wrap_pattern,
+    function_definition_compiler::{
+        ForeignFunctionDefinitionCompiler, GritFunctionDefinitionCompiler,
+    },
+    pattern_compiler::PatternCompiler,
+    pattern_definition_compiler::PatternDefinitionCompiler,
+    predicate_definition_compiler::PredicateDefinitionCompiler,
+    NodeCompiler,
+};
 use crate::{
     parse::make_grit_parser,
     pattern::{
-        built_in_functions::BuiltIns, pattern_definition::PatternDefinition, patterns::Pattern,
-        predicate_definition::PredicateDefinition, Problem,
+        analysis::{has_limit, is_multifile},
+        built_in_functions::BuiltIns,
+        constants::{
+            ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
+        },
+        function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
+        pattern_definition::PatternDefinition,
+        patterns::Pattern,
+        predicate_definition::PredicateDefinition,
+        variable::VariableSourceLocations,
+        Problem, VariableLocations,
     },
 };
 use anyhow::{anyhow, bail, Result};
 use grit_util::{traverse, Order};
 use itertools::Itertools;
 use marzano_language::{self, target_language::TargetLanguage};
-use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::{
-    analysis_logs::AnalysisLogBuilder,
-    analysis_logs::AnalysisLogs,
+    analysis_logs::{AnalysisLogBuilder, AnalysisLogs},
+    cursor_wrapper::CursorWrapper,
+    node_with_source::NodeWithSource,
     position::{FileRange, Position, Range},
 };
 use regex::Regex;
 use std::{
     collections::{BTreeMap, BTreeSet},
+    ffi::OsStr,
     path::Path,
     vec,
 };
@@ -26,24 +46,6 @@ use tree_sitter::{Node, Parser, Tree};
 #[cfg(feature = "grit_tracing")]
 use tracing::instrument;
 
-use super::{
-    analysis::{has_limit, is_multifile},
-    auto_wrap::auto_wrap_pattern,
-    function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
-    variable::VariableSourceLocations,
-    VariableLocations,
-};
-
-pub(crate) const MATCH_VAR: &str = "$match";
-pub(crate) const GRIT_RANGE_VAR: &str = "$grit_range";
-pub(crate) const NEW_FILES_INDEX: usize = 0;
-pub(crate) const PROGRAM_INDEX: usize = 1;
-pub(crate) const FILENAME_INDEX: usize = 2;
-pub(crate) const ABSOLUTE_PATH_INDEX: usize = 3;
-pub const DEFAULT_FILE_NAME: &str = "PlaygroundPattern";
-
-// mode public after being moved out of pattern.rs
-// sign it should compiler.rs should be in the pattern module
 pub(crate) struct CompilationContext<'a> {
     pub src: &'a str,
     pub file: &'a str,
@@ -53,6 +55,32 @@ pub(crate) struct CompilationContext<'a> {
     pub predicate_definition_info: &'a BTreeMap<String, DefinitionInfo>,
     pub function_definition_info: &'a BTreeMap<String, DefinitionInfo>,
     pub foreign_function_definition_info: &'a BTreeMap<String, DefinitionInfo>,
+}
+
+pub(crate) struct NodeCompilationContext<'a> {
+    pub compilation: &'a CompilationContext<'a>,
+
+    /// Used to lookup local variables in the `vars_array`.
+    pub vars: &'a mut BTreeMap<String, usize>,
+
+    /// Storage for variable information.
+    ///
+    /// The outer vector can be index using `scope_index`, while the individual
+    /// variables in a scope can be indexed using the indices stored in `vars`
+    /// and `global_vars`.
+    pub vars_array: &'a mut Vec<Vec<VariableSourceLocations>>,
+
+    /// Index of the local scope.
+    ///
+    /// Corresponds to the index in the outer vector of `vars_array`.
+    pub scope_index: usize,
+
+    /// Used to lookup global variables in the `vars_array`.
+    ///
+    /// Global variables are always at scope 0.
+    pub global_vars: &'a mut BTreeMap<String, usize>,
+
+    pub logs: &'a mut AnalysisLogs,
 }
 
 fn grit_parsing_errors(tree: &Tree, src: &str, file_name: &str) -> Result<AnalysisLogs> {
@@ -282,60 +310,38 @@ fn get_definition_info(
 
 #[allow(clippy::too_many_arguments)]
 fn node_to_definitions(
-    node: &Node,
-    context: &CompilationContext,
-    vars_array: &mut Vec<Vec<VariableSourceLocations>>,
+    node: NodeWithSource,
+    context: &mut NodeCompilationContext,
     pattern_definitions: &mut Vec<PatternDefinition>,
     predicate_definitions: &mut Vec<PredicateDefinition>,
     function_definitions: &mut Vec<GritFunctionDefinition>,
     foreign_function_definitions: &mut Vec<ForeignFunctionDefinition>,
-    global_vars: &mut BTreeMap<String, usize>,
-    logs: &mut AnalysisLogs,
 ) -> Result<()> {
-    let mut cursor = node.walk();
-    for definition in node
-        .children_by_field_name("definitions", &mut cursor)
-        .filter(|n| n.is_named())
-    {
+    for definition in node.named_children_by_field_name("definitions") {
         if let Some(pattern_definition) = definition.child_by_field_name("pattern") {
-            PatternDefinition::from_node(
+            // todo check for duplicate names
+            pattern_definitions.push(PatternDefinitionCompiler::from_node(
                 &pattern_definition,
                 context,
-                vars_array,
-                pattern_definitions,
-                global_vars,
-                logs,
-            )?;
+            )?);
         } else if let Some(predicate_definition) = definition.child_by_field_name("predicate") {
-            PredicateDefinition::from_node(
+            // todo check for duplicate names
+            predicate_definitions.push(PredicateDefinitionCompiler::from_node(
                 &predicate_definition,
                 context,
-                vars_array,
-                predicate_definitions,
-                global_vars,
-                logs,
-            )?;
+            )?);
         } else if let Some(function_definition) = definition.child_by_field_name("function") {
-            GritFunctionDefinition::from_node(
+            function_definitions.push(GritFunctionDefinitionCompiler::from_node(
                 &function_definition,
                 context,
-                vars_array,
-                function_definitions,
-                global_vars,
-                logs,
-            )?;
+            )?);
         } else if let Some(function_definition) = definition.child_by_field_name("foreign") {
-            ForeignFunctionDefinition::from_node(
+            foreign_function_definitions.push(ForeignFunctionDefinitionCompiler::from_node(
                 &function_definition,
                 context,
-                vars_array,
-                foreign_function_definitions,
-                global_vars,
-            )?;
+            )?);
         } else {
-            bail!(anyhow!(
-                "definition must be either a pattern, a predicate or a function"
-            ));
+            bail!("definition must be either a pattern, a predicate or a function");
         }
     }
     Ok(())
@@ -351,7 +357,7 @@ struct DefinitionOutput {
 
 fn get_definitions(
     libs: &[(String, String)],
-    source_file: &Node,
+    source_file: &NodeWithSource,
     parser: &mut Parser,
     context: &CompilationContext,
     global_vars: &mut BTreeMap<String, usize>,
@@ -375,67 +381,70 @@ fn get_definitions(
     );
 
     for (file, pattern) in libs.iter() {
-        let context = CompilationContext {
-            src: pattern,
-            file,
-            ..*context
+        let mut node_context = NodeCompilationContext {
+            compilation: &CompilationContext {
+                src: pattern,
+                file,
+                ..*context
+            },
+            // We're not in a local scope yet, so this map is kinda useless.
+            // It's just there because all node compilers expect one.
+            vars: &mut BTreeMap::new(),
+            vars_array: &mut vars_array,
+            scope_index: 0,
+            global_vars,
+            logs,
         };
-        let tree = parse_one(parser, context.src, file)?;
+
+        let tree = parse_one(parser, pattern, file)?;
         let source_file = tree.root_node();
         node_to_definitions(
-            &source_file,
-            &context,
-            &mut vars_array,
+            NodeWithSource::new(source_file.clone(), pattern),
+            &mut node_context,
             &mut pattern_definitions,
             &mut predicate_definitions,
             &mut function_definitions,
             &mut foreign_function_definitions,
-            global_vars,
-            logs,
         )?;
 
         if let Some(bare_pattern) = source_file.child_by_field_name("pattern") {
-            let scope_index = vars_array.len();
-            vars_array.push(vec![]);
             let mut local_vars = BTreeMap::new();
+            let (scope_index, mut local_context) = create_scope!(node_context, local_vars);
             let path = Path::new(file);
-            if let Some(name) = path.file_stem().and_then(|n| n.to_str()) {
-                let body = Pattern::from_node(
-                    &bare_pattern,
-                    &context,
-                    &mut local_vars,
-                    &mut vars_array,
-                    scope_index,
-                    global_vars,
-                    false,
-                    logs,
-                )?;
-                let pattern_def = PatternDefinition::new(
-                    name.to_owned(),
-                    scope_index,
-                    vec![],
-                    local_vars.values().cloned().collect(),
-                    body,
-                );
-                pattern_definitions.push(pattern_def);
-            } else {
-                bail!(
-                    "failed to get pattern name from definition in file {}",
-                    file
-                )
-            }
+            let Some(name) = path.file_stem().and_then(OsStr::to_str) else {
+                bail!("failed to get pattern name from definition in file {file}");
+            };
+
+            let body = PatternCompiler::from_node(
+                &NodeWithSource::new(bare_pattern, pattern),
+                &mut local_context,
+            )?;
+            let pattern_def = PatternDefinition::new(
+                name.to_owned(),
+                scope_index,
+                vec![],
+                local_vars.values().cloned().collect(),
+                body,
+            );
+            pattern_definitions.push(pattern_def);
         }
     }
     node_to_definitions(
-        source_file,
-        context,
-        &mut vars_array,
+        source_file.clone(),
+        &mut NodeCompilationContext {
+            compilation: context,
+            // We're not in a local scope yet, so this map is kinda useless.
+            // It's just there because all node compilers expect one.
+            vars: &mut BTreeMap::new(),
+            vars_array: &mut vars_array,
+            scope_index: 0,
+            global_vars,
+            logs,
+        },
         &mut pattern_definitions,
         &mut predicate_definitions,
         &mut function_definitions,
         &mut foreign_function_definitions,
-        global_vars,
-        logs,
     )?;
     Ok(DefinitionOutput {
         vars_array,
@@ -702,11 +711,12 @@ pub fn src_to_problem_libs_for_language(
         built_ins.extend_builtins(custom_built_ins)?;
     }
     let mut logs: AnalysisLogs = vec![].into();
-    let mut global_vars = BTreeMap::new();
-    global_vars.insert("$new_files".to_owned(), NEW_FILES_INDEX);
-    global_vars.insert("$filename".to_owned(), FILENAME_INDEX);
-    global_vars.insert("$program".to_owned(), PROGRAM_INDEX);
-    global_vars.insert("$absolute_filename".to_owned(), ABSOLUTE_PATH_INDEX);
+    let mut global_vars = BTreeMap::from([
+        ("$new_files".to_owned(), NEW_FILES_INDEX),
+        ("$filename".to_owned(), FILENAME_INDEX),
+        ("$program".to_owned(), PROGRAM_INDEX),
+        ("$absolute_filename".to_owned(), ABSOLUTE_PATH_INDEX),
+    ]);
     let is_multifile = is_multifile(&source_file, &src, libs, grit_parser)?;
     let has_limit = has_limit(&source_file, &src, libs, grit_parser)?;
     let libs = filter_libs(libs, &src, grit_parser, !is_multifile)?;
@@ -736,7 +746,7 @@ pub fn src_to_problem_libs_for_language(
         foreign_function_definitions,
     } = get_definitions(
         &libs,
-        &source_file,
+        &NodeWithSource::new(source_file.clone(), &src),
         grit_parser,
         &context,
         &mut global_vars,
@@ -765,16 +775,21 @@ pub fn src_to_problem_libs_for_language(
         bail!("{}", long_message);
     };
 
+    let mut node_context = NodeCompilationContext {
+        compilation: &context,
+        vars: &mut vars,
+        vars_array: &mut vars_array,
+        scope_index,
+        global_vars: &mut global_vars,
+        logs: &mut logs,
+    };
+
     let pattern = auto_wrap_pattern(
         pattern,
         &mut pattern_definitions,
-        &mut vars,
-        &mut vars_array,
-        scope_index,
         !is_multifile,
         file_ranges,
-        &context,
-        &mut global_vars,
+        &mut node_context,
     )?;
 
     let problem = Problem::new(

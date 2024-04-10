@@ -1,17 +1,25 @@
 use super::{
     code_snippet::from_back_tick_node,
-    compiler::CompilationContext,
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     variable::{Variable, VariableSourceLocations},
     State,
 };
-use crate::context::Context;
+use crate::{
+    context::Context,
+    pattern_compiler::{
+        compiler::NodeCompilationContext, variable_compiler::VariableCompiler, CompilationContext,
+        NodeCompiler,
+    },
+};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_language::{language::Language, target_language::TargetLanguage};
-use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 use marzano_util::position::Range;
+use marzano_util::{
+    analysis_logs::{AnalysisLogBuilder, AnalysisLogs},
+    node_with_source::NodeWithSource,
+};
 use regex::Regex;
 use std::collections::BTreeMap;
 use tree_sitter::Node;
@@ -112,14 +120,16 @@ impl RegexPattern {
             .children_by_field_name("variables", &mut cursor)
             .filter(|n| n.is_named())
             .map(|n| {
-                Variable::from_node(
-                    &n,
-                    context.file,
-                    context.src,
-                    vars,
-                    global_vars,
-                    vars_array,
-                    scope_index,
+                VariableCompiler::from_node(
+                    &NodeWithSource::new(n, context.src),
+                    &mut NodeCompilationContext {
+                        compilation: context,
+                        vars,
+                        vars_array,
+                        scope_index,
+                        global_vars,
+                        logs,
+                    },
                 )
                 .unwrap()
             });

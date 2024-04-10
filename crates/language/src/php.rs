@@ -1,7 +1,6 @@
-use std::sync::OnceLock;
 use lazy_static::lazy_static;
 use regex::Regex;
-
+use std::sync::OnceLock;
 
 use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
 
@@ -103,5 +102,18 @@ impl Language for Php {
 
     fn exact_variable_regex(&self) -> &'static Regex {
         &EXACT_VARIABLE_REGEX
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{language::Language, php::Php};
+
+    #[test]
+    fn test_php_substitute_variable() {
+        let snippet = "^foo$('^bar')";
+        let lang = Php::new(None);
+        let subbed = lang.substitute_metavariable_prefix(snippet);
+        assert_eq!(subbed, "µfoo$('µbar')");
     }
 }

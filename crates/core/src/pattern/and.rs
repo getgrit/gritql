@@ -1,63 +1,22 @@
 use super::{
-    compiler::CompilationContext,
     functions::{Evaluator, FuncEvaluation},
     patterns::{Matcher, Name, Pattern},
     predicates::Predicate,
     resolved_pattern::ResolvedPattern,
-    variable::VariableSourceLocations,
     State,
 };
 use crate::context::Context;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
-use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub struct And {
-    pub(crate) patterns: Vec<Pattern>,
+    pub patterns: Vec<Pattern>,
 }
 
 impl And {
     pub fn new(patterns: Vec<Pattern>) -> Self {
         Self { patterns }
-    }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Pattern> {
-        let mut cursor = node.walk();
-        let children = node
-            .children_by_field_name("patterns", &mut cursor)
-            .filter(|n| n.is_named());
-        let mut patterns = Vec::new();
-        for pattern in children {
-            patterns.push(Pattern::from_node(
-                &pattern,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                false,
-                logs,
-            )?);
-        }
-        let mut patterns: Vec<Pattern> = patterns
-            .into_iter()
-            .filter(|p| !matches!(p, Pattern::Top))
-            .collect();
-        if patterns.len() == 1 {
-            Ok(patterns.remove(0))
-        } else {
-            Ok(Pattern::And(Box::new(Self::new(patterns))))
-        }
     }
 }
 
@@ -86,42 +45,12 @@ impl Matcher for And {
 
 #[derive(Debug, Clone)]
 pub struct PrAnd {
-    pub(crate) predicates: Vec<Predicate>,
+    pub predicates: Vec<Predicate>,
 }
+
 impl PrAnd {
     pub fn new(predicates: Vec<Predicate>) -> Self {
         Self { predicates }
-    }
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Predicate> {
-        let mut cursor = node.walk();
-        let children = node
-            .children_by_field_name("predicates", &mut cursor)
-            .filter(|n| n.is_named());
-        let mut predicates = Vec::new();
-        for predicate in children {
-            predicates.push(Predicate::from_node(
-                &predicate,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                logs,
-            )?);
-        }
-        if predicates.len() == 1 {
-            Ok(predicates.remove(0))
-        } else {
-            Ok(Predicate::And(Box::new(PrAnd::new(predicates))))
-        }
     }
 }
 

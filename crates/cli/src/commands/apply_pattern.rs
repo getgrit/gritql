@@ -11,10 +11,8 @@ use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 
 use indicatif::MultiProgress;
 use log::debug;
-use marzano_core::pattern::{
-    api::{AllDone, AllDoneReason, AnalysisLog, MatchResult},
-    compiler::CompilationResult,
-};
+use marzano_core::pattern::api::{AllDone, AllDoneReason, AnalysisLog, MatchResult};
+use marzano_core::pattern_compiler::CompilationResult;
 use marzano_gritmodule::fetcher::KeepFetcherKind;
 use marzano_gritmodule::markdown::get_body_from_md_content;
 use marzano_gritmodule::searcher::find_grit_modules_dir;
@@ -127,6 +125,7 @@ pub struct ApplyPatternArgs {
     /// Interpret the request as a natural language request
     #[clap(long)]
     ai: bool,
+    /// Change the default language to use for the pattern (if unset, JavaScript is used by default)
     #[clap(long = "language", alias = "lang")]
     pub language: Option<PatternLanguage>,
 }

@@ -19,16 +19,40 @@ impl<'a> NodeWithSource<'a> {
         Self { node, source }
     }
 
+    pub fn child_by_field_name(&self, field_name: &str) -> Option<Self> {
+        self.node
+            .child_by_field_name(field_name)
+            .map(|child| Self::new(child, self.source))
+    }
+
     pub fn children_by_field_id(&self, field_id: u16) -> impl Iterator<Item = Self> + Clone {
         ChildrenByFieldIterator::new(self, field_id)
+    }
+
+    pub fn children_by_field_name(&self, field_name: &str) -> impl Iterator<Item = Self> {
+        let field_id = self
+            .node
+            .language()
+            .field_id_for_name(field_name)
+            .unwrap_or_default();
+        self.children_by_field_id(field_id)
+    }
+
+    pub fn named_children(&self) -> impl Iterator<Item = Self> {
+        ChildrenIterator::new(self).filter(|child| child.node.is_named())
     }
 
     pub fn named_children_by_field_id(&self, field_id: u16) -> impl Iterator<Item = Self> + Clone {
         ChildrenByFieldIterator::new(self, field_id).filter(|child| child.node.is_named())
     }
 
-    pub fn named_children(&self) -> impl Iterator<Item = Self> {
-        ChildrenIterator::new(self).filter(|child| child.node.is_named())
+    pub fn named_children_by_field_name(&self, field_name: &str) -> impl Iterator<Item = Self> {
+        let field_id = self
+            .node
+            .language()
+            .field_id_for_name(field_name)
+            .unwrap_or_default();
+        self.named_children_by_field_id(field_id)
     }
 
     pub fn range(&self) -> Range {

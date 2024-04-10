@@ -1,24 +1,20 @@
 use super::{
-    compiler::CompilationContext,
     functions::{Evaluator, FuncEvaluation},
     patterns::{Matcher, Name, Pattern},
     predicates::Predicate,
     resolved_pattern::ResolvedPattern,
-    variable::VariableSourceLocations,
     State,
 };
 use crate::context::Context;
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
-use std::collections::BTreeMap;
-use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub struct If {
-    pub(crate) if_: Predicate,
-    pub(crate) then: Pattern,
-    pub(crate) else_: Pattern,
+    pub if_: Predicate,
+    pub then: Pattern,
+    pub else_: Pattern,
 }
 impl If {
     pub fn new(if_: Predicate, then: Pattern, else_: Option<Pattern>) -> Self {
@@ -27,58 +23,6 @@ impl If {
             then,
             else_: else_.unwrap_or(Pattern::Top),
         }
-    }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let if_ = node
-            .child_by_field_name("if")
-            .ok_or_else(|| anyhow!("missing condition of if"))?;
-        let if_ = Predicate::from_node(
-            &if_,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            logs,
-        )?;
-        let then = node
-            .child_by_field_name("then")
-            .ok_or_else(|| anyhow!("missing consequence of if"))?;
-        let then = Pattern::from_node(
-            &then,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            false,
-            logs,
-        )?;
-        let else_ = node
-            .child_by_field_name("else")
-            .map(|e| {
-                Pattern::from_node(
-                    &e,
-                    context,
-                    vars,
-                    vars_array,
-                    scope_index,
-                    global_vars,
-                    false,
-                    logs,
-                )
-            })
-            .map_or(Ok(None), |v| v.map(Some))?;
-        Ok(If::new(if_, then, else_))
     }
 }
 
@@ -108,9 +52,9 @@ impl Matcher for If {
 
 #[derive(Debug, Clone)]
 pub struct PrIf {
-    pub(crate) if_: Predicate,
-    pub(crate) then: Predicate,
-    pub(crate) else_: Predicate,
+    pub if_: Predicate,
+    pub then: Predicate,
+    pub else_: Predicate,
 }
 
 impl PrIf {
@@ -120,55 +64,6 @@ impl PrIf {
             then,
             else_: else_.unwrap_or(Predicate::True),
         }
-    }
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let if_ = node
-            .child_by_field_name("if")
-            .ok_or_else(|| anyhow!("missing condition of if"))?;
-        let if_ = Predicate::from_node(
-            &if_,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            logs,
-        )?;
-        let then = node
-            .child_by_field_name("then")
-            .ok_or_else(|| anyhow!("missing consequence of if"))?;
-        let then = Predicate::from_node(
-            &then,
-            context,
-            vars,
-            vars_array,
-            scope_index,
-            global_vars,
-            logs,
-        )?;
-        let else_ = node
-            .child_by_field_name("else")
-            .map(|e| {
-                Predicate::from_node(
-                    &e,
-                    context,
-                    vars,
-                    vars_array,
-                    scope_index,
-                    global_vars,
-                    logs,
-                )
-            })
-            .map_or(Ok(None), |v| v.map(Some))?;
-        Ok(PrIf::new(if_, then, else_))
     }
 }
 

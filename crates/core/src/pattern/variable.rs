@@ -1,5 +1,5 @@
 use super::{
-    compiler::{ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX},
+    constants::{ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX},
     container::{PatternOrResolved, PatternOrResolvedMut},
     patterns::{Matcher, Name},
     resolved_pattern::ResolvedPattern,
@@ -29,9 +29,6 @@ use std::{
     borrow::Cow,
     collections::{BTreeMap, BTreeSet},
 };
-use tree_sitter::Node;
-
-pub(crate) const GLOBAL_VARS_SCOPE_INDEX: usize = 0;
 
 struct VariableMirror<'a> {
     scope: usize,
@@ -75,28 +72,6 @@ impl Variable {
 
     pub(crate) fn file_name() -> Self {
         Self::new(GLOBAL_VARS_SCOPE_INDEX, FILENAME_INDEX)
-    }
-
-    pub(crate) fn from_node(
-        node: &Node,
-        file: &str,
-        src: &str,
-        vars: &mut BTreeMap<String, usize>,
-        global_vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut [Vec<VariableSourceLocations>],
-        scope_index: usize,
-    ) -> Result<Self> {
-        let name = node.utf8_text(src.as_bytes())?.trim().to_string();
-        let range = node.range().into();
-        register_variable(
-            &name,
-            file,
-            range,
-            vars,
-            global_vars,
-            vars_array,
-            scope_index,
-        )
     }
 
     pub(crate) fn from_name(

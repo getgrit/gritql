@@ -1,0 +1,23 @@
+version: 0.0.1
+patterns:
+  - name: rewrite_filename
+    body: |
+      engine marzano(0.1)
+      language python
+
+      file($name, $body) where {
+        $name <: `index.py`
+      }
+    samples:
+      - input: |
+          # @filename: index.py
+
+          print('hello')
+        output: |
+          # @filename: index.py
+
+          print('hello')
+      - input: |
+          # @filename: main.py
+
+          # This should be unmatched

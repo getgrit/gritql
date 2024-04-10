@@ -2,8 +2,8 @@ use marzano_core::{
     pattern::{
         api::{AnalysisLog, InputFile, MatchResult, PatternInfo},
         built_in_functions::BuiltIns,
-        compiler::{src_to_problem_libs_for_language, CompilationResult},
     },
+    pattern_compiler::{src_to_problem_libs_for_language, CompilationResult},
     tree_sitter_serde::tree_sitter_node_to_json,
 };
 use marzano_language::target_language::{PatternLanguage, TargetLanguage};

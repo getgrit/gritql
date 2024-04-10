@@ -4,10 +4,8 @@ use crate::{
 };
 use anyhow::anyhow;
 use grit_util::AstNode;
-use marzano_util::{
-    node_with_source::NodeWithSource, tree_sitter_util::children_by_field_name_count,
-};
-use tree_sitter::{Node, Parser, Tree};
+use marzano_util::{node_with_source::NodeWithSource, position::Range};
+use tree_sitter::{Parser, Tree};
 
 static STATEMENT_NODE_NAMES: &[&str] = &[
     "break_statement",
@@ -117,35 +115,30 @@ pub(crate) fn parse_file(
     }
 }
 
-pub(crate) fn jslike_check_orphaned(
-    n: Node<'_>,
-    src: &str,
-    orphan_ranges: &mut Vec<tree_sitter::Range>,
-) {
-    if n.is_error()
-        && ["var", "let", "const"].contains(&n.utf8_text(src.as_bytes()).unwrap().as_ref())
-        || n.kind() == "empty_statement"
+pub(crate) fn jslike_check_orphaned(n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Range>) {
+    if n.node.is_error() && ["var", "let", "const"].contains(&n.text())
+        || n.node.kind() == "empty_statement"
     {
         orphan_ranges.push(n.range());
-    } else if n.kind() == "import_statement" {
-        for n in n.named_children(&mut n.walk()).filter(|n| n.is_error()) {
-            if let Some(n) = n.children(&mut n.walk()).last() {
-                if n.kind() == "," {
+    } else if n.node.kind() == "import_statement" {
+        for n in n.named_children().filter(|n| n.node.is_error()) {
+            if let Some(n) = n.children().last() {
+                if n.node.kind() == "," {
                     orphan_ranges.push(n.range())
                 }
             }
         }
         if let Some(import_clause) = n.child_by_field_name("import") {
             if let Some(imports) = import_clause.child_by_field_name("name") {
-                let named_imports = children_by_field_name_count(&imports, "imports");
-                let namespace_import = children_by_field_name_count(&imports, "namespace");
+                let named_imports = imports.named_children_by_field_name("imports").count();
+                let namespace_import = imports.named_children_by_field_name("namespace").count();
                 if named_imports == 0 && namespace_import == 0 {
                     orphan_ranges.push(n.range());
                 }
             }
         }
-    } else if n.is_error() && n.utf8_text(src.as_bytes()).unwrap() == "," {
-        for ancestor in NodeWithSource::new(n.clone(), src).ancestors() {
+    } else if n.node.is_error() && n.text() == "," {
+        for ancestor in n.ancestors() {
             if ancestor.node.kind() == "class_body" {
                 orphan_ranges.push(n.range());
                 break;
