@@ -46,7 +46,7 @@ impl NodeCompiler for GritFunctionDefinitionCompiler {
             name.to_owned(),
             scope_index,
             params,
-            context.vars.values().cloned().collect(),
+            local_vars.values().cloned().collect(),
             body,
         );
         Ok(function_definition)
