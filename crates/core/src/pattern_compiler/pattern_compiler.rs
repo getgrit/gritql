@@ -84,7 +84,6 @@ impl PatternCompiler {
         let ranges = metavariable_ranges(&node, context.compilation.lang);
         let range_map = metavariable_range_mapping(ranges, snippet_start);
 
-        #[allow(clippy::too_many_arguments)]
         fn node_to_astnode(
             node: NodeWithSource,
             context_range: Range,
