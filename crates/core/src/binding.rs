@@ -117,7 +117,7 @@ fn adjust_ranges(substitutions: &mut [(EffectRange, String)], index: usize, delt
 
 // in multiline snippets, remove padding from every line equal to the padding of the first line,
 // such that the first line is left-aligned.
-pub(crate) fn adjust_padding<'a>(
+fn adjust_padding<'a>(
     src: &'a str,
     range: &CodeRange,
     new_padding: Option<usize>,

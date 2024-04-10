@@ -25,16 +25,13 @@ impl NodeCompiler for CallCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> Result<Pattern> {
         let sort = node
             .child_by_field_name("name")
             .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
         let kind = sort.text().trim();
-        let sort = context
-            .compilation
-            .lang
-            .get_ts_language()
-            .id_for_node_kind(kind, true);
+        let lang = context.compilation.lang;
+        let sort = lang.get_ts_language().id_for_node_kind(kind, true);
         let expected_params = if let Some(built_in) = context
             .compilation
             .built_ins
@@ -60,8 +57,7 @@ impl NodeCompiler for CallCompiler {
         };
         let named_args_count = node.named_children_by_field_name("named_args").count();
         let named_args = node.named_children_by_field_name("named_args");
-        let named_args =
-            node_to_args_pairs(named_args, context.compilation.lang, kind, &expected_params)?;
+        let named_args = node_to_args_pairs(named_args, lang, kind, &expected_params)?;
 
         // tree-sitter returns 0 for sorts/kinds it doesn't know about
         if sort != 0 {
@@ -71,7 +67,7 @@ impl NodeCompiler for CallCompiler {
         }
         let mut args = named_args_to_hash_map(named_args, context)?;
         if args.len() != named_args_count {
-            return Err(anyhow!("duplicate named args for invocation of {kind}"));
+            return Err(anyhow!("duplicate named args for invocation of {}", kind));
         }
         if kind == "file" {
             for arg in &args {
@@ -105,15 +101,10 @@ impl NodeCompiler for CallCompiler {
                 args,
                 context.compilation.built_ins,
                 index,
-                context.compilation.lang,
+                lang,
             )?)))
         } else if let Some(info) = context.compilation.function_definition_info.get(kind) {
-            let args = match_args_to_params(
-                kind,
-                args,
-                &collect_params(&info.parameters),
-                context.compilation.lang,
-            )?;
+            let args = match_args_to_params(kind, args, &collect_params(&info.parameters), lang)?;
             Ok(Pattern::CallFunction(Box::new(CallFunction::new(
                 info.index, args,
             ))))
@@ -122,12 +113,7 @@ impl NodeCompiler for CallCompiler {
             .foreign_function_definition_info
             .get(kind)
         {
-            let args = match_args_to_params(
-                kind,
-                args,
-                &collect_params(&info.parameters),
-                context.compilation.lang,
-            )?;
+            let args = match_args_to_params(kind, args, &collect_params(&info.parameters), lang)?;
             Ok(Pattern::CallForeignFunction(Box::new(
                 CallForeignFunction::new(info.index, args),
             )))
@@ -137,14 +123,12 @@ impl NodeCompiler for CallCompiler {
                 .pattern_definition_info
                 .get(kind)
                 .ok_or_else(|| {
-                    anyhow!("pattern definition not found: {kind}. Try running grit init.")
+                    anyhow!(
+                        "pattern definition not found: {}. Try running grit init.",
+                        kind
+                    )
                 })?;
-            let args = match_args_to_params(
-                kind,
-                args,
-                &collect_params(&info.parameters),
-                context.compilation.lang,
-            )?;
+            let args = match_args_to_params(kind, args, &collect_params(&info.parameters), lang)?;
             Ok(Pattern::Call(Box::new(Call::new(
                 (info.index).to_owned(),
                 args,

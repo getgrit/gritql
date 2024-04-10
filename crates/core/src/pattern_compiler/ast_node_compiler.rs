@@ -7,6 +7,7 @@ use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use marzano_language::language::{FieldId, Language, SortId};
 use marzano_util::node_with_source::NodeWithSource;
+use std::cmp::Ordering;
 
 // TreeSitter Field IDs are roughly sequential so to
 // avoid conflicts with the language's field IDs we
@@ -19,25 +20,27 @@ impl AstNodeCompiler {
     // todo should the pattern always be a list? feels like it shouldn't
     // but don't remember why I implemented this way comeback to this later
     pub(crate) fn from_args(
-        named_args: Vec<(String, NodeWithSource)>,
+        mut named_args: Vec<(String, NodeWithSource)>,
         sort: SortId,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
     ) -> Result<ASTNode> {
         let mut args = Vec::new();
         if context.compilation.lang.is_comment(sort) {
-            if named_args.len() > 1 {
-                return Err(anyhow!("comment node has more than one field"));
+            match named_args.len().cmp(&1) {
+                Ordering::Equal => {
+                    let (name, node) = named_args.remove(0);
+                    if name != "content" {
+                        return Err(anyhow!("unknown field name {name} for comment node"));
+                    }
+                    let pattern = PatternCompiler::from_node(&node, context)?;
+                    args.push((COMMENT_CONTENT_FIELD_ID, false, pattern));
+                }
+                Ordering::Greater => {
+                    return Err(anyhow!("comment node has more than one field"));
+                }
+                Ordering::Less => { /* continue */ }
             }
-            if named_args.is_empty() {
-                return Ok(ASTNode::new(sort, args));
-            }
-            let (name, node) = &named_args[0];
-            if *name != "content" {
-                return Err(anyhow!("unknown field name {} for comment node", name));
-            }
-            let pattern = PatternCompiler::from_node(node, context)?;
-            args.push((COMMENT_CONTENT_FIELD_ID, false, pattern));
             return Ok(ASTNode::new(sort, args));
         }
         for (name, node) in named_args {

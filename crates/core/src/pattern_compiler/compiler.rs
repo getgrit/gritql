@@ -768,15 +768,6 @@ pub fn src_to_problem_libs_for_language(
         bail!("{}", long_message);
     };
 
-    let mut node_context = NodeCompilationContext {
-        compilation: &context,
-        vars: &mut vars,
-        vars_array: &mut vars_array,
-        scope_index,
-        global_vars: &mut global_vars,
-        logs: &mut logs,
-    };
-
     let pattern = auto_wrap_pattern(
         pattern,
         &mut pattern_definitions,

@@ -16,6 +16,7 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use im::{vector, Vector};
+use itertools::Itertools;
 use marzano_language::{language::FieldId, target_language::TargetLanguage};
 use marzano_util::{
     analysis_logs::AnalysisLogs, node_with_source::NodeWithSource, position::Range,
@@ -124,7 +125,7 @@ impl<'a> JoinFn<'a> {
         distributed_indent: Option<usize>,
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<str>> {
-        Ok(self
+        let res = self
             .list
             .iter()
             .map(|pattern| {
@@ -138,8 +139,12 @@ impl<'a> JoinFn<'a> {
                 )
             })
             .collect::<Result<Vec<_>>>()?
-            .join(&self.separator)
-            .into())
+            .join(&self.separator);
+        if let Some(padding) = distributed_indent {
+            Ok(pad_text(&res, padding).into())
+        } else {
+            Ok(res.into())
+        }
     }
 
     fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
@@ -252,6 +257,23 @@ pub fn _print_address(string: &str) {
     println!("ADDRESS: {:?}", address);
 }
 
+fn pad_text(text: &str, padding: usize) -> String {
+    if text.trim().is_empty() {
+        text.to_owned()
+    } else {
+        let mut res = if text.starts_with('\n') {
+            "\n".to_owned()
+        } else {
+            String::new()
+        };
+        res.push_str(&text.lines().join(&format!("\n{}", " ".repeat(padding))));
+        if text.ends_with('\n') {
+            res.push('\n')
+        };
+        res
+    }
+}
+
 impl<'a> ResolvedSnippet<'a> {
     pub fn from_binding(binding: Binding) -> ResolvedSnippet {
         ResolvedSnippet::Binding(binding)
@@ -288,7 +310,13 @@ impl<'a> ResolvedSnippet<'a> {
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<str>> {
         let res = match self {
-            ResolvedSnippet::Text(text) => Ok(text.clone()),
+            ResolvedSnippet::Text(text) => {
+                if let Some(indent) = distributed_indent {
+                    Ok(pad_text(text, indent).into())
+                } else {
+                    Ok(text.clone())
+                }
+            }
             ResolvedSnippet::Binding(binding) => {
                 // we are now taking the unmodified source code, and replacing the binding with the snippet
                 // we will want to apply effects next
