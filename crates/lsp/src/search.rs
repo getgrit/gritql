@@ -1,5 +1,5 @@
 use anyhow::Error;
-use marzano_core::pattern::api::{is_match, MatchResult};
+use marzano_core::api::{is_match, MatchResult};
 use marzano_core::pattern_compiler::src_to_problem_libs;
 use marzano_util::rich_path::RichFile;
 use marzano_util::runtime::ExecutionContext;

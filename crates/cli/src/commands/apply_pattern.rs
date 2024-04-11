@@ -11,7 +11,7 @@ use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 
 use indicatif::MultiProgress;
 use log::debug;
-use marzano_core::pattern::api::{AllDone, AllDoneReason, AnalysisLog, MatchResult};
+use marzano_core::api::{AllDone, AllDoneReason, AnalysisLog, MatchResult};
 use marzano_core::pattern_compiler::CompilationResult;
 use marzano_gritmodule::fetcher::KeepFetcherKind;
 use marzano_gritmodule::markdown::get_body_from_md_content;

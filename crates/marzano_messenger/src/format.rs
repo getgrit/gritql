@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use anyhow::Result;
-use marzano_core::pattern::api::{ByteRange, MatchResult};
+use marzano_core::api::{ByteRange, MatchResult};
 use marzano_util::position::{get_one_indexed_position_offset, Position};
 
 const JAVASCRIPT_EXTENSIONS: [&str; 6] = ["js", "jsx", "ts", "tsx", "cjs", "mjs"];

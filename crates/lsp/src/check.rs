@@ -9,7 +9,7 @@ use grit_cache::cache::Cache;
 #[cfg(feature = "caching")]
 use marzano_util::hasher::hash;
 
-use marzano_core::pattern::api::{EnforcementLevel, MatchResult};
+use marzano_core::api::{EnforcementLevel, MatchResult};
 use marzano_core::pattern_compiler::{src_to_problem_libs, CompilationResult};
 use marzano_gritmodule::config::ResolvedGritDefinition;
 use marzano_language::target_language::{PatternLanguage, TargetLanguage};

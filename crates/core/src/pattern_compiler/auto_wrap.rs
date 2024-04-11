@@ -26,7 +26,6 @@ use anyhow::Result;
 use marzano_util::position::FileRange;
 use std::collections::BTreeMap;
 
-#[allow(clippy::too_many_arguments)]
 pub(super) fn auto_wrap_pattern(
     pattern: Pattern,
     pattern_definitions: &mut [PatternDefinition],

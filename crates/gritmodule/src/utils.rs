@@ -1,7 +1,7 @@
 use std::{env::current_exe, fs::canonicalize, path::Path};
 
 use anyhow::{bail, Result};
-use marzano_core::pattern::api::MatchResult;
+use marzano_core::api::MatchResult;
 use regex::Regex;
 
 /// Extracts the *rewritten* (after applying a pattern) path from a `MatchResult`.

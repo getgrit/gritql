@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use anyhow::Result;
 use colored::Colorize;
-use marzano_core::pattern::api::EnforcementLevel;
+use marzano_core::api::EnforcementLevel;
 use marzano_gritmodule::{
     config::{DefinitionKind, DefinitionSource, PatternVisibility, ResolvedGritDefinition},
     fetcher::ModuleRepo,

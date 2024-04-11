@@ -1,4 +1,4 @@
-use marzano_core::pattern::api::EnforcementLevel;
+use marzano_core::api::EnforcementLevel;
 use marzano_language::target_language::PatternLanguage;
 use marzano_util::position::{Position, Range};
 use serde::{Deserialize, Serialize};

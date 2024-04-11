@@ -3,7 +3,7 @@ use std::ptr;
 use crate::position::Range;
 
 use super::cursor_wrapper::CursorWrapper;
-use grit_util::{AstCursor, AstNode};
+use grit_util::{AstCursor, AstNode, CodeRange};
 use tree_sitter::Node;
 
 /// A TreeSitter node, including a reference to the source code from which it
@@ -120,6 +120,16 @@ impl<'a> AstNode for NodeWithSource<'a> {
         let start_byte = self.node.start_byte() as usize;
         let end_byte = self.node.end_byte() as usize;
         &self.source[start_byte..end_byte]
+    }
+
+    fn code_range(&self) -> CodeRange {
+        CodeRange::new(self.node.start_byte(), self.node.end_byte(), self.source)
+    }
+}
+
+impl<'a> From<NodeWithSource<'a>> for CodeRange {
+    fn from(value: NodeWithSource<'a>) -> Self {
+        Self::new(value.node.start_byte(), value.node.end_byte(), value.source)
     }
 }
 

@@ -4,7 +4,7 @@ use std::{
 };
 
 use anyhow::anyhow;
-use marzano_core::{compact_api::compact, pattern::api::MatchResult};
+use marzano_core::{api::MatchResult, compact_api::compact};
 
 use marzano_messenger::{emit::Messager, output_mode::OutputMode};
 
