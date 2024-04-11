@@ -7,13 +7,13 @@ use super::{
 };
 use crate::{
     context::Context,
-    orphan::{get_orphaned_ranges, remove_orphaned_ranges},
+    orphan::{get_orphaned_ranges, remove_orphaned_ranges, replace_cleaned_ranges, Replacement},
     text_unparser::apply_effects,
 };
 use anyhow::{anyhow, bail, Result};
 use im::vector;
 use marzano_language::language::Language;
-use marzano_util::analysis_logs::AnalysisLogs;
+use marzano_util::{analysis_logs::AnalysisLogs, position::Range};
 use std::path::PathBuf;
 use tree_sitter::Parser;
 
@@ -144,8 +144,10 @@ impl Matcher for Step {
                 if let Some(new_ranges) = new_ranges {
                     let tree = parser.parse(new_src.as_bytes(), None).unwrap().unwrap();
                     let orphans = get_orphaned_ranges(&tree, &new_src, context.language());
-                    let (_cleaned_tree, cleaned_src) =
-                        remove_orphaned_ranges(&mut parser, orphans, &new_src)?;
+                    let replacement_ranges =
+                        orphans.into_iter().map(|r| (r, String::new())).collect();
+                    let cleaned_src =
+                        replace_cleaned_ranges(&mut parser, replacement_ranges, &new_src)?;
                     let new_src = if let Some(src) = cleaned_src {
                         src
                     } else {

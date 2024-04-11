@@ -6,6 +6,8 @@ use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::position::Range;
 use tree_sitter::{Parser, Tree};
 
+pub(crate) type Replacement = (Range, String);
+
 fn merge_ranges(ranges: Vec<Range>) -> Vec<Range> {
     if ranges.is_empty() {
         return vec![];
@@ -30,15 +32,16 @@ fn merge_ranges(ranges: Vec<Range>) -> Vec<Range> {
     result
 }
 
-pub(crate) fn remove_orphaned_ranges(
+pub(crate) fn replace_cleaned_ranges(
     parser: &mut Parser,
-    orphan_ranges: Vec<Range>,
+    orphan_ranges: Vec<Replacement>,
     src: &str,
-) -> Result<(Option<Tree>, Option<String>)> {
-    let removable_ranges = merge_ranges(orphan_ranges);
+) -> Result<Option<String>> {
+    let mut removable_ranges = orphan_ranges;
     let mut src = src.to_string();
     for range in &removable_ranges {
         src.drain(range.start_byte as usize..range.end_byte as usize);
+        // src.replace_range(range.start_byte as usize..range.start_byte as usize, " ".repeat(range.end_byte as usize - range.start_byte as usize).as_str());
     }
     let new_tree = if !removable_ranges.is_empty() {
         Some(parser.parse(src.as_bytes(), None).unwrap().unwrap())
