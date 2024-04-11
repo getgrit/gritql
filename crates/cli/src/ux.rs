@@ -5,8 +5,8 @@ use std::{collections::HashMap, fs::read_to_string};
 use colored::Colorize;
 use log::info;
 use marzano_core::{
+    api::{EnforcementLevel, MatchResult},
     fs::extract_ranges,
-    pattern::api::{EnforcementLevel, MatchResult},
 };
 use marzano_gritmodule::{
     config::ResolvedGritDefinition, testing::SampleTestResult, utils::extract_path,

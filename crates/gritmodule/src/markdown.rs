@@ -17,7 +17,7 @@ use crate::{
 
 use anyhow::{anyhow, bail, Result};
 use markdown::{mdast::Node, to_mdast, ParseOptions};
-use marzano_core::pattern::api::EnforcementLevel;
+use marzano_core::api::EnforcementLevel;
 
 fn parse_md_snippet(tree: &Node) -> Option<&Node> {
     tree.children().unwrap().iter().find(|child| match child {

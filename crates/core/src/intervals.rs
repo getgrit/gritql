@@ -1,6 +1,5 @@
+use crate::{pattern::state::EffectRange, problem::EffectKind};
 use std::{cmp::Ordering, ops::Range};
-
-use crate::pattern::{state::EffectRange, EffectKind};
 
 pub trait Interval {
     fn interval(&self) -> (u32, u32);

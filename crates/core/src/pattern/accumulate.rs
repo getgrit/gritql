@@ -3,9 +3,10 @@ use super::{
     functions::{Evaluator, FuncEvaluation},
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
-    Effect, EffectKind, State,
+    State,
 };
 use crate::context::Context;
+use crate::problem::{Effect, EffectKind};
 use anyhow::{bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::borrow::Cow;

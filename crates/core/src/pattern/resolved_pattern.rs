@@ -7,12 +7,12 @@ use super::{
     paths::absolutize,
     patterns::Pattern,
     state::{FilePtr, FileRegistry, State},
-    Effect, EffectKind,
 };
 use crate::{
     binding::{Binding, Constant},
     context::Context,
     pattern::{container::PatternOrResolved, patterns::Name},
+    problem::{Effect, EffectKind},
 };
 use anyhow::{anyhow, bail, Result};
 use im::{vector, Vector};

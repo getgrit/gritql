@@ -1,5 +1,5 @@
 use anyhow::Result;
-use marzano_core::pattern::api::EnforcementLevel;
+use marzano_core::api::EnforcementLevel;
 use marzano_gritmodule::config::{DefinitionSource, ResolvedGritDefinition};
 
 use crate::{

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use marzano_core::{fs::extract_ranges, pattern::api::EnforcementLevel};
+use marzano_core::{api::EnforcementLevel, fs::extract_ranges};
 use marzano_util::position::Range;
 use serde::Serialize;
 

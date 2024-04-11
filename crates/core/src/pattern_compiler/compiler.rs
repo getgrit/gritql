@@ -20,8 +20,9 @@ use crate::{
         pattern_definition::PatternDefinition,
         predicate_definition::PredicateDefinition,
         variable::VariableSourceLocations,
-        Problem, VariableLocations,
+        VariableLocations,
     },
+    problem::Problem,
 };
 use anyhow::{anyhow, bail, Result};
 use grit_util::{traverse, Order};
