@@ -15,6 +15,7 @@ use crate::{
     problem::{Effect, EffectKind},
 };
 use anyhow::{anyhow, bail, Result};
+use grit_util::CodeRange;
 use im::{vector, Vector};
 use itertools::Itertools;
 use marzano_language::{language::FieldId, target_language::TargetLanguage};
@@ -26,7 +27,6 @@ use std::{
     collections::{BTreeMap, HashMap},
     path::Path,
 };
-use tree_sitter::Node;
 
 /**
  * This file contains data structures for everything resolved.
@@ -196,65 +196,6 @@ pub enum ResolvedPattern<'a> {
     File(File<'a>),
     Files(Box<ResolvedPattern<'a>>),
     Constant(Constant),
-}
-
-// I believe default hash is expensive here because of
-// the string reference, we should probably store
-// files in an array, and use index references instead
-#[derive(Debug, Clone, Eq, Hash, PartialEq)]
-pub struct CodeRange {
-    pub start: u32,
-    pub end: u32,
-    pub address: usize,
-}
-
-impl CodeRange {
-    pub fn new(start: u32, end: u32, src: &str) -> CodeRange {
-        let raw_ptr = src as *const str;
-        let thin_ptr = raw_ptr as *const u8;
-        let address = thin_ptr as usize;
-        CodeRange {
-            start,
-            end,
-            address,
-        }
-    }
-
-    pub fn from_node(src: &str, node: &Node) -> CodeRange {
-        let raw_ptr = src as *const str;
-        let thin_ptr = raw_ptr as *const u8;
-        let address = thin_ptr as usize;
-        CodeRange {
-            start: node.start_byte(),
-            end: node.end_byte(),
-            address,
-        }
-    }
-
-    pub fn from_range(src: &str, range: Range) -> CodeRange {
-        let raw_ptr = src as *const str;
-        let thin_ptr = raw_ptr as *const u8;
-        let address = thin_ptr as usize;
-        CodeRange {
-            start: range.start_byte,
-            end: range.end_byte,
-            address,
-        }
-    }
-
-    pub fn equal_address(&self, other: &str) -> bool {
-        let raw_ptr = other as *const str;
-        let thin_ptr = raw_ptr as *const u8;
-        let index = thin_ptr as usize;
-        self.address == index
-    }
-}
-
-pub fn _print_address(string: &str) {
-    let raw_ptr = string as *const str;
-    let thin_ptr = raw_ptr as *const u8;
-    let address = thin_ptr as usize;
-    println!("ADDRESS: {:?}", address);
 }
 
 fn pad_text(text: &str, padding: usize) -> String {
@@ -452,12 +393,12 @@ impl<'a> ResolvedPattern<'a> {
         Self::from_binding(Binding::from_node(node))
     }
 
-    pub(crate) fn from_list(src: &'a str, node: Node<'a>, field_id: FieldId) -> Self {
-        Self::from_binding(Binding::List(NodeWithSource::new(node, src), field_id))
+    pub(crate) fn from_list(node: NodeWithSource<'a>, field_id: FieldId) -> Self {
+        Self::from_binding(Binding::List(node, field_id))
     }
 
-    pub(crate) fn empty_field(src: &'a str, node: Node<'a>, field_id: FieldId) -> Self {
-        Self::from_binding(Binding::Empty(NodeWithSource::new(node, src), field_id))
+    pub(crate) fn empty_field(node: NodeWithSource<'a>, field_id: FieldId) -> Self {
+        Self::from_binding(Binding::Empty(node, field_id))
     }
 
     pub(crate) fn from_path(path: &'a Path) -> Self {
