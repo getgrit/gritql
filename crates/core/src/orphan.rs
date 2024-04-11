@@ -8,21 +8,21 @@ use tree_sitter::{Parser, Tree};
 
 pub(crate) type Replacement = (Range, String);
 
-fn merge_ranges(ranges: Vec<Range>) -> Vec<Range> {
+fn merge_ranges(ranges: Vec<Replacement>) -> Vec<Replacement> {
     if ranges.is_empty() {
         return vec![];
     }
 
-    let sorted: Vec<Range> = ranges
+    let sorted: Vec<Replacement> = ranges
         .into_iter()
-        .sorted_by(|a, b| b.start_byte.cmp(&a.start_byte))
+        .sorted_by(|a, b| b.0.start_byte.cmp(&a.0.start_byte))
         .collect_vec();
     let mut result = vec![];
     let mut current_range = sorted[0].to_owned();
 
     for range in sorted.into_iter().skip(1) {
-        if current_range.start_byte <= range.end_byte {
-            current_range.start_byte = current_range.start_byte.min(range.start_byte);
+        if current_range.0.start_byte <= range.0.end_byte {
+            current_range.0.start_byte = current_range.0.start_byte.min(range.0.start_byte);
         } else {
             result.push(current_range);
             current_range = range.to_owned();
@@ -34,22 +34,18 @@ fn merge_ranges(ranges: Vec<Range>) -> Vec<Range> {
 
 pub(crate) fn replace_cleaned_ranges(
     parser: &mut Parser,
-    orphan_ranges: Vec<Replacement>,
+    replacement_ranges: Vec<Replacement>,
     src: &str,
 ) -> Result<Option<String>> {
-    let mut removable_ranges = orphan_ranges;
-    let mut src = src.to_string();
-    for range in &removable_ranges {
-        src.drain(range.start_byte as usize..range.end_byte as usize);
-        // src.replace_range(range.start_byte as usize..range.start_byte as usize, " ".repeat(range.end_byte as usize - range.start_byte as usize).as_str());
+    if replacement_ranges.is_empty() {
+        return Ok(None);
     }
-    let new_tree = if !removable_ranges.is_empty() {
-        Some(parser.parse(src.as_bytes(), None).unwrap().unwrap())
-    } else {
-        None
-    };
-    let new_src = if new_tree.is_some() { Some(src) } else { None };
-    Ok((new_tree, new_src))
+    let replacement_ranges = merge_ranges(replacement_ranges);
+    let mut src = src.to_string();
+    for range in &replacement_ranges {
+        src.drain(range.0.start_byte as usize..range.0.end_byte as usize);
+        // src.replace_range(range.start_byte as usize..range.start_byte as usize, " ".repeat(range.end_byte as usize - range.start_byte as usize).as_str());
+    Ok(Some(src))
 }
 
 pub fn get_orphaned_ranges(tree: &Tree, src: &str, lang: &TargetLanguage) -> Vec<Range> {
