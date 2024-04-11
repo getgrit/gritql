@@ -13578,6 +13578,112 @@ fn php_cast() {
 }
 
 #[test]
+fn php_if() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`if(^a){^_}` where {
+                |   ^a => `$a == $b`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |$a = 1;
+                |$b = 1;
+                |if($a != $b){
+                |   echo "pass";
+                |}
+                |"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+                |$a = 1;
+                |$b = 1;
+                |if($a == $b){
+                |   echo "pass";
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+#[test]
+fn php_class() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`class ^name { 
+                |    function ^fname() {
+                |        if (^a) { ^_ } else { ^_ }
+                |    }
+                |}` where {
+                |   ^name => `Mod`,
+                |   ^fname => `mod_method`,
+                |   ^a => `$a == $b`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |class A {
+                |    function foo()
+                |    {
+                |        if (isset($this)) {
+                |            echo '$this is defined (';
+                |            echo get_class($this);
+                |            echo ")\n";
+                |        } else {
+                |            echo "\$this is not defined.\n";
+                |        }
+                |    }
+                |}
+                |
+                |class B {
+                |    function bar()
+                |    {
+                |        A::foo();
+                |    }
+                |}
+                |"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+                |class Mod {
+                |    function mod_method()
+                |    {
+                |        if ($a == $b) {
+                |            echo '$this is defined (';
+                |            echo get_class($this);
+                |            echo ")\n";
+                |        } else {
+                |            echo "\$this is not defined.\n";
+                |        }
+                |    }
+                |}
+                |
+                |class B {
+                |    function bar()
+                |    {
+                |        A::foo();
+                |    }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+#[test]
 fn css_property_value() {
     run_test_match(TestArg {
         pattern: r#"
