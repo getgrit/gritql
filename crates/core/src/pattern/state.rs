@@ -1,13 +1,11 @@
 use super::{
-    constants::MATCH_VAR,
-    patterns::Pattern,
-    resolved_pattern::{CodeRange, ResolvedPattern},
-    variable::Variable,
+    constants::MATCH_VAR, patterns::Pattern, resolved_pattern::ResolvedPattern, variable::Variable,
     variable_content::VariableContent,
 };
 use crate::intervals::{earliest_deadline_sort, get_top_level_intervals_in_range, Interval};
 use crate::problem::{Effect, FileOwner};
 use anyhow::{anyhow, bail, Result};
+use grit_util::CodeRange;
 use im::{vector, Vector};
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -88,9 +86,8 @@ fn get_top_level_effect_ranges<'a>(
         .filter(|effect| {
             let binding = &effect.binding;
             if let Some(src) = binding.source() {
-                if let Some(position) = binding.position() {
-                    range.equal_address(src)
-                        && !matches!(memo.get(&CodeRange::from_range(src, position)), Some(None))
+                if let Some(binding_range) = binding.code_range() {
+                    range.applies_to(src) && !matches!(memo.get(&binding_range), Some(None))
                 } else {
                     let _ = binding.log_empty_field_rewrite_error(language, logs);
                     false
