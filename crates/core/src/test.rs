@@ -13762,3 +13762,31 @@ fn yaml_indents_join() {
     })
     .unwrap();
 }
+
+#[test]
+fn ruby_hello_world() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`puts $string` => `puts $string + " modified"`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |puts "hello world"
+                |puts "hello again"
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |puts "hello world" + " modified"
+                |puts "hello again" + " modified"
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
