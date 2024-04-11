@@ -1,5 +1,6 @@
+use marzano_core::analysis::defines_itself;
 use marzano_core::parse::make_grit_parser;
-use marzano_core::pattern::analysis::defines_itself;
+use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::position::{Position, Range};
 use marzano_util::rich_path::RichFile;
 use std::fs::OpenOptions;
@@ -412,7 +413,7 @@ pub fn get_patterns_from_md(
         .parse(&body, None)?
         .ok_or_else(|| anyhow!("parse error"))?;
 
-    if defines_itself(&src_tree.root_node(), &body, name)? {
+    if defines_itself(&NodeWithSource::new(src_tree.root_node(), &body), name)? {
         bail!("Pattern {} attempts to define itself - this is not allowed. Tip: Markdown patterns use the file name as their pattern name.", name);
     }
 
