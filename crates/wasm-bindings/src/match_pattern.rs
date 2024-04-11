@@ -259,6 +259,11 @@ pub async fn match_pattern(
     Ok(serde_wasm_bindgen::to_value(&results)?)
 }
 
+#[wasm_bindgen(js_name = helloWorld)]
+pub async fn hello_world() -> Result<JsValue, JsError> {
+    Ok(serde_wasm_bindgen::to_value(&"hello world!")?)
+}
+
 struct ParsedPattern {
     libs: BTreeMap<String, String>,
     tree: Tree,
