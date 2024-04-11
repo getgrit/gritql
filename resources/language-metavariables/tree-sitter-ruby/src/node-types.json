@@ -1926,7 +1926,17 @@
   {
     "type": "hash_key_symbol",
     "named": true,
-    "fields": {}
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "grit_metavariable",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "hash_pattern",
@@ -2028,7 +2038,17 @@
   {
     "type": "identifier",
     "named": true,
-    "fields": {}
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "grit_metavariable",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "if",
@@ -3928,6 +3948,10 @@
   },
   {
     "type": "global_variable",
+    "named": true
+  },
+  {
+    "type": "grit_metavariable",
     "named": true
   },
   {

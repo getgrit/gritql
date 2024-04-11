@@ -67,7 +67,7 @@ const allLanguages = [
 // I'd rather not special-case languages in individual steps
 // like this and instead have them define their own build
 // steps, but makes the code smaller for now
-const languagesWithoutMetaVariables = ['ruby', 'html', 'hcl'];
+const languagesWithoutMetaVariables = ['html', 'hcl'];
 
 // assumes that this script is run from marzano/resources directory
 const METAVARIABLE_GRAMMARS = `../metavariable-grammars`;

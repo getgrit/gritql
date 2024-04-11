@@ -1,6 +1,6 @@
 {
   "name": "ruby",
-  "word": "identifier",
+  "word": "_identifier",
   "rules": {
     "program": {
       "type": "SEQ",
@@ -7283,6 +7283,19 @@
       ]
     },
     "identifier": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "grit_metavariable"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_identifier"
+        }
+      ]
+    },
+    "_identifier": {
       "type": "TOKEN",
       "content": {
         "type": "SEQ",
@@ -8184,6 +8197,26 @@
           "value": ";"
         }
       ]
+    },
+    "grit_metavariable": {
+      "type": "TOKEN",
+      "content": {
+        "type": "PREC",
+        "value": 100,
+        "content": {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "µ..."
+            },
+            {
+              "type": "PATTERN",
+              "value": "µ[a-zA-Z_][a-zA-Z0-9_]*"
+            }
+          ]
+        }
+      }
     }
   },
   "extras": [
