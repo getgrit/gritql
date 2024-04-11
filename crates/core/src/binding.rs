@@ -357,48 +357,19 @@ impl<'a> Binding<'a> {
             Self::Empty(_, _) => None,
             Self::Node(node) => Some(node.range()),
             Self::String(_, range) => Some(range.to_owned()),
-            Self::List(parent_node, field_id) => {
-                let mut children = parent_node.children_by_field_id(*field_id);
-
-                match children.next() {
-                    None => None,
-                    Some(first_node) => {
-                        let end_node = match children.last() {
-                            None => first_node.clone(),
-                            Some(last_node) => last_node,
-                        };
-                        let mut leading_comment = first_node.clone();
-                        while let Some(comment) = leading_comment.previous_sibling() {
-                            if comment.node.kind() == "comment" {
-                                leading_comment = comment;
-                            } else {
-                                break;
-                            }
-                        }
-                        let mut trailing_comment = end_node;
-                        while let Some(comment) = trailing_comment.next_sibling() {
-                            if comment.node.kind() == "comment" {
-                                trailing_comment = comment;
-                            } else {
-                                break;
-                            }
-                        }
-                        Some(Range {
-                            start: Position::new(
-                                // FIXME: Should this be `leading_node`?
-                                first_node.node.start_position().row() + 1,
-                                first_node.node.start_position().column() + 1,
-                            ),
-                            end: Position::new(
-                                trailing_comment.node.end_position().row() + 1,
-                                trailing_comment.node.end_position().column() + 1,
-                            ),
-                            start_byte: leading_comment.node.start_byte(),
-                            end_byte: trailing_comment.node.end_byte(),
-                        })
-                    }
-                }
-            }
+            Self::List(parent_node, field_id) => get_range_nodes_for_list(parent_node, field_id)
+                .map(|(leading_node, trailing_node)| Range {
+                    start: Position::new(
+                        leading_node.node.start_position().row() + 1,
+                        leading_node.node.start_position().column() + 1,
+                    ),
+                    end: Position::new(
+                        trailing_node.node.end_position().row() + 1,
+                        trailing_node.node.end_position().column() + 1,
+                    ),
+                    start_byte: leading_node.node.start_byte(),
+                    end_byte: trailing_node.node.end_byte(),
+                }),
             Self::FileName(_) => None,
             Self::ConstantRef(_) => None,
         }
@@ -410,38 +381,14 @@ impl<'a> Binding<'a> {
             Self::Empty(_, _) => None,
             Self::Node(node) => Some(node.code_range()),
             Self::String(src, range) => Some(CodeRange::new(range.start_byte, range.end_byte, src)),
-            Self::List(parent_node, field_id) => {
-                let mut children = parent_node.children_by_field_id(*field_id);
-
-                match children.next() {
-                    None => None,
-                    Some(first_node) => {
-                        let end_node = match children.last() {
-                            None => first_node.clone(),
-                            Some(last_node) => last_node,
-                        };
-                        let mut leading_comment = first_node;
-                        while let Some(comment) = leading_comment.previous_sibling() {
-                            if comment.node.kind() == "comment" {
-                                leading_comment = comment;
-                            } else {
-                                break;
-                            }
-                        }
-                        let mut trailing_comment = end_node;
-                        while let Some(comment) = trailing_comment.next_sibling() {
-                            if comment.node.kind() == "comment" {
-                                trailing_comment = comment;
-                            } else {
-                                break;
-                            }
-                        }
-                        let start = leading_comment.node.start_byte();
-                        let end = trailing_comment.node.end_byte();
-                        Some(CodeRange::new(start, end, parent_node.source))
-                    }
-                }
-            }
+            Self::List(parent_node, field_id) => get_range_nodes_for_list(parent_node, field_id)
+                .map(|(leading_node, trailing_node)| {
+                    CodeRange::new(
+                        leading_node.node.start_byte(),
+                        trailing_node.node.end_byte(),
+                        parent_node.source,
+                    )
+                }),
             Self::FileName(_) => None,
             Self::ConstantRef(_) => None,
         }
@@ -626,4 +573,38 @@ impl<'a> Binding<'a> {
 
         Ok(())
     }
+}
+
+fn get_range_nodes_for_list<'a>(
+    parent_node: &NodeWithSource<'a>,
+    field_id: &FieldId,
+) -> Option<(NodeWithSource<'a>, NodeWithSource<'a>)> {
+    let mut children = parent_node.children_by_field_id(*field_id);
+    let Some(first_node) = children.next() else {
+        return None;
+    };
+
+    let end_node = match children.last() {
+        None => first_node.clone(),
+        Some(last_node) => last_node,
+    };
+
+    let mut leading_comment = first_node.clone();
+    while let Some(comment) = leading_comment.previous_sibling() {
+        if comment.node.kind() == "comment" {
+            leading_comment = comment;
+        } else {
+            break;
+        }
+    }
+    let mut trailing_comment = end_node;
+    while let Some(comment) = trailing_comment.next_sibling() {
+        if comment.node.kind() == "comment" {
+            trailing_comment = comment;
+        } else {
+            break;
+        }
+    }
+
+    Some((leading_comment, trailing_comment))
 }
