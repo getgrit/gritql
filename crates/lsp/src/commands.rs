@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt};
 
-use marzano_core::pattern::api::MatchResult;
+use marzano_core::api::MatchResult;
 use marzano_gritmodule::config::ResolvedGritDefinition;
 use serde::{Deserialize, Serialize};
 use tower_lsp::lsp_types::{notification::Notification, request::Request};

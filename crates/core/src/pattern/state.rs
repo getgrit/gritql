@@ -4,9 +4,9 @@ use super::{
     resolved_pattern::{CodeRange, ResolvedPattern},
     variable::Variable,
     variable_content::VariableContent,
-    Effect, FileOwner,
 };
 use crate::intervals::{earliest_deadline_sort, get_top_level_intervals_in_range, Interval};
+use crate::problem::{Effect, FileOwner};
 use anyhow::{anyhow, bail, Result};
 use im::{vector, Vector};
 use marzano_language::target_language::TargetLanguage;

@@ -1,7 +1,7 @@
 use crate::binding::linearize_binding;
 use crate::pattern::resolved_pattern::CodeRange;
 use crate::pattern::state::FileRegistry;
-use crate::pattern::Effect;
+use crate::problem::Effect;
 use anyhow::Result;
 use im::Vector;
 use marzano_language::target_language::TargetLanguage;

@@ -5,7 +5,7 @@ use std::sync::{Arc, RwLock};
 use anyhow::Result;
 #[cfg(feature = "caching")]
 use grit_cache::cache::Cache;
-use marzano_core::{fs::extract_ranges, pattern::api::EnforcementLevel};
+use marzano_core::{api::EnforcementLevel, fs::extract_ranges};
 
 use marzano_gritmodule::fetcher::ModuleRepo;
 use tower_lsp::lsp_types::{CodeDescription, Diagnostic, DiagnosticSeverity, TextDocumentItem};

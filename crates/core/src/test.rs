@@ -1,5 +1,6 @@
 use crate::pattern_compiler::src_to_problem_libs;
 use anyhow::{anyhow, Context, Result};
+use api::MatchResult;
 use insta::{assert_debug_snapshot, assert_snapshot, assert_yaml_snapshot};
 use lazy_static::lazy_static;
 use marzano_auth::testing::get_testing_auth_info;
@@ -8,8 +9,7 @@ use marzano_language::target_language::{PatternLanguage, TargetLanguage};
 use marzano_util::position::{Range, VariableMatch};
 use marzano_util::rich_path::RichFile;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
-use pattern::api::MatchResult;
-use pattern::Problem;
+use problem::Problem;
 use similar::{ChangeTag, TextDiff};
 use std::collections::{BTreeMap, HashMap};
 use std::{env, path::Path, path::PathBuf};

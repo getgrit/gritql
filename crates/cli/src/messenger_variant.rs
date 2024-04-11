@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use marzano_core::pattern::api::AnalysisLog;
+use marzano_core::api::AnalysisLog;
 use marzano_messenger::{
     emit::Messager, output_mode::OutputMode, workflows::PackagedWorkflowOutcome,
 };
@@ -30,10 +30,7 @@ pub enum MessengerVariant<'a> {
 }
 
 impl<'a> Messager for MessengerVariant<'a> {
-    fn raw_emit(
-        &mut self,
-        message: &marzano_core::pattern::api::MatchResult,
-    ) -> anyhow::Result<()> {
+    fn raw_emit(&mut self, message: &marzano_core::api::MatchResult) -> anyhow::Result<()> {
         match self {
             MessengerVariant::Formatted(m) => m.raw_emit(message),
             MessengerVariant::JsonLine(m) => m.raw_emit(message),

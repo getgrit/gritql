@@ -1,7 +1,7 @@
 use crate::inline_snippets::inline_sorted_snippets_with_offset;
 use crate::pattern::resolved_pattern::CodeRange;
 use crate::pattern::state::{get_top_level_effects, FileRegistry};
-use crate::pattern::{Effect, EffectKind};
+use crate::problem::{Effect, EffectKind};
 use anyhow::{anyhow, Result};
 use grit_util::AstNode;
 use marzano_language::language::{FieldId, Language};

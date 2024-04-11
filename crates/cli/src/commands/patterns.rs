@@ -5,7 +5,7 @@ use clap::{Args, Parser, Subcommand};
 use colored::Colorize;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
-use marzano_core::pattern::api::EnforcementLevel;
+use marzano_core::api::EnforcementLevel;
 use marzano_util::{base64, url};
 use std::io::prelude::*;
 

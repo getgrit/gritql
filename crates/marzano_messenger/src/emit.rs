@@ -10,8 +10,8 @@ use dialoguer::Input;
 use indicatif::ProgressBar;
 use log::info;
 use marzano_core::{
+    api::{derive_log_level, is_match, AnalysisLogLevel, MatchResult},
     fs::apply_rewrite,
-    pattern::api::{derive_log_level, is_match, AnalysisLogLevel, MatchResult},
 };
 use marzano_language::target_language::TargetLanguage;
 use serde::{Deserialize, Serialize};

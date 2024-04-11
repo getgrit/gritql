@@ -1,6 +1,6 @@
-use marzano_core::pattern::{
+use marzano_core::{
     api::{derive_log_level, is_match, AnalysisLogLevel, MatchResult},
-    Problem,
+    problem::Problem,
 };
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::runtime::ExecutionContext;

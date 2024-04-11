@@ -5,14 +5,12 @@ use grit_cache::paths::cache_for_cwd;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use log::info;
 use marzano_core::{
-    fs::apply_rewrite,
-    pattern::{
-        api::{
-            is_match, AllDone, AllDoneReason, EnforcementLevel, MatchResult, RewriteReason,
-            RewriteSource,
-        },
-        Problem,
+    api::{
+        is_match, AllDone, AllDoneReason, EnforcementLevel, MatchResult, RewriteReason,
+        RewriteSource,
     },
+    fs::apply_rewrite,
+    problem::Problem,
 };
 use marzano_gritmodule::{config::ResolvedGritDefinition, utils::extract_path};
 use marzano_language::target_language::{expand_paths, PatternLanguage};

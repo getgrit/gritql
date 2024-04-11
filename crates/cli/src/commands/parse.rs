@@ -9,8 +9,8 @@ use crate::{
 use anyhow::{anyhow, bail, Result};
 use clap::Args;
 use marzano_core::{
+    api::{AnalysisLog, MatchResult, PatternInfo},
     parse::parse_input_file,
-    pattern::api::{AnalysisLog, MatchResult, PatternInfo},
 };
 use marzano_language::target_language::PatternLanguage;
 use marzano_messenger::{
