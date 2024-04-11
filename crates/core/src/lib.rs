@@ -1,4 +1,5 @@
 #![deny(clippy::wildcard_enum_match_arm)]
+pub mod analysis;
 pub mod api;
 pub mod binding;
 pub mod compact_api;

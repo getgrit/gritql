@@ -2,7 +2,6 @@ pub mod accessor;
 pub mod accumulate;
 pub mod add;
 pub mod after;
-pub mod analysis;
 pub mod and;
 pub mod any;
 pub mod assignment;
