@@ -950,7 +950,7 @@ module.exports = function defineGrammar(dialect) {
         $.arrow_function,
       ),
 
-      parenthesized_expression: $ => prec(PREC.PAREN, seq('(', $._expression, ')')),
+      parenthesized_expression: $ => prec(PREC.PAREN, seq('(', field('expression', $._expression), ')')),
 
       class_constant_access_expression: $ => seq(
         $._scope_resolution_qualifier,
