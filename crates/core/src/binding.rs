@@ -580,9 +580,7 @@ fn get_range_nodes_for_list<'a>(
     field_id: &FieldId,
 ) -> Option<(NodeWithSource<'a>, NodeWithSource<'a>)> {
     let mut children = parent_node.children_by_field_id(*field_id);
-    let Some(first_node) = children.next() else {
-        return None;
-    };
+    let first_node = children.next()?;
 
     let end_node = match children.last() {
         None => first_node.clone(),
