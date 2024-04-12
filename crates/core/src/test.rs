@@ -7981,7 +7981,7 @@ fn js_repair_orphaned_arrow() {
             // Biome will handle formatting
             expected: r#"
                 |const fn = () =>{} ;
-                |const fnTwo = () => { };
+                |const fnTwo = () => {  };
                 |const fnBob = () => { alert(); }
                 |"#
             .trim_margin()

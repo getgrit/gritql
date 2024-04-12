@@ -4,7 +4,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use grit_util::AstNode;
-use marzano_util::{node_with_source::NodeWithSource, position::Range};
+use marzano_util::node_with_source::NodeWithSource;
 use tree_sitter::{Parser, Tree};
 
 static STATEMENT_NODE_NAMES: &[&str] = &[
@@ -117,17 +117,25 @@ pub(crate) fn parse_file(
 
 pub(crate) fn jslike_check_replacements(
     n: NodeWithSource<'_>,
-    orphan_ranges: &mut Vec<RangeReplacement>,
+    replacement_ranges: &mut Vec<RangeReplacement>,
 ) {
-    if n.node.is_error() && ["var", "let", "const"].contains(&n.text())
+    if n.node.kind() == "arrow_function" {
+        let child = n.node.child_by_field_name("body");
+        if let Some(child) = child {
+            let range = child.range();
+            if range.start_byte() == range.end_byte() {
+                replacement_ranges.push((range.into(), Some("{}".to_string())));
+            }
+        }
+    } else if n.node.is_error() && ["var", "let", "const"].contains(&n.text())
         || n.node.kind() == "empty_statement"
     {
-        orphan_ranges.push((n.range(), None));
+        replacement_ranges.push((n.range(), None));
     } else if n.node.kind() == "import_statement" {
         for n in n.named_children().filter(|n| n.node.is_error()) {
             if let Some(n) = n.children().last() {
                 if n.node.kind() == "," {
-                    orphan_ranges.push((n.range(), None))
+                    replacement_ranges.push((n.range(), None))
                 }
             }
         }
@@ -136,14 +144,14 @@ pub(crate) fn jslike_check_replacements(
                 let named_imports = imports.named_children_by_field_name("imports").count();
                 let namespace_import = imports.named_children_by_field_name("namespace").count();
                 if named_imports == 0 && namespace_import == 0 {
-                    orphan_ranges.push((n.range(), None));
+                    replacement_ranges.push((n.range(), None));
                 }
             }
         }
     } else if n.node.is_error() && n.text() == "," {
         for ancestor in n.ancestors() {
             if ancestor.node.kind() == "class_body" {
-                orphan_ranges.push((n.range(), None));
+                replacement_ranges.push((n.range(), None));
                 break;
             }
         }
