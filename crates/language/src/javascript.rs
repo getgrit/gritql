@@ -1,6 +1,6 @@
 use crate::{
     language::{
-        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, RangeReplacement,
+        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, Replacement,
         SortId, TSLanguage,
     },
     xscript_util::{
@@ -165,7 +165,7 @@ impl Language for JavaScript {
         self.metavariable_sort
     }
 
-    fn check_replacements(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<RangeReplacement>) {
+    fn check_replacements(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Replacement>) {
         jslike_check_replacements(n, orphan_ranges)
     }
 

@@ -179,7 +179,7 @@ impl Language for TypeScript {
     fn check_replacements(
         &self,
         n: NodeWithSource<'_>,
-        replacements: &mut Vec<crate::language::RangeReplacement>,
+        replacements: &mut Vec<crate::language::Replacement>,
     ) {
         jslike_check_replacements(n, replacements)
     }
