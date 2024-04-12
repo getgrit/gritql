@@ -54,15 +54,6 @@ pub(crate) fn replace_cleaned_ranges(
     Ok(Some(src))
 }
 
-pub fn get_orphaned_ranges(tree: &Tree, src: &str, lang: &TargetLanguage) -> Vec<Range> {
-    let mut orphan_ranges = vec![];
-    let cursor = tree.walk();
-    for n in traverse(CursorWrapper::new(cursor, src), Order::Pre) {
-        lang.check_orphaned(n, &mut orphan_ranges);
-    }
-    orphan_ranges
-}
-
 pub fn get_replacement_ranges(tree: &Tree, src: &str, lang: &TargetLanguage) -> Vec<Replacement> {
     let mut replacement_ranges = vec![];
     let cursor = tree.walk();

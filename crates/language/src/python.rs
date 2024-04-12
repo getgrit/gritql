@@ -79,9 +79,13 @@ impl Language for Python {
         id == self.comment_sort
     }
 
-    fn check_orphaned(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Range>) {
+    fn check_replacements(
+        &self,
+        n: NodeWithSource<'_>,
+        replacements: &mut Vec<crate::language::RangeReplacement>,
+    ) {
         if n.node.is_error() && n.text() == "->" {
-            orphan_ranges.push(n.range());
+            replacements.push((n.range(), None));
         }
     }
 }
