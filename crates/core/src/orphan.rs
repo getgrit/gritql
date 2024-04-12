@@ -6,7 +6,7 @@ use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::position::Range;
 use tree_sitter::{Parser, Tree};
 
-pub(crate) type Replacement = (Range, String);
+pub(crate) type Replacement = (Range, Option<String>);
 
 fn merge_ranges(ranges: Vec<Replacement>) -> Vec<Replacement> {
     if ranges.is_empty() {
@@ -21,7 +21,7 @@ fn merge_ranges(ranges: Vec<Replacement>) -> Vec<Replacement> {
     let mut current_range = sorted[0].to_owned();
 
     for range in sorted.into_iter().skip(1) {
-        if current_range.0.start_byte <= range.0.end_byte {
+        if current_range.0.start_byte <= range.0.end_byte && current_range.1 == range.1 {
             current_range.0.start_byte = current_range.0.start_byte.min(range.0.start_byte);
         } else {
             result.push(current_range);

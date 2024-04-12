@@ -7961,6 +7961,33 @@ fn multiply_decimals() {
 }
 
 #[test]
+fn js_repair_orphaned_arrow() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |`console.$_($_)` => .
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |const fn = () => console.log();
+                |"#
+            .trim_margin()
+            .unwrap(),
+            // The whitespace is fine, because Ruff will remove it
+            expected: r#"
+                |const fn = () => {};
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn python_removes_orphaned_type_arrow() {
     run_test_expected({
         TestArgExpected {

@@ -144,8 +144,7 @@ impl Matcher for Step {
                 if let Some(new_ranges) = new_ranges {
                     let tree = parser.parse(new_src.as_bytes(), None).unwrap().unwrap();
                     let orphans = get_orphaned_ranges(&tree, &new_src, context.language());
-                    let replacement_ranges =
-                        orphans.into_iter().map(|r| (r, String::new())).collect();
+                    let replacement_ranges = orphans.into_iter().map(|r| (r, None)).collect();
                     let cleaned_src =
                         replace_cleaned_ranges(&mut parser, replacement_ranges, &new_src)?;
                     let new_src = if let Some(src) = cleaned_src {
