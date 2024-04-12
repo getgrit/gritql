@@ -6,7 +6,7 @@ use super::{
 };
 use crate::{
     context::Context,
-    orphan::{get_replacement_ranges, replace_cleaned_ranges},
+    clean::{get_replacement_ranges, replace_cleaned_ranges},
     problem::{FileOwner, InputRanges, MatchRanges},
     text_unparser::apply_effects,
 };

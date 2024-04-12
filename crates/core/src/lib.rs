@@ -10,7 +10,7 @@ pub mod errors;
 pub mod fs;
 mod inline_snippets;
 mod intervals;
-mod orphan;
+mod clean;
 pub mod parse;
 pub mod pattern;
 pub mod pattern_compiler;
