@@ -204,6 +204,7 @@ impl PatternLanguage {
         match name {
             "js" => match flavor {
                 Some("jsx") => Some(Self::Tsx),
+                Some("flow") => Some(Self::Tsx),
                 Some("typescript") => Some(Self::TypeScript),
                 Some("js_do_not_use") => Some(Self::JavaScript),
                 _ => Some(Self::Tsx),
