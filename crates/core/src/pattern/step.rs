@@ -7,7 +7,7 @@ use super::{
 };
 use crate::{
     context::Context,
-    orphan::{get_orphaned_ranges, remove_orphaned_ranges, replace_cleaned_ranges, Replacement},
+    orphan::{get_orphaned_ranges, replace_cleaned_ranges},
     text_unparser::apply_effects,
 };
 use anyhow::{anyhow, bail, Result};

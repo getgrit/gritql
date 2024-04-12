@@ -45,6 +45,7 @@ pub(crate) fn replace_cleaned_ranges(
     for range in &replacement_ranges {
         src.drain(range.0.start_byte as usize..range.0.end_byte as usize);
         // src.replace_range(range.start_byte as usize..range.start_byte as usize, " ".repeat(range.end_byte as usize - range.start_byte as usize).as_str());
+    }
     Ok(Some(src))
 }
 
