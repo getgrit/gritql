@@ -7961,6 +7961,37 @@ fn multiply_decimals() {
 }
 
 #[test]
+fn js_repair_orphaned_arrow() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |`console.$_($_)` => .
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |const fn = () => console.log();
+                |const fnTwo = () => { console.log(); };
+                |const fnBob = () => { alert(); }
+                |"#
+            .trim_margin()
+            .unwrap(),
+            // Biome will handle formatting
+            expected: r#"
+                |const fn = () =>{} ;
+                |const fnTwo = () => {  };
+                |const fnBob = () => { alert(); }
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn python_removes_orphaned_type_arrow() {
     run_test_expected({
         TestArgExpected {
