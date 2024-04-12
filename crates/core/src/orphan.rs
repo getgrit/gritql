@@ -33,7 +33,6 @@ fn merge_ranges(ranges: Vec<Replacement>) -> Vec<Replacement> {
 }
 
 pub(crate) fn replace_cleaned_ranges(
-    parser: &mut Parser,
     replacement_ranges: Vec<Replacement>,
     src: &str,
 ) -> Result<Option<String>> {
@@ -43,8 +42,14 @@ pub(crate) fn replace_cleaned_ranges(
     let replacement_ranges = merge_ranges(replacement_ranges);
     let mut src = src.to_string();
     for range in &replacement_ranges {
-        src.drain(range.0.start_byte as usize..range.0.end_byte as usize);
-        // src.replace_range(range.start_byte as usize..range.start_byte as usize, " ".repeat(range.end_byte as usize - range.start_byte as usize).as_str());
+        if let Some(replacement) = &range.1 {
+            src.replace_range(
+                range.0.start_byte as usize..range.0.end_byte as usize,
+                replacement,
+            );
+        } else {
+            src.drain(range.0.start_byte as usize..range.0.end_byte as usize);
+        }
     }
     Ok(Some(src))
 }
