@@ -1,5 +1,5 @@
 use crate::{
-    language::{default_parse_file, Language, RangeReplacement, SortId, TSLanguage},
+    language::{default_parse_file, Language, Replacement, SortId, TSLanguage},
     vue::get_vue_ranges,
 };
 use anyhow::anyhow;
@@ -117,25 +117,25 @@ pub(crate) fn parse_file(
 
 pub(crate) fn jslike_check_replacements(
     n: NodeWithSource<'_>,
-    replacement_ranges: &mut Vec<RangeReplacement>,
+    replacement_ranges: &mut Vec<Replacement>,
 ) {
     if n.node.kind() == "arrow_function" {
         let child = n.node.child_by_field_name("body");
         if let Some(child) = child {
             let range = child.range();
             if range.start_byte() == range.end_byte() {
-                replacement_ranges.push((range.into(), Some("{}".to_string())));
+                replacement_ranges.push(Replacement::new(range.into(), "{}"));
             }
         }
     } else if n.node.is_error() && ["var", "let", "const"].contains(&n.text())
         || n.node.kind() == "empty_statement"
     {
-        replacement_ranges.push((n.range(), None));
+        replacement_ranges.push(Replacement::new(n.range(), ""));
     } else if n.node.kind() == "import_statement" {
         for n in n.named_children().filter(|n| n.node.is_error()) {
             if let Some(n) = n.children().last() {
                 if n.node.kind() == "," {
-                    replacement_ranges.push((n.range(), None))
+                    replacement_ranges.push(Replacement::new(n.range(), ""))
                 }
             }
         }
@@ -144,14 +144,14 @@ pub(crate) fn jslike_check_replacements(
                 let named_imports = imports.named_children_by_field_name("imports").count();
                 let namespace_import = imports.named_children_by_field_name("namespace").count();
                 if named_imports == 0 && namespace_import == 0 {
-                    replacement_ranges.push((n.range(), None));
+                    replacement_ranges.push(Replacement::new(n.range(), ""));
                 }
             }
         }
     } else if n.node.is_error() && n.text() == "," {
         for ancestor in n.ancestors() {
             if ancestor.node.kind() == "class_body" {
-                replacement_ranges.push((n.range(), None));
+                replacement_ranges.push(Replacement::new(n.range(), ""));
                 break;
             }
         }

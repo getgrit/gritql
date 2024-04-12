@@ -5,15 +5,15 @@ use super::{
     state::{FilePtr, State},
 };
 use crate::{
-    context::Context,
     clean::{get_replacement_ranges, replace_cleaned_ranges},
+    context::Context,
     problem::{FileOwner, InputRanges, MatchRanges},
     text_unparser::apply_effects,
 };
 use anyhow::{anyhow, bail, Result};
 use im::vector;
 use marzano_language::language::Language;
-use marzano_util::{analysis_logs::AnalysisLogs};
+use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource};
 use std::path::PathBuf;
 use tree_sitter::Parser;
 
@@ -143,8 +143,8 @@ impl Matcher for Step {
                 )?;
                 if let Some(new_ranges) = new_ranges {
                     let tree = parser.parse(new_src.as_bytes(), None).unwrap().unwrap();
-                    let replacement_ranges =
-                        get_replacement_ranges(&tree, &new_src, context.language());
+                    let root = NodeWithSource::new(tree.root_node(), &new_src);
+                    let replacement_ranges = get_replacement_ranges(root, context.language());
                     let cleaned_src = replace_cleaned_ranges(replacement_ranges, &new_src)?;
                     let new_src = if let Some(src) = cleaned_src {
                         src

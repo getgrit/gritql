@@ -1,6 +1,6 @@
-use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
+use crate::language::{fields_for_nodes, Field, Language, Replacement, SortId, TSLanguage};
 use grit_util::AstNode;
-use marzano_util::{node_with_source::NodeWithSource};
+use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
 
 static NODE_TYPES_STRING: &str =
@@ -82,10 +82,10 @@ impl Language for Python {
     fn check_replacements(
         &self,
         n: NodeWithSource<'_>,
-        replacements: &mut Vec<crate::language::RangeReplacement>,
+        replacements: &mut Vec<crate::language::Replacement>,
     ) {
         if n.node.is_error() && n.text() == "->" {
-            replacements.push((n.range(), None));
+            replacements.push(Replacement::new(n.range(), ""));
         }
     }
 }
