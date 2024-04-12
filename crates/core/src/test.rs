@@ -7975,6 +7975,7 @@ fn js_repair_orphaned_arrow() {
                 |const fn = () => console.log();
                 |const fnTwo = () => { console.log(); };
                 |const fnBob = () => { alert(); }
+                |const x = () => {console.log(); console.log()};
                 |"#
             .trim_margin()
             .unwrap(),
@@ -7983,6 +7984,7 @@ fn js_repair_orphaned_arrow() {
                 |const fn = () =>{} ;
                 |const fnTwo = () => {  };
                 |const fnBob = () => { alert(); }
+                |const x = () => { };
                 |"#
             .trim_margin()
             .unwrap(),
