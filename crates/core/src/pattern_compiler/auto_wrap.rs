@@ -26,7 +26,6 @@ use anyhow::Result;
 use marzano_util::position::FileRange;
 use std::collections::BTreeMap;
 
-#[allow(clippy::too_many_arguments)]
 pub(super) fn auto_wrap_pattern(
     pattern: Pattern,
     pattern_definitions: &mut [PatternDefinition],
@@ -368,13 +367,7 @@ fn wrap_pattern_in_range(
     ranges: Vec<FileRange>,
     context: &mut NodeCompilationContext,
 ) -> Result<Pattern> {
-    let var = Variable::from_name(
-        var_name,
-        context.vars,
-        context.vars_array,
-        context.scope_index,
-        context.global_vars,
-    )?;
+    let var = Variable::from_name(var_name, context)?;
     let mut predicates = Vec::new();
     for file_range in ranges {
         let range = file_range.range.clone();
@@ -413,13 +406,7 @@ fn wrap_pattern_in_contains(
     pattern: Pattern,
     context: &mut NodeCompilationContext,
 ) -> Result<Pattern> {
-    let var = Variable::from_name(
-        var_name,
-        context.vars,
-        context.vars_array,
-        context.scope_index,
-        context.global_vars,
-    )?;
+    let var = Variable::from_name(var_name, context)?;
     let pattern = Pattern::Where(Box::new(Where::new(
         Pattern::Variable(var),
         Predicate::Match(Box::new(Match::new(

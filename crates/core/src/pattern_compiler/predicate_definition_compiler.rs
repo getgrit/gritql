@@ -32,11 +32,7 @@ impl NodeCompiler for PredicateDefinitionCompiler {
                 .get(name)
                 .ok_or_else(|| anyhow!("cannot get info for pattern {}", name))?
                 .parameters,
-            local_context.compilation.file,
-            local_context.vars_array,
-            scope_index,
-            local_context.vars,
-            local_context.global_vars,
+            &mut local_context,
         )?;
 
         let body = node

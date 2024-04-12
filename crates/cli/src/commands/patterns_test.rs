@@ -2,7 +2,7 @@ use colored::Colorize;
 use dashmap::{DashMap, ReadOnlyView};
 use log::{debug, info};
 
-use marzano_core::pattern::api::MatchResult;
+use marzano_core::api::MatchResult;
 use marzano_gritmodule::config::{GritPatternSample, GritPatternTestInfo};
 use marzano_gritmodule::formatting::format_rich_files;
 use marzano_gritmodule::markdown::replace_sample_in_md_file;

@@ -3,11 +3,11 @@ use super::{
     patterns::{Matcher, Pattern},
     resolved_pattern::{File, ResolvedPattern},
     state::{FilePtr, State},
-    FileOwner, InputRanges, MatchRanges,
 };
 use crate::{
     context::Context,
     orphan::{get_replacement_ranges, replace_cleaned_ranges},
+    problem::{FileOwner, InputRanges, MatchRanges},
     text_unparser::apply_effects,
 };
 use anyhow::{anyhow, bail, Result};

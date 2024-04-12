@@ -1,13 +1,11 @@
 use super::{
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
-    variable::VariableSourceLocations,
 };
-use crate::{context::Context, pattern_compiler::CompilationContext};
-use anyhow::{anyhow, Result};
+use crate::context::Context;
+use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
-use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub struct GritMap {
@@ -21,45 +19,6 @@ impl GritMap {
 
     pub(crate) fn get(&self, key: &str) -> Option<&Pattern> {
         self.elements.get(key)
-    }
-    #[allow(clippy::too_many_arguments)]
-    pub(crate) fn from_node(
-        node: &Node,
-        context: &CompilationContext,
-        vars: &mut BTreeMap<String, usize>,
-        vars_array: &mut Vec<Vec<VariableSourceLocations>>,
-        scope_index: usize,
-        global_vars: &mut BTreeMap<String, usize>,
-        is_rhs: bool,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
-        let mut cursor = node.walk();
-        let children = node
-            .children_by_field_name("elements", &mut cursor)
-            .filter(|n| n.is_named());
-        let mut elements = BTreeMap::new();
-        for element in children {
-            let key = element
-                .child_by_field_name("key")
-                .ok_or_else(|| anyhow!("key not found in map element"))?
-                .utf8_text(context.src.as_bytes())?
-                .to_string();
-            let value = element
-                .child_by_field_name("value")
-                .ok_or_else(|| anyhow!("value not found in map element"))?;
-            let pattern = Pattern::from_node(
-                &value,
-                context,
-                vars,
-                vars_array,
-                scope_index,
-                global_vars,
-                is_rhs,
-                logs,
-            )?;
-            elements.insert(key, pattern);
-        }
-        Ok(Self::new(elements))
     }
 }
 

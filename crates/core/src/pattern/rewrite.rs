@@ -4,9 +4,10 @@ use super::{
     patterns::{Matcher, Name, Pattern},
     resolved_pattern::ResolvedPattern,
     variable_content::VariableContent,
-    Effect, EffectKind, State,
+    State,
 };
 use crate::context::Context;
+use crate::problem::{Effect, EffectKind};
 use anyhow::{bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
