@@ -7,7 +7,7 @@ use super::{
 };
 use crate::{
     context::Context,
-    orphan::{get_orphaned_ranges, replace_cleaned_ranges},
+    orphan::{get_orphaned_ranges, get_replacement_ranges, replace_cleaned_ranges},
     text_unparser::apply_effects,
 };
 use anyhow::{anyhow, bail, Result};
@@ -143,8 +143,10 @@ impl Matcher for Step {
                 )?;
                 if let Some(new_ranges) = new_ranges {
                     let tree = parser.parse(new_src.as_bytes(), None).unwrap().unwrap();
-                    let orphans = get_orphaned_ranges(&tree, &new_src, context.language());
-                    let replacement_ranges = orphans.into_iter().map(|r| (r, None)).collect();
+                    // let orphans = get_orphaned_ranges(&tree, &new_src, context.language());
+                    // let replacement_ranges = orphans.into_iter().map(|r| (r, None)).collect();
+                    let replacement_ranges =
+                        get_replacement_ranges(&tree, &new_src, context.language());
                     let cleaned_src = replace_cleaned_ranges(replacement_ranges, &new_src)?;
                     let new_src = if let Some(src) = cleaned_src {
                         src

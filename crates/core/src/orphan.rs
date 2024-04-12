@@ -62,3 +62,16 @@ pub fn get_orphaned_ranges(tree: &Tree, src: &str, lang: &TargetLanguage) -> Vec
     }
     orphan_ranges
 }
+
+pub fn get_replacement_ranges(tree: &Tree, src: &str, lang: &TargetLanguage) -> Vec<Replacement> {
+    let mut replacement_ranges = vec![];
+    let cursor = tree.walk();
+    for n in traverse(CursorWrapper::new(cursor, src), Order::Pre) {
+        if n.node.kind() == "arrow_function" {
+            let child = n.node.child_by_field_name("body");
+            println!("child: {:?}", child);
+        }
+        println!("n: {:?}", n);
+    }
+    replacement_ranges
+}
