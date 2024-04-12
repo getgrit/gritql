@@ -1,6 +1,5 @@
 import init, { matchPattern } from './pkg/marzano_wasm_bindings.js';
 import TreeSitter from 'web-tree-sitter';
-import { helloWorld } from './pkg/marzano_wasm_bindings.js';
 
 async function match(pattern, content) {
     return await matchPattern(
@@ -21,8 +20,7 @@ export async function myMatchPattern() {
     let pattern = textArea1;
     let content = textArea2;
     document.getElementById('resultTextArea').value = JSON.stringify(
-        // await match(pattern, content),
-        await helloWorld(),
+        await match(pattern, content),
     );
 }
 
