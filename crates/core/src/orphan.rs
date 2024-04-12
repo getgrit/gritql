@@ -69,9 +69,13 @@ pub fn get_replacement_ranges(tree: &Tree, src: &str, lang: &TargetLanguage) -> 
     for n in traverse(CursorWrapper::new(cursor, src), Order::Pre) {
         if n.node.kind() == "arrow_function" {
             let child = n.node.child_by_field_name("body");
-            println!("child: {:?}", child);
+            if let Some(child) = child {
+                let range = child.range();
+                if range.start_byte() == range.end_byte() {
+                    replacement_ranges.push((range.into(), Some("{}".to_string())));
+                }
+            }
         }
-        println!("n: {:?}", n);
     }
     replacement_ranges
 }

@@ -7973,12 +7973,16 @@ fn js_repair_orphaned_arrow() {
             .unwrap(),
             source: r#"
                 |const fn = () => console.log();
+                |const fnTwo = () => { console.log(); };
+                |const fnBob = () => { alert(); }
                 |"#
             .trim_margin()
             .unwrap(),
-            // The whitespace is fine, because Ruff will remove it
+            // Biome will handle formatting
             expected: r#"
-                |const fn = () => {};
+                |const fn = () =>{} ;
+                |const fnTwo = () => { };
+                |const fnBob = () => { alert(); }
                 |"#
             .trim_margin()
             .unwrap(),
