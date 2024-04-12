@@ -1,6 +1,6 @@
 use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
 use grit_util::AstNode;
-use marzano_util::{node_with_source::NodeWithSource, position::Range};
+use marzano_util::{node_with_source::NodeWithSource};
 use std::sync::OnceLock;
 
 static NODE_TYPES_STRING: &str =

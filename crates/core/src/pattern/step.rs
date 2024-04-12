@@ -13,7 +13,7 @@ use crate::{
 use anyhow::{anyhow, bail, Result};
 use im::vector;
 use marzano_language::language::Language;
-use marzano_util::{analysis_logs::AnalysisLogs, position::Range};
+use marzano_util::{analysis_logs::AnalysisLogs};
 use std::path::PathBuf;
 use tree_sitter::Parser;
 

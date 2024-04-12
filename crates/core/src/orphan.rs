@@ -4,7 +4,7 @@ use itertools::Itertools;
 use marzano_language::{language::Language, target_language::TargetLanguage};
 use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::position::Range;
-use tree_sitter::{Parser, Tree};
+use tree_sitter::{Tree};
 
 pub(crate) type Replacement = (Range, Option<String>);
 
