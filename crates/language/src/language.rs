@@ -20,6 +20,8 @@ pub static GRIT_METAVARIABLE_PREFIX: &str = "$";
 pub type SortId = u16;
 pub type FieldId = u16;
 
+pub type RangeReplacement = (Range, Option<String>);
+
 #[derive(Debug, Clone)]
 pub(crate) struct LeafNormalizer {
     sort: SortId,
@@ -297,7 +299,14 @@ pub trait Language {
 
     fn metavariable_sort(&self) -> SortId;
 
-    fn check_orphaned(&self, _n: NodeWithSource<'_>, _orphan_ranges: &mut Vec<Range>) {}
+    /// The check_cleaning method is used to check for nodes that should be removed or replaced
+    /// This is used to "repair" the program after rewriting, such as by deleting orphaned ranges (like a variable declaration without any variables)
+    fn check_replacements(
+        &self,
+        _n: NodeWithSource<'_>,
+        _replacements: &mut Vec<RangeReplacement>,
+    ) {
+    }
 
     fn get_equivalence_class(
         &self,

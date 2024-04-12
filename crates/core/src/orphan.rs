@@ -67,15 +67,16 @@ pub fn get_replacement_ranges(tree: &Tree, src: &str, lang: &TargetLanguage) -> 
     let mut replacement_ranges = vec![];
     let cursor = tree.walk();
     for n in traverse(CursorWrapper::new(cursor, src), Order::Pre) {
-        if n.node.kind() == "arrow_function" {
-            let child = n.node.child_by_field_name("body");
-            if let Some(child) = child {
-                let range = child.range();
-                if range.start_byte() == range.end_byte() {
-                    replacement_ranges.push((range.into(), Some("{}".to_string())));
-                }
-            }
-        }
+        lang.check_replacements(n, &mut replacement_ranges);
+        // if n.node.kind() == "arrow_function" {
+        //     let child = n.node.child_by_field_name("body");
+        //     if let Some(child) = child {
+        //         let range = child.range();
+        //         if range.start_byte() == range.end_byte() {
+        //             replacement_ranges.push((range.into(), Some("{}".to_string())));
+        //         }
+        //     }
+        // }
     }
     replacement_ranges
 }

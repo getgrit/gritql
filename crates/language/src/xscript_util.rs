@@ -1,5 +1,5 @@
 use crate::{
-    language::{default_parse_file, Language, SortId, TSLanguage},
+    language::{default_parse_file, Language, RangeReplacement, SortId, TSLanguage},
     vue::get_vue_ranges,
 };
 use anyhow::anyhow;
@@ -115,16 +115,19 @@ pub(crate) fn parse_file(
     }
 }
 
-pub(crate) fn jslike_check_orphaned(n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Range>) {
+pub(crate) fn jslike_check_replacements(
+    n: NodeWithSource<'_>,
+    orphan_ranges: &mut Vec<RangeReplacement>,
+) {
     if n.node.is_error() && ["var", "let", "const"].contains(&n.text())
         || n.node.kind() == "empty_statement"
     {
-        orphan_ranges.push(n.range());
+        orphan_ranges.push((n.range(), None));
     } else if n.node.kind() == "import_statement" {
         for n in n.named_children().filter(|n| n.node.is_error()) {
             if let Some(n) = n.children().last() {
                 if n.node.kind() == "," {
-                    orphan_ranges.push(n.range())
+                    orphan_ranges.push((n.range(), None))
                 }
             }
         }
@@ -133,14 +136,14 @@ pub(crate) fn jslike_check_orphaned(n: NodeWithSource<'_>, orphan_ranges: &mut V
                 let named_imports = imports.named_children_by_field_name("imports").count();
                 let namespace_import = imports.named_children_by_field_name("namespace").count();
                 if named_imports == 0 && namespace_import == 0 {
-                    orphan_ranges.push(n.range());
+                    orphan_ranges.push((n.range(), None));
                 }
             }
         }
     } else if n.node.is_error() && n.text() == "," {
         for ancestor in n.ancestors() {
             if ancestor.node.kind() == "class_body" {
-                orphan_ranges.push(n.range());
+                orphan_ranges.push((n.range(), None));
                 break;
             }
         }

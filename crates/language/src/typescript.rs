@@ -6,7 +6,7 @@ use crate::language::{
 };
 use crate::xscript_util::{
     self, js_like_get_statement_sorts, js_like_optional_empty_field_compilation,
-    js_like_skip_snippet_compilation_sorts, jslike_check_orphaned,
+    js_like_skip_snippet_compilation_sorts, jslike_check_replacements,
 };
 use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::position::Range;
@@ -176,8 +176,12 @@ impl Language for TypeScript {
         self.metavariable_sort
     }
 
-    fn check_orphaned(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Range>) {
-        jslike_check_orphaned(n, orphan_ranges)
+    fn check_replacements(
+        &self,
+        _n: NodeWithSource<'_>,
+        _replacements: &mut Vec<crate::language::RangeReplacement>,
+    ) {
+        jslike_check_replacements(n, replacements)
     }
 
     fn parse_file(
