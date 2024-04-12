@@ -299,7 +299,7 @@ pub trait Language {
 
     fn metavariable_sort(&self) -> SortId;
 
-    /// The check_cleaning method is used to check for nodes that should be removed or replaced
+    /// Check for nodes that should be removed or replaced
     /// This is used to "repair" the program after rewriting, such as by deleting orphaned ranges (like a variable declaration without any variables)
     /// If the node should be removed, add range with a None value, if the node should be replaced, add a range with the replacement value
     fn check_replacements(
