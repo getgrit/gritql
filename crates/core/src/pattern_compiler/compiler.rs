@@ -762,6 +762,7 @@ pub fn src_to_problem_libs_for_language(
         !is_multifile,
         file_ranges,
         &mut node_context,
+        injected_limit,
     )?;
 
     let problem = Problem::new(

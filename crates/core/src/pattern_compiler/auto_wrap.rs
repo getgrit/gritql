@@ -32,6 +32,7 @@ pub(super) fn auto_wrap_pattern(
     is_not_multifile: bool,
     file_ranges: Option<Vec<FileRange>>,
     context: &mut NodeCompilationContext,
+    injected_limt: Option<usize>,
 ) -> Result<Pattern> {
     let is_sequential = is_sequential(&pattern, pattern_definitions);
     let should_wrap_in_sequential = !is_sequential;
@@ -62,7 +63,9 @@ pub(super) fn auto_wrap_pattern(
         } else {
             first_wrap
         };
-        let third_wrap = if let Some(limit) = extracted_limit {
+        let third_wrap = if let Some(limit) = injected_limt {
+            Pattern::Limit(Box::new(Limit::new(second_wrap, limit)))
+        } else if let Some(limit) = extracted_limit {
             Pattern::Limit(Box::new(Limit::new(second_wrap, limit)))
         } else {
             second_wrap

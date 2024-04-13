@@ -388,7 +388,7 @@ pub(crate) async fn run_apply_pattern(
     let CompilationResult {
         problem: compiled,
         compilation_warnings,
-    } = match pattern.compile(&my_input.pattern_libs, lang, filter_range) {
+    } = match pattern.compile(&my_input.pattern_libs, lang, filter_range, arg.limit) {
         Ok(c) => c,
         Err(e) => {
             let log = match e.downcast::<marzano_util::analysis_logs::AnalysisLog>() {
