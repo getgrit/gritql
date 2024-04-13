@@ -420,7 +420,7 @@ language js
 debugger_statement() => .
 ```
 
-## Remove debbuger
+## Remove debugger - pairs
 
 ### Bad
 
