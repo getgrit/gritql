@@ -64,7 +64,9 @@ pub(super) fn auto_wrap_pattern(
             first_wrap
         };
         let third_wrap = if let Some(limit) = injected_limit {
-            Pattern::Limit(Box::new(Limit::new(second_wrap, limit)))
+            // Strip the limit if there is one
+            let (pattern, _) = extract_limit_pattern(second_wrap, pattern_definitions);
+            Pattern::Limit(Box::new(Limit::new(pattern, limit)))
         } else if let Some(limit) = extracted_limit {
             Pattern::Limit(Box::new(Limit::new(second_wrap, limit)))
         } else {
