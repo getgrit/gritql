@@ -489,6 +489,7 @@ function isTruthy(x) {
         assert_yaml_snapshot!(patterns);
     }
 
+    #[test]
     fn test_yaml_format() {
         let module = Default::default();
         let mut rich_file = RichFile {
@@ -632,14 +633,19 @@ jobs:
 
 ```
 
-```
 "#
             .to_string(),
         };
         let mut patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
         assert_eq!(patterns.len(), 1);
         println!("{:?}", patterns);
-        assert_yaml_snapshot!(patterns);
+        let sample_input = &patterns[0].config.samples.as_ref().unwrap()[0].input;
+        let sample_output = &patterns[0].config.samples.as_ref().unwrap()[0]
+            .output
+            .as_ref()
+            .unwrap();
+        assert_snapshot!(sample_input);
+        assert_snapshot!(sample_output);
     }
 
     #[test]
@@ -693,10 +699,6 @@ binary_expression($operator, $left, $right) where {
     $operator <: or  { "==" => `===` , "!=" => `!==` },
     or { $left <: `null`, $right <: `null`}
 }
-
-```
-
-```
 
 ```
 
