@@ -507,6 +507,10 @@ $_ => .
 ## Basic input
 
 ```yaml
+foo:
+  - name
+
+  - bar
 jobs:
   - across:
     - var: function
@@ -532,6 +536,10 @@ jobs:
 ```
 
 ```yaml
+foo:
+  - name
+
+  - bar
 jobs:
   - in_parallel:
       steps:
