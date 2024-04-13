@@ -23,11 +23,9 @@ use crate::{
 use anyhow::{anyhow, bail, Context, Result};
 use marzano_core::api::EnforcementLevel;
 
-fn parse_metadata(yaml_content: &str) -> Option<GritPatternMetadata> {
-    match serde_yaml::from_str::<GritPatternMetadata>(yaml_content) {
-        Ok(frontmatter) => Some(frontmatter),
-        Err(_) => None,
-    }
+fn parse_metadata(yaml_content: &str) -> Result<GritPatternMetadata> {
+    let result = serde_yaml::from_str::<GritPatternMetadata>(yaml_content)?;
+    Ok(result)
 }
 
 /// Capture a single markdown GritQL body - there might be multiple in a single markdown file
@@ -172,9 +170,7 @@ pub fn get_patterns_from_md(
             let metadata = metadata.trim().to_string();
             let metadata = metadata.trim_start_matches('-').trim();
             let metadata = metadata.trim_end_matches('-').trim();
-            if let Some(parsed_meta) = parse_metadata(metadata) {
-                meta = parsed_meta;
-            }
+            meta = parse_metadata(metadata)?;
         } else if n.node.kind() == "paragraph" {
             let content = n.node.utf8_text(src.as_bytes()).unwrap();
             let content = content.trim().to_string();
