@@ -3917,7 +3917,7 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter-ruby"
-version = "0.20.0"
+version = "0.20.1"
 dependencies = [
  "cc",
  "tree-sitter",

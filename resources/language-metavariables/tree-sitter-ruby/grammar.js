@@ -76,7 +76,7 @@ const PREC = {
       $.comment,
       $.heredoc_body,
       /\s/,
-      /\\\r?\n/
+      /\\\r?\n/,
     ],
   
     word: $ => $._identifier,
@@ -105,9 +105,9 @@ const PREC = {
         optional(
           choice(
             seq(/__END__[\r\n]/, $.uninterpreted),
-            seq('__END__', alias('', $.uninterpreted))
-          )
-        )
+            seq('__END__', alias('', $.uninterpreted)),
+          ),
+        ),
       ),
   
       uninterpreted: $ => /(.|\s)*/,
@@ -118,15 +118,15 @@ const PREC = {
         seq(
           repeat1(choice(
             seq($._statement, $._terminator),
-            $.empty_statement
+            $.empty_statement,
           )),
-          optional($._statement)
+          optional($._statement),
         ),
-        $._statement
+        $._statement,
       ),
   
-      begin_block: $ => seq("BEGIN", "{", optional($._statements), "}"),
-      end_block: $ => seq("END", "{", optional($._statements), "}"),
+      begin_block: $ => seq('BEGIN', '{', optional($._statements), '}'),
+      end_block: $ => seq('END', '{', optional($._statements), '}'),
   
       _statement: $ => choice(
         $.undef,
@@ -138,7 +138,7 @@ const PREC = {
         $.rescue_modifier,
         $.begin_block,
         $.end_block,
-        $._expression
+        $._expression,
       ),
   
       method: $ => seq('def', $._method_rest),
@@ -148,11 +148,11 @@ const PREC = {
         seq(
           choice(
             field('object', $._variable),
-            seq('(', field('object', $._arg), ')')
+            seq('(', field('object', $._arg), ')'),
           ),
-          choice('.', '::')
+          choice('.', '::'),
         ),
-        $._method_rest
+        $._method_rest,
       ),
   
       _method_rest: $ => seq(
@@ -163,17 +163,17 @@ const PREC = {
             field('parameters', alias($.parameters, $.method_parameters)),
             choice(
               seq(optional($._terminator), optional(field('body', $.body_statement)), 'end'),
-              $._body_expr
-            )
+              $._body_expr,
+            ),
   
           ),
           seq(
             optional(
-              field('parameters', alias($.bare_parameters, $.method_parameters))
+              field('parameters', alias($.bare_parameters, $.method_parameters)),
             ),
             $._terminator,
             optional(field('body', $.body_statement)),
-            'end'
+            'end',
           ),
         ),
       ),
@@ -182,16 +182,16 @@ const PREC = {
         seq(
           field('body', $._arg),
           'rescue',
-          field('handler', $._arg)
-        )
+          field('handler', $._arg),
+        ),
       ),
   
       rescue_modifier_expression: $ => prec(PREC.RESCUE,
         seq(
           field('body', $._expression),
           'rescue',
-          field('handler', $._arg)
-        )
+          field('handler', $._arg),
+        ),
       ),
   
       _body_expr: $ =>
@@ -201,31 +201,31 @@ const PREC = {
             choice(
               $._arg,
               alias($.rescue_modifier_arg, $.rescue_modifier),
-            ))
+            )),
         ),
   
   
       parameters: $ => seq(
         '(',
         commaSep($._formal_parameter),
-        ')'
+        ')',
       ),
   
       bare_parameters: $ => seq(
         $._simple_formal_parameter,
-        repeat(seq(',', $._formal_parameter))
+        repeat(seq(',', $._formal_parameter)),
       ),
   
       block_parameters: $ => seq(
         '|',
         seq(commaSep($._formal_parameter), optional(',')),
         optional(seq(';', sep1(field('locals', $.identifier), ','))), // Block shadow args e.g. {|; a, b| ...}
-        '|'
+        '|',
       ),
   
       _formal_parameter: $ => choice(
         $._simple_formal_parameter,
-        alias($.parameters, $.destructured_parameter)
+        alias($.parameters, $.destructured_parameter),
       ),
   
       _simple_formal_parameter: $ => choice(
@@ -236,33 +236,33 @@ const PREC = {
         $.forward_parameter,
         $.block_parameter,
         $.keyword_parameter,
-        $.optional_parameter
+        $.optional_parameter,
       ),
   
       forward_parameter: $ => '...',
   
       splat_parameter: $ => prec.right(-2, seq(
         '*',
-        field('name', optional($.identifier))
+        field('name', optional($.identifier)),
       )),
       hash_splat_parameter: $ => seq(
         '**',
-        field('name', optional($.identifier))
+        field('name', optional($.identifier)),
       ),
       hash_splat_nil: $ => seq('**', 'nil'),
       block_parameter: $ => seq(
         '&',
-        field('name', optional($.identifier))
+        field('name', optional($.identifier)),
       ),
       keyword_parameter: $ => prec.right(PREC.BITWISE_OR + 1, seq(
         field('name', $.identifier),
         token.immediate(':'),
-        field('value', optional($._arg))
+        field('value', optional($._arg)),
       )),
       optional_parameter: $ => prec(PREC.BITWISE_OR + 1, seq(
         field('name', $.identifier),
         '=',
-        field('value', $._arg)
+        field('value', $._arg),
       )),
   
       class: $ => seq(
@@ -270,10 +270,10 @@ const PREC = {
         field('name', choice($.constant, $.scope_resolution)),
         choice(
           seq(field('superclass', $.superclass), $._terminator),
-          optional($._terminator)
+          optional($._terminator),
         ),
         optional(field('body', $.body_statement)),
-        'end'
+        'end',
       ),
   
       superclass: $ => seq('<', $._expression),
@@ -284,7 +284,7 @@ const PREC = {
         field('value', $._arg),
         $._terminator,
         optional(field('body', $.body_statement)),
-        'end'
+        'end',
       ),
   
       module: $ => seq(
@@ -292,7 +292,7 @@ const PREC = {
         field('name', choice($.constant, $.scope_resolution)),
         optional($._terminator),
         optional(field('body', $.body_statement)),
-        'end'
+        'end',
       ),
   
       return_command: $ => prec.left(seq('return', alias($.command_argument_list, $.argument_list))),
@@ -309,105 +309,105 @@ const PREC = {
       if_modifier: $ => prec(PREC.RESCUE, seq(
         field('body', $._statement),
         'if',
-        field('condition', $._expression)
+        field('condition', $._expression),
       )),
   
       unless_modifier: $ => prec(PREC.RESCUE, seq(
         field('body', $._statement),
         'unless',
-        field('condition', $._expression)
+        field('condition', $._expression),
       )),
   
       while_modifier: $ => prec(PREC.RESCUE, seq(
         field('body', $._statement),
         'while',
-        field('condition', $._expression)
+        field('condition', $._expression),
       )),
   
       until_modifier: $ => prec(PREC.RESCUE, seq(
         field('body', $._statement),
         'until',
-        field('condition', $._expression)
+        field('condition', $._expression),
       )),
   
       rescue_modifier: $ => prec(PREC.RESCUE, seq(
         field('body', $._statement),
         'rescue',
-        field('handler', $._expression)
+        field('handler', $._expression),
       )),
   
       while: $ => seq(
         'while',
         field('condition', $._statement),
-        field('body', $.do)
+        field('body', $.do),
       ),
   
       until: $ => seq(
         'until',
         field('condition', $._statement),
-        field('body', $.do)
+        field('body', $.do),
       ),
   
       for: $ => seq(
         'for',
         field('pattern', choice($._lhs, $.left_assignment_list)),
         field('value', $.in),
-        field('body', $.do)
+        field('body', $.do),
       ),
   
       in: $ => seq('in', $._arg),
       do: $ => seq(
         choice('do', $._terminator),
         optional($._statements),
-        'end'
+        'end',
       ),
   
       case: $ => seq(
         'case',
-        optional(seq(optional($._line_break),  field('value', $._statement))),
+        optional(seq(optional($._line_break), field('value', $._statement))),
         optional($._terminator),
         repeat($.when),
         optional($.else),
-        'end'
+        'end',
       ),
   
       case_match: $ => seq(
         'case',
-        seq(optional($._line_break),  field('value', $._statement)),
+        seq(optional($._line_break), field('value', $._statement)),
         optional($._terminator),
         repeat1(field('clauses', $.in_clause)),
         optional(field('else', $.else)),
-        'end'
+        'end',
       ),
   
       when: $ => seq(
         'when',
         commaSep1(field('pattern', $.pattern)),
-        choice($._terminator, field('body', $.then))
+        choice($._terminator, field('body', $.then)),
       ),
   
       in_clause: $ => seq(
         'in',
         field('pattern', $._pattern_top_expr_body),
         field('guard', optional($._guard)),
-        choice($._terminator, field('body', $.then))
+        choice($._terminator, field('body', $.then)),
       ),
   
       pattern: $ => choice($._arg, $.splat_argument),
   
       _guard: $ => choice(
         $.if_guard,
-        $.unless_guard
+        $.unless_guard,
       ),
   
       if_guard: $ => seq(
         'if',
-        field('condition', $._expression)
+        field('condition', $._expression),
       ),
   
       unless_guard: $ => seq(
         'unless',
-        field('condition', $._expression)
+        field('condition', $._expression),
       ),
   
       _pattern_top_expr_body: $ => prec(-1, choice(
@@ -445,20 +445,20 @@ const PREC = {
       array_pattern: $ => prec.right(-1, choice(
         seq('[', optional($._array_pattern_body), ']'),
         seq(field('class', $._pattern_constant), token.immediate('['), optional($._array_pattern_body), ']'),
-        seq(field('class', $._pattern_constant), token.immediate('('), optional($._array_pattern_body), ')')
+        seq(field('class', $._pattern_constant), token.immediate('('), optional($._array_pattern_body), ')'),
       )),
   
       _find_pattern_body: $ => seq($.splat_parameter, repeat1(seq(',', $._pattern_expr)), ',', $.splat_parameter),
       find_pattern: $ => choice(
         seq('[', $._find_pattern_body, ']'),
         seq(field('class', $._pattern_constant), token.immediate('['), $._find_pattern_body, ']'),
-        seq(field('class', $._pattern_constant), token.immediate('('), $._find_pattern_body, ')')
+        seq(field('class', $._pattern_constant), token.immediate('('), $._find_pattern_body, ')'),
       ),
   
       _hash_pattern_body: $ => prec.right(choice(
         seq(commaSep1($.keyword_pattern), optional(',')),
         seq(commaSep1($.keyword_pattern), ',', $._hash_pattern_any_rest),
-        $._hash_pattern_any_rest
+        $._hash_pattern_any_rest,
       )),
   
       keyword_pattern: $ => prec.right(-1, seq(
@@ -468,11 +468,11 @@ const PREC = {
             alias($.constant, $.hash_key_symbol),
             alias($.identifier_suffix, $.hash_key_symbol),
             alias($.constant_suffix, $.hash_key_symbol),
-            $.string
-          )
+            $.string,
+          ),
         ),
         token.immediate(':'),
-        optional(field('value', $._pattern_expr))
+        optional(field('value', $._pattern_expr)),
       )),
   
       _hash_pattern_any_rest: $ => choice($.hash_splat_parameter, $.hash_splat_nil),
@@ -480,7 +480,7 @@ const PREC = {
       hash_pattern: $ => prec.right(-1, choice(
         seq('{', optional($._hash_pattern_body), '}'),
         seq(field('class', $._pattern_constant), token.immediate('['), $._hash_pattern_body, ']'),
-        seq(field('class', $._pattern_constant), token.immediate('('), $._hash_pattern_body, ')')
+        seq(field('class', $._pattern_constant), token.immediate('('), $._hash_pattern_body, ')'),
       )),
   
       _pattern_expr_basic: $ => prec.right(-1, choice(
@@ -499,7 +499,7 @@ const PREC = {
         alias($._pattern_range, $.range),
         $.variable_reference_pattern,
         $.expression_reference_pattern,
-        $._pattern_constant
+        $._pattern_constant,
       )),
   
       _pattern_range: $ => {
@@ -509,13 +509,13 @@ const PREC = {
         return choice(
           seq(begin, operator, end),
           seq(operator, end),
-          seq(begin, operator)
+          seq(begin, operator),
         );
       },
   
       _pattern_primitive: $ => choice(
         $._pattern_literal,
-        $._pattern_lambda
+        $._pattern_lambda,
       ),
   
       _pattern_lambda: $ => prec.right(-1, $.lambda),
@@ -528,7 +528,7 @@ const PREC = {
         $.regex,
         $.string_array,
         $.symbol_array,
-        $._keyword_variable
+        $._keyword_variable,
       )),
   
       _keyword_variable: $ => prec.right(-1, choice(
@@ -551,13 +551,13 @@ const PREC = {
   
       _pattern_constant: $ => prec.right(-1, choice(
         $.constant,
-        alias($._pattern_constant_resolution, $.scope_resolution)
+        alias($._pattern_constant_resolution, $.scope_resolution),
       )),
   
       _pattern_constant_resolution: $ => seq(
         optional(field('scope', $._pattern_constant)),
         '::',
-        field('name', $.constant)
+        field('name', $.constant),
       ),
   
       if: $ => seq(
@@ -565,7 +565,7 @@ const PREC = {
         field('condition', $._statement),
         choice($._terminator, field('consequence', $.then)),
         field('alternative', optional(choice($.else, $.elsif))),
-        'end'
+        'end',
       ),
   
       unless: $ => seq(
@@ -573,32 +573,32 @@ const PREC = {
         field('condition', $._statement),
         choice($._terminator, field('consequence', $.then)),
         field('alternative', optional(choice($.else, $.elsif))),
-        'end'
+        'end',
       ),
   
       elsif: $ => seq(
         'elsif',
         field('condition', $._statement),
         choice($._terminator, field('consequence', $.then)),
-        field('alternative', optional(choice($.else, $.elsif)))
+        field('alternative', optional(choice($.else, $.elsif))),
       ),
   
       else: $ => seq(
         'else',
         optional($._terminator),
-        optional($._statements)
+        optional($._statements),
       ),
   
       then: $ => choice(
         seq(
           $._terminator,
-          $._statements
+          $._statements,
         ),
         seq(
           optional($._terminator),
           'then',
-          optional($._statements)
-        )
+          optional($._statements),
+        ),
       ),
   
       begin: $ => seq('begin', optional($._terminator), optional($._body_statement), 'end'),
@@ -611,8 +611,8 @@ const PREC = {
         field('variable', optional($.exception_variable)),
         choice(
           $._terminator,
-          field('body', $.then)
-        )
+          field('body', $.then),
+        ),
       ),
   
       exceptions: $ => commaSep1(choice($._arg, $.splat_argument)),
@@ -655,7 +655,7 @@ const PREC = {
         alias($.next_command, $.next),
         $.match_pattern,
         $.test_pattern,
-        $._arg
+        $._arg,
       ),
   
       match_pattern: $ => prec(100, seq(field('value', $._arg), '=>', field('pattern', $._pattern_top_expr_body))),
@@ -674,7 +674,7 @@ const PREC = {
       ),
   
       _unary_minus_pow: $ => seq(field('operator', alias($._unary_minus_num, '-')), field('operand', alias($._pow, $.binary))),
-      _pow: $ => prec.right(PREC.EXPONENTIAL, seq(field('left', $._simple_numeric), field('operator', alias($._binary_star_star, '**')), field('right', $._arg, $.binary))),
+      _pow: $ => prec.right(PREC.EXPONENTIAL, seq(field('left', $._simple_numeric), field('operator', alias($._binary_star_star, '**')), field('right', $._arg))),
   
       _primary: $ => choice(
         $.parenthesized_statements,
@@ -712,7 +712,7 @@ const PREC = {
         $.redo,
         $.retry,
         alias($.parenthesized_unary, $.unary),
-        $.heredoc_beginning
+        $.heredoc_beginning,
       ),
   
       parenthesized_statements: $ => seq('(', optional($._statements), ')'),
@@ -721,15 +721,15 @@ const PREC = {
         field('object', $._primary),
         alias($._element_reference_bracket, '['),
         optional($._argument_list_with_trailing_comma),
-        ']'
+        ']',
       )),
   
       scope_resolution: $ => prec.left(PREC.CALL + 1, seq(
         choice(
           '::',
-          seq(field('scope', $._primary), token.immediate('::'))
+          seq(field('scope', $._primary), token.immediate('::')),
         ),
-        field('name', $.constant)
+        field('name', $.constant),
       )),
   
       _call_operator: $ => choice('.', '&.', token.immediate('::')),
@@ -745,24 +745,24 @@ const PREC = {
           $._chained_command_call,
           field('method', choice(
             $._variable,
-            $._function_identifier
+            $._function_identifier,
           )),
         ),
-        field('arguments', alias($.command_argument_list, $.argument_list))
+        field('arguments', alias($.command_argument_list, $.argument_list)),
       ),
   
       command_call_with_block: $ => {
         const receiver = choice(
           $._call,
-          field('method', choice($._variable, $._function_identifier))
-        )
-        const args = field('arguments', alias($.command_argument_list, $.argument_list))
-        const block = field('block', $.block)
-        const doBlock = field('block', $.do_block)
+          field('method', choice($._variable, $._function_identifier)),
+        );
+        const args = field('arguments', alias($.command_argument_list, $.argument_list));
+        const block = field('block', $.block);
+        const doBlock = field('block', $.do_block);
         return choice(
           seq(receiver, prec(PREC.CURLY_BLOCK, seq(args, block))),
           seq(receiver, prec(PREC.DO_BLOCK, seq(args, doBlock))),
-        )
+        );
       },
   
       _chained_command_call: $ => seq(
@@ -775,32 +775,32 @@ const PREC = {
         const receiver = choice(
           $._call,
           field('method', choice(
-            $._variable, $._function_identifier
-          ))
-        )
+            $._variable, $._function_identifier,
+          )),
+        );
   
-        const args = field('arguments', $.argument_list)
+        const args = field('arguments', $.argument_list);
         const receiver_arguments =
           seq(
             choice(
               receiver,
               prec.left(PREC.CALL, seq(
                 field('receiver', $._primary),
-                field('operator', $._call_operator)
-              ))
+                field('operator', $._call_operator),
+              )),
             ),
-            args
-          )
+            args,
+          );
   
-        const block = field('block', $.block)
-        const doBlock = field('block', $.do_block)
+        const block = field('block', $.block);
+        const doBlock = field('block', $.do_block);
         return choice(
           receiver_arguments,
           prec(PREC.CURLY_BLOCK, seq(receiver_arguments, block)),
           prec(PREC.DO_BLOCK, seq(receiver_arguments, doBlock)),
           prec(PREC.CURLY_BLOCK, seq(receiver, block)),
-          prec(PREC.DO_BLOCK, seq(receiver, doBlock))
-        )
+          prec(PREC.DO_BLOCK, seq(receiver, doBlock)),
+        );
       },
   
       command_argument_list: $ => prec.right(commaSep1($._argument)),
@@ -808,12 +808,12 @@ const PREC = {
       argument_list: $ => prec.right(seq(
         token.immediate('('),
         optional($._argument_list_with_trailing_comma),
-        ')'
+        ')',
       )),
   
       _argument_list_with_trailing_comma: $ => prec.right(seq(
         commaSep1($._argument),
-        optional(',')
+        optional(','),
       )),
   
       _argument: $ => prec.left(choice(
@@ -822,7 +822,7 @@ const PREC = {
         $.hash_splat_argument,
         $.forward_argument,
         $.block_argument,
-        $.pair
+        $.pair,
       )),
   
       forward_argument: $ => '...',
@@ -835,17 +835,17 @@ const PREC = {
         optional($._terminator),
         optional(seq(
           field('parameters', $.block_parameters),
-          optional($._terminator)
+          optional($._terminator),
         )),
         optional(field('body', $.body_statement)),
-        'end'
+        'end',
       ),
   
       block: $ => prec(PREC.CURLY_BLOCK, seq(
         '{',
         field('parameters', optional($.block_parameters)),
         optional(field('body', $.block_body)),
-        '}'
+        '}',
       )),
   
       _arg_rhs: $ => choice($._arg, alias($.rescue_modifier_arg, $.rescue_modifier)),
@@ -856,29 +856,29 @@ const PREC = {
           field('right', choice(
             $._arg_rhs,
             $.splat_argument,
-            $.right_assignment_list
-          ))
-        )
+            $.right_assignment_list,
+          )),
+        ),
       )),
   
       command_assignment: $ => prec.right(PREC.ASSIGN,
         seq(
           field('left', choice($._lhs, $.left_assignment_list)),
           '=',
-          field('right', choice($._expression, alias($.rescue_modifier_expression, $.rescue_modifier)))
-        )
+          field('right', choice($._expression, alias($.rescue_modifier_expression, $.rescue_modifier))),
+        ),
       ),
   
       operator_assignment: $ => prec.right(PREC.ASSIGN, seq(
         field('left', $._lhs),
         field('operator', choice('+=', '-=', '*=', '**=', '/=', '||=', '|=', '&&=', '&=', '%=', '>>=', '<<=', '^=')),
-        field('right', $._arg_rhs)
+        field('right', $._arg_rhs),
       )),
   
       command_operator_assignment: $ => prec.right(PREC.ASSIGN, seq(
         field('left', $._lhs),
         field('operator', choice('+=', '-=', '*=', '**=', '/=', '||=', '|=', '&&=', '&=', '%=', '>>=', '<<=', '^=')),
-        field('right', choice($._expression, alias($.rescue_modifier_expression, $.rescue_modifier)))
+        field('right', choice($._expression, alias($.rescue_modifier_expression, $.rescue_modifier))),
       )),
   
       conditional: $ => prec.right(PREC.CONDITIONAL, seq(
@@ -886,7 +886,7 @@ const PREC = {
         '?',
         field('consequence', $._arg),
         ':',
-        field('alternative', $._arg)
+        field('alternative', $._arg),
       )),
   
       range: $ => {
@@ -896,7 +896,7 @@ const PREC = {
         return prec.right(PREC.RANGE, choice(
           seq(begin, operator, end),
           seq(operator, end),
-          seq(begin, operator)
+          seq(begin, operator),
         ));
       },
   
@@ -916,17 +916,19 @@ const PREC = {
           [prec.right, PREC.EXPONENTIAL, alias($._binary_star_star, '**')],
         ];
   
+        // @ts-ignore
         return choice(...operators.map(([fn, precedence, operator]) => fn(precedence, seq(
           field('left', $._arg),
+          // @ts-ignore
           field('operator', operator),
-          field('right', $._arg)
+          field('right', $._arg),
         ))));
       },
   
       command_binary: $ => prec.left(seq(
         field('left', $._expression),
         field('operator', choice('or', 'and')),
-        field('right', $._expression)
+        field('right', $._expression),
       )),
   
       unary: $ => {
@@ -934,11 +936,13 @@ const PREC = {
           [prec, PREC.DEFINED, 'defined?'],
           [prec.right, PREC.NOT, 'not'],
           [prec.right, PREC.UNARY_MINUS, choice(alias($._unary_minus, '-'), alias($._binary_minus, '-'), '+')],
-          [prec.right, PREC.COMPLEMENT, choice('!', '~')]
+          [prec.right, PREC.COMPLEMENT, choice('!', '~')],
         ];
+        // @ts-ignore
         return choice(...operators.map(([fn, precedence, operator]) => fn(precedence, seq(
+          // @ts-ignore
           field('operator', operator),
-          field('operand', $._arg)
+          field('operand', $._arg),
         ))));
       },
   
@@ -947,33 +951,35 @@ const PREC = {
           [prec, PREC.DEFINED, 'defined?'],
           [prec.right, PREC.NOT, 'not'],
           [prec.right, PREC.UNARY_MINUS, choice(alias($._unary_minus, '-'), '+')],
-          [prec.right, PREC.COMPLEMENT, choice('!', '~')]
+          [prec.right, PREC.COMPLEMENT, choice('!', '~')],
         ];
+        // @ts-ignore
         return choice(...operators.map(([fn, precedence, operator]) => fn(precedence, seq(
+          // @ts-ignore
           field('operator', operator),
-          field('operand', $._expression)
+          field('operand', $._expression),
         ))));
       },
   
       parenthesized_unary: $ => prec(PREC.CALL, seq(
         field('operator', choice('defined?', 'not')),
-        field('operand', $.parenthesized_statements)
+        field('operand', $.parenthesized_statements),
       )),
   
       unary_literal: $ => prec.right(PREC.UNARY_MINUS, seq(
         field('operator', choice(alias($._unary_minus_num, '-'), '+')),
-        field('operand', $._simple_numeric)
+        field('operand', $._simple_numeric),
       )),
   
       _literal: $ => choice(
         $.simple_symbol,
         $.delimited_symbol,
-        $._numeric
+        $._numeric,
       ),
   
       _numeric: $ => choice(
         $._simple_numeric,
-        alias($.unary_literal, $.unary)
+        alias($.unary_literal, $.unary),
       ),
   
       _simple_numeric: $ =>
@@ -981,7 +987,7 @@ const PREC = {
           $.integer,
           $.float,
           $.complex,
-          $.rational
+          $.rational,
         ),
   
       right_assignment_list: $ => prec(-1, commaSep1(choice($._arg, $.splat_argument))),
@@ -989,7 +995,7 @@ const PREC = {
       left_assignment_list: $ => $._mlhs,
       _mlhs: $ => prec.left(-1, seq(
         commaSep1(choice($._lhs, $.rest_assignment, $.destructured_left_assignment)),
-        optional(',')
+        optional(','),
       )),
       destructured_left_assignment: $ => prec(-1, seq('(', $._mlhs, ')')),
   
@@ -1012,12 +1018,12 @@ const PREC = {
         $.super,
         $._nonlocal_variable,
         $.identifier,
-        $.constant
+        $.constant,
       )),
   
       operator: $ => choice(
         '..', '|', '^', '&', '<=>', '==', '===', '=~', '>', '>=', '<', '<=', '+',
-        '-', '*', '/', '%', '!', '!~', '**', '<<', '>>', '~', '+@', '-@', '~@', '[]', '[]=', '`'
+        '-', '*', '/', '%', '!', '!~', '**', '<<', '>>', '~', '+@', '-@', '~@', '[]', '[]=', '`',
       ),
   
       _method_name: $ => choice(
@@ -1028,13 +1034,13 @@ const PREC = {
         $.simple_symbol,
         $.delimited_symbol,
         $.operator,
-        $._nonlocal_variable
+        $._nonlocal_variable,
       ),
   
       _nonlocal_variable: $ => choice(
         $.instance_variable,
         $.class_variable,
-        $.global_variable
+        $.global_variable,
       ),
   
       setter: $ => seq(field('name', $.identifier), token.immediate('=')),
@@ -1043,7 +1049,7 @@ const PREC = {
       alias: $ => seq(
         'alias',
         field('name', $._method_name),
-        field('alias', $._method_name)
+        field('alias', $._method_name),
       ),
   
       comment: $ => token(prec(PREC.COMMENT, choice(
@@ -1054,10 +1060,10 @@ const PREC = {
             /[^=]/,
             /=[^e]/,
             /=e[^n]/,
-            /=en[^d]/
+            /=en[^d]/,
           )),
-          /=end.*/
-        )
+          /=end.*/,
+        ),
       ))),
   
       integer: $ => /0[bB][01](_?[01])*|0[oO]?[0-7](_?[0-7])*|(0[dD])?\d(_?\d)*|0[xX][0-9a-fA-F](_?[0-9a-fA-F])*/,
@@ -1086,7 +1092,7 @@ const PREC = {
   
       chained_string: $ => seq($.string, repeat1($.string)),
   
-      character: $ => /\?(\\\S({[0-9A-Fa-f]*}|[0-9A-Fa-f]*|-\S([MC]-\S)?)?|\S)/,
+      character: $ => /\?(\\\S(\{[0-9A-Fa-f]*\}|[0-9A-Fa-f]*|-\S([MC]-\S)?)?|\S)/,
   
       interpolation: $ => choice(
         seq('#{', optional($._statements), '}'),
@@ -1096,13 +1102,13 @@ const PREC = {
       string: $ => seq(
         alias($._string_start, '"'),
         optional($._literal_contents),
-        alias($._string_end, '"')
+        alias($._string_end, '"'),
       ),
   
       subshell: $ => seq(
         alias($._subshell_start, '`'),
         optional($._literal_contents),
-        alias($._string_end, '`')
+        alias($._string_end, '`'),
       ),
   
       string_array: $ => seq(
@@ -1110,7 +1116,7 @@ const PREC = {
         optional(/\s+/),
         sep(alias($._literal_contents, $.bare_string), /\s+/),
         optional(/\s+/),
-        alias($._string_end, ')')
+        alias($._string_end, ')'),
       ),
   
       symbol_array: $ => seq(
@@ -1118,19 +1124,19 @@ const PREC = {
         optional(/\s+/),
         sep(alias($._literal_contents, $.bare_symbol), /\s+/),
         optional(/\s+/),
-        alias($._string_end, ')')
+        alias($._string_end, ')'),
       ),
   
       delimited_symbol: $ => seq(
         alias($._symbol_start, ':"'),
         optional($._literal_contents),
-        alias($._string_end, '"')
+        alias($._string_end, '"'),
       ),
   
       regex: $ => seq(
         alias($._regex_start, '/'),
         optional($._literal_contents),
-        alias($._string_end, '/')
+        alias($._string_end, '/'),
       ),
   
       heredoc_body: $ => seq(
@@ -1138,56 +1144,56 @@ const PREC = {
         repeat(choice(
           $.heredoc_content,
           $.interpolation,
-          $.escape_sequence
+          $.escape_sequence,
         )),
-        $.heredoc_end
+        $.heredoc_end,
       ),
   
       _literal_contents: $ => repeat1(choice(
         $.string_content,
         $.interpolation,
-        $.escape_sequence
+        $.escape_sequence,
       )),
   
       // https://ruby-doc.org/core-2.5.0/doc/syntax/literals_rdoc.html#label-Strings
       escape_sequence: $ => token(seq(
         '\\',
         choice(
-          /[^ux0-7]/,          // single character
+          /[^ux0-7]/, // single character
           /x[0-9a-fA-F]{1,2}/, // hex code
-          /[0-7]{1,3}/,        // octal
-          /u[0-9a-fA-F]{4}/,   // single unicode
-          /u{[0-9a-fA-F ]+}/,  // multiple unicode
-        )
+          /[0-7]{1,3}/, // octal
+          /u[0-9a-fA-F]{4}/, // single unicode
+          /u\{[0-9a-fA-F]+\}/, // multiple unicode
+        ),
       )),
   
       array: $ => seq(
         '[',
         optional($._argument_list_with_trailing_comma),
-        ']'
+        ']',
       ),
   
       hash: $ => seq(
         '{',
         optional(seq(
           commaSep1(choice($.pair, $.hash_splat_argument)),
-          optional(',')
+          optional(','),
         )),
-        '}'
+        '}',
       ),
   
       pair: $ => prec.right(choice(
         seq(
           field('key', $._arg),
           '=>',
-          field('value', $._arg)
+          field('value', $._arg),
         ),
         seq(
           field('key', choice(
-            $.string
+            $.string,
           )),
           token.immediate(':'),
-          field('value', $._arg)
+          field('value', $._arg),
         ),
         seq(
           field('key', choice(
@@ -1203,28 +1209,28 @@ const PREC = {
             // This alternative never matches, because '_no_line_break' tokens do not exist.
             // The purpose is give a hint to the scanner that it should not produce any line-break
             // terminators at this point.
-            $._no_line_break)
-        )
+            $._no_line_break),
+        ),
       )),
   
       lambda: $ => seq(
         '->',
         field('parameters', optional(choice(
           alias($.parameters, $.lambda_parameters),
-          alias($.bare_parameters, $.lambda_parameters)
+          alias($.bare_parameters, $.lambda_parameters),
         ))),
-        field('body', choice($.block, $.do_block))
+        field('body', choice($.block, $.do_block)),
       ),
   
       empty_statement: $ => prec(-1, ';'),
   
       _terminator: $ => choice(
         $._line_break,
-        ';'
+        ';',
       ),
 
       grit_metavariable: ($) => token(prec(PREC.GRIT_METAVARIABLE, choice("µ...", /µ[a-zA-Z_][a-zA-Z0-9_]*/))),
-    }
+    },
   });
   
   function sep(rule, separator) {
