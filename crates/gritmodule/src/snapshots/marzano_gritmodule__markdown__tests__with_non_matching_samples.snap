@@ -4,14 +4,14 @@ expression: patterns
 ---
 - config:
     name: no_eq_null
-    body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}"
+    body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n"
     level: info
     title: "Compare `null` using  `===` or `!==`"
     description: "Comparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`."
     tags: ~
     samples:
       - name: ~
-        input: ""
+        input: "\n"
         output: ~
         input_range:
           start:
@@ -24,8 +24,8 @@ expression: patterns
           endByte: 658
         output_range: ~
       - name: "`$val == null` => `$val === null`"
-        input: "if (val == null) {\n  done();\n}"
-        output: "if (val === null) {\n  done();\n}"
+        input: "if (val == null) {\n  done();\n}\n"
+        output: "if (val === null) {\n  done();\n}\n"
         input_range:
           start:
             line: 29
@@ -45,8 +45,8 @@ expression: patterns
           startByte: 765
           endByte: 797
       - name: "`$val != null` => `$val !== null`"
-        input: "if (val != null) {\n  done();\n}"
-        output: "if (val !== null) {\n  done();\n}"
+        input: "if (val != null) {\n  done();\n}\n"
+        output: "if (val !== null) {\n  done();\n}\n"
         input_range:
           start:
             line: 43
@@ -66,8 +66,8 @@ expression: patterns
           startByte: 904
           endByte: 936
       - name: "`$val != null` => `$val !== null` into `while`"
-        input: "while (val != null) {\n  did();\n}"
-        output: "while (val !== null) {\n  did();\n}"
+        input: "while (val != null) {\n  did();\n}\n"
+        output: "while (val !== null) {\n  did();\n}\n"
         input_range:
           start:
             line: 57
@@ -87,7 +87,7 @@ expression: patterns
           startByte: 1058
           endByte: 1092
       - name: "Do not change `$val === null`"
-        input: "if (val === null) {\n  done();\n}"
+        input: "if (val === null) {\n  done();\n}\n"
         output: ~
         input_range:
           start:
@@ -100,7 +100,7 @@ expression: patterns
           endByte: 1177
         output_range: ~
       - name: "Do not change `$val !== null`"
-        input: "while (val !== null) {\n  doSomething();\n}"
+        input: "while (val !== null) {\n  doSomething();\n}\n"
         output: ~
         input_range:
           start:

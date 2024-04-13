@@ -4,7 +4,7 @@ expression: patterns
 ---
 - config:
     name: no_debugger
-    body: "engine marzano(0.1)\nlanguage js\n\ndebugger_statement() => ."
+    body: "engine marzano(0.1)\nlanguage js\n\ndebugger_statement() => .\n"
     level: info
     title: "Remove `debugger` statement"
     description: "The code in production should not contain a `debugger`. It causes the browser to stop executing the code and open the debugger."
@@ -12,8 +12,8 @@ expression: patterns
       - fix
     samples:
       - name: Remove debbuger
-        input: "function isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}"
-        output: "function isTruthy(x) {\n  return Boolean(x);\n}"
+        input: "function isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}\n"
+        output: "function isTruthy(x) {\n  return Boolean(x);\n}\n"
         input_range:
           start:
             line: 18

@@ -4,15 +4,15 @@ expression: patterns
 ---
 - config:
     name: no_debugger
-    body: "engine marzano(0.1)\nlanguage js\n\ndebugger_statement() => ."
+    body: "engine marzano(0.1)\nlanguage js\n\ndebugger_statement() => .\n"
     level: info
     title: ""
     description: "The code in production should not contain a `debugger`. It causes the browser to stop executing the code and open the debugger."
     tags: ~
     samples:
       - name: Bad
-        input: "function isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}"
-        output: "function isTruthy(x) {\n  return Boolean(x);\n}"
+        input: "function isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}\n"
+        output: "function isTruthy(x) {\n  return Boolean(x);\n}\n"
         input_range:
           start:
             line: 20
@@ -32,8 +32,8 @@ expression: patterns
           startByte: 393
           endByte: 439
       - name: Remove debugger - group 2
-        input: "function isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}"
-        output: "function isTruthy(x) {\n  return Boolean(x);\n}"
+        input: "function isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}\n"
+        output: "function isTruthy(x) {\n  return Boolean(x);\n}\n"
         input_range:
           start:
             line: 37
@@ -53,7 +53,7 @@ expression: patterns
           startByte: 575
           endByte: 621
       - name: Remove debugger - no match
-        input: "function isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}"
+        input: "function isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}\n"
         output: ~
         input_range:
           start:

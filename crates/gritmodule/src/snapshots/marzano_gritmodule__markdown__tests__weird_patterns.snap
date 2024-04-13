@@ -4,15 +4,15 @@ expression: patterns
 ---
 - config:
     name: CloneActivities
-    body: "engine marzano(0.1)\nlanguage sql\n\npattern dollar_quote_procedure_body() {\n`CREATE PROCEDURE $name($args) AS $decl $block;` as $proc where {\n    $block => `$$$block;\\n$$ LANGUAGE plpgsql`,\n    $decl => `DECLARE\\n $decl`\n    }\n}\ndollar_quote_procedure_body()"
+    body: "engine marzano(0.1)\nlanguage sql\n\npattern dollar_quote_procedure_body() {\n`CREATE PROCEDURE $name($args) AS $decl $block;` as $proc where {\n    $block => `$$$block;\\n$$ LANGUAGE plpgsql`,\n    $decl => `DECLARE\\n $decl`\n    }\n}\ndollar_quote_procedure_body()\n"
     level: info
     title: ""
     description: "In Postgres, function and procedure bodies need to be wrapped in $$dollar quotes$$.\nThis pattern wraps a PLSQL `CREATE PROCEDURE` body in dollar quotes and adds a language specifier."
     tags: ~
     samples:
       - name: Basic procedure
-        input: "CREATE PROCEDURE remove_emp (employee_id int) AS\n    tot_emps int;\n    BEGIN\n        DELETE FROM employees\n        WHERE employees.employee_id = remove_emp.employee_id;\n    tot_emps := tot_emps - 1;\n    END;"
-        output: "CREATE PROCEDURE remove_emp (employee_id int) AS\n    DECLARE\n    tot_emps int;\n    $$BEGIN\n        DELETE FROM employees\n        WHERE employees.employee_id = remove_emp.employee_id;\n    tot_emps := tot_emps - 1;\n    END;\n$$ LANGUAGE plpgsql;"
+        input: "CREATE PROCEDURE remove_emp (employee_id int) AS\n    tot_emps int;\n    BEGIN\n        DELETE FROM employees\n        WHERE employees.employee_id = remove_emp.employee_id;\n    tot_emps := tot_emps - 1;\n    END;\n"
+        output: "CREATE PROCEDURE remove_emp (employee_id int) AS\n    DECLARE\n    tot_emps int;\n    $$BEGIN\n        DELETE FROM employees\n        WHERE employees.employee_id = remove_emp.employee_id;\n    tot_emps := tot_emps - 1;\n    END;\n$$ LANGUAGE plpgsql;\n"
         input_range:
           start:
             line: 24
