@@ -356,7 +356,7 @@ function isTruthy(x) {
         let module = Default::default();
         let mut rich_file = RichFile { path: "no_debugger.md".to_string(),content: r#"---
 title: Remove `debugger` statement
-tags: fix
+tags: [fix]
 ---
 
 The code in production should not contain a `debugger`. It causes the browser to stop executing the code and open the debugger.
@@ -834,7 +834,8 @@ multifile {
         let mut rich_file = RichFile {
             path: "CloneActivities.md".to_string(),
             content: r#"---
-title: Oracle to PG: Dollar quote stored procedure body
+title: "Oracle to PG: Dollar quote stored procedure body"
+tags: [fix]
 ---
 
 In Postgres, function and procedure bodies need to be wrapped in $$dollar quotes$$.
