@@ -280,7 +280,6 @@ pub fn replace_sample_in_md_file(
 
     let byte_range =
         (range.start_byte as isize + offset) as usize..(range.end_byte as isize + offset) as usize;
-    println!("Transform by {}", offset);
 
     let mut file = OpenOptions::new()
         .read(true)
