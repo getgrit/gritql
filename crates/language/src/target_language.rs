@@ -236,7 +236,7 @@ impl PatternLanguage {
             "php" => match flavor {
                 Some("html") => Some(Self::Php),
                 Some("only") => Some(Self::PhpOnly),
-                _ => Some(Self::PhpOnly),
+                _ => Some(Self::Php),
             }
             "universal" => Some(Self::Universal),
             _ => None,

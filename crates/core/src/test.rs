@@ -13229,7 +13229,7 @@ fn php_no_match() {
     run_test_no_match({
         TestArg {
             pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`TEST`
                 |"#
@@ -13250,7 +13250,7 @@ fn php_simple_match() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`echo ^x;` => `^x + ^x;`
                 |"#
@@ -13276,7 +13276,7 @@ fn php_html_simple_match() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
-                |language php(html)
+                |language php
                 |
                 |`<?php
                 |   echo ^x;
@@ -13310,7 +13310,7 @@ fn php_html_multi_arg() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
-                |language php(html)
+                |language php
                 |
                 |`<?php
                 |   $cost = Array(^x);
@@ -13344,7 +13344,7 @@ fn php_until() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |contains bubble `foo(^x)` => `bar(^x)` until `foo(^_)`
                 |"#
@@ -13370,7 +13370,7 @@ fn php_quote_snippet_rewrite() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
-                |language php
+                |language php(only)
                 |php"foo" => php"bar"
                 |"#
             .trim_margin()
@@ -13386,7 +13386,7 @@ fn php_quote_snippet_rewrite() {
 fn php_if_statement() {
     run_test_expected(TestArgExpected {
         pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`$a = 12;` => `$b=24;`
                 |"#
@@ -13416,7 +13416,7 @@ fn php_if_statement() {
 fn php_delete_include() {
     run_test_expected(TestArgExpected {
         pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`include ^package;` => .
                 |"#
@@ -13442,7 +13442,7 @@ fn php_delete_include() {
 fn php_function_modifier() {
     run_test_expected(TestArgExpected {
         pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`class ^_ { ^mod function ^name(){ ^_ } }` where {
                 |   ^mod => `private`,
@@ -13483,7 +13483,7 @@ fn php_function_modifier() {
 fn php_rewrite_arrow_function() {
     run_test_expected(TestArgExpected {
         pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`fn(^a) => ^_` => `fn(^a) => $x * $x`
                 |"#
@@ -13499,7 +13499,7 @@ fn php_rewrite_arrow_function() {
 fn php_array() {
     run_test_expected(TestArgExpected {
         pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`^a=>^_` => `^a=>24`
                 |"#
@@ -13516,7 +13516,7 @@ fn php_html_foreach() {
     run_test_expected(
         TestArgExpected {
             pattern: r#"
-                |language php(html)
+                |language php
                 |
                 |`foreach(^x as ^y){^_}` where {
                 |   ^x => `$x`,
@@ -13553,7 +13553,7 @@ fn php_echo() {
     run_test_expected(
         TestArgExpected {
             pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`echo ^_;` => `print "modified";`
                 |"#
@@ -13585,7 +13585,7 @@ fn php_cast() {
     run_test_expected(
         TestArgExpected {
             pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`(^x) $a` => `(string) $a`
                 |"#
@@ -13613,7 +13613,7 @@ fn php_if() {
     run_test_expected(
         TestArgExpected {
             pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`if(^a){^_}` where {
                 |   ^a => `$a == $b`,
@@ -13649,7 +13649,7 @@ fn php_class() {
     run_test_expected(
         TestArgExpected {
             pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`class ^name { 
                 |    function ^fname() {
