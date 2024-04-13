@@ -66,7 +66,8 @@ pub struct ApplyPatternArgs {
     )]
     output: OutputMode,
     // Inject a [limit](https://docs.grit.io/language/modifiers#limit-clause) to show only the first N results
-    #[clap(short = 'm')]
+    // If the pattern already has a limit, this will override it
+    #[clap(short = 'm', long = "limit")]
     pub limit: Option<usize>,
     // TODO: consider removing this
     #[clap(long = "ignore-limit", default_value = "false", hide = true)]

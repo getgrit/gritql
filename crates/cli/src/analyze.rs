@@ -60,7 +60,7 @@ impl<'b> RichPattern<'b> {
             self.name.to_owned(),
             targets,
             injected_builtins,
-            None,
+            injected_limit,
         )
     }
 }
