@@ -5,4 +5,4 @@ expression: "String::from_utf8(output.stderr)?"
 Error: Failed to parse markdown pattern .grit/patterns/invalid-name.md
 
 Caused by:
-    Invalid pattern name: invalid-name. Grit patterns must match the regex /[\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.
+    Invalid pattern name: 'invalid-name'. Grit patterns must match the regex /^[A-Za-z_][A-Za-z0-9_]*$/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.
