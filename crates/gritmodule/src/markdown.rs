@@ -288,7 +288,7 @@ pub fn replace_sample_in_md_file(sample: &GritPatternSample, file_path: &String)
 
 #[cfg(test)]
 mod tests {
-    use insta::assert_yaml_snapshot;
+    use insta::{assert_snapshot, assert_yaml_snapshot};
 
     use super::*;
 
@@ -699,5 +699,14 @@ $$ LANGUAGE plpgsql;
         let patterns = get_patterns_from_md(&rich_file, &Some(module), &None).unwrap();
         assert_eq!(patterns.len(), 1);
         assert_yaml_snapshot!(patterns);
+
+        // Check that the output range is correct
+        let sample = &patterns[0].config.samples.as_ref().unwrap()[0];
+        let output_content = rich_file.content[sample.output_range.as_ref().unwrap().start_byte
+            as usize
+            ..sample.output_range.as_ref().unwrap().end_byte as usize]
+            .to_string();
+        assert_eq!(&output_content.trim(), sample.output.as_ref().unwrap());
+        assert_snapshot!(output_content);
     }
 }
