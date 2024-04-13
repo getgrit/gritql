@@ -27,6 +27,7 @@ pub struct PatternsDirectory {
     vue: BTreeMap<String, String>,
     toml: BTreeMap<String, String>,
     php: BTreeMap<String, String>,
+    php_only: BTreeMap<String, String>,    
     universal: BTreeMap<String, String>,
 }
 
@@ -82,6 +83,7 @@ impl PatternsDirectory {
             vue: BTreeMap::new(),
             toml: BTreeMap::new(),
             php: BTreeMap::new(),
+            php_only: BTreeMap::new(),
             universal: BTreeMap::new(),
         }
     }
@@ -112,6 +114,7 @@ impl PatternsDirectory {
             PatternLanguage::Vue => &mut self.vue,
             PatternLanguage::Toml => &mut self.toml,
             PatternLanguage::Php => &mut self.php,
+            PatternLanguage::PhpOnly => &mut self.php_only,
             PatternLanguage::Universal => &mut self.universal,
         }
     }
@@ -139,6 +142,7 @@ impl PatternsDirectory {
             PatternLanguage::Vue => &self.vue,
             PatternLanguage::Toml => &self.toml,
             PatternLanguage::Php => &self.php,
+            PatternLanguage::PhpOnly => &self.php_only,
             PatternLanguage::Universal => &self.universal,
         }
     }
@@ -257,6 +261,8 @@ impl PatternsDirectory {
         self.toml = other.toml;
         other.php.extend(mem::take(&mut self.php));
         self.php = other.php;
+        other.php_only.extend(mem::take(&mut self.php_only));
+        self.php_only = other.php_only;
         other.universal.extend(mem::take(&mut self.universal));
         self.universal = other.universal;
     }
