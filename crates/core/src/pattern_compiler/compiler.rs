@@ -816,6 +816,7 @@ mod tests {
             None,
             None,
             None,
+            None
         )
         .unwrap();
         let language = pattern.problem.language.language_name();

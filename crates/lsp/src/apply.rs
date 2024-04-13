@@ -77,6 +77,7 @@ pub async fn apply_pattern_body(
             }]
         }),
         get_ai_built_in_functions_for_feature(),
+        None
     ) {
         Ok(p) => p,
         Err(e) => {
