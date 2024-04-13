@@ -22,7 +22,7 @@ use crate::{
         variable::VariableSourceLocations,
         VariableLocations,
     },
-    problem::Problem,
+    problem::{MarzanoProblemContext, Problem},
 };
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
@@ -294,9 +294,9 @@ fn get_definition_info(
 fn node_to_definitions(
     node: NodeWithSource,
     context: &mut NodeCompilationContext,
-    pattern_definitions: &mut Vec<PatternDefinition>,
-    predicate_definitions: &mut Vec<PredicateDefinition>,
-    function_definitions: &mut Vec<GritFunctionDefinition>,
+    pattern_definitions: &mut Vec<PatternDefinition<MarzanoProblemContext>>,
+    predicate_definitions: &mut Vec<PredicateDefinition<MarzanoProblemContext>>,
+    function_definitions: &mut Vec<GritFunctionDefinition<MarzanoProblemContext>>,
     foreign_function_definitions: &mut Vec<ForeignFunctionDefinition>,
 ) -> Result<()> {
     for definition in node.named_children_by_field_name("definitions") {
@@ -331,9 +331,9 @@ fn node_to_definitions(
 
 struct DefinitionOutput {
     vars_array: Vec<Vec<VariableSourceLocations>>,
-    pattern_definitions: Vec<PatternDefinition>,
-    predicate_definitions: Vec<PredicateDefinition>,
-    function_definitions: Vec<GritFunctionDefinition>,
+    pattern_definitions: Vec<PatternDefinition<MarzanoProblemContext>>,
+    predicate_definitions: Vec<PredicateDefinition<MarzanoProblemContext>>,
+    function_definitions: Vec<GritFunctionDefinition<MarzanoProblemContext>>,
     foreign_function_definitions: Vec<ForeignFunctionDefinition>,
 }
 

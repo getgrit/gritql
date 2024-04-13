@@ -1,38 +1,38 @@
 use super::{
     functions::{Evaluator, FuncEvaluation},
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     predicates::Predicate,
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::Context;
+use crate::context::ProblemContext;
 use anyhow::{bail, Ok, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Not {
-    pub pattern: Pattern,
+pub struct Not<P: ProblemContext> {
+    pub pattern: Pattern<P>,
 }
 
-impl Not {
-    pub fn new(pattern: Pattern) -> Self {
+impl<P: ProblemContext> Not<P> {
+    pub fn new(pattern: Pattern<P>) -> Self {
         Self { pattern }
     }
 }
 
-impl Name for Not {
+impl<P: ProblemContext> PatternName for Not<P> {
     fn name(&self) -> &'static str {
         "NOT"
     }
 }
 
-impl Matcher for Not {
+impl<P: ProblemContext> Matcher<P> for Not<P> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         Ok(!self
@@ -42,27 +42,27 @@ impl Matcher for Not {
 }
 
 #[derive(Debug, Clone)]
-pub struct PrNot {
-    pub(crate) predicate: Predicate,
+pub struct PrNot<P: ProblemContext> {
+    pub(crate) predicate: Predicate<P>,
 }
 
-impl PrNot {
-    pub fn new(predicate: Predicate) -> Self {
+impl<P: ProblemContext> PrNot<P> {
+    pub fn new(predicate: Predicate<P>) -> Self {
         Self { predicate }
     }
 }
 
-impl Name for PrNot {
+impl<P: ProblemContext> PatternName for PrNot<P> {
     fn name(&self) -> &'static str {
         "PREDICATE_NOT"
     }
 }
 
-impl Evaluator for PrNot {
+impl<P: ProblemContext> Evaluator<P> for PrNot<P> {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let res = self

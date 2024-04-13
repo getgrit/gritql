@@ -3,6 +3,7 @@ use super::{
     pattern_compiler::PatternCompiler, variable_compiler::VariableCompiler,
 };
 use crate::pattern::log::{Log, VariableInfo};
+use crate::problem::MarzanoProblemContext;
 use anyhow::Result;
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
@@ -10,7 +11,7 @@ use marzano_util::node_with_source::NodeWithSource;
 pub(crate) struct LogCompiler;
 
 impl NodeCompiler for LogCompiler {
-    type TargetPattern = Log;
+    type TargetPattern = Log<MarzanoProblemContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

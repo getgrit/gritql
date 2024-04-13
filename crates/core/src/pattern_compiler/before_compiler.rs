@@ -3,13 +3,14 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::pattern::before::Before;
+use crate::problem::MarzanoProblemContext;
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct BeforeCompiler;
 
 impl NodeCompiler for BeforeCompiler {
-    type TargetPattern = Before;
+    type TargetPattern = Before<MarzanoProblemContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

@@ -3,13 +3,14 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::pattern::add::Add;
+use crate::problem::MarzanoProblemContext;
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct AddCompiler;
 
 impl NodeCompiler for AddCompiler {
-    type TargetPattern = Add;
+    type TargetPattern = Add<MarzanoProblemContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

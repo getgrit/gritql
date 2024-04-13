@@ -1,9 +1,9 @@
 use super::{
-    patterns::{Matcher, Name},
+    patterns::{Matcher, PatternName},
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::context::Context;
+use crate::context::ProblemContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -18,18 +18,18 @@ impl FloatConstant {
     }
 }
 
-impl Name for FloatConstant {
+impl PatternName for FloatConstant {
     fn name(&self) -> &'static str {
         "DOUBLE_CONSTANT"
     }
 }
 
-impl Matcher for FloatConstant {
+impl<P: ProblemContext> Matcher<P> for FloatConstant {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        _context: &'a impl Context,
+        state: &mut State<'a, P>,
+        _context: &'a P::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let text = binding.text(&state.files)?;

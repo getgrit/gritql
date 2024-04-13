@@ -9,6 +9,7 @@ use crate::pattern::{
     functions::{CallForeignFunction, CallFunction},
     patterns::Pattern,
 };
+use crate::problem::MarzanoProblemContext;
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
 use itertools::Itertools;
@@ -19,13 +20,13 @@ use std::collections::BTreeMap;
 pub(crate) struct CallCompiler;
 
 impl NodeCompiler for CallCompiler {
-    type TargetPattern = Pattern;
+    type TargetPattern = Pattern<MarzanoProblemContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> Result<Pattern> {
+    ) -> Result<Pattern<MarzanoProblemContext>> {
         let sort = node
             .child_by_field_name("name")
             .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
@@ -61,7 +62,7 @@ impl NodeCompiler for CallCompiler {
 
         // tree-sitter returns 0 for sorts/kinds it doesn't know about
         if sort != 0 {
-            return Ok(Pattern::ASTNode(Box::new(AstNodeCompiler::from_args(
+            return Ok(Pattern::AstNode(Box::new(AstNodeCompiler::from_args(
                 named_args, sort, context, is_rhs,
             )?)));
         }
@@ -140,7 +141,7 @@ impl NodeCompiler for CallCompiler {
 pub(crate) struct PrCallCompiler;
 
 impl NodeCompiler for PrCallCompiler {
-    type TargetPattern = PrCall;
+    type TargetPattern = PrCall<MarzanoProblemContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
@@ -180,10 +181,10 @@ fn collect_params(parameters: &[(String, Range)]) -> Vec<String> {
 
 fn match_args_to_params(
     name: &str,
-    mut args: BTreeMap<String, Pattern>,
+    mut args: BTreeMap<String, Pattern<MarzanoProblemContext>>,
     params: &[String],
     language: &impl Language,
-) -> Result<Vec<Option<Pattern>>> {
+) -> Result<Vec<Option<Pattern<MarzanoProblemContext>>>> {
     for (arg, _) in args.iter() {
         if !params.contains(arg) {
             bail!(
@@ -201,7 +202,7 @@ fn match_args_to_params(
 fn named_args_to_hash_map(
     named_args: Vec<(String, NodeWithSource)>,
     context: &mut NodeCompilationContext,
-) -> Result<BTreeMap<String, Pattern>> {
+) -> Result<BTreeMap<String, Pattern<MarzanoProblemContext>>> {
     let mut args = BTreeMap::new();
     for (name, node) in named_args {
         let pattern = PatternCompiler::from_node_with_rhs(&node, context, true)?;

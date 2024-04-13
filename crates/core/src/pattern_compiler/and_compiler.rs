@@ -7,13 +7,14 @@ use crate::pattern::{
     patterns::Pattern,
     predicates::Predicate,
 };
+use crate::problem::MarzanoProblemContext;
 use anyhow::Result;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct AndCompiler;
 
 impl NodeCompiler for AndCompiler {
-    type TargetPattern = Pattern;
+    type TargetPattern = Pattern<MarzanoProblemContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
@@ -36,7 +37,7 @@ impl NodeCompiler for AndCompiler {
 pub(crate) struct PrAndCompiler;
 
 impl NodeCompiler for PrAndCompiler {
-    type TargetPattern = Predicate;
+    type TargetPattern = Predicate<MarzanoProblemContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

@@ -2,8 +2,12 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::pattern::{
-    code_snippet::CodeSnippet, dynamic_snippet::DynamicPattern, patterns::Pattern, rewrite::Rewrite,
+use crate::{
+    pattern::{
+        code_snippet::CodeSnippet, dynamic_snippet::DynamicPattern, patterns::Pattern,
+        rewrite::Rewrite,
+    },
+    problem::MarzanoProblemContext,
 };
 use anyhow::{anyhow, Result};
 use grit_util::AstNode;
@@ -12,7 +16,7 @@ use marzano_util::{analysis_logs::AnalysisLogBuilder, node_with_source::NodeWith
 pub(crate) struct RewriteCompiler;
 
 impl NodeCompiler for RewriteCompiler {
-    type TargetPattern = Rewrite;
+    type TargetPattern = Rewrite<MarzanoProblemContext>;
 
     // do we want to add support for annotations?
     fn from_node_with_rhs(
@@ -67,7 +71,7 @@ impl NodeCompiler for RewriteCompiler {
             Pattern::CallBuiltIn(c) => DynamicPattern::CallBuiltIn(*c),
             Pattern::CallFunction(c) => DynamicPattern::CallFunction(*c),
             Pattern::CallForeignFunction(c) => DynamicPattern::CallForeignFunction(*c),
-            Pattern::ASTNode(_)
+            Pattern::AstNode(_)
                 | Pattern::List(_)
                 | Pattern::Map(_)
                 | Pattern::Call(_)

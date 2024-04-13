@@ -1,28 +1,28 @@
 use super::{
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::{pattern_to_binding, ResolvedPattern},
     State,
 };
-use crate::{binding::Constant, context::Context, errors::debug, resolve};
+use crate::{binding::Constant, context::ProblemContext, errors::debug, resolve};
 use anyhow::{bail, Result};
 use core::fmt::Debug;
 use grit_util::AstNode;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct After {
-    pub(crate) after: Pattern,
+pub struct After<P: ProblemContext> {
+    pub(crate) after: Pattern<P>,
 }
 
-impl After {
-    pub fn new(after: Pattern) -> Self {
+impl<P: ProblemContext> After<P> {
+    pub fn new(after: Pattern<P>) -> Self {
         Self { after }
     }
 
     pub(crate) fn next_pattern<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let binding = pattern_to_binding(&self.after, state, context, logs)?;
@@ -43,18 +43,18 @@ impl After {
     }
 }
 
-impl Name for After {
+impl<P: ProblemContext> PatternName for After<P> {
     fn name(&self) -> &'static str {
         "AFTER"
     }
 }
 
-impl Matcher for After {
+impl<P: ProblemContext> Matcher<P> for After<P> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        init_state: &mut State<'a>,
-        context: &'a impl Context,
+        init_state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let binding = match binding {

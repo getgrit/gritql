@@ -1,29 +1,29 @@
 use super::{
     functions::{Evaluator, FuncEvaluation},
-    patterns::{Name, Pattern},
+    patterns::{Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::context::Context;
+use crate::context::ProblemContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct PrReturn {
-    pub pattern: Pattern,
+pub struct PrReturn<P: ProblemContext> {
+    pub pattern: Pattern<P>,
 }
 
-impl PrReturn {
-    pub fn new(pattern: Pattern) -> Self {
+impl<P: ProblemContext> PrReturn<P> {
+    pub fn new(pattern: Pattern<P>) -> Self {
         Self { pattern }
     }
 }
 
-impl Evaluator for PrReturn {
+impl<P: ProblemContext> Evaluator<P> for PrReturn<P> {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let resolved = ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
@@ -34,7 +34,7 @@ impl Evaluator for PrReturn {
     }
 }
 
-impl Name for PrReturn {
+impl<P: ProblemContext> PatternName for PrReturn<P> {
     fn name(&self) -> &'static str {
         "RETURN"
     }

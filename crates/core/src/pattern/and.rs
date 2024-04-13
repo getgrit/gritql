@@ -1,37 +1,37 @@
 use super::{
     functions::{Evaluator, FuncEvaluation},
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     predicates::Predicate,
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::Context;
+use crate::context::ProblemContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct And {
-    pub patterns: Vec<Pattern>,
+pub struct And<P: ProblemContext> {
+    pub patterns: Vec<Pattern<P>>,
 }
 
-impl And {
-    pub fn new(patterns: Vec<Pattern>) -> Self {
+impl<P: ProblemContext> And<P> {
+    pub fn new(patterns: Vec<Pattern<P>>) -> Self {
         Self { patterns }
     }
 }
 
-impl Name for And {
+impl<P: ProblemContext> PatternName for And<P> {
     fn name(&self) -> &'static str {
         "AND"
     }
 }
 
-impl Matcher for And {
+impl<P: ProblemContext> Matcher<P> for And<P> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         for p in self.patterns.iter() {
@@ -44,27 +44,27 @@ impl Matcher for And {
 }
 
 #[derive(Debug, Clone)]
-pub struct PrAnd {
-    pub predicates: Vec<Predicate>,
+pub struct PrAnd<P: ProblemContext> {
+    pub predicates: Vec<Predicate<P>>,
 }
 
-impl PrAnd {
-    pub fn new(predicates: Vec<Predicate>) -> Self {
+impl<P: ProblemContext> PrAnd<P> {
+    pub fn new(predicates: Vec<Predicate<P>>) -> Self {
         Self { predicates }
     }
 }
 
-impl Name for PrAnd {
+impl<P: ProblemContext> PatternName for PrAnd<P> {
     fn name(&self) -> &'static str {
         "PREDICATE_AND"
     }
 }
 
-impl Evaluator for PrAnd {
+impl<P: ProblemContext> Evaluator<P> for PrAnd<P> {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         for p in self.predicates.iter() {

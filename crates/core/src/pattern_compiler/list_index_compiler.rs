@@ -3,6 +3,7 @@ use super::{
     list_compiler::ListCompiler, node_compiler::NodeCompiler,
 };
 use crate::pattern::list_index::{ContainerOrIndex, ListIndex, ListOrContainer};
+use crate::problem::MarzanoProblemContext;
 use anyhow::{anyhow, Result};
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
@@ -10,7 +11,7 @@ use marzano_util::node_with_source::NodeWithSource;
 pub(crate) struct ListIndexCompiler;
 
 impl NodeCompiler for ListIndexCompiler {
-    type TargetPattern = ListIndex;
+    type TargetPattern = ListIndex<MarzanoProblemContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

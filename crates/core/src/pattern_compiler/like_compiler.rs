@@ -3,13 +3,14 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::pattern::{float_constant::FloatConstant, like::Like, patterns::Pattern};
+use crate::problem::MarzanoProblemContext;
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct LikeCompiler;
 
 impl NodeCompiler for LikeCompiler {
-    type TargetPattern = Like;
+    type TargetPattern = Like<MarzanoProblemContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

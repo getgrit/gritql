@@ -1,27 +1,27 @@
 use super::{
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::{binding::Constant, context::Context};
+use crate::{binding::Constant, context::ProblemContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Multiply {
-    pub lhs: Pattern,
-    pub rhs: Pattern,
+pub struct Multiply<P: ProblemContext> {
+    pub lhs: Pattern<P>,
+    pub rhs: Pattern<P>,
 }
 
-impl Multiply {
-    pub fn new(lhs: Pattern, rhs: Pattern) -> Self {
+impl<P: ProblemContext> Multiply<P> {
+    pub fn new(lhs: Pattern<P>, rhs: Pattern<P>) -> Self {
         Self { lhs, rhs }
     }
 
     pub(crate) fn call<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let res = self.evaluate(state, context, logs)?;
@@ -30,8 +30,8 @@ impl Multiply {
 
     fn evaluate<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<f64> {
         let lhs = self.lhs.float(state, context, logs)?;
@@ -41,18 +41,18 @@ impl Multiply {
     }
 }
 
-impl Name for Multiply {
+impl<P: ProblemContext> PatternName for Multiply<P> {
     fn name(&self) -> &'static str {
         "MULTIPLY"
     }
 }
 
-impl Matcher for Multiply {
+impl<P: ProblemContext> Matcher<P> for Multiply<P> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let binding_text = binding.text(&state.files)?;

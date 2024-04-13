@@ -3,12 +3,12 @@ use super::{
     built_in_functions::CallBuiltIn,
     functions::{CallForeignFunction, CallFunction},
     list_index::ListIndex,
-    patterns::{Matcher, Name},
+    patterns::{Matcher, PatternName},
     resolved_pattern::ResolvedPattern,
     variable::Variable,
     State,
 };
-use crate::context::Context;
+use crate::context::ProblemContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -24,27 +24,27 @@ pub struct DynamicSnippet {
 }
 
 #[derive(Debug, Clone)]
-pub struct DynamicList {
-    pub elements: Vec<DynamicPattern>,
+pub struct DynamicList<P: ProblemContext> {
+    pub elements: Vec<DynamicPattern<P>>,
 }
 
 #[derive(Debug, Clone)]
-pub enum DynamicPattern {
+pub enum DynamicPattern<P: ProblemContext> {
     Variable(Variable),
-    Accessor(Box<Accessor>),
-    ListIndex(Box<ListIndex>),
+    Accessor(Box<Accessor<P>>),
+    ListIndex(Box<ListIndex<P>>),
     Snippet(DynamicSnippet),
-    List(DynamicList),
-    CallBuiltIn(CallBuiltIn),
-    CallFunction(CallFunction),
-    CallForeignFunction(CallForeignFunction),
+    List(DynamicList<P>),
+    CallBuiltIn(CallBuiltIn<P>),
+    CallFunction(CallFunction<P>),
+    CallForeignFunction(CallForeignFunction<P>),
 }
 
-impl DynamicPattern {
+impl<P: ProblemContext> DynamicPattern<P> {
     pub fn text<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<String> {
         let resolved = ResolvedPattern::from_dynamic_pattern(self, state, context, logs)?;
@@ -52,18 +52,18 @@ impl DynamicPattern {
     }
 }
 
-impl Name for DynamicPattern {
+impl<P: ProblemContext> PatternName for DynamicPattern<P> {
     fn name(&self) -> &'static str {
         "DYNAMIC_PATTERN"
     }
 }
 
-impl Matcher for DynamicPattern {
+impl<P: ProblemContext> Matcher<P> for DynamicPattern<P> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if binding.text(&state.files)? == self.text(state, context, logs)? {
@@ -74,7 +74,7 @@ impl Matcher for DynamicPattern {
     }
 }
 
-impl Name for DynamicSnippet {
+impl PatternName for DynamicSnippet {
     fn name(&self) -> &'static str {
         "DYNAMIC_SNIPPET"
     }

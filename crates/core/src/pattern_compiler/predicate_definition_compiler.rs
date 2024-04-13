@@ -1,7 +1,10 @@
 use super::{
     and_compiler::PrAndCompiler, compiler::NodeCompilationContext, node_compiler::NodeCompiler,
 };
-use crate::pattern::{predicate_definition::PredicateDefinition, variable::get_variables};
+use crate::{
+    pattern::{predicate_definition::PredicateDefinition, variable::get_variables},
+    problem::MarzanoProblemContext,
+};
 use anyhow::{anyhow, Result};
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
@@ -10,7 +13,7 @@ use std::collections::BTreeMap;
 pub(crate) struct PredicateDefinitionCompiler;
 
 impl NodeCompiler for PredicateDefinitionCompiler {
-    type TargetPattern = PredicateDefinition;
+    type TargetPattern = PredicateDefinition<MarzanoProblemContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

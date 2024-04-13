@@ -1,43 +1,43 @@
 use super::{
     list_index,
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::context::Context;
+use crate::context::ProblemContext;
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]
-pub struct List {
-    pub patterns: Vec<Pattern>,
+pub struct List<P: ProblemContext> {
+    pub patterns: Vec<Pattern<P>>,
 }
 
-impl List {
-    pub fn new(patterns: Vec<Pattern>) -> Self {
+impl<P: ProblemContext> List<P> {
+    pub fn new(patterns: Vec<Pattern<P>>) -> Self {
         Self { patterns }
     }
 
-    pub fn get(&self, index: isize) -> Option<&Pattern> {
+    pub fn get(&self, index: isize) -> Option<&Pattern<P>> {
         self.patterns
             .get(list_index::to_unsigned(index, self.patterns.len())?)
     }
 }
 
-impl Name for List {
+impl<P: ProblemContext> PatternName for List<P> {
     fn name(&self) -> &'static str {
         "LIST"
     }
 }
 
-impl Matcher for List {
+impl<P: ProblemContext> Matcher<P> for List<P> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut super::state::State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match binding {
@@ -67,11 +67,11 @@ impl Matcher for List {
     }
 }
 
-fn execute_assoc<'a>(
-    patterns: &'a [Pattern],
+fn execute_assoc<'a, P: ProblemContext>(
+    patterns: &'a [Pattern<P>],
     children: &[Cow<ResolvedPattern<'a>>],
-    current_state: &mut State<'a>,
-    context: &'a impl Context,
+    current_state: &mut State<'a, P>,
+    context: &'a P::ExecContext<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<bool> {
     let mut working_state = current_state.clone();

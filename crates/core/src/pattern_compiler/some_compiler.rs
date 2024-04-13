@@ -2,14 +2,14 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::pattern::some::Some;
+use crate::{pattern::some::Some, problem::MarzanoProblemContext};
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct SomeCompiler;
 
 impl NodeCompiler for SomeCompiler {
-    type TargetPattern = Some;
+    type TargetPattern = Some<MarzanoProblemContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

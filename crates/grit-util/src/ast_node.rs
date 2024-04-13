@@ -3,7 +3,7 @@ use crate::CodeRange;
 /// Represents an AST node and offers convenient AST-specific functionality.
 ///
 /// This trait should be free from dependencies on TreeSitter.
-pub trait AstNode: Sized {
+pub trait AstNode: std::fmt::Debug + Sized {
     /// Returns an iterator over the node's ancestors, starting with the node
     /// itself and moving up to the root.
     fn ancestors(&self) -> impl Iterator<Item = Self>;

@@ -1,9 +1,9 @@
 use super::{
-    patterns::{Matcher, Name},
+    patterns::{Matcher, PatternName},
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::context::Context;
+use crate::context::ProblemContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -18,18 +18,18 @@ impl IntConstant {
     }
 }
 
-impl Name for IntConstant {
+impl PatternName for IntConstant {
     fn name(&self) -> &'static str {
         "INT_CONSTANT"
     }
 }
 
-impl Matcher for IntConstant {
+impl<P: ProblemContext> Matcher<P> for IntConstant {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        _context: &'a impl Context,
+        state: &mut State<'a, P>,
+        _context: &'a P::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let text = binding.text(&state.files)?;

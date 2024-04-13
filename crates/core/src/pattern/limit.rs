@@ -1,9 +1,9 @@
 use super::{
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::context::Context;
+use crate::{context::ExecContext, context::ProblemContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::sync::{
@@ -12,14 +12,14 @@ use std::sync::{
 };
 
 #[derive(Debug, Clone)]
-pub struct Limit {
-    pub(crate) pattern: Pattern,
+pub struct Limit<P: ProblemContext> {
+    pub(crate) pattern: Pattern<P>,
     pub limit: usize,
     pub invocation_count: Arc<AtomicUsize>,
 }
 
-impl Limit {
-    pub fn new(pattern: Pattern, limit: usize) -> Self {
+impl<P: ProblemContext> Limit<P> {
+    pub fn new(pattern: Pattern<P>, limit: usize) -> Self {
         Self {
             pattern,
             limit,
@@ -28,18 +28,18 @@ impl Limit {
     }
 }
 
-impl Name for Limit {
+impl<P: ProblemContext> PatternName for Limit<P> {
     fn name(&self) -> &'static str {
         "LIMIT"
     }
 }
 
-impl Matcher for Limit {
+impl<P: ProblemContext> Matcher<P> for Limit<P> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if context.ignore_limit_pattern() {

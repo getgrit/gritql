@@ -1,6 +1,8 @@
 use crate::{
     api::{is_match, AnalysisLog, ByteRange, DoneFile, MatchResult},
+    ast_node::ASTNode,
     binding::Binding,
+    context::ProblemContext,
     pattern::{
         built_in_functions::BuiltIns,
         constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
@@ -24,6 +26,7 @@ use marzano_util::{
     analysis_logs::AnalysisLogs,
     cache::{GritCache, NullCache},
     hasher::hash,
+    node_with_source::NodeWithSource,
     position::{Position, Range, VariableMatch},
     rich_path::{FileName, RichFile, RichPath, TryIntoInputFile},
     runtime::ExecutionContext,
@@ -44,8 +47,7 @@ use tree_sitter::Tree;
 pub struct Problem {
     pub src: String,
     pub tree: Tree,
-    // todo replace with pattern: Pattern
-    pub pattern: Pattern,
+    pub pattern: Pattern<MarzanoProblemContext>,
     pub language: TargetLanguage,
     pub built_ins: BuiltIns,
     pub is_multifile: bool,
@@ -53,9 +55,9 @@ pub struct Problem {
     pub hash: [u8; 32],
     pub name: Option<String>,
     pub(crate) variables: VariableLocations,
-    pub(crate) pattern_definitions: Vec<PatternDefinition>,
-    pub(crate) predicate_definitions: Vec<PredicateDefinition>,
-    pub(crate) function_definitions: Vec<GritFunctionDefinition>,
+    pub(crate) pattern_definitions: Vec<PatternDefinition<MarzanoProblemContext>>,
+    pub(crate) predicate_definitions: Vec<PredicateDefinition<MarzanoProblemContext>>,
+    pub(crate) function_definitions: Vec<GritFunctionDefinition<MarzanoProblemContext>>,
     pub(crate) foreign_function_definitions: Vec<ForeignFunctionDefinition>,
 }
 
@@ -114,16 +116,16 @@ impl Problem {
     pub(crate) fn new(
         src: String,
         tree: Tree,
-        pattern: Pattern,
+        pattern: Pattern<MarzanoProblemContext>,
         language: TargetLanguage,
         built_ins: BuiltIns,
         is_multifile: bool,
         has_limit: bool,
         name: Option<String>,
         variables: VariableLocations,
-        pattern_definitions: Vec<PatternDefinition>,
-        predicate_definitions: Vec<PredicateDefinition>,
-        function_definitions: Vec<GritFunctionDefinition>,
+        pattern_definitions: Vec<PatternDefinition<MarzanoProblemContext>>,
+        predicate_definitions: Vec<PredicateDefinition<MarzanoProblemContext>>,
+        function_definitions: Vec<GritFunctionDefinition<MarzanoProblemContext>>,
         foreign_function_definitions: Vec<ForeignFunctionDefinition>,
     ) -> Self {
         let mut hasher = Sha256::new();
@@ -651,4 +653,13 @@ impl MatchRanges {
             byte_ranges: Some(byte_ranges),
         }
     }
+}
+
+#[derive(Clone, Debug)]
+pub struct MarzanoProblemContext;
+
+impl ProblemContext for MarzanoProblemContext {
+    type Node<'a> = NodeWithSource<'a>;
+    type NodePattern = ASTNode;
+    type ExecContext<'a> = MarzanoContext<'a>;
 }

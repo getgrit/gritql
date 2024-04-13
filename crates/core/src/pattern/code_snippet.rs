@@ -1,26 +1,26 @@
 use super::{
     dynamic_snippet::DynamicPattern,
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{context::Context, resolve};
+use crate::{context::ProblemContext, resolve};
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_language::language::SortId;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct CodeSnippet {
-    pub(crate) patterns: Vec<(SortId, Pattern)>,
+pub struct CodeSnippet<P: ProblemContext> {
+    pub(crate) patterns: Vec<(SortId, Pattern<P>)>,
     pub(crate) source: String,
-    pub(crate) dynamic_snippet: Option<DynamicPattern>,
+    pub(crate) dynamic_snippet: Option<DynamicPattern<P>>,
 }
 
-impl CodeSnippet {
+impl<P: ProblemContext> CodeSnippet<P> {
     pub fn new(
-        patterns: Vec<(SortId, Pattern)>,
-        dynamic_snippet: Option<DynamicPattern>,
+        patterns: Vec<(SortId, Pattern<P>)>,
+        dynamic_snippet: Option<DynamicPattern<P>>,
         source: &str,
     ) -> Self {
         Self {
@@ -31,19 +31,19 @@ impl CodeSnippet {
     }
 }
 
-impl Name for CodeSnippet {
+impl<P: ProblemContext> PatternName for CodeSnippet<P> {
     fn name(&self) -> &'static str {
         "CODESNIPPET"
     }
 }
 
-impl Matcher for CodeSnippet {
+impl<P: ProblemContext> Matcher<P> for CodeSnippet<P> {
     // wrong, but whatever for now
     fn execute<'a>(
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let binding = match resolved_pattern {

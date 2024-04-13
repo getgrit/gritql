@@ -8,13 +8,14 @@ use crate::pattern::{
     patterns::Pattern,
     predicates::Predicate,
 };
+use crate::problem::MarzanoProblemContext;
 use anyhow::{anyhow, Result};
 use marzano_util::{analysis_logs::AnalysisLogBuilder, node_with_source::NodeWithSource};
 
 pub(crate) struct NotCompiler;
 
 impl NodeCompiler for NotCompiler {
-    type TargetPattern = Not;
+    type TargetPattern = Not<MarzanoProblemContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
@@ -50,7 +51,7 @@ impl NodeCompiler for NotCompiler {
 pub(crate) struct PrNotCompiler;
 
 impl NodeCompiler for PrNotCompiler {
-    type TargetPattern = PrNot;
+    type TargetPattern = PrNot<MarzanoProblemContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

@@ -5,25 +5,26 @@ use super::{
     state::{FilePtr, State},
 };
 use crate::{
-    context::Context,
     clean::{get_replacement_ranges, replace_cleaned_ranges},
+    context::ExecContext,
+    context::ProblemContext,
     problem::{FileOwner, InputRanges, MatchRanges},
     text_unparser::apply_effects,
 };
 use anyhow::{anyhow, bail, Result};
 use im::vector;
 use marzano_language::language::Language;
-use marzano_util::{analysis_logs::AnalysisLogs};
+use marzano_util::analysis_logs::AnalysisLogs;
 use std::path::PathBuf;
 use tree_sitter::Parser;
 
 #[derive(Debug, Clone)]
-pub struct Step {
-    pub pattern: Pattern,
+pub struct Step<P: ProblemContext> {
+    pub pattern: Pattern<P>,
 }
 
-impl Step {
-    pub fn new(pattern: Pattern) -> Self {
+impl<P: ProblemContext> Step<P> {
+    pub fn new(pattern: Pattern<P>) -> Self {
         Self { pattern }
     }
 }
@@ -64,12 +65,12 @@ fn extract_file_pointers(binding: &ResolvedPattern) -> Option<Vec<FilePtr>> {
     }
 }
 
-impl Matcher for Step {
+impl<P: ProblemContext> Matcher<P> for Step<P> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut parser = Parser::new()?;

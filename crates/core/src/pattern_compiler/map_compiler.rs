@@ -3,6 +3,7 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::pattern::map::GritMap;
+use crate::problem::MarzanoProblemContext;
 use anyhow::{anyhow, Result};
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
@@ -11,7 +12,7 @@ use std::collections::BTreeMap;
 pub(crate) struct MapCompiler;
 
 impl NodeCompiler for MapCompiler {
-    type TargetPattern = GritMap;
+    type TargetPattern = GritMap<MarzanoProblemContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

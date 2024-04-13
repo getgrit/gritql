@@ -1,36 +1,37 @@
 use super::{
     container::Container,
     functions::{Evaluator, FuncEvaluation},
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{context::Context, errors::debug};
+use crate::{context::ProblemContext, errors::debug};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Match {
-    pub val: Container,
-    pub pattern: Option<Pattern>,
+pub struct Match<P: ProblemContext> {
+    pub val: Container<P>,
+    pub pattern: Option<Pattern<P>>,
 }
-impl Match {
-    pub fn new(val: Container, pattern: Option<Pattern>) -> Self {
+
+impl<P: ProblemContext> Match<P> {
+    pub fn new(val: Container<P>, pattern: Option<Pattern<P>>) -> Self {
         Self { val, pattern }
     }
 }
 
-impl Name for Match {
+impl<P: ProblemContext> PatternName for Match<P> {
     fn name(&self) -> &'static str {
         "MATCH"
     }
 }
 
-impl Evaluator for Match {
+impl<P: ProblemContext> Evaluator<P> for Match<P> {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         match &self.val {

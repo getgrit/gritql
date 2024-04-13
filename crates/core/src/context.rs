@@ -1,5 +1,6 @@
 use crate::{
     pattern::{
+        ast_node_pattern::AstNodePattern,
         built_in_functions::CallBuiltIn,
         function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
         pattern_definition::PatternDefinition,
@@ -10,15 +11,24 @@ use crate::{
     problem::FileOwners,
 };
 use anyhow::Result;
+use grit_util::AstNode;
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::AnalysisLogs;
 
-pub trait Context {
-    fn pattern_definitions(&self) -> &[PatternDefinition];
+/// Contains various kinds of context about the problem being executed.
+pub trait ProblemContext: Clone + std::fmt::Debug + Sized {
+    type Node<'a>: AstNode;
+    type NodePattern: AstNodePattern<Self>;
+    type ExecContext<'a>: ExecContext<Self>;
+}
 
-    fn predicate_definitions(&self) -> &[PredicateDefinition];
+/// Contains context necessary for problem execution.
+pub trait ExecContext<P: ProblemContext> {
+    fn pattern_definitions(&self) -> &[PatternDefinition<P>];
 
-    fn function_definitions(&self) -> &[GritFunctionDefinition];
+    fn predicate_definitions(&self) -> &[PredicateDefinition<P>];
+
+    fn function_definitions(&self) -> &[GritFunctionDefinition<P>];
 
     fn foreign_function_definitions(&self) -> &[ForeignFunctionDefinition];
 
@@ -26,9 +36,9 @@ pub trait Context {
 
     fn call_built_in<'a>(
         &self,
-        call: &'a CallBuiltIn,
+        call: &'a CallBuiltIn<P>,
         context: &'a Self,
-        state: &mut State<'a>,
+        state: &mut State<'a, P>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>>;
 

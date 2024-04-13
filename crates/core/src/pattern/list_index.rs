@@ -2,38 +2,38 @@ use super::{
     accessor::execute_resolved_with_binding,
     container::{Container, PatternOrResolved, PatternOrResolvedMut},
     list::List,
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     state::State,
 };
 use crate::{
     binding::{Binding, Constant},
-    context::Context,
+    context::ProblemContext,
     resolve_opt,
 };
 use anyhow::{anyhow, bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub enum ListOrContainer {
-    Container(Container),
-    List(List),
+pub enum ListOrContainer<P: ProblemContext> {
+    Container(Container<P>),
+    List(List<P>),
 }
 
 #[derive(Debug, Clone)]
-pub enum ContainerOrIndex {
-    Container(Container),
+pub enum ContainerOrIndex<P: ProblemContext> {
+    Container(Container<P>),
     Index(isize),
 }
 
 #[derive(Debug, Clone)]
-pub struct ListIndex {
-    pub list: ListOrContainer,
-    pub index: ContainerOrIndex,
+pub struct ListIndex<P: ProblemContext> {
+    pub list: ListOrContainer<P>,
+    pub index: ContainerOrIndex<P>,
 }
 
-impl ListIndex {
-    fn get_index<'a>(&'a self, state: &State<'a>) -> Result<isize> {
+impl<P: ProblemContext> ListIndex<P> {
+    fn get_index<'a>(&'a self, state: &State<'a, P>) -> Result<isize> {
         match &self.index {
             ContainerOrIndex::Container(c) => {
                 let raw_index = c
@@ -55,8 +55,8 @@ impl ListIndex {
 
     pub(crate) fn get<'a, 'b>(
         &'a self,
-        state: &'b State<'a>,
-    ) -> Result<Option<PatternOrResolved<'a, 'b>>> {
+        state: &'b State<'a, P>,
+    ) -> Result<Option<PatternOrResolved<'a, 'b, P>>> {
         let index = self.get_index(state)?;
         match &self.list {
             ListOrContainer::Container(c) => match c.get_pattern_or_resolved(state)? {
@@ -88,8 +88,8 @@ impl ListIndex {
 
     pub(crate) fn get_mut<'a, 'b>(
         &'a self,
-        state: &'b mut State<'a>,
-    ) -> Result<Option<PatternOrResolvedMut<'a, 'b>>> {
+        state: &'b mut State<'a, P>,
+    ) -> Result<Option<PatternOrResolvedMut<'a, 'b, P>>> {
         let index = self.get_index(state)?;
         match &self.list {
             ListOrContainer::Container(c) => match c.get_pattern_or_resolved_mut(state)? {
@@ -121,7 +121,7 @@ impl ListIndex {
 
     pub(crate) fn set_resolved<'a>(
         &'a self,
-        state: &mut State<'a>,
+        state: &mut State<'a, P>,
         value: ResolvedPattern<'a>,
     ) -> Result<Option<ResolvedPattern<'a>>> {
         let index = self.get_index(state)?;
@@ -149,18 +149,18 @@ pub(crate) fn to_unsigned(index: isize, len: usize) -> Option<usize> {
     }
 }
 
-impl Name for ListIndex {
+impl<P: ProblemContext> PatternName for ListIndex<P> {
     fn name(&self) -> &'static str {
         "LIST_INDEX"
     }
 }
 
-impl Matcher for ListIndex {
+impl<P: ProblemContext> Matcher<P> for ListIndex<P> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match self.get(state)? {

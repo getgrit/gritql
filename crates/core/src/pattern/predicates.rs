@@ -10,39 +10,39 @@ use super::{
     maybe::PrMaybe,
     not::PrNot,
     or::PrOr,
-    patterns::Name,
+    patterns::PatternName,
     predicate_return::PrReturn,
     r#if::PrIf,
     r#match::Match,
     rewrite::Rewrite,
     State,
 };
-use crate::context::Context;
+use crate::context::ProblemContext;
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub enum Predicate {
-    Call(Box<PrCall>),
-    Not(Box<PrNot>),
-    If(Box<PrIf>),
+pub enum Predicate<P: ProblemContext> {
+    Call(Box<PrCall<P>>),
+    Not(Box<PrNot<P>>),
+    If(Box<PrIf<P>>),
     True,
     False,
-    Or(Box<PrOr>),
-    And(Box<PrAnd>),
-    Maybe(Box<PrMaybe>),
-    Any(Box<PrAny>),
-    Rewrite(Box<Rewrite>),
-    Log(Log),
-    Match(Box<Match>),
-    Equal(Box<Equal>),
-    Assignment(Box<Assignment>),
-    Accumulate(Box<Accumulate>),
-    Return(Box<PrReturn>),
+    Or(Box<PrOr<P>>),
+    And(Box<PrAnd<P>>),
+    Maybe(Box<PrMaybe<P>>),
+    Any(Box<PrAny<P>>),
+    Rewrite(Box<Rewrite<P>>),
+    Log(Log<P>),
+    Match(Box<Match<P>>),
+    Equal(Box<Equal<P>>),
+    Assignment(Box<Assignment<P>>),
+    Accumulate(Box<Accumulate<P>>),
+    Return(Box<PrReturn<P>>),
 }
 
-impl Name for Predicate {
+impl<P: ProblemContext> PatternName for Predicate<P> {
     fn name(&self) -> &'static str {
         match self {
             Predicate::Call(call) => call.name(),
@@ -65,11 +65,11 @@ impl Name for Predicate {
     }
 }
 
-impl Evaluator for Predicate {
+impl<P: ProblemContext> Evaluator<P> for Predicate<P> {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, P>,
+        context: &'a P::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         match self {
