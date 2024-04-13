@@ -9,7 +9,7 @@ expression: patterns
     title: Copy activity names to timekeeper
     description: "We cannot directly include `@getgrit/sdk` in `@getgrit/timekeeper` but we _can_ use Grit to copy over the function names list."
     tags: ~
-    samples: ~
+    samples: []
     path: CloneActivities.md
     position:
       line: 6

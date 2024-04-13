@@ -99,6 +99,19 @@ expression: patterns
           startByte: 1145
           endByte: 1177
         output_range: ~
+      - name: "Do not change `$val !== null`"
+        input: "while (val !== null) {\n  doSomething();\n}"
+        output: ~
+        input_range:
+          start:
+            line: 79
+            column: 1
+          end:
+            line: 82
+            column: 1
+          startByte: 1220
+          endByte: 1262
+        output_range: ~
     path: no_eq_null.md
     position:
       line: 10
