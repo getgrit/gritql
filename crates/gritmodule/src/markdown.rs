@@ -153,7 +153,7 @@ pub fn get_patterns_from_md(
 
             if let Some(last_config) = patterns.last_mut() {
                 // If the grit block started in an h1, then new samples are introduced with each h3
-                if heading_level <= last_config.section_level + 2 {
+                if heading_level <= last_config.section_level + 1 {
                     if let Some(open_sample) = last_config.open_sample.take() {
                         last_config.samples.push(open_sample);
                     }
@@ -466,6 +466,7 @@ function isTruthy(x) {
         let patterns = get_patterns_from_md(&rich_file, &module, &None).unwrap();
         assert_eq!(patterns.len(), 1);
         println!("{:?}", patterns);
+        assert_eq!(patterns[0].config.samples.as_ref().unwrap().len(), 3);
         assert_yaml_snapshot!(patterns);
     }
 

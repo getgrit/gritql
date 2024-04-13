@@ -12,7 +12,7 @@ expression: patterns
     samples:
       - name: Bad
         input: "function isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}"
-        output: ~
+        output: "function isTruthy(x) {\n  return Boolean(x);\n}"
         input_range:
           start:
             line: 20
@@ -22,11 +22,7 @@ expression: patterns
             column: 1
           startByte: 306
           endByte: 364
-        output_range: ~
-      - name: Good
-        input: "function isTruthy(x) {\n  return Boolean(x);\n}"
-        output: ~
-        input_range:
+        output_range:
           start:
             line: 29
             column: 1
@@ -35,7 +31,6 @@ expression: patterns
             column: 1
           startByte: 393
           endByte: 439
-        output_range: ~
       - name: Remove debugger - group 2
         input: "function isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}"
         output: "function isTruthy(x) {\n  return Boolean(x);\n}"
