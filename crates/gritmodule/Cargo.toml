@@ -21,7 +21,6 @@ git2 = { version = "0.17.2", default-features = false, features = [
 ] }
 lazy_static = { version = "1.4.0" }
 regex = { version = "1.7.3" }
-markdown = { version = "1.0.0-alpha.11" }
 tokio = { version = "1", features = ["full"] }
 tempfile = { version = "3.7.0" }
 log = { version = "0.4.19" }

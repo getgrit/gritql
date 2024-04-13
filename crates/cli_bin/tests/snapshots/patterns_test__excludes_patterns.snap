@@ -1,8 +1,8 @@
 ---
-source: apps/marzano/cli/tests/patterns_test.rs
+source: crates/cli_bin/tests/patterns_test.rs
 expression: stdout
 ---
-Found 7 testable patterns.
+Found 8 testable patterns.
 ✗ broken_pattern
   ✓ `$val != null` => `$val !== null` not channge
   ✓ `$val != null` => `$val !== null` into `while` not change
@@ -15,4 +15,4 @@ Found 7 testable patterns.
      }
     
 
-
+✓ no_eq_null

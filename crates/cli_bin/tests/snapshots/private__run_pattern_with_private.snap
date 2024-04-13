@@ -28,7 +28,7 @@ expression: parsed
   visibility: public
 - config:
     name: marky
-    body: "pattern show_this_one() {\n  `foo` => `bar`\n}\n\nprivate pattern hide_this() {\n  `foods` => `calories`\n}\n\nor {\n  `foo` => `bar`,\n  show_this_one(),\n  hide_this()\n}"
+    body: "pattern show_this_one() {\n  `foo` => `bar`\n}\n\nprivate pattern hide_this() {\n  `foods` => `calories`\n}\n\nor {\n  `foo` => `bar`,\n  show_this_one(),\n  hide_this()\n}\n"
     level: info
     title: Markdown Pattern
     description: This is to show how to use markdown patterns.
@@ -40,7 +40,7 @@ expression: parsed
       column: 1
     raw:
       format: markdown
-      content: "# Markdown Pattern\n\nThis is to show how to use markdown patterns.\n\n```grit\npattern show_this_one() {\n  `foo` => `bar`\n}\n\nprivate pattern hide_this() {\n  `foods` => `calories`\n}\n\nor {\n  `foo` => `bar`,\n  show_this_one(),\n  hide_this()\n}\n```"
+      content: "# Markdown Pattern\n\nThis is to show how to use markdown patterns.\n\n```grit\npattern show_this_one() {\n  `foo` => `bar`\n}\n\nprivate pattern hide_this() {\n  `foods` => `calories`\n}\n\nor {\n  `foo` => `bar`,\n  show_this_one(),\n  hide_this()\n}\n```\n"
   module:
     type: Module
     host: ""
@@ -48,7 +48,7 @@ expression: parsed
     remote: ""
     providerName: ""
   localName: marky
-  body: "pattern show_this_one() {\n  `foo` => `bar`\n}\n\nprivate pattern hide_this() {\n  `foods` => `calories`\n}\n\nor {\n  `foo` => `bar`,\n  show_this_one(),\n  hide_this()\n}"
+  body: "pattern show_this_one() {\n  `foo` => `bar`\n}\n\nprivate pattern hide_this() {\n  `foods` => `calories`\n}\n\nor {\n  `foo` => `bar`,\n  show_this_one(),\n  hide_this()\n}\n"
   kind: pattern
   language: js
   visibility: public

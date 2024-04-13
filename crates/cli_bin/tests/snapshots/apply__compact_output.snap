@@ -1,11 +1,9 @@
 ---
-source: apps/marzano/cli/tests/apply.rs
-expression: content
+source: crates/cli_bin/tests/apply.rs
+expression: sorted_content
 ---
-./small.ts:4:15 - matched
-./small.ts:6:17 - matched
-./small.ts:13:10 - matched
-
+./big.ts:107:25 - matched
+./big.ts:109:71 - matched
 ./big.ts:14:39 - matched
 ./big.ts:18:19 - matched
 ./big.ts:24:17 - matched
@@ -14,8 +12,7 @@ expression: content
 ./big.ts:40:20 - matched
 ./big.ts:52:20 - matched
 ./big.ts:71:71 - matched
-./big.ts:107:25 - matched
-./big.ts:109:71 - matched
-
+./small.ts:13:10 - matched
+./small.ts:4:15 - matched
+./small.ts:6:17 - matched
 Processed 2 files and found 2 matches
-
