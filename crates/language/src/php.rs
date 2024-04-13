@@ -1,8 +1,13 @@
-use lazy_static::lazy_static;
 use regex::Regex;
 use std::sync::OnceLock;
 
-use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
+use crate::{
+    language::{
+        fields_for_nodes, Field, Language, SortId, TSLanguage
+    }, xscript_util::{
+        php_like_exact_variable_regex, php_like_metavariable_bracket_regex, php_like_metavariable_prefix, php_like_metavariable_regex, PHP_CODE_SNIPPETS
+    }
+};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/php-node-types.json");
 
@@ -43,15 +48,6 @@ impl Php {
     }
 }
 
-lazy_static! {
-    pub static ref EXACT_VARIABLE_REGEX: Regex =
-        Regex::new(r"^\^([A-Za-z_][A-Za-z0-9_]*)$").unwrap();
-    pub static ref VARIABLE_REGEX: Regex =
-        Regex::new(r"\^(\.\.\.|[A-Za-z_][A-Za-z0-9_]*)").unwrap();
-    pub static ref BRACKET_VAR_REGEX: Regex =
-        Regex::new(r"\^\[([A-Za-z_][A-Za-z0-9_]*)\]").unwrap();
-}
-
 impl Language for Php {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -65,19 +61,7 @@ impl Language for Php {
         "PhpWithHTML"
     }
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[
-            ("", ""),
-            ("", ";"),
-            ("<?php ", " ?>"),
-            ("<?php ", "; ?>"),
-            ("<?php class GRIT_CLASS {", "} ?>"),
-            ("<?php class GRIT_CLASS { ", " function GRIT_FN(); } ?>"),
-            ("<?php GRIT_FN(", ") { } ?>"),
-            ("<?php $GRIT_VAR = ", "; ?>"),
-            ("<?php $GRIT_VAR = ", " ?>"),
-            ("<?php [", "]; ?>"),
-            ("<?php ", "{} ?>"),
-        ]
+        &PHP_CODE_SNIPPETS
     }
 
     fn node_types(&self) -> &[Vec<Field>] {
@@ -89,19 +73,19 @@ impl Language for Php {
     }
 
     fn metavariable_prefix(&self) -> &'static str {
-        "^"
+        php_like_metavariable_prefix()
     }
 
     fn metavariable_regex(&self) -> &'static Regex {
-        &VARIABLE_REGEX
+        php_like_metavariable_regex()
     }
 
     fn metavariable_bracket_regex(&self) -> &'static Regex {
-        &BRACKET_VAR_REGEX
+        php_like_metavariable_bracket_regex()
     }
 
     fn exact_variable_regex(&self) -> &'static Regex {
-        &EXACT_VARIABLE_REGEX
+        php_like_exact_variable_regex()
     }
 }
 
