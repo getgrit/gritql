@@ -644,4 +644,60 @@ multifile {
         assert_eq!(patterns.len(), 1);
         assert_yaml_snapshot!(patterns);
     }
+
+    #[test]
+    fn test_weird_patterns() {
+        let module = ModuleRepo::from_host_repo("github.com", "getgrit/rewriter").unwrap();
+        let rich_file = RichFile {
+            path: "CloneActivities.md".to_string(),
+            content: r#"---
+title: Oracle to PG: Dollar quote stored procedure body
+---
+
+In Postgres, function and procedure bodies need to be wrapped in $$dollar quotes$$.
+This pattern wraps a PLSQL `CREATE PROCEDURE` body in dollar quotes and adds a language specifier.
+
+```grit
+engine marzano(0.1)
+language sql
+
+pattern dollar_quote_procedure_body() {
+`CREATE PROCEDURE $name($args) AS $decl $block;` as $proc where {
+    $block => `$$$block;\n$$ LANGUAGE plpgsql`,
+    $decl => `DECLARE\n $decl`
+    }
+}
+dollar_quote_procedure_body()
+```
+
+## Basic procedure
+
+```sql
+CREATE PROCEDURE remove_emp (employee_id int) AS
+    tot_emps int;
+    BEGIN
+        DELETE FROM employees
+        WHERE employees.employee_id = remove_emp.employee_id;
+    tot_emps := tot_emps - 1;
+    END;
+```
+
+```sql
+CREATE PROCEDURE remove_emp (employee_id int) AS
+    DECLARE
+    tot_emps int;
+    $$BEGIN
+        DELETE FROM employees
+        WHERE employees.employee_id = remove_emp.employee_id;
+    tot_emps := tot_emps - 1;
+    END;
+$$ LANGUAGE plpgsql;
+```
+"#
+            .to_string(),
+        };
+        let patterns = get_patterns_from_md(&rich_file, &Some(module), &None).unwrap();
+        assert_eq!(patterns.len(), 1);
+        assert_yaml_snapshot!(patterns);
+    }
 }
