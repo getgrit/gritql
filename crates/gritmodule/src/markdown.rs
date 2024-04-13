@@ -4,7 +4,7 @@ use marzano_core::parse::make_grit_parser;
 use marzano_language::language::Language as _;
 use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::node_with_source::NodeWithSource;
-use marzano_util::position::{Position, Range};
+use marzano_util::position::Position;
 use marzano_util::rich_path::RichFile;
 use std::fs::OpenOptions;
 use std::io::{Read, Seek, Write};
@@ -19,7 +19,6 @@ use crate::{
     parser::extract_relative_file_path,
     utils::is_pattern_name,
 };
-use grit_util::AstCursor as _;
 
 use anyhow::{anyhow, bail, Context, Result};
 use marzano_core::api::EnforcementLevel;
@@ -45,8 +44,6 @@ struct MarkdownBody {
 }
 
 pub fn make_md_parser() -> Result<Parser> {
-    use anyhow::Context;
-
     let mut parser = Parser::new().unwrap();
     let language = marzano_language::markdown_block::MarkdownBlock::new(None);
     parser
@@ -647,7 +644,7 @@ jobs:
 "#
             .to_string(),
         };
-        let mut patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
+        let patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
         assert_eq!(patterns.len(), 1);
         println!("{:?}", patterns);
         let sample_input = &patterns[0].config.samples.as_ref().unwrap()[0].input;
