@@ -280,100 +280,101 @@ js\"hello world\"
 }
 
 pub fn replace_sample_in_md_file(sample: &GritPatternSample, file_path: &String) -> Result<()> {
-    let mut file = OpenOptions::new().read(true).write(true).open(file_path)?;
+    todo!("This needs to be implemented");
+    // let mut file = OpenOptions::new().read(true).write(true).open(file_path)?;
 
-    let mut content = String::new();
-    file.read_to_string(&mut content)?;
+    // let mut content = String::new();
+    // file.read_to_string(&mut content)?;
 
-    let content_clone = content.clone();
-    let source_lines: Vec<&str> = content_clone.split('\n').collect();
+    // let content_clone = content.clone();
+    // let source_lines: Vec<&str> = content_clone.split('\n').collect();
 
-    let tree = match to_mdast(&content, &ParseOptions::default()) {
-        Ok(tree) => tree,
-        Err(e) => bail!("Failed to parse markdown source: {}", e),
-    };
+    // let tree = match to_mdast(&content, &ParseOptions::default()) {
+    //     Ok(tree) => tree,
+    //     Err(e) => bail!("Failed to parse markdown source: {}", e),
+    // };
 
-    let snippet = match parse_md_snippet(&tree) {
-        Some(snippet) => snippet,
-        None => bail!("Failed to parse markdown source"),
-    };
+    // let snippet = match parse_md_snippet(&tree) {
+    //     Some(snippet) => snippet,
+    //     None => bail!("Failed to parse markdown source"),
+    // };
 
-    let snippet_index = tree
-        .children()
-        .unwrap()
-        .iter()
-        .position(|node| *node == *snippet)
-        .unwrap();
+    // let snippet_index = tree
+    //     .children()
+    //     .unwrap()
+    //     .iter()
+    //     .position(|node| *node == *snippet)
+    //     .unwrap();
 
-    let children = match tree.children() {
-        Some(children) => children,
-        None => bail!("Failed to parse markdown source"),
-    };
+    // let children = match tree.children() {
+    //     Some(children) => children,
+    //     None => bail!("Failed to parse markdown source"),
+    // };
 
-    let config_samples = children.iter().skip(snippet_index).collect::<Vec<&Node>>();
+    // let config_samples = children.iter().skip(snippet_index).collect::<Vec<&Node>>();
 
-    let mut found_subheading = false;
-    let mut code_blocks_replaced = 0;
+    // let mut found_subheading = false;
+    // let mut code_blocks_replaced = 0;
 
-    for node in config_samples.iter() {
-        match node {
-            Node::Heading(heading) if heading.depth == 2 => {
-                let content_line = match node.position() {
-                    Some(position) => position.start.line,
-                    None => {
-                        continue;
-                    }
-                };
-                let heading_content = source_lines
-                    .get(content_line - 1)
-                    .unwrap()
-                    .trim_start_matches('#')
-                    .trim();
+    // for node in config_samples.iter() {
+    //     match node {
+    //         Node::Heading(heading) if heading.depth == 2 => {
+    //             let content_line = match node.position() {
+    //                 Some(position) => position.start.line,
+    //                 None => {
+    //                     continue;
+    //                 }
+    //             };
+    //             let heading_content = source_lines
+    //                 .get(content_line - 1)
+    //                 .unwrap()
+    //                 .trim_start_matches('#')
+    //                 .trim();
 
-                if let Some(sample_name) = &sample.name {
-                    if heading_content == sample_name.as_str() {
-                        found_subheading = true;
-                    }
-                }
-            }
-            Node::Code(code) if found_subheading => {
-                code_blocks_replaced += 1;
-                if code_blocks_replaced == 1 {
-                    let start_line = match &code.position {
-                        Some(position) => position.start.line,
-                        None => bail!("Failed to get start line"),
-                    };
-                    let end_line = match &code.position {
-                        Some(position) => position.end.line,
-                        None => bail!("Failed to get end line"),
-                    };
-                    let start = source_lines[..start_line].join("\n").len() + 1;
-                    let end = source_lines[..(end_line - 1)].join("\n").len();
-                    content.replace_range(start..end, &sample.input);
-                } else if code_blocks_replaced == 2 && sample.output.is_some() {
-                    let start_line = match &code.position {
-                        Some(position) => position.start.line,
-                        None => bail!("Failed to get start line"),
-                    };
-                    let end_line = match &code.position {
-                        Some(position) => position.end.line,
-                        None => bail!("Failed to get end line"),
-                    };
-                    let start = source_lines[..start_line].join("\n").len() + 1;
-                    let end = source_lines[..(end_line - 1)].join("\n").len();
-                    content.replace_range(start..end, sample.output.as_ref().unwrap());
-                    found_subheading = false;
-                }
-            }
-            _ => {}
-        }
-    }
+    //             if let Some(sample_name) = &sample.name {
+    //                 if heading_content == sample_name.as_str() {
+    //                     found_subheading = true;
+    //                 }
+    //             }
+    //         }
+    //         Node::Code(code) if found_subheading => {
+    //             code_blocks_replaced += 1;
+    //             if code_blocks_replaced == 1 {
+    //                 let start_line = match &code.position {
+    //                     Some(position) => position.start.line,
+    //                     None => bail!("Failed to get start line"),
+    //                 };
+    //                 let end_line = match &code.position {
+    //                     Some(position) => position.end.line,
+    //                     None => bail!("Failed to get end line"),
+    //                 };
+    //                 let start = source_lines[..start_line].join("\n").len() + 1;
+    //                 let end = source_lines[..(end_line - 1)].join("\n").len();
+    //                 content.replace_range(start..end, &sample.input);
+    //             } else if code_blocks_replaced == 2 && sample.output.is_some() {
+    //                 let start_line = match &code.position {
+    //                     Some(position) => position.start.line,
+    //                     None => bail!("Failed to get start line"),
+    //                 };
+    //                 let end_line = match &code.position {
+    //                     Some(position) => position.end.line,
+    //                     None => bail!("Failed to get end line"),
+    //                 };
+    //                 let start = source_lines[..start_line].join("\n").len() + 1;
+    //                 let end = source_lines[..(end_line - 1)].join("\n").len();
+    //                 content.replace_range(start..end, sample.output.as_ref().unwrap());
+    //                 found_subheading = false;
+    //             }
+    //         }
+    //         _ => {}
+    //     }
+    // }
 
-    file.seek(SeekFrom::Start(0))?;
-    file.write_all(content.as_bytes())?;
-    file.set_len(content.len() as u64)?;
+    // file.seek(SeekFrom::Start(0))?;
+    // file.write_all(content.as_bytes())?;
+    // file.set_len(content.len() as u64)?;
 
-    Ok(())
+    // Ok(())
 }
 
 pub fn get_patterns_from_md(
@@ -504,6 +505,94 @@ function isTruthy(x) {
 }
 ```
 "#.to_string()};
+        let patterns = get_patterns_from_md(&rich_file, &module, &None).unwrap();
+        assert_eq!(patterns.len(), 1);
+        println!("{:?}", patterns);
+        assert_yaml_snapshot!(patterns);
+    }
+
+    #[test]
+    fn test_multiple_markdown_patterns() {
+        let module = Default::default();
+        let rich_file = RichFile {
+            path: "no_debugger.md".to_string(),
+            content: r#"
+This is a single Markdown file with multiple grit patterns.
+
+## Pattern one
+
+```grit
+engine marzano(0.1)
+language js
+
+debugger_statement() => .
+```
+
+Example:
+
+```javascript
+function isTruthy(x) {
+  debugger;
+  return Boolean(x);
+}
+```
+
+```typescript
+function isTruthy(x) {
+  return Boolean(x);
+}
+
+### Test case 2
+
+```javascript
+function isTruthy(x) {
+  debugger;
+  return Boolean(x);
+}
+```
+
+```typescript
+function isTruthy(x) {
+  return Boolean(x);
+}
+
+
+## Pattern two
+
+```grit
+engine marzano(0.1)
+language js
+
+`console.log($_)` => .
+```
+
+### Test case 3 - non matching.
+
+```javascript
+function isTruthy(x) {
+  console.error("Hello");
+  return Boolean(x);
+}
+```
+
+### Test case 4
+
+```javascript
+function isTruthy(x) {
+  console.log("Hello");
+  return Boolean(x);
+}
+```
+
+```typescript
+function isTruthy(x) {
+  return Boolean(x);
+}
+
+```
+"#
+            .to_string(),
+        };
         let patterns = get_patterns_from_md(&rich_file, &module, &None).unwrap();
         assert_eq!(patterns.len(), 1);
         println!("{:?}", patterns);
