@@ -1,4 +1,4 @@
-use super::{FileOwner, InputRanges, Problem};
+use crate::problem::{FileOwner, InputRanges, Problem};
 use crate::{fs, tree_sitter_serde::tree_sitter_node_to_json};
 use anyhow::{bail, Result};
 use im::Vector;

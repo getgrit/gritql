@@ -21,6 +21,18 @@ pub type SortId = u16;
 pub type FieldId = u16;
 
 #[derive(Debug, Clone)]
+pub struct Replacement {
+    pub range: Range,
+    pub replacement: &'static str,
+}
+
+impl Replacement {
+    pub fn new(range: Range, replacement: &'static str) -> Self {
+        Self { range, replacement }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub(crate) struct LeafNormalizer {
     sort: SortId,
     normalizer: fn(&str) -> Option<&str>,
@@ -297,7 +309,10 @@ pub trait Language {
 
     fn metavariable_sort(&self) -> SortId;
 
-    fn check_orphaned(&self, _n: NodeWithSource<'_>, _orphan_ranges: &mut Vec<Range>) {}
+    /// Check for nodes that should be removed or replaced
+    /// This is used to "repair" the program after rewriting, such as by deleting orphaned ranges (like a variable declaration without any variables)
+    /// If the node should be removed, add range with a None value, if the node should be replaced, add a range with the replacement value
+    fn check_replacements(&self, _n: NodeWithSource<'_>, _replacements: &mut Vec<Replacement>) {}
 
     fn get_equivalence_class(
         &self,

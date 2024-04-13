@@ -1,5 +1,8 @@
-use anyhow::{Result, anyhow};
-use marzano_core::{fs::extract_ranges, pattern::api::{make_suppress_comment, MatchResult}};
+use anyhow::{anyhow, Result};
+use marzano_core::{
+    api::{make_suppress_comment, MatchResult},
+    fs::extract_ranges,
+};
 use marzano_language::target_language::{PatternLanguage, TargetLanguage};
 use tower_lsp::lsp_types::{
     self, CodeAction, CodeActionKind, CodeActionOrCommand, Command, DocumentChanges, OneOf,
@@ -31,7 +34,7 @@ pub fn get_code_actions(
 
     for (pattern, pattern_result) in pattern_results {
         for result in pattern_result {
-            if let MatchResult::Rewrite(_) = result {
+            if matches!(result, MatchResult::Match(_) | MatchResult::Rewrite(_)) {
                 let ranges = extract_ranges(&result).cloned().unwrap_or_default();
                 let intersecting_ranges = ranges
                     .iter()
@@ -39,27 +42,29 @@ pub fn get_code_actions(
                     .filter(|r| check_intersection(r, &lsp_range));
                 for range in intersecting_ranges {
                     let local_name = &pattern.name();
-                    let title = format!("Apply {}", local_name);
-                    let body = &pattern.body;
-                    let language = &pattern.language;
-                    let command = Command::new(
-                        title.clone(),
-                        LspCommand::ApplyResult.to_string(),
-                        Some(vec![
-                            serde_json::Value::String(document.uri.to_string()),
-                            serde_json::Value::String(body.to_string()),
-                            serde_json::Value::String(language.to_string()),
-                            serde_json::to_value(range).unwrap(),
-                        ]),
-                    );
-                    let apply_action = CodeAction {
-                        title,
-                        kind: Some(CodeActionKind::QUICKFIX),
-                        command: Some(command),
-                        ..Default::default()
-                    };
+                    if matches!(result, MatchResult::Rewrite(_)) {
+                        let title = format!("Apply {}", local_name);
+                        let body = &pattern.body;
+                        let language = &pattern.language;
+                        let command = Command::new(
+                            title.clone(),
+                            LspCommand::ApplyResult.to_string(),
+                            Some(vec![
+                                serde_json::Value::String(document.uri.to_string()),
+                                serde_json::Value::String(body.to_string()),
+                                serde_json::Value::String(language.to_string()),
+                                serde_json::to_value(range).unwrap(),
+                            ]),
+                        );
+                        let apply_action = CodeAction {
+                            title,
+                            kind: Some(CodeActionKind::QUICKFIX),
+                            command: Some(command),
+                            ..Default::default()
+                        };
+                        code_actions.push(CodeActionOrCommand::CodeAction(apply_action));
+                    }
                     let suppress_action = make_suppress_action(&document, &range, local_name)?;
-                    code_actions.push(CodeActionOrCommand::CodeAction(apply_action));
                     code_actions.push(CodeActionOrCommand::CodeAction(suppress_action));
                 }
             }
@@ -74,14 +79,20 @@ fn make_suppress_action(
     range: &Range,
     local_name: &str,
 ) -> Result<CodeAction> {
-    let language = language_id_to_pattern_language(&document.language_id).unwrap_or(PatternLanguage::JavaScript);
-    let target_language = TargetLanguage::try_from(language).map_err(|_| anyhow!("Invalid language"))?;
+    let language = language_id_to_pattern_language(&document.language_id)
+        .unwrap_or(PatternLanguage::JavaScript);
+    let target_language =
+        TargetLanguage::try_from(language).map_err(|_| anyhow!("Invalid language"))?;
     let insert_text = make_suppress_comment(Some(local_name), &target_language);
     let whitespace = document
         .text
         .lines()
         .nth(range.start.line as usize)
-        .map(|line| line.chars().take_while(|c| c.is_whitespace()).collect::<String>())
+        .map(|line| {
+            line.chars()
+                .take_while(|c| c.is_whitespace())
+                .collect::<String>()
+        })
         .unwrap_or_default();
     let insert_text = format!("{}{}", whitespace, insert_text);
     let text_edit = TextEdit {

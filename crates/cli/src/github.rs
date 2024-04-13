@@ -4,7 +4,7 @@ use std::io::prelude::*;
 use anyhow::{Context as _, Result};
 
 use log::info;
-use marzano_core::{fs::extract_ranges, pattern::api::EnforcementLevel};
+use marzano_core::{api::EnforcementLevel, fs::extract_ranges};
 use marzano_gritmodule::config::ResolvedGritDefinition;
 use marzano_gritmodule::utils::extract_path;
 use marzano_util::position::Range;

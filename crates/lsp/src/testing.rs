@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use marzano_core::{
-    parse::make_grit_parser, pattern::api::MatchResult, pattern_compiler::src_to_problem_libs,
+    api::MatchResult, parse::make_grit_parser, pattern_compiler::src_to_problem_libs,
 };
 use marzano_gritmodule::{
     markdown::get_patterns_from_md,
@@ -115,6 +115,7 @@ pub async fn maybe_test_pattern(
         Some(our_pattern.local_name.to_string()),
         None,
         get_ai_built_in_functions_for_feature(),
+        None
     ) {
         Ok(p) => {
             client

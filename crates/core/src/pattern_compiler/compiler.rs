@@ -9,22 +9,23 @@ use super::{
     NodeCompiler,
 };
 use crate::{
+    analysis::{has_limit, is_multifile},
     parse::make_grit_parser,
     pattern::{
-        analysis::{has_limit, is_multifile},
         built_in_functions::BuiltIns,
         constants::{
             ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
         },
         function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
         pattern_definition::PatternDefinition,
-        patterns::Pattern,
         predicate_definition::PredicateDefinition,
         variable::VariableSourceLocations,
-        Problem, VariableLocations,
+        VariableLocations,
     },
+    problem::Problem,
 };
 use anyhow::{anyhow, bail, Result};
+use grit_util::AstNode;
 use grit_util::{traverse, Order};
 use itertools::Itertools;
 use marzano_language::{self, target_language::TargetLanguage};
@@ -47,7 +48,6 @@ use tree_sitter::{Node, Parser, Tree};
 use tracing::instrument;
 
 pub(crate) struct CompilationContext<'a> {
-    pub src: &'a str,
     pub file: &'a str,
     pub built_ins: &'a BuiltIns,
     pub lang: &'a TargetLanguage,
@@ -149,20 +149,17 @@ fn get_duplicates(list: &[(String, Range)]) -> Vec<&String> {
 // errors only refer to pattern, but could also be predicate
 fn insert_definition_index(
     indices: &mut BTreeMap<String, DefinitionInfo>,
-    definition: Node,
+    definition: NodeWithSource,
     index: &mut usize,
-    src: &[u8],
 ) -> Result<()> {
     let name = definition
         .child_by_field_name("name")
         .ok_or_else(|| anyhow!("missing name of patternDefinition"))?;
-    let name = name.utf8_text(src)?;
-    let name = name.trim();
-    let parameters = definition
-        .children_by_field_name("args", &mut definition.walk())
-        .filter(|n| n.is_named())
-        .map(|n| Ok((n.utf8_text(src)?.trim().to_string(), n.range().into())))
-        .collect::<Result<Vec<(String, Range)>>>()?;
+    let name = name.text().trim();
+    let parameters: Vec<_> = definition
+        .named_children_by_field_name("args")
+        .map(|n| (n.text().trim().to_string(), n.range()))
+        .collect();
     let duplicates = get_duplicates(&parameters);
     if !duplicates.is_empty() {
         bail!(
@@ -187,8 +184,7 @@ fn insert_definition_index(
 
 #[allow(clippy::too_many_arguments)]
 fn node_to_definition_info(
-    node: &Node,
-    src: &[u8],
+    node: &NodeWithSource,
     pattern_indices: &mut BTreeMap<String, DefinitionInfo>,
     pattern_index: &mut usize,
     predicate_indices: &mut BTreeMap<String, DefinitionInfo>,
@@ -198,28 +194,18 @@ fn node_to_definition_info(
     foreign_function_indices: &mut BTreeMap<String, DefinitionInfo>,
     foreign_function_index: &mut usize,
 ) -> Result<()> {
-    let mut cursor = node.walk();
-    for definition in node
-        .children_by_field_name("definitions", &mut cursor)
-        .filter(|n| n.is_named())
-    {
+    for definition in node.named_children_by_field_name("definitions") {
         if let Some(pattern_definition) = definition.child_by_field_name("pattern") {
-            insert_definition_index(pattern_indices, pattern_definition, pattern_index, src)?;
+            insert_definition_index(pattern_indices, pattern_definition, pattern_index)?;
         } else if let Some(predicate_definition) = definition.child_by_field_name("predicate") {
-            insert_definition_index(
-                predicate_indices,
-                predicate_definition,
-                predicate_index,
-                src,
-            )?;
+            insert_definition_index(predicate_indices, predicate_definition, predicate_index)?;
         } else if let Some(function_definition) = definition.child_by_field_name("function") {
-            insert_definition_index(function_indices, function_definition, function_index, src)?;
+            insert_definition_index(function_indices, function_definition, function_index)?;
         } else if let Some(foreign_definition) = definition.child_by_field_name("foreign") {
             insert_definition_index(
                 foreign_function_indices,
                 foreign_definition,
                 foreign_function_index,
-                src,
             )?;
         } else {
             bail!("definition must be either a pattern, a predicate or a function");
@@ -242,8 +228,7 @@ struct DefinitionInfoKinds {
 
 fn get_definition_info(
     libs: &[(String, String)],
-    source_file: &Node,
-    src: &str,
+    root: &NodeWithSource,
     parser: &mut Parser,
 ) -> Result<DefinitionInfoKinds> {
     let mut pattern_indices: BTreeMap<String, DefinitionInfo> = BTreeMap::new();
@@ -256,10 +241,9 @@ fn get_definition_info(
     let mut foreign_function_index = 0;
     for (file, pattern) in libs.iter() {
         let tree = parse_one(parser, pattern, file)?;
-        let node = tree.root_node();
+        let root = NodeWithSource::new(tree.root_node(), pattern);
         node_to_definition_info(
-            &node,
-            pattern.as_bytes(),
+            &root,
             &mut pattern_indices,
             &mut pattern_index,
             &mut predicate_indices,
@@ -269,7 +253,7 @@ fn get_definition_info(
             &mut foreign_function_indices,
             &mut foreign_function_index,
         )?;
-        if node.child_by_field_name("pattern").is_some() {
+        if root.child_by_field_name("pattern").is_some() {
             let path = Path::new(file);
             if let Some(name) = path.file_stem().and_then(|n| n.to_str()) {
                 let info = DefinitionInfo {
@@ -289,8 +273,7 @@ fn get_definition_info(
         }
     }
     node_to_definition_info(
-        source_file,
-        src.as_bytes(),
+        root,
         &mut pattern_indices,
         &mut pattern_index,
         &mut predicate_indices,
@@ -308,7 +291,6 @@ fn get_definition_info(
     })
 }
 
-#[allow(clippy::too_many_arguments)]
 fn node_to_definitions(
     node: NodeWithSource,
     context: &mut NodeCompilationContext,
@@ -382,11 +364,7 @@ fn get_definitions(
 
     for (file, pattern) in libs.iter() {
         let mut node_context = NodeCompilationContext {
-            compilation: &CompilationContext {
-                src: pattern,
-                file,
-                ..*context
-            },
+            compilation: &CompilationContext { file, ..*context },
             // We're not in a local scope yet, so this map is kinda useless.
             // It's just there because all node compilers expect one.
             vars: &mut BTreeMap::new(),
@@ -675,6 +653,7 @@ pub fn src_to_problem_libs(
     name: Option<String>,
     file_ranges: Option<Vec<FileRange>>,
     custom_built_ins: Option<BuiltIns>,
+    injected_limit: Option<usize>,
 ) -> Result<CompilationResult> {
     let mut parser = make_grit_parser()?;
     let src_tree = parse_one(&mut parser, &src, DEFAULT_FILE_NAME)?;
@@ -687,9 +666,11 @@ pub fn src_to_problem_libs(
         file_ranges,
         &mut parser,
         custom_built_ins,
+        injected_limit,
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn src_to_problem_libs_for_language(
     src: String,
     libs: &BTreeMap<String, String>,
@@ -698,6 +679,7 @@ pub fn src_to_problem_libs_for_language(
     file_ranges: Option<Vec<FileRange>>,
     grit_parser: &mut Parser,
     custom_built_ins: Option<BuiltIns>,
+    injected_limit: Option<usize>,
 ) -> Result<CompilationResult> {
     if src == "." {
         let error = ". never matches and should not be used as a pattern. Did you mean to run 'grit apply <pattern> .'?";
@@ -705,7 +687,7 @@ pub fn src_to_problem_libs_for_language(
     }
     let src_tree = parse_one(grit_parser, &src, DEFAULT_FILE_NAME)?;
 
-    let source_file = src_tree.root_node();
+    let root = NodeWithSource::new(src_tree.root_node(), &src);
     let mut built_ins = BuiltIns::get_built_in_functions();
     if let Some(custom_built_ins) = custom_built_ins {
         built_ins.extend_builtins(custom_built_ins)?;
@@ -717,18 +699,17 @@ pub fn src_to_problem_libs_for_language(
         ("$program".to_owned(), PROGRAM_INDEX),
         ("$absolute_filename".to_owned(), ABSOLUTE_PATH_INDEX),
     ]);
-    let is_multifile = is_multifile(&source_file, &src, libs, grit_parser)?;
-    let has_limit = has_limit(&source_file, &src, libs, grit_parser)?;
+    let is_multifile = is_multifile(&root, libs, grit_parser)?;
+    let has_limit = has_limit(&root, libs, grit_parser)?;
     let libs = filter_libs(libs, &src, grit_parser, !is_multifile)?;
     let DefinitionInfoKinds {
         pattern_indices: pattern_definition_indices,
         predicate_indices: predicate_definition_indices,
         function_indices: function_definition_indices,
         foreign_function_indices,
-    } = get_definition_info(&libs, &source_file, &src, grit_parser)?;
+    } = get_definition_info(&libs, &root, grit_parser)?;
 
     let context = CompilationContext {
-        src: &src,
         file: DEFAULT_FILE_NAME,
         built_ins: &built_ins,
         lang: &lang,
@@ -746,7 +727,7 @@ pub fn src_to_problem_libs_for_language(
         foreign_function_definitions,
     } = get_definitions(
         &libs,
-        &NodeWithSource::new(source_file.clone(), &src),
+        &root,
         grit_parser,
         &context,
         &mut global_vars,
@@ -755,25 +736,6 @@ pub fn src_to_problem_libs_for_language(
     let scope_index = vars_array.len();
     vars_array.push(vec![]);
     let mut vars = BTreeMap::new();
-
-    let pattern = if let Some(node) = source_file.child_by_field_name("pattern") {
-        Pattern::from_node(
-            &node,
-            &context,
-            &mut vars,
-            &mut vars_array,
-            scope_index,
-            &mut global_vars,
-            false,
-            &mut logs,
-        )?
-    } else {
-        let long_message = "No pattern found.
-        If you have written a pattern definition in the form `pattern myPattern() {{ }}`,
-        try calling it by adding `myPattern()` to the end of your file.
-        Check out the docs at https://docs.grit.io for help with writing patterns.";
-        bail!("{}", long_message);
-    };
 
     let mut node_context = NodeCompilationContext {
         compilation: &context,
@@ -784,12 +746,23 @@ pub fn src_to_problem_libs_for_language(
         logs: &mut logs,
     };
 
+    let pattern = if let Some(node) = root.child_by_field_name("pattern") {
+        PatternCompiler::from_node(&node, &mut node_context)?
+    } else {
+        let long_message = "No pattern found.
+        If you have written a pattern definition in the form `pattern myPattern() {{ }}`,
+        try calling it by adding `myPattern()` to the end of your file.
+        Check out the docs at https://docs.grit.io for help with writing patterns.";
+        bail!("{}", long_message);
+    };
+
     let pattern = auto_wrap_pattern(
         pattern,
         &mut pattern_definitions,
         !is_multifile,
         file_ranges,
         &mut node_context,
+        injected_limit,
     )?;
 
     let problem = Problem::new(
@@ -844,6 +817,7 @@ mod tests {
             pattern,
             &libs,
             PatternLanguage::JavaScript.try_into().unwrap(),
+            None,
             None,
             None,
             None,

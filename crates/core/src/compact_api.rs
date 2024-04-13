@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::pattern::api::{
+use crate::api::{
     AllDone, AnalysisLog, CreateFile, DoneFile, EntireFile, InputFile, Match, MatchResult,
     PatternInfo, RemoveFile, Rewrite, RewriteReason,
 };

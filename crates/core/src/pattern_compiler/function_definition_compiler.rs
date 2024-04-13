@@ -35,11 +35,7 @@ impl NodeCompiler for GritFunctionDefinitionCompiler {
                 .get(name)
                 .ok_or_else(|| anyhow!("cannot get info for function {}", name))?
                 .parameters,
-            local_context.compilation.file,
-            local_context.vars_array,
-            scope_index,
-            local_context.vars,
-            local_context.global_vars,
+            &mut local_context,
         )?;
 
         let body = node
@@ -72,7 +68,7 @@ impl NodeCompiler for ForeignFunctionDefinitionCompiler {
             .ok_or_else(|| anyhow!("missing name of function definition"))?;
         let name = name.text().trim();
         let mut local_vars = BTreeMap::new();
-        let (scope_index, local_context) = create_scope!(context, local_vars);
+        let (scope_index, mut local_context) = create_scope!(context, local_vars);
         let params = get_variables(
             &context
                 .compilation
@@ -80,11 +76,7 @@ impl NodeCompiler for ForeignFunctionDefinitionCompiler {
                 .get(name)
                 .ok_or_else(|| anyhow!("cannot get info for function {}", name))?
                 .parameters,
-            local_context.compilation.file,
-            local_context.vars_array,
-            scope_index,
-            local_context.vars,
-            local_context.global_vars,
+            &mut local_context,
         )?;
         let body = node
             .child_by_field_name("body")

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use marzano_core::pattern::api::MatchResult;
+use marzano_core::api::MatchResult;
 use marzano_core::pattern_compiler::src_to_problem_libs;
 use marzano_gritmodule::patterns_directory::PatternsDirectory;
 use marzano_language::target_language::PatternLanguage;
@@ -77,6 +77,7 @@ pub async fn apply_pattern_body(
             }]
         }),
         get_ai_built_in_functions_for_feature(),
+        None
     ) {
         Ok(p) => p,
         Err(e) => {

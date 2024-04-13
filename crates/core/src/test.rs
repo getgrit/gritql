@@ -1,5 +1,6 @@
 use crate::pattern_compiler::src_to_problem_libs;
 use anyhow::{anyhow, Context, Result};
+use api::MatchResult;
 use insta::{assert_debug_snapshot, assert_snapshot, assert_yaml_snapshot};
 use lazy_static::lazy_static;
 use marzano_auth::testing::get_testing_auth_info;
@@ -8,8 +9,7 @@ use marzano_language::target_language::{PatternLanguage, TargetLanguage};
 use marzano_util::position::{Range, VariableMatch};
 use marzano_util::rich_path::RichFile;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
-use pattern::api::MatchResult;
-use pattern::Problem;
+use problem::Problem;
 use similar::{ChangeTag, TextDiff};
 use std::collections::{BTreeMap, HashMap};
 use std::{env, path::Path, path::PathBuf};
@@ -23,7 +23,7 @@ use super::*;
 
 pub fn src_to_problem(src: String, default_lang: TargetLanguage) -> Result<Problem> {
     let libs = BTreeMap::new();
-    src_to_problem_libs(src, &libs, default_lang, None, None, None).map(|cr| cr.problem)
+    src_to_problem_libs(src, &libs, default_lang, None, None, None, None).map(|cr| cr.problem)
 }
 
 // #[deprecated(note = "remove after migrating tests to MatchResult")]
@@ -97,7 +97,7 @@ fn match_pattern_libs(
     let default_context = ExecutionContext::default();
     let context = TEST_EXECUTION_CONTEXT.as_ref().unwrap_or(&default_context);
 
-    let pattern = src_to_problem_libs(pattern, libs, default_language, None, None, None)?.problem;
+    let pattern = src_to_problem_libs(pattern, libs, default_language, None, None, None, None)?.problem;
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), src.to_owned()), context);
     let mut execution_result = ExecutionResult {
         input_file_debug_text: "".to_string(),
@@ -424,7 +424,7 @@ fn test_compile_time_logging() {
     .to_string();
     let libs = BTreeMap::new();
     let default_language = PatternLanguage::Tsx.try_into().unwrap();
-    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None).unwrap();
+    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
     let res = format!("{:?}", pattern.compilation_warnings);
     assert_snapshot!(res);
 }
@@ -439,7 +439,7 @@ fn warns_against_snippet_useless_rewrite() {
     .to_string();
     let libs = BTreeMap::new();
     let default_language = PatternLanguage::Tsx.try_into().unwrap();
-    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None).unwrap();
+    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
     let res = format!("{:?}", pattern.compilation_warnings);
     assert_snapshot!(res);
 }
@@ -456,7 +456,7 @@ fn does_not_warn_against_regular_snippet_rewrite() {
     .to_string();
     let libs = BTreeMap::new();
     let default_language = PatternLanguage::Tsx.try_into().unwrap();
-    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None).unwrap();
+    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
     assert!(pattern.compilation_warnings.is_empty())
 }
 
@@ -470,7 +470,7 @@ fn warns_against_snippet_regex_without_metavars() {
     .to_string();
     let libs = BTreeMap::new();
     let default_language = PatternLanguage::Tsx.try_into().unwrap();
-    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None).unwrap();
+    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
     let res = format!("{:?}", pattern.compilation_warnings);
     assert_snapshot!(res);
 }
@@ -486,7 +486,7 @@ fn does_not_warn_against_snippet_regex_with_metavars() {
     .to_string();
     let libs = BTreeMap::new();
     let default_language = PatternLanguage::Tsx.try_into().unwrap();
-    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None).unwrap();
+    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
     assert!(pattern.compilation_warnings.is_empty())
 }
 
@@ -3264,7 +3264,7 @@ fn warning_rewrite_in_not() {
 
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let libs = BTreeMap::new();
-    let cr = src_to_problem_libs(pattern, &libs, js_lang, None, None, None).unwrap();
+    let cr = src_to_problem_libs(pattern, &libs, js_lang, None, None, None, None).unwrap();
     assert_debug_snapshot!(cr.compilation_warnings)
 }
 
@@ -7961,6 +7961,37 @@ fn multiply_decimals() {
 }
 
 #[test]
+fn js_repair_orphaned_arrow() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |`console.$_($_)` => .
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |const fn = () => console.log();
+                |const fnTwo = () => { console.log(); };
+                |const fnBob = () => { alert(); }
+                |"#
+            .trim_margin()
+            .unwrap(),
+            // Biome will handle formatting
+            expected: r#"
+                |const fn = () =>{} ;
+                |const fnTwo = () => {  };
+                |const fnBob = () => { alert(); }
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn python_removes_orphaned_type_arrow() {
     run_test_expected({
         TestArgExpected {
@@ -8316,7 +8347,7 @@ fn distinct_on_primitives() {
 fn correct_variable_index() {
     let pattern = "`function () { $body }`".to_owned();
     let tsx: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
-    let _pattern = src_to_problem_libs(pattern, &BTreeMap::new(), tsx, None, None, None).unwrap();
+    let _pattern = src_to_problem_libs(pattern, &BTreeMap::new(), tsx, None, None, None, None).unwrap();
 }
 
 #[test]

@@ -1,8 +1,6 @@
 use marzano_core::{
-    pattern::{
-        api::{AnalysisLog, InputFile, MatchResult, PatternInfo},
-        built_in_functions::BuiltIns,
-    },
+    api::{AnalysisLog, InputFile, MatchResult, PatternInfo},
+    pattern::built_in_functions::BuiltIns,
     pattern_compiler::{src_to_problem_libs_for_language, CompilationResult},
     tree_sitter_serde::tree_sitter_node_to_json,
 };
@@ -108,6 +106,7 @@ pub async fn parse_input_files(
         None,
         parser,
         injected_builtins,
+        None
     ) {
         Ok(c) => {
             let warning_logs = c
@@ -231,6 +230,7 @@ pub async fn match_pattern(
         None,
         parser,
         injected_builtins,
+        None
     ) {
         Ok(c) => c,
         Err(e) => {

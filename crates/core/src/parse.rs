@@ -1,4 +1,4 @@
-use crate::pattern::api::InputFile;
+use crate::api::InputFile;
 use anyhow::Result;
 use marzano_language::target_language::TargetLanguage;
 use std::path::Path;

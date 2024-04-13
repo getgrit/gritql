@@ -1,9 +1,38 @@
-use super::{compiler::NodeCompilationContext, node_compiler::NodeCompiler};
-use crate::pattern::list::List;
-use anyhow::Result;
+use super::{
+    compiler::NodeCompilationContext, node_compiler::NodeCompiler,
+    pattern_compiler::PatternCompiler,
+};
+use crate::pattern::{list::List, patterns::Pattern};
+use anyhow::{bail, Result};
+use marzano_language::language::Field;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct ListCompiler;
+
+impl ListCompiler {
+    pub(crate) fn from_node_in_context(
+        node: &NodeWithSource,
+        context_field: &Field,
+        context: &mut NodeCompilationContext,
+        is_rhs: bool,
+    ) -> Result<Pattern> {
+        let kind = node.node.kind();
+        match kind.as_ref() {
+            "assocNode" => {
+                if !context_field.multiple() {
+                    bail!(
+                        "Field {} does not accept list patterns",
+                        context_field.name()
+                    )
+                }
+                Ok(Pattern::List(Box::new(Self::from_node_with_rhs(
+                    node, context, is_rhs,
+                )?)))
+            }
+            _ => PatternCompiler::from_node(node, context),
+        }
+    }
+}
 
 impl NodeCompiler for ListCompiler {
     type TargetPattern = List;
@@ -13,16 +42,10 @@ impl NodeCompiler for ListCompiler {
         context: &mut NodeCompilationContext,
         is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
-        // TODO: Move the List compiler logic here instead of forwarding.
-        List::from_node(
-            &node.node,
-            context.compilation,
-            context.vars,
-            context.vars_array,
-            context.scope_index,
-            context.global_vars,
-            is_rhs,
-            context.logs,
-        )
+        let patterns = node
+            .named_children_by_field_name("patterns")
+            .map(|pattern| PatternCompiler::from_node_with_rhs(&pattern, context, is_rhs))
+            .collect::<Result<Vec<_>>>()?;
+        Ok(List::new(patterns))
     }
 }

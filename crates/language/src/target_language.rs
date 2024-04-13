@@ -1,3 +1,4 @@
+use crate::language::Replacement;
 use crate::language::{GritMetaValue, LeafEquivalenceClass, SnippetTree, TSLanguage};
 use crate::{
     csharp::CSharp,

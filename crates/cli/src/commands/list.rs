@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Args;
-use marzano_core::pattern::api::EnforcementLevel;
+use marzano_core::api::EnforcementLevel;
 use marzano_language::target_language::PatternLanguage;
 use serde::Serialize;
 

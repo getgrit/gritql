@@ -1,11 +1,13 @@
-use crate::pattern::{
-    built_in_functions::CallBuiltIn,
-    function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
-    pattern_definition::PatternDefinition,
-    predicate_definition::PredicateDefinition,
-    resolved_pattern::ResolvedPattern,
-    state::State,
-    FileOwners,
+use crate::{
+    pattern::{
+        built_in_functions::CallBuiltIn,
+        function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
+        pattern_definition::PatternDefinition,
+        predicate_definition::PredicateDefinition,
+        resolved_pattern::ResolvedPattern,
+        state::State,
+    },
+    problem::FileOwners,
 };
 use anyhow::Result;
 use marzano_language::target_language::TargetLanguage;

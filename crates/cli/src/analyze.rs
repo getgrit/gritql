@@ -15,11 +15,11 @@ use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 
 #[allow(unused_imports)]
 use marzano_core::pattern::built_in_functions::BuiltIns;
-use marzano_core::pattern::{
-    api::{AnalysisLog, DoneFile, MatchResult},
-    Problem,
-};
 use marzano_core::pattern_compiler::{src_to_problem_libs, CompilationResult};
+use marzano_core::{
+    api::{AnalysisLog, DoneFile, MatchResult},
+    problem::Problem,
+};
 use marzano_language::target_language::PatternLanguage;
 use marzano_util::cache::GritCache;
 use marzano_util::position::{FileRange, Position};
@@ -45,6 +45,7 @@ impl<'b> RichPattern<'b> {
         pattern_libs: &BTreeMap<String, String>,
         language: Option<PatternLanguage>,
         targets: Option<Vec<FileRange>>,
+        injected_limit: Option<usize>,
     ) -> Result<CompilationResult> {
         let lang = language.unwrap_or_default();
         #[cfg(not(feature = "ai_builtins"))]
@@ -59,6 +60,7 @@ impl<'b> RichPattern<'b> {
             self.name.to_owned(),
             targets,
             injected_builtins,
+            injected_limit,
         )
     }
 }
