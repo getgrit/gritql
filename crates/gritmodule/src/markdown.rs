@@ -49,6 +49,7 @@ pub fn make_md_parser() -> Result<Parser> {
         .with_context(|| "Failed to load markdown grammar")?;
     Ok(parser)
 }
+
 pub fn get_patterns_from_md(
     file: &mut RichFile,
     source_module: &Option<ModuleRepo>,
