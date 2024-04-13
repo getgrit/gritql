@@ -272,7 +272,11 @@ pub fn replace_sample_in_md_file(sample: &GritPatternSample, file_path: &String)
         bail!("Sample does not have an output range, cannot replace in file");
     };
 
-    let mut file = OpenOptions::new().read(true).write(true).open(file_path)?;
+    let mut file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(file_path)
+        .with_context(|| format!("Failed to open file for writing: {}", file_path))?;
 
     let mut content = String::new();
     file.read_to_string(&mut content)?;
@@ -289,6 +293,7 @@ pub fn replace_sample_in_md_file(sample: &GritPatternSample, file_path: &String)
     file.seek(SeekFrom::Start(0))?;
     file.write_all(content.as_bytes())?;
     file.set_len(content.len() as u64)?;
+    file.sync_all()?;
 
     Ok(())
 }
@@ -695,11 +700,10 @@ language js
             path: "no_eq_null.md".to_string(),
             content: r#"---
 title: Compare `null` using  `===` or `!==`
+tags: [good]
 ---
 
 Comparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.
-
-tags: #good
 
 ```grit
 engine marzano(0.1)
