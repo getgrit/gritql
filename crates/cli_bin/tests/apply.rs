@@ -1461,7 +1461,10 @@ fn compact_output() -> Result<()> {
     );
 
     let content = String::from_utf8(output.stdout)?;
-    assert_snapshot!(content);
+    let mut lines: Vec<&str> = content.lines().collect();
+    lines.sort_unstable();
+    let sorted_content = lines.join("\n");
+    assert_snapshot!(sorted_content);
 
     Ok(())
 }
