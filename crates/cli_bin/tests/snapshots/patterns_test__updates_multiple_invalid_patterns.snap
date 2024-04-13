@@ -41,11 +41,9 @@ if (val === null) {
 ## `$val != null` => `$val !== null` to channge
 
 ```javascript
-if (val != null) if (val !== null) {
+if (val != null) {
   done();
   console.log("This should be added as well");
-}
-should be added as well");
 }
 ```
 
