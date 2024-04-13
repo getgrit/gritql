@@ -84,7 +84,7 @@ pub fn get_patterns_from_md(
         .context("No valid Markdown tree found")?;
     let root_node = NodeWithSource::new(src_tree.root_node(), src);
 
-    let mut cursor = CursorWrapper::new(root_node.node.walk(), root_node.source);
+    let cursor = CursorWrapper::new(root_node.node.walk(), root_node.source);
 
     let mut patterns: Vec<MarkdownBody> = Vec::new();
 
@@ -186,7 +186,6 @@ pub fn get_patterns_from_md(
                 meta.description = Some(content);
             }
         }
-        // println!("Finished node: {:?}", n.node.kind(),);
     }
 
     // Markdown patterns have a default level of info
@@ -196,12 +195,6 @@ pub fn get_patterns_from_md(
 
     // TODO: this bit
     let mut grit_parser = make_grit_parser()?;
-    // let src_tree = grit_parser
-    //     .parse(content.into_owned(), None)?
-    //     .ok_or_else(|| anyhow!("parse error"))?;
-    // if defines_itself(&NodeWithSource::new(src_tree.root_node(), &body), name)? {
-    //     bail!("Pattern {} attempts to define itself - this is not allowed. Tip: Markdown patterns use the file name as their pattern name.", name);
-    // }
 
     let patterns = patterns
         .into_iter()
@@ -219,7 +212,13 @@ pub fn get_patterns_from_md(
             if let Some(last_sample) = p.open_sample.take() {
                 p.samples.push(last_sample);
             }
-            ModuleGritPattern {
+            let src_tree = grit_parser
+                .parse(&p.body, None)?
+                .ok_or_else(|| anyhow!("parse error"))?;
+            if defines_itself(&NodeWithSource::new(src_tree.root_node(), &p.body), name)? {
+                bail!("Pattern {} attempts to define itself - this is not allowed. Tip: Markdown patterns use the file name as their pattern name.", name);
+            };
+            Ok(ModuleGritPattern {
                 config: GritDefinitionConfig {
                     name: local_name.clone(),
                     body: Some(p.body),
@@ -236,9 +235,9 @@ pub fn get_patterns_from_md(
                 module: source_module.clone(),
                 local_name,
                 ..Default::default()
-            }
+            })
         })
-        .collect();
+        .collect::<Result<Vec<_>>>()?;
     Ok(patterns)
 }
 
