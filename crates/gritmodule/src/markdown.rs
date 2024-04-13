@@ -179,6 +179,17 @@ pub fn get_patterns_from_md(
         }
     }
 
+    if patterns.is_empty() {
+        bail!(
+            r#"No grit body found in markdown file. Try adding a fenced code block with the language set to grit, for example:
+```grit
+engine marzano(0.1)
+language js
+js"hello world"
+```"#
+        );
+    }
+
     // Markdown patterns have a default level of info
     if meta.level.is_none() {
         meta.level = Some(EnforcementLevel::Info);
