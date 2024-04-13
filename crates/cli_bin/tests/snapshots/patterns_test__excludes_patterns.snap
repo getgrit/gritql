@@ -2,7 +2,7 @@
 source: crates/cli_bin/tests/patterns_test.rs
 expression: stdout
 ---
-Found 9 testable patterns.
+Found 8 testable patterns.
 ✗ broken_pattern
   ✓ `$val != null` => `$val !== null` not channge
   ✓ `$val != null` => `$val !== null` into `while` not change
@@ -12,24 +12,6 @@ Found 9 testable patterns.
      if (val === null) {
        done();
     -  console.log("This should be removed by grit patterns test --update");
-     }
-    
-
-✗ multiple_broken_patterns
-  ✓ `$val != null` => `$val !== null` into `while` not change
-  ✓ Do not change `$val === null` not change
-  ✓ Do not change `$val !== null` not change
-  ✗ `$val == null` => `$val === null` to change
-     if (val === null) {
-       done();
-    +  cnonsole.log("This should be added to the output by patterns test --update");
-     }
-    
-
-  ✗ `$val != null` => `$val !== null` to channge
-     if (val !== null) {
-       done();
-    +  console.log("This should be added as well");
      }
     
 
