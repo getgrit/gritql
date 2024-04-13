@@ -1,0 +1,30 @@
+---
+source: crates/gritmodule/src/markdown.rs
+expression: sample_input
+---
+foo:
+  - name
+
+  - bar
+jobs:
+  - across:
+    - var: function
+      values:
+      - file1
+      - file2
+      - file3
+    - var: x
+      values:
+      - one
+      - two
+    - var: y
+      values:
+      - a
+      - b
+    task: create-file
+    params:
+      FUNCTION: ((.:function))-js
+    input_mapping:
+      code: ((.:x))-js
+    output_mapping:
+      code: ((.:y))-js

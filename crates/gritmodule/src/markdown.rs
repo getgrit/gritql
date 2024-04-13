@@ -872,7 +872,7 @@ $$ LANGUAGE plpgsql;
             as usize
             ..sample.output_range.as_ref().unwrap().end_byte as usize]
             .to_string();
-        assert_eq!(&output_content.trim(), sample.output.as_ref().unwrap());
+        assert_eq!(&output_content, sample.output.as_ref().unwrap());
         assert_snapshot!(output_content);
     }
 }
