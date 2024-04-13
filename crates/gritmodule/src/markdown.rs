@@ -97,10 +97,7 @@ pub fn get_patterns_from_md(
         } else if n.node.kind() == "code_fence_content" {
             let content = n.node.utf8_text(src.as_bytes()).unwrap();
             let content = content.to_string();
-            println!(
-                "Processing code block (lang = {:?}): {:?}",
-                current_code_block_language, content
-            );
+
             if current_code_block_language == Some(std::borrow::Cow::Borrowed("grit")) {
                 let definition = MarkdownBody {
                     body: content.to_string(),
