@@ -102,6 +102,10 @@ pub fn get_patterns_from_md(
         } else if n.node.kind() == "code_fence_content" {
             let content = n.node.utf8_text(src.as_bytes()).unwrap();
             let content = content.to_string();
+            println!(
+                "Processing code block (lang = {:?}): {:?}",
+                current_code_block_language, content
+            );
             if current_code_block_language == Some(std::borrow::Cow::Borrowed("grit")) {
                 let definition = MarkdownBody {
                     body: content.to_string(),
@@ -431,6 +435,7 @@ function isTruthy(x) {
 function isTruthy(x) {
   return Boolean(x);
 }
+```
 
 ### Test case 2
 
@@ -445,7 +450,7 @@ function isTruthy(x) {
 function isTruthy(x) {
   return Boolean(x);
 }
-
+```
 
 ## Pattern two
 
@@ -478,13 +483,12 @@ function isTruthy(x) {
 function isTruthy(x) {
   return Boolean(x);
 }
-
 ```
 "#
             .to_string(),
         };
         let patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
-        assert_eq!(patterns.len(), 1);
+        assert_eq!(patterns.len(), 2);
         println!("{:?}", patterns);
         assert_yaml_snapshot!(patterns);
     }
