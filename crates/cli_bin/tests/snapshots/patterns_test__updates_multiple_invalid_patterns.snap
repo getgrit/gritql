@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/cli/tests/patterns_test.rs
+source: crates/cli_bin/tests/patterns_test.rs
 expression: after
 ---
 ---
@@ -23,10 +23,6 @@ binary_expression($operator, $left, $right) where {
 
 ```
 
-```
-
-```
-
 ## `$val == null` => `$val === null` to change
 
 ```javascript
@@ -46,16 +42,17 @@ if (val === null) {
 ## `$val != null` => `$val !== null` to channge
 
 ```javascript
-if (val != null) {
+if (val != null) if (val !== null) {
   done();
   console.log("This should be added as well");
+}
+should be added as well");
 }
 ```
 
 ```typescript
 if (val !== null) {
   done();
-  console.log("This should be added as well");
 }
 ```
 
@@ -88,4 +85,3 @@ while (val !== null) {
   doSomething();
 }
 ```
-

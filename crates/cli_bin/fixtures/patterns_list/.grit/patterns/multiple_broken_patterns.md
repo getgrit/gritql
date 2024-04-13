@@ -19,10 +19,6 @@ binary_expression($operator, $left, $right) where {
 
 ```
 
-```
-
-```
-
 ## `$val == null` => `$val === null` to change
 
 ```javascript
