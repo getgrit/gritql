@@ -24,110 +24,19 @@ use grit_util::AstCursor as _;
 use anyhow::{anyhow, bail, Context, Result};
 use marzano_core::api::EnforcementLevel;
 
-// fn parse_md_snippet(tree: &Node) -> Option<&Node> {
-//     tree.children().unwrap().iter().find(|child| match child {
-//         Node::Code(n) => match &n.lang {
-//             Some(lang) => lang == "grit",
-//             None => false,
-//         },
-//         _ => false,
-//     })
-// }
-
-// fn parse_metadata(tree: &Node) -> Option<GritPatternMetadata> {
-//     let metadata_node = tree.children().unwrap().iter().find(|child| match child {
-//         Node::Heading(_) => serde_yaml::from_str::<GritPatternMetadata>(&child.to_string()).is_ok(),
-//         _ => false,
-//     });
-
-//     metadata_node?;
-
-//     match serde_yaml::from_str::<GritPatternMetadata>(&metadata_node.unwrap().to_string()) {
-//         Ok(frontmatter) => Some(frontmatter),
-//         Err(_) => None,
-//     }
-// }
-
-// fn parse_title(tree: &Node, source_lines: &[&str]) -> Option<String> {
-//     let first_child = tree.children().unwrap().first();
-//     match first_child {
-//         Some(Node::Heading(heading)) => {
-//             if heading.depth == 1 {
-//                 let title = get_text_from_lines(first_child.unwrap(), source_lines)?;
-//                 Some(title.trim_start_matches('#').trim().to_string())
-//             } else {
-//                 None
-//             }
-//         }
-//         _ => None,
-//     }
-// }
-
-// fn parse_md_tags(source_lines: &[&str]) -> Option<Vec<String>> {
-//     let regex = regex::Regex::new(r"tags:\s*(#[\w-]+,?\s*)+").unwrap();
-
-//     for line in source_lines {
-//         if let Some(captures) = regex.captures(line) {
-//             let tag_match = captures.get(0).map_or("", |m| m.as_str());
-//             let tag_regex = regex::Regex::new(r"#([\w-]+)").unwrap();
-//             let tags: Vec<String> = tag_regex
-//                 .captures_iter(tag_match)
-//                 .filter_map(|cap| cap.get(1))
-//                 .map(|m| m.as_str().to_string())
-//                 .collect();
-//             return Some(tags);
-//         }
-//     }
-
-//     None
-// }
-
-// fn parse_description(tree: &Node, source_lines: &[&str]) -> Option<String> {
-//     let heading_index = tree
-//         .children()
-//         .unwrap()
-//         .iter()
-//         .position(|child| match child {
-//             Node::Heading(n) => n.depth <= 2,
-//             _ => false,
-//         });
-
-//     heading_index?;
-
-//     let heading_index = heading_index.unwrap();
-//     let paragraph = tree
-//         .children()
-//         .unwrap()
-//         .iter()
-//         .skip(heading_index + 1)
-//         .find(|child| matches!(child, Node::Paragraph(_)));
-
-//     paragraph?;
-
-//     let paragraph = paragraph.unwrap();
-//     get_text_from_lines(paragraph, source_lines)
-// }
-
-// fn get_text_from_lines(node: &Node, source_lines: &[&str]) -> Option<String> {
-//     let start_line = node.position()?.start.line;
-//     let end_line = node.position()?.end.line;
-
-//     let lines = source_lines
-//         .iter()
-//         .skip(start_line - 1)
-//         .take(end_line - start_line + 1)
-//         .filter(|line| !line.is_empty())
-//         .map(|line| line.to_string())
-//         .collect::<Vec<_>>();
-
-//     Some(lines.join("\n"))
-// }
+fn parse_metadata(yaml_content: &str) -> Option<GritPatternMetadata> {
+    match serde_yaml::from_str::<GritPatternMetadata>(yaml_content) {
+        Ok(frontmatter) => Some(frontmatter),
+        Err(_) => None,
+    }
+}
 
 /// Capture a single markdown GritQL body - there might be multiple in a single markdown file
 #[derive(Debug)]
 struct MarkdownBody {
     body: String,
     position: Position,
+    section_heading: String,
     section_level: u32,
     /// Track the samples which have already been matched together
     samples: Vec<GritPatternSample>,
@@ -157,9 +66,10 @@ pub fn get_patterns_from_md(
         .file_stem()
         .and_then(|stem| stem.to_str())
         .unwrap_or_else(|| file.path.trim_end_matches(".md"));
-    // if !is_pattern_name(name) {
-    //     bail!("Invalid pattern name: {}. Grit patterns must match the regex /[\\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", name);
-    // }
+    if !is_pattern_name(name) {
+        bail!("Invalid pattern name: {}. Grit patterns must match the regex /[\\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", name);
+    }
+
     let relative_path = extract_relative_file_path(file, root);
 
     let mut parser = make_md_parser()?;
@@ -180,11 +90,14 @@ pub fn get_patterns_from_md(
     // Track the current heading level, used for determining which patterns should be grouped together
     let mut current_heading = (1, "".to_string());
 
+    let mut meta = GritPatternMetadata::default();
+
     for n in traverse(cursor, Order::Pre) {
         if n.node.kind() == "language" {
             current_code_block_language = Some(n.node.utf8_text(src.as_bytes()).unwrap());
         } else if n.node.kind() == "code_fence_content" {
             let content = n.node.utf8_text(src.as_bytes()).unwrap();
+            let content = content.trim().to_string();
             if current_code_block_language == Some(std::borrow::Cow::Borrowed("grit")) {
                 // TODO: this bit
                 // let src_tree = grit_parser
@@ -197,6 +110,7 @@ pub fn get_patterns_from_md(
                 let definition = MarkdownBody {
                     body: content.to_string(),
                     position: n.node.range().start_point().into(),
+                    section_heading: current_heading.1.clone(),
                     section_level: current_heading.0,
                     samples: Vec::new(),
                     open_sample: None,
@@ -256,33 +170,31 @@ pub fn get_patterns_from_md(
             let heading_text = heading_text.trim().to_string();
 
             current_heading = (heading_level, heading_text);
+        } else if n.node.kind() == "minus_metadata" {
+            let metadata = n.node.utf8_text(src.as_bytes()).unwrap();
+            let metadata = metadata.trim().to_string();
+            let metadata = metadata.trim_start_matches('-').trim();
+            let metadata = metadata.trim_end_matches('-').trim();
+            if let Some(parsed_meta) = parse_metadata(metadata) {
+                meta = parsed_meta;
+            }
+        } else if n.node.kind() == "paragraph" {
+            let content = n.node.utf8_text(src.as_bytes()).unwrap();
+            let content = content.trim().to_string();
+
+            if meta.description.is_none() {
+                meta.description = Some(content);
+            }
         }
-        // println!(
-        //     "Finished node: {:?} in language: {:?}, defs are {:?}",
-        //     n.node.kind(),
-        //     current_code_block_language,
-        //     config.len()
-        // );
+        println!("Finished node: {:?}", n.node.kind(),);
     }
 
-    println!("We ended up with {:?}", patterns);
+    println!("We ended up with {:?}", meta);
 
-    // let mut meta = parse_metadata(&tree).unwrap_or_default();
-    // if meta.title.is_none() {
-    //     meta.title = parse_title(&tree, &source_lines);
-    // }
-
-    // if meta.description.is_none() {
-    //     meta.description = parse_description(&tree, &source_lines);
-    // }
-
-    // if meta.tags.is_none() {
-    //     meta.tags = parse_md_tags(&source_lines);
-    // }
-
-    // if meta.level.is_none() {
-    //     meta.level = Some(EnforcementLevel::Info);
-    // }
+    // Markdown patterns have a default level of info
+    if meta.level.is_none() {
+        meta.level = Some(EnforcementLevel::Info);
+    }
 
     let patterns = patterns
         .into_iter()
@@ -293,11 +205,15 @@ pub fn get_patterns_from_md(
             } else {
                 format!("{}-{}", name, i)
             };
+            let mut meta_copy = meta.clone();
+            if meta_copy.title.is_none() {
+                meta_copy.title = Some(p.section_heading);
+            }
             ModuleGritPattern {
                 config: GritDefinitionConfig {
                     name: local_name.clone(),
                     body: Some(p.body),
-                    meta: GritPatternMetadata::default(),
+                    meta: meta_copy,
                     kind: Some(DefinitionKind::Pattern),
                     samples: if p.samples.is_empty() {
                         None
@@ -454,11 +370,10 @@ mod tests {
         let module = Default::default();
         let rich_file = RichFile { path: "no_debugger.md".to_string(),content: r#"---
 title: Remove `debugger` statement
+tags: [fix]
 ---
 
 The code in production should not contain a `debugger`. It causes the browser to stop executing the code and open the debugger.
-
-tags: #fix
 
 ```grit
 engine marzano(0.1)
@@ -493,11 +408,10 @@ function isTruthy(x) {
         let module = Default::default();
         let rich_file = RichFile { path: "no_debugger.md".to_string(),content: r#"---
 title: Remove `debugger` statement
+tags: fix
 ---
 
 The code in production should not contain a `debugger`. It causes the browser to stop executing the code and open the debugger.
-
-tags: #fix
 
 ```grit
 engine marzano(0.1)
