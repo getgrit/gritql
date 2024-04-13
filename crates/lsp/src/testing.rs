@@ -115,6 +115,7 @@ pub async fn maybe_test_pattern(
         Some(our_pattern.local_name.to_string()),
         None,
         get_ai_built_in_functions_for_feature(),
+        None
     ) {
         Ok(p) => {
             client
