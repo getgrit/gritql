@@ -69,7 +69,7 @@ pub fn get_patterns_from_md(
         .and_then(|stem| stem.to_str())
         .unwrap_or_else(|| file.path.trim_end_matches(".md"));
     if !is_pattern_name(name) {
-        bail!("Invalid pattern name: {}. Grit patterns must match the regex /[\\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", name);
+        bail!("Invalid pattern name: '{}'. Grit patterns must match the regex /^[A-Za-z_][A-Za-z0-9_]*$/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", name);
     }
 
     let relative_path = extract_relative_file_path(file, root);
