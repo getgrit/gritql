@@ -1,0 +1,89 @@
+---
+source: crates/gritmodule/src/markdown.rs
+expression: patterns
+---
+- config:
+    name: no_debugger
+    body: "engine marzano(0.1)\nlanguage js\n\ndebugger_statement() => ."
+    level: info
+    title: Pattern one
+    description: This is a single Markdown file with multiple grit patterns.
+    tags: ~
+    samples:
+      - name: Pattern one
+        input: "function isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}"
+        output: "function isTruthy(x) {\n  return Boolean(x);\n}\n\n### Test case 2\n\n```javascript\nfunction isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}"
+        input_range:
+          start:
+            line: 16
+            column: 1
+          end:
+            line: 20
+            column: 1
+          startByte: 174
+          endByte: 232
+        output_range:
+          start:
+            line: 23
+            column: 1
+          end:
+            line: 34
+            column: 1
+          startByte: 251
+          endByte: 387
+      - name: Pattern one
+        input: "function isTruthy(x) {\n  return Boolean(x);\n}\n\n\n## Pattern two\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n`console.log($_)` => ."
+        output: ~
+        input_range:
+          start:
+            line: 37
+            column: 1
+          end:
+            line: 49
+            column: 1
+          startByte: 406
+          endByte: 534
+        output_range: ~
+      - name: Test case 3 - non matching.
+        input: "function isTruthy(x) {\n  console.error(\"Hello\");\n  return Boolean(x);\n}"
+        output: ~
+        input_range:
+          start:
+            line: 54
+            column: 1
+          end:
+            line: 58
+            column: 1
+          startByte: 586
+          endByte: 658
+        output_range: ~
+      - name: Test case 4
+        input: "function isTruthy(x) {\n  console.log(\"Hello\");\n  return Boolean(x);\n}"
+        output: "function isTruthy(x) {\n  return Boolean(x);\n}"
+        input_range:
+          start:
+            line: 63
+            column: 1
+          end:
+            line: 67
+            column: 1
+          startByte: 694
+          endByte: 764
+        output_range:
+          start:
+            line: 70
+            column: 1
+          end:
+            line: 74
+            column: 1
+          startByte: 783
+          endByte: 830
+    path: no_debugger.md
+    position:
+      line: 7
+      column: 1
+    raw:
+      format: markdown
+      content: "\nThis is a single Markdown file with multiple grit patterns.\n\n## Pattern one\n\n```grit\nengine marzano(0.1)\nlanguage js\n\ndebugger_statement() => .\n```\n\nExample:\n\n```javascript\nfunction isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}\n```\n\n```typescript\nfunction isTruthy(x) {\n  return Boolean(x);\n}\n\n### Test case 2\n\n```javascript\nfunction isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}\n```\n\n```typescript\nfunction isTruthy(x) {\n  return Boolean(x);\n}\n\n\n## Pattern two\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n`console.log($_)` => .\n```\n\n### Test case 3 - non matching.\n\n```javascript\nfunction isTruthy(x) {\n  console.error(\"Hello\");\n  return Boolean(x);\n}\n```\n\n### Test case 4\n\n```javascript\nfunction isTruthy(x) {\n  console.log(\"Hello\");\n  return Boolean(x);\n}\n```\n\n```typescript\nfunction isTruthy(x) {\n  return Boolean(x);\n}\n\n```\n"
+  module: ~
+  local_name: no_debugger

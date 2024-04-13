@@ -199,7 +199,7 @@ pub fn get_patterns_from_md(
     let patterns = patterns
         .into_iter()
         .enumerate()
-        .map(|(i, p)| {
+        .map(|(i, mut p)| {
             let local_name = if i == 0 {
                 name.to_string()
             } else {
@@ -209,17 +209,16 @@ pub fn get_patterns_from_md(
             if meta_copy.title.is_none() {
                 meta_copy.title = Some(p.section_heading);
             }
+            if let Some(last_sample) = p.open_sample.take() {
+                p.samples.push(last_sample);
+            }
             ModuleGritPattern {
                 config: GritDefinitionConfig {
                     name: local_name.clone(),
                     body: Some(p.body),
                     meta: meta_copy,
                     kind: Some(DefinitionKind::Pattern),
-                    samples: if p.samples.is_empty() {
-                        None
-                    } else {
-                        Some(p.samples)
-                    },
+                    samples: Some(p.samples),
                     path: relative_path.clone(),
                     position: Some(p.position),
                     raw: Some(RawGritDefinition {
@@ -435,6 +434,31 @@ function isTruthy(x) {
 
 ```typescript
 function isTruthy(x) {
+  return Boolean(x);
+}
+```
+
+## Remove debugger - group 2
+Bad:
+```javascript
+function isTruthy(x) {
+  debugger;
+  return Boolean(x);
+}
+```
+
+Good:
+```typescript
+function isTruthy(x) {
+  return Boolean(x);
+}
+```
+
+## Remove debugger - no match
+Bad:
+```javascript
+function isTruthy(x) {
+  debugger;
   return Boolean(x);
 }
 ```
