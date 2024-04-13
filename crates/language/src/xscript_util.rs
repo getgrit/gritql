@@ -162,11 +162,11 @@ pub(crate) fn jslike_check_replacements(
 
 lazy_static! {
     static ref PHP_LIKE_EXACT_VARIABLE_REGEX: Regex =
-        Regex::new(r"^\^([A-Za-z_][A-Za-z0-9_]*)$").unwrap();
+        Regex::new(r"^\^([A-Za-z_][A-Za-z0-9_]*)$").expect("Failed to compile PHP_LIKE_EXACT_VARIABLE_REGEX");
     static ref PHP_LIKE_VARIABLE_REGEX: Regex =
-        Regex::new(r"\^(\.\.\.|[A-Za-z_][A-Za-z0-9_]*)").unwrap();
+        Regex::new(r"\^(\.\.\.|[A-Za-z_][A-Za-z0-9_]*)").expect("Failed to compile PHP_LIKE_VARIABLE_REGEX");
     static ref PHP_LIKE_BRACKET_VAR_REGEX: Regex =
-        Regex::new(r"\^\[([A-Za-z_][A-Za-z0-9_]*)\]").unwrap();
+        Regex::new(r"\^\[([A-Za-z_][A-Za-z0-9_]*)\]").expect("Failed to compile PHP_LIKE_BRACKET_VAR_REGEX");
     pub static ref PHP_ONLY_CODE_SNIPPETS: Vec<(&'static str, &'static str)> = vec![
         ("", ""),
         ("", ";"),
