@@ -157,6 +157,9 @@ pub fn get_patterns_from_md(
         .file_stem()
         .and_then(|stem| stem.to_str())
         .unwrap_or_else(|| file.path.trim_end_matches(".md"));
+    // if !is_pattern_name(name) {
+    //     bail!("Invalid pattern name: {}. Grit patterns must match the regex /[\\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", name);
+    // }
     let relative_path = extract_relative_file_path(file, root);
 
     let mut parser = make_md_parser()?;
@@ -169,7 +172,7 @@ pub fn get_patterns_from_md(
 
     let mut cursor = CursorWrapper::new(root_node.node.walk(), root_node.source);
 
-    let mut config: Vec<MarkdownBody> = Vec::new();
+    let mut patterns: Vec<MarkdownBody> = Vec::new();
 
     // Track the current language block for when we hit the actual content
     let mut current_code_block_language = None;
@@ -198,8 +201,8 @@ pub fn get_patterns_from_md(
                     samples: Vec::new(),
                     open_sample: None,
                 };
-                config.push(definition);
-            } else if let Some(last_config) = config.last_mut() {
+                patterns.push(definition);
+            } else if let Some(last_config) = patterns.last_mut() {
                 // Check if we have an open sample
                 if let Some(mut open_sample) = last_config.open_sample.take() {
                     open_sample.output = Some(content.to_string());
@@ -234,7 +237,7 @@ pub fn get_patterns_from_md(
                 _ => 6,
             };
 
-            if let Some(last_config) = config.last_mut() {
+            if let Some(last_config) = patterns.last_mut() {
                 // If the grit block started in an h1, then new samples are introduced with each h3
                 if heading_level <= last_config.section_level + 2 {
                     if let Some(open_sample) = last_config.open_sample.take() {
@@ -262,44 +265,7 @@ pub fn get_patterns_from_md(
         // );
     }
 
-    println!("We ended up with {:?}", config);
-
-    // let definition = GritDefinitionConfig {
-    //     name: format!("{}-{}", name, config.len()),
-    //     body: Some(content.to_string()),
-    //     meta: GritPatternMetadata::default(),
-    //     kind: Some(DefinitionKind::Pattern),
-    //     samples: Some(Vec::new()),
-    //     path: relative_path.clone(),
-    //     position: Some(n.node.range().start_point().into()),
-    //     raw: Some(RawGritDefinition {
-    //         content: src.to_string(),
-    //         format: crate::parser::PatternFileExt::Md,
-    //     }),
-    // };
-
-    // let snippet = parse_md_snippet(&tree);
-    // if snippet.is_none() {
-    //     bail!("No grit fenced code block found in markdown file",)
-    // }
-    // let snippet = snippet.unwrap();
-
-    // let source_lines: Vec<&str> = file.content.split('\n').collect();
-    // let body = snippet.to_string();
-    // let position = snippet
-    //     .position()
-    //     .map(|position| Position::new(position.start.line as u32 + 1, 1));
-
-    // if !is_pattern_name(name) {
-    //     bail!("Invalid pattern name: {}. Grit patterns must match the regex /[\\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", name);
-    // }
-
-    // let mut grit_parser = make_grit_parser()?;
-
-    // let samples = match parse_samples(&tree, &source_lines) {
-    //     Ok(samples) => samples,
-    //     Err(e) => bail!("Failed to parse samples: {}", e),
-    // };
+    println!("We ended up with {:?}", patterns);
 
     // let mut meta = parse_metadata(&tree).unwrap_or_default();
     // if meta.title.is_none() {
@@ -318,160 +284,41 @@ pub fn get_patterns_from_md(
     //     meta.level = Some(EnforcementLevel::Info);
     // }
 
-    // let grit_pattern = ModuleGritPattern {
-    //     config: GritDefinitionConfig {
-    //         name: name.to_string(),
-    //         body: Some(body),
-    //         samples: Some(samples),
-    //         kind: Some(DefinitionKind::Pattern),
-    //         path: extract_relative_file_path(file, root),
-    //         position,
-    //         meta,
-    //         raw: Some(RawGritDefinition {
-    //             content,
-    //             format: crate::parser::PatternFileExt::Md,
-    //         }),
-    //     },
-    //     module: source_module.clone(),
-    //     local_name: name.to_string(),
-    //     ..Default::default()
-    // };
-
-    // Ok(vec![grit_pattern])
+    let patterns = patterns
+        .into_iter()
+        .enumerate()
+        .map(|(i, p)| {
+            let local_name = if i == 0 {
+                name.to_string()
+            } else {
+                format!("{}-{}", name, i)
+            };
+            ModuleGritPattern {
+                config: GritDefinitionConfig {
+                    name: local_name.clone(),
+                    body: Some(p.body),
+                    meta: GritPatternMetadata::default(),
+                    kind: Some(DefinitionKind::Pattern),
+                    samples: if p.samples.is_empty() {
+                        None
+                    } else {
+                        Some(p.samples)
+                    },
+                    path: relative_path.clone(),
+                    position: Some(p.position),
+                    raw: Some(RawGritDefinition {
+                        content: src.to_string(),
+                        format: crate::parser::PatternFileExt::Md,
+                    }),
+                },
+                module: source_module.clone(),
+                local_name,
+                ..Default::default()
+            }
+        })
+        .collect();
+    Ok(patterns)
 }
-
-// fn parse_samples(tree: &Node, source_lines: &[&str]) -> Result<Vec<GritPatternSample>> {
-//     todo!("This needs to be implemented");
-// let samples: Vec<GritPatternSample> = Vec::new();
-// let snippet = match parse_md_snippet(tree) {
-//     Some(snippet) => snippet,
-//     None => return Ok(samples),
-// };
-
-// let snippet_index = tree
-//     .children()
-//     .unwrap()
-//     .iter()
-//     .position(|node| *node == *snippet)
-//     .unwrap();
-
-// let children = match tree.children() {
-//     Some(children) => children,
-//     None => return Ok(samples),
-// };
-// let config_samples = children.iter().skip(snippet_index).collect::<Vec<&Node>>();
-
-// let mut samples = Vec::new();
-// let mut current_subheading: Option<String> = None;
-// let mut current_input: Option<String> = None;
-// let mut current_input_range: Option<Range> = None;
-
-// for node in config_samples.iter() {
-//     if let (Some(subheading), Some(input), Some(input_range)) =
-//         (&current_subheading, &current_input, &current_input_range)
-//     {
-//         match node {
-//             Node::Heading(_) => {
-//                 let sample = GritPatternSample {
-//                     name: Some(subheading.to_string()),
-//                     input: input.to_string(),
-//                     output: None,
-//                     input_range: Some(*input_range),
-//                     output_range: Some(*input_range),
-//                 };
-//                 samples.push(sample);
-//                 current_input = None;
-//                 current_input_range = None;
-//             }
-//             Node::Code(n) => {
-//                 let output_range = n.position.as_ref().map(|position| {
-//                     Range::from_md(
-//                         // We want the internals, not the fence
-//                         position.start.line + 1,
-//                         position.start.column,
-//                         position.end.line - 1,
-//                         position.end.column,
-//                         position.start.offset,
-//                         position.end.offset,
-//                     )
-//                 });
-//                 let sample = GritPatternSample {
-//                     name: Some(subheading.to_string()),
-//                     input: input.to_string(),
-//                     output: Some(n.value.to_string()),
-//                     input_range: Some(*input_range),
-//                     output_range,
-//                 };
-//                 samples.push(sample);
-//                 current_subheading = None;
-//                 current_input = None;
-//                 current_input_range = None;
-//             }
-//             _ => {}
-//         }
-//     }
-
-//     if let Node::Heading(heading) = node {
-//         if heading.depth == 1 {
-//             break;
-//         }
-//     }
-
-//     match node {
-//         Node::Heading(_) => {
-//             let content_line = match node.position() {
-//                 Some(position) => position.start.line,
-//                 None => {
-//                     continue;
-//                 }
-//             };
-//             let content = source_lines
-//                 .get(content_line - 1)
-//                 .unwrap()
-//                 .trim_start_matches('#')
-//                 .trim();
-//             current_subheading = Some(content.to_string());
-//             current_input = None;
-//             current_input_range = None;
-//         }
-//         Node::Code(n) if current_subheading.is_some() => {
-//             if current_input.is_none() {
-//                 current_input = Some(n.value.to_string());
-//                 match &n.position {
-//                     Some(position) => {
-//                         current_input_range = Some(Range::from_md(
-//                             // We want the internals, not the fence
-//                             position.start.line + 1,
-//                             position.start.column,
-//                             position.end.line - 1,
-//                             position.end.column,
-//                             position.start.offset,
-//                             position.end.offset,
-//                         ));
-//                     }
-//                     None => {}
-//                 }
-//             }
-//         }
-//         _ => {}
-//     }
-// }
-
-// if let (Some(subheading), Some(input), Some(input_range)) =
-//     (current_subheading, current_input, current_input_range)
-// {
-//     let sample = GritPatternSample {
-//         name: Some(subheading),
-//         output: None,
-//         input,
-//         input_range: Some(input_range),
-//         output_range: None,
-//     };
-//     samples.push(sample);
-// }
-
-// Ok(samples)
-// }
 
 pub fn get_body_from_md_content(content: &str) -> Result<String> {
     let patterns = get_patterns_from_md(
