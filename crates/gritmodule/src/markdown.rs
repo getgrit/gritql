@@ -123,6 +123,18 @@ use marzano_core::api::EnforcementLevel;
 //     Some(lines.join("\n"))
 // }
 
+/// Capture a single markdown GritQL body - there might be multiple in a single markdown file
+#[derive(Debug)]
+struct MarkdownBody {
+    body: String,
+    position: Position,
+    section_level: u32,
+    /// Track the samples which have already been matched together
+    samples: Vec<GritPatternSample>,
+    /// Leave "open" sample which have not been matched to a pair yet
+    open_sample: Option<GritPatternSample>,
+}
+
 pub fn make_md_parser() -> Result<Parser> {
     use anyhow::Context;
 
@@ -157,16 +169,18 @@ pub fn get_patterns_from_md(
 
     let mut cursor = CursorWrapper::new(root_node.node.walk(), root_node.source);
 
-    let mut config: Vec<GritDefinitionConfig> = Vec::new();
+    let mut config: Vec<MarkdownBody> = Vec::new();
 
+    // Track the current language block for when we hit the actual content
     let mut current_code_block_language = None;
+
+    // Track the current heading level, used for determining which patterns should be grouped together
+    let mut current_heading = (1, "".to_string());
 
     for n in traverse(cursor, Order::Pre) {
         if n.node.kind() == "language" {
-            // current_code_block = Some(&n);
             current_code_block_language = Some(n.node.utf8_text(src.as_bytes()).unwrap());
-        }
-        if n.node.kind() == "code_fence_content" {
+        } else if n.node.kind() == "code_fence_content" {
             let content = n.node.utf8_text(src.as_bytes()).unwrap();
             if current_code_block_language == Some(std::borrow::Cow::Borrowed("grit")) {
                 // TODO: this bit
@@ -177,34 +191,92 @@ pub fn get_patterns_from_md(
                 //     bail!("Pattern {} attempts to define itself - this is not allowed. Tip: Markdown patterns use the file name as their pattern name.", name);
                 // }
 
-                let definition = GritDefinitionConfig {
-                    name: format!("{}-{}", name, config.len()),
-                    body: Some(content.to_string()),
-                    meta: GritPatternMetadata::default(),
-                    kind: Some(DefinitionKind::Pattern),
-                    samples: Some(Vec::new()),
-                    path: relative_path.clone(),
-                    position: Some(n.node.range().start_point().into()),
-                    raw: Some(RawGritDefinition {
-                        content: src.to_string(),
-                        format: crate::parser::PatternFileExt::Md,
-                    }),
+                let definition = MarkdownBody {
+                    body: content.to_string(),
+                    position: n.node.range().start_point().into(),
+                    section_level: current_heading.0,
+                    samples: Vec::new(),
+                    open_sample: None,
                 };
                 config.push(definition);
+            } else if let Some(last_config) = config.last_mut() {
+                // Check if we have an open sample
+                if let Some(mut open_sample) = last_config.open_sample.take() {
+                    open_sample.output = Some(content.to_string());
+                    open_sample.output_range = Some(n.node.range().into());
+                    last_config.samples.push(open_sample);
+                } else {
+                    // Start a new sample
+                    let sample = GritPatternSample {
+                        name: if !current_heading.1.is_empty() {
+                            Some(current_heading.1.clone())
+                        } else {
+                            None
+                        },
+                        input: content.to_string(),
+                        output: None,
+                        input_range: Some(n.node.range().into()),
+                        output_range: None,
+                    };
+                    last_config.open_sample = Some(sample);
+                }
             }
-            println!(
-                "Found code block in language: {:?} with content: {:?}",
-                current_code_block_language, content,
-            );
+            current_code_block_language = None;
+        } else if n.node.kind() == "atx_heading" {
+            let heading_level = n.node.child_by_field_name("level").unwrap();
+            let heading_level = match heading_level.kind() {
+                std::borrow::Cow::Borrowed("atx_h1_marker") => 1,
+                std::borrow::Cow::Borrowed("atx_h2_marker") => 2,
+                std::borrow::Cow::Borrowed("atx_h3_marker") => 3,
+                std::borrow::Cow::Borrowed("atx_h4_marker") => 4,
+                std::borrow::Cow::Borrowed("atx_h5_marker") => 5,
+                std::borrow::Cow::Borrowed("atx_h6_marker") => 6,
+                _ => 6,
+            };
+
+            if let Some(last_config) = config.last_mut() {
+                // If the grit block started in an h1, then new samples are introduced with each h3
+                if heading_level <= last_config.section_level + 2 {
+                    if let Some(open_sample) = last_config.open_sample.take() {
+                        last_config.samples.push(open_sample);
+                    }
+                }
+            }
+
+            let heading_text = n
+                .node
+                .child_by_field_name("heading_content")
+                .unwrap()
+                .utf8_text(src.as_bytes())
+                .unwrap()
+                .to_string();
+            let heading_text = heading_text.trim().to_string();
+
+            current_heading = (heading_level, heading_text);
         }
-        println!(
-            "Finished node: {:?} in language: {:?}",
-            n.node.kind(),
-            current_code_block_language
-        );
+        // println!(
+        //     "Finished node: {:?} in language: {:?}, defs are {:?}",
+        //     n.node.kind(),
+        //     current_code_block_language,
+        //     config.len()
+        // );
     }
 
-    todo!("This needs to be implemented");
+    println!("We ended up with {:?}", config);
+
+    // let definition = GritDefinitionConfig {
+    //     name: format!("{}-{}", name, config.len()),
+    //     body: Some(content.to_string()),
+    //     meta: GritPatternMetadata::default(),
+    //     kind: Some(DefinitionKind::Pattern),
+    //     samples: Some(Vec::new()),
+    //     path: relative_path.clone(),
+    //     position: Some(n.node.range().start_point().into()),
+    //     raw: Some(RawGritDefinition {
+    //         content: src.to_string(),
+    //         format: crate::parser::PatternFileExt::Md,
+    //     }),
+    // };
 
     // let snippet = parse_md_snippet(&tree);
     // if snippet.is_none() {
@@ -556,6 +628,49 @@ function isTruthy(x) {
   return Boolean(x);
 }
 ```
+
+```typescript
+function isTruthy(x) {
+  return Boolean(x);
+}
+```
+"#.to_string()};
+        let patterns = get_patterns_from_md(&rich_file, &module, &None).unwrap();
+        assert_eq!(patterns.len(), 1);
+        println!("{:?}", patterns);
+        assert_yaml_snapshot!(patterns);
+    }
+
+    #[test]
+    fn test_sample_labels() {
+        let module = Default::default();
+        let rich_file = RichFile { path: "no_debugger.md".to_string(),content: r#"---
+title: Remove `debugger` statement
+---
+
+The code in production should not contain a `debugger`. It causes the browser to stop executing the code and open the debugger.
+
+tags: #fix
+
+```grit
+engine marzano(0.1)
+language js
+
+debugger_statement() => .
+```
+
+## Remove debbuger
+
+### Bad
+
+```javascript
+function isTruthy(x) {
+  debugger;
+  return Boolean(x);
+}
+```
+
+### Good
 
 ```typescript
 function isTruthy(x) {
