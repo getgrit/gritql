@@ -55,10 +55,15 @@ pub fn make_md_parser() -> Result<Parser> {
     Ok(parser)
 }
 pub fn get_patterns_from_md(
-    file: &RichFile,
+    file: &mut RichFile,
     source_module: &Option<ModuleRepo>,
     root: &Option<String>,
 ) -> Result<Vec<ModuleGritPattern>> {
+    // Tree sitter has weird problems if we are missing a newline at the end of the file
+    if !file.content.ends_with('\n') {
+        file.content.push('\n');
+    }
+
     let src = &file.content;
 
     let path = Path::new(&file.path);
@@ -73,7 +78,6 @@ pub fn get_patterns_from_md(
     let relative_path = extract_relative_file_path(file, root);
 
     let mut parser = make_md_parser()?;
-    let mut grit_parser = make_grit_parser()?;
 
     let src_tree = parser
         .parse(src, None)?
@@ -97,16 +101,8 @@ pub fn get_patterns_from_md(
             current_code_block_language = Some(n.node.utf8_text(src.as_bytes()).unwrap());
         } else if n.node.kind() == "code_fence_content" {
             let content = n.node.utf8_text(src.as_bytes()).unwrap();
-            let content = content.trim().to_string();
+            let content = content.to_string();
             if current_code_block_language == Some(std::borrow::Cow::Borrowed("grit")) {
-                // TODO: this bit
-                // let src_tree = grit_parser
-                //     .parse(content.into_owned(), None)?
-                //     .ok_or_else(|| anyhow!("parse error"))?;
-                // if defines_itself(&NodeWithSource::new(src_tree.root_node(), &body), name)? {
-                //     bail!("Pattern {} attempts to define itself - this is not allowed. Tip: Markdown patterns use the file name as their pattern name.", name);
-                // }
-
                 let definition = MarkdownBody {
                     body: content.to_string(),
                     position: n.node.range().start_point().into(),
@@ -189,12 +185,19 @@ pub fn get_patterns_from_md(
         // println!("Finished node: {:?}", n.node.kind(),);
     }
 
-    // println!("We ended up with {:?}", meta);
-
     // Markdown patterns have a default level of info
     if meta.level.is_none() {
         meta.level = Some(EnforcementLevel::Info);
     }
+
+    // TODO: this bit
+    let mut grit_parser = make_grit_parser()?;
+    // let src_tree = grit_parser
+    //     .parse(content.into_owned(), None)?
+    //     .ok_or_else(|| anyhow!("parse error"))?;
+    // if defines_itself(&NodeWithSource::new(src_tree.root_node(), &body), name)? {
+    //     bail!("Pattern {} attempts to define itself - this is not allowed. Tip: Markdown patterns use the file name as their pattern name.", name);
+    // }
 
     let patterns = patterns
         .into_iter()
@@ -237,7 +240,7 @@ pub fn get_patterns_from_md(
 
 pub fn get_body_from_md_content(content: &str) -> Result<String> {
     let patterns = get_patterns_from_md(
-        &RichFile {
+        &mut RichFile {
             path: "test.md".to_string(),
             content: content.to_string(),
         },
@@ -295,7 +298,7 @@ mod tests {
     #[test]
     fn test_markdown_parser() {
         let module = Default::default();
-        let rich_file = RichFile { path: "no_debugger.md".to_string(),content: r#"---
+        let mut rich_file = RichFile { path: "no_debugger.md".to_string(),content: r#"---
 title: Remove `debugger` statement
 tags: [fix]
 ---
@@ -324,7 +327,7 @@ function isTruthy(x) {
 }
 ```
 "#.to_string()};
-        let patterns = get_patterns_from_md(&rich_file, &module, &None).unwrap();
+        let patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
         assert_eq!(patterns.len(), 1);
         println!("{:?}", patterns);
         assert_yaml_snapshot!(patterns);
@@ -333,7 +336,7 @@ function isTruthy(x) {
     #[test]
     fn test_sample_labels() {
         let module = Default::default();
-        let rich_file = RichFile { path: "no_debugger.md".to_string(),content: r#"---
+        let mut rich_file = RichFile { path: "no_debugger.md".to_string(),content: r#"---
 title: Remove `debugger` statement
 tags: fix
 ---
@@ -391,7 +394,7 @@ function isTruthy(x) {
 }
 ```
 "#.to_string()};
-        let patterns = get_patterns_from_md(&rich_file, &module, &None).unwrap();
+        let patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
         assert_eq!(patterns.len(), 1);
         println!("{:?}", patterns);
         assert_eq!(patterns[0].config.samples.as_ref().unwrap().len(), 3);
@@ -401,7 +404,7 @@ function isTruthy(x) {
     #[test]
     fn test_multiple_markdown_patterns() {
         let module = Default::default();
-        let rich_file = RichFile {
+        let mut rich_file = RichFile {
             path: "no_debugger.md".to_string(),
             content: r#"
 This is a single Markdown file with multiple grit patterns.
@@ -480,7 +483,160 @@ function isTruthy(x) {
 "#
             .to_string(),
         };
-        let patterns = get_patterns_from_md(&rich_file, &module, &None).unwrap();
+        let patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
+        assert_eq!(patterns.len(), 1);
+        println!("{:?}", patterns);
+        assert_yaml_snapshot!(patterns);
+    }
+
+    fn test_yaml_format() {
+        let module = Default::default();
+        let mut rich_file = RichFile {
+            path: "concourse.md".to_string(),
+            content: r#"
+This is a markdown file with some yaml patterns
+
+```grit
+engine marzano(0.1)
+language yaml
+
+$_ => .
+```
+
+## Basic input
+
+```yaml
+jobs:
+  - across:
+    - var: function
+      values:
+      - file1
+      - file2
+      - file3
+    - var: x
+      values:
+      - one
+      - two
+    - var: y
+      values:
+      - a
+      - b
+    task: create-file
+    params:
+      FUNCTION: ((.:function))-js
+    input_mapping:
+      code: ((.:x))-js
+    output_mapping:
+      code: ((.:y))-js
+```
+
+```yaml
+jobs:
+  - in_parallel:
+      steps:
+        - task: create-file-1
+          params:
+              FUNCTION: file1-js
+          input_mapping:
+              code: one-js
+          output_mapping:
+              code: a-js
+
+        - task: create-file-2
+          params:
+              FUNCTION: file2-js
+          input_mapping:
+              code: one-js
+          output_mapping:
+              code: a-js
+
+        - task: create-file-3
+          params:
+              FUNCTION: file3-js
+          input_mapping:
+              code: one-js
+          output_mapping:
+              code: a-js
+
+        - task: create-file-4
+          params:
+              FUNCTION: file1-js
+          input_mapping:
+              code: two-js
+          output_mapping:
+              code: a-js
+
+        - task: create-file-5
+          params:
+              FUNCTION: file2-js
+          input_mapping:
+              code: two-js
+          output_mapping:
+              code: a-js
+
+        - task: create-file-6
+          params:
+              FUNCTION: file3-js
+          input_mapping:
+              code: two-js
+          output_mapping:
+              code: a-js
+
+        - task: create-file-7
+          params:
+              FUNCTION: file1-js
+          input_mapping:
+              code: one-js
+          output_mapping:
+              code: b-js
+
+        - task: create-file-8
+          params:
+              FUNCTION: file2-js
+          input_mapping:
+              code: one-js
+          output_mapping:
+              code: b-js
+
+        - task: create-file-9
+          params:
+              FUNCTION: file3-js
+          input_mapping:
+              code: one-js
+          output_mapping:
+              code: b-js
+
+        - task: create-file-10
+          params:
+              FUNCTION: file1-js
+          input_mapping:
+              code: two-js
+          output_mapping:
+              code: b-js
+
+        - task: create-file-11
+          params:
+              FUNCTION: file2-js
+          input_mapping:
+              code: two-js
+          output_mapping:
+              code: b-js
+
+        - task: create-file-12
+          params:
+              FUNCTION: file3-js
+          input_mapping:
+              code: two-js
+          output_mapping:
+              code: b-js
+
+```
+
+```
+"#
+            .to_string(),
+        };
+        let mut patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
         assert_eq!(patterns.len(), 1);
         println!("{:?}", patterns);
         assert_yaml_snapshot!(patterns);
@@ -489,7 +645,7 @@ function isTruthy(x) {
     #[test]
     fn test_frontmatter_enforcement() {
         let module = Default::default();
-        let rich_file = RichFile {
+        let mut rich_file = RichFile {
             path: "no_console_log.md".to_string(),
             content: r#"---
 title: Forbid console.log
@@ -508,7 +664,7 @@ language js
 "#
             .to_string(),
         };
-        let patterns = get_patterns_from_md(&rich_file, &module, &None).unwrap();
+        let patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
         assert_eq!(patterns.len(), 1);
         println!("{:?}", patterns);
         assert_eq!(patterns[0].config.meta.level, Some(EnforcementLevel::Error));
@@ -517,7 +673,7 @@ language js
     #[test]
     fn with_non_matching_samples() {
         let module = Default::default();
-        let rich_file = RichFile {
+        let mut rich_file = RichFile {
             path: "no_eq_null.md".to_string(),
             content: r#"---
 title: Compare `null` using  `===` or `!==`
@@ -603,7 +759,7 @@ while (val !== null) {
 ```
 "#.to_string(),
         };
-        let patterns = get_patterns_from_md(&rich_file, &module, &None).unwrap();
+        let patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
         assert_eq!(patterns.len(), 1);
         assert_yaml_snapshot!(patterns);
     }
@@ -611,7 +767,7 @@ while (val !== null) {
     #[test]
     fn with_no_frontmatter() {
         let module = ModuleRepo::from_host_repo("github.com", "getgrit/rewriter").unwrap();
-        let rich_file = RichFile {
+        let mut rich_file = RichFile {
             path: "CloneActivities.md".to_string(),
             content: r#"# Copy activity names to timekeeper
 
@@ -640,7 +796,7 @@ multifile {
 }
 ```
 "#.to_string(),};
-        let patterns = get_patterns_from_md(&rich_file, &Some(module), &None).unwrap();
+        let patterns = get_patterns_from_md(&mut rich_file, &Some(module), &None).unwrap();
         assert_eq!(patterns.len(), 1);
         assert_yaml_snapshot!(patterns);
     }
@@ -648,7 +804,7 @@ multifile {
     #[test]
     fn test_weird_patterns() {
         let module = ModuleRepo::from_host_repo("github.com", "getgrit/rewriter").unwrap();
-        let rich_file = RichFile {
+        let mut rich_file = RichFile {
             path: "CloneActivities.md".to_string(),
             content: r#"---
 title: Oracle to PG: Dollar quote stored procedure body
@@ -696,7 +852,7 @@ $$ LANGUAGE plpgsql;
 "#
             .to_string(),
         };
-        let patterns = get_patterns_from_md(&rich_file, &Some(module), &None).unwrap();
+        let patterns = get_patterns_from_md(&mut rich_file, &Some(module), &None).unwrap();
         assert_eq!(patterns.len(), 1);
         assert_yaml_snapshot!(patterns);
 
