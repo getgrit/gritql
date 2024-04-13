@@ -190,7 +190,6 @@ pub fn get_patterns_from_md(
         meta.level = Some(EnforcementLevel::Info);
     }
 
-    // TODO: this bit
     let mut grit_parser = make_grit_parser()?;
 
     let patterns = patterns
