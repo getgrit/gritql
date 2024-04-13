@@ -65,6 +65,10 @@ pub struct ApplyPatternArgs {
         default_value_t = OutputMode::Standard,
     )]
     output: OutputMode,
+    // Inject a [limit](https://docs.grit.io/language/modifiers#limit-clause) to show only the first N results
+    #[clap(short = 'm')]
+    pub limit: Option<usize>,
+    // TODO: consider removing this
     #[clap(long = "ignore-limit", default_value = "false", hide = true)]
     ignore_limit: bool,
     // Dry run
@@ -134,6 +138,7 @@ impl Default for ApplyPatternArgs {
     fn default() -> Self {
         Self {
             output: Default::default(),
+            limit: Default::default(),
             ignore_limit: Default::default(),
             dry_run: Default::default(),
             force: Default::default(),

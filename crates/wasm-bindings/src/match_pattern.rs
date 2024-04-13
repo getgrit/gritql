@@ -105,6 +105,7 @@ pub async fn parse_input_files(
         None,
         parser,
         injected_builtins,
+        None
     ) {
         Ok(c) => {
             let warning_logs = c
@@ -228,6 +229,7 @@ pub async fn match_pattern(
         None,
         parser,
         injected_builtins,
+        None
     ) {
         Ok(c) => c,
         Err(e) => {
