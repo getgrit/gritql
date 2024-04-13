@@ -267,10 +267,20 @@ js\"hello world\"
 ```");
 }
 
-pub fn replace_sample_in_md_file(sample: &GritPatternSample, file_path: &String) -> Result<()> {
+/// Give an sample, and a byte offset, replaces the sample in the markdown file and returns the new byte offset
+/// The byte offset refers to the relative difference in the length of the output of the sample
+pub fn replace_sample_in_md_file(
+    sample: &GritPatternSample,
+    file_path: &String,
+    offset: isize,
+) -> Result<isize> {
     let Some(range) = &sample.output_range else {
         bail!("Sample does not have an output range, cannot replace in file");
     };
+
+    let byte_range =
+        (range.start_byte as isize + offset) as usize..(range.end_byte as isize + offset) as usize;
+    println!("Transform by {}", offset);
 
     let mut file = OpenOptions::new()
         .read(true)
@@ -281,13 +291,12 @@ pub fn replace_sample_in_md_file(sample: &GritPatternSample, file_path: &String)
     let mut content = String::new();
     file.read_to_string(&mut content)?;
 
-    if let Some(actual_output) = &sample.output {
-        content.replace_range(
-            range.start_byte as usize..range.end_byte as usize,
-            actual_output,
-        );
+    let new_offset = if let Some(actual_output) = &sample.output {
+        content.replace_range(byte_range, actual_output);
+        actual_output.len() as isize - (range.end_byte - range.start_byte) as isize
     } else {
-        content.replace_range(range.start_byte as usize..range.end_byte as usize, "");
+        content.replace_range(byte_range, "");
+        -((range.end_byte - range.start_byte) as isize)
     };
 
     file.seek(SeekFrom::Start(0))?;
@@ -295,7 +304,7 @@ pub fn replace_sample_in_md_file(sample: &GritPatternSample, file_path: &String)
     file.set_len(content.len() as u64)?;
     file.sync_all()?;
 
-    Ok(())
+    Ok(new_offset)
 }
 
 #[cfg(test)]

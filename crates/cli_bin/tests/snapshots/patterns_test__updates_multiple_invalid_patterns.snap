@@ -50,6 +50,7 @@ if (val != null) {
 ```typescript
 if (val !== null) {
   done();
+  console.log("This should be added as well");
 }
 ```
 
