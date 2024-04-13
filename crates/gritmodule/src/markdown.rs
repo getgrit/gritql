@@ -186,10 +186,10 @@ pub fn get_patterns_from_md(
                 meta.description = Some(content);
             }
         }
-        println!("Finished node: {:?}", n.node.kind(),);
+        // println!("Finished node: {:?}", n.node.kind(),);
     }
 
-    println!("We ended up with {:?}", meta);
+    // println!("We ended up with {:?}", meta);
 
     // Markdown patterns have a default level of info
     if meta.level.is_none() {

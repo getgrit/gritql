@@ -6,7 +6,7 @@ expression: patterns
     name: no_debugger
     body: "engine marzano(0.1)\nlanguage js\n\ndebugger_statement() => ."
     level: info
-    title: Remove debugger statement
+    title: "Remove `debugger` statement"
     description: "The code in production should not contain a `debugger`. It causes the browser to stop executing the code and open the debugger."
     tags:
       - fix
@@ -16,28 +16,28 @@ expression: patterns
         output: "function isTruthy(x) {\n  return Boolean(x);\n}"
         input_range:
           start:
-            line: 23
+            line: 18
             column: 1
           end:
-            line: 26
-            column: 4
-          startByte: 287
-          endByte: 362
+            line: 22
+            column: 1
+          startByte: 291
+          endByte: 349
         output_range:
           start:
-            line: 30
+            line: 25
             column: 1
           end:
-            line: 32
-            column: 4
-          startByte: 364
-          endByte: 427
+            line: 28
+            column: 1
+          startByte: 368
+          endByte: 414
     path: no_debugger.md
     position:
-      line: 10
+      line: 9
       column: 1
     raw:
       format: markdown
-      content: "---\ntitle: Remove `debugger` statement\n---\n\nThe code in production should not contain a `debugger`. It causes the browser to stop executing the code and open the debugger.\n\ntags: #fix\n\n```grit\nengine marzano(0.1)\nlanguage js\n\ndebugger_statement() => .\n```\n\n```\n\n```\n\n## Remove debbuger\n\n```javascript\nfunction isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}\n```\n\n```typescript\nfunction isTruthy(x) {\n  return Boolean(x);\n}\n```\n"
+      content: "---\ntitle: Remove `debugger` statement\ntags: [fix]\n---\n\nThe code in production should not contain a `debugger`. It causes the browser to stop executing the code and open the debugger.\n\n```grit\nengine marzano(0.1)\nlanguage js\n\ndebugger_statement() => .\n```\n\n## Remove debbuger\n\n```javascript\nfunction isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}\n```\n\n```typescript\nfunction isTruthy(x) {\n  return Boolean(x);\n}\n```\n"
   module: ~
   local_name: no_debugger
