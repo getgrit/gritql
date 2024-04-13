@@ -8,26 +8,27 @@ expression: patterns
     level: info
     title: "Compare `null` using  `===` or `!==`"
     description: "Comparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`."
-    tags: ~
+    tags:
+      - good
     samples:
       - name: "`$val == null` => `$val === null`"
         input: "if (val == null) {\n  done();\n}\n"
         output: "if (val === null) {\n  done();\n}\n"
         input_range:
           start:
-            line: 25
+            line: 24
             column: 1
           end:
-            line: 28
+            line: 27
             column: 1
           startByte: 705
           endByte: 736
         output_range:
           start:
-            line: 31
+            line: 30
             column: 1
           end:
-            line: 34
+            line: 33
             column: 1
           startByte: 755
           endByte: 787
@@ -36,19 +37,19 @@ expression: patterns
         output: "if (val !== null) {\n  done();\n}\n"
         input_range:
           start:
-            line: 39
+            line: 38
             column: 1
           end:
-            line: 42
+            line: 41
             column: 1
           startByte: 844
           endByte: 875
         output_range:
           start:
-            line: 45
+            line: 44
             column: 1
           end:
-            line: 48
+            line: 47
             column: 1
           startByte: 894
           endByte: 926
@@ -57,19 +58,19 @@ expression: patterns
         output: "while (val !== null) {\n  did();\n}\n"
         input_range:
           start:
-            line: 53
+            line: 52
             column: 1
           end:
-            line: 56
+            line: 55
             column: 1
           startByte: 996
           endByte: 1029
         output_range:
           start:
-            line: 59
+            line: 58
             column: 1
           end:
-            line: 62
+            line: 61
             column: 1
           startByte: 1048
           endByte: 1082
@@ -78,10 +79,10 @@ expression: patterns
         output: ~
         input_range:
           start:
-            line: 67
+            line: 66
             column: 1
           end:
-            line: 70
+            line: 69
             column: 1
           startByte: 1135
           endByte: 1167
@@ -91,20 +92,20 @@ expression: patterns
         output: ~
         input_range:
           start:
-            line: 75
+            line: 74
             column: 1
           end:
-            line: 78
+            line: 77
             column: 1
           startByte: 1210
           endByte: 1252
         output_range: ~
     path: no_eq_null.md
     position:
-      line: 10
+      line: 9
       column: 1
     raw:
       format: markdown
-      content: "---\ntitle: Compare `null` using  `===` or `!==`\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\ntags: #good\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n## `$val == null` => `$val === null`\n\n```javascript\nif (val == null) {\n  done();\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null`\n\n```javascript\nif (val != null) {\n  done();\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while`\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null`\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null`\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
+      content: "---\ntitle: Compare `null` using  `===` or `!==`\ntags: [good]\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n## `$val == null` => `$val === null`\n\n```javascript\nif (val == null) {\n  done();\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null`\n\n```javascript\nif (val != null) {\n  done();\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while`\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null`\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null`\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
   module: ~
   local_name: no_eq_null

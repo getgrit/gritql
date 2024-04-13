@@ -243,104 +243,106 @@ expression: v
     level: info
     title: "Compare `null` using  `===` or `!==`"
     description: "Comparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`."
-    tags: ~
+    tags:
+      - good
+      - exclude2
     samples:
       - name: "`$val == null` => `$val === null` to change"
         input: "if (val == null) {\n  done();\n  cnonsole.log(\"This should be added to the output by patterns test --update\");\n}\n"
         output: "if (val === null) {\n  done();\n}\n"
         input_range:
           start:
-            line: 25
+            line: 24
             column: 1
           end:
-            line: 29
+            line: 28
             column: 1
-          startByte: 726
-          endByte: 837
+          startByte: 729
+          endByte: 840
         output_range:
           start:
-            line: 32
+            line: 31
             column: 1
           end:
-            line: 35
+            line: 34
             column: 1
-          startByte: 856
-          endByte: 888
+          startByte: 859
+          endByte: 891
       - name: "`$val != null` => `$val !== null` to channge"
         input: "if (val != null) {\n  done();\n  console.log(\"This should be added as well\");\n}\n"
         output: "if (val !== null) {\n  done();\n}\n"
         input_range:
           start:
-            line: 40
+            line: 39
             column: 1
           end:
-            line: 44
+            line: 43
             column: 1
-          startByte: 956
-          endByte: 1034
+          startByte: 959
+          endByte: 1037
         output_range:
           start:
-            line: 47
+            line: 46
             column: 1
           end:
-            line: 50
+            line: 49
             column: 1
-          startByte: 1053
-          endByte: 1085
+          startByte: 1056
+          endByte: 1088
       - name: "`$val != null` => `$val !== null` into `while` not change"
         input: "while (val != null) {\n  did();\n}\n"
         output: "while (val !== null) {\n  did();\n}\n"
         input_range:
           start:
-            line: 55
+            line: 54
             column: 1
           end:
-            line: 58
+            line: 57
             column: 1
-          startByte: 1166
-          endByte: 1199
+          startByte: 1169
+          endByte: 1202
         output_range:
           start:
-            line: 61
+            line: 60
             column: 1
           end:
-            line: 64
+            line: 63
             column: 1
-          startByte: 1218
-          endByte: 1252
+          startByte: 1221
+          endByte: 1255
       - name: "Do not change `$val === null` not change"
         input: "if (val === null) {\n  done();\n}\n"
         output: ~
         input_range:
           start:
-            line: 69
+            line: 68
             column: 1
           end:
-            line: 72
+            line: 71
             column: 1
-          startByte: 1316
-          endByte: 1348
+          startByte: 1319
+          endByte: 1351
         output_range: ~
       - name: "Do not change `$val !== null` not change"
         input: "while (val !== null) {\n  doSomething();\n}\n"
         output: ~
         input_range:
           start:
-            line: 77
+            line: 76
             column: 1
           end:
-            line: 80
+            line: 79
             column: 1
-          startByte: 1402
-          endByte: 1444
+          startByte: 1405
+          endByte: 1447
         output_range: ~
     path: ".grit/patterns/multiple_broken_patterns.md"
     position:
-      line: 10
+      line: 9
       column: 1
     raw:
       format: markdown
-      content: "---\ntitle: Compare `null` using  `===` or `!==`\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\ntags: #good, #exclude2\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n## `$val == null` => `$val === null` to change\n\n```javascript\nif (val == null) {\n  done();\n  cnonsole.log(\"This should be added to the output by patterns test --update\");\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` to channge\n\n```javascript\nif (val != null) {\n  done();\n  console.log(\"This should be added as well\");\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while` not change\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null` not change\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null` not change\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
+      content: "---\ntitle: Compare `null` using  `===` or `!==`\ntags: [\"good\", \"exclude2\"]\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n## `$val == null` => `$val === null` to change\n\n```javascript\nif (val == null) {\n  done();\n  cnonsole.log(\"This should be added to the output by patterns test --update\");\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` to channge\n\n```javascript\nif (val != null) {\n  done();\n  console.log(\"This should be added as well\");\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while` not change\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null` not change\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null` not change\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
   module:
     type: Module
     host: ""
