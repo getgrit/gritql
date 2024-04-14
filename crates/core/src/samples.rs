@@ -12,16 +12,10 @@ mod tests {
                 pattern: r#"
                     |engine marzano(0.1)
                     |language js
-                    |or {
-                    |    `1`,
-                    |    `2` where $is_two = true
-                    |} where {
-                    |    if ($is_two <: not undefined) {
-                    |        $n = `two`
-                    |    } else {
-                    |        $n = `one`
-                    |    }
-                    |} => $n"#
+                    |`1` where {
+                    |   $output = "",
+                    |   // $grit_samples <: some bubble $sample where $output += $sample.input
+                    |} => `$output`"#
                     .trim_margin()
                     .unwrap(),
                 source: r#"
@@ -30,7 +24,7 @@ mod tests {
                     .to_owned(),
                 expected: r#"
                 console.log(one);
-                console.log(two)"#
+                console.log(2)"#
                     .to_owned(),
             }
         })
