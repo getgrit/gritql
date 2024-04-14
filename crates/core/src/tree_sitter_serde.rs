@@ -1,7 +1,6 @@
 use marzano_language::{
     grit_ts_node::GRIT_NODE_TYPES,
     language::{Field, Language},
-    target_language::TargetLanguage,
 };
 use serde_json::{json, Value};
 use tree_sitter::Node;
@@ -9,10 +8,12 @@ use tree_sitter::Node;
 /**
  * Converts a tree-sitter node to a Serde JSON value.
  */
+// Todo language should not be an optional
+// node types should be it's own trait that Language implements
 pub fn tree_sitter_node_to_json(
     node: &Node,
     source: &str,
-    language: Option<&TargetLanguage>,
+    language: Option<&impl Language>,
 ) -> serde_json::Value {
     let sort_id = node.kind_id();
     let node_types = if let Some(language) = language {

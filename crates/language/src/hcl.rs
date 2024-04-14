@@ -66,6 +66,10 @@ impl Language for Hcl {
     fn is_comment(&self, id: SortId) -> bool {
         id == self.comment_sort
     }
+
+    fn make_single_line_comment(&self, text: &str) -> String {
+        format!("# {}\n", text)
+    }
 }
 
 #[cfg(test)]

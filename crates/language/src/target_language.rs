@@ -596,33 +596,6 @@ impl TargetLanguage {
         }
     }
 
-    pub fn should_pad_snippet(&self) -> bool {
-        match self {
-            TargetLanguage::JavaScript(_) => false,
-            TargetLanguage::TypeScript(_) => false,
-            TargetLanguage::Tsx(_) => false,
-            TargetLanguage::Html(_) => false,
-            TargetLanguage::Css(_) => false,
-            TargetLanguage::Json(_) => false,
-            TargetLanguage::Java(_) => false,
-            TargetLanguage::CSharp(_) => false,
-            TargetLanguage::Python(_) => true,
-            TargetLanguage::MarkdownBlock(_) => false,
-            TargetLanguage::MarkdownInline(_) => false,
-            TargetLanguage::Go(_) => false,
-            TargetLanguage::Rust(_) => false,
-            TargetLanguage::Ruby(_) => false,
-            TargetLanguage::Solidity(_) => false,
-            TargetLanguage::Hcl(_) => false,
-            TargetLanguage::Yaml(_) => true,
-            TargetLanguage::Sql(_) => false,
-            TargetLanguage::Vue(_) => false,
-            TargetLanguage::Toml(_) => false,
-            TargetLanguage::Php(_) => false,
-            TargetLanguage::PhpOnly(_) => false,
-        }
-    }
-
     pub fn get_default_extension(&self) -> &'static str {
         self.to_module_language().get_default_extension().unwrap()
     }
@@ -633,33 +606,6 @@ impl TargetLanguage {
 
     pub fn match_extension(&self, ext: &str) -> bool {
         self.to_module_language().match_extension(ext)
-    }
-
-    pub fn make_single_line_comment(&self, text: &str) -> String {
-        match self {
-            TargetLanguage::CSharp(_)
-            | TargetLanguage::Go(_)
-            | TargetLanguage::Java(_)
-            | TargetLanguage::JavaScript(_)
-            | TargetLanguage::Json(_)
-            | TargetLanguage::Rust(_)
-            | TargetLanguage::Solidity(_)
-            | TargetLanguage::Tsx(_)
-            | TargetLanguage::PhpOnly(_)
-            | TargetLanguage::TypeScript(_) => format!("// {}\n", text),
-            TargetLanguage::Python(_)
-            | TargetLanguage::Hcl(_)
-            | TargetLanguage::Ruby(_)
-            | TargetLanguage::Toml(_)
-            | TargetLanguage::Yaml(_) => format!("# {}\n", text),
-            TargetLanguage::Html(_)
-            | TargetLanguage::Php(_)
-            | TargetLanguage::Vue(_)
-            | TargetLanguage::MarkdownBlock(_)
-            | TargetLanguage::MarkdownInline(_) => format!("<!-- {} -->\n", text),
-            TargetLanguage::Css(_) => format!("/* {} */\n", text),
-            TargetLanguage::Sql(_) => format!("-- {}\n", text),
-        }
     }
 
     pub fn extract_single_line_comment(&self, text: &str) -> Option<String> {

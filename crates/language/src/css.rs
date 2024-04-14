@@ -101,6 +101,10 @@ impl Language for Css {
             default_parse_file(self.get_ts_language(), name, body, logs, new)
         }
     }
+
+    fn make_single_line_comment(&self, text: &str) -> String {
+        format!("/* {} */\n", text)
+    }
 }
 
 #[cfg(test)]

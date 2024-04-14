@@ -88,6 +88,14 @@ impl Language for Python {
             replacements.push(Replacement::new(n.range(), ""));
         }
     }
+
+    fn should_pad_snippet(&self) -> bool {
+        true
+    }
+
+    fn make_single_line_comment(&self, text: &str) -> String {
+        format!("# {}\n", text)
+    }
 }
 
 #[cfg(test)]

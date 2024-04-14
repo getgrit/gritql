@@ -1,6 +1,6 @@
 use anyhow::{anyhow, bail, Result};
 use itertools::Itertools;
-use marzano_language::{language::Language, target_language::TargetLanguage};
+use marzano_language::language::Language;
 use std::{cell::RefCell, collections::HashSet, ops::Range, rc::Rc};
 
 use crate::binding::EffectRange;
@@ -81,7 +81,7 @@ fn sort_range_start(replacements: &mut [(EffectRange, String)]) {
 }
 
 fn pad_snippet(
-    language: &TargetLanguage,
+    language: &impl Language,
     context: &str,
     range_start: usize,
     snippet: &str,
@@ -126,7 +126,7 @@ fn pad_snippet(
 // maybe convert these to a debug assertion?
 // also probably worth merging with the originial above.
 pub(crate) fn inline_sorted_snippets_with_offset(
-    language: &TargetLanguage,
+    language: &impl Language,
     code: String,
     offset: usize,
     replacements: &mut Vec<(EffectRange, String)>,

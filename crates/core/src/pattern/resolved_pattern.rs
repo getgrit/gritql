@@ -18,7 +18,7 @@ use anyhow::{anyhow, bail, Result};
 use grit_util::CodeRange;
 use im::{vector, Vector};
 use itertools::Itertools;
-use marzano_language::{language::FieldId, target_language::TargetLanguage};
+use marzano_language::language::{FieldId, Language};
 use marzano_util::{
     analysis_logs::AnalysisLogs, node_with_source::NodeWithSource, position::Range,
 };
@@ -118,7 +118,7 @@ impl<'a> JoinFn<'a> {
 
     fn linearized_text(
         &self,
-        language: &TargetLanguage,
+        language: &impl Language,
         effects: &[Effect<'a>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
@@ -166,7 +166,7 @@ pub enum LazyBuiltIn<'a> {
 impl<'a> LazyBuiltIn<'a> {
     fn linearized_text(
         &self,
-        language: &TargetLanguage,
+        language: &impl Language,
         effects: &[Effect<'a>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
@@ -243,7 +243,7 @@ impl<'a> ResolvedSnippet<'a> {
 
     pub(crate) fn linearized_text(
         &self,
-        language: &TargetLanguage,
+        language: &impl Language,
         effects: &[Effect<'a>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
@@ -285,7 +285,7 @@ impl<'a> ResolvedPattern<'a> {
         &mut self,
         mut with: ResolvedPattern<'a>,
         effects: &mut Vector<Effect<'a>>,
-        language: &TargetLanguage,
+        language: &impl Language,
     ) -> Result<()> {
         match self {
             ResolvedPattern::Binding(bindings) => {
@@ -699,7 +699,7 @@ impl<'a> ResolvedPattern<'a> {
 
     pub(crate) fn linearized_text(
         &self,
-        language: &TargetLanguage,
+        language: &impl Language,
         effects: &[Effect<'a>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
@@ -910,7 +910,7 @@ impl<'a> ResolvedPattern<'a> {
         &mut self,
         binding: &Binding<'a>,
         is_first: bool,
-        language: &TargetLanguage,
+        language: &impl Language,
     ) -> Result<()> {
         let ResolvedPattern::Snippets(ref mut snippets) = self else {
             return Ok(());

@@ -2,7 +2,8 @@ use crate::problem::{FileOwner, InputRanges, Problem};
 use crate::{fs, tree_sitter_serde::tree_sitter_node_to_json};
 use anyhow::{bail, Result};
 use im::Vector;
-use marzano_language::target_language::TargetLanguage;
+use marzano_language::language::Language;
+use marzano_language::tsx::Tsx;
 use marzano_util::analysis_logs::AnalysisLog as MarzanoAnalysisLog;
 use marzano_util::position::{Position, Range, VariableMatch};
 use serde::{Deserialize, Serialize};
@@ -93,7 +94,7 @@ impl MatchResult {
 
     pub(crate) fn file_to_match_result(
         file: &Vector<&FileOwner>,
-        language: &TargetLanguage,
+        language: &impl Language,
     ) -> Result<Option<MatchResult>> {
         if file.is_empty() {
             bail!("cannot have file with no versions")
@@ -165,7 +166,7 @@ impl MatchResult {
     /// Returns None if it has any issues.
     pub fn get_rewrite_to_suppress(
         &self,
-        language: &TargetLanguage,
+        language: &impl Language,
         pattern_name: Option<&str>,
     ) -> Option<MatchResult> {
         let comment = make_suppress_comment(pattern_name, language);
@@ -188,7 +189,7 @@ impl MatchResult {
     }
 }
 
-pub fn make_suppress_comment(pattern_name: Option<&str>, language: &TargetLanguage) -> String {
+pub fn make_suppress_comment(pattern_name: Option<&str>, language: &impl Language) -> String {
     match pattern_name {
         None => language.make_single_line_comment("grit-ignore"),
         Some(pattern_name) => {
@@ -247,7 +248,7 @@ impl PatternInfo {
     pub fn from_compiled(compiled: Problem, source_file: String) -> Self {
         let node = compiled.tree.root_node();
         let parsed_pattern =
-            to_string_pretty(&tree_sitter_node_to_json(&node, &source_file, None)).unwrap();
+            to_string_pretty(&tree_sitter_node_to_json(&node, &source_file, None::<&Tsx>)).unwrap();
         Self {
             messages: vec![],
             variables: compiled.compiled_vars(),
@@ -281,7 +282,7 @@ impl Match {
         file: &str,
         name: &str,
         tree: &Tree,
-        language: &TargetLanguage,
+        language: &impl Language,
     ) -> Self {
         let input_file_debug_text = to_string_pretty(&tree_sitter_node_to_json(
             &tree.root_node(),
@@ -352,7 +353,7 @@ impl Rewrite {
     fn file_to_rewrite(
         initial: &FileOwner,
         rewrite: &FileOwner,
-        language: &TargetLanguage,
+        language: &impl Language,
     ) -> Result<Self> {
         let original = if let Some(ranges) = &initial.matches.borrow().input_matches {
             Match::file_to_match(
