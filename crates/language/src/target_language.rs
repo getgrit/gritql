@@ -12,8 +12,8 @@ use crate::{
     language::{Field, FieldId, Language, SortId},
     markdown_block::MarkdownBlock,
     markdown_inline::MarkdownInline,
-    php_only::PhpOnly,
     php::Php,
+    php_only::PhpOnly,
     python::Python,
     ruby::Ruby,
     rust::Rust,
@@ -209,6 +209,8 @@ impl PatternLanguage {
         match name {
             "js" => match flavor {
                 Some("jsx") => Some(Self::Tsx),
+                Some("flow") => Some(Self::Tsx),
+                Some("flowComments") => Some(Self::Tsx),
                 Some("typescript") => Some(Self::TypeScript),
                 Some("js_do_not_use") => Some(Self::JavaScript),
                 _ => Some(Self::Tsx),
@@ -237,7 +239,7 @@ impl PatternLanguage {
                 Some("html") => Some(Self::Php),
                 Some("only") => Some(Self::PhpOnly),
                 _ => Some(Self::Php),
-            }
+            },
             "universal" => Some(Self::Universal),
             _ => None,
         }
