@@ -8,7 +8,7 @@ use crate::problem::{Effect, FileOwner};
 use anyhow::{anyhow, bail, Result};
 use grit_util::CodeRange;
 use im::{vector, Vector};
-use marzano_language::target_language::TargetLanguage;
+use marzano_language::language::Language;
 use marzano_util::analysis_logs::AnalysisLogs;
 use marzano_util::position::Range;
 use marzano_util::position::VariableMatch;
@@ -79,7 +79,7 @@ fn get_top_level_effect_ranges<'a>(
     effects: &[Effect<'a>],
     memo: &HashMap<CodeRange, Option<String>>,
     range: &CodeRange,
-    language: &TargetLanguage,
+    language: &impl Language,
     logs: &mut AnalysisLogs,
 ) -> Result<Vec<EffectRange<'a>>> {
     let mut effects: Vec<EffectRange> = effects
@@ -124,7 +124,7 @@ pub(crate) fn get_top_level_effects<'a>(
     effects: &[Effect<'a>],
     memo: &HashMap<CodeRange, Option<String>>,
     range: &CodeRange,
-    language: &TargetLanguage,
+    language: &impl Language,
     logs: &mut AnalysisLogs,
 ) -> Result<Vec<Effect<'a>>> {
     let top_level = get_top_level_effect_ranges(effects, memo, range, language, logs)?;
@@ -223,7 +223,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
 
     pub(crate) fn bindings_history_to_ranges(
         &self,
-        lang: &TargetLanguage,
+        lang: &impl Language,
         current_name: Option<&str>,
     ) -> (Vec<VariableMatch>, Vec<Range>, bool) {
         let mut matches = vec![];

@@ -4,7 +4,6 @@ use crate::problem::{Effect, EffectKind};
 use anyhow::{anyhow, Result};
 use grit_util::{AstNode, CodeRange};
 use marzano_language::language::{FieldId, Language};
-use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::position::{Position, Range};
@@ -199,7 +198,7 @@ impl EffectRange {
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn linearize_binding<'a>(
-    language: &TargetLanguage,
+    language: &impl Language,
     effects: &[Effect<'a>],
     files: &FileRegistry<'a>,
     memo: &mut HashMap<CodeRange, Option<String>>,
@@ -396,7 +395,7 @@ impl<'a> Binding<'a> {
 
     pub(crate) fn linearized_text(
         &self,
-        language: &TargetLanguage,
+        language: &impl Language,
         effects: &[Effect<'a>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
@@ -549,7 +548,7 @@ impl<'a> Binding<'a> {
 
     pub(crate) fn log_empty_field_rewrite_error(
         &self,
-        language: &TargetLanguage,
+        language: &impl Language,
         logs: &mut AnalysisLogs,
     ) -> Result<()> {
         match self {

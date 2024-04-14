@@ -63,6 +63,10 @@ impl Language for Vue {
     fn metavariable_sort(&self) -> SortId {
         self.metavariable_sort
     }
+
+    fn make_single_line_comment(&self, text: &str) -> String {
+        format!("<!-- {} -->\n", text)
+    }
 }
 
 fn is_lang_attribute(node: &Node, text: &[u8], name_array: Option<&[&str]>) -> bool {

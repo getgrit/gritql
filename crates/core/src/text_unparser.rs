@@ -4,7 +4,7 @@ use crate::problem::Effect;
 use anyhow::Result;
 use grit_util::CodeRange;
 use im::Vector;
-use marzano_language::target_language::TargetLanguage;
+use marzano_language::language::Language;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::HashMap;
 use std::ops::Range;
@@ -23,7 +23,7 @@ pub(crate) fn apply_effects<'a>(
     files: &FileRegistry<'a>,
     the_filename: &Path,
     new_filename: &mut PathBuf,
-    language: &TargetLanguage,
+    language: &impl Language,
     current_name: Option<&str>,
     logs: &mut AnalysisLogs,
 ) -> Result<(String, Option<Vec<Range<usize>>>)> {

@@ -339,6 +339,14 @@ pub trait Language {
     ) -> Result<Option<Tree>> {
         default_parse_file(self.get_ts_language(), name, body, logs, new)
     }
+
+    fn should_pad_snippet(&self) -> bool {
+        false
+    }
+
+    fn make_single_line_comment(&self, text: &str) -> String {
+        format!("// {}\n", text)
+    }
 }
 
 pub(crate) fn default_parse_file(

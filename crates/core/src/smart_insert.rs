@@ -1,6 +1,6 @@
 use crate::binding::Binding;
 use grit_util::AstNode;
-use marzano_language::{language::Language, target_language::TargetLanguage};
+use marzano_language::language::Language;
 use marzano_util::node_with_source::NodeWithSource;
 
 impl<'a> Binding<'a> {
@@ -9,7 +9,7 @@ impl<'a> Binding<'a> {
         &self,
         text: &str,
         is_first: bool,
-        language: &TargetLanguage,
+        language: &impl Language,
     ) -> Option<String> {
         match self {
             Self::List(node, field_id) => {
@@ -49,7 +49,7 @@ fn calculate_padding(
     children: &[NodeWithSource],
     insert: &str,
     is_first: bool,
-    language: &TargetLanguage,
+    language: &impl Language,
 ) -> Option<String> {
     let named_children: Vec<_> = children
         .iter()

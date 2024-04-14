@@ -2,11 +2,11 @@ use regex::Regex;
 use std::sync::OnceLock;
 
 use crate::{
-    language::{
-        fields_for_nodes, Field, Language, SortId, TSLanguage
-    }, xscript_util::{
-        php_like_exact_variable_regex, php_like_metavariable_bracket_regex, php_like_metavariable_prefix, php_like_metavariable_regex, PHP_CODE_SNIPPETS
-    }
+    language::{fields_for_nodes, Field, Language, SortId, TSLanguage},
+    xscript_util::{
+        php_like_exact_variable_regex, php_like_metavariable_bracket_regex,
+        php_like_metavariable_prefix, php_like_metavariable_regex, PHP_CODE_SNIPPETS,
+    },
 };
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/php-node-types.json");
@@ -86,6 +86,10 @@ impl Language for Php {
 
     fn exact_variable_regex(&self) -> &'static Regex {
         php_like_exact_variable_regex()
+    }
+
+    fn make_single_line_comment(&self, text: &str) -> String {
+        format!("<!-- {} -->\n", text)
     }
 }
 
