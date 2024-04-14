@@ -1,18 +1,18 @@
-use super::patterns::Name;
+use super::patterns::PatternName;
 use super::resolved_pattern::ResolvedPattern;
 use super::{patterns::Matcher, patterns::Pattern, PatternDefinition, State};
-use crate::context::Context;
+use crate::context::QueryContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Bubble {
-    pub pattern_def: PatternDefinition,
-    pub args: Vec<Option<Pattern>>,
+pub struct Bubble<Q: QueryContext> {
+    pub pattern_def: PatternDefinition<Q>,
+    pub args: Vec<Option<Pattern<Q>>>,
 }
 
-impl Bubble {
-    pub fn new(pattern_def: PatternDefinition, args: Vec<Pattern>) -> Self {
+impl<Q: QueryContext> Bubble<Q> {
+    pub fn new(pattern_def: PatternDefinition<Q>, args: Vec<Pattern<Q>>) -> Self {
         Self {
             pattern_def,
             args: args.into_iter().map(Some).collect(),
@@ -20,18 +20,18 @@ impl Bubble {
     }
 }
 
-impl Name for Bubble {
+impl<Q: QueryContext> PatternName for Bubble<Q> {
     fn name(&self) -> &'static str {
         "BUBBLE"
     }
 }
 
-impl Matcher for Bubble {
+impl<Q: QueryContext> Matcher<Q> for Bubble<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         self.pattern_def

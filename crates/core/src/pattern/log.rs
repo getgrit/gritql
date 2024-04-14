@@ -1,11 +1,11 @@
 use super::{
     functions::{Evaluator, FuncEvaluation},
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     state::State,
     variable::{get_file_name, Variable},
 };
-use crate::{binding::Binding, context::Context};
+use crate::{binding::Binding, context::QueryContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 
@@ -22,20 +22,20 @@ impl VariableInfo {
 }
 
 #[derive(Debug, Clone)]
-pub struct Log {
+pub struct Log<Q: QueryContext> {
     pub variable: Option<VariableInfo>,
-    pub message: Option<Pattern>,
+    pub message: Option<Pattern<Q>>,
 }
 
-impl Log {
-    pub fn new(variable: Option<VariableInfo>, message: Option<Pattern>) -> Self {
+impl<Q: QueryContext> Log<Q> {
+    pub fn new(variable: Option<VariableInfo>, message: Option<Pattern<Q>>) -> Self {
         Self { variable, message }
     }
 
     fn add_log<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut message = String::new();
@@ -80,23 +80,23 @@ impl Log {
     }
 }
 
-impl Matcher for Log {
+impl<Q: QueryContext> Matcher<Q> for Log<Q> {
     fn execute<'a>(
         &'a self,
-        _binding: &super::resolved_pattern::ResolvedPattern<'a>,
-        state: &mut super::state::State<'a>,
-        context: &'a impl Context,
+        _binding: &ResolvedPattern<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         self.add_log(state, context, logs)
     }
 }
 
-impl Evaluator for Log {
+impl<Q: QueryContext> Evaluator<Q> for Log<Q> {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let predicator = self.add_log(state, context, logs)?;
@@ -107,7 +107,7 @@ impl Evaluator for Log {
     }
 }
 
-impl Name for Log {
+impl<Q: QueryContext> PatternName for Log<Q> {
     fn name(&self) -> &'static str {
         "LOG"
     }

@@ -3,6 +3,7 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::pattern::{limit::Limit, patterns::Pattern};
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
@@ -10,7 +11,7 @@ use marzano_util::node_with_source::NodeWithSource;
 pub(crate) struct LimitCompiler;
 
 impl NodeCompiler for LimitCompiler {
-    type TargetPattern = Pattern;
+    type TargetPattern = Pattern<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

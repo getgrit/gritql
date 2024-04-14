@@ -2,27 +2,27 @@ use super::{
     function_definition::FunctionDefinition,
     functions::{Evaluator, FuncEvaluation},
     patterns::Matcher,
-    patterns::{Name, Pattern},
+    patterns::{Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::Context;
+use crate::{context::ExecContext, context::QueryContext};
 use anyhow::{bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Clone, Debug)]
-pub struct Call {
+pub struct Call<Q: QueryContext> {
     pub(crate) index: usize,
-    pub(crate) args: Vec<Option<Pattern>>,
+    pub(crate) args: Vec<Option<Pattern<Q>>>,
 }
 
-impl Call {
-    pub fn new(index: usize, args: Vec<Option<Pattern>>) -> Self {
+impl<Q: QueryContext> Call<Q> {
+    pub fn new(index: usize, args: Vec<Option<Pattern<Q>>>) -> Self {
         Self { index, args }
     }
 }
 
-impl Name for Call {
+impl<Q: QueryContext> PatternName for Call<Q> {
     fn name(&self) -> &'static str {
         "CALL"
     }
@@ -30,12 +30,12 @@ impl Name for Call {
 
 // todo parameters, and name should both be usize references
 // argument should throw an error if its not a parameter at compile time
-impl Matcher for Call {
+impl<Q: QueryContext> Matcher<Q> for Call<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let pattern_definition = &context.pattern_definitions()[self.index];
@@ -45,28 +45,28 @@ impl Matcher for Call {
 }
 
 #[derive(Debug, Clone)]
-pub struct PrCall {
+pub struct PrCall<Q: QueryContext> {
     index: usize,
-    pub args: Vec<Option<Pattern>>,
+    pub args: Vec<Option<Pattern<Q>>>,
 }
 
-impl PrCall {
-    pub fn new(index: usize, args: Vec<Option<Pattern>>) -> Self {
+impl<Q: QueryContext> PrCall<Q> {
+    pub fn new(index: usize, args: Vec<Option<Pattern<Q>>>) -> Self {
         Self { index, args }
     }
 }
 
-impl Name for PrCall {
+impl<Q: QueryContext> PatternName for PrCall<Q> {
     fn name(&self) -> &'static str {
         "PREDICATE_CALL"
     }
 }
 
-impl Evaluator for PrCall {
+impl<Q: QueryContext> Evaluator<Q> for PrCall<Q> {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let predicate_definition = &context.predicate_definitions().get(self.index);

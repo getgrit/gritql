@@ -43,7 +43,6 @@ use super::{
     within_compiler::WithinCompiler,
 };
 use crate::pattern::{
-    ast_node::ASTNode,
     dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
     list::List,
     patterns::Pattern,
@@ -51,6 +50,8 @@ use crate::pattern::{
     string_constant::AstLeafNode,
     variable::{is_reserved_metavariable, register_variable, Variable},
 };
+use crate::problem::MarzanoQueryContext;
+use crate::{ast_node::ASTNode, context::QueryContext};
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
 use grit_util::{traverse, Order};
@@ -78,7 +79,7 @@ impl PatternCompiler {
         context_range: Range,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> Result<Pattern> {
+    ) -> Result<Pattern<MarzanoQueryContext>> {
         let snippet_start = node.node.start_byte();
         let node = NodeWithSource::new(node.node, &node.context);
         let ranges = metavariable_ranges(&node, context.compilation.lang);
@@ -90,7 +91,7 @@ impl PatternCompiler {
             range_map: &HashMap<Range, Range>,
             context: &mut NodeCompilationContext,
             is_rhs: bool,
-        ) -> Result<Pattern> {
+        ) -> Result<Pattern<MarzanoQueryContext>> {
             let sort = node.node.kind_id();
             // probably safe to assume node is named, but just in case
             // maybe doesn't even matter, but is what I expect,
@@ -160,7 +161,7 @@ impl PatternCompiler {
                         let mut nodes_list = node
                             .named_children_by_field_id(field_id)
                             .map(|n| node_to_astnode(n, context_range, range_map, context, is_rhs))
-                            .collect::<Result<Vec<Pattern>>>()?;
+                            .collect::<Result<Vec<Pattern<MarzanoQueryContext>>>>()?;
                         if !field.multiple() {
                             return Ok((
                                 field_id,
@@ -186,15 +187,15 @@ impl PatternCompiler {
                             Pattern::List(Box::new(List::new(nodes_list))),
                         ))
                     })
-                    .collect::<Result<Vec<(u16, bool, Pattern)>>>()?;
-            Ok(Pattern::ASTNode(Box::new(ASTNode { sort, args })))
+                    .collect::<Result<Vec<(u16, bool, Pattern<MarzanoQueryContext>)>>>()?;
+            Ok(Pattern::AstNode(Box::new(ASTNode { sort, args })))
         }
         node_to_astnode(node, context_range, &range_map, context, is_rhs)
     }
 }
 
 impl NodeCompiler for PatternCompiler {
-    type TargetPattern = Pattern;
+    type TargetPattern = Pattern<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
@@ -342,12 +343,12 @@ fn derive_range(text: &str, m: RegexMatch) -> Range {
     byte_range.byte_range_to_char_range(text)
 }
 
-fn implicit_metavariable_regex(
+fn implicit_metavariable_regex<Q: QueryContext>(
     node: &NodeWithSource,
     context_range: Range,
     range_map: &HashMap<Range, Range>,
     context: &mut NodeCompilationContext,
-) -> Result<Option<RegexPattern>> {
+) -> Result<Option<RegexPattern<Q>>> {
     let range = node.range();
     let offset = range.start_byte;
     let mut last = if cfg!(target_arch = "wasm32") {
@@ -407,13 +408,13 @@ fn make_regex_match_range(text: &str, m: RegexMatch) -> Range {
     Range::new(start, end, m.start() as u32, m.end() as u32)
 }
 
-fn metavariable_descendent(
+fn metavariable_descendent<Q: QueryContext>(
     node: &NodeWithSource,
     context_range: Range,
     range_map: &HashMap<Range, Range>,
     context: &mut NodeCompilationContext,
     is_rhs: bool,
-) -> Result<Option<Pattern>> {
+) -> Result<Option<Pattern<Q>>> {
     let mut cursor = node.node.walk();
     loop {
         let node = NodeWithSource::new(cursor.node(), node.source);
@@ -503,7 +504,7 @@ enum SnippetValues {
     Variable(Variable),
 }
 
-impl From<SnippetValues> for Pattern {
+impl<Q: QueryContext> From<SnippetValues> for Pattern<Q> {
     fn from(value: SnippetValues) -> Self {
         match value {
             SnippetValues::Dots => Pattern::Dots,

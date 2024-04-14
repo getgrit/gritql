@@ -3,6 +3,7 @@ use super::compiler::NodeCompilationContext;
 use super::pattern_compiler::PatternCompiler;
 use super::NodeCompiler;
 use crate::pattern::{patterns::Pattern, step::Step};
+use crate::problem::MarzanoQueryContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogBuilder;
 use marzano_util::node_with_source::NodeWithSource;
@@ -12,7 +13,7 @@ const SEQUENTIAL_WARNING: &str = "Warning: sequential matches at the top of the 
 pub(crate) struct StepCompiler;
 
 impl NodeCompiler for StepCompiler {
-    type TargetPattern = Step;
+    type TargetPattern = Step<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
@@ -31,7 +32,7 @@ impl NodeCompiler for StepCompiler {
             | Pattern::Bubble(_) => {}
             Pattern::And(_)
             | Pattern::Or(_)
-            | Pattern::ASTNode(_)
+            | Pattern::AstNode(_)
             | Pattern::List(_)
             | Pattern::ListIndex(_)
             | Pattern::Map(_)

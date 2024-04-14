@@ -2,14 +2,14 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::pattern::subtract::Subtract;
+use crate::{pattern::subtract::Subtract, problem::MarzanoQueryContext};
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct SubtractCompiler;
 
 impl NodeCompiler for SubtractCompiler {
-    type TargetPattern = Subtract;
+    type TargetPattern = Subtract<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

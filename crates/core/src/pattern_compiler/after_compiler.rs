@@ -3,13 +3,14 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::pattern::after::After;
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct AfterCompiler;
 
 impl NodeCompiler for AfterCompiler {
-    type TargetPattern = After;
+    type TargetPattern = After<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

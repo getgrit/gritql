@@ -1,8 +1,9 @@
 use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler, step_compiler::StepCompiler,
 };
-use crate::pattern::{
-    files::Files, patterns::Pattern, sequential::Sequential, some::Some, step::Step,
+use crate::{
+    pattern::{files::Files, patterns::Pattern, sequential::Sequential, some::Some, step::Step},
+    problem::MarzanoQueryContext,
 };
 use anyhow::Result;
 use marzano_util::node_with_source::NodeWithSource;
@@ -13,7 +14,7 @@ impl SequentialCompiler {
     pub(crate) fn from_files_node(
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
-    ) -> Result<Sequential> {
+    ) -> Result<Sequential<MarzanoQueryContext>> {
         node.named_children_by_field_name("files")
             .map(|n| {
                 let step = StepCompiler::from_node(&n, context)?;
@@ -27,7 +28,7 @@ impl SequentialCompiler {
 }
 
 impl NodeCompiler for SequentialCompiler {
-    type TargetPattern = Sequential;
+    type TargetPattern = Sequential<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

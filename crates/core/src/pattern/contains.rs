@@ -1,40 +1,40 @@
 use super::{
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::{LazyBuiltIn, ResolvedPattern, ResolvedSnippet},
     Node, State,
 };
-use crate::{context::Context, resolve};
+use crate::{context::QueryContext, resolve};
 use anyhow::Result;
 use core::fmt::Debug;
 use im::vector;
 use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource};
 
 #[derive(Debug, Clone)]
-pub struct Contains {
-    pub contains: Pattern,
-    pub until: Option<Pattern>,
+pub struct Contains<Q: QueryContext> {
+    pub contains: Pattern<Q>,
+    pub until: Option<Pattern<Q>>,
 }
 
-impl Contains {
-    pub fn new(contains: Pattern, until: Option<Pattern>) -> Self {
+impl<Q: QueryContext> Contains<Q> {
+    pub fn new(contains: Pattern<Q>, until: Option<Pattern<Q>>) -> Self {
         Self { contains, until }
     }
 }
 
-impl Name for Contains {
+impl<Q: QueryContext> PatternName for Contains<Q> {
     fn name(&self) -> &'static str {
         "CONTAINS"
     }
 }
 
-fn execute_until<'a>(
-    init_state: &mut State<'a>,
+fn execute_until<'a, Q: QueryContext>(
+    init_state: &mut State<'a, Q>,
     node: &Node<'a>,
     src: &'a str,
-    context: &'a impl Context,
+    context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
-    the_contained: &'a Pattern,
-    until: &'a Option<Pattern>,
+    the_contained: &'a Pattern<Q>,
+    until: &'a Option<Pattern<Q>>,
 ) -> Result<bool, anyhow::Error> {
     let mut did_match = false;
     let mut cur_state = init_state.clone();
@@ -82,12 +82,12 @@ fn execute_until<'a>(
 
 // Contains and within should call the same function taking an iterator as an argument
 // even better two arguments an accumulator and an iterator.
-impl Matcher for Contains {
+impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
     fn execute<'a>(
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
-        init_state: &mut State<'a>,
-        context: &'a impl Context,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match resolved_pattern {

@@ -5,7 +5,7 @@ pub mod after;
 pub mod and;
 pub mod any;
 pub mod assignment;
-pub mod ast_node;
+pub mod ast_node_pattern;
 pub mod before;
 pub mod boolean_constant;
 pub mod bubble;
@@ -71,7 +71,10 @@ use self::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::{context::Context, problem::FileOwners};
+use crate::{
+    context::{ExecContext, QueryContext},
+    problem::{FileOwners, MarzanoQueryContext},
+};
 use anyhow::Result;
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::{
@@ -96,12 +99,12 @@ pub const MAX_FILE_SIZE: usize = 1_000_000;
  *
  * E.g., If a Node would contain a tree-sitter cursor, that would not be safe.
  */
-pub trait Work {
+pub trait Work<Q: QueryContext> {
     // it is important that any implementors of Work
     // do not compute-expensive things in execute
     // it should be stored somewhere in the struct of the implementor
     // fn execute(&self, state: &mut State) -> Vec<Match>;
-    fn execute(&self, state: &mut State);
+    fn execute(&self, state: &mut State<Q>);
 }
 
 #[derive(Debug, Default)]
@@ -131,9 +134,9 @@ impl VariableLocations {
 }
 
 pub struct MarzanoContext<'a> {
-    pub pattern_definitions: &'a Vec<PatternDefinition>,
-    pub predicate_definitions: &'a Vec<PredicateDefinition>,
-    pub function_definitions: &'a Vec<GritFunctionDefinition>,
+    pub pattern_definitions: &'a Vec<PatternDefinition<MarzanoQueryContext>>,
+    pub predicate_definitions: &'a Vec<PredicateDefinition<MarzanoQueryContext>>,
+    pub function_definitions: &'a Vec<GritFunctionDefinition<MarzanoQueryContext>>,
     pub foreign_function_definitions: &'a Vec<ForeignFunctionDefinition>,
     pub files: &'a FileOwners,
     pub built_ins: &'a BuiltIns,
@@ -145,9 +148,9 @@ pub struct MarzanoContext<'a> {
 impl<'a> MarzanoContext<'a> {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        pattern_definitions: &'a Vec<PatternDefinition>,
-        predicate_definitions: &'a Vec<PredicateDefinition>,
-        function_definitions: &'a Vec<GritFunctionDefinition>,
+        pattern_definitions: &'a Vec<PatternDefinition<MarzanoQueryContext>>,
+        predicate_definitions: &'a Vec<PredicateDefinition<MarzanoQueryContext>>,
+        function_definitions: &'a Vec<GritFunctionDefinition<MarzanoQueryContext>>,
         foreign_function_definitions: &'a Vec<ForeignFunctionDefinition>,
         files: &'a FileOwners,
         built_ins: &'a BuiltIns,
@@ -169,16 +172,16 @@ impl<'a> MarzanoContext<'a> {
     }
 }
 
-impl<'a> Context for MarzanoContext<'a> {
-    fn pattern_definitions(&self) -> &[PatternDefinition] {
+impl<'a> ExecContext<MarzanoQueryContext> for MarzanoContext<'a> {
+    fn pattern_definitions(&self) -> &[PatternDefinition<MarzanoQueryContext>] {
         self.pattern_definitions
     }
 
-    fn predicate_definitions(&self) -> &[PredicateDefinition] {
+    fn predicate_definitions(&self) -> &[PredicateDefinition<MarzanoQueryContext>] {
         self.predicate_definitions
     }
 
-    fn function_definitions(&self) -> &[GritFunctionDefinition] {
+    fn function_definitions(&self) -> &[GritFunctionDefinition<MarzanoQueryContext>] {
         self.function_definitions
     }
 
@@ -192,9 +195,9 @@ impl<'a> Context for MarzanoContext<'a> {
 
     fn call_built_in<'b>(
         &self,
-        call: &'b CallBuiltIn,
+        call: &'b CallBuiltIn<MarzanoQueryContext>,
         context: &'b Self,
-        state: &mut State<'b>,
+        state: &mut State<'b, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'b>> {
         self.built_ins.call(call, context, state, logs)

@@ -1,38 +1,38 @@
 use super::{
     container::Container,
     functions::{Evaluator, FuncEvaluation},
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::Context;
+use crate::context::QueryContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Assignment {
-    pub container: Container,
-    pub pattern: Pattern,
+pub struct Assignment<Q: QueryContext> {
+    pub container: Container<Q>,
+    pub pattern: Pattern<Q>,
 }
 
-impl Assignment {
-    pub fn new(container: Container, pattern: Pattern) -> Self {
+impl<Q: QueryContext> Assignment<Q> {
+    pub fn new(container: Container<Q>, pattern: Pattern<Q>) -> Self {
         Self { container, pattern }
     }
 }
 
-impl Name for Assignment {
+impl<Q: QueryContext> PatternName for Assignment<Q> {
     fn name(&self) -> &'static str {
         "assignment"
     }
 }
 
-impl Matcher for Assignment {
+impl<Q: QueryContext> Matcher<Q> for Assignment<Q> {
     fn execute<'a>(
         &'a self,
         _context_node: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let resolved = ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
@@ -41,11 +41,11 @@ impl Matcher for Assignment {
     }
 }
 
-impl Evaluator for Assignment {
+impl<Q: QueryContext> Evaluator<Q> for Assignment<Q> {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let resolved: ResolvedPattern<'_> =

@@ -1,20 +1,23 @@
-use crate::pattern::list_index::{ContainerOrIndex, ListOrContainer};
-
 use super::{
     accessor::Accessor, container::Container, dynamic_snippet::DynamicPattern,
     list_index::ListIndex, patterns::Pattern, predicates::Predicate, regex::RegexLike,
 };
+use crate::{
+    context::QueryContext,
+    pattern::ast_node_pattern::AstNodePattern,
+    pattern::list_index::{ContainerOrIndex, ListOrContainer},
+};
 
-pub(crate) struct PatternOrPredicateIterator<'a> {
-    patterns: Vec<PatternOrPredicate<'a>>,
+pub(crate) struct PatternOrPredicateIterator<'a, Q: QueryContext> {
+    patterns: Vec<PatternOrPredicate<'a, Q>>,
 }
 
-impl<'a> Iterator for PatternOrPredicateIterator<'a> {
-    type Item = PatternOrPredicate<'a>;
+impl<'a, Q: QueryContext> Iterator for PatternOrPredicateIterator<'a, Q> {
+    type Item = PatternOrPredicate<'a, Q>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(pattern) = self.patterns.pop() {
-            self.patterns.extend(&pattern.children());
+            self.patterns.extend(pattern.children());
             Some(pattern)
         } else {
             None
@@ -22,13 +25,13 @@ impl<'a> Iterator for PatternOrPredicateIterator<'a> {
     }
 }
 
-impl<'a> PatternOrPredicateIterator<'a> {
-    fn from_pattern(pattern: &'a Pattern) -> Self {
+impl<'a, Q: QueryContext> PatternOrPredicateIterator<'a, Q> {
+    fn from_pattern(pattern: &'a Pattern<Q>) -> Self {
         Self {
             patterns: vec![PatternOrPredicate::Pattern(pattern)],
         }
     }
-    fn from_predicate(predicate: &'a Predicate) -> Self {
+    fn from_predicate(predicate: &'a Predicate<Q>) -> Self {
         Self {
             patterns: vec![PatternOrPredicate::Predicate(predicate)],
         }
@@ -37,13 +40,13 @@ impl<'a> PatternOrPredicateIterator<'a> {
 
 // todo maybe add variable?
 #[derive(Clone, Copy)]
-pub(crate) enum PatternOrPredicate<'a> {
-    Pattern(&'a Pattern),
-    Predicate(&'a Predicate),
+pub enum PatternOrPredicate<'a, Q: QueryContext> {
+    Pattern(&'a Pattern<Q>),
+    Predicate(&'a Predicate<Q>),
 }
 
-impl<'a> PatternOrPredicate<'a> {
-    fn children(&self) -> Vec<PatternOrPredicate<'a>> {
+impl<'a, Q: QueryContext> PatternOrPredicate<'a, Q> {
+    fn children(&self) -> Vec<PatternOrPredicate<'a, Q>> {
         match self {
             PatternOrPredicate::Pattern(p) => p.children(),
             PatternOrPredicate::Predicate(p) => p.children(),
@@ -51,12 +54,12 @@ impl<'a> PatternOrPredicate<'a> {
     }
 }
 
-impl Predicate {
-    pub(crate) fn iter(&self) -> PatternOrPredicateIterator {
+impl<Q: QueryContext> Predicate<Q> {
+    pub(crate) fn iter(&self) -> PatternOrPredicateIterator<Q> {
         PatternOrPredicateIterator::from_predicate(self)
     }
 
-    fn children(&self) -> Vec<PatternOrPredicate> {
+    fn children(&self) -> Vec<PatternOrPredicate<Q>> {
         match self {
             Predicate::Call(call) => args_children(&call.args),
             Predicate::Not(not) => vec![PatternOrPredicate::Predicate(&not.predicate)],
@@ -99,8 +102,8 @@ impl Predicate {
     }
 }
 
-impl Container {
-    fn children(&self) -> Vec<PatternOrPredicate> {
+impl<Q: QueryContext> Container<Q> {
+    fn children(&self) -> Vec<PatternOrPredicate<Q>> {
         match self {
             Container::Variable(_) => vec![],
             Container::Accessor(a) => a.children(),
@@ -109,8 +112,8 @@ impl Container {
     }
 }
 
-impl Accessor {
-    fn children(&self) -> Vec<PatternOrPredicate> {
+impl<Q: QueryContext> Accessor<Q> {
+    fn children(&self) -> Vec<PatternOrPredicate<Q>> {
         match &self.map {
             super::accessor::AccessorMap::Container(c) => c.children(),
             super::accessor::AccessorMap::Map(m) => m
@@ -122,8 +125,8 @@ impl Accessor {
     }
 }
 
-impl DynamicPattern {
-    fn children(&self) -> Vec<PatternOrPredicate> {
+impl<Q: QueryContext> DynamicPattern<Q> {
+    fn children(&self) -> Vec<PatternOrPredicate<Q>> {
         match &self {
             super::dynamic_snippet::DynamicPattern::Variable(_) => Vec::new(),
             super::dynamic_snippet::DynamicPattern::Accessor(a) => a.children(),
@@ -141,8 +144,8 @@ impl DynamicPattern {
     }
 }
 
-impl ListIndex {
-    fn children(&self) -> Vec<PatternOrPredicate> {
+impl<Q: QueryContext> ListIndex<Q> {
+    fn children(&self) -> Vec<PatternOrPredicate<Q>> {
         let mut v = Vec::new();
         let list = match &self.list {
             ListOrContainer::Container(c) => c.children(),
@@ -158,35 +161,31 @@ impl ListIndex {
     }
 }
 
-fn args_children(args: &[Option<Pattern>]) -> Vec<PatternOrPredicate> {
+fn args_children<Q: QueryContext>(args: &[Option<Pattern<Q>>]) -> Vec<PatternOrPredicate<Q>> {
     args.iter()
         .flat_map(|p| p.as_ref().map(PatternOrPredicate::Pattern))
         .collect()
 }
 
-fn patterns_children(patterns: &[Pattern]) -> Vec<PatternOrPredicate> {
+fn patterns_children<Q: QueryContext>(patterns: &[Pattern<Q>]) -> Vec<PatternOrPredicate<Q>> {
     patterns.iter().map(PatternOrPredicate::Pattern).collect()
 }
 
-fn predicates_children(predicates: &[Predicate]) -> Vec<PatternOrPredicate> {
+fn predicates_children<Q: QueryContext>(predicates: &[Predicate<Q>]) -> Vec<PatternOrPredicate<Q>> {
     predicates
         .iter()
         .map(PatternOrPredicate::Predicate)
         .collect()
 }
 
-impl Pattern {
-    pub(crate) fn iter(&self) -> PatternOrPredicateIterator {
+impl<Q: QueryContext> Pattern<Q> {
+    pub(crate) fn iter(&self) -> PatternOrPredicateIterator<Q> {
         PatternOrPredicateIterator::from_pattern(self)
     }
 
-    fn children(&self) -> Vec<PatternOrPredicate> {
+    fn children(&self) -> Vec<PatternOrPredicate<Q>> {
         match self {
-            Pattern::ASTNode(a) => a
-                .args
-                .iter()
-                .map(|a| PatternOrPredicate::Pattern(&a.2))
-                .collect(),
+            Pattern::AstNode(a) => a.children(),
             Pattern::List(l) => patterns_children(&l.patterns),
             Pattern::ListIndex(l) => l.children(),
             Pattern::Map(m) => m

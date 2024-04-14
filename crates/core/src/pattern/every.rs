@@ -1,36 +1,36 @@
 use super::{
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{context::Context, resolve};
+use crate::{context::QueryContext, resolve};
 use anyhow::Result;
 use im::vector;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Every {
-    pub pattern: Pattern,
+pub struct Every<Q: QueryContext> {
+    pub pattern: Pattern<Q>,
 }
 
-impl Every {
-    pub fn new(pattern: Pattern) -> Self {
+impl<Q: QueryContext> Every<Q> {
+    pub fn new(pattern: Pattern<Q>) -> Self {
         Self { pattern }
     }
 }
 
-impl Name for Every {
+impl<Q: QueryContext> PatternName for Every<Q> {
     fn name(&self) -> &'static str {
         "EVERY"
     }
 }
 
-impl Matcher for Every {
+impl<Q: QueryContext> Matcher<Q> for Every<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        init_state: &mut State<'a>,
-        context: &'a impl Context,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         // might be necessary to clone init state at the top,

@@ -10,8 +10,8 @@ use super::{
 };
 use crate::{
     binding::{Binding, Constant},
-    context::Context,
-    pattern::{container::PatternOrResolved, patterns::Name},
+    context::QueryContext,
+    pattern::{container::PatternOrResolved, patterns::PatternName},
     problem::{Effect, EffectKind},
 };
 use anyhow::{anyhow, bail, Result};
@@ -270,7 +270,7 @@ impl<'a> ResolvedSnippet<'a> {
         res
     }
 
-    pub(crate) fn is_truthy(&self, state: &mut State<'a>) -> Result<bool> {
+    pub(crate) fn is_truthy<Q: QueryContext>(&self, state: &mut State<'a, Q>) -> Result<bool> {
         let truthiness = match self {
             Self::Binding(b) => b.is_truthy(),
             Self::Text(t) => !t.is_empty(),
@@ -470,10 +470,10 @@ impl<'a> ResolvedPattern<'a> {
         }
     }
 
-    pub fn from_dynamic_snippet(
+    pub fn from_dynamic_snippet<Q: QueryContext>(
         snippet: &'a DynamicSnippet,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         let mut parts = Vec::new();
@@ -504,10 +504,10 @@ impl<'a> ResolvedPattern<'a> {
         Ok(Self::Snippets(parts.into()))
     }
 
-    pub fn from_dynamic_pattern(
-        pattern: &'a DynamicPattern,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+    pub fn from_dynamic_pattern<Q: QueryContext>(
+        pattern: &'a DynamicPattern<Q>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         match pattern {
@@ -546,10 +546,10 @@ impl<'a> ResolvedPattern<'a> {
         }
     }
 
-    pub(crate) fn from_accessor(
-        accessor: &'a Accessor,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+    pub(crate) fn from_accessor<Q: QueryContext>(
+        accessor: &'a Accessor<Q>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         match accessor.get(state)? {
@@ -562,10 +562,10 @@ impl<'a> ResolvedPattern<'a> {
         }
     }
 
-    pub(crate) fn from_list_index(
-        index: &'a ListIndex,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+    pub(crate) fn from_list_index<Q: QueryContext>(
+        index: &'a ListIndex<Q>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         match index.get(state)? {
@@ -578,10 +578,10 @@ impl<'a> ResolvedPattern<'a> {
         }
     }
 
-    pub fn from_pattern(
-        pattern: &'a Pattern,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+    pub fn from_pattern<Q: QueryContext>(
+        pattern: &'a Pattern<Q>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
         match pattern {
@@ -659,7 +659,7 @@ impl<'a> ResolvedPattern<'a> {
             Pattern::Modulo(modulo_pattern) => modulo_pattern.call(state, context, logs),
             Pattern::Before(before) => before.prev_pattern(state, context, logs),
             Pattern::After(after) => after.next_pattern(state, context, logs),
-            Pattern::ASTNode(_)
+            Pattern::AstNode(_)
             | Pattern::CodeSnippet(_)
             | Pattern::Call(_)
             | Pattern::Regex(_)
@@ -926,7 +926,7 @@ impl<'a> ResolvedPattern<'a> {
         Ok(())
     }
 
-    pub(crate) fn is_truthy(&self, state: &mut State<'a>) -> Result<bool> {
+    pub(crate) fn is_truthy<Q: QueryContext>(&self, state: &mut State<'a, Q>) -> Result<bool> {
         let truthiness = match self {
             Self::Binding(bindings) => bindings.last().map_or(false, Binding::is_truthy),
             Self::List(elements) => !elements.is_empty(),
@@ -946,10 +946,10 @@ impl<'a> ResolvedPattern<'a> {
     }
 }
 
-pub(crate) fn pattern_to_binding<'a>(
-    pattern: &'a Pattern,
-    state: &mut State<'a>,
-    context: &'a impl Context,
+pub(crate) fn pattern_to_binding<'a, Q: QueryContext>(
+    pattern: &'a Pattern<Q>,
+    state: &mut State<'a, Q>,
+    context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<Binding<'a>> {
     let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)?;
@@ -965,10 +965,10 @@ pub(crate) fn pattern_to_binding<'a>(
 
 // borrow here seems off I think we want Vec<&ResolvedPattern>
 // since we'll be getting pointers to var_content
-pub fn patterns_to_resolved<'a>(
-    patterns: &'a [Option<Pattern>],
-    state: &mut State<'a>,
-    context: &'a impl Context,
+pub fn patterns_to_resolved<'a, Q: QueryContext>(
+    patterns: &'a [Option<Pattern<Q>>],
+    state: &mut State<'a, Q>,
+    context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<Vec<Option<ResolvedPattern<'a>>>> {
     patterns
@@ -1003,7 +1003,7 @@ yparam -> {
 Let's say this leads to `5` <: $xparam.
 
 If $xparam has a .pattern (like in this case), also try to pattern match the pattern
-(happening inside `Matcher for Variable`). Similar to what we do now with `.assigned`, but doing it with `.pattern`.
+(happening inside `Matcher<Q> for Variable`). Similar to what we do now with `.assigned`, but doing it with `.pattern`.
 
 xparam -> {
     pattern = $arg

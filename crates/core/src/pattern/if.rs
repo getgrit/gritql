@@ -1,23 +1,23 @@
 use super::{
     functions::{Evaluator, FuncEvaluation},
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     predicates::Predicate,
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::Context;
+use crate::context::QueryContext;
 use anyhow::{bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct If {
-    pub if_: Predicate,
-    pub then: Pattern,
-    pub else_: Pattern,
+pub struct If<Q: QueryContext> {
+    pub if_: Predicate<Q>,
+    pub then: Pattern<Q>,
+    pub else_: Pattern<Q>,
 }
-impl If {
-    pub fn new(if_: Predicate, then: Pattern, else_: Option<Pattern>) -> Self {
+impl<Q: QueryContext> If<Q> {
+    pub fn new(if_: Predicate<Q>, then: Pattern<Q>, else_: Option<Pattern<Q>>) -> Self {
         Self {
             if_,
             then,
@@ -26,18 +26,18 @@ impl If {
     }
 }
 
-impl Name for If {
+impl<Q: QueryContext> PatternName for If<Q> {
     fn name(&self) -> &'static str {
         "IF"
     }
 }
 
-impl Matcher for If {
+impl<Q: QueryContext> Matcher<Q> for If<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        init_state: &mut State<'a>,
-        context: &'a impl Context,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut state = init_state.clone();
@@ -51,14 +51,14 @@ impl Matcher for If {
 }
 
 #[derive(Debug, Clone)]
-pub struct PrIf {
-    pub if_: Predicate,
-    pub then: Predicate,
-    pub else_: Predicate,
+pub struct PrIf<Q: QueryContext> {
+    pub if_: Predicate<Q>,
+    pub then: Predicate<Q>,
+    pub else_: Predicate<Q>,
 }
 
-impl PrIf {
-    pub fn new(if_: Predicate, then: Predicate, else_: Option<Predicate>) -> Self {
+impl<Q: QueryContext> PrIf<Q> {
+    pub fn new(if_: Predicate<Q>, then: Predicate<Q>, else_: Option<Predicate<Q>>) -> Self {
         Self {
             if_,
             then,
@@ -67,17 +67,17 @@ impl PrIf {
     }
 }
 
-impl Name for PrIf {
+impl<Q: QueryContext> PatternName for PrIf<Q> {
     fn name(&self) -> &'static str {
         "PREDICATE_IF"
     }
 }
 
-impl Evaluator for PrIf {
+impl<Q: QueryContext> Evaluator<Q> for PrIf<Q> {
     fn execute_func<'a>(
         &'a self,
-        init_state: &mut State<'a>,
-        context: &'a impl Context,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let mut state = init_state.clone();

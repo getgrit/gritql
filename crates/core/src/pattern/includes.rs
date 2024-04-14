@@ -1,35 +1,35 @@
 use super::{
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::Context;
+use crate::context::QueryContext;
 use anyhow::{Context as _, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Includes {
-    pub(crate) includes: Pattern,
+pub struct Includes<Q: QueryContext> {
+    pub(crate) includes: Pattern<Q>,
 }
 
-impl Includes {
-    pub fn new(includes: Pattern) -> Self {
+impl<Q: QueryContext> Includes<Q> {
+    pub fn new(includes: Pattern<Q>) -> Self {
         Self { includes }
     }
 }
 
-impl Name for Includes {
+impl<Q: QueryContext> PatternName for Includes<Q> {
     fn name(&self) -> &'static str {
         "INCLUDES"
     }
 }
 
-fn execute<'a>(
-    pattern: &'a Pattern,
+fn execute<'a, Q: QueryContext>(
+    pattern: &'a Pattern<Q>,
     binding: &ResolvedPattern<'a>,
-    state: &mut State<'a>,
-    context: &'a impl Context,
+    state: &mut State<'a, Q>,
+    context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<bool> {
     match &pattern {
@@ -60,7 +60,7 @@ fn execute<'a>(
             }
             Ok(true)
         }
-        Pattern::ASTNode(_)
+        Pattern::AstNode(_)
         | Pattern::List(_)
         | Pattern::ListIndex(_)
         | Pattern::Map(_)
@@ -128,12 +128,12 @@ fn execute<'a>(
 
 // Includes and within should call the same function taking an iterator as an argument
 // even better two arguments an accumulator and an iterator.
-impl Matcher for Includes {
+impl<Q: QueryContext> Matcher<Q> for Includes<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         execute(&self.includes, binding, state, context, logs)

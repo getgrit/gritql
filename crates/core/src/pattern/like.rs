@@ -1,39 +1,39 @@
 use super::{
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::Context;
+use crate::context::QueryContext;
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
-pub struct Like {
-    pub like: Pattern,
-    pub threshold: Pattern,
+pub struct Like<Q: QueryContext> {
+    pub like: Pattern<Q>,
+    pub threshold: Pattern<Q>,
 }
 
-impl Like {
-    pub fn new(like: Pattern, threshold: Pattern) -> Self {
+impl<Q: QueryContext> Like<Q> {
+    pub fn new(like: Pattern<Q>, threshold: Pattern<Q>) -> Self {
         Self { like, threshold }
     }
 }
 
-impl Name for Like {
+impl<Q: QueryContext> PatternName for Like<Q> {
     fn name(&self) -> &'static str {
         "LIKE"
     }
 }
 
-impl Matcher for Like {
+impl<Q: QueryContext> Matcher<Q> for Like<Q> {
     #[cfg(feature = "embeddings")]
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         use crate::errors::debug;
@@ -50,8 +50,8 @@ impl Matcher for Like {
     fn execute<'a>(
         &'a self,
         _binding: &ResolvedPattern<'a>,
-        _state: &mut State<'a>,
-        _context: &'a impl Context,
+        _state: &mut State<'a, Q>,
+        _context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         Err(anyhow!("Like only available under the embeddings feature"))

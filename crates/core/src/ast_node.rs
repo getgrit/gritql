@@ -1,10 +1,15 @@
-use super::{
-    patterns::Matcher,
-    patterns::{Name, Pattern},
-    resolved_pattern::ResolvedPattern,
-    State,
+use crate::pattern::iter_pattern::PatternOrPredicate;
+use crate::pattern::MarzanoContext;
+use crate::{context::ExecContext, resolve};
+use crate::{
+    pattern::{
+        ast_node_pattern::AstNodePattern,
+        patterns::{Matcher, Pattern, PatternName},
+        resolved_pattern::ResolvedPattern,
+        state::State,
+    },
+    problem::MarzanoQueryContext,
 };
-use crate::{context::Context, resolve};
 use anyhow::Result;
 use marzano_language::language::{FieldId, Language, SortId};
 use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource};
@@ -12,27 +17,40 @@ use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource
 #[derive(Debug, Clone)]
 pub struct ASTNode {
     pub(crate) sort: SortId,
-    pub(crate) args: Vec<(FieldId, bool, Pattern)>,
+    pub(crate) args: Vec<(FieldId, bool, Pattern<MarzanoQueryContext>)>,
 }
 
 impl ASTNode {
-    pub fn new(sort: SortId, args: Vec<(FieldId, bool, Pattern)>) -> Self {
+    pub fn new(sort: SortId, args: Vec<(FieldId, bool, Pattern<MarzanoQueryContext>)>) -> Self {
         Self { sort, args }
     }
 }
 
-impl Name for ASTNode {
+impl AstNodePattern<MarzanoQueryContext> for ASTNode {
+    fn children(&self) -> Vec<PatternOrPredicate<MarzanoQueryContext>> {
+        self.args
+            .iter()
+            .map(|a| PatternOrPredicate::Pattern(&a.2))
+            .collect()
+    }
+
+    fn matches_kind_of(&self, node: &NodeWithSource) -> bool {
+        self.sort == node.node.kind_id()
+    }
+}
+
+impl PatternName for ASTNode {
     fn name(&self) -> &'static str {
         "ASTNODE"
     }
 }
 
-impl Matcher<Q> for ASTNode {
+impl Matcher<MarzanoQueryContext> for ASTNode {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        init_state: &mut State<'a, Q>,
-        context: &'a Q::ExecContext<'a>,
+        init_state: &mut State<'a, MarzanoQueryContext>,
+        context: &'a MarzanoContext,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let binding = if let ResolvedPattern::Binding(binding) = binding {

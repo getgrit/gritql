@@ -2,14 +2,14 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::pattern::predicate_return::PrReturn;
+use crate::{pattern::predicate_return::PrReturn, problem::MarzanoQueryContext};
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct PredicateReturnCompiler;
 
 impl NodeCompiler for PredicateReturnCompiler {
-    type TargetPattern = PrReturn;
+    type TargetPattern = PrReturn<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

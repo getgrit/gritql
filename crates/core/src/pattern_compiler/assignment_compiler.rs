@@ -3,6 +3,7 @@ use super::{
     node_compiler::NodeCompiler, pattern_compiler::PatternCompiler,
 };
 use crate::pattern::{assignment::Assignment, variable::is_reserved_metavariable};
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
 use marzano_language::{language::GRIT_METAVARIABLE_PREFIX, target_language::TargetLanguage};
@@ -11,7 +12,7 @@ use marzano_util::node_with_source::NodeWithSource;
 pub(crate) struct AssignmentCompiler;
 
 impl NodeCompiler for AssignmentCompiler {
-    type TargetPattern = Assignment;
+    type TargetPattern = Assignment<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

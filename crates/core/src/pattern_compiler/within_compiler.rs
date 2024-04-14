@@ -2,14 +2,14 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::pattern::within::Within;
+use crate::{pattern::within::Within, problem::MarzanoQueryContext};
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct WithinCompiler;
 
 impl NodeCompiler for WithinCompiler {
-    type TargetPattern = Within;
+    type TargetPattern = Within<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

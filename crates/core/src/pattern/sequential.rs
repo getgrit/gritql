@@ -1,23 +1,23 @@
 use super::{
-    patterns::{Matcher, Name},
+    patterns::{Matcher, PatternName},
     resolved_pattern::ResolvedPattern,
     state::State,
     step::Step,
 };
-use crate::context::Context;
+use crate::context::QueryContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::ops;
 
 #[derive(Debug, Clone)]
-pub struct Sequential(pub Vec<Step>);
+pub struct Sequential<Q: QueryContext>(pub Vec<Step<Q>>);
 
-impl Matcher for Sequential {
+impl<Q: QueryContext> Matcher<Q> for Sequential<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         for step in &self.0 {
@@ -29,21 +29,21 @@ impl Matcher for Sequential {
     }
 }
 
-impl From<Vec<Step>> for Sequential {
-    fn from(logs: Vec<Step>) -> Self {
+impl<Q: QueryContext> From<Vec<Step<Q>>> for Sequential<Q> {
+    fn from(logs: Vec<Step<Q>>) -> Self {
         Self(logs)
     }
 }
 
-impl ops::Deref for Sequential {
-    type Target = Vec<Step>;
+impl<Q: QueryContext> ops::Deref for Sequential<Q> {
+    type Target = Vec<Step<Q>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl Name for Sequential {
+impl<Q: QueryContext> PatternName for Sequential<Q> {
     fn name(&self) -> &'static str {
         "SEQUENTIAL"
     }

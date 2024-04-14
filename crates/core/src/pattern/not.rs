@@ -1,38 +1,38 @@
 use super::{
     functions::{Evaluator, FuncEvaluation},
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     predicates::Predicate,
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::Context;
+use crate::context::QueryContext;
 use anyhow::{bail, Ok, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Not {
-    pub pattern: Pattern,
+pub struct Not<Q: QueryContext> {
+    pub pattern: Pattern<Q>,
 }
 
-impl Not {
-    pub fn new(pattern: Pattern) -> Self {
+impl<Q: QueryContext> Not<Q> {
+    pub fn new(pattern: Pattern<Q>) -> Self {
         Self { pattern }
     }
 }
 
-impl Name for Not {
+impl<Q: QueryContext> PatternName for Not<Q> {
     fn name(&self) -> &'static str {
         "NOT"
     }
 }
 
-impl Matcher for Not {
+impl<Q: QueryContext> Matcher<Q> for Not<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         Ok(!self
@@ -42,27 +42,27 @@ impl Matcher for Not {
 }
 
 #[derive(Debug, Clone)]
-pub struct PrNot {
-    pub(crate) predicate: Predicate,
+pub struct PrNot<Q: QueryContext> {
+    pub(crate) predicate: Predicate<Q>,
 }
 
-impl PrNot {
-    pub fn new(predicate: Predicate) -> Self {
+impl<Q: QueryContext> PrNot<Q> {
+    pub fn new(predicate: Predicate<Q>) -> Self {
         Self { predicate }
     }
 }
 
-impl Name for PrNot {
+impl<Q: QueryContext> PatternName for PrNot<Q> {
     fn name(&self) -> &'static str {
         "PREDICATE_NOT"
     }
 }
 
-impl Evaluator for PrNot {
+impl<Q: QueryContext> Evaluator<Q> for PrNot<Q> {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let res = self

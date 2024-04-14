@@ -3,13 +3,14 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::pattern::contains::Contains;
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct ContainsCompiler;
 
 impl NodeCompiler for ContainsCompiler {
-    type TargetPattern = Contains;
+    type TargetPattern = Contains<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
