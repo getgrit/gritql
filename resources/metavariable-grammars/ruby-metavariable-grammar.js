@@ -592,12 +592,12 @@ const PREC = {
       then: $ => choice(
         seq(
           $._terminator,
-          $._statements,
+          field('statements', $._statements),
         ),
         seq(
           optional($._terminator),
           'then',
-          optional($._statements),
+          optional(field('statements', $._statements)),
         ),
       ),
   
@@ -900,20 +900,47 @@ const PREC = {
         ));
       },
   
+      and: _ => 'and',
+      or: _ => 'or',
+      boolean_or: _ => '||',
+      boolean_and: _ => '&&',
+      shift_left: _ => '<<',
+      shift_right: _ => '>>',
+      bitwise_and: _ => '&',
+      bitwise_or: _ => '|',
+      xor: _ => '^',
+      plus: _ => '+',
+      minus: _ => '-',
+      times: _ => '*',
+      divide: _ => '/',
+      modulo: _ => '%',
+      exponent: _ => '**',
+
+      less_than: _ => '<',
+      less_than_or_equal: _ => '<=',
+      equal: _ => '==',
+      equal_2: _ => '===',
+      not_equal: _ => '!=',
+      greater_than_or_equal: _ => '>=',
+      greater_than: _ => '>',
+      spaceship: _ => '<=>',
+      regex_match: _ => '=~',
+      regex_no_match: _ => '!~',
+
       binary: $ => {
         const operators = [
-          [prec.left, PREC.AND, 'and'],
-          [prec.left, PREC.OR, 'or'],
-          [prec.left, PREC.BOOLEAN_OR, '||'],
-          [prec.left, PREC.BOOLEAN_AND, '&&'],
-          [prec.left, PREC.SHIFT, choice('<<', '>>')],
-          [prec.left, PREC.COMPARISON, choice('<', '<=', '>', '>=')],
-          [prec.left, PREC.BITWISE_AND, '&'],
-          [prec.left, PREC.BITWISE_OR, choice('^', '|')],
-          [prec.left, PREC.ADDITIVE, choice('+', alias($._binary_minus, '-'))],
-          [prec.left, PREC.MULTIPLICATIVE, choice('/', '%', alias($._binary_star, '*'))],
-          [prec.right, PREC.RELATIONAL, choice('==', '!=', '===', '<=>', '=~', '!~')],
-          [prec.right, PREC.EXPONENTIAL, alias($._binary_star_star, '**')],
+          [prec.left, PREC.AND, $.and],
+          [prec.left, PREC.OR, $.or],
+          [prec.left, PREC.BOOLEAN_OR, $.boolean_or],
+          [prec.left, PREC.BOOLEAN_AND, $.boolean_and],
+          [prec.left, PREC.SHIFT, choice($.shift_left, $.shift_right)],
+          [prec.left, PREC.COMPARISON, choice($.less_than, $.less_than_or_equal, $.greater_than, $.greater_than_or_equal)],
+          [prec.left, PREC.BITWISE_AND, $.bitwise_and],
+          [prec.left, PREC.BITWISE_OR, choice($.xor, $.bitwise_or)],
+          [prec.left, PREC.ADDITIVE, choice($.plus, alias($._binary_minus, $.minus))],
+          [prec.left, PREC.MULTIPLICATIVE, choice($.divide, $.modulo, alias($._binary_star, $.times))],
+          [prec.right, PREC.RELATIONAL, choice($.equal, $.not_equal, $.equal_2, $.spaceship, $.regex_match, $.regex_no_match)],
+          [prec.right, PREC.EXPONENTIAL, alias($._binary_star_star, $.exponent)],
         ];
   
         // @ts-ignore
@@ -927,7 +954,7 @@ const PREC = {
   
       command_binary: $ => prec.left(seq(
         field('left', $._expression),
-        field('operator', choice('or', 'and')),
+        field('operator', choice($.or, $.and)),
         field('right', $._expression),
       )),
   
