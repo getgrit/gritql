@@ -48,7 +48,7 @@ dialoguer = { version = "0.10.4" }
 console = { version = "0.15.7" }
 rayon = { version = "1.8.0" }
 dashmap = { version = "5.5.3" }
-clap-markdown = { git = "https://github.com/getgrit/clap-markdown", optional = true }
+clap-markdown = { git = "https://github.com/getgrit/clap-markdown", rev = "4568de734d29257d51c0da15acde6ffd92126299", optional = true }
 flate2 = { version = "1.0.17", features = [
   "rust_backend",
 ], default-features = false }
