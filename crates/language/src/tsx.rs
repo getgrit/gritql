@@ -2,7 +2,8 @@ use std::{borrow::Cow, sync::OnceLock};
 
 use crate::{
     language::{
-        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, SortId, TSLanguage,
+        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, Replacement,
+        SortId, TSLanguage,
     },
     xscript_util::{
         self, js_like_optional_empty_field_compilation, js_like_skip_snippet_compilation_sorts,
@@ -10,7 +11,7 @@ use crate::{
 };
 use marzano_util::{node_with_source::NodeWithSource, position::Range};
 use tree_sitter::{Node, Parser};
-use xscript_util::{js_like_get_statement_sorts, jslike_check_orphaned};
+use xscript_util::{js_like_get_statement_sorts, jslike_check_replacements};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/tsx-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
@@ -177,8 +178,8 @@ impl Language for Tsx {
         self.metavariable_sort
     }
 
-    fn check_orphaned(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Range>) {
-        jslike_check_orphaned(n, orphan_ranges)
+    fn check_replacements(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Replacement>) {
+        jslike_check_replacements(n, orphan_ranges)
     }
 
     fn parse_file(

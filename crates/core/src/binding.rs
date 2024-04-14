@@ -1,9 +1,8 @@
 use crate::inline_snippets::inline_sorted_snippets_with_offset;
-use crate::pattern::resolved_pattern::CodeRange;
 use crate::pattern::state::{get_top_level_effects, FileRegistry};
-use crate::pattern::{Effect, EffectKind};
+use crate::problem::{Effect, EffectKind};
 use anyhow::{anyhow, Result};
-use grit_util::AstNode;
+use grit_util::{AstNode, CodeRange};
 use marzano_language::language::{FieldId, Language};
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
@@ -214,25 +213,17 @@ pub(crate) fn linearize_binding<'a>(
     let effects1 = effects1
         .into_iter()
         .map(|effect| {
-            let b = effect.binding;
-            let (src, range) = match (b.source(), b.position()) {
-                (Some(src), Some(orig_range)) => {
-                    (Some(src), Some(CodeRange::from_range(src, orig_range)))
-                }
-                _ => {
-                    b.log_empty_field_rewrite_error(language, logs)?;
-                    (None, None)
-                }
-            };
-            if let (Some(src), Some(range)) = (src, &range) {
+            let binding = effect.binding;
+            let binding_range = binding.code_range();
+            if let (Some(src), Some(range)) = (binding.source(), binding_range.as_ref()) {
                 match effect.kind {
                     EffectKind::Rewrite => {
                         if let Some(o) = memo.get(range) {
                             if let Some(s) = o {
-                                return Ok((b, s.to_owned().into(), effect.kind));
+                                return Ok((binding, s.to_owned().into(), effect.kind));
                             } else {
                                 return Ok((
-                                    b,
+                                    binding,
                                     adjust_padding(src, range, distributed_indent, 0, &mut [])?,
                                     effect.kind,
                                 ));
@@ -243,6 +234,8 @@ pub(crate) fn linearize_binding<'a>(
                     }
                     EffectKind::Insert => {}
                 }
+            } else {
+                binding.log_empty_field_rewrite_error(language, logs)?;
             }
             let res = effect.pattern.linearized_text(
                 language,
@@ -252,12 +245,12 @@ pub(crate) fn linearize_binding<'a>(
                 distributed_indent.is_some(),
                 logs,
             )?;
-            if let Some(range) = range {
+            if let Some(range) = binding_range {
                 if matches!(effect.kind, EffectKind::Rewrite) {
                     memo.insert(range, Some(res.to_string()));
                 }
             }
-            Ok((b, res, effect.kind))
+            Ok((binding, res, effect.kind))
         })
         .collect::<Result<Vec<_>>>()?;
 
@@ -364,47 +357,38 @@ impl<'a> Binding<'a> {
             Self::Empty(_, _) => None,
             Self::Node(node) => Some(node.range()),
             Self::String(_, range) => Some(range.to_owned()),
-            Self::List(parent_node, field_id) => {
-                let mut children = parent_node.children_by_field_id(*field_id);
+            Self::List(parent_node, field_id) => get_range_nodes_for_list(parent_node, field_id)
+                .map(|(leading_node, trailing_node)| Range {
+                    start: Position::new(
+                        leading_node.node.start_position().row() + 1,
+                        leading_node.node.start_position().column() + 1,
+                    ),
+                    end: Position::new(
+                        trailing_node.node.end_position().row() + 1,
+                        trailing_node.node.end_position().column() + 1,
+                    ),
+                    start_byte: leading_node.node.start_byte(),
+                    end_byte: trailing_node.node.end_byte(),
+                }),
+            Self::FileName(_) => None,
+            Self::ConstantRef(_) => None,
+        }
+    }
 
-                match children.next() {
-                    None => None,
-                    Some(first_node) => {
-                        let end_node = match children.last() {
-                            None => first_node.clone(),
-                            Some(last_node) => last_node,
-                        };
-                        let mut leading_comment = first_node.clone();
-                        while let Some(comment) = leading_comment.previous_sibling() {
-                            if comment.node.kind() == "comment" {
-                                leading_comment = comment;
-                            } else {
-                                break;
-                            }
-                        }
-                        let mut trailing_comment = end_node;
-                        while let Some(comment) = trailing_comment.next_sibling() {
-                            if comment.node.kind() == "comment" {
-                                trailing_comment = comment;
-                            } else {
-                                break;
-                            }
-                        }
-                        Some(Range {
-                            start: Position::new(
-                                first_node.node.start_position().row() + 1,
-                                first_node.node.start_position().column() + 1,
-                            ),
-                            end: Position::new(
-                                trailing_comment.node.end_position().row() + 1,
-                                trailing_comment.node.end_position().column() + 1,
-                            ),
-                            start_byte: leading_comment.node.start_byte(),
-                            end_byte: trailing_comment.node.end_byte(),
-                        })
-                    }
-                }
-            }
+    // todo implement for empty and empty list
+    pub fn code_range(&self) -> Option<CodeRange> {
+        match self {
+            Self::Empty(_, _) => None,
+            Self::Node(node) => Some(node.code_range()),
+            Self::String(src, range) => Some(CodeRange::new(range.start_byte, range.end_byte, src)),
+            Self::List(parent_node, field_id) => get_range_nodes_for_list(parent_node, field_id)
+                .map(|(leading_node, trailing_node)| {
+                    CodeRange::new(
+                        leading_node.node.start_byte(),
+                        trailing_node.node.end_byte(),
+                        parent_node.source,
+                    )
+                }),
             Self::FileName(_) => None,
             Self::ConstantRef(_) => None,
         }
@@ -421,20 +405,17 @@ impl<'a> Binding<'a> {
     ) -> Result<Cow<'a, str>> {
         let res: Result<Cow<'a, str>> = match self {
             Self::Empty(_, _) => Ok(Cow::Borrowed("")),
-            Self::Node(node) => {
-                let range = CodeRange::from_node(node.source, &node.node);
-                linearize_binding(
-                    language,
-                    effects,
-                    files,
-                    memo,
-                    node.source,
-                    range,
-                    distributed_indent,
-                    logs,
-                )
-                .map(|r| r.0)
-            }
+            Self::Node(node) => linearize_binding(
+                language,
+                effects,
+                files,
+                memo,
+                node.source,
+                node.code_range(),
+                distributed_indent,
+                logs,
+            )
+            .map(|r| r.0),
             // can't linearize until we update source to point to the entire file
             // otherwise file file pointers won't match
             Self::String(s, r) => Ok(Cow::Owned(
@@ -592,4 +573,36 @@ impl<'a> Binding<'a> {
 
         Ok(())
     }
+}
+
+fn get_range_nodes_for_list<'a>(
+    parent_node: &NodeWithSource<'a>,
+    field_id: &FieldId,
+) -> Option<(NodeWithSource<'a>, NodeWithSource<'a>)> {
+    let mut children = parent_node.children_by_field_id(*field_id);
+    let first_node = children.next()?;
+
+    let end_node = match children.last() {
+        None => first_node.clone(),
+        Some(last_node) => last_node,
+    };
+
+    let mut leading_comment = first_node.clone();
+    while let Some(comment) = leading_comment.previous_sibling() {
+        if comment.node.kind() == "comment" {
+            leading_comment = comment;
+        } else {
+            break;
+        }
+    }
+    let mut trailing_comment = end_node;
+    while let Some(comment) = trailing_comment.next_sibling() {
+        if comment.node.kind() == "comment" {
+            trailing_comment = comment;
+        } else {
+            break;
+        }
+    }
+
+    Some((leading_comment, trailing_comment))
 }

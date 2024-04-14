@@ -1,6 +1,6 @@
-use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
+use crate::language::{fields_for_nodes, Field, Language, Replacement, SortId, TSLanguage};
 use grit_util::AstNode;
-use marzano_util::{node_with_source::NodeWithSource, position::Range};
+use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
 
 static NODE_TYPES_STRING: &str =
@@ -79,9 +79,13 @@ impl Language for Python {
         id == self.comment_sort
     }
 
-    fn check_orphaned(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Range>) {
+    fn check_replacements(
+        &self,
+        n: NodeWithSource<'_>,
+        replacements: &mut Vec<crate::language::Replacement>,
+    ) {
         if n.node.is_error() && n.text() == "->" {
-            orphan_ranges.push(n.range());
+            replacements.push(Replacement::new(n.range(), ""));
         }
     }
 }

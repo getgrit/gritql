@@ -1,11 +1,13 @@
 use crate::{
-    language::{default_parse_file, Language, SortId, TSLanguage},
+    language::{default_parse_file, Language, Replacement, SortId, TSLanguage},
     vue::get_vue_ranges,
 };
 use anyhow::anyhow;
 use grit_util::AstNode;
-use marzano_util::{node_with_source::NodeWithSource, position::Range};
+use regex::Regex;
+use marzano_util::node_with_source::NodeWithSource;
 use tree_sitter::{Parser, Tree};
+use lazy_static::lazy_static;
 
 static STATEMENT_NODE_NAMES: &[&str] = &[
     "break_statement",
@@ -115,16 +117,27 @@ pub(crate) fn parse_file(
     }
 }
 
-pub(crate) fn jslike_check_orphaned(n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Range>) {
-    if n.node.is_error() && ["var", "let", "const"].contains(&n.text())
+pub(crate) fn jslike_check_replacements(
+    n: NodeWithSource<'_>,
+    replacement_ranges: &mut Vec<Replacement>,
+) {
+    if n.node.kind() == "arrow_function" {
+        let child = n.node.child_by_field_name("body");
+        if let Some(child) = child {
+            let range = child.range();
+            if range.start_byte() == range.end_byte() {
+                replacement_ranges.push(Replacement::new(range.into(), "{}"));
+            }
+        }
+    } else if n.node.is_error() && ["var", "let", "const"].contains(&n.text())
         || n.node.kind() == "empty_statement"
     {
-        orphan_ranges.push(n.range());
+        replacement_ranges.push(Replacement::new(n.range(), ""));
     } else if n.node.kind() == "import_statement" {
         for n in n.named_children().filter(|n| n.node.is_error()) {
             if let Some(n) = n.children().last() {
                 if n.node.kind() == "," {
-                    orphan_ranges.push(n.range())
+                    replacement_ranges.push(Replacement::new(n.range(), ""))
                 }
             }
         }
@@ -133,18 +146,68 @@ pub(crate) fn jslike_check_orphaned(n: NodeWithSource<'_>, orphan_ranges: &mut V
                 let named_imports = imports.named_children_by_field_name("imports").count();
                 let namespace_import = imports.named_children_by_field_name("namespace").count();
                 if named_imports == 0 && namespace_import == 0 {
-                    orphan_ranges.push(n.range());
+                    replacement_ranges.push(Replacement::new(n.range(), ""));
                 }
             }
         }
     } else if n.node.is_error() && n.text() == "," {
         for ancestor in n.ancestors() {
             if ancestor.node.kind() == "class_body" {
-                orphan_ranges.push(n.range());
+                replacement_ranges.push(Replacement::new(n.range(), ""));
                 break;
             }
         }
     }
+}
+
+lazy_static! {
+    static ref PHP_LIKE_EXACT_VARIABLE_REGEX: Regex =
+        Regex::new(r"^\^([A-Za-z_][A-Za-z0-9_]*)$").expect("Failed to compile PHP_LIKE_EXACT_VARIABLE_REGEX");
+    static ref PHP_LIKE_VARIABLE_REGEX: Regex =
+        Regex::new(r"\^(\.\.\.|[A-Za-z_][A-Za-z0-9_]*)").expect("Failed to compile PHP_LIKE_VARIABLE_REGEX");
+    static ref PHP_LIKE_BRACKET_VAR_REGEX: Regex =
+        Regex::new(r"\^\[([A-Za-z_][A-Za-z0-9_]*)\]").expect("Failed to compile PHP_LIKE_BRACKET_VAR_REGEX");
+    pub static ref PHP_ONLY_CODE_SNIPPETS: Vec<(&'static str, &'static str)> = vec![
+        ("", ""),
+        ("", ";"),
+        ("$", ";"),
+        ("class GRIT_CLASS {", "}"),
+        ("class GRIT_CLASS { ", " function GRIT_FN(); }"),
+        (" GRIT_FN(", ") { }"),
+        ("$GRIT_VAR = ", ";"),
+        ("$GRIT_VAR = ", ""),
+        ("[", "];"),
+        ("", "{}"),
+    ];
+    pub static ref PHP_CODE_SNIPPETS: Vec<(&'static str, &'static str)> = {
+        let mut php_tag_modifications:Vec<(&'static str, &'static str)> = PHP_ONLY_CODE_SNIPPETS.
+            clone().
+            into_iter().
+            map(|(s1, s2)| {
+                let owned_str1 = Box::leak(Box::new(format!("<?php {}", s1))) as &'static str;
+                let owned_str2 = Box::leak(Box::new(format!("{} ?>", s2))) as &'static str;
+                (owned_str1, owned_str2)
+            }).collect();
+        php_tag_modifications.extend(vec![("", "")]);
+        php_tag_modifications
+    };
+    
+}
+
+pub(crate) fn php_like_metavariable_regex() -> &'static Regex {
+    &PHP_LIKE_VARIABLE_REGEX
+}
+
+pub(crate) fn php_like_metavariable_bracket_regex() -> &'static Regex {
+    &PHP_LIKE_BRACKET_VAR_REGEX
+}
+
+pub(crate) fn php_like_exact_variable_regex() -> &'static Regex {
+    &PHP_LIKE_EXACT_VARIABLE_REGEX
+}
+
+pub(crate) fn php_like_metavariable_prefix() -> &'static str {
+    "^"
 }
 
 #[cfg(test)]

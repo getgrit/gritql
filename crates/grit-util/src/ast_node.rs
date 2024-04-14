@@ -1,3 +1,5 @@
+use crate::CodeRange;
+
 /// Represents an AST node and offers convenient AST-specific functionality.
 ///
 /// This trait should be free from dependencies on TreeSitter.
@@ -29,4 +31,7 @@ pub trait AstNode: Sized {
 
     /// Returns the text representation of the node.
     fn text(&self) -> &str;
+
+    /// Returns the code range of the node.
+    fn code_range(&self) -> CodeRange;
 }

@@ -2,7 +2,7 @@ use colored::Colorize;
 use dashmap::{DashMap, ReadOnlyView};
 use log::{debug, info};
 
-use marzano_core::pattern::api::MatchResult;
+use marzano_core::api::MatchResult;
 use marzano_gritmodule::config::{GritPatternSample, GritPatternTestInfo};
 use marzano_gritmodule::formatting::format_rich_files;
 use marzano_gritmodule::markdown::replace_sample_in_md_file;
@@ -26,7 +26,7 @@ use marzano_messenger::emit::{get_visibility, VisibilityLevels};
 
 use super::patterns::PatternsTestArgs;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context as _, Result};
 
 pub async fn get_marzano_pattern_test_results(
     patterns: Vec<GritPatternTestInfo>,
@@ -56,7 +56,9 @@ pub async fn get_marzano_pattern_test_results(
                 .make_pattern(&pattern.body, pattern.local_name.clone())
                 .unwrap_or_else(|_| panic!("Failed to parse pattern {}", pattern.body));
 
-            let compiled = rich_pattern.compile(&libs, None, None).map(|cr| cr.problem);
+            let compiled = rich_pattern
+                .compile(&libs, None, None, None)
+                .map(|cr| cr.problem);
 
             match compiled {
                 Ok(compiled) => {
@@ -312,6 +314,9 @@ fn update_results(
         }
         info!("{} {}", '✓', pattern_name);
 
+        // After replacing the first sample in a file, the offset of the second file will have changed.
+        let mut byte_offset: isize = 0;
+
         for result in results {
             if !result.result.is_pure_pass() {
                 let sample_name = get_sample_name(&result.actual_sample);
@@ -328,7 +333,18 @@ fn update_results(
                     .find(|p| p.local_name == Some(pattern_name.clone()))
                 {
                     if let Some(path) = &pattern.config.path {
-                        replace_sample_in_md_file(&result.actual_sample, path).unwrap();
+                        byte_offset =
+                            replace_sample_in_md_file(&result.actual_sample, path, byte_offset)
+                                .with_context(|| {
+                                    format!(
+                                        "Failed to update sample {} in markdown file",
+                                        &result
+                                            .actual_sample
+                                            .name
+                                            .as_ref()
+                                            .unwrap_or(&"".to_string())
+                                    )
+                                })?;
                     }
                 }
             }

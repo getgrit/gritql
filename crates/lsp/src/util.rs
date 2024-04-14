@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
-use marzano_core::pattern::{api::Rewrite, built_in_functions::BuiltIns};
+use marzano_core::{api::Rewrite, pattern::built_in_functions::BuiltIns};
 use marzano_util::{
     position::{
         map_one_indexed_position_to_zero_indexed, map_zero_indexed_position_to_one_indexed,

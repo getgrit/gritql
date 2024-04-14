@@ -5,14 +5,12 @@ use grit_cache::paths::cache_for_cwd;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use log::info;
 use marzano_core::{
-    fs::apply_rewrite,
-    pattern::{
-        api::{
-            is_match, AllDone, AllDoneReason, EnforcementLevel, MatchResult, RewriteReason,
-            RewriteSource,
-        },
-        Problem,
+    api::{
+        is_match, AllDone, AllDoneReason, EnforcementLevel, MatchResult, RewriteReason,
+        RewriteSource,
     },
+    fs::apply_rewrite,
+    problem::Problem,
 };
 use marzano_gritmodule::{config::ResolvedGritDefinition, utils::extract_path};
 use marzano_language::target_language::{expand_paths, PatternLanguage};
@@ -150,7 +148,7 @@ pub(crate) async fn run_check(
                 .make_pattern(&body, Some(p.local_name.to_string()))
                 .unwrap();
             let lang = PatternLanguage::get_language(&p.body);
-            match rich_pattern.compile(&grit_files, lang, filter_range.clone()) {
+            match rich_pattern.compile(&grit_files, lang, filter_range.clone(), None) {
                 Ok(c) => Ok((p.local_name.clone(), c.problem)),
                 Err(e) => {
                     bail!("Unable to compile pattern {}:\n{}", p.local_name, e);

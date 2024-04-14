@@ -71,7 +71,10 @@ impl Matcher for ASTNode {
 
             let res = if *is_list {
                 pattern.execute(
-                    &ResolvedPattern::from_list(source, node.clone(), *field_id),
+                    &ResolvedPattern::from_list(
+                        NodeWithSource::new(node.clone(), source),
+                        *field_id,
+                    ),
                     &mut cur_state,
                     context,
                     logs,
@@ -85,7 +88,10 @@ impl Matcher for ASTNode {
                 )
             } else {
                 pattern.execute(
-                    &ResolvedPattern::empty_field(source, node.clone(), *field_id),
+                    &ResolvedPattern::empty_field(
+                        NodeWithSource::new(node.clone(), source),
+                        *field_id,
+                    ),
                     &mut cur_state,
                     context,
                     logs,

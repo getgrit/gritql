@@ -1,10 +1,11 @@
 use crate::{
     language::{
-        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, SortId, TSLanguage,
+        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, Replacement,
+        SortId, TSLanguage,
     },
     xscript_util::{
         self, js_like_get_statement_sorts, js_optional_empty_field_compilation,
-        js_skip_snippet_compilation_sorts, jslike_check_orphaned,
+        js_skip_snippet_compilation_sorts, jslike_check_replacements,
     },
 };
 use anyhow::Result;
@@ -164,8 +165,8 @@ impl Language for JavaScript {
         self.metavariable_sort
     }
 
-    fn check_orphaned(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Range>) {
-        jslike_check_orphaned(n, orphan_ranges)
+    fn check_replacements(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Replacement>) {
+        jslike_check_replacements(n, orphan_ranges)
     }
 
     /// This needs a special implementation to parse only the JS ranges inside a vue file

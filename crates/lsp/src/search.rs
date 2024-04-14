@@ -1,5 +1,5 @@
 use anyhow::Error;
-use marzano_core::pattern::api::{is_match, MatchResult};
+use marzano_core::api::{is_match, MatchResult};
 use marzano_core::pattern_compiler::src_to_problem_libs;
 use marzano_util::rich_path::RichFile;
 use marzano_util::runtime::ExecutionContext;
@@ -52,6 +52,7 @@ pub async fn search_query(
             None,
             None,
             get_ai_built_in_functions_for_feature(),
+            None
         ) {
             Ok(p) => p,
             Err(e) => {

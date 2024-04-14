@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use marzano_core::{
-    parse::make_grit_parser, pattern::api::MatchResult, pattern_compiler::src_to_problem_libs,
+    api::MatchResult, parse::make_grit_parser, pattern_compiler::src_to_problem_libs,
 };
 use marzano_gritmodule::{
     markdown::get_patterns_from_md,
@@ -65,7 +65,7 @@ pub async fn maybe_test_pattern(
         .with_context(|| format!("Failed to get grit files for {}", document.uri))?;
 
     // Parse our pattern directly from the file
-    let rich_file = document_as_rich_file(document.clone())
+    let mut rich_file = document_as_rich_file(document.clone())
         .with_context(|| format!("Failed to parse document as rich file: {}", document.uri))?;
 
     let root = manager.get_root_uri();
@@ -75,7 +75,7 @@ pub async fn maybe_test_pattern(
     } else {
         None
     };
-    let found_patterns = get_patterns_from_md(&rich_file, &Some(module_repo), &root)?;
+    let found_patterns = get_patterns_from_md(&mut rich_file, &Some(module_repo), &root)?;
 
     let our_pattern = match found_patterns.first() {
         Some(pattern) => pattern,
@@ -115,6 +115,7 @@ pub async fn maybe_test_pattern(
         Some(our_pattern.local_name.to_string()),
         None,
         get_ai_built_in_functions_for_feature(),
+        None,
     ) {
         Ok(p) => {
             client
