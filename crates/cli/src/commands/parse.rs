@@ -12,7 +12,7 @@ use marzano_core::{
     api::{AnalysisLog, MatchResult, PatternInfo},
     parse::parse_input_file,
 };
-use marzano_language::target_language::PatternLanguage;
+use marzano_language::target_language::{PatternLanguage, TargetLanguage};
 use marzano_messenger::{
     emit::{Messager, VisibilityLevels},
     output_mode::OutputMode,
@@ -56,7 +56,7 @@ pub(crate) async fn run_parse(
     };
 
     // we should be reading the default from a config
-    let lang = PatternLanguage::get_language(&parse_input.pattern_body)
+    let lang: TargetLanguage = PatternLanguage::get_language(&parse_input.pattern_body)
         .unwrap_or_default()
         .try_into()
         .map_err(|e: String| anyhow!(e))?;
