@@ -1,6 +1,6 @@
 use super::compiler::{DefinitionInfo, NodeCompilationContext};
 use crate::{
-    context::ProblemContext,
+    context::QueryContext,
     pattern::{
         and::{And, PrAnd},
         bubble::Bubble,
@@ -29,13 +29,13 @@ use anyhow::Result;
 use marzano_util::position::FileRange;
 use std::collections::BTreeMap;
 
-pub(super) fn auto_wrap_pattern<P: ProblemContext>(
-    pattern: Pattern<P>,
-    pattern_definitions: &mut [PatternDefinition<P>],
+pub(super) fn auto_wrap_pattern<Q: QueryContext>(
+    pattern: Pattern<Q>,
+    pattern_definitions: &mut [PatternDefinition<Q>],
     is_not_multifile: bool,
     file_ranges: Option<Vec<FileRange>>,
     context: &mut NodeCompilationContext,
-) -> Result<Pattern<P>> {
+) -> Result<Pattern<Q>> {
     let is_sequential = is_sequential(&pattern, pattern_definitions);
     let should_wrap_in_sequential = !is_sequential;
     let should_wrap_in_contains = should_autowrap(&pattern, pattern_definitions);
@@ -84,9 +84,9 @@ pub(super) fn auto_wrap_pattern<P: ProblemContext>(
     }
 }
 
-fn is_sequential<P: ProblemContext>(
-    pattern: &Pattern<P>,
-    pattern_definitions: &[PatternDefinition<P>],
+fn is_sequential<Q: QueryContext>(
+    pattern: &Pattern<Q>,
+    pattern_definitions: &[PatternDefinition<Q>],
 ) -> bool {
     match pattern {
         Pattern::Sequential(_) => true,
@@ -148,9 +148,9 @@ fn is_sequential<P: ProblemContext>(
     }
 }
 
-pub(crate) fn should_autowrap<P: ProblemContext>(
-    pattern: &Pattern<P>,
-    pattern_definitions: &[PatternDefinition<P>],
+pub(crate) fn should_autowrap<Q: QueryContext>(
+    pattern: &Pattern<Q>,
+    pattern_definitions: &[PatternDefinition<Q>],
 ) -> bool {
     match pattern {
         Pattern::Contains(_) => false,
@@ -212,10 +212,10 @@ pub(crate) fn should_autowrap<P: ProblemContext>(
     }
 }
 
-fn extract_limit_pattern<P: ProblemContext>(
-    pattern: Pattern<P>,
-    pattern_definitions: &mut [PatternDefinition<P>],
-) -> (Pattern<P>, Option<usize>) {
+fn extract_limit_pattern<Q: QueryContext>(
+    pattern: Pattern<Q>,
+    pattern_definitions: &mut [PatternDefinition<Q>],
+) -> (Pattern<Q>, Option<usize>) {
     match pattern {
         Pattern::Limit(limit) => (limit.pattern, Some(limit.limit)),
         Pattern::Where(w) => {
@@ -306,9 +306,9 @@ fn extract_limit_pattern<P: ProblemContext>(
     }
 }
 
-fn should_wrap_in_file<P: ProblemContext>(
-    pattern: &Pattern<P>,
-    pattern_definitions: &[PatternDefinition<P>],
+fn should_wrap_in_file<Q: QueryContext>(
+    pattern: &Pattern<Q>,
+    pattern_definitions: &[PatternDefinition<Q>],
 ) -> bool {
     match pattern {
         Pattern::File(_) => false,
@@ -370,12 +370,12 @@ fn should_wrap_in_file<P: ProblemContext>(
     }
 }
 
-fn wrap_pattern_in_range<P: ProblemContext>(
+fn wrap_pattern_in_range<Q: QueryContext>(
     var_name: &str,
-    pattern: Pattern<P>,
+    pattern: Pattern<Q>,
     ranges: Vec<FileRange>,
     context: &mut NodeCompilationContext,
-) -> Result<Pattern<P>> {
+) -> Result<Pattern<Q>> {
     let var = Variable::from_name(var_name, context)?;
     let mut predicates = Vec::new();
     for file_range in ranges {
@@ -410,11 +410,11 @@ fn wrap_pattern_in_range<P: ProblemContext>(
     Ok(pattern)
 }
 
-fn wrap_pattern_in_contains<P: ProblemContext>(
+fn wrap_pattern_in_contains<Q: QueryContext>(
     var_name: &str,
-    pattern: Pattern<P>,
+    pattern: Pattern<Q>,
     context: &mut NodeCompilationContext,
-) -> Result<Pattern<P>> {
+) -> Result<Pattern<Q>> {
     let var = Variable::from_name(var_name, context)?;
     let pattern = Pattern::Where(Box::new(Where::new(
         Pattern::Variable(var),
@@ -434,15 +434,15 @@ fn wrap_pattern_in_contains<P: ProblemContext>(
     Ok(Pattern::Contains(Box::new(Contains::new(bubble, None))))
 }
 
-fn wrap_pattern_in_file<P: ProblemContext>(pattern: Pattern<P>) -> Result<Pattern<P>> {
+fn wrap_pattern_in_file<Q: QueryContext>(pattern: Pattern<Q>) -> Result<Pattern<Q>> {
     let pattern = Pattern::File(Box::new(FilePattern::new(Pattern::Top, pattern)));
     Ok(pattern)
 }
 
-pub(crate) fn wrap_pattern_in_before_and_after_each_file<P: ProblemContext>(
-    pattern: Pattern<P>,
+pub(crate) fn wrap_pattern_in_before_and_after_each_file<Q: QueryContext>(
+    pattern: Pattern<Q>,
     pattern_definition_info: &BTreeMap<String, DefinitionInfo>,
-) -> Result<Pattern<P>> {
+) -> Result<Pattern<Q>> {
     let before_each_file = "before_each_file";
     let after_each_file = "after_each_file";
     let mut all_steps = vec![];

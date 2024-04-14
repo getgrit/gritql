@@ -3,25 +3,25 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::{binding::Constant, context::ProblemContext};
+use crate::{binding::Constant, context::QueryContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Modulo<P: ProblemContext> {
-    pub lhs: Pattern<P>,
-    pub rhs: Pattern<P>,
+pub struct Modulo<Q: QueryContext> {
+    pub lhs: Pattern<Q>,
+    pub rhs: Pattern<Q>,
 }
 
-impl<P: ProblemContext> Modulo<P> {
-    pub fn new(lhs: Pattern<P>, rhs: Pattern<P>) -> Self {
+impl<Q: QueryContext> Modulo<Q> {
+    pub fn new(lhs: Pattern<Q>, rhs: Pattern<Q>) -> Self {
         Self { lhs, rhs }
     }
 
     pub(crate) fn call<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let res = self.evaluate(state, context, logs)?;
@@ -30,8 +30,8 @@ impl<P: ProblemContext> Modulo<P> {
 
     fn evaluate<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<i64> {
         let lhs = self.lhs.text(state, context, logs)?;
@@ -43,18 +43,18 @@ impl<P: ProblemContext> Modulo<P> {
     }
 }
 
-impl<P: ProblemContext> PatternName for Modulo<P> {
+impl<Q: QueryContext> PatternName for Modulo<Q> {
     fn name(&self) -> &'static str {
         "MODULO"
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for Modulo<P> {
+impl<Q: QueryContext> Matcher<Q> for Modulo<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let binding_text = binding.text(&state.files)?;

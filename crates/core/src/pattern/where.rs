@@ -5,19 +5,19 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::ProblemContext;
+use crate::context::QueryContext;
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Where<P: ProblemContext> {
-    pub(crate) pattern: Pattern<P>,
-    pub(crate) side_condition: Predicate<P>,
+pub struct Where<Q: QueryContext> {
+    pub(crate) pattern: Pattern<Q>,
+    pub(crate) side_condition: Predicate<Q>,
 }
 
-impl<P: ProblemContext> Where<P> {
-    pub fn new(pattern: Pattern<P>, side_condition: Predicate<P>) -> Self {
+impl<Q: QueryContext> Where<Q> {
+    pub fn new(pattern: Pattern<Q>, side_condition: Predicate<Q>) -> Self {
         Self {
             pattern,
             side_condition,
@@ -25,20 +25,20 @@ impl<P: ProblemContext> Where<P> {
     }
 }
 
-impl<P: ProblemContext> PatternName for Where<P> {
+impl<Q: QueryContext> PatternName for Where<Q> {
     fn name(&self) -> &'static str {
         "WHERE"
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for Where<P> {
+impl<Q: QueryContext> Matcher<Q> for Where<Q> {
     // order here is pattern then side condition, do we prefer side condition then pattern?
     // should the state be reset on failure?
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        init_state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut cur_state = init_state.clone();

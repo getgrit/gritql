@@ -6,7 +6,7 @@ use super::{
     state::State,
     variable::Variable,
 };
-use crate::{binding::Constant, context::ProblemContext};
+use crate::{binding::Constant, context::QueryContext};
 use anyhow::{bail, Result};
 #[cfg(feature = "external_functions")]
 use marzano_externals::function::ExternalFunction;
@@ -14,32 +14,32 @@ use marzano_language::foreign_language::ForeignLanguage;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::borrow::Cow;
 
-pub(crate) trait FunctionDefinition<P: ProblemContext> {
+pub(crate) trait FunctionDefinition<Q: QueryContext> {
     fn call<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
-        args: &'a [Option<Pattern<P>>],
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
+        args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation>;
 }
 
 #[derive(Clone, Debug)]
-pub struct GritFunctionDefinition<P: ProblemContext> {
+pub struct GritFunctionDefinition<Q: QueryContext> {
     pub name: String,
     pub scope: usize,
     pub params: Vec<(String, Variable)>,
     pub local_vars: Vec<usize>,
-    pub function: Predicate<P>,
+    pub function: Predicate<Q>,
 }
 
-impl<P: ProblemContext> GritFunctionDefinition<P> {
+impl<Q: QueryContext> GritFunctionDefinition<Q> {
     pub fn new(
         name: String,
         scope: usize,
         params: Vec<(String, Variable)>,
         local_vars: Vec<usize>,
-        function: Predicate<P>,
+        function: Predicate<Q>,
     ) -> Self {
         Self {
             name,
@@ -51,12 +51,12 @@ impl<P: ProblemContext> GritFunctionDefinition<P> {
     }
 }
 
-impl<P: ProblemContext> FunctionDefinition<P> for GritFunctionDefinition<P> {
+impl<Q: QueryContext> FunctionDefinition<Q> for GritFunctionDefinition<Q> {
     fn call<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
-        args: &'a [Option<Pattern<P>>],
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
+        args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         state.reset_vars(self.scope, args);
@@ -89,13 +89,13 @@ impl ForeignFunctionDefinition {
     }
 }
 
-impl<P: ProblemContext> FunctionDefinition<P> for ForeignFunctionDefinition {
+impl<Q: QueryContext> FunctionDefinition<Q> for ForeignFunctionDefinition {
     #[cfg(not(feature = "external_functions_common"))]
     fn call<'a>(
         &'a self,
-        _state: &mut State<'a, P>,
-        _context: &'a P::ExecContext<'a>,
-        _args: &'a [Option<Pattern<P>>],
+        _state: &mut State<'a, Q>,
+        _context: &'a Q::ExecContext<'a>,
+        _args: &'a [Option<Pattern<Q>>],
         _logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         bail!("External functions are not enabled in your environment")
@@ -103,9 +103,9 @@ impl<P: ProblemContext> FunctionDefinition<P> for ForeignFunctionDefinition {
     #[cfg(feature = "external_functions_common")]
     fn call<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
-        args: &'a [Option<Pattern<P>>],
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
+        args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let param_names = self

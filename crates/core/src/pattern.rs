@@ -72,7 +72,7 @@ use self::{
     state::State,
 };
 use crate::{
-    context::{ExecContext, ProblemContext},
+    context::{ExecContext, QueryContext},
     problem::{FileOwners, MarzanoProblemContext},
 };
 use anyhow::Result;
@@ -99,12 +99,12 @@ pub const MAX_FILE_SIZE: usize = 1_000_000;
  *
  * E.g., If a Node would contain a tree-sitter cursor, that would not be safe.
  */
-pub trait Work<P: ProblemContext> {
+pub trait Work<Q: QueryContext> {
     // it is important that any implementors of Work
     // do not compute-expensive things in execute
     // it should be stored somewhere in the struct of the implementor
     // fn execute(&self, state: &mut State) -> Vec<Match>;
-    fn execute(&self, state: &mut State<P>);
+    fn execute(&self, state: &mut State<Q>);
 }
 
 #[derive(Debug, Default)]

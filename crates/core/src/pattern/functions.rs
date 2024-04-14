@@ -4,7 +4,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::{context::ExecContext, context::ProblemContext};
+use crate::{context::ExecContext, context::QueryContext};
 use anyhow::{bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -15,41 +15,41 @@ pub(crate) struct FuncEvaluation<'a> {
     pub ret_val: Option<ResolvedPattern<'a>>,
 }
 
-pub(crate) trait Evaluator<P: ProblemContext>: Debug {
+pub(crate) trait Evaluator<Q: QueryContext>: Debug {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation>;
 }
 
 #[derive(Debug, Clone)]
-pub struct CallFunction<P: ProblemContext> {
+pub struct CallFunction<Q: QueryContext> {
     pub(crate) index: usize,
-    pub(crate) args: Vec<Option<Pattern<P>>>,
+    pub(crate) args: Vec<Option<Pattern<Q>>>,
 }
 
-pub(crate) trait GritCall<P: ProblemContext> {
+pub(crate) trait GritCall<Q: QueryContext> {
     fn call<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>>;
 }
 
-impl<P: ProblemContext> CallFunction<P> {
-    pub fn new(index: usize, args: Vec<Option<Pattern<P>>>) -> Self {
+impl<Q: QueryContext> CallFunction<Q> {
+    pub fn new(index: usize, args: Vec<Option<Pattern<Q>>>) -> Self {
         Self { index, args }
     }
 }
 
-impl<P: ProblemContext> GritCall<P> for CallFunction<P> {
+impl<Q: QueryContext> GritCall<Q> for CallFunction<Q> {
     fn call<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let function_definition = &context.function_definitions()[self.index];
@@ -64,29 +64,29 @@ impl<P: ProblemContext> GritCall<P> for CallFunction<P> {
     }
 }
 
-impl<P: ProblemContext> PatternName for CallFunction<P> {
+impl<Q: QueryContext> PatternName for CallFunction<Q> {
     fn name(&self) -> &'static str {
         "CALL_FUNCTION"
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct CallForeignFunction<P: ProblemContext> {
+pub struct CallForeignFunction<Q: QueryContext> {
     pub(crate) index: usize,
-    pub(crate) args: Vec<Option<Pattern<P>>>,
+    pub(crate) args: Vec<Option<Pattern<Q>>>,
 }
 
-impl<P: ProblemContext> CallForeignFunction<P> {
-    pub fn new(index: usize, args: Vec<Option<Pattern<P>>>) -> Self {
+impl<Q: QueryContext> CallForeignFunction<Q> {
+    pub fn new(index: usize, args: Vec<Option<Pattern<Q>>>) -> Self {
         Self { index, args }
     }
 }
 
-impl<P: ProblemContext> GritCall<P> for CallForeignFunction<P> {
+impl<Q: QueryContext> GritCall<Q> for CallForeignFunction<Q> {
     fn call<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let function_definition = &context.foreign_function_definitions()[self.index];
@@ -101,7 +101,7 @@ impl<P: ProblemContext> GritCall<P> for CallForeignFunction<P> {
     }
 }
 
-impl<P: ProblemContext> PatternName for CallForeignFunction<P> {
+impl<Q: QueryContext> PatternName for CallForeignFunction<Q> {
     fn name(&self) -> &'static str {
         "CALL_FUNCTION"
     }

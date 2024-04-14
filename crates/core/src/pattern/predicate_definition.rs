@@ -1,27 +1,27 @@
 use super::{
     functions::Evaluator, patterns::Pattern, predicates::Predicate, variable::Variable, State,
 };
-use crate::context::ProblemContext;
+use crate::context::QueryContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Clone, Debug)]
-pub struct PredicateDefinition<P: ProblemContext> {
+pub struct PredicateDefinition<Q: QueryContext> {
     pub name: String,
     pub scope: usize,
     pub params: Vec<(String, Variable)>,
     // this could just be a usize representing the len
     pub local_vars: Vec<usize>,
-    pub predicate: Predicate<P>,
+    pub predicate: Predicate<Q>,
 }
 
-impl<P: ProblemContext> PredicateDefinition<P> {
+impl<Q: QueryContext> PredicateDefinition<Q> {
     pub fn new(
         name: String,
         scope: usize,
         params: Vec<(String, Variable)>,
         local_vars: Vec<usize>,
-        predicate: Predicate<P>,
+        predicate: Predicate<Q>,
     ) -> Self {
         Self {
             name,
@@ -34,9 +34,9 @@ impl<P: ProblemContext> PredicateDefinition<P> {
 
     pub fn call<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
-        args: &'a [Option<Pattern<P>>],
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
+        args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         state.reset_vars(self.scope, args);

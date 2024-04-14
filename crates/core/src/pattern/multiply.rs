@@ -3,25 +3,25 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::{binding::Constant, context::ProblemContext};
+use crate::{binding::Constant, context::QueryContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Multiply<P: ProblemContext> {
-    pub lhs: Pattern<P>,
-    pub rhs: Pattern<P>,
+pub struct Multiply<Q: QueryContext> {
+    pub lhs: Pattern<Q>,
+    pub rhs: Pattern<Q>,
 }
 
-impl<P: ProblemContext> Multiply<P> {
-    pub fn new(lhs: Pattern<P>, rhs: Pattern<P>) -> Self {
+impl<Q: QueryContext> Multiply<Q> {
+    pub fn new(lhs: Pattern<Q>, rhs: Pattern<Q>) -> Self {
         Self { lhs, rhs }
     }
 
     pub(crate) fn call<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let res = self.evaluate(state, context, logs)?;
@@ -30,8 +30,8 @@ impl<P: ProblemContext> Multiply<P> {
 
     fn evaluate<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<f64> {
         let lhs = self.lhs.float(state, context, logs)?;
@@ -41,18 +41,18 @@ impl<P: ProblemContext> Multiply<P> {
     }
 }
 
-impl<P: ProblemContext> PatternName for Multiply<P> {
+impl<Q: QueryContext> PatternName for Multiply<Q> {
     fn name(&self) -> &'static str {
         "MULTIPLY"
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for Multiply<P> {
+impl<Q: QueryContext> Matcher<Q> for Multiply<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let binding_text = binding.text(&state.files)?;

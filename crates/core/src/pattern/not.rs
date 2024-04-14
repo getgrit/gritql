@@ -5,34 +5,34 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::ProblemContext;
+use crate::context::QueryContext;
 use anyhow::{bail, Ok, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Not<P: ProblemContext> {
-    pub pattern: Pattern<P>,
+pub struct Not<Q: QueryContext> {
+    pub pattern: Pattern<Q>,
 }
 
-impl<P: ProblemContext> Not<P> {
-    pub fn new(pattern: Pattern<P>) -> Self {
+impl<Q: QueryContext> Not<Q> {
+    pub fn new(pattern: Pattern<Q>) -> Self {
         Self { pattern }
     }
 }
 
-impl<P: ProblemContext> PatternName for Not<P> {
+impl<Q: QueryContext> PatternName for Not<Q> {
     fn name(&self) -> &'static str {
         "NOT"
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for Not<P> {
+impl<Q: QueryContext> Matcher<Q> for Not<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         Ok(!self
@@ -42,27 +42,27 @@ impl<P: ProblemContext> Matcher<P> for Not<P> {
 }
 
 #[derive(Debug, Clone)]
-pub struct PrNot<P: ProblemContext> {
-    pub(crate) predicate: Predicate<P>,
+pub struct PrNot<Q: QueryContext> {
+    pub(crate) predicate: Predicate<Q>,
 }
 
-impl<P: ProblemContext> PrNot<P> {
-    pub fn new(predicate: Predicate<P>) -> Self {
+impl<Q: QueryContext> PrNot<Q> {
+    pub fn new(predicate: Predicate<Q>) -> Self {
         Self { predicate }
     }
 }
 
-impl<P: ProblemContext> PatternName for PrNot<P> {
+impl<Q: QueryContext> PatternName for PrNot<Q> {
     fn name(&self) -> &'static str {
         "PREDICATE_NOT"
     }
 }
 
-impl<P: ProblemContext> Evaluator<P> for PrNot<P> {
+impl<Q: QueryContext> Evaluator<Q> for PrNot<Q> {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let res = self

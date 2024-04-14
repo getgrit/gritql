@@ -5,27 +5,27 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::context::ProblemContext;
+use crate::context::QueryContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Maybe<P: ProblemContext> {
-    pub pattern: Pattern<P>,
+pub struct Maybe<Q: QueryContext> {
+    pub pattern: Pattern<Q>,
 }
 
-impl<P: ProblemContext> Maybe<P> {
-    pub fn new(pattern: Pattern<P>) -> Self {
+impl<Q: QueryContext> Maybe<Q> {
+    pub fn new(pattern: Pattern<Q>) -> Self {
         Self { pattern }
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for Maybe<P> {
+impl<Q: QueryContext> Matcher<Q> for Maybe<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        init_state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut state = init_state.clone();
@@ -36,28 +36,28 @@ impl<P: ProblemContext> Matcher<P> for Maybe<P> {
     }
 }
 
-impl<P: ProblemContext> PatternName for Maybe<P> {
+impl<Q: QueryContext> PatternName for Maybe<Q> {
     fn name(&self) -> &'static str {
         "MAYBE"
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct PrMaybe<P: ProblemContext> {
-    pub(crate) predicate: Predicate<P>,
+pub struct PrMaybe<Q: QueryContext> {
+    pub(crate) predicate: Predicate<Q>,
 }
 
-impl<P: ProblemContext> PrMaybe<P> {
-    pub fn new(predicate: Predicate<P>) -> Self {
+impl<Q: QueryContext> PrMaybe<Q> {
+    pub fn new(predicate: Predicate<Q>) -> Self {
         Self { predicate }
     }
 }
 
-impl<P: ProblemContext> Evaluator<P> for PrMaybe<P> {
+impl<Q: QueryContext> Evaluator<Q> for PrMaybe<Q> {
     fn execute_func<'a>(
         &'a self,
-        init_state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let mut state = init_state.clone();
@@ -75,7 +75,7 @@ impl<P: ProblemContext> Evaluator<P> for PrMaybe<P> {
     }
 }
 
-impl<P: ProblemContext> PatternName for PrMaybe<P> {
+impl<Q: QueryContext> PatternName for PrMaybe<Q> {
     fn name(&self) -> &'static str {
         "MAYBE"
     }

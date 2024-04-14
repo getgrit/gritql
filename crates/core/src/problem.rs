@@ -2,7 +2,7 @@ use crate::{
     api::{is_match, AnalysisLog, ByteRange, DoneFile, MatchResult},
     ast_node::ASTNode,
     binding::Binding,
-    context::ProblemContext,
+    context::QueryContext,
     pattern::{
         built_in_functions::BuiltIns,
         constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
@@ -658,7 +658,7 @@ impl MatchRanges {
 #[derive(Clone, Debug)]
 pub struct MarzanoProblemContext;
 
-impl ProblemContext for MarzanoProblemContext {
+impl QueryContext for MarzanoProblemContext {
     type Node<'a> = NodeWithSource<'a>;
     type NodePattern = ASTNode;
     type ExecContext<'a> = MarzanoContext<'a>;

@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{binding::Binding, context::ProblemContext};
+use crate::{binding::Binding, context::QueryContext};
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use grit_util::AstNode;
@@ -29,12 +29,12 @@ impl PatternName for StringConstant {
 
 // this does what a raw string should do
 // TODO: rename this, and implement StringConstant that checks sort.
-impl<P: ProblemContext> Matcher<P> for StringConstant {
+impl<Q: QueryContext> Matcher<Q> for StringConstant {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a, P>,
-        _context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        _context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let text = binding.text(&state.files)?;
@@ -73,12 +73,12 @@ impl PatternName for AstLeafNode {
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for AstLeafNode {
+impl<Q: QueryContext> Matcher<Q> for AstLeafNode {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        _state: &mut State<'a, P>,
-        _context: &'a P::ExecContext<'a>,
+        _state: &mut State<'a, Q>,
+        _context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let ResolvedPattern::Binding(b) = binding else {

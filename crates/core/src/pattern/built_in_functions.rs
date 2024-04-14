@@ -1,6 +1,5 @@
 use crate::{
-    binding::Constant, context::ExecContext, context::ProblemContext,
-    problem::MarzanoProblemContext,
+    binding::Constant, context::ExecContext, context::QueryContext, problem::MarzanoProblemContext,
 };
 use itertools::Itertools;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -27,18 +26,18 @@ use marzano_language::language::Language;
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]
-pub struct CallBuiltIn<P: ProblemContext> {
+pub struct CallBuiltIn<Q: QueryContext> {
     pub(crate) index: usize,
-    pub(crate) args: Vec<Option<Pattern<P>>>,
+    pub(crate) args: Vec<Option<Pattern<Q>>>,
 }
 
-impl<P: ProblemContext> CallBuiltIn<P> {
-    pub fn new(index: usize, args: Vec<Option<Pattern<P>>>) -> Self {
+impl<Q: QueryContext> CallBuiltIn<Q> {
+    pub fn new(index: usize, args: Vec<Option<Pattern<Q>>>) -> Self {
         Self { index, args }
     }
 
     pub(crate) fn from_args(
-        mut args: BTreeMap<String, Pattern<P>>,
+        mut args: BTreeMap<String, Pattern<Q>>,
         built_ins: &BuiltIns,
         index: usize,
         lang: &impl Language,
@@ -55,18 +54,18 @@ impl<P: ProblemContext> CallBuiltIn<P> {
     }
 }
 
-impl<P: ProblemContext> GritCall<P> for CallBuiltIn<P> {
+impl<Q: QueryContext> GritCall<Q> for CallBuiltIn<Q> {
     fn call<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         context.call_built_in(self, context, state, logs)
     }
 }
 
-impl<P: ProblemContext> PatternName for CallBuiltIn<P> {
+impl<Q: QueryContext> PatternName for CallBuiltIn<Q> {
     fn name(&self) -> &'static str {
         "CALL_BUILT_IN"
     }

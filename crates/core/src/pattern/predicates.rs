@@ -17,32 +17,32 @@ use super::{
     rewrite::Rewrite,
     State,
 };
-use crate::context::ProblemContext;
+use crate::context::QueryContext;
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub enum Predicate<P: ProblemContext> {
-    Call(Box<PrCall<P>>),
-    Not(Box<PrNot<P>>),
-    If(Box<PrIf<P>>),
+pub enum Predicate<Q: QueryContext> {
+    Call(Box<PrCall<Q>>),
+    Not(Box<PrNot<Q>>),
+    If(Box<PrIf<Q>>),
     True,
     False,
-    Or(Box<PrOr<P>>),
-    And(Box<PrAnd<P>>),
-    Maybe(Box<PrMaybe<P>>),
-    Any(Box<PrAny<P>>),
-    Rewrite(Box<Rewrite<P>>),
-    Log(Log<P>),
-    Match(Box<Match<P>>),
-    Equal(Box<Equal<P>>),
-    Assignment(Box<Assignment<P>>),
-    Accumulate(Box<Accumulate<P>>),
-    Return(Box<PrReturn<P>>),
+    Or(Box<PrOr<Q>>),
+    And(Box<PrAnd<Q>>),
+    Maybe(Box<PrMaybe<Q>>),
+    Any(Box<PrAny<Q>>),
+    Rewrite(Box<Rewrite<Q>>),
+    Log(Log<Q>),
+    Match(Box<Match<Q>>),
+    Equal(Box<Equal<Q>>),
+    Assignment(Box<Assignment<Q>>),
+    Accumulate(Box<Accumulate<Q>>),
+    Return(Box<PrReturn<Q>>),
 }
 
-impl<P: ProblemContext> PatternName for Predicate<P> {
+impl<Q: QueryContext> PatternName for Predicate<Q> {
     fn name(&self) -> &'static str {
         match self {
             Predicate::Call(call) => call.name(),
@@ -65,11 +65,11 @@ impl<P: ProblemContext> PatternName for Predicate<P> {
     }
 }
 
-impl<P: ProblemContext> Evaluator<P> for Predicate<P> {
+impl<Q: QueryContext> Evaluator<Q> for Predicate<Q> {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         match self {

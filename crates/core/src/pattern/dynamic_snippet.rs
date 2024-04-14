@@ -8,7 +8,7 @@ use super::{
     variable::Variable,
     State,
 };
-use crate::context::ProblemContext;
+use crate::context::QueryContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -24,27 +24,27 @@ pub struct DynamicSnippet {
 }
 
 #[derive(Debug, Clone)]
-pub struct DynamicList<P: ProblemContext> {
-    pub elements: Vec<DynamicPattern<P>>,
+pub struct DynamicList<Q: QueryContext> {
+    pub elements: Vec<DynamicPattern<Q>>,
 }
 
 #[derive(Debug, Clone)]
-pub enum DynamicPattern<P: ProblemContext> {
+pub enum DynamicPattern<Q: QueryContext> {
     Variable(Variable),
-    Accessor(Box<Accessor<P>>),
-    ListIndex(Box<ListIndex<P>>),
+    Accessor(Box<Accessor<Q>>),
+    ListIndex(Box<ListIndex<Q>>),
     Snippet(DynamicSnippet),
-    List(DynamicList<P>),
-    CallBuiltIn(CallBuiltIn<P>),
-    CallFunction(CallFunction<P>),
-    CallForeignFunction(CallForeignFunction<P>),
+    List(DynamicList<Q>),
+    CallBuiltIn(CallBuiltIn<Q>),
+    CallFunction(CallFunction<Q>),
+    CallForeignFunction(CallForeignFunction<Q>),
 }
 
-impl<P: ProblemContext> DynamicPattern<P> {
+impl<Q: QueryContext> DynamicPattern<Q> {
     pub fn text<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<String> {
         let resolved = ResolvedPattern::from_dynamic_pattern(self, state, context, logs)?;
@@ -52,18 +52,18 @@ impl<P: ProblemContext> DynamicPattern<P> {
     }
 }
 
-impl<P: ProblemContext> PatternName for DynamicPattern<P> {
+impl<Q: QueryContext> PatternName for DynamicPattern<Q> {
     fn name(&self) -> &'static str {
         "DYNAMIC_PATTERN"
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for DynamicPattern<P> {
+impl<Q: QueryContext> Matcher<Q> for DynamicPattern<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if binding.text(&state.files)? == self.text(state, context, logs)? {

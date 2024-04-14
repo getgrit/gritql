@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::{context::ExecContext, context::ProblemContext};
+use crate::{context::ExecContext, context::QueryContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::sync::{
@@ -12,14 +12,14 @@ use std::sync::{
 };
 
 #[derive(Debug, Clone)]
-pub struct Limit<P: ProblemContext> {
-    pub(crate) pattern: Pattern<P>,
+pub struct Limit<Q: QueryContext> {
+    pub(crate) pattern: Pattern<Q>,
     pub limit: usize,
     pub invocation_count: Arc<AtomicUsize>,
 }
 
-impl<P: ProblemContext> Limit<P> {
-    pub fn new(pattern: Pattern<P>, limit: usize) -> Self {
+impl<Q: QueryContext> Limit<Q> {
+    pub fn new(pattern: Pattern<Q>, limit: usize) -> Self {
         Self {
             pattern,
             limit,
@@ -28,18 +28,18 @@ impl<P: ProblemContext> Limit<P> {
     }
 }
 
-impl<P: ProblemContext> PatternName for Limit<P> {
+impl<Q: QueryContext> PatternName for Limit<Q> {
     fn name(&self) -> &'static str {
         "LIMIT"
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for Limit<P> {
+impl<Q: QueryContext> Matcher<Q> for Limit<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if context.ignore_limit_pattern() {

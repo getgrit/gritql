@@ -3,34 +3,34 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{context::ProblemContext, resolve};
+use crate::{context::QueryContext, resolve};
 use anyhow::Result;
 use im::vector;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Every<P: ProblemContext> {
-    pub pattern: Pattern<P>,
+pub struct Every<Q: QueryContext> {
+    pub pattern: Pattern<Q>,
 }
 
-impl<P: ProblemContext> Every<P> {
-    pub fn new(pattern: Pattern<P>) -> Self {
+impl<Q: QueryContext> Every<Q> {
+    pub fn new(pattern: Pattern<Q>) -> Self {
         Self { pattern }
     }
 }
 
-impl<P: ProblemContext> PatternName for Every<P> {
+impl<Q: QueryContext> PatternName for Every<Q> {
     fn name(&self) -> &'static str {
         "EVERY"
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for Every<P> {
+impl<Q: QueryContext> Matcher<Q> for Every<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        init_state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         // might be necessary to clone init state at the top,

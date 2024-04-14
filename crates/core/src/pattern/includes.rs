@@ -3,33 +3,33 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::ProblemContext;
+use crate::context::QueryContext;
 use anyhow::{Context as _, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Includes<P: ProblemContext> {
-    pub(crate) includes: Pattern<P>,
+pub struct Includes<Q: QueryContext> {
+    pub(crate) includes: Pattern<Q>,
 }
 
-impl<P: ProblemContext> Includes<P> {
-    pub fn new(includes: Pattern<P>) -> Self {
+impl<Q: QueryContext> Includes<Q> {
+    pub fn new(includes: Pattern<Q>) -> Self {
         Self { includes }
     }
 }
 
-impl<P: ProblemContext> PatternName for Includes<P> {
+impl<Q: QueryContext> PatternName for Includes<Q> {
     fn name(&self) -> &'static str {
         "INCLUDES"
     }
 }
 
-fn execute<'a, P: ProblemContext>(
-    pattern: &'a Pattern<P>,
+fn execute<'a, Q: QueryContext>(
+    pattern: &'a Pattern<Q>,
     binding: &ResolvedPattern<'a>,
-    state: &mut State<'a, P>,
-    context: &'a P::ExecContext<'a>,
+    state: &mut State<'a, Q>,
+    context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<bool> {
     match &pattern {
@@ -128,12 +128,12 @@ fn execute<'a, P: ProblemContext>(
 
 // Includes and within should call the same function taking an iterator as an argument
 // even better two arguments an accumulator and an iterator.
-impl<P: ProblemContext> Matcher<P> for Includes<P> {
+impl<Q: QueryContext> Matcher<Q> for Includes<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         execute(&self.includes, binding, state, context, logs)

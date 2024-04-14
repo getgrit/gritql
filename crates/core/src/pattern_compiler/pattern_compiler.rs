@@ -51,7 +51,7 @@ use crate::pattern::{
     variable::{is_reserved_metavariable, register_variable, Variable},
 };
 use crate::problem::MarzanoProblemContext;
-use crate::{ast_node::ASTNode, context::ProblemContext};
+use crate::{ast_node::ASTNode, context::QueryContext};
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
 use grit_util::{traverse, Order};
@@ -343,12 +343,12 @@ fn derive_range(text: &str, m: RegexMatch) -> Range {
     byte_range.byte_range_to_char_range(text)
 }
 
-fn implicit_metavariable_regex<P: ProblemContext>(
+fn implicit_metavariable_regex<Q: QueryContext>(
     node: &NodeWithSource,
     context_range: Range,
     range_map: &HashMap<Range, Range>,
     context: &mut NodeCompilationContext,
-) -> Result<Option<RegexPattern<P>>> {
+) -> Result<Option<RegexPattern<Q>>> {
     let range = node.range();
     let offset = range.start_byte;
     let mut last = if cfg!(target_arch = "wasm32") {
@@ -408,13 +408,13 @@ fn make_regex_match_range(text: &str, m: RegexMatch) -> Range {
     Range::new(start, end, m.start() as u32, m.end() as u32)
 }
 
-fn metavariable_descendent<P: ProblemContext>(
+fn metavariable_descendent<Q: QueryContext>(
     node: &NodeWithSource,
     context_range: Range,
     range_map: &HashMap<Range, Range>,
     context: &mut NodeCompilationContext,
     is_rhs: bool,
-) -> Result<Option<Pattern<P>>> {
+) -> Result<Option<Pattern<Q>>> {
     let mut cursor = node.node.walk();
     loop {
         let node = NodeWithSource::new(cursor.node(), node.source);
@@ -504,7 +504,7 @@ enum SnippetValues {
     Variable(Variable),
 }
 
-impl<P: ProblemContext> From<SnippetValues> for Pattern<P> {
+impl<Q: QueryContext> From<SnippetValues> for Pattern<Q> {
     fn from(value: SnippetValues) -> Self {
         match value {
             SnippetValues::Dots => Pattern::Dots,

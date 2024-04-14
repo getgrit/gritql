@@ -6,35 +6,35 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{binding::Binding, context::ProblemContext};
+use crate::{binding::Binding, context::QueryContext};
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::mem::transmute;
 
 #[derive(Debug, Clone)]
-pub struct Or<P: ProblemContext> {
-    pub patterns: Vec<Pattern<P>>,
+pub struct Or<Q: QueryContext> {
+    pub patterns: Vec<Pattern<Q>>,
 }
 
-impl<P: ProblemContext> Or<P> {
-    pub fn new(patterns: Vec<Pattern<P>>) -> Self {
+impl<Q: QueryContext> Or<Q> {
+    pub fn new(patterns: Vec<Pattern<Q>>) -> Self {
         Self { patterns }
     }
 }
 
-impl<P: ProblemContext> PatternName for Or<P> {
+impl<Q: QueryContext> PatternName for Or<Q> {
     fn name(&self) -> &'static str {
         "OR"
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for Or<P> {
+impl<Q: QueryContext> Matcher<Q> for Or<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        init_state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let ResolvedPattern::Binding(binding_vector) = &binding {
@@ -71,27 +71,27 @@ impl<P: ProblemContext> Matcher<P> for Or<P> {
 }
 
 #[derive(Debug, Clone)]
-pub struct PrOr<P: ProblemContext> {
-    pub predicates: Vec<Predicate<P>>,
+pub struct PrOr<Q: QueryContext> {
+    pub predicates: Vec<Predicate<Q>>,
 }
 
-impl<P: ProblemContext> PrOr<P> {
-    pub fn new(predicates: Vec<Predicate<P>>) -> Self {
+impl<Q: QueryContext> PrOr<Q> {
+    pub fn new(predicates: Vec<Predicate<Q>>) -> Self {
         Self { predicates }
     }
 }
 
-impl<P: ProblemContext> PatternName for PrOr<P> {
+impl<Q: QueryContext> PatternName for PrOr<Q> {
     fn name(&self) -> &'static str {
         "PREDICATE_OR"
     }
 }
 
-impl<P: ProblemContext> Evaluator<P> for PrOr<P> {
+impl<Q: QueryContext> Evaluator<Q> for PrOr<Q> {
     fn execute_func<'a>(
         &'a self,
-        init_state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         for p in self.predicates.iter() {

@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::context::ProblemContext;
+use crate::context::QueryContext;
 use anyhow::{anyhow, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use marzano_util::position::UtilRange;
@@ -64,12 +64,12 @@ impl From<UtilRange> for Range {
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for Range {
+impl<Q: QueryContext> Matcher<Q> for Range {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        _state: &mut State<'a, P>,
-        _context: &'a P::ExecContext<'a>,
+        _state: &mut State<'a, Q>,
+        _context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
     ) -> anyhow::Result<bool> {
         if let Some(range) = binding.position() {

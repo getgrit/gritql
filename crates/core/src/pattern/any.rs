@@ -5,37 +5,37 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::ProblemContext;
+use crate::context::QueryContext;
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Any<P: ProblemContext> {
-    pub(crate) patterns: Vec<Pattern<P>>,
+pub struct Any<Q: QueryContext> {
+    pub(crate) patterns: Vec<Pattern<Q>>,
 }
 
-impl<P: ProblemContext> Any<P> {
-    pub fn new(patterns: Vec<Pattern<P>>) -> Self {
+impl<Q: QueryContext> Any<Q> {
+    pub fn new(patterns: Vec<Pattern<Q>>) -> Self {
         Self { patterns }
     }
 }
 
-impl<P: ProblemContext> PatternName for Any<P> {
+impl<Q: QueryContext> PatternName for Any<Q> {
     fn name(&self) -> &'static str {
         "ANY"
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for Any<P> {
+impl<Q: QueryContext> Matcher<Q> for Any<Q> {
     // apply all successful updates to the state
     // must have at least one successful match
     // return soft and failed on failure
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        init_state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut matched = false;
@@ -57,27 +57,27 @@ impl<P: ProblemContext> Matcher<P> for Any<P> {
     }
 }
 #[derive(Debug, Clone)]
-pub struct PrAny<P: ProblemContext> {
-    pub predicates: Vec<Predicate<P>>,
+pub struct PrAny<Q: QueryContext> {
+    pub predicates: Vec<Predicate<Q>>,
 }
 
-impl<P: ProblemContext> PrAny<P> {
-    pub fn new(predicates: Vec<Predicate<P>>) -> Self {
+impl<Q: QueryContext> PrAny<Q> {
+    pub fn new(predicates: Vec<Predicate<Q>>) -> Self {
         Self { predicates }
     }
 }
 
-impl<P: ProblemContext> PatternName for PrAny<P> {
+impl<Q: QueryContext> PatternName for PrAny<Q> {
     fn name(&self) -> &'static str {
         "PREDICATE_ANY"
     }
 }
 
-impl<P: ProblemContext> Evaluator<P> for PrAny<P> {
+impl<Q: QueryContext> Evaluator<Q> for PrAny<Q> {
     fn execute_func<'a>(
         &'a self,
-        init_state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let mut matched = false;

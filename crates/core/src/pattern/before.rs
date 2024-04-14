@@ -3,25 +3,25 @@ use super::{
     resolved_pattern::{pattern_to_binding, ResolvedPattern},
     State,
 };
-use crate::{binding::Constant, context::ProblemContext, errors::debug, resolve};
+use crate::{binding::Constant, context::QueryContext, errors::debug, resolve};
 use anyhow::{bail, Result};
 use grit_util::AstNode;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Before<P: ProblemContext> {
-    pub before: Pattern<P>,
+pub struct Before<Q: QueryContext> {
+    pub before: Pattern<Q>,
 }
 
-impl<P: ProblemContext> Before<P> {
-    pub fn new(before: Pattern<P>) -> Self {
+impl<Q: QueryContext> Before<Q> {
+    pub fn new(before: Pattern<Q>) -> Self {
         Self { before }
     }
 
     pub(crate) fn prev_pattern<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let binding = pattern_to_binding(&self.before, state, context, logs)?;
@@ -42,18 +42,18 @@ impl<P: ProblemContext> Before<P> {
     }
 }
 
-impl<P: ProblemContext> PatternName for Before<P> {
+impl<Q: QueryContext> PatternName for Before<Q> {
     fn name(&self) -> &'static str {
         "BEFORE"
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for Before<P> {
+impl<Q: QueryContext> Matcher<Q> for Before<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        init_state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let binding = match binding {

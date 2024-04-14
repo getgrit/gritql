@@ -3,38 +3,38 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::context::ProblemContext;
+use crate::context::QueryContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]
-pub struct GritMap<P: ProblemContext> {
-    pub elements: BTreeMap<String, Pattern<P>>,
+pub struct GritMap<Q: QueryContext> {
+    pub elements: BTreeMap<String, Pattern<Q>>,
 }
 
-impl<P: ProblemContext> GritMap<P> {
-    pub(crate) fn new(elements: BTreeMap<String, Pattern<P>>) -> Self {
+impl<Q: QueryContext> GritMap<Q> {
+    pub(crate) fn new(elements: BTreeMap<String, Pattern<Q>>) -> Self {
         Self { elements }
     }
 
-    pub(crate) fn get(&self, key: &str) -> Option<&Pattern<P>> {
+    pub(crate) fn get(&self, key: &str) -> Option<&Pattern<Q>> {
         self.elements.get(key)
     }
 }
 
-impl<P: ProblemContext> PatternName for GritMap<P> {
+impl<Q: QueryContext> PatternName for GritMap<Q> {
     fn name(&self) -> &'static str {
         "MAP"
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for GritMap<P> {
+impl<Q: QueryContext> Matcher<Q> for GritMap<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let ResolvedPattern::Map(map) = binding {

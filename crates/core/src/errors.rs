@@ -2,13 +2,13 @@ use anyhow::{bail, Result};
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 
 use crate::{
-    context::ProblemContext,
+    context::QueryContext,
     pattern::{state::State, variable::get_file_name},
 };
 
-pub fn debug<P: ProblemContext>(
+pub fn debug<Q: QueryContext>(
     analysis_logs: &mut AnalysisLogs,
-    state: &State<'_, P>,
+    state: &State<'_, Q>,
     message: &str,
 ) -> Result<()> {
     let mut builder = AnalysisLogBuilder::default();

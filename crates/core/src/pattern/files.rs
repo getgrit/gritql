@@ -3,28 +3,28 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::context::ProblemContext;
+use crate::context::QueryContext;
 use anyhow::Result;
 use im::vector;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Files<P: ProblemContext> {
-    pub pattern: Pattern<P>,
+pub struct Files<Q: QueryContext> {
+    pub pattern: Pattern<Q>,
 }
 
-impl<P: ProblemContext> Files<P> {
-    pub fn new(pattern: Pattern<P>) -> Self {
+impl<Q: QueryContext> Files<Q> {
+    pub fn new(pattern: Pattern<Q>) -> Self {
         Self { pattern }
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for Files<P> {
+impl<Q: QueryContext> Matcher<Q> for Files<Q> {
     fn execute<'a>(
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match resolved_pattern {

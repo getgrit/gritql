@@ -6,7 +6,7 @@ use super::{
     State,
 };
 use crate::{
-    binding::Binding, context::ProblemContext, pattern_compiler::compiler::NodeCompilationContext,
+    binding::Binding, context::QueryContext, pattern_compiler::compiler::NodeCompilationContext,
 };
 use anyhow::{bail, Result};
 use core::fmt::Debug;
@@ -40,10 +40,10 @@ impl Variable {
         Self { scope, index }
     }
 
-    pub(crate) fn get_pattern_or_resolved<'a, 'b, P: ProblemContext>(
+    pub(crate) fn get_pattern_or_resolved<'a, 'b, Q: QueryContext>(
         &self,
-        state: &'b State<'a, P>,
-    ) -> Result<Option<PatternOrResolved<'a, 'b, P>>> {
+        state: &'b State<'a, Q>,
+    ) -> Result<Option<PatternOrResolved<'a, 'b, Q>>> {
         let v = state.trace_var(self);
         let content = &state.bindings[v.scope].last().unwrap()[v.index];
         if let Some(pattern) = content.pattern {
@@ -54,10 +54,10 @@ impl Variable {
             bail!("variable has no pattern or value")
         }
     }
-    pub(crate) fn get_pattern_or_resolved_mut<'a, 'b, P: ProblemContext>(
+    pub(crate) fn get_pattern_or_resolved_mut<'a, 'b, Q: QueryContext>(
         &self,
-        state: &'b mut State<'a, P>,
-    ) -> Result<Option<PatternOrResolvedMut<'a, 'b, P>>> {
+        state: &'b mut State<'a, Q>,
+    ) -> Result<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
         let v = state.trace_var(self);
         let content = &mut state.bindings[v.scope].back_mut().unwrap()[v.index];
         if let Some(pattern) = content.pattern {
@@ -77,14 +77,14 @@ impl Variable {
         register_variable_optional_range(name, None, context)
     }
 
-    pub(crate) fn text<'a, P: ProblemContext>(&self, state: &State<'a, P>) -> Result<Cow<'a, str>> {
+    pub(crate) fn text<'a, Q: QueryContext>(&self, state: &State<'a, Q>) -> Result<Cow<'a, str>> {
         state.bindings[self.scope].last().unwrap()[self.index].text(state)
     }
 
-    fn execute_resolved<'a, P: ProblemContext>(
+    fn execute_resolved<'a, Q: QueryContext>(
         &self,
         resolved_pattern: &ResolvedPattern<'a>,
-        state: &mut State<'a, P>,
+        state: &mut State<'a, Q>,
     ) -> Result<Option<bool>> {
         let mut variable_mirrors: Vec<VariableMirror> = Vec::new();
         {
@@ -262,12 +262,12 @@ impl PatternName for Variable {
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for Variable {
+impl<Q: QueryContext> Matcher<Q> for Variable {
     fn execute<'a>(
         &'a self,
         resolved_pattern: &ResolvedPattern<'a>,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let Some(res) = self.execute_resolved(resolved_pattern, state)? {
@@ -307,8 +307,8 @@ impl<P: ProblemContext> Matcher<P> for Variable {
     }
 }
 
-pub(crate) fn get_absolute_file_name<P: ProblemContext>(
-    state: &State<'_, P>,
+pub(crate) fn get_absolute_file_name<Q: QueryContext>(
+    state: &State<'_, Q>,
 ) -> Result<String, anyhow::Error> {
     let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[ABSOLUTE_PATH_INDEX]
         .value
@@ -319,8 +319,8 @@ pub(crate) fn get_absolute_file_name<P: ProblemContext>(
     Ok(file)
 }
 
-pub(crate) fn get_file_name<P: ProblemContext>(
-    state: &State<'_, P>,
+pub(crate) fn get_file_name<Q: QueryContext>(
+    state: &State<'_, Q>,
 ) -> Result<String, anyhow::Error> {
     let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[FILENAME_INDEX]
         .value

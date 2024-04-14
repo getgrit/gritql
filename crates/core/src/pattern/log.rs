@@ -5,7 +5,7 @@ use super::{
     state::State,
     variable::{get_file_name, Variable},
 };
-use crate::{binding::Binding, context::ProblemContext};
+use crate::{binding::Binding, context::QueryContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 
@@ -22,20 +22,20 @@ impl VariableInfo {
 }
 
 #[derive(Debug, Clone)]
-pub struct Log<P: ProblemContext> {
+pub struct Log<Q: QueryContext> {
     pub variable: Option<VariableInfo>,
-    pub message: Option<Pattern<P>>,
+    pub message: Option<Pattern<Q>>,
 }
 
-impl<P: ProblemContext> Log<P> {
-    pub fn new(variable: Option<VariableInfo>, message: Option<Pattern<P>>) -> Self {
+impl<Q: QueryContext> Log<Q> {
+    pub fn new(variable: Option<VariableInfo>, message: Option<Pattern<Q>>) -> Self {
         Self { variable, message }
     }
 
     fn add_log<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut message = String::new();
@@ -80,23 +80,23 @@ impl<P: ProblemContext> Log<P> {
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for Log<P> {
+impl<Q: QueryContext> Matcher<Q> for Log<Q> {
     fn execute<'a>(
         &'a self,
         _binding: &ResolvedPattern<'a>,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         self.add_log(state, context, logs)
     }
 }
 
-impl<P: ProblemContext> Evaluator<P> for Log<P> {
+impl<Q: QueryContext> Evaluator<Q> for Log<Q> {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let predicator = self.add_log(state, context, logs)?;
@@ -107,7 +107,7 @@ impl<P: ProblemContext> Evaluator<P> for Log<P> {
     }
 }
 
-impl<P: ProblemContext> PatternName for Log<P> {
+impl<Q: QueryContext> PatternName for Log<Q> {
     fn name(&self) -> &'static str {
         "LOG"
     }

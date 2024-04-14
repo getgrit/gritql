@@ -15,20 +15,20 @@ use grit_util::AstNode;
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::AnalysisLogs;
 
-/// Contains various kinds of context about the problem being executed.
-pub trait ProblemContext: Clone + std::fmt::Debug + Sized {
+/// Contains various kinds of context about the query being executed.
+pub trait QueryContext: Clone + std::fmt::Debug + Sized {
     type Node<'a>: AstNode;
     type NodePattern: AstNodePattern<Self>;
     type ExecContext<'a>: ExecContext<Self>;
 }
 
-/// Contains context necessary for problem execution.
-pub trait ExecContext<P: ProblemContext> {
-    fn pattern_definitions(&self) -> &[PatternDefinition<P>];
+/// Contains context necessary for query execution.
+pub trait ExecContext<Q: QueryContext> {
+    fn pattern_definitions(&self) -> &[PatternDefinition<Q>];
 
-    fn predicate_definitions(&self) -> &[PredicateDefinition<P>];
+    fn predicate_definitions(&self) -> &[PredicateDefinition<Q>];
 
-    fn function_definitions(&self) -> &[GritFunctionDefinition<P>];
+    fn function_definitions(&self) -> &[GritFunctionDefinition<Q>];
 
     fn foreign_function_definitions(&self) -> &[ForeignFunctionDefinition];
 
@@ -36,9 +36,9 @@ pub trait ExecContext<P: ProblemContext> {
 
     fn call_built_in<'a>(
         &self,
-        call: &'a CallBuiltIn<P>,
+        call: &'a CallBuiltIn<Q>,
         context: &'a Self,
-        state: &mut State<'a, P>,
+        state: &mut State<'a, Q>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>>;
 

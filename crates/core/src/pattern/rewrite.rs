@@ -6,7 +6,7 @@ use super::{
     variable_content::VariableContent,
     State,
 };
-use crate::context::ProblemContext;
+use crate::context::QueryContext;
 use crate::problem::{Effect, EffectKind};
 use anyhow::{bail, Result};
 use core::fmt::Debug;
@@ -14,14 +14,14 @@ use marzano_util::analysis_logs::AnalysisLogs;
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]
-pub struct Rewrite<P: ProblemContext> {
-    pub left: Pattern<P>,
-    pub right: DynamicPattern<P>,
+pub struct Rewrite<Q: QueryContext> {
+    pub left: Pattern<Q>,
+    pub right: DynamicPattern<Q>,
     pub(crate) _annotation: Option<String>,
 }
 
-impl<P: ProblemContext> Rewrite<P> {
-    pub fn new(left: Pattern<P>, right: DynamicPattern<P>, _annotation: Option<String>) -> Self {
+impl<Q: QueryContext> Rewrite<Q> {
+    pub fn new(left: Pattern<Q>, right: DynamicPattern<Q>, _annotation: Option<String>) -> Self {
         Self {
             left,
             right,
@@ -41,8 +41,8 @@ impl<P: ProblemContext> Rewrite<P> {
     pub(crate) fn execute_generalized<'a>(
         &'a self,
         resolved: Option<&ResolvedPattern<'a>>,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let resolved = match resolved {
@@ -108,29 +108,29 @@ impl<P: ProblemContext> Rewrite<P> {
     }
 }
 
-impl<P: ProblemContext> PatternName for Rewrite<P> {
+impl<Q: QueryContext> PatternName for Rewrite<Q> {
     fn name(&self) -> &'static str {
         "REWRITE"
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for Rewrite<P> {
+impl<Q: QueryContext> Matcher<Q> for Rewrite<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         self.execute_generalized(Some(binding), state, context, logs)
     }
 }
 
-impl<P: ProblemContext> Evaluator<P> for Rewrite<P> {
+impl<Q: QueryContext> Evaluator<Q> for Rewrite<Q> {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a, P>,
-        context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let predicator = self.execute_generalized(None, state, context, logs)?;

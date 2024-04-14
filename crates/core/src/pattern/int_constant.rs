@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::context::ProblemContext;
+use crate::context::QueryContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -24,12 +24,12 @@ impl PatternName for IntConstant {
     }
 }
 
-impl<P: ProblemContext> Matcher<P> for IntConstant {
+impl<Q: QueryContext> Matcher<Q> for IntConstant {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a, P>,
-        _context: &'a P::ExecContext<'a>,
+        state: &mut State<'a, Q>,
+        _context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let text = binding.text(&state.files)?;
