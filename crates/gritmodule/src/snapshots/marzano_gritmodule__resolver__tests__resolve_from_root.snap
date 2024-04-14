@@ -100,101 +100,96 @@ expression: resolved_patterns
   visibility: public
 - config:
     name: es6_exports
-    body: "engine marzano(0.1)\nlanguage js\n\nor {\n    and {\n        // handle a default export of an object by exporting the individual original definitions\n        `module.exports = { $vals }` where {\n            $new_export = \"\",\n            // it's only safe to remove the overall export if every property is individually exported\n            $vals <: some bubble($new_export) $prop where {\n                $prop <: or {\n                    shorthand_property_identifier() as $name where { $value = $name },\n                    pair(key=$name, $value)\n                },\n                or {\n                    $program <: contains or {\n                        // does not handle difficult trying to match a sublist of the module.exports\n                        `const $name = require($val).$foo` => `export { $foo as $name } from $val`,\n                        `const $name = require($val)` => `export { default as $name } from $val`,\n                        `const $name = require($val).default` => `export { default as $name } from $val`,\n                        or {\n                            `let $name = $val`,\n                            `var $name = $val`,\n                            `const $name = $val`,\n                            function_declaration($name)\n                        } as $match => `export $match`\n                    },\n                    if ($value <: $name) {\n                        $new_export += `export { $name };\\n`\n                    } else {\n                        $new_export += `export const $name = $value;\\n`\n                    }\n                }\n            }\n        } => `$new_export`\n    },\n    // handle other default exports\n    `module.exports = $export` => `export default $export`,\n    // Handle individually named exports\n    `module.exports.$name = $export` => `export const $name = $export;\\n`\n}"
+    body: "engine marzano(0.1)\nlanguage js\n\nor {\n    and {\n        // handle a default export of an object by exporting the individual original definitions\n        `module.exports = { $vals }` where {\n            $new_export = \"\",\n            // it's only safe to remove the overall export if every property is individually exported\n            $vals <: some bubble($new_export) $prop where {\n                $prop <: or {\n                    shorthand_property_identifier() as $name where { $value = $name },\n                    pair(key=$name, $value)\n                },\n                or {\n                    $program <: contains or {\n                        // does not handle difficult trying to match a sublist of the module.exports\n                        `const $name = require($val).$foo` => `export { $foo as $name } from $val`,\n                        `const $name = require($val)` => `export { default as $name } from $val`,\n                        `const $name = require($val).default` => `export { default as $name } from $val`,\n                        or {\n                            `let $name = $val`,\n                            `var $name = $val`,\n                            `const $name = $val`,\n                            function_declaration($name)\n                        } as $match => `export $match`\n                    },\n                    if ($value <: $name) {\n                        $new_export += `export { $name };\\n`\n                    } else {\n                        $new_export += `export const $name = $value;\\n`\n                    }\n                }\n            }\n        } => `$new_export`\n    },\n    // handle other default exports\n    `module.exports = $export` => `export default $export`,\n    // Handle individually named exports\n    `module.exports.$name = $export` => `export const $name = $export;\\n`\n}\n"
     level: info
     title: Prefer ES6-style exports over module.exports
     description: "Converts CommonJS `module.exports` to ES6-style exports."
-    tags:
-      - js
-      - es6
-      - migration
-      - cjs
-      - commonjs
+    tags: ~
     samples:
       - name: Transform direct exports
-        input: "module.exports.king = '9';"
-        output: "export const king = '9';"
+        input: "module.exports.king = '9';\n"
+        output: "export const king = '9';\n"
         input_range:
           start:
             line: 56
             column: 1
           end:
-            line: 56
-            column: 4
-          startByte: 2056
-          endByte: 2092
+            line: 57
+            column: 1
+          startByte: 2062
+          endByte: 2089
         output_range:
           start:
             line: 60
             column: 1
           end:
-            line: 60
-            column: 4
-          startByte: 2094
-          endByte: 2128
+            line: 61
+            column: 1
+          startByte: 2100
+          endByte: 2125
       - name: Transform default exports
-        input: "async function createTeam() {\n  console.log('cool');\n}\n\nconst addTeamToOrgSubscription = () => console.log('cool');\n\nmodule.exports = {\n  createTeam,\n  addTeamToOrgSubscription,\n};"
-        output: "export async function createTeam() {\n  console.log('cool');\n}\n\nexport const addTeamToOrgSubscription = () => console.log('cool');"
+        input: "async function createTeam() {\n  console.log('cool');\n}\n\nconst addTeamToOrgSubscription = () => console.log('cool');\n\nmodule.exports = {\n  createTeam,\n  addTeamToOrgSubscription,\n};\n"
+        output: "export async function createTeam() {\n  console.log('cool');\n}\n\nexport const addTeamToOrgSubscription = () => console.log('cool');\n"
         input_range:
           start:
             line: 66
             column: 1
           end:
-            line: 75
-            column: 4
-          startByte: 2160
-          endByte: 2350
+            line: 76
+            column: 1
+          startByte: 2166
+          endByte: 2347
         output_range:
           start:
             line: 79
             column: 1
           end:
-            line: 83
-            column: 4
-          startByte: 2352
-          endByte: 2491
+            line: 84
+            column: 1
+          startByte: 2358
+          endByte: 2488
       - name: Keep inline values in tact
-        input: "const king = '9';\n\nmodule.exports = {\n  king,\n  queen: '8',\n};"
-        output: "export const king = '9';\n\nexport const queen = '8';"
+        input: "const king = '9';\n\nmodule.exports = {\n  king,\n  queen: '8',\n};\n"
+        output: "export const king = '9';\n\nexport const queen = '8';\n"
         input_range:
           start:
             line: 89
             column: 1
           end:
-            line: 94
-            column: 4
-          startByte: 2525
-          endByte: 2597
+            line: 95
+            column: 1
+          startByte: 2531
+          endByte: 2594
         output_range:
           start:
             line: 98
             column: 1
           end:
-            line: 100
-            column: 4
-          startByte: 2599
-          endByte: 2660
+            line: 101
+            column: 1
+          startByte: 2605
+          endByte: 2657
       - name: Work on
-        input: "const c1 = require('./mod1');\nconst c2 = require('./mod2');\nconst c3 = require('./mod3');\nconst myDefaultConst = require('./mod4').default;\nconst myRenamed = require('mod5').originalName;\nconst { sub1, sub2 } = require('mod5'); // not handled\n\nmodule.exports = { c1, c2, c3, myDefaultConst, myRenamed, sub1, sub2 };"
-        output: "export { default as c1 } from './mod1';\nexport { default as c2 } from './mod2';\nexport { default as c3 } from './mod3';\nexport { default as myDefaultConst } from './mod4';\nexport { originalName as myRenamed } from 'mod5';\nconst { sub1, sub2 } = require('mod5'); // not handled\n\nexport { sub1 };\nexport { sub2 };"
+        input: "const c1 = require('./mod1');\nconst c2 = require('./mod2');\nconst c3 = require('./mod3');\nconst myDefaultConst = require('./mod4').default;\nconst myRenamed = require('mod5').originalName;\nconst { sub1, sub2 } = require('mod5'); // not handled\n\nmodule.exports = { c1, c2, c3, myDefaultConst, myRenamed, sub1, sub2 };\n"
+        output: "export { default as c1 } from './mod1';\nexport { default as c2 } from './mod2';\nexport { default as c3 } from './mod3';\nexport { default as myDefaultConst } from './mod4';\nexport { originalName as myRenamed } from 'mod5';\nconst { sub1, sub2 } = require('mod5'); // not handled\n\nexport { sub1 };\nexport { sub2 };\n"
         input_range:
           start:
             line: 106
             column: 1
           end:
-            line: 113
-            column: 4
-          startByte: 2675
-          endByte: 3000
+            line: 114
+            column: 1
+          startByte: 2681
+          endByte: 2997
         output_range:
           start:
             line: 117
             column: 1
           end:
-            line: 125
-            column: 4
-          startByte: 3002
-          endByte: 3323
+            line: 126
+            column: 1
+          startByte: 3008
+          endByte: 3320
     path: ".grit/.gritmodules/github.com/getgrit/js/.grit/patterns/es6_exports.md"
     position:
       line: 10
@@ -209,7 +204,7 @@ expression: resolved_patterns
     remote: "https://github.com/getgrit/js.git"
     providerName: github.com/getgrit/js
   localName: es6_exports
-  body: "engine marzano(0.1)\nlanguage js\n\nor {\n    and {\n        // handle a default export of an object by exporting the individual original definitions\n        `module.exports = { $vals }` where {\n            $new_export = \"\",\n            // it's only safe to remove the overall export if every property is individually exported\n            $vals <: some bubble($new_export) $prop where {\n                $prop <: or {\n                    shorthand_property_identifier() as $name where { $value = $name },\n                    pair(key=$name, $value)\n                },\n                or {\n                    $program <: contains or {\n                        // does not handle difficult trying to match a sublist of the module.exports\n                        `const $name = require($val).$foo` => `export { $foo as $name } from $val`,\n                        `const $name = require($val)` => `export { default as $name } from $val`,\n                        `const $name = require($val).default` => `export { default as $name } from $val`,\n                        or {\n                            `let $name = $val`,\n                            `var $name = $val`,\n                            `const $name = $val`,\n                            function_declaration($name)\n                        } as $match => `export $match`\n                    },\n                    if ($value <: $name) {\n                        $new_export += `export { $name };\\n`\n                    } else {\n                        $new_export += `export const $name = $value;\\n`\n                    }\n                }\n            }\n        } => `$new_export`\n    },\n    // handle other default exports\n    `module.exports = $export` => `export default $export`,\n    // Handle individually named exports\n    `module.exports.$name = $export` => `export const $name = $export;\\n`\n}"
+  body: "engine marzano(0.1)\nlanguage js\n\nor {\n    and {\n        // handle a default export of an object by exporting the individual original definitions\n        `module.exports = { $vals }` where {\n            $new_export = \"\",\n            // it's only safe to remove the overall export if every property is individually exported\n            $vals <: some bubble($new_export) $prop where {\n                $prop <: or {\n                    shorthand_property_identifier() as $name where { $value = $name },\n                    pair(key=$name, $value)\n                },\n                or {\n                    $program <: contains or {\n                        // does not handle difficult trying to match a sublist of the module.exports\n                        `const $name = require($val).$foo` => `export { $foo as $name } from $val`,\n                        `const $name = require($val)` => `export { default as $name } from $val`,\n                        `const $name = require($val).default` => `export { default as $name } from $val`,\n                        or {\n                            `let $name = $val`,\n                            `var $name = $val`,\n                            `const $name = $val`,\n                            function_declaration($name)\n                        } as $match => `export $match`\n                    },\n                    if ($value <: $name) {\n                        $new_export += `export { $name };\\n`\n                    } else {\n                        $new_export += `export const $name = $value;\\n`\n                    }\n                }\n            }\n        } => `$new_export`\n    },\n    // handle other default exports\n    `module.exports = $export` => `export default $export`,\n    // Handle individually named exports\n    `module.exports.$name = $export` => `export const $name = $export;\\n`\n}\n"
   kind: pattern
   language: js
   visibility: public
@@ -287,68 +282,66 @@ expression: resolved_patterns
   visibility: public
 - config:
     name: no_dead_code
-    body: "engine marzano(0.1)\nlanguage js\n\nstatement_block($statements) where {\n    $deleting = \"false\",\n    $statements <: some bubble($deleting) $s where {\n        if ($deleting <: \"true\") {\n            $s => .\n        } else {\n            // we start deleting\n            if ($s <: or { throw_statement() , continue_statement() , return_statement() }) {\n                $deleting = \"true\",\n            }\n        }\n    }\n}"
+    body: "engine marzano(0.1)\nlanguage js\n\nstatement_block($statements) where {\n    $deleting = \"false\",\n    $statements <: some bubble($deleting) $s where {\n        if ($deleting <: \"true\") {\n            $s => .\n        } else {\n            // we start deleting\n            if ($s <: or { throw_statement() , continue_statement() , return_statement() }) {\n                $deleting = \"true\",\n            }\n        }\n    }\n}\n"
     level: info
     title: Remove unreachable code
     description: "Remove unreachable code found after `return` / `throw` / `continue` or `break` statements."
-    tags:
-      - good
-      - SE
+    tags: ~
     samples:
       - name: Remove code after return
-        input: "function f() {\n  return 3;\n  1 + 1;\n}"
-        output: "function f() {\n  return 3;\n}"
+        input: "function f() {\n  return 3;\n  1 + 1;\n}\n"
+        output: "function f() {\n  return 3;\n}\n"
         input_range:
           start:
             line: 31
             column: 1
           end:
-            line: 34
-            column: 4
-          startByte: 607
-          endByte: 662
+            line: 35
+            column: 1
+          startByte: 621
+          endByte: 659
         output_range:
           start:
             line: 38
             column: 1
           end:
-            line: 40
-            column: 4
-          startByte: 664
-          endByte: 710
+            line: 41
+            column: 1
+          startByte: 678
+          endByte: 707
       - name: "Remove code after return, multiline"
-        input: "function f() {\n  foo();\n  return 3;\n  1 + 1;\n}"
-        output: "function f() {\n  foo();\n  return 3;\n}"
+        input: "function f() {\n  foo();\n  return 3;\n  1 + 1;\n}\n"
+        output: "function f() {\n  foo();\n  return 3;\n}\n"
         input_range:
           start:
             line: 46
             column: 1
           end:
-            line: 50
-            column: 4
-          startByte: 752
-          endByte: 816
+            line: 51
+            column: 1
+          startByte: 766
+          endByte: 813
         output_range:
           start:
             line: 54
             column: 1
           end:
-            line: 57
-            column: 4
-          startByte: 818
-          endByte: 873
+            line: 58
+            column: 1
+          startByte: 832
+          endByte: 870
       - name: "Don't exit a scope"
-        input: "function f() {\n  if (a) {\n    return 3;\n  }\n  1 + 1;\n}"
+        input: "function f() {\n  if (a) {\n    return 3;\n  }\n  1 + 1;\n}\n"
         output: ~
         input_range:
           start:
             line: 63
             column: 1
           end:
-            line: 68
-            column: 4
-          startByte: 898
-          endByte: 970
+            line: 69
+            column: 1
+          startByte: 912
+          endByte: 967
         output_range: ~
     path: ".grit/.gritmodules/github.com/getgrit/js/.grit/patterns/no_dead_code.md"
     position:
@@ -364,115 +357,119 @@ expression: resolved_patterns
     remote: "https://github.com/getgrit/js.git"
     providerName: github.com/getgrit/js
   localName: no_dead_code
-  body: "engine marzano(0.1)\nlanguage js\n\nstatement_block($statements) where {\n    $deleting = \"false\",\n    $statements <: some bubble($deleting) $s where {\n        if ($deleting <: \"true\") {\n            $s => .\n        } else {\n            // we start deleting\n            if ($s <: or { throw_statement() , continue_statement() , return_statement() }) {\n                $deleting = \"true\",\n            }\n        }\n    }\n}"
+  body: "engine marzano(0.1)\nlanguage js\n\nstatement_block($statements) where {\n    $deleting = \"false\",\n    $statements <: some bubble($deleting) $s where {\n        if ($deleting <: \"true\") {\n            $s => .\n        } else {\n            // we start deleting\n            if ($s <: or { throw_statement() , continue_statement() , return_statement() }) {\n                $deleting = \"true\",\n            }\n        }\n    }\n}\n"
   kind: pattern
   language: js
   visibility: public
 - config:
     name: no_eq_null
-    body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n"
+    body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n"
     level: info
-    title: Compare null using  === or !==
+    title: "Compare `null` using  `===` or `!==`"
     description: "Comparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`."
-    tags:
-      - good
+    tags: ~
     samples:
+      - name: ~
+        input: "\n"
+        output: ~
+        input_range:
+          start:
+            line: 23
+            column: 1
+          end:
+            line: 24
+            column: 1
+          startByte: 657
+          endByte: 658
+        output_range: ~
       - name: "`$val == null` => `$val === null`"
-        input: "if (val == null) {\n  done();\n}"
-        output: "if (val === null) {\n  done();\n}"
+        input: "if (val == null) {\n  done();\n}\n"
+        output: "if (val === null) {\n  done();\n}\n"
         input_range:
           start:
             line: 29
             column: 1
           end:
-            line: 31
-            column: 4
-          startByte: 701
-          endByte: 749
+            line: 32
+            column: 1
+          startByte: 715
+          endByte: 746
         output_range:
           start:
             line: 35
             column: 1
           end:
-            line: 37
-            column: 4
-          startByte: 751
-          endByte: 800
+            line: 38
+            column: 1
+          startByte: 765
+          endByte: 797
       - name: "`$val != null` => `$val !== null`"
-        input: "if (val != null) {\n  done();\n}"
-        output: "if (val !== null) {\n  done();\n}"
+        input: "if (val != null) {\n  done();\n}\n"
+        output: "if (val !== null) {\n  done();\n}\n"
         input_range:
           start:
             line: 43
             column: 1
           end:
-            line: 45
-            column: 4
-          startByte: 840
-          endByte: 888
+            line: 46
+            column: 1
+          startByte: 854
+          endByte: 885
         output_range:
           start:
             line: 49
             column: 1
           end:
-            line: 51
-            column: 4
-          startByte: 890
-          endByte: 939
+            line: 52
+            column: 1
+          startByte: 904
+          endByte: 936
       - name: "`$val != null` => `$val !== null` into `while`"
-        input: "while (val != null) {\n  did();\n}"
-        output: "while (val !== null) {\n  did();\n}"
+        input: "while (val != null) {\n  did();\n}\n"
+        output: "while (val !== null) {\n  did();\n}\n"
         input_range:
           start:
             line: 57
             column: 1
           end:
-            line: 59
-            column: 4
-          startByte: 992
-          endByte: 1042
+            line: 60
+            column: 1
+          startByte: 1006
+          endByte: 1039
         output_range:
           start:
             line: 63
             column: 1
           end:
-            line: 65
-            column: 4
-          startByte: 1044
-          endByte: 1095
+            line: 66
+            column: 1
+          startByte: 1058
+          endByte: 1092
       - name: "Do not change `$val === null`"
-        input: "if (val === null) {\n  done();\n}"
+        input: "if (val === null) {\n  done();\n}\n"
         output: ~
         input_range:
           start:
             line: 71
             column: 1
           end:
-            line: 73
-            column: 4
-          startByte: 1131
-          endByte: 1180
-        output_range:
-          start:
-            line: 71
+            line: 74
             column: 1
-          end:
-            line: 73
-            column: 4
-          startByte: 1131
-          endByte: 1180
+          startByte: 1145
+          endByte: 1177
+        output_range: ~
       - name: "Do not change `$val !== null`"
-        input: "while (val !== null) {\n  doSomething();\n}"
+        input: "while (val !== null) {\n  doSomething();\n}\n"
         output: ~
         input_range:
           start:
             line: 79
             column: 1
           end:
-            line: 81
-            column: 4
-          startByte: 1216
-          endByte: 1265
+            line: 82
+            column: 1
+          startByte: 1220
+          endByte: 1262
         output_range: ~
     path: ".grit/patterns/no_eq_null.md"
     position:
@@ -488,7 +485,7 @@ expression: resolved_patterns
     remote: "https://github.com/getgrit/rewriter.git"
     providerName: github.com/getgrit/rewriter
   localName: no_eq_null
-  body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n"
+  body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n"
   kind: pattern
   language: js
   visibility: public
@@ -518,100 +515,96 @@ expression: resolved_patterns
   visibility: public
 - config:
     name: strict_tsconfig
-    body: "engine marzano(0.1)\nlanguage json\n\npair(key=`\"compilerOptions\"`, $value) where {\n    $value <: object($properties),\n    $newOptions = [],\n\n    $properties <: maybe contains pair(key=`\"noImplicitAny\"`, value=`false` => `true`),\n    $properties <: maybe contains pair(key=`\"strict\"`, value=`false` => `true`),\n    if ($properties <: contains pair(key=`\"strict\"`, value=$strict)) {\n        $strict <: maybe `false` => `true`\n    } else {\n        $newOptions += `\"strict\": true`\n    },\n\n    // These are all included by default; ideally we'd delete, but can't, so just mark as true\n    $properties <: maybe contains pair(key=`\"noImplicitThis\"`) => .,\n    $properties <: maybe contains pair(key=`\"alwaysStrict\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictBindCallApply\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictNullChecks\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictFunctionTypes\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictPropertyInitialization\"`) => .,\n\n    // allow JS\n    if ($properties <: contains pair(key=`\"allowJs\"`, value=$allow_js)) {\n        $allow_js <: maybe `false` => `true`\n    } else {\n        $newOptions += `\"allowJs\": true`\n    },\n\n    // check JS\n    if ($properties <: contains pair(key=`\"checkJs\"`, value=$check_js)) {\n        $check_js <: maybe `true` => `false`\n    } else {\n        $newOptions += `\"checkJs\": false`\n    },\n\n    if (!$newOptions <: []) {\n        $joined = join(list=$newOptions, separator=\", \"),\n        $properties => `$joined, $properties`\n    }\n}"
+    body: "engine marzano(0.1)\nlanguage json\n\npair(key=`\"compilerOptions\"`, $value) where {\n    $value <: object($properties),\n    $newOptions = [],\n\n    $properties <: maybe contains pair(key=`\"noImplicitAny\"`, value=`false` => `true`),\n    $properties <: maybe contains pair(key=`\"strict\"`, value=`false` => `true`),\n    if ($properties <: contains pair(key=`\"strict\"`, value=$strict)) {\n        $strict <: maybe `false` => `true`\n    } else {\n        $newOptions += `\"strict\": true`\n    },\n\n    // These are all included by default; ideally we'd delete, but can't, so just mark as true\n    $properties <: maybe contains pair(key=`\"noImplicitThis\"`) => .,\n    $properties <: maybe contains pair(key=`\"alwaysStrict\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictBindCallApply\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictNullChecks\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictFunctionTypes\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictPropertyInitialization\"`) => .,\n\n    // allow JS\n    if ($properties <: contains pair(key=`\"allowJs\"`, value=$allow_js)) {\n        $allow_js <: maybe `false` => `true`\n    } else {\n        $newOptions += `\"allowJs\": true`\n    },\n\n    // check JS\n    if ($properties <: contains pair(key=`\"checkJs\"`, value=$check_js)) {\n        $check_js <: maybe `true` => `false`\n    } else {\n        $newOptions += `\"checkJs\": false`\n    },\n\n    if (!$newOptions <: []) {\n        $joined = join(list=$newOptions, separator=\", \"),\n        $properties => `$joined, $properties`\n    }\n}\n"
     level: info
     title: Strict tsconfig
     description: "Adds `\"strict\": true, \"allowJs\": true, \"checkJs\": false` from a tsconfig's `compilerOptions`, and then removes existing redundant options (such as `noImplicitAny`)."
-    tags:
-      - js
-      - ts
-      - tsconfig
-      - strict
+    tags: ~
     samples:
       - name: Transform standard tsconfig.json
-        input: "{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"outDir\": \"../../dist/out-tsc\",\n    \"types\": [\"node\"],\n    \"foo\": \"bar\"\n  },\n  \"exclude\": [\"**/*.spec.ts\"],\n  \"include\": [\"**/*.ts\"]\n}"
-        output: "{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"allowJs\": true,\n    \"checkJs\": false,\n    \"outDir\": \"../../dist/out-tsc\",\n    \"types\": [\"node\"],\n    \"foo\": \"bar\"\n  },\n  \"exclude\": [\"**/*.spec.ts\"],\n  \"include\": [\"**/*.ts\"]\n}"
+        input: "{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"outDir\": \"../../dist/out-tsc\",\n    \"types\": [\"node\"],\n    \"foo\": \"bar\"\n  },\n  \"exclude\": [\"**/*.spec.ts\"],\n  \"include\": [\"**/*.ts\"]\n}\n"
+        output: "{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"allowJs\": true,\n    \"checkJs\": false,\n    \"outDir\": \"../../dist/out-tsc\",\n    \"types\": [\"node\"],\n    \"foo\": \"bar\"\n  },\n  \"exclude\": [\"**/*.spec.ts\"],\n  \"include\": [\"**/*.ts\"]\n}\n"
         input_range:
           start:
             line: 59
             column: 1
           end:
-            line: 68
-            column: 4
-          startByte: 1857
-          endByte: 2064
+            line: 69
+            column: 1
+          startByte: 1865
+          endByte: 2061
         output_range:
           start:
             line: 72
             column: 1
           end:
-            line: 84
-            column: 4
-          startByte: 2066
-          endByte: 2336
+            line: 85
+            column: 1
+          startByte: 2074
+          endByte: 2333
       - name: Handles redundant options
-        input: "{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"outDir\": \"../../dist/out-tsc\",\n    \"types\": [\"node\"],\n    \"foo\": \"bar\",\n    \"baz\": \"raz\"\n  },\n  \"exclude\": [\"**/*.spec.ts\"],\n  \"include\": [\"**/*.ts\"]\n}"
-        output: "{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"allowJs\": true,\n    \"checkJs\": false,\n    \"outDir\": \"../../dist/out-tsc\",\n    \"types\": [\"node\"],\n    \"foo\": \"bar\",\n    \"baz\": \"raz\"\n  },\n  \"exclude\": [\"**/*.spec.ts\"],\n  \"include\": [\"**/*.ts\"]\n}"
+        input: "{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"outDir\": \"../../dist/out-tsc\",\n    \"types\": [\"node\"],\n    \"foo\": \"bar\",\n    \"baz\": \"raz\"\n  },\n  \"exclude\": [\"**/*.spec.ts\"],\n  \"include\": [\"**/*.ts\"]\n}\n"
+        output: "{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"allowJs\": true,\n    \"checkJs\": false,\n    \"outDir\": \"../../dist/out-tsc\",\n    \"types\": [\"node\"],\n    \"foo\": \"bar\",\n    \"baz\": \"raz\"\n  },\n  \"exclude\": [\"**/*.spec.ts\"],\n  \"include\": [\"**/*.ts\"]\n}\n"
         input_range:
           start:
             line: 90
             column: 1
           end:
-            line: 100
-            column: 4
-          startByte: 2368
-          endByte: 2593
+            line: 101
+            column: 1
+          startByte: 2376
+          endByte: 2590
         output_range:
           start:
             line: 104
             column: 1
           end:
-            line: 117
-            column: 4
-          startByte: 2595
-          endByte: 2883
+            line: 118
+            column: 1
+          startByte: 2603
+          endByte: 2880
       - name: Handles existing strict
-        input: "{\n  \"compilerOptions\": {\n    \"target\": \"es5\",\n    \"lib\": [\"dom\", \"dom.iterable\", \"esnext\"],\n    \"allowJs\": true,\n    \"skipLibCheck\": true,\n    \"strict\": true,\n    \"forceConsistentCasingInFileNames\": true,\n    \"noEmit\": true,\n    \"esModuleInterop\": true,\n    \"module\": \"esnext\",\n    \"moduleResolution\": \"node\",\n    \"resolveJsonModule\": true,\n    \"isolatedModules\": true,\n    \"jsx\": \"preserve\",\n    \"incremental\": true,\n    \"noImplicitAny\": false,\n    \"plugins\": [\n      {\n        \"name\": \"next\"\n      }\n    ],\n    \"baseUrl\": \".\",\n    \"paths\": {\n      \"@/*\": [\"./*\"]\n    }\n  },\n  \"include\": [\"next-env.d.ts\", \"**/*.ts\", \"**/*.tsx\", \".next/types/**/*.ts\"],\n  \"exclude\": [\"node_modules\"]\n}"
-        output: "{\n  \"compilerOptions\": {\n    \"checkJs\": false,\n    \"target\": \"es5\",\n    \"lib\": [\"dom\", \"dom.iterable\", \"esnext\"],\n    \"allowJs\": true,\n    \"skipLibCheck\": true,\n    \"strict\": true,\n    \"forceConsistentCasingInFileNames\": true,\n    \"noEmit\": true,\n    \"esModuleInterop\": true,\n    \"module\": \"esnext\",\n    \"moduleResolution\": \"node\",\n    \"resolveJsonModule\": true,\n    \"isolatedModules\": true,\n    \"jsx\": \"preserve\",\n    \"incremental\": true,\n    \"noImplicitAny\": true,\n    \"plugins\": [\n      {\n        \"name\": \"next\"\n      }\n    ],\n    \"baseUrl\": \".\",\n    \"paths\": {\n      \"@/*\": [\"./*\"]\n    }\n  },\n  \"include\": [\"next-env.d.ts\", \"**/*.ts\", \"**/*.tsx\", \".next/types/**/*.ts\"],\n  \"exclude\": [\"node_modules\"]\n}"
+        input: "{\n  \"compilerOptions\": {\n    \"target\": \"es5\",\n    \"lib\": [\"dom\", \"dom.iterable\", \"esnext\"],\n    \"allowJs\": true,\n    \"skipLibCheck\": true,\n    \"strict\": true,\n    \"forceConsistentCasingInFileNames\": true,\n    \"noEmit\": true,\n    \"esModuleInterop\": true,\n    \"module\": \"esnext\",\n    \"moduleResolution\": \"node\",\n    \"resolveJsonModule\": true,\n    \"isolatedModules\": true,\n    \"jsx\": \"preserve\",\n    \"incremental\": true,\n    \"noImplicitAny\": false,\n    \"plugins\": [\n      {\n        \"name\": \"next\"\n      }\n    ],\n    \"baseUrl\": \".\",\n    \"paths\": {\n      \"@/*\": [\"./*\"]\n    }\n  },\n  \"include\": [\"next-env.d.ts\", \"**/*.ts\", \"**/*.tsx\", \".next/types/**/*.ts\"],\n  \"exclude\": [\"node_modules\"]\n}\n"
+        output: "{\n  \"compilerOptions\": {\n    \"checkJs\": false,\n    \"target\": \"es5\",\n    \"lib\": [\"dom\", \"dom.iterable\", \"esnext\"],\n    \"allowJs\": true,\n    \"skipLibCheck\": true,\n    \"strict\": true,\n    \"forceConsistentCasingInFileNames\": true,\n    \"noEmit\": true,\n    \"esModuleInterop\": true,\n    \"module\": \"esnext\",\n    \"moduleResolution\": \"node\",\n    \"resolveJsonModule\": true,\n    \"isolatedModules\": true,\n    \"jsx\": \"preserve\",\n    \"incremental\": true,\n    \"noImplicitAny\": true,\n    \"plugins\": [\n      {\n        \"name\": \"next\"\n      }\n    ],\n    \"baseUrl\": \".\",\n    \"paths\": {\n      \"@/*\": [\"./*\"]\n    }\n  },\n  \"include\": [\"next-env.d.ts\", \"**/*.ts\", \"**/*.tsx\", \".next/types/**/*.ts\"],\n  \"exclude\": [\"node_modules\"]\n}\n"
         input_range:
           start:
             line: 123
             column: 1
           end:
-            line: 152
-            column: 4
-          startByte: 2913
-          endByte: 3610
+            line: 153
+            column: 1
+          startByte: 2921
+          endByte: 3607
         output_range:
           start:
             line: 156
             column: 1
           end:
-            line: 186
-            column: 4
-          startByte: 3612
-          endByte: 4330
+            line: 187
+            column: 1
+          startByte: 3620
+          endByte: 4327
       - name: "Bugfix $decl <: false"
-        input: "{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"outDir\": \"../../dist/out-tsc\",\n    \"module\": \"commonjs\",\n    \"types\": [\"node\", \"express\"],\n    \"allowJs\": true\n  },\n  \"exclude\": [\"jest.config.ts\", \"**/*.spec.ts\", \"**/*.test.ts\"],\n  \"include\": [\"**/*.ts\"]\n}"
-        output: "{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"checkJs\": false,\n    \"outDir\": \"../../dist/out-tsc\",\n    \"module\": \"commonjs\",\n    \"types\": [\"node\", \"express\"],\n    \"allowJs\": true\n  },\n  \"exclude\": [\"jest.config.ts\", \"**/*.spec.ts\", \"**/*.test.ts\"],\n  \"include\": [\"**/*.ts\"]\n}"
+        input: "{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"outDir\": \"../../dist/out-tsc\",\n    \"module\": \"commonjs\",\n    \"types\": [\"node\", \"express\"],\n    \"allowJs\": true\n  },\n  \"exclude\": [\"jest.config.ts\", \"**/*.spec.ts\", \"**/*.test.ts\"],\n  \"include\": [\"**/*.ts\"]\n}\n"
+        output: "{\n  \"extends\": \"./tsconfig.json\",\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"checkJs\": false,\n    \"outDir\": \"../../dist/out-tsc\",\n    \"module\": \"commonjs\",\n    \"types\": [\"node\", \"express\"],\n    \"allowJs\": true\n  },\n  \"exclude\": [\"jest.config.ts\", \"**/*.spec.ts\", \"**/*.test.ts\"],\n  \"include\": [\"**/*.ts\"]\n}\n"
         input_range:
           start:
             line: 192
             column: 1
           end:
-            line: 202
-            column: 4
-          startByte: 4358
-          endByte: 4639
+            line: 203
+            column: 1
+          startByte: 4366
+          endByte: 4636
         output_range:
           start:
             line: 206
             column: 1
           end:
-            line: 218
-            column: 4
-          startByte: 4641
-          endByte: 4964
+            line: 219
+            column: 1
+          startByte: 4649
+          endByte: 4961
     path: ".grit/.gritmodules/github.com/getgrit/json/.grit/patterns/strict_tsconfig.md"
     position:
       line: 12
@@ -626,7 +619,7 @@ expression: resolved_patterns
     remote: "https://github.com/getgrit/json.git"
     providerName: github.com/getgrit/json
   localName: strict_tsconfig
-  body: "engine marzano(0.1)\nlanguage json\n\npair(key=`\"compilerOptions\"`, $value) where {\n    $value <: object($properties),\n    $newOptions = [],\n\n    $properties <: maybe contains pair(key=`\"noImplicitAny\"`, value=`false` => `true`),\n    $properties <: maybe contains pair(key=`\"strict\"`, value=`false` => `true`),\n    if ($properties <: contains pair(key=`\"strict\"`, value=$strict)) {\n        $strict <: maybe `false` => `true`\n    } else {\n        $newOptions += `\"strict\": true`\n    },\n\n    // These are all included by default; ideally we'd delete, but can't, so just mark as true\n    $properties <: maybe contains pair(key=`\"noImplicitThis\"`) => .,\n    $properties <: maybe contains pair(key=`\"alwaysStrict\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictBindCallApply\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictNullChecks\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictFunctionTypes\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictPropertyInitialization\"`) => .,\n\n    // allow JS\n    if ($properties <: contains pair(key=`\"allowJs\"`, value=$allow_js)) {\n        $allow_js <: maybe `false` => `true`\n    } else {\n        $newOptions += `\"allowJs\": true`\n    },\n\n    // check JS\n    if ($properties <: contains pair(key=`\"checkJs\"`, value=$check_js)) {\n        $check_js <: maybe `true` => `false`\n    } else {\n        $newOptions += `\"checkJs\": false`\n    },\n\n    if (!$newOptions <: []) {\n        $joined = join(list=$newOptions, separator=\", \"),\n        $properties => `$joined, $properties`\n    }\n}"
+  body: "engine marzano(0.1)\nlanguage json\n\npair(key=`\"compilerOptions\"`, $value) where {\n    $value <: object($properties),\n    $newOptions = [],\n\n    $properties <: maybe contains pair(key=`\"noImplicitAny\"`, value=`false` => `true`),\n    $properties <: maybe contains pair(key=`\"strict\"`, value=`false` => `true`),\n    if ($properties <: contains pair(key=`\"strict\"`, value=$strict)) {\n        $strict <: maybe `false` => `true`\n    } else {\n        $newOptions += `\"strict\": true`\n    },\n\n    // These are all included by default; ideally we'd delete, but can't, so just mark as true\n    $properties <: maybe contains pair(key=`\"noImplicitThis\"`) => .,\n    $properties <: maybe contains pair(key=`\"alwaysStrict\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictBindCallApply\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictNullChecks\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictFunctionTypes\"`) => .,\n    $properties <: maybe contains pair(key=`\"strictPropertyInitialization\"`) => .,\n\n    // allow JS\n    if ($properties <: contains pair(key=`\"allowJs\"`, value=$allow_js)) {\n        $allow_js <: maybe `false` => `true`\n    } else {\n        $newOptions += `\"allowJs\": true`\n    },\n\n    // check JS\n    if ($properties <: contains pair(key=`\"checkJs\"`, value=$check_js)) {\n        $check_js <: maybe `true` => `false`\n    } else {\n        $newOptions += `\"checkJs\": false`\n    },\n\n    if (!$newOptions <: []) {\n        $joined = join(list=$newOptions, separator=\", \"),\n        $properties => `$joined, $properties`\n    }\n}\n"
   kind: pattern
   language: json
   visibility: public

@@ -1,36 +1,36 @@
 use super::{
     functions::{Evaluator, FuncEvaluation},
-    patterns::{Name, Pattern},
+    patterns::{Pattern, PatternName},
     variable::Variable,
     State,
 };
-use crate::context::Context;
+use crate::context::QueryContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Equal {
+pub struct Equal<Q: QueryContext> {
     pub var: Variable,
-    pub pattern: Pattern,
+    pub pattern: Pattern<Q>,
 }
 
-impl Equal {
-    pub fn new(var: Variable, pattern: Pattern) -> Self {
+impl<Q: QueryContext> Equal<Q> {
+    pub fn new(var: Variable, pattern: Pattern<Q>) -> Self {
         Self { var, pattern }
     }
 }
 
-impl Name for Equal {
+impl<Q: QueryContext> PatternName for Equal<Q> {
     fn name(&self) -> &'static str {
         "EQUAL"
     }
 }
 
-impl Evaluator for Equal {
+impl<Q: QueryContext> Evaluator<Q> for Equal<Q> {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         let lhs_text = self.var.text(state)?;

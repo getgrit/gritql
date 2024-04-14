@@ -2,7 +2,7 @@ use super::{
     compiler::NodeCompilationContext, list_compiler::ListCompiler, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::pattern::ast_node::ASTNode;
+use crate::ast_node::ASTNode;
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use marzano_language::language::{FieldId, Language, SortId};

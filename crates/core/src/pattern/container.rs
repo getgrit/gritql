@@ -1,3 +1,5 @@
+use crate::context::QueryContext;
+
 use super::{
     accessor::Accessor, list_index::ListIndex, patterns::Pattern,
     resolved_pattern::ResolvedPattern, state::State, variable::Variable,
@@ -11,30 +13,30 @@ use anyhow::Result;
 /// - Accessor: a map accessor (ex. `$foo.bar`)
 /// - ListIndex: a list index (ex. `$foo[0]`)
 #[derive(Debug, Clone)]
-pub enum Container {
+pub enum Container<Q: QueryContext> {
     Variable(Variable),
-    Accessor(Box<Accessor>),
-    ListIndex(Box<ListIndex>),
+    Accessor(Box<Accessor<Q>>),
+    ListIndex(Box<ListIndex<Q>>),
 }
 
 #[derive(Debug)]
-pub(crate) enum PatternOrResolved<'a, 'b> {
-    Pattern(&'a Pattern),
+pub(crate) enum PatternOrResolved<'a, 'b, Q: QueryContext> {
+    Pattern(&'a Pattern<Q>),
     Resolved(&'b ResolvedPattern<'a>),
     ResolvedBinding(ResolvedPattern<'a>),
 }
 
 #[derive(Debug)]
-pub(crate) enum PatternOrResolvedMut<'a, 'b> {
-    Pattern(&'a Pattern),
+pub(crate) enum PatternOrResolvedMut<'a, 'b, Q: QueryContext> {
+    Pattern(&'a Pattern<Q>),
     Resolved(&'b mut ResolvedPattern<'a>),
     _ResolvedBinding,
 }
 
-impl Container {
+impl<Q: QueryContext> Container<Q> {
     pub(crate) fn set_resolved<'a>(
         &'a self,
-        state: &mut State<'a>,
+        state: &mut State<'a, Q>,
         value: ResolvedPattern<'a>,
     ) -> Result<Option<ResolvedPattern<'a>>> {
         match self {
@@ -54,8 +56,8 @@ impl Container {
 
     pub(crate) fn get_pattern_or_resolved<'a, 'b>(
         &'a self,
-        state: &'b State<'a>,
-    ) -> Result<Option<PatternOrResolved<'a, 'b>>> {
+        state: &'b State<'a, Q>,
+    ) -> Result<Option<PatternOrResolved<'a, 'b, Q>>> {
         match self {
             Container::Variable(v) => v.get_pattern_or_resolved(state),
             Container::Accessor(a) => a.get(state),
@@ -65,8 +67,8 @@ impl Container {
 
     pub(crate) fn get_pattern_or_resolved_mut<'a, 'b>(
         &'a self,
-        state: &'b mut State<'a>,
-    ) -> Result<Option<PatternOrResolvedMut<'a, 'b>>> {
+        state: &'b mut State<'a, Q>,
+    ) -> Result<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
         match self {
             Container::Variable(v) => v.get_pattern_or_resolved_mut(state),
             Container::Accessor(a) => a.get_mut(state),

@@ -2,7 +2,10 @@ use super::{
     back_tick_compiler::BackTickCompiler, compiler::NodeCompilationContext,
     node_compiler::NodeCompiler, variable_compiler::VariableCompiler,
 };
-use crate::pattern::regex::{RegexLike, RegexPattern};
+use crate::{
+    pattern::regex::{RegexLike, RegexPattern},
+    problem::MarzanoQueryContext,
+};
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
 use marzano_language::language::Language;
@@ -11,7 +14,7 @@ use marzano_util::{analysis_logs::AnalysisLogBuilder, node_with_source::NodeWith
 pub(crate) struct RegexCompiler;
 
 impl NodeCompiler for RegexCompiler {
-    type TargetPattern = RegexPattern;
+    type TargetPattern = RegexPattern<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

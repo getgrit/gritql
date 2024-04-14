@@ -1,46 +1,51 @@
 use super::{
+    ast_node_pattern::AstNodePattern,
     functions::{Evaluator, FuncEvaluation},
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     predicates::Predicate,
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{binding::Binding, context::Context};
+use crate::{binding::Binding, context::QueryContext};
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
+use std::mem::transmute;
 
 #[derive(Debug, Clone)]
-pub struct Or {
-    pub patterns: Vec<Pattern>,
+pub struct Or<Q: QueryContext> {
+    pub patterns: Vec<Pattern<Q>>,
 }
-impl Or {
-    pub fn new(patterns: Vec<Pattern>) -> Self {
+
+impl<Q: QueryContext> Or<Q> {
+    pub fn new(patterns: Vec<Pattern<Q>>) -> Self {
         Self { patterns }
     }
 }
 
-impl Name for Or {
+impl<Q: QueryContext> PatternName for Or<Q> {
     fn name(&self) -> &'static str {
         "OR"
     }
 }
 
-impl Matcher for Or {
+impl<Q: QueryContext> Matcher<Q> for Or<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        init_state: &mut State<'a>,
-        context: &'a impl Context,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let ResolvedPattern::Binding(binding_vector) = &binding {
             for p in self.patterns.iter() {
                 // filter out pattern which cannot match because of a mismatched node type
-                if let (Some(binding_node), Pattern::ASTNode(node_pattern)) =
+                if let (Some(binding_node), Pattern::AstNode(node_pattern)) =
                     (binding_vector.last().and_then(Binding::as_node), p)
                 {
-                    if node_pattern.sort != binding_node.node.kind_id() {
+                    // Safety: This is safe as long as `MarzanoProblemContext` is the
+                    // only implementation of `ProblemContext`.
+                    if !node_pattern.matches_kind_of(unsafe { transmute(&binding_node) }) {
                         continue;
                     }
                 }
@@ -66,26 +71,27 @@ impl Matcher for Or {
 }
 
 #[derive(Debug, Clone)]
-pub struct PrOr {
-    pub predicates: Vec<Predicate>,
+pub struct PrOr<Q: QueryContext> {
+    pub predicates: Vec<Predicate<Q>>,
 }
-impl PrOr {
-    pub fn new(predicates: Vec<Predicate>) -> Self {
+
+impl<Q: QueryContext> PrOr<Q> {
+    pub fn new(predicates: Vec<Predicate<Q>>) -> Self {
         Self { predicates }
     }
 }
 
-impl Name for PrOr {
+impl<Q: QueryContext> PatternName for PrOr<Q> {
     fn name(&self) -> &'static str {
         "PREDICATE_OR"
     }
 }
 
-impl Evaluator for PrOr {
+impl<Q: QueryContext> Evaluator<Q> for PrOr<Q> {
     fn execute_func<'a>(
         &'a self,
-        init_state: &mut State<'a>,
-        context: &'a impl Context,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         for p in self.predicates.iter() {

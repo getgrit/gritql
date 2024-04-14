@@ -1,4 +1,6 @@
-use crate::{binding::Constant, context::Context};
+use crate::{
+    binding::Constant, context::ExecContext, context::QueryContext, problem::MarzanoQueryContext,
+};
 use itertools::Itertools;
 use marzano_util::analysis_logs::AnalysisLogs;
 use rand::prelude::SliceRandom;
@@ -9,7 +11,7 @@ use rand::Rng;
 use super::{
     functions::GritCall,
     paths::resolve,
-    patterns::{Name, Pattern},
+    patterns::{Pattern, PatternName},
     resolved_pattern::{
         patterns_to_resolved, JoinFn, LazyBuiltIn, ResolvedPattern, ResolvedSnippet,
     },
@@ -24,18 +26,18 @@ use marzano_language::language::Language;
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]
-pub struct CallBuiltIn {
+pub struct CallBuiltIn<Q: QueryContext> {
     pub(crate) index: usize,
-    pub(crate) args: Vec<Option<Pattern>>,
+    pub(crate) args: Vec<Option<Pattern<Q>>>,
 }
 
-impl CallBuiltIn {
-    pub fn new(index: usize, args: Vec<Option<Pattern>>) -> Self {
+impl<Q: QueryContext> CallBuiltIn<Q> {
+    pub fn new(index: usize, args: Vec<Option<Pattern<Q>>>) -> Self {
         Self { index, args }
     }
 
     pub(crate) fn from_args(
-        mut args: BTreeMap<String, Pattern>,
+        mut args: BTreeMap<String, Pattern<Q>>,
         built_ins: &BuiltIns,
         index: usize,
         lang: &impl Language,
@@ -52,18 +54,18 @@ impl CallBuiltIn {
     }
 }
 
-impl GritCall for CallBuiltIn {
+impl<Q: QueryContext> GritCall<Q> for CallBuiltIn<Q> {
     fn call<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         context.call_built_in(self, context, state, logs)
     }
 }
 
-impl Name for CallBuiltIn {
+impl<Q: QueryContext> PatternName for CallBuiltIn<Q> {
     fn name(&self) -> &'static str {
         "CALL_BUILT_IN"
     }
@@ -74,9 +76,9 @@ impl Name for CallBuiltIn {
 // value.
 
 type F = dyn for<'a> Fn(
-        &'a [Option<Pattern>],
+        &'a [Option<Pattern<MarzanoQueryContext>>],
         &'a MarzanoContext<'a>,
-        &mut State<'a>,
+        &mut State<'a, MarzanoQueryContext>,
         &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>>
     + Send
@@ -91,9 +93,9 @@ pub struct BuiltInFunction {
 impl BuiltInFunction {
     fn call<'a>(
         &self,
-        args: &'a [Option<Pattern>],
+        args: &'a [Option<Pattern<MarzanoQueryContext>>],
         context: &'a MarzanoContext<'a>,
-        state: &mut State<'a>,
+        state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         (self.func)(args, context, state, logs)
@@ -119,9 +121,9 @@ pub struct BuiltIns(Vec<BuiltInFunction>);
 impl BuiltIns {
     pub(crate) fn call<'a>(
         &self,
-        call: &'a CallBuiltIn,
+        call: &'a CallBuiltIn<MarzanoQueryContext>,
         context: &'a MarzanoContext<'a>,
-        state: &mut State<'a>,
+        state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         self.0[call.index].call(&call.args, context, state, logs)
@@ -180,9 +182,9 @@ impl From<Vec<BuiltInFunction>> for BuiltIns {
 
 /// Turn an arbitrary path into a resolved and normalized absolute path
 fn resolve_path_fn<'a>(
-    args: &'a [Option<Pattern>],
+    args: &'a [Option<Pattern<MarzanoQueryContext>>],
     context: &'a MarzanoContext<'a>,
-    state: &mut State<'a>,
+    state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
@@ -207,9 +209,9 @@ fn capitalize(s: &str) -> String {
 }
 
 fn capitalize_fn<'a>(
-    args: &'a [Option<Pattern>],
+    args: &'a [Option<Pattern<MarzanoQueryContext>>],
     context: &'a MarzanoContext<'a>,
-    state: &mut State<'a>,
+    state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
@@ -222,9 +224,9 @@ fn capitalize_fn<'a>(
 }
 
 fn lowercase_fn<'a>(
-    args: &'a [Option<Pattern>],
+    args: &'a [Option<Pattern<MarzanoQueryContext>>],
     context: &'a MarzanoContext<'a>,
-    state: &mut State<'a>,
+    state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
@@ -237,9 +239,9 @@ fn lowercase_fn<'a>(
 }
 
 fn uppercase_fn<'a>(
-    args: &'a [Option<Pattern>],
+    args: &'a [Option<Pattern<MarzanoQueryContext>>],
     context: &'a MarzanoContext<'a>,
-    state: &mut State<'a>,
+    state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
@@ -252,9 +254,9 @@ fn uppercase_fn<'a>(
 }
 
 fn text_fn<'a>(
-    args: &'a [Option<Pattern>],
+    args: &'a [Option<Pattern<MarzanoQueryContext>>],
     context: &'a MarzanoContext<'a>,
-    state: &mut State<'a>,
+    state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
@@ -267,9 +269,9 @@ fn text_fn<'a>(
 }
 
 fn trim_fn<'a>(
-    args: &'a [Option<Pattern>],
+    args: &'a [Option<Pattern<MarzanoQueryContext>>],
     context: &'a MarzanoContext<'a>,
-    state: &mut State<'a>,
+    state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
@@ -291,9 +293,9 @@ fn trim_fn<'a>(
 }
 
 fn split_fn<'a>(
-    args: &'a [Option<Pattern>],
+    args: &'a [Option<Pattern<MarzanoQueryContext>>],
     context: &'a MarzanoContext<'a>,
-    state: &mut State<'a>,
+    state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
@@ -316,9 +318,9 @@ fn split_fn<'a>(
 }
 
 fn random_fn<'a>(
-    args: &'a [Option<Pattern>],
+    args: &'a [Option<Pattern<MarzanoQueryContext>>],
     context: &'a MarzanoContext<'a>,
-    state: &mut State<'a>,
+    state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
@@ -348,9 +350,9 @@ fn random_fn<'a>(
 }
 
 fn join_fn<'a>(
-    args: &'a [Option<Pattern>],
+    args: &'a [Option<Pattern<MarzanoQueryContext>>],
     context: &'a MarzanoContext<'a>,
-    state: &mut State<'a>,
+    state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
@@ -377,9 +379,9 @@ fn join_fn<'a>(
 }
 
 fn distinct_fn<'a>(
-    args: &'a [Option<Pattern>],
+    args: &'a [Option<Pattern<MarzanoQueryContext>>],
     context: &'a MarzanoContext<'a>,
-    state: &mut State<'a>,
+    state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
@@ -418,9 +420,9 @@ fn distinct_fn<'a>(
 
 // Shuffle a list
 fn shuffle_fn<'a>(
-    args: &'a [Option<Pattern>],
+    args: &'a [Option<Pattern<MarzanoQueryContext>>],
     context: &'a MarzanoContext<'a>,
-    state: &mut State<'a>,
+    state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
@@ -464,9 +466,9 @@ fn shuffle_fn<'a>(
 }
 
 fn length_fn<'a>(
-    args: &'a [Option<Pattern>],
+    args: &'a [Option<Pattern<MarzanoQueryContext>>],
     context: &'a MarzanoContext<'a>,
-    state: &mut State<'a>,
+    state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
 ) -> Result<ResolvedPattern<'a>> {
     let args = patterns_to_resolved(args, state, context, logs)?;

@@ -6,7 +6,8 @@ use super::{
 };
 use crate::{
     clean::{get_replacement_ranges, replace_cleaned_ranges},
-    context::Context,
+    context::ExecContext,
+    context::QueryContext,
     problem::{FileOwner, InputRanges, MatchRanges},
     text_unparser::apply_effects,
 };
@@ -18,12 +19,12 @@ use std::path::PathBuf;
 use tree_sitter::Parser;
 
 #[derive(Debug, Clone)]
-pub struct Step {
-    pub pattern: Pattern,
+pub struct Step<Q: QueryContext> {
+    pub pattern: Pattern<Q>,
 }
 
-impl Step {
-    pub fn new(pattern: Pattern) -> Self {
+impl<Q: QueryContext> Step<Q> {
+    pub fn new(pattern: Pattern<Q>) -> Self {
         Self { pattern }
     }
 }
@@ -64,12 +65,12 @@ fn extract_file_pointers(binding: &ResolvedPattern) -> Option<Vec<FilePtr>> {
     }
 }
 
-impl Matcher for Step {
+impl<Q: QueryContext> Matcher<Q> for Step<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut parser = Parser::new()?;

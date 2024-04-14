@@ -88,6 +88,7 @@ pub fn check_file(
             Some(pattern.local_name.to_string()),
             None,
             get_ai_built_in_functions_for_feature(),
+            None
         )?;
         let logs = compilation_warnings
             .clone()

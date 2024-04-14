@@ -21,7 +21,7 @@ pub fn language_id_to_pattern_language(language_id: &str) -> Option<PatternLangu
         "sql" => Some(PatternLanguage::Sql),
         "vue" => Some(PatternLanguage::Vue),
         "toml" => Some(PatternLanguage::Toml),
-        "php" => Some(PatternLanguage::Php),
+        "php" => Some(PatternLanguage::PhpOnly),
         _ => None,
     }
 }
@@ -50,6 +50,7 @@ pub fn target_language_to_language_id(target_language: TargetLanguage) -> &'stat
         TargetLanguage::Vue(_) => "vue",
         TargetLanguage::Toml(_) => "toml",
         TargetLanguage::Php(_) => "php",
+        TargetLanguage::PhpOnly(_) => "php",
     }
 }
 

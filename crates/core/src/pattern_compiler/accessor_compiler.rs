@@ -3,6 +3,7 @@ use super::{
     map_compiler::MapCompiler, node_compiler::NodeCompiler, variable_compiler::VariableCompiler,
 };
 use crate::pattern::accessor::{Accessor, AccessorKey, AccessorMap};
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
@@ -10,7 +11,7 @@ use marzano_util::node_with_source::NodeWithSource;
 pub(crate) struct AccessorCompiler;
 
 impl NodeCompiler for AccessorCompiler {
-    type TargetPattern = Accessor;
+    type TargetPattern = Accessor<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

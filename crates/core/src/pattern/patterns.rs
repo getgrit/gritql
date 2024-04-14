@@ -6,7 +6,6 @@ use super::{
     and::And,
     any::Any,
     assignment::Assignment,
-    ast_node::ASTNode,
     before::Before,
     boolean_constant::BooleanConstant,
     bubble::Bubble,
@@ -50,20 +49,20 @@ use super::{
     within::Within,
     State,
 };
-use crate::context::Context;
+use crate::context::QueryContext;
 use anyhow::{bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 
-pub(crate) trait Matcher: Debug {
+pub trait Matcher<Q: QueryContext>: Debug {
     // it is important that any implementors of Pattern
     // do not compute-expensive things in execute
     // it should be stored somewhere in the struct of the implementor
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool>;
 
@@ -73,34 +72,34 @@ pub(crate) trait Matcher: Debug {
     // fn sort(&self) -> SortFormula;
 }
 
-pub trait Name {
+pub trait PatternName {
     fn name(&self) -> &'static str;
 }
 
 #[derive(Debug, Clone)]
-pub enum Pattern {
-    ASTNode(Box<ASTNode>),
-    List(Box<List>),
-    ListIndex(Box<ListIndex>),
-    Map(Box<GritMap>),
-    Accessor(Box<Accessor>),
-    Call(Box<Call>),
-    Regex(Box<RegexPattern>),
-    File(Box<FilePattern>),
-    Files(Box<Files>),
-    Bubble(Box<Bubble>),
-    Limit(Box<Limit>),
-    CallBuiltIn(Box<CallBuiltIn>),
-    CallFunction(Box<CallFunction>),
-    CallForeignFunction(Box<CallForeignFunction>),
-    Assignment(Box<Assignment>),
-    Accumulate(Box<Accumulate>),
-    And(Box<And>),
-    Or(Box<Or>),
-    Maybe(Box<Maybe>),
-    Any(Box<Any>),
-    Not(Box<Not>),
-    If(Box<If>),
+pub enum Pattern<Q: QueryContext> {
+    AstNode(Box<Q::NodePattern>),
+    List(Box<List<Q>>),
+    ListIndex(Box<ListIndex<Q>>),
+    Map(Box<GritMap<Q>>),
+    Accessor(Box<Accessor<Q>>),
+    Call(Box<Call<Q>>),
+    Regex(Box<RegexPattern<Q>>),
+    File(Box<FilePattern<Q>>),
+    Files(Box<Files<Q>>),
+    Bubble(Box<Bubble<Q>>),
+    Limit(Box<Limit<Q>>),
+    CallBuiltIn(Box<CallBuiltIn<Q>>),
+    CallFunction(Box<CallFunction<Q>>),
+    CallForeignFunction(Box<CallForeignFunction<Q>>),
+    Assignment(Box<Assignment<Q>>),
+    Accumulate(Box<Accumulate<Q>>),
+    And(Box<And<Q>>),
+    Or(Box<Or<Q>>),
+    Maybe(Box<Maybe<Q>>),
+    Any(Box<Any<Q>>),
+    Not(Box<Not<Q>>),
+    If(Box<If<Q>>),
     Undefined,
     Top,
     Bottom,
@@ -111,36 +110,36 @@ pub enum Pattern {
     IntConstant(IntConstant),
     FloatConstant(FloatConstant),
     BooleanConstant(BooleanConstant),
-    Dynamic(DynamicPattern),
-    CodeSnippet(CodeSnippet),
+    Dynamic(DynamicPattern<Q>),
+    CodeSnippet(CodeSnippet<Q>),
     Variable(Variable),
-    Rewrite(Box<Rewrite>),
-    Log(Box<Log>),
+    Rewrite(Box<Rewrite<Q>>),
+    Log(Box<Log<Q>>),
     Range(PRange),
-    Contains(Box<Contains>),
-    Includes(Box<Includes>),
-    Within(Box<Within>),
-    After(Box<After>),
-    Before(Box<Before>),
-    Where(Box<Where>),
-    Some(Box<Some>),
-    Every(Box<Every>),
-    Add(Box<Add>),
-    Subtract(Box<Subtract>),
-    Multiply(Box<Multiply>),
-    Divide(Box<Divide>),
-    Modulo(Box<Modulo>),
+    Contains(Box<Contains<Q>>),
+    Includes(Box<Includes<Q>>),
+    Within(Box<Within<Q>>),
+    After(Box<After<Q>>),
+    Before(Box<Before<Q>>),
+    Where(Box<Where<Q>>),
+    Some(Box<Some<Q>>),
+    Every(Box<Every<Q>>),
+    Add(Box<Add<Q>>),
+    Subtract(Box<Subtract<Q>>),
+    Multiply(Box<Multiply<Q>>),
+    Divide(Box<Divide<Q>>),
+    Modulo(Box<Modulo<Q>>),
     Dots,
-    Sequential(Sequential),
-    Like(Box<Like>),
+    Sequential(Sequential<Q>),
+    Like(Box<Like<Q>>),
 }
 
-impl Pattern {
+impl<Q: QueryContext> Pattern<Q> {
     // todo this should return a cow, but currently can't figure out lifetimes
     pub fn text<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<String> {
         Ok(ResolvedPattern::from_pattern(self, state, context, logs)?
@@ -150,18 +149,18 @@ impl Pattern {
 
     pub(crate) fn float<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<f64> {
         ResolvedPattern::from_pattern(self, state, context, logs)?.float(&state.files)
     }
 }
 
-impl Name for Pattern {
+impl<Q: QueryContext> PatternName for Pattern<Q> {
     fn name(&self) -> &'static str {
         match self {
-            Pattern::ASTNode(ast_node) => ast_node.name(),
+            Pattern::AstNode(ast_node) => ast_node.name(),
             Pattern::Some(some) => some.name(),
             Pattern::Every(every) => every.name(),
             Pattern::List(nodes) => nodes.name(),
@@ -218,12 +217,12 @@ impl Name for Pattern {
     }
 }
 
-impl Matcher for Pattern {
+impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let ResolvedPattern::File(file) = &binding {
@@ -236,7 +235,7 @@ impl Matcher for Pattern {
         }
 
         match self {
-            Pattern::ASTNode(ast_node) => ast_node.execute(binding, state, context, logs),
+            Pattern::AstNode(ast_node) => ast_node.execute(binding, state, context, logs),
             Pattern::Some(some) => some.execute(binding, state, context, logs),
             Pattern::Every(every) => every.execute(binding, state, context, logs),
             Pattern::List(patterns) => patterns.execute(binding, state, context, logs),

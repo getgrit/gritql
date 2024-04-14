@@ -27,12 +27,12 @@ impl Name for ASTNode {
     }
 }
 
-impl Matcher for ASTNode {
+impl Matcher<Q> for ASTNode {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        init_state: &mut State<'a>,
-        context: &'a impl Context,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let binding = if let ResolvedPattern::Binding(binding) = binding {

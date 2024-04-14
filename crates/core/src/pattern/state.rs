@@ -2,6 +2,7 @@ use super::{
     constants::MATCH_VAR, patterns::Pattern, resolved_pattern::ResolvedPattern, variable::Variable,
     variable_content::VariableContent,
 };
+use crate::context::QueryContext;
 use crate::intervals::{earliest_deadline_sort, get_top_level_intervals_in_range, Interval};
 use crate::problem::{Effect, FileOwner};
 use anyhow::{anyhow, bail, Result};
@@ -67,8 +68,8 @@ impl<'a> FileRegistry<'a> {
 
 // todo: we don't want to clone pattern definitions when cloning State
 #[derive(Clone, Debug)]
-pub struct State<'a> {
-    pub bindings: VarRegistry<'a>,
+pub struct State<'a, Q: QueryContext> {
+    pub bindings: VarRegistry<'a, Q>,
     pub effects: Vector<Effect<'a>>,
     pub files: FileRegistry<'a>,
     rng: rand::rngs::StdRng,
@@ -150,8 +151,8 @@ impl FilePtr {
     }
 }
 
-impl<'a> State<'a> {
-    pub(crate) fn new(bindings: VarRegistry<'a>, files: Vec<&'a FileOwner>) -> Self {
+impl<'a, Q: QueryContext> State<'a, Q> {
+    pub(crate) fn new(bindings: VarRegistry<'a, Q>, files: Vec<&'a FileOwner>) -> Self {
         Self {
             rng: rand::rngs::StdRng::seed_from_u64(32),
             bindings,
@@ -172,9 +173,9 @@ impl<'a> State<'a> {
         &mut self.rng
     }
 
-    pub(crate) fn reset_vars(&mut self, scope: usize, args: &'a [Option<Pattern>]) {
+    pub(crate) fn reset_vars(&mut self, scope: usize, args: &'a [Option<Pattern<Q>>]) {
         let old_scope = self.bindings[scope].last().unwrap();
-        let new_scope: Vector<Box<VariableContent>> = old_scope
+        let new_scope: Vector<Box<VariableContent<Q>>> = old_scope
             .iter()
             .enumerate()
             .map(|(index, content)| {
@@ -267,4 +268,4 @@ impl<'a> State<'a> {
     }
 }
 
-type VarRegistry<'a> = Vector<Vector<Vector<Box<VariableContent<'a>>>>>;
+type VarRegistry<'a, P> = Vector<Vector<Vector<Box<VariableContent<'a, P>>>>>;

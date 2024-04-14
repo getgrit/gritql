@@ -4,27 +4,27 @@ use super::{
     variable::Variable,
     State,
 };
-use crate::context::Context;
+use crate::context::QueryContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Clone, Debug)]
-pub struct PatternDefinition {
+pub struct PatternDefinition<Q: QueryContext> {
     pub name: String,
     pub scope: usize,
     pub params: Vec<(String, Variable)>,
     // this could just be a usize representing the len
     pub local_vars: Vec<usize>,
-    pub pattern: Pattern,
+    pub pattern: Pattern<Q>,
 }
 
-impl PatternDefinition {
+impl<Q: QueryContext> PatternDefinition<Q> {
     pub fn new(
         name: String,
         scope: usize,
         params: Vec<(String, Variable)>,
         local_vars: Vec<usize>,
-        pattern: Pattern,
+        pattern: Pattern<Q>,
     ) -> Self {
         Self {
             name,
@@ -37,11 +37,11 @@ impl PatternDefinition {
 
     pub(crate) fn call<'a>(
         &'a self,
-        state: &mut State<'a>,
+        state: &mut State<'a, Q>,
         binding: &ResolvedPattern<'a>,
-        context: &'a impl Context,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-        args: &'a [Option<Pattern>],
+        args: &'a [Option<Pattern<Q>>],
     ) -> Result<bool> {
         state.reset_vars(self.scope, args);
         let res = self.pattern.execute(binding, state, context, logs);

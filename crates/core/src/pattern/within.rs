@@ -1,37 +1,37 @@
 use super::{
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{context::Context, resolve};
+use crate::{context::QueryContext, resolve};
 use anyhow::Result;
 use core::fmt::Debug;
 use grit_util::AstNode;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Within {
-    pub(crate) pattern: Pattern,
+pub struct Within<Q: QueryContext> {
+    pub(crate) pattern: Pattern<Q>,
 }
 
-impl Within {
-    pub fn new(pattern: Pattern) -> Self {
+impl<Q: QueryContext> Within<Q> {
+    pub fn new(pattern: Pattern<Q>) -> Self {
         Self { pattern }
     }
 }
 
-impl Name for Within {
+impl<Q: QueryContext> PatternName for Within<Q> {
     fn name(&self) -> &'static str {
         "WITHIN"
     }
 }
 
-impl Matcher for Within {
+impl<Q: QueryContext> Matcher<Q> for Within<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        init_state: &mut State<'a>,
-        context: &'a impl Context,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let mut did_match = false;

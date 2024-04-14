@@ -100,109 +100,100 @@ expression: v
   visibility: public
 - config:
     name: broken_pattern
-    body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n"
+    body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n"
     level: info
-    title: Compare null using  === or !==
+    title: "Compare `null` using  `===` or `!==`"
     description: "Comparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`."
-    tags:
-      - good
+    tags: ~
     samples:
       - name: "`$val == null` => `$val === null` to change"
-        input: "if (val == null) {\n  done();\n}"
-        output: "if (val === null) {\n  done();\n  console.log(\"This should be removed by grit patterns test --update\");\n}\n"
+        input: "if (val == null) {\n  done();\n}\n"
+        output: "if (val === null) {\n  done();\n  console.log(\"This should be removed by grit patterns test --update\");\n}\n\n"
         input_range:
           start:
             line: 25
             column: 1
           end:
-            line: 27
-            column: 4
-          startByte: 701
-          endByte: 749
+            line: 28
+            column: 1
+          startByte: 715
+          endByte: 746
         output_range:
           start:
             line: 31
             column: 1
           end:
-            line: 35
-            column: 4
-          startByte: 751
-          endByte: 873
+            line: 36
+            column: 1
+          startByte: 765
+          endByte: 870
       - name: "`$val != null` => `$val !== null` not channge"
-        input: "if (val != null) {\n  done();\n}"
-        output: "if (val !== null) {\n  done();\n}"
+        input: "if (val != null) {\n  done();\n}\n"
+        output: "if (val !== null) {\n  done();\n}\n"
         input_range:
           start:
             line: 41
             column: 1
           end:
-            line: 43
-            column: 4
-          startByte: 925
-          endByte: 973
+            line: 44
+            column: 1
+          startByte: 939
+          endByte: 970
         output_range:
           start:
             line: 47
             column: 1
           end:
-            line: 49
-            column: 4
-          startByte: 975
-          endByte: 1024
+            line: 50
+            column: 1
+          startByte: 989
+          endByte: 1021
       - name: "`$val != null` => `$val !== null` into `while` not change"
-        input: "while (val != null) {\n  did();\n}"
-        output: "while (val !== null) {\n  did();\n}"
+        input: "while (val != null) {\n  did();\n}\n"
+        output: "while (val !== null) {\n  did();\n}\n"
         input_range:
           start:
             line: 55
             column: 1
           end:
-            line: 57
-            column: 4
-          startByte: 1088
-          endByte: 1138
+            line: 58
+            column: 1
+          startByte: 1102
+          endByte: 1135
         output_range:
           start:
             line: 61
             column: 1
           end:
-            line: 63
-            column: 4
-          startByte: 1140
-          endByte: 1191
+            line: 64
+            column: 1
+          startByte: 1154
+          endByte: 1188
       - name: "Do not change `$val === null` not change"
-        input: "if (val === null) {\n  done();\n}"
+        input: "if (val === null) {\n  done();\n}\n"
         output: ~
         input_range:
           start:
             line: 69
             column: 1
           end:
-            line: 71
-            column: 4
-          startByte: 1238
-          endByte: 1287
-        output_range:
-          start:
-            line: 69
+            line: 72
             column: 1
-          end:
-            line: 71
-            column: 4
-          startByte: 1238
-          endByte: 1287
+          startByte: 1252
+          endByte: 1284
+        output_range: ~
       - name: "Do not change `$val !== null` not change"
-        input: "while (val !== null) {\n  doSomething();\n}"
+        input: "while (val !== null) {\n  doSomething();\n}\n"
         output: ~
         input_range:
           start:
             line: 77
             column: 1
           end:
-            line: 79
-            column: 4
-          startByte: 1334
-          endByte: 1383
+            line: 80
+            column: 1
+          startByte: 1338
+          endByte: 1380
         output_range: ~
     path: ".grit/patterns/broken_pattern.md"
     position:
@@ -218,7 +209,7 @@ expression: v
     remote: ""
     providerName: ""
   localName: broken_pattern
-  body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n"
+  body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n"
   kind: pattern
   language: js
   visibility: public
@@ -248,118 +239,110 @@ expression: v
   visibility: public
 - config:
     name: multiple_broken_patterns
-    body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n"
+    body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n"
     level: info
-    title: Compare null using  === or !==
+    title: "Compare `null` using  `===` or `!==`"
     description: "Comparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`."
     tags:
       - good
       - exclude2
     samples:
       - name: "`$val == null` => `$val === null` to change"
-        input: "if (val == null) {\n  done();\n  cnonsole.log(\"This should be added to the output by patterns test --update\");\n}"
-        output: "if (val === null) {\n  done();\n}"
+        input: "if (val == null) {\n  done();\n  cnonsole.log(\"This should be added to the output by patterns test --update\");\n}\n"
+        output: "if (val === null) {\n  done();\n}\n"
         input_range:
           start:
-            line: 29
+            line: 24
             column: 1
           end:
-            line: 32
-            column: 4
-          startByte: 722
-          endByte: 850
+            line: 28
+            column: 1
+          startByte: 729
+          endByte: 840
         output_range:
           start:
-            line: 36
+            line: 31
             column: 1
           end:
-            line: 38
-            column: 4
-          startByte: 852
-          endByte: 901
+            line: 34
+            column: 1
+          startByte: 859
+          endByte: 891
       - name: "`$val != null` => `$val !== null` to channge"
-        input: "if (val != null) {\n  done();\n  console.log(\"This should be added as well\");\n}"
-        output: "if (val !== null) {\n  done();\n}"
+        input: "if (val != null) {\n  done();\n  console.log(\"This should be added as well\");\n}\n"
+        output: "if (val !== null) {\n  done();\n}\n"
         input_range:
           start:
-            line: 44
+            line: 39
             column: 1
           end:
-            line: 47
-            column: 4
-          startByte: 952
-          endByte: 1047
+            line: 43
+            column: 1
+          startByte: 959
+          endByte: 1037
         output_range:
           start:
-            line: 51
+            line: 46
             column: 1
           end:
-            line: 53
-            column: 4
-          startByte: 1049
-          endByte: 1098
+            line: 49
+            column: 1
+          startByte: 1056
+          endByte: 1088
       - name: "`$val != null` => `$val !== null` into `while` not change"
-        input: "while (val != null) {\n  did();\n}"
-        output: "while (val !== null) {\n  did();\n}"
+        input: "while (val != null) {\n  did();\n}\n"
+        output: "while (val !== null) {\n  did();\n}\n"
         input_range:
           start:
-            line: 59
+            line: 54
             column: 1
           end:
-            line: 61
-            column: 4
-          startByte: 1162
-          endByte: 1212
+            line: 57
+            column: 1
+          startByte: 1169
+          endByte: 1202
         output_range:
           start:
-            line: 65
+            line: 60
             column: 1
           end:
-            line: 67
-            column: 4
-          startByte: 1214
-          endByte: 1265
+            line: 63
+            column: 1
+          startByte: 1221
+          endByte: 1255
       - name: "Do not change `$val === null` not change"
-        input: "if (val === null) {\n  done();\n}"
+        input: "if (val === null) {\n  done();\n}\n"
         output: ~
         input_range:
           start:
-            line: 73
+            line: 68
             column: 1
           end:
-            line: 75
-            column: 4
-          startByte: 1312
-          endByte: 1361
-        output_range:
-          start:
-            line: 73
+            line: 71
             column: 1
-          end:
-            line: 75
-            column: 4
-          startByte: 1312
-          endByte: 1361
+          startByte: 1319
+          endByte: 1351
+        output_range: ~
       - name: "Do not change `$val !== null` not change"
-        input: "while (val !== null) {\n  doSomething();\n}"
+        input: "while (val !== null) {\n  doSomething();\n}\n"
         output: ~
         input_range:
           start:
-            line: 81
+            line: 76
             column: 1
           end:
-            line: 83
-            column: 4
-          startByte: 1408
-          endByte: 1457
+            line: 79
+            column: 1
+          startByte: 1405
+          endByte: 1447
         output_range: ~
     path: ".grit/patterns/multiple_broken_patterns.md"
     position:
-      line: 10
+      line: 9
       column: 1
     raw:
       format: markdown
-      content: "---\ntitle: Compare `null` using  `===` or `!==`\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\ntags: #good, #exclude2\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n```\n\n```\n\n## `$val == null` => `$val === null` to change\n\n```javascript\nif (val == null) {\n  done();\n  cnonsole.log(\"This should be added to the output by patterns test --update\");\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` to channge\n\n```javascript\nif (val != null) {\n  done();\n  console.log(\"This should be added as well\");\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while` not change\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null` not change\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null` not change\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
+      content: "---\ntitle: Compare `null` using  `===` or `!==`\ntags: [\"good\", \"exclude2\"]\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n## `$val == null` => `$val === null` to change\n\n```javascript\nif (val == null) {\n  done();\n  cnonsole.log(\"This should be added to the output by patterns test --update\");\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` to channge\n\n```javascript\nif (val != null) {\n  done();\n  console.log(\"This should be added as well\");\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while` not change\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null` not change\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null` not change\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
   module:
     type: Module
     host: ""
@@ -367,116 +350,106 @@ expression: v
     remote: ""
     providerName: ""
   localName: multiple_broken_patterns
-  body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n"
+  body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n"
   kind: pattern
   language: js
   visibility: public
 - config:
     name: no_eq_null
-    body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n"
+    body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n"
     level: info
-    title: Compare null using  === or !==
+    title: "Compare `null` using  `===` or `!==`"
     description: "Comparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`."
-    tags:
-      - good
-      - exclude1
+    tags: ~
     samples:
       - name: "`$val == null` => `$val === null`"
-        input: "if (val == null) {\n  done();\n}"
-        output: "if (val === null) {\n  done();\n}"
+        input: "if (val == null) {\n  done();\n}\n"
+        output: "if (val === null) {\n  done();\n}\n"
         input_range:
           start:
-            line: 29
+            line: 25
             column: 1
           end:
+            line: 28
+            column: 1
+          startByte: 716
+          endByte: 747
+        output_range:
+          start:
             line: 31
-            column: 4
-          startByte: 712
-          endByte: 760
-        output_range:
-          start:
-            line: 35
             column: 1
           end:
-            line: 37
-            column: 4
-          startByte: 762
-          endByte: 811
+            line: 34
+            column: 1
+          startByte: 766
+          endByte: 798
       - name: "`$val != null` => `$val !== null`"
-        input: "if (val != null) {\n  done();\n}"
-        output: "if (val !== null) {\n  done();\n}"
+        input: "if (val != null) {\n  done();\n}\n"
+        output: "if (val !== null) {\n  done();\n}\n"
         input_range:
           start:
-            line: 43
+            line: 39
             column: 1
           end:
+            line: 42
+            column: 1
+          startByte: 855
+          endByte: 886
+        output_range:
+          start:
             line: 45
-            column: 4
-          startByte: 851
-          endByte: 899
-        output_range:
-          start:
-            line: 49
             column: 1
           end:
-            line: 51
-            column: 4
-          startByte: 901
-          endByte: 950
+            line: 48
+            column: 1
+          startByte: 905
+          endByte: 937
       - name: "`$val != null` => `$val !== null` into `while`"
-        input: "while (val != null) {\n  did();\n}"
-        output: "while (val !== null) {\n  did();\n}"
+        input: "while (val != null) {\n  did();\n}\n"
+        output: "while (val !== null) {\n  did();\n}\n"
         input_range:
           start:
-            line: 57
+            line: 53
             column: 1
           end:
+            line: 56
+            column: 1
+          startByte: 1007
+          endByte: 1040
+        output_range:
+          start:
             line: 59
-            column: 4
-          startByte: 1003
-          endByte: 1053
-        output_range:
-          start:
-            line: 63
             column: 1
           end:
-            line: 65
-            column: 4
-          startByte: 1055
-          endByte: 1106
+            line: 62
+            column: 1
+          startByte: 1059
+          endByte: 1093
       - name: "Do not change `$val === null`"
-        input: "if (val === null) {\n  done();\n}"
+        input: "if (val === null) {\n  done();\n}\n"
         output: ~
         input_range:
           start:
-            line: 71
+            line: 67
             column: 1
           end:
-            line: 73
-            column: 4
-          startByte: 1142
-          endByte: 1191
-        output_range:
-          start:
-            line: 71
+            line: 70
             column: 1
-          end:
-            line: 73
-            column: 4
-          startByte: 1142
-          endByte: 1191
+          startByte: 1146
+          endByte: 1178
+        output_range: ~
       - name: "Do not change `$val !== null`"
-        input: "while (val !== null) {\n  doSomething();\n}"
+        input: "while (val !== null) {\n  doSomething();\n}\n"
         output: ~
         input_range:
           start:
-            line: 79
+            line: 75
             column: 1
           end:
-            line: 81
-            column: 4
-          startByte: 1227
-          endByte: 1276
+            line: 78
+            column: 1
+          startByte: 1221
+          endByte: 1263
         output_range: ~
     path: ".grit/patterns/no_eq_null.md"
     position:
@@ -484,7 +457,7 @@ expression: v
       column: 1
     raw:
       format: markdown
-      content: "---\ntitle: Compare `null` using  `===` or `!==`\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\ntags: #good, #exclude1\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n```\n\n```\n\n## `$val == null` => `$val === null`\n\n```javascript\nif (val == null) {\n  done();\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null`\n\n```javascript\nif (val != null) {\n  done();\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while`\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null`\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null`\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
+      content: "---\ntitle: Compare `null` using  `===` or `!==`\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\ntags: #good, #exclude1\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n## `$val == null` => `$val === null`\n\n```javascript\nif (val == null) {\n  done();\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null`\n\n```javascript\nif (val != null) {\n  done();\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while`\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null`\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null`\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
   module:
     type: Module
     host: ""
@@ -492,7 +465,7 @@ expression: v
     remote: ""
     providerName: ""
   localName: no_eq_null
-  body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n"
+  body: "engine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n"
   kind: pattern
   language: js
   visibility: public

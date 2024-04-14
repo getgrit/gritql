@@ -1,37 +1,37 @@
 use super::{
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     variable::Variable,
     State,
 };
-use crate::context::Context;
+use crate::context::QueryContext;
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 use regex::Regex;
 
 #[derive(Debug, Clone)]
-pub struct RegexPattern {
-    pub regex: RegexLike,
+pub struct RegexPattern<Q: QueryContext> {
+    pub regex: RegexLike<Q>,
     pub variables: Vec<Variable>,
 }
 
 #[derive(Debug, Clone)]
-pub enum RegexLike {
+pub enum RegexLike<Q: QueryContext> {
     Regex(String),
-    Pattern(Box<Pattern>),
+    Pattern(Box<Pattern<Q>>),
 }
 
-impl RegexPattern {
-    pub fn new(regex: RegexLike, variables: Vec<Variable>) -> Self {
+impl<Q: QueryContext> RegexPattern<Q> {
+    pub fn new(regex: RegexLike<Q>, variables: Vec<Variable>) -> Self {
         Self { regex, variables }
     }
 
     pub(crate) fn execute_matching<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
         must_match_entire_string: bool,
     ) -> Result<bool> {
@@ -121,18 +121,18 @@ impl RegexPattern {
     }
 }
 
-impl Name for RegexPattern {
+impl<Q: QueryContext> PatternName for RegexPattern<Q> {
     fn name(&self) -> &'static str {
         "REGEX"
     }
 }
 
-impl Matcher for RegexPattern {
+impl<Q: QueryContext> Matcher<Q> for RegexPattern<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         self.execute_matching(binding, state, context, logs, true)

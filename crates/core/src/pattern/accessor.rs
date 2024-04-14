@@ -1,25 +1,25 @@
 use super::{
     container::{Container, PatternOrResolved, PatternOrResolvedMut},
     map::GritMap,
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     state::State,
     variable::Variable,
 };
-use crate::{binding::Constant, context::Context};
+use crate::{binding::Constant, context::QueryContext};
 use anyhow::{bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]
-pub enum AccessorMap {
-    Container(Container),
-    Map(GritMap),
+pub enum AccessorMap<Q: QueryContext> {
+    Container(Container<Q>),
+    Map(GritMap<Q>),
 }
 
 #[derive(Debug, Clone)]
-pub struct Accessor {
-    pub map: AccessorMap,
+pub struct Accessor<Q: QueryContext> {
+    pub map: AccessorMap<Q>,
     pub key: AccessorKey,
 }
 
@@ -29,12 +29,12 @@ pub enum AccessorKey {
     Variable(Variable),
 }
 
-impl Accessor {
-    pub fn new(map: AccessorMap, key: AccessorKey) -> Self {
+impl<Q: QueryContext> Accessor<Q> {
+    pub fn new(map: AccessorMap<Q>, key: AccessorKey) -> Self {
         Self { map, key }
     }
 
-    fn get_key<'a>(&'a self, state: &State<'a>) -> Result<Cow<'a, str>> {
+    fn get_key<'a>(&'a self, state: &State<'a, Q>) -> Result<Cow<'a, str>> {
         match &self.key {
             AccessorKey::String(s) => Ok(Cow::Borrowed(s)),
             AccessorKey::Variable(v) => v.text(state),
@@ -43,8 +43,8 @@ impl Accessor {
 
     pub(crate) fn get<'a, 'b>(
         &'a self,
-        state: &'b State<'a>,
-    ) -> Result<Option<PatternOrResolved<'a, 'b>>> {
+        state: &'b State<'a, Q>,
+    ) -> Result<Option<PatternOrResolved<'a, 'b, Q>>> {
         let key = self.get_key(state)?;
         match &self.map {
             AccessorMap::Container(c) => match c.get_pattern_or_resolved(state)? {
@@ -63,8 +63,8 @@ impl Accessor {
 
     pub(crate) fn get_mut<'a, 'b>(
         &'a self,
-        state: &'b mut State<'a>,
-    ) -> Result<Option<PatternOrResolvedMut<'a, 'b>>> {
+        state: &'b mut State<'a, Q>,
+    ) -> Result<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
         let key = self.get_key(state)?;
         match &self.map {
             AccessorMap::Container(c) => match c.get_pattern_or_resolved_mut(state)? {
@@ -83,7 +83,7 @@ impl Accessor {
 
     pub(crate) fn set_resolved<'a>(
         &'a self,
-        state: &mut State<'a>,
+        state: &mut State<'a, Q>,
         value: ResolvedPattern<'a>,
     ) -> Result<Option<ResolvedPattern<'a>>> {
         match &self.map {
@@ -102,18 +102,18 @@ impl Accessor {
     }
 }
 
-impl Name for Accessor {
+impl<Q: QueryContext> PatternName for Accessor<Q> {
     fn name(&self) -> &'static str {
         "ACCESSOR"
     }
 }
 
-impl Matcher for Accessor {
+impl<Q: QueryContext> Matcher<Q> for Accessor<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match self.get(state)? {
@@ -132,10 +132,10 @@ impl Matcher for Accessor {
     }
 }
 
-pub(crate) fn execute_resolved_with_binding<'a>(
+pub(crate) fn execute_resolved_with_binding<'a, Q: QueryContext>(
     r: &ResolvedPattern<'a>,
     binding: &ResolvedPattern<'a>,
-    state: &State<'a>,
+    state: &State<'a, Q>,
 ) -> Result<bool> {
     if let ResolvedPattern::Binding(r) = r {
         if let ResolvedPattern::Binding(b) = binding {

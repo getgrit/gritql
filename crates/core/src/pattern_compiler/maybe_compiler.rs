@@ -3,13 +3,14 @@ use super::{
     pattern_compiler::PatternCompiler, predicate_compiler::PredicateCompiler,
 };
 use crate::pattern::maybe::{Maybe, PrMaybe};
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct MaybeCompiler;
 
 impl NodeCompiler for MaybeCompiler {
-    type TargetPattern = Maybe;
+    type TargetPattern = Maybe<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
@@ -27,7 +28,7 @@ impl NodeCompiler for MaybeCompiler {
 pub(crate) struct PrMaybeCompiler;
 
 impl NodeCompiler for PrMaybeCompiler {
-    type TargetPattern = PrMaybe;
+    type TargetPattern = PrMaybe<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

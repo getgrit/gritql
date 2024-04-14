@@ -1,7 +1,9 @@
 #![deny(clippy::wildcard_enum_match_arm)]
 pub mod analysis;
 pub mod api;
+pub mod ast_node;
 pub mod binding;
+mod clean;
 pub mod compact_api;
 pub mod context;
 mod effects_dependency_graph;
@@ -10,7 +12,6 @@ pub mod errors;
 pub mod fs;
 mod inline_snippets;
 mod intervals;
-mod clean;
 pub mod parse;
 pub mod pattern;
 pub mod pattern_compiler;

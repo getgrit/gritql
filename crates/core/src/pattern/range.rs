@@ -1,9 +1,9 @@
 use super::{
-    patterns::{Matcher, Name},
+    patterns::{Matcher, PatternName},
     resolved_pattern::ResolvedPattern,
-    state,
+    state::State,
 };
-use crate::context::Context;
+use crate::context::QueryContext;
 use anyhow::{anyhow, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use marzano_util::position::UtilRange;
@@ -64,12 +64,12 @@ impl From<UtilRange> for Range {
     }
 }
 
-impl Matcher for Range {
+impl<Q: QueryContext> Matcher<Q> for Range {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        _state: &mut state::State<'a>,
-        _context: &'a impl Context,
+        _state: &mut State<'a, Q>,
+        _context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
     ) -> anyhow::Result<bool> {
         if let Some(range) = binding.position() {
@@ -99,7 +99,7 @@ impl Matcher for Range {
     }
 }
 
-impl Name for Range {
+impl PatternName for Range {
     fn name(&self) -> &'static str {
         "RANGE"
     }

@@ -1,36 +1,36 @@
 use super::{
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{context::Context, resolve};
+use crate::{context::QueryContext, resolve};
 use anyhow::Result;
 use im::vector;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub struct Some {
-    pub pattern: Pattern,
+pub struct Some<Q: QueryContext> {
+    pub pattern: Pattern<Q>,
 }
 
-impl Some {
-    pub fn new(pattern: Pattern) -> Self {
+impl<Q: QueryContext> Some<Q> {
+    pub fn new(pattern: Pattern<Q>) -> Self {
         Self { pattern }
     }
 }
 
-impl Name for Some {
+impl<Q: QueryContext> PatternName for Some<Q> {
     fn name(&self) -> &'static str {
         "SOME"
     }
 }
 
-impl Matcher for Some {
+impl<Q: QueryContext> Matcher<Q> for Some<Q> {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        init_state: &mut State<'a>,
-        context: &'a impl Context,
+        init_state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         match binding {

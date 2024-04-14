@@ -110,7 +110,8 @@ fn updates_multiple_invalid_patterns() -> Result<()> {
         .arg("--update")
         .current_dir(_temp_dir.path().join("patterns_list"));
 
-    println!("{:?}", cmd.output());
+    let stdout = String::from_utf8(cmd.output()?.stdout)?;
+    println!("stdout: {}", stdout);
     let after = std::fs::read_to_string(
         _temp_dir
             .path()

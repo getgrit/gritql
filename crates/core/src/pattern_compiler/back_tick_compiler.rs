@@ -3,6 +3,7 @@ use super::{
     snippet_compiler::parse_snippet_content,
 };
 use crate::pattern::patterns::Pattern;
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
@@ -10,7 +11,7 @@ use marzano_util::node_with_source::NodeWithSource;
 pub(crate) struct BackTickCompiler;
 
 impl NodeCompiler for BackTickCompiler {
-    type TargetPattern = Pattern;
+    type TargetPattern = Pattern<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
@@ -32,7 +33,7 @@ impl NodeCompiler for BackTickCompiler {
 pub(crate) struct RawBackTickCompiler;
 
 impl NodeCompiler for RawBackTickCompiler {
-    type TargetPattern = Pattern;
+    type TargetPattern = Pattern<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

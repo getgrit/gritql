@@ -1,25 +1,29 @@
 use super::{
     dynamic_snippet::DynamicPattern,
     functions::{Evaluator, FuncEvaluation},
-    patterns::{Matcher, Name, Pattern},
+    patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::Context;
 use crate::problem::{Effect, EffectKind};
+use crate::{context::ExecContext, context::QueryContext};
 use anyhow::{bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]
-pub struct Accumulate {
-    pub(crate) left: Pattern,
-    pub(crate) right: Pattern,
-    dynamic_right: Option<DynamicPattern>,
+pub struct Accumulate<Q: QueryContext> {
+    pub(crate) left: Pattern<Q>,
+    pub(crate) right: Pattern<Q>,
+    dynamic_right: Option<DynamicPattern<Q>>,
 }
 
-impl Accumulate {
-    pub fn new(left: Pattern, right: Pattern, dynamic_right: Option<DynamicPattern>) -> Self {
+impl<Q: QueryContext> Accumulate<Q> {
+    pub fn new(
+        left: Pattern<Q>,
+        right: Pattern<Q>,
+        dynamic_right: Option<DynamicPattern<Q>>,
+    ) -> Self {
         Self {
             left,
             right,
@@ -28,18 +32,18 @@ impl Accumulate {
     }
 }
 
-impl Name for Accumulate {
+impl<Q: QueryContext> PatternName for Accumulate<Q> {
     fn name(&self) -> &'static str {
         "ACCUMULATE"
     }
 }
 
-impl Matcher for Accumulate {
+impl<Q: QueryContext> Matcher<Q> for Accumulate<Q> {
     fn execute<'a>(
         &'a self,
         context_node: &ResolvedPattern<'a>,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         if let Pattern::Variable(var) = &self.left {
@@ -113,11 +117,11 @@ impl Matcher for Accumulate {
     }
 }
 
-impl Evaluator for Accumulate {
+impl<Q: QueryContext> Evaluator<Q> for Accumulate<Q> {
     fn execute_func<'a>(
         &'a self,
-        state: &mut State<'a>,
-        context: &'a impl Context,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
         if let Pattern::Variable(var) = &self.left {

@@ -27,7 +27,7 @@ pub struct MarkdownBlock {
 }
 
 impl MarkdownBlock {
-    pub(crate) fn new(lang: Option<TSLanguage>) -> Self {
+    pub fn new(lang: Option<TSLanguage>) -> Self {
         let language = LANGUAGE.get_or_init(|| lang.unwrap_or_else(language));
         let node_types = NODE_TYPES.get_or_init(|| fields_for_nodes(language, NODE_TYPES_STRING));
         let metavariable_sort = language.id_for_node_kind("grit_metavariable", true);

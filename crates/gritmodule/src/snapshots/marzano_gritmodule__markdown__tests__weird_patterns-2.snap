@@ -1,0 +1,13 @@
+---
+source: crates/gritmodule/src/markdown.rs
+expression: output_content
+---
+CREATE PROCEDURE remove_emp (employee_id int) AS
+    DECLARE
+    tot_emps int;
+    $$BEGIN
+        DELETE FROM employees
+        WHERE employees.employee_id = remove_emp.employee_id;
+    tot_emps := tot_emps - 1;
+    END;
+$$ LANGUAGE plpgsql;

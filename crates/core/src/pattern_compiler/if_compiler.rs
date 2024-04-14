@@ -3,13 +3,14 @@ use super::{
     pattern_compiler::PatternCompiler, predicate_compiler::PredicateCompiler,
 };
 use crate::pattern::r#if::{If, PrIf};
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct IfCompiler;
 
 impl NodeCompiler for IfCompiler {
-    type TargetPattern = If;
+    type TargetPattern = If<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
@@ -35,7 +36,7 @@ impl NodeCompiler for IfCompiler {
 pub(crate) struct PrIfCompiler;
 
 impl NodeCompiler for PrIfCompiler {
-    type TargetPattern = PrIf;
+    type TargetPattern = PrIf<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

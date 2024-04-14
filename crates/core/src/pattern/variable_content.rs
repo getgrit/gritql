@@ -1,14 +1,14 @@
 use anyhow::{anyhow, Result};
 use std::borrow::Cow;
 
-use crate::pattern::patterns::Pattern;
+use crate::{context::QueryContext, pattern::patterns::Pattern};
 
 use super::{resolved_pattern::ResolvedPattern, state::State, variable::Variable};
 
 #[derive(Debug, Clone)]
-pub struct VariableContent<'a> {
+pub struct VariableContent<'a, Q: QueryContext> {
     pub name: String,
-    pub pattern: Option<&'a Pattern>,
+    pub pattern: Option<&'a Pattern<Q>>,
     // needs to be boxed for lifetime reasons
     pub(crate) value: Option<ResolvedPattern<'a>>,
     pub(crate) value_history: Vec<ResolvedPattern<'a>>,
@@ -16,7 +16,7 @@ pub struct VariableContent<'a> {
     pub(crate) mirrors: Vec<&'a Variable>,
 }
 
-impl<'a> VariableContent<'a> {
+impl<'a, Q: QueryContext> VariableContent<'a, Q> {
     pub fn new(name: String) -> Self {
         Self {
             name,
@@ -29,7 +29,7 @@ impl<'a> VariableContent<'a> {
 
     // should we return an option instead of a Result?
     // should we trace pattern calls here? - currently only used by variable which already traces
-    pub fn text(&self, state: &State<'a>) -> Result<Cow<'a, str>> {
+    pub fn text(&self, state: &State<'a, Q>) -> Result<Cow<'a, str>> {
         if let Some(value) = &self.value {
             value.text(&state.files)
         } else {

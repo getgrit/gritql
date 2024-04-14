@@ -22,7 +22,7 @@ use crate::{
         variable::VariableSourceLocations,
         VariableLocations,
     },
-    problem::Problem,
+    problem::{MarzanoQueryContext, Problem},
 };
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
@@ -294,9 +294,9 @@ fn get_definition_info(
 fn node_to_definitions(
     node: NodeWithSource,
     context: &mut NodeCompilationContext,
-    pattern_definitions: &mut Vec<PatternDefinition>,
-    predicate_definitions: &mut Vec<PredicateDefinition>,
-    function_definitions: &mut Vec<GritFunctionDefinition>,
+    pattern_definitions: &mut Vec<PatternDefinition<MarzanoQueryContext>>,
+    predicate_definitions: &mut Vec<PredicateDefinition<MarzanoQueryContext>>,
+    function_definitions: &mut Vec<GritFunctionDefinition<MarzanoQueryContext>>,
     foreign_function_definitions: &mut Vec<ForeignFunctionDefinition>,
 ) -> Result<()> {
     for definition in node.named_children_by_field_name("definitions") {
@@ -331,9 +331,9 @@ fn node_to_definitions(
 
 struct DefinitionOutput {
     vars_array: Vec<Vec<VariableSourceLocations>>,
-    pattern_definitions: Vec<PatternDefinition>,
-    predicate_definitions: Vec<PredicateDefinition>,
-    function_definitions: Vec<GritFunctionDefinition>,
+    pattern_definitions: Vec<PatternDefinition<MarzanoQueryContext>>,
+    predicate_definitions: Vec<PredicateDefinition<MarzanoQueryContext>>,
+    function_definitions: Vec<GritFunctionDefinition<MarzanoQueryContext>>,
     foreign_function_definitions: Vec<ForeignFunctionDefinition>,
 }
 
@@ -653,6 +653,7 @@ pub fn src_to_problem_libs(
     name: Option<String>,
     file_ranges: Option<Vec<FileRange>>,
     custom_built_ins: Option<BuiltIns>,
+    injected_limit: Option<usize>,
 ) -> Result<CompilationResult> {
     let mut parser = make_grit_parser()?;
     let src_tree = parse_one(&mut parser, &src, DEFAULT_FILE_NAME)?;
@@ -665,9 +666,11 @@ pub fn src_to_problem_libs(
         file_ranges,
         &mut parser,
         custom_built_ins,
+        injected_limit,
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn src_to_problem_libs_for_language(
     src: String,
     libs: &BTreeMap<String, String>,
@@ -676,6 +679,7 @@ pub fn src_to_problem_libs_for_language(
     file_ranges: Option<Vec<FileRange>>,
     grit_parser: &mut Parser,
     custom_built_ins: Option<BuiltIns>,
+    injected_limit: Option<usize>,
 ) -> Result<CompilationResult> {
     if src == "." {
         let error = ". never matches and should not be used as a pattern. Did you mean to run 'grit apply <pattern> .'?";
@@ -758,6 +762,7 @@ pub fn src_to_problem_libs_for_language(
         !is_multifile,
         file_ranges,
         &mut node_context,
+        injected_limit,
     )?;
 
     let problem = Problem::new(
@@ -812,6 +817,7 @@ mod tests {
             pattern,
             &libs,
             PatternLanguage::JavaScript.try_into().unwrap(),
+            None,
             None,
             None,
             None,
