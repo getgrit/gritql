@@ -3,7 +3,7 @@ use super::{
 };
 use crate::{
     pattern::{pattern_definition::PatternDefinition, variable::get_variables},
-    problem::MarzanoProblemContext,
+    problem::MarzanoQueryContext,
 };
 use anyhow::{anyhow, Result};
 use grit_util::AstNode;
@@ -13,7 +13,7 @@ use std::collections::BTreeMap;
 pub(crate) struct PatternDefinitionCompiler;
 
 impl NodeCompiler for PatternDefinitionCompiler {
-    type TargetPattern = PatternDefinition<MarzanoProblemContext>;
+    type TargetPattern = PatternDefinition<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

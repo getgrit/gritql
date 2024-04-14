@@ -2,7 +2,7 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler, variable_compiler::VariableCompiler,
 };
-use crate::problem::MarzanoProblemContext;
+use crate::problem::MarzanoQueryContext;
 use crate::{
     pattern::{
         container::Container, patterns::Pattern, predicates::Predicate, r#match::Match,
@@ -23,7 +23,7 @@ pub(crate) struct AsCompiler;
 
 impl NodeCompiler for AsCompiler {
     // todo make `as` its own pattern
-    type TargetPattern = Where<MarzanoProblemContext>;
+    type TargetPattern = Where<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

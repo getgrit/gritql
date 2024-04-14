@@ -8,7 +8,7 @@ use crate::pattern::{
     patterns::Pattern,
     variable::{get_variables, register_variable},
 };
-use crate::problem::MarzanoProblemContext;
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
 use itertools::Itertools;
@@ -18,7 +18,7 @@ use std::collections::BTreeMap;
 pub(crate) struct BubbleCompiler;
 
 impl NodeCompiler for BubbleCompiler {
-    type TargetPattern = Bubble<MarzanoProblemContext>;
+    type TargetPattern = Bubble<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
@@ -51,7 +51,7 @@ impl NodeCompiler for BubbleCompiler {
                 let v = Pattern::Variable(register_variable(name, *range, context)?);
                 Ok(v)
             })
-            .collect::<Result<Vec<Pattern<MarzanoProblemContext>>>>()?;
+            .collect::<Result<Vec<Pattern<MarzanoQueryContext>>>>()?;
 
         let pattern_def = PatternDefinition::new(
             "<bubble>".to_string(),

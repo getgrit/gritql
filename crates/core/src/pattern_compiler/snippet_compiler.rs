@@ -11,7 +11,7 @@ use crate::{
         patterns::Pattern,
         variable::{register_variable, Variable},
     },
-    problem::MarzanoProblemContext,
+    problem::MarzanoQueryContext,
 };
 use crate::{pattern_compiler::compiler::NodeCompilationContext, split_snippet::split_snippet};
 use anyhow::{anyhow, bail, Result};
@@ -28,7 +28,7 @@ use marzano_util::{
 pub(crate) struct CodeSnippetCompiler;
 
 impl NodeCompiler for CodeSnippetCompiler {
-    type TargetPattern = Pattern<MarzanoProblemContext>;
+    type TargetPattern = Pattern<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
@@ -54,7 +54,7 @@ impl NodeCompiler for CodeSnippetCompiler {
 pub(crate) struct LanguageSpecificSnippetCompiler;
 
 impl NodeCompiler for LanguageSpecificSnippetCompiler {
-    type TargetPattern = Pattern<MarzanoProblemContext>;
+    type TargetPattern = Pattern<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
@@ -155,7 +155,7 @@ pub(crate) fn parse_snippet_content(
     range: Range,
     context: &mut NodeCompilationContext,
     is_rhs: bool,
-) -> Result<Pattern<MarzanoProblemContext>> {
+) -> Result<Pattern<MarzanoQueryContext>> {
     // we check for CURLY_VAR_REGEX in the content, and if found
     // compile into a DynamicPattern, rather than a CodeSnippet.
     // This is because the syntax should only ever be necessary
@@ -205,7 +205,7 @@ pub(crate) fn parse_snippet_content(
                 dynamic_snippet_from_source(source, range, context).map(DynamicPattern::Snippet)?,
             ));
         }
-        let snippet_patterns: Vec<(SortId, Pattern<MarzanoProblemContext>)> = snippet_nodes
+        let snippet_patterns: Vec<(SortId, Pattern<MarzanoQueryContext>)> = snippet_nodes
             .into_iter()
             .map(|node| {
                 Ok((
@@ -213,7 +213,7 @@ pub(crate) fn parse_snippet_content(
                     PatternCompiler::from_snippet_node(node, range, context, is_rhs)?,
                 ))
             })
-            .collect::<Result<Vec<(SortId, Pattern<MarzanoProblemContext>)>>>()?;
+            .collect::<Result<Vec<(SortId, Pattern<MarzanoQueryContext>)>>>()?;
         let dynamic_snippet = dynamic_snippet_from_source(source, range, context)
             .map_or(None, |s| Some(DynamicPattern::Snippet(s)));
         Ok(Pattern::CodeSnippet(CodeSnippet::new(

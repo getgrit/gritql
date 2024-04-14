@@ -50,7 +50,7 @@ use crate::pattern::{
     string_constant::AstLeafNode,
     variable::{is_reserved_metavariable, register_variable, Variable},
 };
-use crate::problem::MarzanoProblemContext;
+use crate::problem::MarzanoQueryContext;
 use crate::{ast_node::ASTNode, context::QueryContext};
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
@@ -79,7 +79,7 @@ impl PatternCompiler {
         context_range: Range,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> Result<Pattern<MarzanoProblemContext>> {
+    ) -> Result<Pattern<MarzanoQueryContext>> {
         let snippet_start = node.node.start_byte();
         let node = NodeWithSource::new(node.node, &node.context);
         let ranges = metavariable_ranges(&node, context.compilation.lang);
@@ -91,7 +91,7 @@ impl PatternCompiler {
             range_map: &HashMap<Range, Range>,
             context: &mut NodeCompilationContext,
             is_rhs: bool,
-        ) -> Result<Pattern<MarzanoProblemContext>> {
+        ) -> Result<Pattern<MarzanoQueryContext>> {
             let sort = node.node.kind_id();
             // probably safe to assume node is named, but just in case
             // maybe doesn't even matter, but is what I expect,
@@ -161,7 +161,7 @@ impl PatternCompiler {
                         let mut nodes_list = node
                             .named_children_by_field_id(field_id)
                             .map(|n| node_to_astnode(n, context_range, range_map, context, is_rhs))
-                            .collect::<Result<Vec<Pattern<MarzanoProblemContext>>>>()?;
+                            .collect::<Result<Vec<Pattern<MarzanoQueryContext>>>>()?;
                         if !field.multiple() {
                             return Ok((
                                 field_id,
@@ -187,7 +187,7 @@ impl PatternCompiler {
                             Pattern::List(Box::new(List::new(nodes_list))),
                         ))
                     })
-                    .collect::<Result<Vec<(u16, bool, Pattern<MarzanoProblemContext>)>>>()?;
+                    .collect::<Result<Vec<(u16, bool, Pattern<MarzanoQueryContext>)>>>()?;
             Ok(Pattern::AstNode(Box::new(ASTNode { sort, args })))
         }
         node_to_astnode(node, context_range, &range_map, context, is_rhs)
@@ -195,7 +195,7 @@ impl PatternCompiler {
 }
 
 impl NodeCompiler for PatternCompiler {
-    type TargetPattern = Pattern<MarzanoProblemContext>;
+    type TargetPattern = Pattern<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

@@ -3,14 +3,14 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::pattern::divide::Divide;
-use crate::problem::MarzanoProblemContext;
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct DivideCompiler;
 
 impl NodeCompiler for DivideCompiler {
-    type TargetPattern = Divide<MarzanoProblemContext>;
+    type TargetPattern = Divide<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

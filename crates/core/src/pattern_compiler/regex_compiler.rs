@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     pattern::regex::{RegexLike, RegexPattern},
-    problem::MarzanoProblemContext,
+    problem::MarzanoQueryContext,
 };
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
@@ -14,7 +14,7 @@ use marzano_util::{analysis_logs::AnalysisLogBuilder, node_with_source::NodeWith
 pub(crate) struct RegexCompiler;
 
 impl NodeCompiler for RegexCompiler {
-    type TargetPattern = RegexPattern<MarzanoProblemContext>;
+    type TargetPattern = RegexPattern<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

@@ -6,14 +6,14 @@ use crate::pattern::{
     accumulate::Accumulate, code_snippet::CodeSnippet, dynamic_snippet::DynamicPattern,
     patterns::Pattern,
 };
-use crate::problem::MarzanoProblemContext;
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct AccumulateCompiler;
 
 impl NodeCompiler for AccumulateCompiler {
-    type TargetPattern = Accumulate<MarzanoProblemContext>;
+    type TargetPattern = Accumulate<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

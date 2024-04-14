@@ -73,7 +73,7 @@ use self::{
 };
 use crate::{
     context::{ExecContext, QueryContext},
-    problem::{FileOwners, MarzanoProblemContext},
+    problem::{FileOwners, MarzanoQueryContext},
 };
 use anyhow::Result;
 use marzano_language::target_language::TargetLanguage;
@@ -134,9 +134,9 @@ impl VariableLocations {
 }
 
 pub struct MarzanoContext<'a> {
-    pub pattern_definitions: &'a Vec<PatternDefinition<MarzanoProblemContext>>,
-    pub predicate_definitions: &'a Vec<PredicateDefinition<MarzanoProblemContext>>,
-    pub function_definitions: &'a Vec<GritFunctionDefinition<MarzanoProblemContext>>,
+    pub pattern_definitions: &'a Vec<PatternDefinition<MarzanoQueryContext>>,
+    pub predicate_definitions: &'a Vec<PredicateDefinition<MarzanoQueryContext>>,
+    pub function_definitions: &'a Vec<GritFunctionDefinition<MarzanoQueryContext>>,
     pub foreign_function_definitions: &'a Vec<ForeignFunctionDefinition>,
     pub files: &'a FileOwners,
     pub built_ins: &'a BuiltIns,
@@ -148,9 +148,9 @@ pub struct MarzanoContext<'a> {
 impl<'a> MarzanoContext<'a> {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        pattern_definitions: &'a Vec<PatternDefinition<MarzanoProblemContext>>,
-        predicate_definitions: &'a Vec<PredicateDefinition<MarzanoProblemContext>>,
-        function_definitions: &'a Vec<GritFunctionDefinition<MarzanoProblemContext>>,
+        pattern_definitions: &'a Vec<PatternDefinition<MarzanoQueryContext>>,
+        predicate_definitions: &'a Vec<PredicateDefinition<MarzanoQueryContext>>,
+        function_definitions: &'a Vec<GritFunctionDefinition<MarzanoQueryContext>>,
         foreign_function_definitions: &'a Vec<ForeignFunctionDefinition>,
         files: &'a FileOwners,
         built_ins: &'a BuiltIns,
@@ -172,16 +172,16 @@ impl<'a> MarzanoContext<'a> {
     }
 }
 
-impl<'a> ExecContext<MarzanoProblemContext> for MarzanoContext<'a> {
-    fn pattern_definitions(&self) -> &[PatternDefinition<MarzanoProblemContext>] {
+impl<'a> ExecContext<MarzanoQueryContext> for MarzanoContext<'a> {
+    fn pattern_definitions(&self) -> &[PatternDefinition<MarzanoQueryContext>] {
         self.pattern_definitions
     }
 
-    fn predicate_definitions(&self) -> &[PredicateDefinition<MarzanoProblemContext>] {
+    fn predicate_definitions(&self) -> &[PredicateDefinition<MarzanoQueryContext>] {
         self.predicate_definitions
     }
 
-    fn function_definitions(&self) -> &[GritFunctionDefinition<MarzanoProblemContext>] {
+    fn function_definitions(&self) -> &[GritFunctionDefinition<MarzanoQueryContext>] {
         self.function_definitions
     }
 
@@ -195,9 +195,9 @@ impl<'a> ExecContext<MarzanoProblemContext> for MarzanoContext<'a> {
 
     fn call_built_in<'b>(
         &self,
-        call: &'b CallBuiltIn<MarzanoProblemContext>,
+        call: &'b CallBuiltIn<MarzanoQueryContext>,
         context: &'b Self,
-        state: &mut State<'b, MarzanoProblemContext>,
+        state: &mut State<'b, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'b>> {
         self.built_ins.call(call, context, state, logs)

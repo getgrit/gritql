@@ -3,14 +3,14 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::pattern::multiply::Multiply;
-use crate::problem::MarzanoProblemContext;
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct MultiplyCompiler;
 
 impl NodeCompiler for MultiplyCompiler {
-    type TargetPattern = Multiply<MarzanoProblemContext>;
+    type TargetPattern = Multiply<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

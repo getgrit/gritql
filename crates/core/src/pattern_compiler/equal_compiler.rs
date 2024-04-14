@@ -3,14 +3,14 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::pattern::{equal::Equal, patterns::Pattern};
-use crate::problem::MarzanoProblemContext;
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct EqualCompiler;
 
 impl NodeCompiler for EqualCompiler {
-    type TargetPattern = Equal<MarzanoProblemContext>;
+    type TargetPattern = Equal<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

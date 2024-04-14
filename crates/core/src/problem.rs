@@ -47,7 +47,7 @@ use tree_sitter::Tree;
 pub struct Problem {
     pub src: String,
     pub tree: Tree,
-    pub pattern: Pattern<MarzanoProblemContext>,
+    pub pattern: Pattern<MarzanoQueryContext>,
     pub language: TargetLanguage,
     pub built_ins: BuiltIns,
     pub is_multifile: bool,
@@ -55,9 +55,9 @@ pub struct Problem {
     pub hash: [u8; 32],
     pub name: Option<String>,
     pub(crate) variables: VariableLocations,
-    pub(crate) pattern_definitions: Vec<PatternDefinition<MarzanoProblemContext>>,
-    pub(crate) predicate_definitions: Vec<PredicateDefinition<MarzanoProblemContext>>,
-    pub(crate) function_definitions: Vec<GritFunctionDefinition<MarzanoProblemContext>>,
+    pub(crate) pattern_definitions: Vec<PatternDefinition<MarzanoQueryContext>>,
+    pub(crate) predicate_definitions: Vec<PredicateDefinition<MarzanoQueryContext>>,
+    pub(crate) function_definitions: Vec<GritFunctionDefinition<MarzanoQueryContext>>,
     pub(crate) foreign_function_definitions: Vec<ForeignFunctionDefinition>,
 }
 
@@ -116,16 +116,16 @@ impl Problem {
     pub(crate) fn new(
         src: String,
         tree: Tree,
-        pattern: Pattern<MarzanoProblemContext>,
+        pattern: Pattern<MarzanoQueryContext>,
         language: TargetLanguage,
         built_ins: BuiltIns,
         is_multifile: bool,
         has_limit: bool,
         name: Option<String>,
         variables: VariableLocations,
-        pattern_definitions: Vec<PatternDefinition<MarzanoProblemContext>>,
-        predicate_definitions: Vec<PredicateDefinition<MarzanoProblemContext>>,
-        function_definitions: Vec<GritFunctionDefinition<MarzanoProblemContext>>,
+        pattern_definitions: Vec<PatternDefinition<MarzanoQueryContext>>,
+        predicate_definitions: Vec<PredicateDefinition<MarzanoQueryContext>>,
+        function_definitions: Vec<GritFunctionDefinition<MarzanoQueryContext>>,
         foreign_function_definitions: Vec<ForeignFunctionDefinition>,
     ) -> Self {
         let mut hasher = Sha256::new();
@@ -656,9 +656,9 @@ impl MatchRanges {
 }
 
 #[derive(Clone, Debug)]
-pub struct MarzanoProblemContext;
+pub struct MarzanoQueryContext;
 
-impl QueryContext for MarzanoProblemContext {
+impl QueryContext for MarzanoQueryContext {
     type Node<'a> = NodeWithSource<'a>;
     type NodePattern = ASTNode;
     type ExecContext<'a> = MarzanoContext<'a>;

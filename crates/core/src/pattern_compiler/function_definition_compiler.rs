@@ -6,7 +6,7 @@ use crate::pattern::{
     function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
     variable::get_variables,
 };
-use crate::problem::MarzanoProblemContext;
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
@@ -15,7 +15,7 @@ use std::collections::BTreeMap;
 pub(crate) struct GritFunctionDefinitionCompiler;
 
 impl NodeCompiler for GritFunctionDefinitionCompiler {
-    type TargetPattern = GritFunctionDefinition<MarzanoProblemContext>;
+    type TargetPattern = GritFunctionDefinition<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

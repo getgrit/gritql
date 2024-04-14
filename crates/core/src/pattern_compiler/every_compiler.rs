@@ -3,14 +3,14 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::pattern::every::Every;
-use crate::problem::MarzanoProblemContext;
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct EveryCompiler;
 
 impl NodeCompiler for EveryCompiler {
-    type TargetPattern = Every<MarzanoProblemContext>;
+    type TargetPattern = Every<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

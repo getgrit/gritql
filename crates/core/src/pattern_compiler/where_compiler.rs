@@ -2,14 +2,14 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler, predicate_compiler::PredicateCompiler,
 };
-use crate::{pattern::r#where::Where, problem::MarzanoProblemContext};
+use crate::{pattern::r#where::Where, problem::MarzanoQueryContext};
 use anyhow::{anyhow, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct WhereCompiler;
 
 impl NodeCompiler for WhereCompiler {
-    type TargetPattern = Where<MarzanoProblemContext>;
+    type TargetPattern = Where<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

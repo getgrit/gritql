@@ -4,14 +4,14 @@ use super::{
     variable_compiler::VariableCompiler,
 };
 use crate::pattern::container::Container;
-use crate::problem::MarzanoProblemContext;
+use crate::problem::MarzanoQueryContext;
 use anyhow::{bail, Result};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct ContainerCompiler;
 
 impl NodeCompiler for ContainerCompiler {
-    type TargetPattern = Container<MarzanoProblemContext>;
+    type TargetPattern = Container<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

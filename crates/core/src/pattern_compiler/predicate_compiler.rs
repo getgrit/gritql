@@ -7,7 +7,7 @@ use super::{
     or_compiler::PrOrCompiler, predicate_return_compiler::PredicateReturnCompiler,
     rewrite_compiler::RewriteCompiler,
 };
-use crate::{pattern::predicates::Predicate, problem::MarzanoProblemContext};
+use crate::{pattern::predicates::Predicate, problem::MarzanoQueryContext};
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
@@ -15,7 +15,7 @@ use marzano_util::node_with_source::NodeWithSource;
 pub(crate) struct PredicateCompiler;
 
 impl NodeCompiler for PredicateCompiler {
-    type TargetPattern = Predicate<MarzanoProblemContext>;
+    type TargetPattern = Predicate<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,

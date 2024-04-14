@@ -8,7 +8,7 @@ use crate::{
         resolved_pattern::ResolvedPattern,
         state::State,
     },
-    problem::MarzanoProblemContext,
+    problem::MarzanoQueryContext,
 };
 use anyhow::Result;
 use marzano_language::language::{FieldId, Language, SortId};
@@ -17,17 +17,17 @@ use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource
 #[derive(Debug, Clone)]
 pub struct ASTNode {
     pub(crate) sort: SortId,
-    pub(crate) args: Vec<(FieldId, bool, Pattern<MarzanoProblemContext>)>,
+    pub(crate) args: Vec<(FieldId, bool, Pattern<MarzanoQueryContext>)>,
 }
 
 impl ASTNode {
-    pub fn new(sort: SortId, args: Vec<(FieldId, bool, Pattern<MarzanoProblemContext>)>) -> Self {
+    pub fn new(sort: SortId, args: Vec<(FieldId, bool, Pattern<MarzanoQueryContext>)>) -> Self {
         Self { sort, args }
     }
 }
 
-impl AstNodePattern<MarzanoProblemContext> for ASTNode {
-    fn children(&self) -> Vec<PatternOrPredicate<MarzanoProblemContext>> {
+impl AstNodePattern<MarzanoQueryContext> for ASTNode {
+    fn children(&self) -> Vec<PatternOrPredicate<MarzanoQueryContext>> {
         self.args
             .iter()
             .map(|a| PatternOrPredicate::Pattern(&a.2))
@@ -45,11 +45,11 @@ impl PatternName for ASTNode {
     }
 }
 
-impl Matcher<MarzanoProblemContext> for ASTNode {
+impl Matcher<MarzanoQueryContext> for ASTNode {
     fn execute<'a>(
         &'a self,
         binding: &ResolvedPattern<'a>,
-        init_state: &mut State<'a, MarzanoProblemContext>,
+        init_state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {

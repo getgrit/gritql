@@ -9,7 +9,7 @@ use crate::pattern::{
     functions::{CallForeignFunction, CallFunction},
     patterns::Pattern,
 };
-use crate::problem::MarzanoProblemContext;
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
 use itertools::Itertools;
@@ -20,13 +20,13 @@ use std::collections::BTreeMap;
 pub(crate) struct CallCompiler;
 
 impl NodeCompiler for CallCompiler {
-    type TargetPattern = Pattern<MarzanoProblemContext>;
+    type TargetPattern = Pattern<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> Result<Pattern<MarzanoProblemContext>> {
+    ) -> Result<Pattern<MarzanoQueryContext>> {
         let sort = node
             .child_by_field_name("name")
             .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
@@ -141,7 +141,7 @@ impl NodeCompiler for CallCompiler {
 pub(crate) struct PrCallCompiler;
 
 impl NodeCompiler for PrCallCompiler {
-    type TargetPattern = PrCall<MarzanoProblemContext>;
+    type TargetPattern = PrCall<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
@@ -181,10 +181,10 @@ fn collect_params(parameters: &[(String, Range)]) -> Vec<String> {
 
 fn match_args_to_params(
     name: &str,
-    mut args: BTreeMap<String, Pattern<MarzanoProblemContext>>,
+    mut args: BTreeMap<String, Pattern<MarzanoQueryContext>>,
     params: &[String],
     language: &impl Language,
-) -> Result<Vec<Option<Pattern<MarzanoProblemContext>>>> {
+) -> Result<Vec<Option<Pattern<MarzanoQueryContext>>>> {
     for (arg, _) in args.iter() {
         if !params.contains(arg) {
             bail!(
@@ -202,7 +202,7 @@ fn match_args_to_params(
 fn named_args_to_hash_map(
     named_args: Vec<(String, NodeWithSource)>,
     context: &mut NodeCompilationContext,
-) -> Result<BTreeMap<String, Pattern<MarzanoProblemContext>>> {
+) -> Result<BTreeMap<String, Pattern<MarzanoQueryContext>>> {
     let mut args = BTreeMap::new();
     for (name, node) in named_args {
         let pattern = PatternCompiler::from_node_with_rhs(&node, context, true)?;

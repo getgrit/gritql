@@ -3,7 +3,7 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::pattern::{list::List, patterns::Pattern};
-use crate::problem::MarzanoProblemContext;
+use crate::problem::MarzanoQueryContext;
 use anyhow::{bail, Result};
 use marzano_language::language::Field;
 use marzano_util::node_with_source::NodeWithSource;
@@ -16,7 +16,7 @@ impl ListCompiler {
         context_field: &Field,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> Result<Pattern<MarzanoProblemContext>> {
+    ) -> Result<Pattern<MarzanoQueryContext>> {
         let kind = node.node.kind();
         match kind.as_ref() {
             "assocNode" => {
@@ -36,7 +36,7 @@ impl ListCompiler {
 }
 
 impl NodeCompiler for ListCompiler {
-    type TargetPattern = List<MarzanoProblemContext>;
+    type TargetPattern = List<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
