@@ -15,6 +15,7 @@ use crate::{
         built_in_functions::BuiltIns,
         constants::{
             ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
+            SAMPLES_INDEX,
         },
         function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
         pattern_definition::PatternDefinition,
@@ -698,6 +699,7 @@ pub fn src_to_problem_libs_for_language(
         ("$filename".to_owned(), FILENAME_INDEX),
         ("$program".to_owned(), PROGRAM_INDEX),
         ("$absolute_filename".to_owned(), ABSOLUTE_PATH_INDEX),
+        ("$samples".to_owned(), SAMPLES_INDEX),
     ]);
     let is_multifile = is_multifile(&root, libs, grit_parser)?;
     let has_limit = has_limit(&root, libs, grit_parser)?;
