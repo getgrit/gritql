@@ -19,5 +19,16 @@ patterns:
 
       `println!($_)` => .  where {
         $filename <: not includes "test.rs",
-        $absolute_filename <: includes "apps/marzano/lsp",
+        $absolute_filename <: includes "lsp",
+      }
+  - name: no_println_in_core
+    description: Don't use println or other debugging macros in core code.
+    level: error
+    body: |
+      engine marzano(0.1)
+      language rust
+
+      `println!($_)` as $print => .  where {
+        $absolute_filename <: includes "crates/gritmodule",
+        $print <: not within `mod tests { $_ }`
       }

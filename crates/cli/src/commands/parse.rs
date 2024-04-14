@@ -94,7 +94,7 @@ async fn parse_one_pattern(body: String, path: Option<&PathBuf>) -> Result<Match
     let pattern = resolver.make_pattern(&body, None)?;
     let pattern_libs = get_grit_files_from_cwd().await?;
     let pattern_libs = pattern_libs.get_language_directory_or_default(lang)?;
-    let problem = match pattern.compile(&pattern_libs, None, None) {
+    let problem = match pattern.compile(&pattern_libs, None, None, None) {
         Ok(problem) => problem,
         Err(e) => {
             let log = match e.downcast::<marzano_util::analysis_logs::AnalysisLog>() {

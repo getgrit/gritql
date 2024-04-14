@@ -45,6 +45,7 @@ impl<'b> RichPattern<'b> {
         pattern_libs: &BTreeMap<String, String>,
         language: Option<PatternLanguage>,
         targets: Option<Vec<FileRange>>,
+        injected_limit: Option<usize>,
     ) -> Result<CompilationResult> {
         let lang = language.unwrap_or_default();
         #[cfg(not(feature = "ai_builtins"))]
@@ -59,6 +60,7 @@ impl<'b> RichPattern<'b> {
             self.name.to_owned(),
             targets,
             injected_builtins,
+            injected_limit,
         )
     }
 }

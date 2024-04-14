@@ -133,8 +133,9 @@ fn empty_or_returns_error() -> Result<()> {
 fn error_returns_gritfile_path() -> Result<()> {
     let mut cmd = get_test_cmd()?;
 
-    let fixtures_root = get_fixtures_root()?;
-    let fixture_path = fixtures_root.join("bad_libs").join("sample.js");
+    let (_temp_dir, dir) = get_fixture("bad_libs", true)?;
+
+    let fixture_path = dir.join("sample.js");
 
     let input = format!(
         r#"{{ "pattern_body" : "no_console_log()", "paths" : [ {:?} ] }}"#,
@@ -144,13 +145,17 @@ fn error_returns_gritfile_path() -> Result<()> {
     cmd.write_stdin(input);
 
     let output = cmd.output()?;
+    let stdout = String::from_utf8(output.stdout)?;
+    let stderr = String::from_utf8(output.stderr)?;
+
+    println!("stdout: {:?}", stdout);
+    println!("stderr: {:?}", stderr);
 
     assert!(
         output.status.success(),
         "Command didn't finish successfully"
     );
 
-    let stdout = String::from_utf8(output.stdout)?;
     let line = stdout.lines().next().ok_or_else(|| anyhow!("No output"))?;
     let v: serde_json::Value = serde_json::from_str(line)?;
 
@@ -1395,13 +1400,16 @@ fn yaml_color() -> Result<()> {
         .arg("--dry-run");
 
     let output = apply_cmd.output()?;
+    let stdout = String::from_utf8(output.stdout)?;
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stdout: {:?}", stdout);
+    println!("stderr: {:?}", stderr);
     assert!(
         output.status.success(),
         "Command didn't finish successfully"
     );
 
-    let content = String::from_utf8(output.stdout)?;
-    assert_snapshot!(content);
+    assert_snapshot!(stdout);
 
     Ok(())
 }
@@ -1453,7 +1461,10 @@ fn compact_output() -> Result<()> {
     );
 
     let content = String::from_utf8(output.stdout)?;
-    assert_snapshot!(content);
+    let mut lines: Vec<&str> = content.lines().collect();
+    lines.sort_unstable();
+    let sorted_content = lines.join("\n");
+    assert_snapshot!(sorted_content);
 
     Ok(())
 }
@@ -1822,6 +1833,60 @@ fn applies_limit_on_multifile() -> Result<()> {
     let test1 = std::fs::read_to_string(fixture_dir.join("file1.js"))?;
     let test2 = std::fs::read_to_string(fixture_dir.join("file2.js"))?;
     assert!(test1 == "const y = 6;" && test2 == "const y = 6;");
+
+    Ok(())
+}
+
+#[test]
+fn overrides_limit() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("pattern.grit")
+        .arg("file1.js")
+        .arg("file2.js")
+        .arg("--limit=2")
+        .current_dir(&fixture_dir);
+
+    let output = cmd.output()?;
+    let stdout = String::from_utf8(output.stdout)?;
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stdout: {:?}", stdout);
+    println!("stderr: {:?}", stderr);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully"
+    );
+
+    assert!(stdout.contains("found 2 matches"));
+
+    Ok(())
+}
+
+#[test]
+fn injects_limit() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`x` => `y`")
+        .arg("file1.js")
+        .arg("file2.js")
+        .arg("--limit=1")
+        .current_dir(&fixture_dir);
+
+    let output = cmd.output()?;
+    let stdout = String::from_utf8(output.stdout)?;
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stdout: {:?}", stdout);
+    println!("stderr: {:?}", stderr);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully"
+    );
+
+    assert!(stdout.contains("found 1 matches"));
 
     Ok(())
 }

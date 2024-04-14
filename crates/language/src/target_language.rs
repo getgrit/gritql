@@ -1,4 +1,4 @@
-use crate::language::RangeReplacement;
+use crate::language::Replacement;
 use crate::language::{GritMetaValue, LeafEquivalenceClass, SnippetTree, TSLanguage};
 use crate::{
     csharp::CSharp,
@@ -12,6 +12,7 @@ use crate::{
     language::{Field, FieldId, Language, SortId},
     markdown_block::MarkdownBlock,
     markdown_inline::MarkdownInline,
+    php_only::PhpOnly,
     php::Php,
     python::Python,
     ruby::Ruby,
@@ -78,6 +79,7 @@ pub enum PatternLanguage {
     Vue,
     Toml,
     Php,
+    PhpOnly,
     #[value(skip)]
     Universal,
 }
@@ -107,6 +109,7 @@ impl fmt::Display for PatternLanguage {
             PatternLanguage::Toml => write!(f, "toml"),
             PatternLanguage::Universal => write!(f, "universal"),
             PatternLanguage::Php => write!(f, "php"),
+            PatternLanguage::PhpOnly => write!(f, "php"),
         }
     }
 }
@@ -135,6 +138,7 @@ impl From<&TargetLanguage> for PatternLanguage {
             TargetLanguage::Vue(_) => PatternLanguage::Vue,
             TargetLanguage::Toml(_) => PatternLanguage::Toml,
             TargetLanguage::Php(_) => PatternLanguage::Php,
+            TargetLanguage::PhpOnly(_) => PatternLanguage::PhpOnly,
         }
     }
 }
@@ -163,6 +167,7 @@ impl PatternLanguage {
             PatternLanguage::Vue => Vue::is_initialized(),
             PatternLanguage::Toml => Toml::is_initialized(),
             PatternLanguage::Php => Php::is_initialized(),
+            PatternLanguage::PhpOnly => PhpOnly::is_initialized(),
             PatternLanguage::Universal => false,
         }
     }
@@ -228,7 +233,11 @@ impl PatternLanguage {
             "sql" => Some(Self::Sql),
             "vue" => Some(Self::Vue),
             "toml" => Some(Self::Toml),
-            "php" => Some(Self::Php),
+            "php" => match flavor {
+                Some("html") => Some(Self::Php),
+                Some("only") => Some(Self::PhpOnly),
+                _ => Some(Self::Php),
+            }
             "universal" => Some(Self::Universal),
             _ => None,
         }
@@ -259,6 +268,7 @@ impl PatternLanguage {
             PatternLanguage::Vue => &["vue"],
             PatternLanguage::Toml => &["toml"],
             PatternLanguage::Php => &["php", "phps", "phar", "phtml", "pht"],
+            PatternLanguage::PhpOnly => &["php", "phps", "phar", "phtml", "pht"],
             PatternLanguage::Universal => &[],
         }
     }
@@ -286,6 +296,7 @@ impl PatternLanguage {
             PatternLanguage::Vue => Some("vue"),
             PatternLanguage::Toml => Some("toml"),
             PatternLanguage::Php => Some("php"),
+            PatternLanguage::PhpOnly => Some("php"),
             PatternLanguage::Universal => None,
         }
     }
@@ -309,7 +320,7 @@ impl PatternLanguage {
             "yaml" | "yml" => Some(Self::Yaml),
             "sql" => Some(Self::Sql),
             "vue" => Some(Self::Vue),
-            "php" | "phps" | "phar" | "phtml" | "pht" => Some(Self::Php),
+            "php" | "phps" | "phtml" | "pht" => Some(Self::Php),
             _ => None,
         }
     }
@@ -349,6 +360,7 @@ impl PatternLanguage {
             PatternLanguage::Vue,
             PatternLanguage::Toml,
             PatternLanguage::Php,
+            PatternLanguage::PhpOnly,
         ]
     }
 
@@ -384,6 +396,7 @@ impl PatternLanguage {
             PatternLanguage::Vue => Ok(TargetLanguage::Vue(Vue::new(Some(lang)))),
             PatternLanguage::Toml => Ok(TargetLanguage::Toml(Toml::new(Some(lang)))),
             PatternLanguage::Php => Ok(TargetLanguage::Php(Php::new(Some(lang)))),
+            PatternLanguage::PhpOnly => Ok(TargetLanguage::PhpOnly(PhpOnly::new(Some(lang)))),
             PatternLanguage::Universal => Err("Cannot convert universal to TSLang".to_string()),
         }
     }
@@ -466,6 +479,7 @@ pub enum TargetLanguage {
     Toml(Toml),
     Sql(Sql),
     Php(Php),
+    PhpOnly(PhpOnly),
 }
 
 // when built to wasm the language must be initialized with a parser at least once
@@ -499,6 +513,7 @@ impl TryFrom<PatternLanguage> for TargetLanguage {
             PatternLanguage::Vue => Ok(TargetLanguage::Vue(Vue::new(None))),
             PatternLanguage::Toml => Ok(TargetLanguage::Toml(Toml::new(None))),
             PatternLanguage::Php => Ok(TargetLanguage::Php(Php::new(None))),
+            PatternLanguage::PhpOnly => Ok(TargetLanguage::PhpOnly(PhpOnly::new(None))),
             PatternLanguage::Universal => {
                 Err("cannot instantiate Universal as a target language".to_string())
             }
@@ -530,6 +545,7 @@ impl fmt::Display for TargetLanguage {
             TargetLanguage::Vue(_) => write!(f, "vue"),
             TargetLanguage::Toml(_) => write!(f, "toml"),
             TargetLanguage::Php(_) => write!(f, "php"),
+            TargetLanguage::PhpOnly(_) => write!(f, "php"),
         }
     }
 }
@@ -574,6 +590,7 @@ impl TargetLanguage {
             TargetLanguage::Vue(_) => PatternLanguage::Vue,
             TargetLanguage::Toml(_) => PatternLanguage::Toml,
             TargetLanguage::Php(_) => PatternLanguage::Php,
+            TargetLanguage::PhpOnly(_) => PatternLanguage::PhpOnly,
         }
     }
 
@@ -600,6 +617,7 @@ impl TargetLanguage {
             TargetLanguage::Vue(_) => false,
             TargetLanguage::Toml(_) => false,
             TargetLanguage::Php(_) => false,
+            TargetLanguage::PhpOnly(_) => false,
         }
     }
 
@@ -625,7 +643,7 @@ impl TargetLanguage {
             | TargetLanguage::Rust(_)
             | TargetLanguage::Solidity(_)
             | TargetLanguage::Tsx(_)
-            | TargetLanguage::Php(_)
+            | TargetLanguage::PhpOnly(_)
             | TargetLanguage::TypeScript(_) => format!("// {}\n", text),
             TargetLanguage::Python(_)
             | TargetLanguage::Hcl(_)
@@ -633,6 +651,7 @@ impl TargetLanguage {
             | TargetLanguage::Toml(_)
             | TargetLanguage::Yaml(_) => format!("# {}\n", text),
             TargetLanguage::Html(_)
+            | TargetLanguage::Php(_)
             | TargetLanguage::Vue(_)
             | TargetLanguage::MarkdownBlock(_)
             | TargetLanguage::MarkdownInline(_) => format!("<!-- {} -->\n", text),
@@ -652,6 +671,7 @@ impl TargetLanguage {
             | TargetLanguage::Solidity(_)
             | TargetLanguage::Tsx(_)
             | TargetLanguage::Php(_)
+            | TargetLanguage::PhpOnly(_)
             | TargetLanguage::TypeScript(_) => Regex::new(r"//\s*(.*)").unwrap(),
             TargetLanguage::Python(_)
             | TargetLanguage::Ruby(_)

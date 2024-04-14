@@ -39,6 +39,7 @@ static SQL_LANGUAGE: OnceLock<Language> = OnceLock::new();
 static VUE_LANGUAGE: OnceLock<Language> = OnceLock::new();
 static TOML_LANGUAGE: OnceLock<Language> = OnceLock::new();
 static PHP_LANGUAGE: OnceLock<Language> = OnceLock::new();
+static PHP_ONLY_LANGUAGE: OnceLock<Language> = OnceLock::new();
 
 #[wasm_bindgen(js_name = initializeTreeSitter)]
 pub async fn initialize_tree_sitter() -> Result<(), JsError> {
@@ -105,6 +106,7 @@ pub async fn parse_input_files(
         None,
         parser,
         injected_builtins,
+        None
     ) {
         Ok(c) => {
             let warning_logs = c
@@ -228,6 +230,7 @@ pub async fn match_pattern(
         None,
         parser,
         injected_builtins,
+        None
     ) {
         Ok(c) => c,
         Err(e) => {
@@ -255,11 +258,6 @@ pub async fn match_pattern(
         .collect();
     let results = pattern.execute_files(&files, &context);
     Ok(serde_wasm_bindgen::to_value(&results)?)
-}
-
-#[wasm_bindgen(js_name = helloWorld)]
-pub async fn hello_world() -> Result<JsValue, JsError> {
-    Ok(serde_wasm_bindgen::to_value(&"hello world!")?)
 }
 
 struct ParsedPattern {
@@ -367,7 +365,8 @@ fn pattern_language_to_path(lang: &PatternLanguage) -> Result<String, JsError> {
         PatternLanguage::Sql => Ok("/tree-sitter-sql.wasm"),
         PatternLanguage::Vue => Ok("/tree-sitter-vue.wasm"),
         PatternLanguage::Toml => Ok("/tree-sitter-toml.wasm"),
-        PatternLanguage::Php => Ok("/tree-sitter-php_only.wasm"),
+        PatternLanguage::Php => Ok("/tree-sitter-php.wasm"),
+        PatternLanguage::PhpOnly => Ok("/tree-sitter-php_only.wasm"),
         PatternLanguage::Universal => Err(JsError::new("Universal does not have a parser")),
     }?;
     let final_file = format!("{}{}", get_parser_path(), wasm_file);
@@ -411,6 +410,7 @@ fn get_lang_store(language: &PatternLanguage) -> Result<&'static OnceLock<Langua
         PatternLanguage::Vue => Ok(&VUE_LANGUAGE),
         PatternLanguage::Toml => Ok(&TOML_LANGUAGE),
         PatternLanguage::Php => Ok(&PHP_LANGUAGE),
+        PatternLanguage::PhpOnly => Ok(&PHP_ONLY_LANGUAGE),
         PatternLanguage::Universal => Err(JsError::new("Universal does not have a parser")),
     }
 }

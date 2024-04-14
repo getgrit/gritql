@@ -23,7 +23,7 @@ use super::*;
 
 pub fn src_to_problem(src: String, default_lang: TargetLanguage) -> Result<Problem> {
     let libs = BTreeMap::new();
-    src_to_problem_libs(src, &libs, default_lang, None, None, None).map(|cr| cr.problem)
+    src_to_problem_libs(src, &libs, default_lang, None, None, None, None).map(|cr| cr.problem)
 }
 
 // #[deprecated(note = "remove after migrating tests to MatchResult")]
@@ -97,7 +97,7 @@ fn match_pattern_libs(
     let default_context = ExecutionContext::default();
     let context = TEST_EXECUTION_CONTEXT.as_ref().unwrap_or(&default_context);
 
-    let pattern = src_to_problem_libs(pattern, libs, default_language, None, None, None)?.problem;
+    let pattern = src_to_problem_libs(pattern, libs, default_language, None, None, None, None)?.problem;
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), src.to_owned()), context);
     let mut execution_result = ExecutionResult {
         input_file_debug_text: "".to_string(),
@@ -424,7 +424,7 @@ fn test_compile_time_logging() {
     .to_string();
     let libs = BTreeMap::new();
     let default_language = PatternLanguage::Tsx.try_into().unwrap();
-    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None).unwrap();
+    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
     let res = format!("{:?}", pattern.compilation_warnings);
     assert_snapshot!(res);
 }
@@ -439,7 +439,7 @@ fn warns_against_snippet_useless_rewrite() {
     .to_string();
     let libs = BTreeMap::new();
     let default_language = PatternLanguage::Tsx.try_into().unwrap();
-    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None).unwrap();
+    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
     let res = format!("{:?}", pattern.compilation_warnings);
     assert_snapshot!(res);
 }
@@ -456,7 +456,7 @@ fn does_not_warn_against_regular_snippet_rewrite() {
     .to_string();
     let libs = BTreeMap::new();
     let default_language = PatternLanguage::Tsx.try_into().unwrap();
-    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None).unwrap();
+    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
     assert!(pattern.compilation_warnings.is_empty())
 }
 
@@ -470,7 +470,7 @@ fn warns_against_snippet_regex_without_metavars() {
     .to_string();
     let libs = BTreeMap::new();
     let default_language = PatternLanguage::Tsx.try_into().unwrap();
-    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None).unwrap();
+    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
     let res = format!("{:?}", pattern.compilation_warnings);
     assert_snapshot!(res);
 }
@@ -486,7 +486,7 @@ fn does_not_warn_against_snippet_regex_with_metavars() {
     .to_string();
     let libs = BTreeMap::new();
     let default_language = PatternLanguage::Tsx.try_into().unwrap();
-    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None).unwrap();
+    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
     assert!(pattern.compilation_warnings.is_empty())
 }
 
@@ -3264,7 +3264,7 @@ fn warning_rewrite_in_not() {
 
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let libs = BTreeMap::new();
-    let cr = src_to_problem_libs(pattern, &libs, js_lang, None, None, None).unwrap();
+    let cr = src_to_problem_libs(pattern, &libs, js_lang, None, None, None, None).unwrap();
     assert_debug_snapshot!(cr.compilation_warnings)
 }
 
@@ -8347,7 +8347,7 @@ fn distinct_on_primitives() {
 fn correct_variable_index() {
     let pattern = "`function () { $body }`".to_owned();
     let tsx: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
-    let _pattern = src_to_problem_libs(pattern, &BTreeMap::new(), tsx, None, None, None).unwrap();
+    let _pattern = src_to_problem_libs(pattern, &BTreeMap::new(), tsx, None, None, None, None).unwrap();
 }
 
 #[test]
@@ -13229,7 +13229,7 @@ fn php_no_match() {
     run_test_no_match({
         TestArg {
             pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`TEST`
                 |"#
@@ -13250,7 +13250,7 @@ fn php_simple_match() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`echo ^x;` => `^x + ^x;`
                 |"#
@@ -13272,11 +13272,79 @@ fn php_simple_match() {
 }
 
 #[test]
-fn php_until() {
+fn php_html_simple_match() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
                 |language php
+                |
+                |`<?php
+                |   echo ^x;
+                |?>` where {
+                |   ^x => `^x + ^x`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |<?php
+                |   echo "duplicate this message";
+                |?>
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |<?php
+                |   echo "duplicate this message" + "duplicate this message";
+                |?>
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_html_multi_arg() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`<?php
+                |   $cost = Array(^x);
+                |?>` where {
+                |   ^x => `100, 399, 249`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |<?php
+                |   $cost = Array(20, 10);
+                |?>
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |<?php
+                |   $cost = Array(100, 399, 249);
+                |?>
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn php_until() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language php(only)
                 |
                 |contains bubble `foo(^x)` => `bar(^x)` until `foo(^_)`
                 |"#
@@ -13302,7 +13370,7 @@ fn php_quote_snippet_rewrite() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
-                |language php
+                |language php(only)
                 |php"foo" => php"bar"
                 |"#
             .trim_margin()
@@ -13318,7 +13386,7 @@ fn php_quote_snippet_rewrite() {
 fn php_if_statement() {
     run_test_expected(TestArgExpected {
         pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`$a = 12;` => `$b=24;`
                 |"#
@@ -13348,7 +13416,7 @@ fn php_if_statement() {
 fn php_delete_include() {
     run_test_expected(TestArgExpected {
         pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`include ^package;` => .
                 |"#
@@ -13374,7 +13442,7 @@ fn php_delete_include() {
 fn php_function_modifier() {
     run_test_expected(TestArgExpected {
         pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`class ^_ { ^mod function ^name(){ ^_ } }` where {
                 |   ^mod => `private`,
@@ -13415,7 +13483,7 @@ fn php_function_modifier() {
 fn php_rewrite_arrow_function() {
     run_test_expected(TestArgExpected {
         pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`fn(^a) => ^_` => `fn(^a) => $x * $x`
                 |"#
@@ -13431,7 +13499,7 @@ fn php_rewrite_arrow_function() {
 fn php_array() {
     run_test_expected(TestArgExpected {
         pattern: r#"
-                |language php
+                |language php(only)
                 |
                 |`^a=>^_` => `^a=>24`
                 |"#
@@ -13440,6 +13508,209 @@ fn php_array() {
         source: r#"$fn1 = array("a"=>1, "b"=>2, "c"=>3);"#.trim_margin().unwrap(),
         expected: r#"$fn1 = array("a"=>24, "b"=>24, "c"=>24);"#.trim_margin().unwrap(),
     })
+    .unwrap();
+}
+
+#[test]
+fn php_html_foreach() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php
+                |
+                |`foreach(^x as ^y){^_}` where {
+                |   ^x => `$x`,
+                |   ^y => `$y`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |<?php
+                |    $arr = array(1, 2, 3, 4);
+                |    foreach($arr as &$value) {
+                |        $value = $value * 2;
+                |    }
+                |?>"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+                |<?php
+                |    $arr = array(1, 2, 3, 4);
+                |    foreach($x as $y) {
+                |        $value = $value * 2;
+                |    }
+                |?>"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+#[test]
+fn php_echo() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php(only)
+                |
+                |`echo ^_;` => `print "modified";`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |$arr = array(1, 2, 3, 4);
+                |foreach($arr as &$value) {
+                |    echo $value * 2;
+                |}
+                |"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+                |$arr = array(1, 2, 3, 4);
+                |foreach($arr as &$value) {
+                |    print "modified";
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+#[test]
+fn php_cast() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php(only)
+                |
+                |`(^x) $a` => `(string) $a`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |$i = (int) $a;
+                |$f = (float) $a;
+                |"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+                |$i = (string) $a;
+                |$f = (string) $a;
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+#[test]
+fn php_if() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php(only)
+                |
+                |`if(^a){^_}` where {
+                |   ^a => `$a == $b`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |$a = 1;
+                |$b = 1;
+                |if($a != $b){
+                |   echo "pass";
+                |}
+                |"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+                |$a = 1;
+                |$b = 1;
+                |if($a == $b){
+                |   echo "pass";
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
+    .unwrap();
+}
+
+#[test]
+fn php_class() {
+    run_test_expected(
+        TestArgExpected {
+            pattern: r#"
+                |language php(only)
+                |
+                |`class ^name { 
+                |    function ^fname() {
+                |        if (^a) { ^_ } else { ^_ }
+                |    }
+                |}` where {
+                |   ^name => `Mod`,
+                |   ^fname => `mod_method`,
+                |   ^a => `$a == $b`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |class A {
+                |    function foo()
+                |    {
+                |        if (isset($this)) {
+                |            echo '$this is defined (';
+                |            echo get_class($this);
+                |            echo ")\n";
+                |        } else {
+                |            echo "\$this is not defined.\n";
+                |        }
+                |    }
+                |}
+                |
+                |class B {
+                |    function bar()
+                |    {
+                |        A::foo();
+                |    }
+                |}
+                |"#
+            .trim_margin().
+            unwrap(),
+            expected: r#"
+                |class Mod {
+                |    function mod_method()
+                |    {
+                |        if ($a == $b) {
+                |            echo '$this is defined (';
+                |            echo get_class($this);
+                |            echo ")\n";
+                |        } else {
+                |            echo "\$this is not defined.\n";
+                |        }
+                |    }
+                |}
+                |
+                |class B {
+                |    function bar()
+                |    {
+                |        A::foo();
+                |    }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    )
     .unwrap();
 }
 

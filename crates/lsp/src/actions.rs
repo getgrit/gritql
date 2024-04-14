@@ -34,7 +34,7 @@ pub fn get_code_actions(
 
     for (pattern, pattern_result) in pattern_results {
         for result in pattern_result {
-            if let MatchResult::Rewrite(_) = result {
+            if matches!(result, MatchResult::Match(_) | MatchResult::Rewrite(_)) {
                 let ranges = extract_ranges(&result).cloned().unwrap_or_default();
                 let intersecting_ranges = ranges
                     .iter()
@@ -42,27 +42,29 @@ pub fn get_code_actions(
                     .filter(|r| check_intersection(r, &lsp_range));
                 for range in intersecting_ranges {
                     let local_name = &pattern.name();
-                    let title = format!("Apply {}", local_name);
-                    let body = &pattern.body;
-                    let language = &pattern.language;
-                    let command = Command::new(
-                        title.clone(),
-                        LspCommand::ApplyResult.to_string(),
-                        Some(vec![
-                            serde_json::Value::String(document.uri.to_string()),
-                            serde_json::Value::String(body.to_string()),
-                            serde_json::Value::String(language.to_string()),
-                            serde_json::to_value(range).unwrap(),
-                        ]),
-                    );
-                    let apply_action = CodeAction {
-                        title,
-                        kind: Some(CodeActionKind::QUICKFIX),
-                        command: Some(command),
-                        ..Default::default()
-                    };
+                    if matches!(result, MatchResult::Rewrite(_)) {
+                        let title = format!("Apply {}", local_name);
+                        let body = &pattern.body;
+                        let language = &pattern.language;
+                        let command = Command::new(
+                            title.clone(),
+                            LspCommand::ApplyResult.to_string(),
+                            Some(vec![
+                                serde_json::Value::String(document.uri.to_string()),
+                                serde_json::Value::String(body.to_string()),
+                                serde_json::Value::String(language.to_string()),
+                                serde_json::to_value(range).unwrap(),
+                            ]),
+                        );
+                        let apply_action = CodeAction {
+                            title,
+                            kind: Some(CodeActionKind::QUICKFIX),
+                            command: Some(command),
+                            ..Default::default()
+                        };
+                        code_actions.push(CodeActionOrCommand::CodeAction(apply_action));
+                    }
                     let suppress_action = make_suppress_action(&document, &range, local_name)?;
-                    code_actions.push(CodeActionOrCommand::CodeAction(apply_action));
                     code_actions.push(CodeActionOrCommand::CodeAction(suppress_action));
                 }
             }

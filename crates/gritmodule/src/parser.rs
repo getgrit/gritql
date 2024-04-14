@@ -45,7 +45,7 @@ impl PatternFileExt {
 
     fn get_patterns(
         &self,
-        file: &RichFile,
+        file: &mut RichFile,
         source_module: &Option<ModuleRepo>,
         root: &Option<String>,
     ) -> Result<Vec<ModuleGritPattern>, anyhow::Error> {
@@ -84,11 +84,11 @@ pub async fn get_patterns_from_file(
 ) -> Result<Vec<ModuleGritPattern>> {
     let repo_root = find_repo_root_from(path.clone()).await?;
     let content = fs::read_to_string(&path).await?;
-    let file = RichFile {
+    let mut file = RichFile {
         path: path.to_string_lossy().to_string(),
         content,
     };
-    ext.get_patterns(&file, &source_module, &repo_root)
+    ext.get_patterns(&mut file, &source_module, &repo_root)
 }
 
 pub fn extract_relative_file_path(file: &RichFile, root: &Option<String>) -> String {
