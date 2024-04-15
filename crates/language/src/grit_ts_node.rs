@@ -13,7 +13,7 @@ pub struct GritNodeTypes {
 
 impl NodeTypes for GritNodeTypes {
     fn node_types(&self) -> &[Vec<Field>] {
-        &self.node_types
+        self.node_types
     }
 }
 
