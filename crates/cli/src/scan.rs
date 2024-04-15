@@ -88,5 +88,5 @@ pub fn log_check_json(check_results: HashMap<String, Vec<CheckResult<'_>>>, file
         results: semgrep_results,
     };
     let json = serde_json::to_string(&scan).unwrap();
-    println!("{}", json);
+    log::info!("{}", json);
 }

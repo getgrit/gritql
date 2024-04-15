@@ -32,7 +32,7 @@ patterns:
         $outcome = .,
         or {
             $absolute_filename <: includes "crates/gritmodule",
-            and { $absolute_filename <: includes "crates/cli/", $outcome = `log::info($args)` }
+            and { $absolute_filename <: includes "crates/cli/", $outcome = `log::info!($args)` }
         },
         // Allow tests and build utils
         $absolute_filename <: not includes or {

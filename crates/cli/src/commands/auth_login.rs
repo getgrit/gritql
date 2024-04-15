@@ -22,15 +22,15 @@ pub(crate) async fn run_login(_arg: LoginArgs) -> Result<()> {
         "Your one-time code is: {}\n",
         style(session.user_code()).bold().yellow()
     );
-    println!("Please open the following URL in your browser to authenticate:");
-    println!("{}", style(session.verify_url()).cyan());
+    log::info!("Please open the following URL in your browser to authenticate:");
+    log::info!("{}", style(session.verify_url()).cyan());
 
     // Wait for the user to complete the login process
     session.poll().await?;
 
     updater.save_token(session.token()?).await?;
 
-    println!("You are now logged in!");
+    log::info!("You are now logged in!");
 
     debug!("Token is: {}", session.token()?);
 
