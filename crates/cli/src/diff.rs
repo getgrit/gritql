@@ -1,11 +1,11 @@
-use anyhow::{bail, Result};
+use anyhow::{Result};
 use marzano_util::{
     diff::{parse_modified_ranges, FileDiff},
-    position::{FileRange, Position, RangeWithoutByte, UtilRange},
+    position::{FileRange},
 };
-use regex::Regex;
-use serde::Serialize;
-use std::{fs::File, io::Read, path::PathBuf, str::FromStr};
+
+
+use std::{fs::File, io::Read, path::PathBuf};
 
 pub fn run_git_diff(path: &PathBuf) -> Result<String> {
     let output = std::process::Command::new("git")
@@ -41,7 +41,7 @@ pub(crate) fn extract_target_ranges(
         raw_diff
             .into_iter()
             .flat_map(|diff| {
-                if (diff.new_path.is_none()) {
+                if diff.new_path.is_none() {
                     log::info!("Skipping diff with no new path: {:?}", diff);
                 }
                 let new_path = diff.new_path.as_ref().unwrap().clone();

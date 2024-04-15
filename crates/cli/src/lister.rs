@@ -136,7 +136,7 @@ pub async fn list_applyables(
         resolved_patterns.sort();
 
         if format.json {
-            log::info!("{}", serde_json::to_string(&resolved_patterns));
+            log::info!("{}", serde_json::to_string(&resolved_patterns)?);
             return Ok(());
         }
 
