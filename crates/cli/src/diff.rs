@@ -39,15 +39,18 @@ pub(crate) fn extract_target_ranges(
     Ok(Some(
         raw_diff
             .into_iter()
-            .flat_map(|diff| {
-                if diff.new_path.is_none() {
-                    log::info!("Skipping diff with no new path: {:?}", diff);
+            .flat_map(|diff| match diff.new_path {
+                Some(new_path) => {
+                    let mapped = diff.after.into_iter().map(move |range| FileRange {
+                        range,
+                        file_path: new_path.clone(),
+                    });
+                    mapped.collect::<Vec<_>>()
                 }
-                let new_path = diff.new_path.as_ref().unwrap().clone();
-                diff.after.into_iter().map(move |range| FileRange {
-                    range,
-                    file_path: new_path.clone(),
-                })
+                None => {
+                    log::info!("Skipping diff with no new path: {:?}", diff);
+                    vec![]
+                }
             })
             .collect(),
     ))
