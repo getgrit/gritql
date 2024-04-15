@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use marzano_util::position::{FileRange, Position, RangeWithoutByte, UtilRange};
 use regex::Regex;
 use serde::Serialize;
@@ -27,7 +27,7 @@ pub fn extract_modified_ranges(diff_path: &PathBuf) -> Result<Vec<FileDiff>> {
 #[derive(Debug, Clone, Serialize)]
 pub struct FileDiff {
     pub old_path: Option<String>,
-    pub new_path: String,
+    pub new_path: Option<String>,
     pub before: Vec<UtilRange>,
     pub after: Vec<UtilRange>,
 }
@@ -56,8 +56,6 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
     let mut results = Vec::new();
     let lines = diff.lines();
 
-    let mut current_file_diff = None;
-
     for line in lines {
         if line.starts_with("---") {
             let old_file_name = line
@@ -68,9 +66,9 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 .trim_start_matches("a/")
                 .to_string();
 
-            current_file_diff = Some(FileDiff {
+            results.push(FileDiff {
                 old_path: Some(old_file_name.clone()),
-                new_path: Some(old_file_name),
+                new_path: None,
                 before: Vec::new(),
                 after: Vec::new(),
             });
@@ -83,28 +81,24 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 .trim_start_matches("b/")
                 .to_string();
 
-            if let Some(file_diff) = &mut current_file_diff {
-                file_diff.new_path = new_file_name;
+            if let Some(file_diff) = results.last_mut() {
+                file_diff.new_path = Some(new_file_name);
             } else {
-                current_file_diff = Some(FileDiff {
-                    old_path: None,
-                    new_path: new_file_name,
-                    before: Vec::new(),
-                    after: Vec::new(),
-                });
-            }
+                bail!("Encountered new file path without a current file diff");
+            };
         } else if line.starts_with("@@") {
-            let parts = line.split_whitespace();
-            let before_range = parse_hunk_part(parts.nth(1).unwrap_or_default())?;
-            let after_range = parse_hunk_part(parts.nth(2).unwrap_or_default())?;
+            let mut parts = line.split_whitespace();
+            let before_range = parse_hunk_part(parts.nth(1).unwrap_or(""))?;
+            // Note nth mutates the iterator, so after range is the next element
+            let after_range = parse_hunk_part(parts.next().unwrap_or(""))?;
 
             println!("Before: {:?}, After: {:?}", before_range, after_range);
 
-            if let Some(file_diff) = &mut current_file_diff {
+            if let Some(file_diff) = results.last_mut() {
                 file_diff.before.push(before_range);
                 file_diff.after.push(after_range);
             } else {
-                println!("No current file diff");
+                bail!("Encountered hunk without a current file diff");
             }
         }
     }
@@ -115,20 +109,23 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
 pub(crate) fn extract_target_ranges(
     arg: &Option<Option<PathBuf>>,
 ) -> Result<Option<Vec<FileRange>>> {
-    if let Some(Some(diff_path)) = &arg {
-        let diff_ranges = extract_modified_ranges(diff_path)?;
-        Ok(Some(
-            diff_ranges.into_iter().flat_map(|x| x.after).collect(),
-        ))
-    } else if let Some(None) = &arg {
-        let diff = git_diff(&std::env::current_dir()?)?;
-        let diff_ranges = parse_modified_ranges(&diff)?;
-        Ok(Some(
-            diff_ranges.into_iter().flat_map(|x| x.after).collect(),
-        ))
-    } else {
-        Ok(None)
-    }
+    // if let Some(Some(diff_path)) = &arg {
+    //     let diff_ranges = extract_modified_ranges(diff_path)?;
+    //     Ok(Some(
+    //         diff_ranges.into_iter().flat_map(|x| x.after).collect(),
+    //     ))
+    // } else if let Some(None) = &arg {
+    //     let diff = git_diff(&std::env::current_dir()?)?;
+    //     let diff_ranges = parse_modified_ranges(&diff)?;
+    //     Ok(Some(
+    //         diff_ranges
+    //             .into_iter()
+    //             .flat_map(|x| x.after.map(|x| x.into()))
+    //             .collect(),
+    //     ))
+    // } else {
+    Ok(None)
+    // }
 }
 
 #[cfg(test)]
@@ -153,20 +150,13 @@ index adacd90..71b96e0 100644
     export const addTeamToOrgSubscription = () => console.log('cool');
 "#;
         let parsed = parse_modified_ranges(diff).unwrap();
+        println!("{:?}", parsed);
         let before_range = &parsed[0].before[0];
-        assert_eq!(
-            before_range.file_path,
-            "crates/cli_bin/fixtures/es6/empty_export_object.js"
-        );
-        assert_eq!(before_range.range.start_line(), 5);
-        assert_eq!(before_range.range.end_line(), 5);
+        assert_eq!(before_range.start_line(), 5);
+        assert_eq!(before_range.end_line(), 5);
         let after_range = &parsed[0].after[0];
-        assert_eq!(
-            after_range.file_path,
-            "crates/cli_bin/fixtures/es6/empty_export_object.js"
-        );
-        assert_eq!(after_range.range.start_line(), 5);
-        assert_eq!(after_range.range.end_line(), 5);
+        assert_eq!(after_range.start_line(), 5);
+        assert_eq!(after_range.end_line(), 5);
         assert_yaml_snapshot!(parsed);
     }
 
