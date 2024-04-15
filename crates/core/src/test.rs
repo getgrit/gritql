@@ -97,7 +97,8 @@ fn match_pattern_libs(
     let default_context = ExecutionContext::default();
     let context = TEST_EXECUTION_CONTEXT.as_ref().unwrap_or(&default_context);
 
-    let pattern = src_to_problem_libs(pattern, libs, default_language, None, None, None, None)?.problem;
+    let pattern =
+        src_to_problem_libs(pattern, libs, default_language, None, None, None, None)?.problem;
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), src.to_owned()), context);
     let mut execution_result = ExecutionResult {
         input_file_debug_text: "".to_string(),
@@ -424,7 +425,8 @@ fn test_compile_time_logging() {
     .to_string();
     let libs = BTreeMap::new();
     let default_language = PatternLanguage::Tsx.try_into().unwrap();
-    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
+    let pattern =
+        src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
     let res = format!("{:?}", pattern.compilation_warnings);
     assert_snapshot!(res);
 }
@@ -439,7 +441,8 @@ fn warns_against_snippet_useless_rewrite() {
     .to_string();
     let libs = BTreeMap::new();
     let default_language = PatternLanguage::Tsx.try_into().unwrap();
-    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
+    let pattern =
+        src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
     let res = format!("{:?}", pattern.compilation_warnings);
     assert_snapshot!(res);
 }
@@ -456,7 +459,8 @@ fn does_not_warn_against_regular_snippet_rewrite() {
     .to_string();
     let libs = BTreeMap::new();
     let default_language = PatternLanguage::Tsx.try_into().unwrap();
-    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
+    let pattern =
+        src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
     assert!(pattern.compilation_warnings.is_empty())
 }
 
@@ -470,7 +474,8 @@ fn warns_against_snippet_regex_without_metavars() {
     .to_string();
     let libs = BTreeMap::new();
     let default_language = PatternLanguage::Tsx.try_into().unwrap();
-    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
+    let pattern =
+        src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
     let res = format!("{:?}", pattern.compilation_warnings);
     assert_snapshot!(res);
 }
@@ -486,7 +491,8 @@ fn does_not_warn_against_snippet_regex_with_metavars() {
     .to_string();
     let libs = BTreeMap::new();
     let default_language = PatternLanguage::Tsx.try_into().unwrap();
-    let pattern = src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
+    let pattern =
+        src_to_problem_libs(pattern, &libs, default_language, None, None, None, None).unwrap();
     assert!(pattern.compilation_warnings.is_empty())
 }
 
@@ -8347,7 +8353,8 @@ fn distinct_on_primitives() {
 fn correct_variable_index() {
     let pattern = "`function () { $body }`".to_owned();
     let tsx: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
-    let _pattern = src_to_problem_libs(pattern, &BTreeMap::new(), tsx, None, None, None, None).unwrap();
+    let _pattern =
+        src_to_problem_libs(pattern, &BTreeMap::new(), tsx, None, None, None, None).unwrap();
 }
 
 #[test]
@@ -10376,6 +10383,51 @@ fn js_respects_blanket_grit_disable() {
                 |"#
             .trim_margin()
             .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn rust_respects_blanket_grit_disable() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language rust
+                |
+                |`println!($_)` => .
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+fn main() {
+    if cfg!(target_os = "linux") {
+        // grit-ignore
+        println!("cargo:rustc-link-lib=stdc++");
+        // grit-ignore
+        println!("cargo:rustc-link-lib=dylib=stdc++");
+        println!("cargo:rustc-link-lib=c");
+    } else if cfg!(target_os = "windows") {
+        // Does not work yet
+        // grit-ignore
+        println!("cargo:rustc-link-lib=dylib=stdc++");
+    }
+}"#
+            .to_owned(),
+            expected: r#"
+fn main() {
+    if cfg!(target_os = "linux") {
+        // grit-ignore
+        println!("cargo:rustc-link-lib=stdc++");
+        // grit-ignore
+        println!("cargo:rustc-link-lib=dylib=stdc++");
+    } else if cfg!(target_os = "windows") {
+        // Does not work yet
+        // grit-ignore
+        println!("cargo:rustc-link-lib=dylib=stdc++");
+    }
+}"#
+            .to_owned(),
         }
     })
     .unwrap();
@@ -13513,9 +13565,8 @@ fn php_array() {
 
 #[test]
 fn php_html_foreach() {
-    run_test_expected(
-        TestArgExpected {
-            pattern: r#"
+    run_test_expected(TestArgExpected {
+        pattern: r#"
                 |language php
                 |
                 |`foreach(^x as ^y){^_}` where {
@@ -13523,18 +13574,18 @@ fn php_html_foreach() {
                 |   ^y => `$y`,
                 |}
                 |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"
+        .trim_margin()
+        .unwrap(),
+        source: r#"
                 |<?php
                 |    $arr = array(1, 2, 3, 4);
                 |    foreach($arr as &$value) {
                 |        $value = $value * 2;
                 |    }
                 |?>"#
-            .trim_margin().
-            unwrap(),
-            expected: r#"
+            .trim_margin()
+            .unwrap(),
+        expected: r#"
                 |<?php
                 |    $arr = array(1, 2, 3, 4);
                 |    foreach($x as $y) {
@@ -13543,112 +13594,104 @@ fn php_html_foreach() {
                 |?>"#
             .trim_margin()
             .unwrap(),
-        }
-    )
+    })
     .unwrap();
 }
 
 #[test]
 fn php_echo() {
-    run_test_expected(
-        TestArgExpected {
-            pattern: r#"
+    run_test_expected(TestArgExpected {
+        pattern: r#"
                 |language php(only)
                 |
                 |`echo ^_;` => `print "modified";`
                 |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"
+        .trim_margin()
+        .unwrap(),
+        source: r#"
                 |$arr = array(1, 2, 3, 4);
                 |foreach($arr as &$value) {
                 |    echo $value * 2;
                 |}
                 |"#
-            .trim_margin().
-            unwrap(),
-            expected: r#"
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
                 |$arr = array(1, 2, 3, 4);
                 |foreach($arr as &$value) {
                 |    print "modified";
                 |}
                 |"#
-            .trim_margin()
-            .unwrap(),
-        }
-    )
+        .trim_margin()
+        .unwrap(),
+    })
     .unwrap();
 }
 
 #[test]
 fn php_cast() {
-    run_test_expected(
-        TestArgExpected {
-            pattern: r#"
+    run_test_expected(TestArgExpected {
+        pattern: r#"
                 |language php(only)
                 |
                 |`(^x) $a` => `(string) $a`
                 |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"
+        .trim_margin()
+        .unwrap(),
+        source: r#"
                 |$i = (int) $a;
                 |$f = (float) $a;
                 |"#
-            .trim_margin().
-            unwrap(),
-            expected: r#"
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
                 |$i = (string) $a;
                 |$f = (string) $a;
                 |"#
-            .trim_margin()
-            .unwrap(),
-        }
-    )
+        .trim_margin()
+        .unwrap(),
+    })
     .unwrap();
 }
 
 #[test]
 fn php_if() {
-    run_test_expected(
-        TestArgExpected {
-            pattern: r#"
+    run_test_expected(TestArgExpected {
+        pattern: r#"
                 |language php(only)
                 |
                 |`if(^a){^_}` where {
                 |   ^a => `$a == $b`,
                 |}
                 |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"
+        .trim_margin()
+        .unwrap(),
+        source: r#"
                 |$a = 1;
                 |$b = 1;
                 |if($a != $b){
                 |   echo "pass";
                 |}
                 |"#
-            .trim_margin().
-            unwrap(),
-            expected: r#"
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
                 |$a = 1;
                 |$b = 1;
                 |if($a == $b){
                 |   echo "pass";
                 |}
                 |"#
-            .trim_margin()
-            .unwrap(),
-        }
-    )
+        .trim_margin()
+        .unwrap(),
+    })
     .unwrap();
 }
 
 #[test]
 fn php_class() {
-    run_test_expected(
-        TestArgExpected {
-            pattern: r#"
+    run_test_expected(TestArgExpected {
+        pattern: r#"
                 |language php(only)
                 |
                 |`class ^name { 
@@ -13661,9 +13704,9 @@ fn php_class() {
                 |   ^a => `$a == $b`,
                 |}
                 |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"
+        .trim_margin()
+        .unwrap(),
+        source: r#"
                 |class A {
                 |    function foo()
                 |    {
@@ -13684,9 +13727,9 @@ fn php_class() {
                 |    }
                 |}
                 |"#
-            .trim_margin().
-            unwrap(),
-            expected: r#"
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
                 |class Mod {
                 |    function mod_method()
                 |    {
@@ -13707,10 +13750,9 @@ fn php_class() {
                 |    }
                 |}
                 |"#
-            .trim_margin()
-            .unwrap(),
-        }
-    )
+        .trim_margin()
+        .unwrap(),
+    })
     .unwrap();
 }
 
