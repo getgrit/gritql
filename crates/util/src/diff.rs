@@ -1,5 +1,4 @@
 use anyhow::{bail, Result};
-use regex::Regex;
 use serde::Serialize;
 use std::str::FromStr;
 
