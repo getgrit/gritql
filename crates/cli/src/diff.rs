@@ -1,9 +1,8 @@
 use anyhow::Result;
 use marzano_util::position::{FileRange, Position, RangeWithoutByte, UtilRange};
+use regex::Regex;
 use serde::Serialize;
 use std::{fs::File, io::Read, path::PathBuf, str::FromStr};
-
-use crate::commands::apply::SharedApplyArgs;
 
 pub fn git_diff(path: &PathBuf) -> Result<String> {
     let output = std::process::Command::new("git")
@@ -27,100 +26,87 @@ pub fn extract_modified_ranges(diff_path: &PathBuf) -> Result<Vec<FileDiff>> {
 // Define a new struct to hold before and after ranges
 #[derive(Debug, Clone, Serialize)]
 pub struct FileDiff {
-    pub file_path: String,
-    pub before: Vec<FileRange>,
-    pub after: Vec<FileRange>,
+    pub old_path: Option<String>,
+    pub new_path: String,
+    pub before: Vec<UtilRange>,
+    pub after: Vec<UtilRange>,
+}
+
+fn parse_hunk_part(range_part: &str) -> Result<UtilRange> {
+    let range_parts: Vec<&str> = range_part.split(',').collect();
+    if let Ok(line_num) = u32::from_str(range_parts[0].trim_start_matches(['+', '-'])) {
+        return Ok(UtilRange::RangeWithoutByte(RangeWithoutByte {
+            start: Position {
+                line: line_num,
+                column: 0,
+            },
+            end: Position {
+                line: line_num
+                    + range_parts
+                        .get(1)
+                        .map_or(1, |&x| x.parse::<u32>().unwrap_or(0)),
+                column: 0,
+            },
+        }));
+    }
+    Err(anyhow::anyhow!("Failed to parse hunk part"))
 }
 
 pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
     let mut results = Vec::new();
     let lines = diff.lines();
 
-    let mut is_deleted_file = false;
-    let mut current_file_diff = FileDiff {
-        file_path: String::new(),
-        before: Vec::new(),
-        after: Vec::new(),
-    };
-    let mut start_pos_before = Position { line: 0, column: 0 };
-    let mut end_pos_before = Position { line: 0, column: 0 };
-    let mut start_pos_after = Position { line: 0, column: 0 };
-    let mut end_pos_after = Position { line: 0, column: 0 };
+    let mut current_file_diff = None;
 
     for line in lines {
-        if line.starts_with("+++") {
-            if !current_file_diff.file_path.is_empty() {
-                // If the previous file was marked as deleted, only "before" ranges are relevant.
-                if is_deleted_file {
-                    current_file_diff.after.clear();
-                }
-                results.push(current_file_diff);
-            }
-            is_deleted_file = line.contains("/dev/null");
-            current_file_diff = FileDiff {
-                file_path: line
-                    .split_whitespace()
-                    .nth(1)
-                    .unwrap_or("")
-                    .to_string()
-                    .trim_start_matches("b/")
-                    .to_string(),
-                before: Vec::new(),
-                after: Vec::new(),
-            };
-        } else if line.starts_with("@@") {
-            let range_parts: Vec<&str> = line
+        if line.starts_with("---") {
+            let old_file_name = line
                 .split_whitespace()
                 .nth(1)
                 .unwrap_or("")
-                .split('+')
-                .collect();
-            let after_range_parts: Vec<&str> = line
+                .to_string()
+                .trim_start_matches("a/")
+                .to_string();
+
+            current_file_diff = Some(FileDiff {
+                old_path: Some(old_file_name.clone()),
+                new_path: Some(old_file_name),
+                before: Vec::new(),
+                after: Vec::new(),
+            });
+        } else if line.starts_with("+++") {
+            let new_file_name = line
                 .split_whitespace()
-                .nth(2)
+                .nth(1)
                 .unwrap_or("")
-                .split('+')
-                .collect();
+                .to_string()
+                .trim_start_matches("b/")
+                .to_string();
 
-            if let Ok(line_num_before) = u32::from_str(range_parts[0].trim_start_matches('-')) {
-                start_pos_before.line = line_num_before;
-                end_pos_before.line = line_num_before
-                    + range_parts
-                        .get(1)
-                        .map_or(1, |&x| x.parse::<u32>().unwrap_or(1));
+            if let Some(file_diff) = &mut current_file_diff {
+                file_diff.new_path = new_file_name;
+            } else {
+                current_file_diff = Some(FileDiff {
+                    old_path: None,
+                    new_path: new_file_name,
+                    before: Vec::new(),
+                    after: Vec::new(),
+                });
             }
+        } else if line.starts_with("@@") {
+            let parts = line.split_whitespace();
+            let before_range = parse_hunk_part(parts.nth(1).unwrap_or_default())?;
+            let after_range = parse_hunk_part(parts.nth(2).unwrap_or_default())?;
 
-            if let Ok(line_num_after) = u32::from_str(after_range_parts[0]) {
-                start_pos_after.line = line_num_after;
-                end_pos_after.line = line_num_after
-                    + after_range_parts
-                        .get(1)
-                        .map_or(1, |&x| x.parse::<u32>().unwrap_or(1));
+            println!("Before: {:?}, After: {:?}", before_range, after_range);
+
+            if let Some(file_diff) = &mut current_file_diff {
+                file_diff.before.push(before_range);
+                file_diff.after.push(after_range);
+            } else {
+                println!("No current file diff");
             }
-
-            current_file_diff.before.push(FileRange {
-                file_path: current_file_diff.file_path.clone(),
-                range: UtilRange::RangeWithoutByte(RangeWithoutByte {
-                    start: start_pos_before,
-                    end: end_pos_before,
-                }),
-            });
-
-            current_file_diff.after.push(FileRange {
-                file_path: current_file_diff.file_path.clone(),
-                range: UtilRange::RangeWithoutByte(RangeWithoutByte {
-                    start: start_pos_after,
-                    end: end_pos_after,
-                }),
-            });
         }
-    }
-
-    if !current_file_diff.file_path.is_empty() {
-        if is_deleted_file {
-            current_file_diff.after.clear();
-        }
-        results.push(current_file_diff);
     }
 
     Ok(results)
