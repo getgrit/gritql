@@ -28,10 +28,11 @@ patterns:
       engine marzano(0.1)
       language rust
 
-      `println!($_)` as $print => .  where {
-        $absolute_filename <: includes or {
-          "crates/gritmodule",
-          "crates/cli/",
+      `println!($args)` as $print where {
+        $outcome = .,
+        or {
+            $absolute_filename <: includes "crates/gritmodule",
+            and { $absolute_filename <: includes "crates/cli/", $outcome = `log::info($args)` }
         },
         // Allow tests and build utils
         $absolute_filename <: not includes or {
@@ -39,4 +40,4 @@ patterns:
           "build.rs",
         },
         $print <: not within `mod tests { $_ }`
-      }
+      } => $outcome

@@ -18,7 +18,7 @@ pub(crate) async fn run_login(_arg: LoginArgs) -> Result<()> {
 
     // Prompt the user to open the URL in their browser
     info!("Authenticating with the Grit API...");
-    println!(
+    log::info!(
         "Your one-time code is: {}\n",
         style(session.user_code()).bold().yellow()
     );
