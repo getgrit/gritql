@@ -41,7 +41,7 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
     let lines = diff.lines();
 
     for line in lines {
-        if line.starts_with("---") {
+        if line.starts_with("--- ") {
             let old_file_name = line
                 .split_whitespace()
                 .nth(1)
@@ -56,7 +56,7 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 before: Vec::new(),
                 after: Vec::new(),
             });
-        } else if line.starts_with("+++") {
+        } else if line.starts_with("+++ ") {
             let new_file_name = line
                 .split_whitespace()
                 .nth(1)
@@ -70,7 +70,7 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
             } else {
                 bail!("Encountered new file path without a current file diff");
             };
-        } else if line.starts_with("@@") {
+        } else if line.starts_with("@@ ") {
             let mut parts = line.split_whitespace();
             let before_range = parse_hunk_part(parts.nth(1).unwrap_or(""))?;
             // Note nth mutates the iterator, so after range is the next element
@@ -292,5 +292,14 @@ index f6e1a2c..2c58ad2 100644
 "#;
         let parsed = parse_modified_ranges(diff).unwrap();
         assert_yaml_snapshot!(parsed);
+    }
+
+    #[test]
+    fn handles_weird_diffs() {
+        // This diff includes diffs inside the diff itself
+        let diff = include_str!("../fixtures/long_diff.diff");
+        let parsed_diffs = parse_modified_ranges(diff).expect("Failed to parse diffs");
+        assert!(!parsed_diffs.is_empty(), "No diffs parsed");
+        assert!(parsed_diffs.iter().all(|diff| diff.new_path.is_some()));
     }
 }
