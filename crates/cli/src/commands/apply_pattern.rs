@@ -223,7 +223,7 @@ pub(crate) async fn run_apply_pattern(
         let json_ranges = flushable_unwrap!(emitter, parse_eslint_output(json_path));
         Some(json_ranges)
     } else {
-        flushable_unwrap!(emitter, extract_target_ranges(&shared))
+        flushable_unwrap!(emitter, extract_target_ranges(&shared.only_in_diff))
     };
 
     let (my_input, lang) = if let Some(pattern_libs) = pattern_libs {

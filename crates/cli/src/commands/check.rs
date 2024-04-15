@@ -31,7 +31,7 @@ use marzano_messenger::emit::{Messager, VisibilityLevels};
 use cli_server::check::CheckMessenger;
 
 use crate::{
-    diff::{extract_modified_ranges, git_diff, parse_modified_ranges},
+    diff::{extract_modified_ranges, extract_target_ranges, git_diff, parse_modified_ranges},
     error::GoodError,
     flags::{GlobalFormatFlags, OutputFormat},
     github::{log_check_annotations, write_check_summary},
@@ -122,16 +122,7 @@ pub(crate) async fn run_check(
         std::env::current_dir()?
     };
 
-    let filter_range = if let Some(Some(diff_path)) = &arg.only_in_diff {
-        let diff_ranges = extract_modified_ranges(diff_path)?;
-        Some(diff_ranges)
-    } else if let Some(None) = &arg.only_in_diff {
-        let diff = git_diff(&std::env::current_dir()?)?;
-        let diff_ranges = parse_modified_ranges(&diff)?;
-        Some(diff_ranges)
-    } else {
-        None
-    };
+    let filter_range = extract_target_ranges(&arg.only_in_diff)?;
 
     // Construct a resolver
     let resolver = GritModuleResolver::new(current_dir.to_str().unwrap());

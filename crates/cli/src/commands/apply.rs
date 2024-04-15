@@ -124,6 +124,7 @@ mod tests {
             paths,
             apply_migration_args,
             apply_pattern_args,
+            shared_apply_args: Default::default(),
         };
         run_apply(args, multi, &mut details, &GlobalFormatFlags::default()).await?;
         Ok(())

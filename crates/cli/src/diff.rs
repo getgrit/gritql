@@ -126,13 +126,15 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
     Ok(results)
 }
 
-pub(crate) fn extract_target_ranges(arg: &SharedApplyArgs) -> Result<Option<Vec<FileRange>>> {
-    if let Some(Some(diff_path)) = &arg.only_in_diff {
+pub(crate) fn extract_target_ranges(
+    arg: &Option<Option<PathBuf>>,
+) -> Result<Option<Vec<FileRange>>> {
+    if let Some(Some(diff_path)) = &arg {
         let diff_ranges = extract_modified_ranges(diff_path)?;
         Ok(Some(
             diff_ranges.into_iter().flat_map(|x| x.after).collect(),
         ))
-    } else if let Some(None) = &arg.only_in_diff {
+    } else if let Some(None) = &arg {
         let diff = git_diff(&std::env::current_dir()?)?;
         let diff_ranges = parse_modified_ranges(&diff)?;
         Ok(Some(
