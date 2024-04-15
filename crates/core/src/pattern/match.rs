@@ -5,7 +5,10 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{context::QueryContext, errors::debug};
+use crate::{
+    context::{ExecContext, QueryContext},
+    errors::debug,
+};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -56,7 +59,7 @@ impl<Q: QueryContext> Evaluator<Q> for Match<Q> {
                                     "Attempted to match against undefined variable {}",
                                     state.get_name(&var)
                                 );
-                                debug(logs, state, message.as_str())?;
+                                debug(logs, state, context.language(), message.as_str())?;
                             }
                             res
                         }
@@ -68,7 +71,7 @@ impl<Q: QueryContext> Evaluator<Q> for Match<Q> {
                                 "Attempted to match against undefined variable {}",
                                 state.get_name(&var)
                             );
-                            debug(logs, state, message.as_str())?;
+                            debug(logs, state, context.language(), message.as_str())?;
                         }
                         res
                     }

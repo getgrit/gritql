@@ -3,7 +3,12 @@ use super::{
     resolved_pattern::{pattern_to_binding, ResolvedPattern},
     State,
 };
-use crate::{binding::Constant, context::QueryContext, errors::debug, resolve};
+use crate::{
+    binding::Constant,
+    context::{ExecContext, QueryContext},
+    errors::debug,
+    resolve,
+};
 use anyhow::{bail, Result};
 use grit_util::AstNode;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -35,6 +40,7 @@ impl<Q: QueryContext> Before<Q> {
             debug(
                 logs,
                 state,
+                context.language(),
                 "no node before current node, treating as undefined",
             )?;
             Ok(ResolvedPattern::Constant(Constant::Undefined))

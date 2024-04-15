@@ -4,7 +4,7 @@ use super::{
     variable::Variable,
     State,
 };
-use crate::context::QueryContext;
+use crate::context::{ExecContext, QueryContext};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -35,7 +35,7 @@ impl<Q: QueryContext> RegexPattern<Q> {
         logs: &mut AnalysisLogs,
         must_match_entire_string: bool,
     ) -> Result<bool> {
-        let text = binding.text(&state.files)?;
+        let text = binding.text(&state.files, context.language())?;
         let resolved_regex_text = match &self.regex {
             RegexLike::Regex(regex) => match must_match_entire_string {
                 true => format!("^{}$", regex),
@@ -43,7 +43,7 @@ impl<Q: QueryContext> RegexPattern<Q> {
             },
             RegexLike::Pattern(ref pattern) => {
                 let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)?;
-                let text = resolved.text(&state.files)?;
+                let text = resolved.text(&state.files, context.language())?;
                 match must_match_entire_string {
                     true => format!("^{}$", text),
                     false => text.to_string(),
@@ -80,7 +80,11 @@ impl<Q: QueryContext> RegexPattern<Q> {
                 &mut state.bindings[variable.scope].back_mut().unwrap()[variable.index];
 
             if let Some(previous_value) = &variable_content.value {
-                if previous_value.text(&state.files).unwrap() != value {
+                if previous_value
+                    .text(&state.files, context.language())
+                    .unwrap()
+                    != value
+                {
                     return Ok(false);
                 } else {
                     continue;
@@ -89,7 +93,7 @@ impl<Q: QueryContext> RegexPattern<Q> {
                 let res = if let ResolvedPattern::Binding(binding) = binding {
                     if let Some(binding) = binding.last() {
                         if let (Some(mut position), Some(source)) =
-                            (binding.position(), binding.source())
+                            (binding.position(context.language()), binding.source())
                         {
                             // this moves the byte-range out of sync with
                             // the row-col range, maybe we should just

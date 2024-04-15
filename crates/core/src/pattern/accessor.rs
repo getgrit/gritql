@@ -6,8 +6,12 @@ use super::{
     state::State,
     variable::Variable,
 };
-use crate::{binding::Constant, context::QueryContext};
+use crate::{
+    binding::Constant,
+    context::{ExecContext, QueryContext},
+};
 use anyhow::{bail, Result};
+use marzano_language::language::Language;
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::borrow::Cow;
 
@@ -34,20 +38,21 @@ impl<Q: QueryContext> Accessor<Q> {
         Self { map, key }
     }
 
-    fn get_key<'a>(&'a self, state: &State<'a, Q>) -> Result<Cow<'a, str>> {
+    fn get_key<'a>(&'a self, state: &State<'a, Q>, lang: &impl Language) -> Result<Cow<'a, str>> {
         match &self.key {
             AccessorKey::String(s) => Ok(Cow::Borrowed(s)),
-            AccessorKey::Variable(v) => v.text(state),
+            AccessorKey::Variable(v) => v.text(state, lang),
         }
     }
 
     pub(crate) fn get<'a, 'b>(
         &'a self,
         state: &'b State<'a, Q>,
+        lang: &impl Language,
     ) -> Result<Option<PatternOrResolved<'a, 'b, Q>>> {
-        let key = self.get_key(state)?;
+        let key = self.get_key(state, lang)?;
         match &self.map {
-            AccessorMap::Container(c) => match c.get_pattern_or_resolved(state)? {
+            AccessorMap::Container(c) => match c.get_pattern_or_resolved(state, lang)? {
                 None => Ok(None),
                 Some(PatternOrResolved::Pattern(Pattern::Map(m))) => {
                     Ok(m.get(&key).map(PatternOrResolved::Pattern))
@@ -64,10 +69,11 @@ impl<Q: QueryContext> Accessor<Q> {
     pub(crate) fn get_mut<'a, 'b>(
         &'a self,
         state: &'b mut State<'a, Q>,
+        lang: &impl Language,
     ) -> Result<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
-        let key = self.get_key(state)?;
+        let key = self.get_key(state, lang)?;
         match &self.map {
-            AccessorMap::Container(c) => match c.get_pattern_or_resolved_mut(state)? {
+            AccessorMap::Container(c) => match c.get_pattern_or_resolved_mut(state, lang)? {
                 None => Ok(None),
                 Some(PatternOrResolvedMut::Pattern(Pattern::Map(m))) => {
                     Ok(m.get(&key).map(PatternOrResolvedMut::Pattern))
@@ -84,12 +90,13 @@ impl<Q: QueryContext> Accessor<Q> {
     pub(crate) fn set_resolved<'a>(
         &'a self,
         state: &mut State<'a, Q>,
+        lang: &impl Language,
         value: ResolvedPattern<'a>,
     ) -> Result<Option<ResolvedPattern<'a>>> {
         match &self.map {
             AccessorMap::Container(c) => {
-                let key = self.get_key(state)?;
-                match c.get_pattern_or_resolved_mut(state)? {
+                let key = self.get_key(state, lang)?;
+                match c.get_pattern_or_resolved_mut(state, lang)? {
                     None => Ok(None),
                     Some(PatternOrResolvedMut::Resolved(ResolvedPattern::Map(m))) => {
                         Ok(m.insert(key.to_string(), value))
@@ -116,12 +123,12 @@ impl<Q: QueryContext> Matcher<Q> for Accessor<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        match self.get(state)? {
+        match self.get(state, context.language())? {
             Some(PatternOrResolved::Resolved(r)) => {
-                execute_resolved_with_binding(r, binding, state)
+                execute_resolved_with_binding(r, binding, state, context.language())
             }
             Some(PatternOrResolved::ResolvedBinding(r)) => {
-                execute_resolved_with_binding(&r, binding, state)
+                execute_resolved_with_binding(&r, binding, state, context.language())
             }
             Some(PatternOrResolved::Pattern(p)) => p.execute(binding, state, context, logs),
             None => Ok(
@@ -136,15 +143,16 @@ pub(crate) fn execute_resolved_with_binding<'a, Q: QueryContext>(
     r: &ResolvedPattern<'a>,
     binding: &ResolvedPattern<'a>,
     state: &State<'a, Q>,
+    lang: &impl Language,
 ) -> Result<bool> {
     if let ResolvedPattern::Binding(r) = r {
         if let ResolvedPattern::Binding(b) = binding {
             if let (Some(r), Some(b)) = (r.last(), b.last()) {
-                return Ok(r.is_equivalent_to(b));
+                return Ok(r.is_equivalent_to(b, lang));
             } else {
                 bail!("Resolved pattern missing binding")
             }
         }
     }
-    Ok(r.text(&state.files)? == binding.text(&state.files)?)
+    Ok(r.text(&state.files, lang)? == binding.text(&state.files, lang)?)
 }

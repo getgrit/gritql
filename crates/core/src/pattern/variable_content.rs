@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use marzano_language::language::Language;
 use std::borrow::Cow;
 
 use crate::{context::QueryContext, pattern::patterns::Pattern};
@@ -29,9 +30,9 @@ impl<'a, Q: QueryContext> VariableContent<'a, Q> {
 
     // should we return an option instead of a Result?
     // should we trace pattern calls here? - currently only used by variable which already traces
-    pub fn text(&self, state: &State<'a, Q>) -> Result<Cow<'a, str>> {
+    pub fn text(&self, state: &State<'a, Q>, language: &impl Language) -> Result<Cow<'a, str>> {
         if let Some(value) = &self.value {
-            value.text(&state.files)
+            value.text(&state.files, language)
         } else {
             Err(anyhow!("no value for variable {}", self.name))
         }

@@ -3,7 +3,12 @@ use super::{
     resolved_pattern::{pattern_to_binding, ResolvedPattern},
     State,
 };
-use crate::{binding::Constant, context::QueryContext, errors::debug, resolve};
+use crate::{
+    binding::Constant,
+    context::{ExecContext, QueryContext},
+    errors::debug,
+    resolve,
+};
 use anyhow::{bail, Result};
 use core::fmt::Debug;
 use grit_util::AstNode;
@@ -36,6 +41,7 @@ impl<Q: QueryContext> After<Q> {
             debug(
                 logs,
                 state,
+                context.language(),
                 "no node after current node, treating as undefined",
             )?;
             Ok(ResolvedPattern::Constant(Constant::Undefined))

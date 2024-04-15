@@ -13,7 +13,10 @@ use super::{
     target_arch = "wasm32"
 ))]
 use crate::context::ExecContext;
-use crate::{binding::Constant, context::QueryContext};
+use crate::{
+    binding::Constant,
+    context::{ExecContext, QueryContext},
+};
 use anyhow::{bail, Result};
 #[cfg(feature = "external_functions")]
 use marzano_externals::function::ExternalFunction;
@@ -126,7 +129,7 @@ impl<Q: QueryContext> FunctionDefinition<Q> for ForeignFunctionDefinition {
 
         for r in resolved.iter() {
             match r {
-                Some(r) => match r.text(&state.files) {
+                Some(r) => match r.text(&state.files, context.language()) {
                     Ok(t) => cow_resolved.push(t),
                     Err(e) => bail!("failed to get text from resolved pattern: {}", e),
                 },

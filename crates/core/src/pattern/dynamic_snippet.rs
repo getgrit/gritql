@@ -8,7 +8,7 @@ use super::{
     variable::Variable,
     State,
 };
-use crate::context::QueryContext;
+use crate::context::{ExecContext, QueryContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -48,7 +48,7 @@ impl<Q: QueryContext> DynamicPattern<Q> {
         logs: &mut AnalysisLogs,
     ) -> Result<String> {
         let resolved = ResolvedPattern::from_dynamic_pattern(self, state, context, logs)?;
-        Ok(resolved.text(&state.files)?.to_string())
+        Ok(resolved.text(&state.files, context.language())?.to_string())
     }
 }
 
@@ -66,7 +66,7 @@ impl<Q: QueryContext> Matcher<Q> for DynamicPattern<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        if binding.text(&state.files)? == self.text(state, context, logs)? {
+        if binding.text(&state.files, context.language())? == self.text(state, context, logs)? {
             Ok(true)
         } else {
             Ok(false)

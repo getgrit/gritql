@@ -10,7 +10,7 @@ use super::{
 };
 use crate::{
     binding::{Binding, Constant},
-    context::QueryContext,
+    context::{ExecContext, QueryContext},
     pattern::{container::PatternOrResolved, patterns::PatternName},
     problem::{Effect, EffectKind},
 };
@@ -62,10 +62,14 @@ impl<'a> File<'a> {
         }
     }
 
-    pub(crate) fn absolute_path(&self, files: &FileRegistry<'a>) -> Result<ResolvedPattern<'a>> {
+    pub(crate) fn absolute_path(
+        &self,
+        files: &FileRegistry<'a>,
+        language: &impl Language,
+    ) -> Result<ResolvedPattern<'a>> {
         match self {
             File::Resolved(resolved) => {
-                let name = resolved.name.text(files)?;
+                let name = resolved.name.text(files, language)?;
                 let absolute_path = absolutize(name.as_ref())?;
                 Ok(ResolvedPattern::Constant(Constant::String(absolute_path)))
             }
@@ -147,11 +151,11 @@ impl<'a> JoinFn<'a> {
         }
     }
 
-    fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
+    fn text(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<Cow<'a, str>> {
         Ok(self
             .list
             .iter()
-            .map(|pattern| pattern.text(state))
+            .map(|pattern| pattern.text(state, language))
             .collect::<Result<Vec<_>>>()?
             .join(&self.separator)
             .into())
@@ -180,9 +184,13 @@ impl<'a> LazyBuiltIn<'a> {
         }
     }
 
-    pub(crate) fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
+    pub(crate) fn text(
+        &self,
+        state: &FileRegistry<'a>,
+        language: &impl Language,
+    ) -> Result<Cow<'a, str>> {
         match self {
-            LazyBuiltIn::Join(join) => join.text(state),
+            LazyBuiltIn::Join(join) => join.text(state, language),
         }
     }
 }
@@ -222,22 +230,26 @@ impl<'a> ResolvedSnippet<'a> {
 
     // if the snippet is text consisting of newlines followed by spaces, returns the number of spaces.
     // might not be general enough, but should be good for a first pass
-    fn padding(&self, state: &FileRegistry<'a>) -> Result<usize> {
-        let text = self.text(state)?;
+    fn padding(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<usize> {
+        let text = self.text(state, language)?;
         let len = text.len();
         let trim_len = text.trim_end_matches(' ').len();
         Ok(len - trim_len)
     }
 
-    pub(crate) fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
+    pub(crate) fn text(
+        &self,
+        state: &FileRegistry<'a>,
+        language: &impl Language,
+    ) -> Result<Cow<'a, str>> {
         match self {
             ResolvedSnippet::Text(text) => Ok(text.clone()),
             ResolvedSnippet::Binding(binding) => {
                 // we are now taking the unmodified source code, and replacing the binding with the snippet
                 // we will want to apply effects next
-                Ok(binding.text().into())
+                Ok(binding.text(language).into())
             }
-            ResolvedSnippet::LazyFn(lazy) => lazy.text(state),
+            ResolvedSnippet::LazyFn(lazy) => lazy.text(state, language),
         }
     }
 
@@ -270,11 +282,15 @@ impl<'a> ResolvedSnippet<'a> {
         res
     }
 
-    pub(crate) fn is_truthy<Q: QueryContext>(&self, state: &mut State<'a, Q>) -> Result<bool> {
+    pub(crate) fn is_truthy<Q: QueryContext>(
+        &self,
+        state: &mut State<'a, Q>,
+        language: &impl Language,
+    ) -> Result<bool> {
         let truthiness = match self {
             Self::Binding(b) => b.is_truthy(),
             Self::Text(t) => !t.is_empty(),
-            Self::LazyFn(t) => !t.text(&state.files)?.is_empty(),
+            Self::LazyFn(t) => !t.text(&state.files, language)?.is_empty(),
         };
         Ok(truthiness)
     }
@@ -368,10 +384,10 @@ impl<'a> ResolvedPattern<'a> {
         }
     }
 
-    pub(crate) fn position(&self) -> Option<Range> {
+    pub(crate) fn position(&self, language: &impl Language) -> Option<Range> {
         if let ResolvedPattern::Binding(binding) = self {
             if let Some(binding) = binding.last() {
-                return binding.position();
+                return binding.position(language);
             }
         }
         None
@@ -552,7 +568,7 @@ impl<'a> ResolvedPattern<'a> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
-        match accessor.get(state)? {
+        match accessor.get(state, context.language())? {
             Some(PatternOrResolved::Pattern(pattern)) => {
                 ResolvedPattern::from_pattern(pattern, state, context, logs)
             }
@@ -568,7 +584,7 @@ impl<'a> ResolvedPattern<'a> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
-        match index.get(state)? {
+        match index.get(state, context.language())? {
             Some(PatternOrResolved::Pattern(pattern)) => {
                 ResolvedPattern::from_pattern(pattern, state, context, logs)
             }
@@ -643,7 +659,7 @@ impl<'a> ResolvedPattern<'a> {
                 let name = &file_pattern.name;
                 let body = &file_pattern.body;
                 let name = ResolvedPattern::from_pattern(name, state, context, logs)?;
-                let name = name.text(&state.files)?;
+                let name = name.text(&state.files, context.language())?;
                 let name = ResolvedPattern::Constant(Constant::String(name.to_string()));
                 let body = ResolvedPattern::from_pattern(body, state, context, logs)?;
                 // todo: replace GENERATED_SOURCE with a computed source once linearization and
@@ -722,7 +738,7 @@ impl<'a> ResolvedPattern<'a> {
                             Some(padding),
                             logs,
                         )?;
-                        padding = snippet.padding(files)?;
+                        padding = snippet.padding(files, language)?;
                         res.push_str(&text);
                     }
                     Ok(res.into())
@@ -814,7 +830,7 @@ impl<'a> ResolvedPattern<'a> {
         }
     }
 
-    pub(crate) fn float(&self, state: &FileRegistry<'a>) -> Result<f64> {
+    pub(crate) fn float(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<f64> {
         match self {
             ResolvedPattern::Constant(c) => match c {
                 Constant::Float(d) => Ok(*d),
@@ -825,7 +841,7 @@ impl<'a> ResolvedPattern<'a> {
             ResolvedPattern::Snippets(s) => {
                 let text = s
                     .iter()
-                    .map(|snippet| snippet.text(state))
+                    .map(|snippet| snippet.text(state, language))
                     .collect::<Result<Vec<_>>>()?
                     .join("");
                 text.parse::<f64>().map_err(|_| {
@@ -836,7 +852,7 @@ impl<'a> ResolvedPattern<'a> {
                 let text = binding
                     .last()
                     .ok_or_else(|| anyhow!("cannot grab text of resolved_pattern with no binding"))?
-                    .text();
+                    .text(language);
                 text.parse::<f64>().map_err(|_| {
                     anyhow!("Failed to convert binding to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")
                 })
@@ -862,17 +878,17 @@ impl<'a> ResolvedPattern<'a> {
     }
 
     // should we instead return an Option?
-    pub fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
+    pub fn text(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<Cow<'a, str>> {
         match self {
             ResolvedPattern::Snippets(snippets) => Ok(snippets
                 .iter()
-                .map(|snippet| snippet.text(state))
+                .map(|snippet| snippet.text(state, language))
                 .collect::<Result<Vec<_>>>()?
                 .join("")
                 .into()),
             ResolvedPattern::List(list) => Ok(list
                 .iter()
-                .map(|pattern| pattern.text(state))
+                .map(|pattern| pattern.text(state, language))
                 .collect::<Result<Vec<_>>>()?
                 .join(",")
                 .into()),
@@ -883,7 +899,9 @@ impl<'a> ResolvedPattern<'a> {
                         format!(
                             "\"{}\": {}",
                             key,
-                            value.text(state).expect("failed to get text of map value")
+                            value
+                                .text(state, language)
+                                .expect("failed to get text of map value")
                         )
                     })
                     .collect::<Vec<_>>()
@@ -893,15 +911,15 @@ impl<'a> ResolvedPattern<'a> {
             ResolvedPattern::Binding(binding) => Ok(binding
                 .last()
                 .ok_or_else(|| anyhow!("cannot grab text of resolved_pattern with no binding"))?
-                .text()
+                .text(language)
                 .into()),
             ResolvedPattern::File(file) => Ok(format!(
                 "{}:\n{}",
-                file.name(state).text(state)?,
-                file.body(state).text(state)?
+                file.name(state).text(state, language)?,
+                file.body(state).text(state, language)?
             )
             .into()),
-            ResolvedPattern::Files(files) => files.text(state),
+            ResolvedPattern::Files(files) => files.text(state, language),
             ResolvedPattern::Constant(constant) => Ok(constant.to_string().into()),
         }
     }
@@ -919,14 +937,18 @@ impl<'a> ResolvedPattern<'a> {
             return Ok(());
         };
         if let Some(padding) = binding.get_insertion_padding(text, is_first, language) {
-            if padding.chars().next() != binding.text().chars().last() {
+            if padding.chars().next() != binding.text(language).chars().last() {
                 snippets.push_front(ResolvedSnippet::Text(padding.into()));
             }
         }
         Ok(())
     }
 
-    pub(crate) fn is_truthy<Q: QueryContext>(&self, state: &mut State<'a, Q>) -> Result<bool> {
+    pub(crate) fn is_truthy<Q: QueryContext>(
+        &self,
+        state: &mut State<'a, Q>,
+        language: &impl Language,
+    ) -> Result<bool> {
         let truthiness = match self {
             Self::Binding(bindings) => bindings.last().map_or(false, Binding::is_truthy),
             Self::List(elements) => !elements.is_empty(),
@@ -934,7 +956,7 @@ impl<'a> ResolvedPattern<'a> {
             Self::Constant(c) => c.is_truthy(),
             Self::Snippets(s) => {
                 if let Some(s) = s.last() {
-                    s.is_truthy(state)?
+                    s.is_truthy(state, language)?
                 } else {
                     false
                 }

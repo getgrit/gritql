@@ -189,9 +189,9 @@ fn resolve_path_fn<'a>(
 ) -> Result<ResolvedPattern<'a>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
 
-    let current_file = get_absolute_file_name(state)?;
+    let current_file = get_absolute_file_name(state, context.language())?;
     let target_path = match &args[0] {
-        Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
+        Some(resolved_pattern) => resolved_pattern.text(&state.files, context.language())?,
         None => return Err(anyhow!("No path argument provided for resolve function")),
     };
 
@@ -217,7 +217,7 @@ fn capitalize_fn<'a>(
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let s = match &args[0] {
-        Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
+        Some(resolved_pattern) => resolved_pattern.text(&state.files, context.language())?,
         None => return Err(anyhow!("No argument provided for capitalize function")),
     };
     Ok(ResolvedPattern::from_string(capitalize(&s)))
@@ -232,7 +232,7 @@ fn lowercase_fn<'a>(
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let s = match &args[0] {
-        Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
+        Some(resolved_pattern) => resolved_pattern.text(&state.files, context.language())?,
         None => return Err(anyhow!("lowercase takes 1 argument")),
     };
     Ok(ResolvedPattern::from_string(s.to_lowercase()))
@@ -247,7 +247,7 @@ fn uppercase_fn<'a>(
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let s = match &args[0] {
-        Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
+        Some(resolved_pattern) => resolved_pattern.text(&state.files, context.language())?,
         None => return Err(anyhow!("uppercase takes 1 argument")),
     };
     Ok(ResolvedPattern::from_string(s.to_uppercase()))
@@ -262,7 +262,7 @@ fn text_fn<'a>(
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let s = match args.first() {
-        Some(Some(resolved_pattern)) => resolved_pattern.text(&state.files)?,
+        Some(Some(resolved_pattern)) => resolved_pattern.text(&state.files, context.language())?,
         _ => return Err(anyhow!("text takes 1 argument")),
     };
     Ok(ResolvedPattern::from_string(s.to_string()))
@@ -277,12 +277,12 @@ fn trim_fn<'a>(
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let trim_chars = match &args[1] {
-        Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
+        Some(resolved_pattern) => resolved_pattern.text(&state.files, context.language())?,
         None => return Err(anyhow!("trim takes 2 arguments: string and trim_chars")),
     };
 
     let s = match &args[0] {
-        Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
+        Some(resolved_pattern) => resolved_pattern.text(&state.files, context.language())?,
         None => return Err(anyhow!("trim takes 2 arguments: string and trim_chars")),
     };
 
@@ -301,12 +301,12 @@ fn split_fn<'a>(
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let string = if let Some(string) = &args[0] {
-        string.text(&state.files)?
+        string.text(&state.files, context.language())?
     } else {
         bail!("split requires parameter string")
     };
     let separator = if let Some(separator) = &args[1] {
-        separator.text(&state.files)?
+        separator.text(&state.files, context.language())?
     } else {
         bail!("split requires parameter separator")
     };
@@ -327,8 +327,8 @@ fn random_fn<'a>(
 
     match args.as_slice() {
         [Some(start), Some(end)] => {
-            let start = start.text(&state.files)?;
-            let end = end.text(&state.files)?;
+            let start = start.text(&state.files, context.language())?;
+            let end = end.text(&state.files, context.language())?;
             let start = start.parse::<i64>().unwrap();
             let end = end.parse::<i64>().unwrap();
             // Inclusive range
@@ -359,7 +359,7 @@ fn join_fn<'a>(
 
     let separator = &args[1];
     let separator = match separator {
-        Some(resolved_pattern) => resolved_pattern.text(&state.files)?,
+        Some(resolved_pattern) => resolved_pattern.text(&state.files, context.language())?,
         None => return Err(anyhow!("trim takes 2 arguments: list and separator")),
     };
 
@@ -484,14 +484,14 @@ fn length_fn<'a>(
                 let length = if let Some(list_items) = resolved_pattern.list_items() {
                     list_items.count()
                 } else {
-                    resolved_pattern.text().len()
+                    resolved_pattern.text(context.language()).len()
                 };
                 Ok(ResolvedPattern::Constant(Constant::Integer(length as i64)))
             }
             None => Err(anyhow!("length argument must be a list or string")),
         },
         Some(resolved_pattern) => {
-            if let Ok(text) = resolved_pattern.text(&state.files) {
+            if let Ok(text) = resolved_pattern.text(&state.files, context.language()) {
                 let length = text.len();
                 Ok(ResolvedPattern::Constant(Constant::Integer(length as i64)))
             } else {

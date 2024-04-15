@@ -4,7 +4,7 @@ use super::{
     variable::Variable,
     State,
 };
-use crate::context::QueryContext;
+use crate::context::{ExecContext, QueryContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -33,7 +33,7 @@ impl<Q: QueryContext> Evaluator<Q> for Equal<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
-        let lhs_text = self.var.text(state)?;
+        let lhs_text = self.var.text(state, context.language())?;
         let rhs_text = self.pattern.text(state, context, logs)?;
         Ok(FuncEvaluation {
             predicator: lhs_text == rhs_text,

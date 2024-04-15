@@ -5,6 +5,7 @@ use super::{
     resolved_pattern::ResolvedPattern, state::State, variable::Variable,
 };
 use anyhow::Result;
+use marzano_language::language::Language;
 
 /// A `Container` represents anything which "contains" a reference to a Pattern.
 ///
@@ -37,6 +38,7 @@ impl<Q: QueryContext> Container<Q> {
     pub(crate) fn set_resolved<'a>(
         &'a self,
         state: &mut State<'a, Q>,
+        lang: &impl Language,
         value: ResolvedPattern<'a>,
     ) -> Result<Option<ResolvedPattern<'a>>> {
         match self {
@@ -44,35 +46,37 @@ impl<Q: QueryContext> Container<Q> {
                 let var = state.trace_var(v);
                 let content = &mut state.bindings[var.scope].back_mut().unwrap()[var.index];
                 match content.pattern {
-                    Some(Pattern::Accessor(a)) => a.set_resolved(state, value),
-                    Some(Pattern::ListIndex(l)) => l.set_resolved(state, value),
+                    Some(Pattern::Accessor(a)) => a.set_resolved(state, lang, value),
+                    Some(Pattern::ListIndex(l)) => l.set_resolved(state, lang, value),
                     None | Some(_) => Ok(content.set_value(value)),
                 }
             }
-            Container::Accessor(a) => a.set_resolved(state, value),
-            Container::ListIndex(l) => l.set_resolved(state, value),
+            Container::Accessor(a) => a.set_resolved(state, lang, value),
+            Container::ListIndex(l) => l.set_resolved(state, lang, value),
         }
     }
 
     pub(crate) fn get_pattern_or_resolved<'a, 'b>(
         &'a self,
         state: &'b State<'a, Q>,
+        lang: &impl Language,
     ) -> Result<Option<PatternOrResolved<'a, 'b, Q>>> {
         match self {
             Container::Variable(v) => v.get_pattern_or_resolved(state),
-            Container::Accessor(a) => a.get(state),
-            Container::ListIndex(a) => a.get(state),
+            Container::Accessor(a) => a.get(state, lang),
+            Container::ListIndex(a) => a.get(state, lang),
         }
     }
 
     pub(crate) fn get_pattern_or_resolved_mut<'a, 'b>(
         &'a self,
         state: &'b mut State<'a, Q>,
+        lang: &impl Language,
     ) -> Result<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
         match self {
             Container::Variable(v) => v.get_pattern_or_resolved_mut(state),
-            Container::Accessor(a) => a.get_mut(state),
-            Container::ListIndex(l) => l.get_mut(state),
+            Container::Accessor(a) => a.get_mut(state, lang),
+            Container::ListIndex(l) => l.get_mut(state, lang),
         }
     }
 }
