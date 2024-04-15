@@ -218,16 +218,15 @@ fn maybe_spawn_analytics_worker(
     cmd.arg("--installation-id");
     cmd.arg(installation_id.to_string());
 
-    // No telemetry in the worker
-    cmd.env("RUST_LOG", "off");
-
     cmd.arg("--command")
         .arg(command.to_string())
         .arg("--args")
         .arg(args.join(" "))
         .stdin(Stdio::piped());
 
-    if !is_telemetry_foregrounded() {
+    if is_telemetry_foregrounded() {
+        cmd.arg("--log-level=info");
+    } else {
         cmd.stdout(Stdio::null());
         cmd.stderr(Stdio::null());
     }
