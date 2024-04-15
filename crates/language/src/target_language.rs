@@ -1,5 +1,5 @@
-use crate::language::Replacement;
 use crate::language::{GritMetaValue, LeafEquivalenceClass, SnippetTree, TSLanguage};
+use crate::language::{NodeTypes, Replacement};
 use crate::{
     csharp::CSharp,
     css::Css,
@@ -455,6 +455,35 @@ pub fn expand_paths(
 
     let final_walker = file_walker.standard_filters(true).hidden(false).build();
     Ok(final_walker)
+}
+
+impl NodeTypes for TargetLanguage {
+    fn node_types(&self) -> &[Vec<Field>] {
+        match self {
+            TargetLanguage::JavaScript(l) => l.node_types(),
+            TargetLanguage::TypeScript(l) => l.node_types(),
+            TargetLanguage::Tsx(l) => l.node_types(),
+            TargetLanguage::Html(l) => l.node_types(),
+            TargetLanguage::Css(l) => l.node_types(),
+            TargetLanguage::Json(l) => l.node_types(),
+            TargetLanguage::Java(l) => l.node_types(),
+            TargetLanguage::CSharp(l) => l.node_types(),
+            TargetLanguage::Python(l) => l.node_types(),
+            TargetLanguage::MarkdownBlock(l) => l.node_types(),
+            TargetLanguage::MarkdownInline(l) => l.node_types(),
+            TargetLanguage::Go(l) => l.node_types(),
+            TargetLanguage::Rust(l) => l.node_types(),
+            TargetLanguage::Ruby(l) => l.node_types(),
+            TargetLanguage::Solidity(l) => l.node_types(),
+            TargetLanguage::Hcl(l) => l.node_types(),
+            TargetLanguage::Yaml(l) => l.node_types(),
+            TargetLanguage::Vue(l) => l.node_types(),
+            TargetLanguage::Toml(l) => l.node_types(),
+            TargetLanguage::Sql(l) => l.node_types(),
+            TargetLanguage::Php(l) => l.node_types(),
+            TargetLanguage::PhpOnly(l) => l.node_types(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

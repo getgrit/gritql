@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
+use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str =
     include_str!("../../../resources/node-types/csharp-node-types.json");
@@ -41,6 +41,12 @@ impl CSharp {
     }
 }
 
+impl NodeTypes for CSharp {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
+}
+
 impl Language for CSharp {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -52,10 +58,6 @@ impl Language for CSharp {
 
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
         &[("", "")]
-    }
-
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
     }
 
     fn metavariable_sort(&self) -> SortId {

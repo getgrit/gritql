@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
+use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/html-node-types.json");
 
@@ -41,6 +41,12 @@ impl Html {
     }
 }
 
+impl NodeTypes for Html {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
+}
+
 impl Language for Html {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -51,10 +57,6 @@ impl Language for Html {
     }
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
         &[("", "")]
-    }
-
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
     }
 
     fn metavariable_sort(&self) -> SortId {

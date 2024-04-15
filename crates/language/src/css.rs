@@ -1,7 +1,9 @@
 use std::sync::OnceLock;
 
 use crate::{
-    language::{default_parse_file, fields_for_nodes, Field, Language, SortId, TSLanguage},
+    language::{
+        default_parse_file, fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage,
+    },
     vue::get_vue_ranges,
 };
 use anyhow::anyhow;
@@ -49,6 +51,12 @@ impl Css {
     }
 }
 
+impl NodeTypes for Css {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
+}
+
 impl Language for Css {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -63,10 +71,6 @@ impl Language for Css {
             ("GRIT_BLOCK { ", " }"),
             ("GRIT_BLOCK { GRIT_PROPERTY: ", " }"),
         ]
-    }
-
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
     }
 
     fn metavariable_sort(&self) -> SortId {

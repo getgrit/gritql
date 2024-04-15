@@ -2,8 +2,8 @@ use crate::problem::{FileOwner, InputRanges, Problem};
 use crate::{fs, tree_sitter_serde::tree_sitter_node_to_json};
 use anyhow::{bail, Result};
 use im::Vector;
+use marzano_language::grit_ts_node::grit_node_types;
 use marzano_language::language::Language;
-use marzano_language::tsx::Tsx;
 use marzano_util::analysis_logs::AnalysisLog as MarzanoAnalysisLog;
 use marzano_util::position::{Position, Range, VariableMatch};
 use serde::{Deserialize, Serialize};
@@ -247,8 +247,13 @@ pub struct PatternInfo {
 impl PatternInfo {
     pub fn from_compiled(compiled: Problem, source_file: String) -> Self {
         let node = compiled.tree.root_node();
-        let parsed_pattern =
-            to_string_pretty(&tree_sitter_node_to_json(&node, &source_file, None::<&Tsx>)).unwrap();
+        let grit_node_types = grit_node_types();
+        let parsed_pattern = to_string_pretty(&tree_sitter_node_to_json(
+            &node,
+            &source_file,
+            &grit_node_types,
+        ))
+        .unwrap();
         Self {
             messages: vec![],
             variables: compiled.compiled_vars(),
@@ -284,12 +289,8 @@ impl Match {
         tree: &Tree,
         language: &impl Language,
     ) -> Self {
-        let input_file_debug_text = to_string_pretty(&tree_sitter_node_to_json(
-            &tree.root_node(),
-            file,
-            Some(language),
-        ))
-        .unwrap();
+        let input_file_debug_text =
+            to_string_pretty(&tree_sitter_node_to_json(&tree.root_node(), file, language)).unwrap();
         Self {
             debug: input_file_debug_text,
             source_file: name.to_owned(),
