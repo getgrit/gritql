@@ -14376,11 +14376,19 @@
     "named": false
   },
   {
+    "type": "c",
+    "named": false
+  },
+  {
     "type": "comment",
     "named": true
   },
   {
     "type": "contains",
+    "named": false
+  },
+  {
+    "type": "cpp",
     "named": false
   },
   {
@@ -14633,11 +14641,11 @@
   },
   {
     "type": "variable",
-    "named": true
+    "named": false
   },
   {
     "type": "variable",
-    "named": false
+    "named": true
   },
   {
     "type": "where",
