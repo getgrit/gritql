@@ -33,7 +33,10 @@ patterns:
           "crates/gritmodule",
           "crates/cli/",
         },
-        // Allow tests
-        $absolute_filename <: not includes "tests",
+        // Allow tests and build utils
+        $absolute_filename <: not includes or {
+          "tests/",
+          "build.rs",
+        },
         $print <: not within `mod tests { $_ }`
       }
