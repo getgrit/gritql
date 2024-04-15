@@ -76,8 +76,6 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
             // Note nth mutates the iterator, so after range is the next element
             let after_range = parse_hunk_part(parts.next().unwrap_or(""))?;
 
-            println!("Before: {:?}, After: {:?}", before_range, after_range);
-
             if let Some(file_diff) = results.last_mut() {
                 file_diff.before.push(before_range);
                 file_diff.after.push(after_range);
