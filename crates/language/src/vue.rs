@@ -25,6 +25,7 @@ fn language() -> TSLanguage {
 pub struct Vue {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,
+    comment_sort: SortId,
     language: &'static TSLanguage,
 }
 
@@ -33,9 +34,11 @@ impl Vue {
         let language = LANGUAGE.get_or_init(|| lang.unwrap_or_else(language));
         let node_types = NODE_TYPES.get_or_init(|| fields_for_nodes(language, NODE_TYPES_STRING));
         let metavariable_sort = language.id_for_node_kind("grit_metavariable", true);
+        let comment_sort = language.id_for_node_kind("comment", true);
         Self {
             node_types,
             metavariable_sort,
+            comment_sort,
             language,
         }
     }
@@ -64,6 +67,10 @@ impl Language for Vue {
 
     fn metavariable_sort(&self) -> SortId {
         self.metavariable_sort
+    }
+
+    fn is_comment(&self, id: SortId) -> bool {
+        id == self.comment_sort
     }
 
     fn make_single_line_comment(&self, text: &str) -> String {

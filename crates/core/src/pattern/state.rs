@@ -87,7 +87,7 @@ fn get_top_level_effect_ranges<'a>(
         .filter(|effect| {
             let binding = &effect.binding;
             if let Some(src) = binding.source() {
-                if let Some(binding_range) = binding.code_range() {
+                if let Some(binding_range) = binding.code_range(language) {
                     range.applies_to(src) && !matches!(memo.get(&binding_range), Some(None))
                 } else {
                     let _ = binding.log_empty_field_rewrite_error(language, logs);
@@ -100,7 +100,7 @@ fn get_top_level_effect_ranges<'a>(
         .map(|effect| {
             let binding = &effect.binding;
             let ts_range = binding
-                .position()
+                .position(language)
                 .ok_or_else(|| anyhow!("binding has no position"))?;
             let end_byte = ts_range.end_byte;
             let start_byte = ts_range.start_byte;
@@ -243,7 +243,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
                                 suppressed_count += 1;
                                 continue;
                             }
-                            if let Some(match_position) = binding.position() {
+                            if let Some(match_position) = binding.position(lang) {
                                 // TODO, this check only needs to be done at the global scope right?
                                 if name == MATCH_VAR {
                                     // apply_match = true;

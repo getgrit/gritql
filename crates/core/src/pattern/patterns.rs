@@ -49,7 +49,7 @@ use super::{
     within::Within,
     State,
 };
-use crate::context::QueryContext;
+use crate::context::{ExecContext, QueryContext};
 use anyhow::{bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -143,7 +143,7 @@ impl<Q: QueryContext> Pattern<Q> {
         logs: &mut AnalysisLogs,
     ) -> Result<String> {
         Ok(ResolvedPattern::from_pattern(self, state, context, logs)?
-            .text(&state.files)?
+            .text(&state.files, context.language())?
             .to_string())
     }
 
@@ -153,7 +153,8 @@ impl<Q: QueryContext> Pattern<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<f64> {
-        ResolvedPattern::from_pattern(self, state, context, logs)?.float(&state.files)
+        ResolvedPattern::from_pattern(self, state, context, logs)?
+            .float(&state.files, context.language())
     }
 }
 
@@ -229,7 +230,7 @@ impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
             state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[FILENAME_INDEX].value =
                 Some(file.name(&state.files));
             state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[ABSOLUTE_PATH_INDEX]
-                .value = Some(file.absolute_path(&state.files)?);
+                .value = Some(file.absolute_path(&state.files, context.language())?);
             state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[PROGRAM_INDEX].value =
                 Some(file.binding(&state.files));
         }

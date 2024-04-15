@@ -184,11 +184,15 @@ impl<Q: QueryContext> Matcher<Q> for Step<Q> {
                 if let ResolvedPattern::File(file) = f {
                     let name: PathBuf = file
                         .name(&state.files)
-                        .text(&state.files)
+                        .text(&state.files, context.language())
                         .unwrap()
                         .as_ref()
                         .into();
-                    let body = file.body(&state.files).text(&state.files).unwrap().into();
+                    let body = file
+                        .body(&state.files)
+                        .text(&state.files, context.language())
+                        .unwrap()
+                        .into();
                     let owned_file =
                         FileOwner::new(name.clone(), body, None, true, context.language(), logs)?
                             .ok_or_else(|| {

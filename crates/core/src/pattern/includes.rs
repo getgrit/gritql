@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::QueryContext;
+use crate::context::{ExecContext, QueryContext};
 use anyhow::{Context as _, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -111,10 +111,10 @@ fn execute<'a, Q: QueryContext>(
         | Pattern::Like(_) => {
             let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)
                 .context("includes can only be used with patterns that can be resolved")?;
-            let substring = resolved.text(&state.files).context(
+            let substring = resolved.text(&state.files, context.language()).context(
                 "includes can only be used with patterns that can be resolved to a string",
             )?;
-            let string = binding.text(&state.files).context(
+            let string = binding.text(&state.files, context.language()).context(
                 "includes can only be used with patterns that can be resolved to a string",
             )?;
             if string.contains(&*substring) {

@@ -6,7 +6,9 @@ use super::{
     State,
 };
 use crate::{
-    binding::Binding, context::QueryContext, pattern_compiler::compiler::NodeCompilationContext,
+    binding::Binding,
+    context::{ExecContext, QueryContext},
+    pattern_compiler::compiler::NodeCompilationContext,
 };
 use anyhow::{bail, Result};
 use core::fmt::Debug;
@@ -77,14 +79,19 @@ impl Variable {
         register_variable_optional_range(name, None, context)
     }
 
-    pub(crate) fn text<'a, Q: QueryContext>(&self, state: &State<'a, Q>) -> Result<Cow<'a, str>> {
-        state.bindings[self.scope].last().unwrap()[self.index].text(state)
+    pub(crate) fn text<'a, Q: QueryContext>(
+        &self,
+        state: &State<'a, Q>,
+        lang: &impl Language,
+    ) -> Result<Cow<'a, str>> {
+        state.bindings[self.scope].last().unwrap()[self.index].text(state, lang)
     }
 
     fn execute_resolved<'a, Q: QueryContext>(
         &self,
         resolved_pattern: &ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
+        lang: &impl Language,
     ) -> Result<Option<bool>> {
         let mut variable_mirrors: Vec<VariableMirror> = Vec::new();
         {
@@ -105,7 +112,7 @@ impl Variable {
                             if let (Some(var_binding), Some(binding)) =
                                 (bindings.last(), cur_bindings.last())
                             {
-                                if !var_binding.is_equivalent_to(binding) {
+                                if !var_binding.is_equivalent_to(binding, lang) {
                                     return Ok(Some(false));
                                 }
                                 let value_history = &mut variable_content.value_history;
@@ -126,8 +133,8 @@ impl Variable {
                             }
                         } else {
                             return Ok(Some(
-                                resolved_pattern.text(&state.files)?
-                                    == bindings.last().unwrap().text(),
+                                resolved_pattern.text(&state.files, lang)?
+                                    == bindings.last().unwrap().text(lang),
                             ));
                         }
                     }
@@ -138,8 +145,8 @@ impl Variable {
                     | ResolvedPattern::Files(_)
                     | ResolvedPattern::Constant(_) => {
                         return Ok(Some(
-                            resolved_pattern.text(&state.files)?
-                                == var_side_resolve_pattern.text(&state.files)?,
+                            resolved_pattern.text(&state.files, lang)?
+                                == var_side_resolve_pattern.text(&state.files, lang)?,
                         ));
                     }
                 }
@@ -270,7 +277,7 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        if let Some(res) = self.execute_resolved(resolved_pattern, state)? {
+        if let Some(res) = self.execute_resolved(resolved_pattern, state, context.language())? {
             return Ok(res);
         }
         // we only check the assignment if the variable is not bound already
@@ -309,24 +316,26 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
 
 pub(crate) fn get_absolute_file_name<Q: QueryContext>(
     state: &State<'_, Q>,
+    lang: &impl Language,
 ) -> Result<String, anyhow::Error> {
     let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[ABSOLUTE_PATH_INDEX]
         .value
         .as_ref();
     let file = file
-        .map(|f| f.text(&state.files).map(|s| s.to_string()))
+        .map(|f| f.text(&state.files, lang).map(|s| s.to_string()))
         .unwrap_or(Ok("No File Found".to_string()))?;
     Ok(file)
 }
 
 pub(crate) fn get_file_name<Q: QueryContext>(
     state: &State<'_, Q>,
+    lang: &impl Language,
 ) -> Result<String, anyhow::Error> {
     let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[FILENAME_INDEX]
         .value
         .as_ref();
     let file = file
-        .map(|f| f.text(&state.files).map(|s| s.to_string()))
+        .map(|f| f.text(&state.files, lang).map(|s| s.to_string()))
         .unwrap_or(Ok("No File Found".to_string()))?;
     Ok(file)
 }

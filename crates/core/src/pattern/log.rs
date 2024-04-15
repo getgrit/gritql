@@ -5,7 +5,10 @@ use super::{
     state::State,
     variable::{get_file_name, Variable},
 };
-use crate::{binding::Binding, context::QueryContext};
+use crate::{
+    binding::Binding,
+    context::{ExecContext, QueryContext},
+};
 use anyhow::Result;
 use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 
@@ -41,11 +44,11 @@ impl<Q: QueryContext> Log<Q> {
         let mut message = String::new();
         if let Some(user_message) = &self.message {
             let resolved = ResolvedPattern::from_pattern(user_message, state, context, logs)?;
-            let text = resolved.text(&state.files)?;
+            let text = resolved.text(&state.files, context.language())?;
             message.push_str(&format!("{}\n", text));
         }
         let mut log_builder = AnalysisLogBuilder::default();
-        let file = get_file_name(state)?;
+        let file = get_file_name(state, context.language())?;
         #[allow(clippy::unnecessary_cast)]
         log_builder.level(441 as u16).file(file);
 
@@ -58,13 +61,16 @@ impl<Q: QueryContext> Log<Q> {
             let var_content = &state.bindings[var.scope].last().unwrap()[var.index];
             let value = var_content.value.as_ref();
             let src = value
-                .map(|v| v.text(&state.files).map(|s| s.to_string()))
+                .map(|v| {
+                    v.text(&state.files, context.language())
+                        .map(|s| s.to_string())
+                })
                 .unwrap_or(Ok("Variable has no source".to_string()))?;
             log_builder.source(src);
             let node: Option<&Binding> = value.and_then(|v| v.get_binding());
             // todo add support for other types of bindings
             if let Some(node) = node {
-                if let Some(range) = node.position() {
+                if let Some(range) = node.position(context.language()) {
                     log_builder.range(range);
                 }
                 if let Some(syntax_tree) = node.get_sexp() {

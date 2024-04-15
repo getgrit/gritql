@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::context::QueryContext;
+use crate::context::{ExecContext, QueryContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -29,10 +29,10 @@ impl<Q: QueryContext> Matcher<Q> for IntConstant {
         &'a self,
         binding: &ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
-        _context: &'a Q::ExecContext<'a>,
+        context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let text = binding.text(&state.files)?;
+        let text = binding.text(&state.files, context.language())?;
         let parsed_int = text.parse::<i64>()?;
         Ok(parsed_int == self.value)
     }

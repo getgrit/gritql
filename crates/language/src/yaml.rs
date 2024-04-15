@@ -25,6 +25,7 @@ fn built_in_language() -> TSLanguage {
 pub struct Yaml {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,
+    comment_sort: SortId,
     equivalent_leaf_nodes: &'static [Vec<LeafNormalizer>],
     language: &'static TSLanguage,
 }
@@ -46,9 +47,11 @@ impl Yaml {
             ]]
         });
         let metavariable_sort = language.id_for_node_kind("grit_metavariable", true);
+        let comment_sort = language.id_for_node_kind("comment", true);
         Self {
             node_types,
             metavariable_sort,
+            comment_sort,
             equivalent_leaf_nodes,
             language,
         }
@@ -82,6 +85,10 @@ impl Language for Yaml {
 
     fn metavariable_sort(&self) -> SortId {
         self.metavariable_sort
+    }
+
+    fn is_comment(&self, id: SortId) -> bool {
+        id == self.comment_sort
     }
 
     fn get_equivalence_class(

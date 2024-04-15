@@ -213,7 +213,7 @@ pub(crate) fn linearize_binding<'a>(
         .into_iter()
         .map(|effect| {
             let binding = effect.binding;
-            let binding_range = binding.code_range();
+            let binding_range = binding.code_range(language);
             if let (Some(src), Some(range)) = (binding.source(), binding_range.as_ref()) {
                 match effect.kind {
                     EffectKind::Rewrite => {
@@ -257,7 +257,7 @@ pub(crate) fn linearize_binding<'a>(
         .iter()
         .map(|(b, s, k)| {
             let range = b
-                .position()
+                .position(language)
                 .ok_or_else(|| anyhow!("binding has no position"))?;
             match k {
                 EffectKind::Insert => Ok((
@@ -351,43 +351,49 @@ impl<'a> Binding<'a> {
     }
 
     // todo implement for empty and empty list
-    pub fn position(&self) -> Option<Range> {
+    pub fn position(&self, language: &impl Language) -> Option<Range> {
         match self {
             Self::Empty(_, _) => None,
             Self::Node(node) => Some(node.range()),
             Self::String(_, range) => Some(range.to_owned()),
-            Self::List(parent_node, field_id) => get_range_nodes_for_list(parent_node, field_id)
-                .map(|(leading_node, trailing_node)| Range {
-                    start: Position::new(
-                        leading_node.node.start_position().row() + 1,
-                        leading_node.node.start_position().column() + 1,
-                    ),
-                    end: Position::new(
-                        trailing_node.node.end_position().row() + 1,
-                        trailing_node.node.end_position().column() + 1,
-                    ),
-                    start_byte: leading_node.node.start_byte(),
-                    end_byte: trailing_node.node.end_byte(),
-                }),
+            Self::List(parent_node, field_id) => {
+                get_range_nodes_for_list(parent_node, field_id, language).map(
+                    |(leading_node, trailing_node)| Range {
+                        start: Position::new(
+                            leading_node.node.start_position().row() + 1,
+                            leading_node.node.start_position().column() + 1,
+                        ),
+                        end: Position::new(
+                            trailing_node.node.end_position().row() + 1,
+                            trailing_node.node.end_position().column() + 1,
+                        ),
+                        start_byte: leading_node.node.start_byte(),
+                        end_byte: trailing_node.node.end_byte(),
+                    },
+                )
+            }
             Self::FileName(_) => None,
             Self::ConstantRef(_) => None,
         }
     }
 
     // todo implement for empty and empty list
-    pub fn code_range(&self) -> Option<CodeRange> {
+    pub fn code_range(&self, language: &impl Language) -> Option<CodeRange> {
         match self {
             Self::Empty(_, _) => None,
             Self::Node(node) => Some(node.code_range()),
             Self::String(src, range) => Some(CodeRange::new(range.start_byte, range.end_byte, src)),
-            Self::List(parent_node, field_id) => get_range_nodes_for_list(parent_node, field_id)
-                .map(|(leading_node, trailing_node)| {
-                    CodeRange::new(
-                        leading_node.node.start_byte(),
-                        trailing_node.node.end_byte(),
-                        parent_node.source,
-                    )
-                }),
+            Self::List(parent_node, field_id) => {
+                get_range_nodes_for_list(parent_node, field_id, language).map(
+                    |(leading_node, trailing_node)| {
+                        CodeRange::new(
+                            leading_node.node.start_byte(),
+                            trailing_node.node.end_byte(),
+                            parent_node.source,
+                        )
+                    },
+                )
+            }
             Self::FileName(_) => None,
             Self::ConstantRef(_) => None,
         }
@@ -422,7 +428,7 @@ impl<'a> Binding<'a> {
             )),
             Self::FileName(s) => Ok(Cow::Owned(s.to_string_lossy().into())),
             Self::List(parent_node, _field_id) => {
-                if let Some(pos) = self.position() {
+                if let Some(pos) = self.position(language) {
                     let range = CodeRange::new(pos.start_byte, pos.end_byte, parent_node.source);
                     linearize_binding(
                         language,
@@ -444,14 +450,14 @@ impl<'a> Binding<'a> {
         res
     }
 
-    pub fn text(&self) -> String {
+    pub fn text(&self, language: &impl Language) -> String {
         match self {
             Self::Empty(_, _) => "".to_string(),
             Self::Node(node) => node.text().to_string(),
             Self::String(s, r) => s[r.start_byte as usize..r.end_byte as usize].into(),
             Self::FileName(s) => s.to_string_lossy().into(),
             Self::List(node, _) => {
-                if let Some(pos) = self.position() {
+                if let Some(pos) = self.position(language) {
                     node.source[pos.start_byte as usize..pos.end_byte as usize].to_string()
                 } else {
                     "".to_string()
@@ -577,6 +583,7 @@ impl<'a> Binding<'a> {
 fn get_range_nodes_for_list<'a>(
     parent_node: &NodeWithSource<'a>,
     field_id: &FieldId,
+    language: &impl Language,
 ) -> Option<(NodeWithSource<'a>, NodeWithSource<'a>)> {
     let mut children = parent_node.children_by_field_id(*field_id);
     let first_node = children.next()?;
@@ -588,7 +595,7 @@ fn get_range_nodes_for_list<'a>(
 
     let mut leading_comment = first_node.clone();
     while let Some(comment) = leading_comment.previous_sibling() {
-        if comment.node.kind() == "comment" {
+        if language.is_comment(comment.node.kind_id()) {
             leading_comment = comment;
         } else {
             break;
@@ -596,7 +603,7 @@ fn get_range_nodes_for_list<'a>(
     }
     let mut trailing_comment = end_node;
     while let Some(comment) = trailing_comment.next_sibling() {
-        if comment.node.kind() == "comment" {
+        if language.is_comment(comment.node.kind_id()) {
             trailing_comment = comment;
         } else {
             break;

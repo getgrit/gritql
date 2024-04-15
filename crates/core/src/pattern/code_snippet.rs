@@ -4,7 +4,10 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{context::QueryContext, resolve};
+use crate::{
+    context::{ExecContext, QueryContext},
+    resolve,
+};
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_language::language::SortId;
@@ -54,7 +57,7 @@ impl<Q: QueryContext> Matcher<Q> for CodeSnippet<Q> {
             | resolved @ ResolvedPattern::File(_)
             | resolved @ ResolvedPattern::Files(_)
             | resolved @ ResolvedPattern::Constant(_) => {
-                return Ok(resolved.text(&state.files)?.trim() == self.source)
+                return Ok(resolved.text(&state.files, context.language())?.trim() == self.source)
             }
         };
 

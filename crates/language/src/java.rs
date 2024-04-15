@@ -75,7 +75,7 @@ impl Language for Java {
     }
 
     fn is_comment(&self, id: SortId) -> bool {
-        self.comment_sorts.iter().any(|sort| sort == &id)
+        self.comment_sorts.contains(&id)
     }
 }
 
