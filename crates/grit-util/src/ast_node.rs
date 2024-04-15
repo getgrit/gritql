@@ -1,4 +1,4 @@
-use crate::CodeRange;
+use crate::{AstCursor, CodeRange};
 
 /// Represents an AST node and offers convenient AST-specific functionality.
 ///
@@ -34,4 +34,7 @@ pub trait AstNode: std::fmt::Debug + Sized {
 
     /// Returns the code range of the node.
     fn code_range(&self) -> CodeRange;
+
+    /// Returns a cursor for traversing the tree, starting at the current node.
+    fn walk(&self) -> impl AstCursor<Node = Self>;
 }

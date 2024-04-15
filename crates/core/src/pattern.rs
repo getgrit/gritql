@@ -82,7 +82,6 @@ use marzano_util::{
 };
 use std::fmt::Debug;
 use std::vec;
-use tree_sitter::Node;
 use variable::VariableSourceLocations;
 
 #[cfg(feature = "grit_tracing")]
@@ -199,7 +198,7 @@ impl<'a> ExecContext<MarzanoQueryContext> for MarzanoContext<'a> {
         context: &'b Self,
         state: &mut State<'b, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'b>> {
+    ) -> Result<ResolvedPattern<'b, MarzanoQueryContext>> {
         self.built_ins.call(call, context, state, logs)
     }
 

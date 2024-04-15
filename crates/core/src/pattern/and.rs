@@ -29,7 +29,7 @@ impl<Q: QueryContext> PatternName for And<Q> {
 impl<Q: QueryContext> Matcher<Q> for And<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -66,7 +66,7 @@ impl<Q: QueryContext> Evaluator<Q> for PrAnd<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         for p in self.predicates.iter() {
             let res = p.execute_func(state, context, logs)?;
             match res.predicator {

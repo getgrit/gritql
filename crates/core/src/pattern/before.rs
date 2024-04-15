@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::{pattern_to_binding, ResolvedPattern},
     State,
 };
-use crate::{binding::Constant, context::QueryContext, errors::debug, resolve};
+use crate::{binding::Binding, constant::Constant, context::QueryContext, errors::debug, resolve};
 use anyhow::{bail, Result};
 use grit_util::AstNode;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -23,7 +23,7 @@ impl<Q: QueryContext> Before<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a>> {
+    ) -> Result<ResolvedPattern<'a, Q>> {
         let binding = pattern_to_binding(&self.before, state, context, logs)?;
         let Some(node) = binding.as_node() else {
             bail!("cannot get the node before this binding")
@@ -51,7 +51,7 @@ impl<Q: QueryContext> PatternName for Before<Q> {
 impl<Q: QueryContext> Matcher<Q> for Before<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

@@ -6,11 +6,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::{
-    binding::{Binding, Constant},
-    context::QueryContext,
-    resolve_opt,
-};
+use crate::{binding::Binding, constant::Constant, context::QueryContext, resolve_opt};
 use anyhow::{anyhow, bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -122,8 +118,8 @@ impl<Q: QueryContext> ListIndex<Q> {
     pub(crate) fn set_resolved<'a>(
         &'a self,
         state: &mut State<'a, Q>,
-        value: ResolvedPattern<'a>,
-    ) -> Result<Option<ResolvedPattern<'a>>> {
+        value: ResolvedPattern<'a, Q>,
+    ) -> Result<Option<ResolvedPattern<'a, Q>>> {
         let index = self.get_index(state)?;
         match &self.list {
             ListOrContainer::Container(c) => match c.get_pattern_or_resolved_mut(state)? {
@@ -158,7 +154,7 @@ impl<Q: QueryContext> PatternName for ListIndex<Q> {
 impl<Q: QueryContext> Matcher<Q> for ListIndex<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

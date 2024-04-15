@@ -1,5 +1,6 @@
 use crate::{
-    binding::Constant, context::ExecContext, context::QueryContext, problem::MarzanoQueryContext,
+    binding::Binding, constant::Constant, context::ExecContext, context::QueryContext,
+    problem::MarzanoQueryContext,
 };
 use itertools::Itertools;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -60,7 +61,7 @@ impl<Q: QueryContext> GritCall<Q> for CallBuiltIn<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a>> {
+    ) -> Result<ResolvedPattern<'a, Q>> {
         context.call_built_in(self, context, state, logs)
     }
 }
@@ -80,7 +81,7 @@ type F = dyn for<'a> Fn(
         &'a MarzanoContext<'a>,
         &mut State<'a, MarzanoQueryContext>,
         &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a>>
+    ) -> Result<ResolvedPattern<'a, MarzanoQueryContext>>
     + Send
     + Sync;
 
@@ -97,7 +98,7 @@ impl BuiltInFunction {
         context: &'a MarzanoContext<'a>,
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a>> {
+    ) -> Result<ResolvedPattern<'a, MarzanoQueryContext>> {
         (self.func)(args, context, state, logs)
     }
 
@@ -125,7 +126,7 @@ impl BuiltIns {
         context: &'a MarzanoContext<'a>,
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a>> {
+    ) -> Result<ResolvedPattern<'a, MarzanoQueryContext>> {
         self.0[call.index].call(&call.args, context, state, logs)
     }
 
@@ -186,7 +187,7 @@ fn resolve_path_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
+) -> Result<ResolvedPattern<'a, MarzanoQueryContext>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let current_file = get_absolute_file_name(state)?;
@@ -213,7 +214,7 @@ fn capitalize_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
+) -> Result<ResolvedPattern<'a, MarzanoQueryContext>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let s = match &args[0] {
@@ -228,7 +229,7 @@ fn lowercase_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
+) -> Result<ResolvedPattern<'a, MarzanoQueryContext>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let s = match &args[0] {
@@ -243,7 +244,7 @@ fn uppercase_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
+) -> Result<ResolvedPattern<'a, MarzanoQueryContext>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let s = match &args[0] {
@@ -258,7 +259,7 @@ fn text_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
+) -> Result<ResolvedPattern<'a, MarzanoQueryContext>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let s = match args.first() {
@@ -273,7 +274,7 @@ fn trim_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
+) -> Result<ResolvedPattern<'a, MarzanoQueryContext>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let trim_chars = match &args[1] {
@@ -297,7 +298,7 @@ fn split_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
+) -> Result<ResolvedPattern<'a, MarzanoQueryContext>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let string = if let Some(string) = &args[0] {
@@ -310,7 +311,7 @@ fn split_fn<'a>(
     } else {
         bail!("split requires parameter separator")
     };
-    let parts: Vector<ResolvedPattern> = string
+    let parts: Vector<ResolvedPattern<MarzanoQueryContext>> = string
         .split(&separator.as_ref())
         .map(|s| ResolvedPattern::Snippets(vector![ResolvedSnippet::Text(s.to_string().into())]))
         .collect();
@@ -322,7 +323,7 @@ fn random_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
+) -> Result<ResolvedPattern<'a, MarzanoQueryContext>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     match args.as_slice() {
@@ -354,7 +355,7 @@ fn join_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
+) -> Result<ResolvedPattern<'a, MarzanoQueryContext>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let separator = &args[1];
@@ -383,7 +384,7 @@ fn distinct_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
+) -> Result<ResolvedPattern<'a, MarzanoQueryContext>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let list = args.into_iter().next().unwrap();
@@ -424,7 +425,7 @@ fn shuffle_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
+) -> Result<ResolvedPattern<'a, MarzanoQueryContext>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let list = args
@@ -470,7 +471,7 @@ fn length_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> Result<ResolvedPattern<'a>> {
+) -> Result<ResolvedPattern<'a, MarzanoQueryContext>> {
     let args = patterns_to_resolved(args, state, context, logs)?;
 
     let list = args.into_iter().next().unwrap();

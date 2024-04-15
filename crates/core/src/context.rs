@@ -1,6 +1,7 @@
 use crate::{
+    binding::Binding,
     pattern::{
-        ast_node_pattern::AstNodePattern,
+        ast_node_pattern::{AstLeafNodePattern, AstNodePattern},
         built_in_functions::CallBuiltIn,
         function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
         pattern_definition::PatternDefinition,
@@ -19,7 +20,9 @@ use marzano_util::analysis_logs::AnalysisLogs;
 pub trait QueryContext: Clone + std::fmt::Debug + Sized {
     type Node<'a>: AstNode;
     type NodePattern: AstNodePattern<Self>;
+    type LeafNodePattern: AstLeafNodePattern<Self>;
     type ExecContext<'a>: ExecContext<Self>;
+    type Binding<'a>: Binding<'a, Self>;
 }
 
 /// Contains context necessary for query execution.
@@ -40,7 +43,7 @@ pub trait ExecContext<Q: QueryContext> {
         context: &'a Self,
         state: &mut State<'a, Q>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a>>;
+    ) -> Result<ResolvedPattern<'a, Q>>;
 
     #[cfg(all(
         feature = "network_requests_external",

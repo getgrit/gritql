@@ -5,6 +5,7 @@ use super::{
     state::{FilePtr, State},
 };
 use crate::{
+    binding::Binding,
     clean::{get_replacement_ranges, replace_cleaned_ranges},
     context::ExecContext,
     context::QueryContext,
@@ -29,14 +30,14 @@ impl<Q: QueryContext> Step<Q> {
     }
 }
 
-fn extract_file_pointer(file: &File) -> Option<FilePtr> {
+fn extract_file_pointer<Q: QueryContext>(file: &File<Q>) -> Option<FilePtr> {
     match file {
         File::Resolved(_) => None,
         File::Ptr(ptr) => Some(*ptr),
     }
 }
 
-fn handle_files(files_list: &ResolvedPattern) -> Option<Vec<FilePtr>> {
+fn handle_files<Q: QueryContext>(files_list: &ResolvedPattern<Q>) -> Option<Vec<FilePtr>> {
     if let ResolvedPattern::List(files) = files_list {
         files
             .iter()
@@ -53,7 +54,7 @@ fn handle_files(files_list: &ResolvedPattern) -> Option<Vec<FilePtr>> {
     }
 }
 
-fn extract_file_pointers(binding: &ResolvedPattern) -> Option<Vec<FilePtr>> {
+fn extract_file_pointers<Q: QueryContext>(binding: &ResolvedPattern<Q>) -> Option<Vec<FilePtr>> {
     match binding {
         ResolvedPattern::Binding(_) => None,
         ResolvedPattern::Snippets(_) => None,
@@ -68,7 +69,7 @@ fn extract_file_pointers(binding: &ResolvedPattern) -> Option<Vec<FilePtr>> {
 impl<Q: QueryContext> Matcher<Q> for Step<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

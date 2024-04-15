@@ -1,62 +1,6 @@
-use crate::binding::Binding;
 use grit_util::AstNode;
 use itertools::{EitherOrBoth, Itertools};
 use marzano_util::node_with_source::NodeWithSource;
-
-impl<'a> Binding<'a> {
-    /// Checks whether two bindings are equivalent.
-    ///
-    /// Bindings are considered equivalent if they refer to the same thing.
-    pub fn is_equivalent_to(&self, other: &'a Binding) -> bool {
-        // covers Node, and List with one element
-        if let (Some(s1), Some(s2)) = (self.singleton(), other.singleton()) {
-            return are_equivalent(&s1, &s2);
-        }
-
-        match self {
-            // should never occur covered by singleton
-            Self::Node(node1) => match other {
-                Self::Node(node2) => are_equivalent(node1, node2),
-                Self::String(str, range) => {
-                    str[range.start_byte as usize..range.end_byte as usize] == self.text()
-                }
-                Self::FileName(_) | Self::List(..) | Self::Empty(..) | Self::ConstantRef(_) => {
-                    false
-                }
-            },
-            Self::List(parent_node1, field1) => match other {
-                Self::List(parent_node2, field2) => parent_node1
-                    .named_children_by_field_id(*field1)
-                    .zip_longest(parent_node2.named_children_by_field_id(*field2))
-                    .all(|zipped| match zipped {
-                        EitherOrBoth::Both(node1, node2) => are_equivalent(&node1, &node2),
-                        EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => false,
-                    }),
-                Self::String(..)
-                | Self::FileName(_)
-                | Self::Node(..)
-                | Self::Empty(..)
-                | Self::ConstantRef(_) => false,
-            },
-            // I suspect matching kind is too strict
-            Self::Empty(node1, field1) => match other {
-                Self::Empty(node2, field2) => {
-                    node1.node.kind_id() == node2.node.kind_id() && field1 == field2
-                }
-                Self::String(..)
-                | Self::FileName(_)
-                | Self::Node(..)
-                | Self::List(..)
-                | Self::ConstantRef(_) => false,
-            },
-            Self::ConstantRef(c1) => other.as_constant().map_or(false, |c2| *c1 == c2),
-            Self::String(s1, range) => {
-                s1[range.start_byte as usize..range.end_byte as usize] == other.text()
-            }
-            Self::FileName(s1) => other.as_filename().map_or(false, |s2| *s1 == s2),
-        }
-    }
-}
 
 /// Checks whether two nodes are equivalent.
 ///

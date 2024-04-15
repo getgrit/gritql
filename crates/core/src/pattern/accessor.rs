@@ -6,7 +6,7 @@ use super::{
     state::State,
     variable::Variable,
 };
-use crate::{binding::Constant, context::QueryContext};
+use crate::{binding::Binding, constant::Constant, context::QueryContext};
 use anyhow::{bail, Result};
 use marzano_util::analysis_logs::AnalysisLogs;
 use std::borrow::Cow;
@@ -84,8 +84,8 @@ impl<Q: QueryContext> Accessor<Q> {
     pub(crate) fn set_resolved<'a>(
         &'a self,
         state: &mut State<'a, Q>,
-        value: ResolvedPattern<'a>,
-    ) -> Result<Option<ResolvedPattern<'a>>> {
+        value: ResolvedPattern<'a, Q>,
+    ) -> Result<Option<ResolvedPattern<'a, Q>>> {
         match &self.map {
             AccessorMap::Container(c) => {
                 let key = self.get_key(state)?;
@@ -111,7 +111,7 @@ impl<Q: QueryContext> PatternName for Accessor<Q> {
 impl<Q: QueryContext> Matcher<Q> for Accessor<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -133,8 +133,8 @@ impl<Q: QueryContext> Matcher<Q> for Accessor<Q> {
 }
 
 pub(crate) fn execute_resolved_with_binding<'a, Q: QueryContext>(
-    r: &ResolvedPattern<'a>,
-    binding: &ResolvedPattern<'a>,
+    r: &ResolvedPattern<'a, Q>,
+    binding: &ResolvedPattern<'a, Q>,
     state: &State<'a, Q>,
 ) -> Result<bool> {
     if let ResolvedPattern::Binding(r) = r {

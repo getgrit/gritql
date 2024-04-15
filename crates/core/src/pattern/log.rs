@@ -61,7 +61,7 @@ impl<Q: QueryContext> Log<Q> {
                 .map(|v| v.text(&state.files).map(|s| s.to_string()))
                 .unwrap_or(Ok("Variable has no source".to_string()))?;
             log_builder.source(src);
-            let node: Option<&Binding> = value.and_then(|v| v.get_binding());
+            let node = value.and_then(|v| v.get_binding());
             // todo add support for other types of bindings
             if let Some(node) = node {
                 if let Some(range) = node.position() {
@@ -83,7 +83,7 @@ impl<Q: QueryContext> Log<Q> {
 impl<Q: QueryContext> Matcher<Q> for Log<Q> {
     fn execute<'a>(
         &'a self,
-        _binding: &ResolvedPattern<'a>,
+        _binding: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -98,7 +98,7 @@ impl<Q: QueryContext> Evaluator<Q> for Log<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         let predicator = self.add_log(state, context, logs)?;
         Ok(FuncEvaluation {
             predicator,

@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::{pattern_to_binding, ResolvedPattern},
     State,
 };
-use crate::{binding::Constant, context::QueryContext, errors::debug, resolve};
+use crate::{binding::Binding, constant::Constant, context::QueryContext, errors::debug, resolve};
 use anyhow::{bail, Result};
 use core::fmt::Debug;
 use grit_util::AstNode;
@@ -24,7 +24,7 @@ impl<Q: QueryContext> After<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a>> {
+    ) -> Result<ResolvedPattern<'a, Q>> {
         let binding = pattern_to_binding(&self.after, state, context, logs)?;
         let Some(node) = binding.as_node() else {
             bail!("cannot get the node after this binding")
@@ -52,7 +52,7 @@ impl<Q: QueryContext> PatternName for After<Q> {
 impl<Q: QueryContext> Matcher<Q> for After<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

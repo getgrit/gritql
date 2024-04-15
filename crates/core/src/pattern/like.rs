@@ -31,7 +31,7 @@ impl<Q: QueryContext> Matcher<Q> for Like<Q> {
     #[cfg(feature = "embeddings")]
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -49,7 +49,7 @@ impl<Q: QueryContext> Matcher<Q> for Like<Q> {
     #[cfg(not(feature = "embeddings"))]
     fn execute<'a>(
         &'a self,
-        _binding: &ResolvedPattern<'a>,
+        _binding: &ResolvedPattern<'a, Q>,
         _state: &mut State<'a, Q>,
         _context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,

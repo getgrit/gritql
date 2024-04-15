@@ -71,7 +71,7 @@ impl<Q: QueryContext> Evaluator<Q> for Predicate<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         match self {
             Predicate::Call(call) => call.execute_func(state, context, logs),
             Predicate::Or(or) => or.execute_func(state, context, logs),

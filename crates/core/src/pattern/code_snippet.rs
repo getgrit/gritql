@@ -4,7 +4,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{context::QueryContext, resolve};
+use crate::{binding::Binding, context::QueryContext, resolve};
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_language::language::SortId;
@@ -41,7 +41,7 @@ impl<Q: QueryContext> Matcher<Q> for CodeSnippet<Q> {
     // wrong, but whatever for now
     fn execute<'a>(
         &'a self,
-        resolved_pattern: &ResolvedPattern<'a>,
+        resolved_pattern: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

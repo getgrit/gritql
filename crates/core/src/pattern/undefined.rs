@@ -10,7 +10,7 @@ pub(crate) struct Undefined {}
 
 impl Undefined {
     pub(crate) fn execute<'a, Q: QueryContext>(
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         _init_state: &mut State<'a, Q>,
         _context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,

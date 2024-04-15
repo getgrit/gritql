@@ -27,7 +27,7 @@ impl<Q: QueryContext> PatternName for Includes<Q> {
 
 fn execute<'a, Q: QueryContext>(
     pattern: &'a Pattern<Q>,
-    binding: &ResolvedPattern<'a>,
+    binding: &ResolvedPattern<'a, Q>,
     state: &mut State<'a, Q>,
     context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
@@ -131,7 +131,7 @@ fn execute<'a, Q: QueryContext>(
 impl<Q: QueryContext> Matcher<Q> for Includes<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

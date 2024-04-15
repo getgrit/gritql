@@ -33,7 +33,7 @@ impl<Q: QueryContext> Matcher<Q> for Any<Q> {
     // return soft and failed on failure
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -79,7 +79,7 @@ impl<Q: QueryContext> Evaluator<Q> for PrAny<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         let mut matched = false;
         let mut cur_state = init_state.clone();
         for predicate in &self.predicates {

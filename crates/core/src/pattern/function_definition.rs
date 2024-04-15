@@ -13,7 +13,7 @@ use super::{
     target_arch = "wasm32"
 ))]
 use crate::context::ExecContext;
-use crate::{binding::Constant, context::QueryContext};
+use crate::{constant::Constant, context::QueryContext};
 use anyhow::{bail, Result};
 #[cfg(feature = "external_functions")]
 use marzano_externals::function::ExternalFunction;
@@ -28,7 +28,7 @@ pub(crate) trait FunctionDefinition<Q: QueryContext> {
         context: &'a Q::ExecContext<'a>,
         args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation>;
+    ) -> Result<FuncEvaluation<Q>>;
 }
 
 #[derive(Clone, Debug)]
@@ -65,7 +65,7 @@ impl<Q: QueryContext> FunctionDefinition<Q> for GritFunctionDefinition<Q> {
         context: &'a Q::ExecContext<'a>,
         args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         state.reset_vars(self.scope, args);
         self.function.execute_func(state, context, logs)
     }
@@ -104,7 +104,7 @@ impl<Q: QueryContext> FunctionDefinition<Q> for ForeignFunctionDefinition {
         _context: &'a Q::ExecContext<'a>,
         _args: &'a [Option<Pattern<Q>>],
         _logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         bail!("External functions are not enabled in your environment")
     }
     #[cfg(feature = "external_functions_common")]
@@ -114,7 +114,7 @@ impl<Q: QueryContext> FunctionDefinition<Q> for ForeignFunctionDefinition {
         context: &'a Q::ExecContext<'a>,
         args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         let param_names = self
             .params
             .iter()

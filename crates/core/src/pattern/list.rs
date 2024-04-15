@@ -4,7 +4,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::context::QueryContext;
+use crate::{binding::Binding, context::QueryContext};
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -35,7 +35,7 @@ impl<Q: QueryContext> PatternName for List<Q> {
 impl<Q: QueryContext> Matcher<Q> for List<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -46,7 +46,7 @@ impl<Q: QueryContext> Matcher<Q> for List<Q> {
                     return Ok(false);
                 };
 
-                let children: Vec<Cow<ResolvedPattern>> = list_items
+                let children: Vec<_> = list_items
                     .map(ResolvedPattern::from_node)
                     .map(Cow::Owned)
                     .collect();
@@ -54,8 +54,7 @@ impl<Q: QueryContext> Matcher<Q> for List<Q> {
                 execute_assoc(&self.patterns, &children, state, context, logs)
             }
             ResolvedPattern::List(patterns) => {
-                let patterns: Vec<Cow<ResolvedPattern<'_>>> =
-                    patterns.into_iter().map(Cow::Borrowed).collect();
+                let patterns: Vec<_> = patterns.into_iter().map(Cow::Borrowed).collect();
                 execute_assoc(&self.patterns, &patterns, state, context, logs)
             }
             ResolvedPattern::Snippets(_)
@@ -69,7 +68,7 @@ impl<Q: QueryContext> Matcher<Q> for List<Q> {
 
 fn execute_assoc<'a, Q: QueryContext>(
     patterns: &'a [Pattern<Q>],
-    children: &[Cow<ResolvedPattern<'a>>],
+    children: &[Cow<ResolvedPattern<'a, Q>>],
     current_state: &mut State<'a, Q>,
     context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,

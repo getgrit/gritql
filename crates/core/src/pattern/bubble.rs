@@ -29,7 +29,7 @@ impl<Q: QueryContext> PatternName for Bubble<Q> {
 impl<Q: QueryContext> Matcher<Q> for Bubble<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

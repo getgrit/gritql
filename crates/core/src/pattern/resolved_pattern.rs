@@ -9,7 +9,8 @@ use super::{
     state::{FilePtr, FileRegistry, State},
 };
 use crate::{
-    binding::{Binding, Constant},
+    binding::Binding,
+    constant::Constant,
     context::QueryContext,
     pattern::{container::PatternOrResolved, patterns::PatternName},
     problem::{Effect, EffectKind},
@@ -33,36 +34,36 @@ use std::{
  */
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ResolvedSnippet<'a> {
+pub enum ResolvedSnippet<'a, Q: QueryContext> {
     // if refering to a dynamic_snippet, we can use the &str variant,
     // but if referring to the result of a BuiltIn, we need the
     // String variant
     Text(Cow<'a, str>),
-    Binding(Binding<'a>),
-    LazyFn(Box<LazyBuiltIn<'a>>),
+    Binding(Q::Binding<'a>),
+    LazyFn(Box<LazyBuiltIn<'a, Q>>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ResolvedFile<'a> {
-    name: ResolvedPattern<'a>,
-    body: ResolvedPattern<'a>,
+pub struct ResolvedFile<'a, Q: QueryContext> {
+    name: ResolvedPattern<'a, Q>,
+    body: ResolvedPattern<'a, Q>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum File<'a> {
-    Resolved(Box<ResolvedFile<'a>>),
+pub enum File<'a, Q: QueryContext> {
+    Resolved(Box<ResolvedFile<'a, Q>>),
     Ptr(FilePtr),
 }
 
-impl<'a> File<'a> {
-    pub(crate) fn name(&self, files: &FileRegistry<'a>) -> ResolvedPattern<'a> {
+impl<'a, Q: QueryContext> File<'a, Q> {
+    pub(crate) fn name(&self, files: &FileRegistry<'a>) -> ResolvedPattern<'a, Q> {
         match self {
             File::Resolved(resolved) => resolved.name.clone(),
             File::Ptr(ptr) => ResolvedPattern::from_path(&files.get_file(*ptr).name),
         }
     }
 
-    pub(crate) fn absolute_path(&self, files: &FileRegistry<'a>) -> Result<ResolvedPattern<'a>> {
+    pub(crate) fn absolute_path(&self, files: &FileRegistry<'a>) -> Result<ResolvedPattern<'a, Q>> {
         match self {
             File::Resolved(resolved) => {
                 let name = resolved.name.text(files)?;
@@ -75,7 +76,7 @@ impl<'a> File<'a> {
         }
     }
 
-    pub(crate) fn body(&self, files: &FileRegistry<'a>) -> ResolvedPattern<'a> {
+    pub(crate) fn body(&self, files: &FileRegistry<'a>) -> ResolvedPattern<'a, Q> {
         match self {
             File::Resolved(resolved) => resolved.body.clone(),
             File::Ptr(ptr) => {
@@ -86,7 +87,7 @@ impl<'a> File<'a> {
         }
     }
 
-    pub(crate) fn binding(&self, files: &FileRegistry<'a>) -> ResolvedPattern<'a> {
+    pub(crate) fn binding(&self, files: &FileRegistry<'a>) -> ResolvedPattern<'a, Q> {
         match self {
             File::Resolved(resolved) => resolved.body.clone(),
             File::Ptr(ptr) => {
@@ -99,17 +100,20 @@ impl<'a> File<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct JoinFn<'a> {
-    pub(crate) list: Vector<ResolvedPattern<'a>>,
+pub struct JoinFn<'a, Q: QueryContext> {
+    pub(crate) list: Vector<ResolvedPattern<'a, Q>>,
     separator: String,
 }
 
-impl<'a> JoinFn<'a> {
-    pub(crate) fn from_resolved(list: Vector<ResolvedPattern<'a>>, separator: String) -> Self {
+impl<'a, Q: QueryContext> JoinFn<'a, Q> {
+    pub(crate) fn from_resolved(list: Vector<ResolvedPattern<'a, Q>>, separator: String) -> Self {
         Self { list, separator }
     }
 
-    pub(crate) fn from_list_binding(binding: &'_ Binding<'a>, separator: String) -> Option<Self> {
+    pub(crate) fn from_list_binding(
+        binding: &'_ Q::Binding<'a>,
+        separator: String,
+    ) -> Option<Self> {
         binding.list_items().map(|list_items| Self {
             list: list_items.map(ResolvedPattern::from_node).collect(),
             separator,
@@ -119,7 +123,7 @@ impl<'a> JoinFn<'a> {
     fn linearized_text(
         &self,
         language: &impl Language,
-        effects: &[Effect<'a>],
+        effects: &[Effect<'a, Q>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
         distributed_indent: Option<usize>,
@@ -159,15 +163,15 @@ impl<'a> JoinFn<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum LazyBuiltIn<'a> {
-    Join(JoinFn<'a>),
+pub enum LazyBuiltIn<'a, Q: QueryContext> {
+    Join(JoinFn<'a, Q>),
 }
 
-impl<'a> LazyBuiltIn<'a> {
+impl<'a, Q: QueryContext> LazyBuiltIn<'a, Q> {
     fn linearized_text(
         &self,
         language: &impl Language,
-        effects: &[Effect<'a>],
+        effects: &[Effect<'a, Q>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
         distributed_indent: Option<usize>,
@@ -188,13 +192,13 @@ impl<'a> LazyBuiltIn<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ResolvedPattern<'a> {
-    Binding(Vector<Binding<'a>>),
-    Snippets(Vector<ResolvedSnippet<'a>>),
-    List(Vector<ResolvedPattern<'a>>),
-    Map(BTreeMap<String, ResolvedPattern<'a>>),
-    File(File<'a>),
-    Files(Box<ResolvedPattern<'a>>),
+pub enum ResolvedPattern<'a, Q: QueryContext> {
+    Binding(Vector<Q::Binding<'a>>),
+    Snippets(Vector<ResolvedSnippet<'a, Q>>),
+    List(Vector<ResolvedPattern<'a, Q>>),
+    Map(BTreeMap<String, ResolvedPattern<'a, Q>>),
+    File(File<'a, Q>),
+    Files(Box<ResolvedPattern<'a, Q>>),
     Constant(Constant),
 }
 
@@ -215,8 +219,8 @@ fn pad_text(text: &str, padding: usize) -> String {
     }
 }
 
-impl<'a> ResolvedSnippet<'a> {
-    pub fn from_binding(binding: Binding) -> ResolvedSnippet {
+impl<'a, Q: QueryContext> ResolvedSnippet<'a, Q> {
+    pub fn from_binding(binding: Q::Binding<'a>) -> ResolvedSnippet<Q> {
         ResolvedSnippet::Binding(binding)
     }
 
@@ -244,7 +248,7 @@ impl<'a> ResolvedSnippet<'a> {
     pub(crate) fn linearized_text(
         &self,
         language: &impl Language,
-        effects: &[Effect<'a>],
+        effects: &[Effect<'a, Q>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
         distributed_indent: Option<usize>,
@@ -270,7 +274,7 @@ impl<'a> ResolvedSnippet<'a> {
         res
     }
 
-    pub(crate) fn is_truthy<Q: QueryContext>(&self, state: &mut State<'a, Q>) -> Result<bool> {
+    pub(crate) fn is_truthy(&self, state: &mut State<'a, Q>) -> Result<bool> {
         let truthiness = match self {
             Self::Binding(b) => b.is_truthy(),
             Self::Text(t) => !t.is_empty(),
@@ -280,16 +284,16 @@ impl<'a> ResolvedSnippet<'a> {
     }
 }
 
-impl<'a> ResolvedPattern<'a> {
+impl<'a, Q: QueryContext> ResolvedPattern<'a, Q> {
     pub fn extend(
         &mut self,
-        mut with: ResolvedPattern<'a>,
-        effects: &mut Vector<Effect<'a>>,
+        mut with: ResolvedPattern<'a, Q>,
+        effects: &mut Vector<Effect<'a, Q>>,
         language: &impl Language,
     ) -> Result<()> {
         match self {
             ResolvedPattern::Binding(bindings) => {
-                let new_effects: Result<Vec<Effect>> = bindings
+                let new_effects: Result<Vec<Effect<Q>>> = bindings
                     .iter()
                     .map(|b| {
                         let is_first = !effects.iter().any(|e| e.binding == *b);
@@ -377,7 +381,7 @@ impl<'a> ResolvedPattern<'a> {
         None
     }
 
-    pub(crate) fn from_binding(binding: Binding<'a>) -> Self {
+    pub(crate) fn from_binding(binding: Q::Binding<'a>) -> Self {
         Self::Binding(vector![binding])
     }
 
@@ -389,7 +393,7 @@ impl<'a> ResolvedPattern<'a> {
         Self::from_binding(Binding::from_constant(constant))
     }
 
-    pub(crate) fn from_node(node: NodeWithSource<'a>) -> Self {
+    pub(crate) fn from_node(node: Q::Node<'a>) -> Self {
         Self::from_binding(Binding::from_node(node))
     }
 
@@ -413,11 +417,11 @@ impl<'a> ResolvedPattern<'a> {
         Self::Snippets(vector![ResolvedSnippet::Text(string.into())])
     }
 
-    pub(crate) fn from_resolved_snippet(snippet: ResolvedSnippet<'a>) -> Self {
+    pub(crate) fn from_resolved_snippet(snippet: ResolvedSnippet<'a, Q>) -> Self {
         Self::Snippets(vector![snippet])
     }
 
-    fn to_snippets(&self) -> Result<Vector<ResolvedSnippet<'a>>> {
+    fn to_snippets(&self) -> Result<Vector<ResolvedSnippet<'a, Q>>> {
         match self {
             ResolvedPattern::Snippets(snippets) => Ok(snippets.clone()),
             ResolvedPattern::Binding(bindings) => Ok(vector![ResolvedSnippet::from_binding(
@@ -462,7 +466,7 @@ impl<'a> ResolvedPattern<'a> {
         }
     }
 
-    pub fn get_binding(&self) -> Option<&Binding> {
+    pub fn get_binding(&self) -> Option<&Q::Binding<'a>> {
         if let ResolvedPattern::Binding(bindings) = self {
             bindings.last()
         } else {
@@ -470,7 +474,7 @@ impl<'a> ResolvedPattern<'a> {
         }
     }
 
-    pub fn from_dynamic_snippet<Q: QueryContext>(
+    pub fn from_dynamic_snippet(
         snippet: &'a DynamicSnippet,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
@@ -504,7 +508,7 @@ impl<'a> ResolvedPattern<'a> {
         Ok(Self::Snippets(parts.into()))
     }
 
-    pub fn from_dynamic_pattern<Q: QueryContext>(
+    pub fn from_dynamic_pattern(
         pattern: &'a DynamicPattern<Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
@@ -546,7 +550,7 @@ impl<'a> ResolvedPattern<'a> {
         }
     }
 
-    pub(crate) fn from_accessor<Q: QueryContext>(
+    pub(crate) fn from_accessor(
         accessor: &'a Accessor<Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
@@ -562,7 +566,7 @@ impl<'a> ResolvedPattern<'a> {
         }
     }
 
-    pub(crate) fn from_list_index<Q: QueryContext>(
+    pub(crate) fn from_list_index(
         index: &'a ListIndex<Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
@@ -578,7 +582,7 @@ impl<'a> ResolvedPattern<'a> {
         }
     }
 
-    pub fn from_pattern<Q: QueryContext>(
+    pub fn from_pattern(
         pattern: &'a Pattern<Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
@@ -700,7 +704,7 @@ impl<'a> ResolvedPattern<'a> {
     pub(crate) fn linearized_text(
         &self,
         language: &impl Language,
-        effects: &[Effect<'a>],
+        effects: &[Effect<'a, Q>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
         should_pad_snippet: bool,
@@ -908,7 +912,7 @@ impl<'a> ResolvedPattern<'a> {
 
     pub(crate) fn normalize_insert(
         &mut self,
-        binding: &Binding<'a>,
+        binding: &Q::Binding<'a>,
         is_first: bool,
         language: &impl Language,
     ) -> Result<()> {
@@ -926,7 +930,7 @@ impl<'a> ResolvedPattern<'a> {
         Ok(())
     }
 
-    pub(crate) fn is_truthy<Q: QueryContext>(&self, state: &mut State<'a, Q>) -> Result<bool> {
+    pub(crate) fn is_truthy(&self, state: &mut State<'a, Q>) -> Result<bool> {
         let truthiness = match self {
             Self::Binding(bindings) => bindings.last().map_or(false, Binding::is_truthy),
             Self::List(elements) => !elements.is_empty(),
@@ -951,7 +955,7 @@ pub(crate) fn pattern_to_binding<'a, Q: QueryContext>(
     state: &mut State<'a, Q>,
     context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<Binding<'a>> {
+) -> Result<Q::Binding<'a>> {
     let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)?;
     if let ResolvedPattern::Binding(binding) = resolved {
         Ok(binding
@@ -970,7 +974,7 @@ pub fn patterns_to_resolved<'a, Q: QueryContext>(
     state: &mut State<'a, Q>,
     context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<Vec<Option<ResolvedPattern<'a>>>> {
+) -> Result<Vec<Option<ResolvedPattern<'a, Q>>>> {
     patterns
         .iter()
         .map(|p| match p {

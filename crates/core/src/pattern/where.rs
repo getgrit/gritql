@@ -36,7 +36,7 @@ impl<Q: QueryContext> Matcher<Q> for Where<Q> {
     // should the state be reset on failure?
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

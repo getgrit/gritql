@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::{binding::Constant, context::QueryContext};
+use crate::{constant::Constant, context::QueryContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -23,7 +23,7 @@ impl<Q: QueryContext> Divide<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a>> {
+    ) -> Result<ResolvedPattern<'a, Q>> {
         let res = self.evaluate(state, context, logs)?;
         Ok(ResolvedPattern::Constant(Constant::Float(res)))
     }
@@ -50,7 +50,7 @@ impl<Q: QueryContext> PatternName for Divide<Q> {
 impl<Q: QueryContext> Matcher<Q> for Divide<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

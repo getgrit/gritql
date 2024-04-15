@@ -3,6 +3,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
+use crate::binding::Binding;
 use crate::{context::QueryContext, resolve};
 use anyhow::Result;
 use core::fmt::Debug;
@@ -29,7 +30,7 @@ impl<Q: QueryContext> PatternName for Within<Q> {
 impl<Q: QueryContext> Matcher<Q> for Within<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

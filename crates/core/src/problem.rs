@@ -1,8 +1,8 @@
 use crate::{
     api::{is_match, AnalysisLog, ByteRange, DoneFile, MatchResult},
-    ast_node::ASTNode,
-    binding::Binding,
+    ast_node::{ASTNode, AstLeafNode},
     context::QueryContext,
+    marzano_binding::MarzanoBinding,
     pattern::{
         built_in_functions::BuiltIns,
         constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
@@ -84,7 +84,7 @@ impl From<Vec<FilePtr>> for FilePattern {
     }
 }
 
-impl From<FilePattern> for ResolvedPattern<'_> {
+impl<Q: QueryContext> From<FilePattern> for ResolvedPattern<'_, Q> {
     fn from(val: FilePattern) -> Self {
         match val {
             FilePattern::Single(file) => ResolvedPattern::File(File::Ptr(file)),
@@ -549,9 +549,9 @@ pub enum EffectKind {
 }
 
 #[derive(Debug, Clone)]
-pub struct Effect<'a> {
-    pub binding: Binding<'a>,
-    pub(crate) pattern: ResolvedPattern<'a>,
+pub struct Effect<'a, Q: QueryContext> {
+    pub binding: Q::Binding<'a>,
+    pub(crate) pattern: ResolvedPattern<'a, Q>,
     pub kind: EffectKind,
 }
 
@@ -655,11 +655,13 @@ impl MatchRanges {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct MarzanoQueryContext;
 
 impl QueryContext for MarzanoQueryContext {
     type Node<'a> = NodeWithSource<'a>;
     type NodePattern = ASTNode;
+    type LeafNodePattern = AstLeafNode;
     type ExecContext<'a> = MarzanoContext<'a>;
+    type Binding<'a> = MarzanoBinding<'a>;
 }

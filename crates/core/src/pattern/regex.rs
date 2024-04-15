@@ -4,7 +4,7 @@ use super::{
     variable::Variable,
     State,
 };
-use crate::context::QueryContext;
+use crate::{binding::Binding, context::QueryContext};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -29,7 +29,7 @@ impl<Q: QueryContext> RegexPattern<Q> {
 
     pub(crate) fn execute_matching<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -130,7 +130,7 @@ impl<Q: QueryContext> PatternName for RegexPattern<Q> {
 impl<Q: QueryContext> Matcher<Q> for RegexPattern<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

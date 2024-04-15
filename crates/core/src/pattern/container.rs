@@ -22,14 +22,14 @@ pub enum Container<Q: QueryContext> {
 #[derive(Debug)]
 pub(crate) enum PatternOrResolved<'a, 'b, Q: QueryContext> {
     Pattern(&'a Pattern<Q>),
-    Resolved(&'b ResolvedPattern<'a>),
-    ResolvedBinding(ResolvedPattern<'a>),
+    Resolved(&'b ResolvedPattern<'a, Q>),
+    ResolvedBinding(ResolvedPattern<'a, Q>),
 }
 
 #[derive(Debug)]
 pub(crate) enum PatternOrResolvedMut<'a, 'b, Q: QueryContext> {
     Pattern(&'a Pattern<Q>),
-    Resolved(&'b mut ResolvedPattern<'a>),
+    Resolved(&'b mut ResolvedPattern<'a, Q>),
     _ResolvedBinding,
 }
 
@@ -37,8 +37,8 @@ impl<Q: QueryContext> Container<Q> {
     pub(crate) fn set_resolved<'a>(
         &'a self,
         state: &mut State<'a, Q>,
-        value: ResolvedPattern<'a>,
-    ) -> Result<Option<ResolvedPattern<'a>>> {
+        value: ResolvedPattern<'a, Q>,
+    ) -> Result<Option<ResolvedPattern<'a, Q>>> {
         match self {
             Container::Variable(v) => {
                 let var = state.trace_var(v);

@@ -42,7 +42,7 @@ use super::{
     rewrite::Rewrite,
     sequential::Sequential,
     some::Some,
-    string_constant::{AstLeafNode, StringConstant},
+    string_constant::StringConstant,
     subtract::Subtract,
     undefined::Undefined,
     variable::Variable,
@@ -60,7 +60,7 @@ pub trait Matcher<Q: QueryContext>: Debug {
     // it should be stored somewhere in the struct of the implementor
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -106,7 +106,7 @@ pub enum Pattern<Q: QueryContext> {
     // differentiated from top for debugging purposes.
     Underscore,
     StringConstant(StringConstant),
-    AstLeafNode(AstLeafNode),
+    AstLeafNode(Q::LeafNodePattern),
     IntConstant(IntConstant),
     FloatConstant(FloatConstant),
     BooleanConstant(BooleanConstant),
@@ -220,7 +220,7 @@ impl<Q: QueryContext> PatternName for Pattern<Q> {
 impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

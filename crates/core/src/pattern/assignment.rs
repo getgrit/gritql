@@ -30,7 +30,7 @@ impl<Q: QueryContext> PatternName for Assignment<Q> {
 impl<Q: QueryContext> Matcher<Q> for Assignment<Q> {
     fn execute<'a>(
         &'a self,
-        _context_node: &ResolvedPattern<'a>,
+        _context_node: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -47,8 +47,8 @@ impl<Q: QueryContext> Evaluator<Q> for Assignment<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
-        let resolved: ResolvedPattern<'_> =
+    ) -> Result<FuncEvaluation<Q>> {
+        let resolved: ResolvedPattern<'_, Q> =
             ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
         self.container.set_resolved(state, resolved)?;
         Ok(FuncEvaluation {

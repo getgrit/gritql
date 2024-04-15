@@ -61,7 +61,7 @@ impl<Q: QueryContext> PatternName for DynamicPattern<Q> {
 impl<Q: QueryContext> Matcher<Q> for DynamicPattern<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

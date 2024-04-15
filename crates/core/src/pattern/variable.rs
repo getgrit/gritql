@@ -29,10 +29,10 @@ pub struct VariableSourceLocations {
 }
 use std::{borrow::Cow, collections::BTreeSet};
 
-struct VariableMirror<'a> {
+struct VariableMirror<'a, Q: QueryContext> {
     scope: usize,
     index: usize,
-    binding: Binding<'a>,
+    binding: Q::Binding<'a>,
 }
 
 impl Variable {
@@ -83,10 +83,10 @@ impl Variable {
 
     fn execute_resolved<'a, Q: QueryContext>(
         &self,
-        resolved_pattern: &ResolvedPattern<'a>,
+        resolved_pattern: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
     ) -> Result<Option<bool>> {
-        let mut variable_mirrors: Vec<VariableMirror> = Vec::new();
+        let mut variable_mirrors: Vec<VariableMirror<Q>> = Vec::new();
         {
             let variable_content = &mut **(state
                 .bindings
@@ -265,7 +265,7 @@ impl PatternName for Variable {
 impl<Q: QueryContext> Matcher<Q> for Variable {
     fn execute<'a>(
         &'a self,
-        resolved_pattern: &ResolvedPattern<'a>,
+        resolved_pattern: &ResolvedPattern<'a, Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

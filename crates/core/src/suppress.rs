@@ -1,33 +1,10 @@
-use crate::binding::Binding;
 use grit_util::AstNode;
 use itertools::{EitherOrBoth, Itertools};
 use marzano_language::language::Language;
 use marzano_util::node_with_source::NodeWithSource;
 use tree_sitter::Range;
 
-impl<'a> Binding<'a> {
-    pub(crate) fn is_suppressed(&self, lang: &impl Language, current_name: Option<&str>) -> bool {
-        let node = match self {
-            Self::Node(node) | Self::List(node, _) | Self::Empty(node, _) => node.clone(),
-            Self::String(_, _) | Self::FileName(_) | Self::ConstantRef(_) => return false,
-        };
-        let target_range = node.node.range();
-        for n in node.children().chain(node.ancestors()) {
-            for c in n.children() {
-                if !(lang.is_comment(c.node.kind_id()) || lang.is_comment_wrapper(&c.node)) {
-                    continue;
-                }
-                if is_suppress_comment(&c, &target_range, current_name, lang) {
-                    return true;
-                }
-            }
-        }
-
-        false
-    }
-}
-
-fn is_suppress_comment(
+pub(crate) fn is_suppress_comment(
     comment_node: &NodeWithSource,
     target_range: &Range,
     current_name: Option<&str>,

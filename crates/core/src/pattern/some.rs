@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{context::QueryContext, resolve};
+use crate::{binding::Binding, context::QueryContext, resolve};
 use anyhow::Result;
 use im::vector;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -28,7 +28,7 @@ impl<Q: QueryContext> PatternName for Some<Q> {
 impl<Q: QueryContext> Matcher<Q> for Some<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &ResolvedPattern<'a, Q>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -80,7 +80,7 @@ impl<Q: QueryContext> Matcher<Q> for Some<Q> {
                 for (key, value) in map {
                     let state = cur_state.clone();
                     let key =
-                        ResolvedPattern::Constant(crate::binding::Constant::String(key.clone()));
+                        ResolvedPattern::Constant(crate::constant::Constant::String(key.clone()));
                     let resolved = ResolvedPattern::List(vector![key, value.clone()]);
                     if pattern.execute(&resolved, &mut cur_state, context, logs)? {
                         did_match = true;
