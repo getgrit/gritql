@@ -32,7 +32,7 @@ impl<'a> Binding<'a> {
             }
             Self::Node(node) => {
                 if language.is_statement(node.node.kind_id())
-                    && !node.text().ends_with('\n')
+                    && !node.text().is_ok_and(|t| t.ends_with('\n'))
                     && !text.starts_with('\n')
                 {
                     Some("\n".to_string())

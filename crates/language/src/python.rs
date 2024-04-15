@@ -88,7 +88,7 @@ impl Language for Python {
         n: NodeWithSource<'_>,
         replacements: &mut Vec<crate::language::Replacement>,
     ) {
-        if n.node.is_error() && n.text() == "->" {
+        if n.node.is_error() && n.text().is_ok_and(|t| t == "->") {
             replacements.push(Replacement::new(n.range(), ""));
         }
     }

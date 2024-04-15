@@ -11,7 +11,6 @@ use crate::pattern::{
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
-use itertools::Itertools;
 use marzano_util::node_with_source::NodeWithSource;
 use std::collections::BTreeMap;
 
