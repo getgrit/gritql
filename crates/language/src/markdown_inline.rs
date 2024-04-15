@@ -63,6 +63,10 @@ impl Language for MarkdownInline {
         self.metavariable_sort
     }
 
+    fn is_comment(&self, _id: SortId) -> bool {
+        false
+    }
+
     fn make_single_line_comment(&self, text: &str) -> String {
         format!("<!-- {} -->\n", text)
     }

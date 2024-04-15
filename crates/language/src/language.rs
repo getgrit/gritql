@@ -242,9 +242,7 @@ pub trait Language {
         &EXACT_REPLACED_VARIABLE_REGEX
     }
 
-    fn is_comment(&self, _id: SortId) -> bool {
-        false
-    }
+    fn is_comment(&self, _id: SortId) -> bool;
 
     fn is_comment_wrapper(&self, _node: &tree_sitter::Node) -> bool {
         false
