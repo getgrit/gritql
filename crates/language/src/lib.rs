@@ -12,6 +12,7 @@ pub mod language;
 pub mod markdown_block;
 pub mod markdown_inline;
 pub mod php;
+mod php_like;
 pub mod php_only;
 pub mod python;
 pub mod ruby;
