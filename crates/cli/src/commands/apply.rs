@@ -62,7 +62,6 @@ pub(crate) async fn run_apply(
     {
         let current_dir = current_dir()?;
         let custom_workflow = find_workflow_file_from(current_dir, &args.pattern_or_workflow).await;
-        println!("ARGS: {:?}", args);
         if let Some(custom_workflow) = custom_workflow {
             return run_apply_migration(
                 custom_workflow,

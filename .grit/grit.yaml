@@ -29,6 +29,11 @@ patterns:
       language rust
 
       `println!($_)` as $print => .  where {
-        $absolute_filename <: includes "crates/gritmodule",
+        $absolute_filename <: includes or {
+          "crates/gritmodule",
+          "crates/cli/",
+        },
+        // Allow tests
+        $absolute_filename <: not includes "tests",
         $print <: not within `mod tests { $_ }`
       }
