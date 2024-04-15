@@ -38,6 +38,8 @@ patterns:
         $absolute_filename <: not includes or {
           "tests/",
           "build.rs",
+          // Workaround for https://github.com/getgrit/gritql/issues/232
+          "lister.rs"
         },
         $print <: not within `mod tests { $_ }`
       } => $outcome
