@@ -2,6 +2,7 @@ pub mod analysis_logs;
 pub mod base64;
 pub mod cache;
 pub mod cursor_wrapper;
+pub mod diff;
 #[cfg(feature = "finder")]
 pub mod finder;
 pub mod hasher;

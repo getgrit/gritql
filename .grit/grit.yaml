@@ -28,7 +28,18 @@ patterns:
       engine marzano(0.1)
       language rust
 
-      `println!($_)` as $print => .  where {
-        $absolute_filename <: includes "crates/gritmodule",
+      `println!($args)` as $print where {
+        $outcome = .,
+        or {
+            $absolute_filename <: includes "crates/gritmodule",
+            and { $absolute_filename <: includes "crates/cli/", $outcome = `log::info!($args)` }
+        },
+        // Allow tests and build utils
+        $absolute_filename <: not includes or {
+          "tests/",
+          "build.rs",
+          // Workaround for https://github.com/getgrit/gritql/issues/232
+          "lister.rs"
+        },
         $print <: not within `mod tests { $_ }`
-      }
+      } => $outcome

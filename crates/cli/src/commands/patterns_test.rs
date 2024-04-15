@@ -235,7 +235,7 @@ pub async fn get_marzano_pattern_test_results(
                 .collect::<Vec<_>>();
             test_report.append(&mut sample_results);
 
-            println!("{}", serde_json::to_string(&test_report)?);
+            log::info!("{}", serde_json::to_string(&test_report)?);
         }
         _ => {
             bail!("Output format not supported for this command");

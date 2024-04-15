@@ -2097,6 +2097,7 @@ dependencies = [
  "grit-util",
  "http",
  "ignore",
+ "insta",
  "log",
  "reqwest",
  "serde",

@@ -312,6 +312,22 @@ pub enum UtilRange {
     RangeWithoutByte(RangeWithoutByte),
 }
 
+impl UtilRange {
+    pub fn start_line(&self) -> u32 {
+        match self {
+            UtilRange::Range(range) => range.start.line,
+            UtilRange::RangeWithoutByte(range) => range.start.line,
+        }
+    }
+
+    pub fn end_line(&self) -> u32 {
+        match self {
+            UtilRange::Range(range) => range.end.line,
+            UtilRange::RangeWithoutByte(range) => range.end.line,
+        }
+    }
+}
+
 impl From<Range> for UtilRange {
     fn from(range: Range) -> Self {
         Self::Range(range)

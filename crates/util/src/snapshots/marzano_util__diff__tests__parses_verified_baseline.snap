@@ -1,0 +1,22 @@
+---
+source: crates/util/src/diff.rs
+expression: parsed
+---
+- old_path: crates/cli/src/analyze.rs
+  new_path: crates/cli/src/analyze.rs
+  before:
+    - RangeWithoutByte:
+        start:
+          line: 9
+          column: 0
+        end:
+          line: 16
+          column: 0
+  after:
+    - RangeWithoutByte:
+        start:
+          line: 9
+          column: 0
+        end:
+          line: 16
+          column: 0

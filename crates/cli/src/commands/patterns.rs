@@ -187,7 +187,7 @@ pub(crate) async fn run_patterns_edit(arg: PatternsEditArgs) -> Result<()> {
     let app_url = "https://app.grit.io";
     let url = format!("{}/studio?pattern_file={}", app_url, url_safe);
 
-    println!("Open in Grit studio: {}", url.bright_blue());
+    log::info!("Open in Grit studio: {}", url.bright_blue());
 
     Ok(())
 }

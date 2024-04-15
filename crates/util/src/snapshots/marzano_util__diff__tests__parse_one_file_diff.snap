@@ -1,0 +1,22 @@
+---
+source: crates/util/src/diff.rs
+expression: parsed
+---
+- old_path: crates/cli_bin/fixtures/es6/empty_export_object.js
+  new_path: crates/cli_bin/fixtures/es6/empty_export_object.js
+  before:
+    - RangeWithoutByte:
+        start:
+          line: 5
+          column: 0
+        end:
+          line: 12
+          column: 0
+  after:
+    - RangeWithoutByte:
+        start:
+          line: 5
+          column: 0
+        end:
+          line: 12
+          column: 0

@@ -2319,9 +2319,15 @@ fn apply_only_in_diff() -> Result<()> {
 
     let output = cmd.output()?;
 
+    let stderr = String::from_utf8(output.stderr)?;
+    let stdout = String::from_utf8(output.stdout)?;
+
+    println!("stderr: {}", stderr);
+    println!("stdout: {}", stdout);
+
     assert!(output.status.success(), "Command failed");
 
-    assert!(String::from_utf8(output.stdout)?.contains("Processed 1 files and found 1 match"));
+    assert!(stdout.contains("Processed 1 files and found 1 match"));
 
     let content = std::fs::read_to_string(dir.join("index.js"))?;
     assert!(!content.contains("console.log('really cool')"));

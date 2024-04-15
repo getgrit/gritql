@@ -218,16 +218,15 @@ fn maybe_spawn_analytics_worker(
     cmd.arg("--installation-id");
     cmd.arg(installation_id.to_string());
 
-    // No telemetry in the worker
-    cmd.env("RUST_LOG", "off");
-
     cmd.arg("--command")
         .arg(command.to_string())
         .arg("--args")
         .arg(args.join(" "))
         .stdin(Stdio::piped());
 
-    if !is_telemetry_foregrounded() {
+    if is_telemetry_foregrounded() {
+        cmd.arg("--log-level=info");
+    } else {
         cmd.stdout(Stdio::null());
         cmd.stderr(Stdio::null());
     }
@@ -248,16 +247,18 @@ fn write_analytics_event(
             let data = format!("{}\t{}\n", serialized_name, serialized_event);
             let res = analytics_worker.write_all(data.as_bytes());
             if let Err(e) = res {
-                println!("Failed to write to analytics worker: {:?}", e);
+                log::info!("Failed to write to analytics worker: {:?}", e);
             }
         }
         (None, _, _) => {
             // No analytics worker to send event to, do nothing
         }
         (worker, name_err, event_err) => {
-            println!(
+            log::info!(
                 "Failed to serialize analytics event: {:?} {:?} {:?}",
-                worker, name_err, event_err
+                worker,
+                name_err,
+                event_err
             );
         }
     }
@@ -276,7 +277,7 @@ pub async fn run_command() -> Result<()> {
     let mut analytics_child =
         match maybe_spawn_analytics_worker(&app.command, &analytics_args, &updater) {
             Err(_e) => {
-                println!("Failed to start the analytics worker process");
+                log::info!("Failed to start the analytics worker process");
                 // We failed to start the analytics worker process
                 None
             }
@@ -382,10 +383,10 @@ pub async fn run_command() -> Result<()> {
     // If we are in the foreground, wait for the analytics worker to finish
     if is_telemetry_foregrounded() {
         if let Some(mut child) = analytics_child {
-            println!("Waiting for analytics worker to finish");
+            log::info!("Waiting for analytics worker to finish");
             let res = child.wait();
             if let Err(e) = res {
-                println!("Failed to wait for analytics worker: {:?}", e);
+                log::info!("Failed to wait for analytics worker: {:?}", e);
             }
         }
     }

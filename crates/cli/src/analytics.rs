@@ -212,7 +212,7 @@ pub async fn track_event(
     {
         Ok(response) => {
             if !response.status().is_success() {
-                eprintln!(
+                log::error!(
                     "Failed to send event {}: {}",
                     analytics_event_name,
                     response.status()
@@ -220,11 +220,11 @@ pub async fn track_event(
             }
         }
         Err(e) => {
-            eprintln!("Failed to send event {}: {:#}", analytics_event_name, e);
+            log::error!("Failed to send event {}: {:#}", analytics_event_name, e);
         }
     }
 
-    println!("Successfully sent event {}", analytics_event_name);
+    log::info!("Successfully sent event {}", analytics_event_name);
 }
 
 pub fn is_telemetry_disabled() -> bool {

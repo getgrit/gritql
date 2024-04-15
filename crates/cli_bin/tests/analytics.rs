@@ -13,7 +13,10 @@ fn confirm_telemetry_flush() -> Result<()> {
     cmd.arg("doctor").current_dir(temp_fixtures_root);
 
     let output = cmd.output()?;
-    println!("output: {:?}", String::from_utf8(output.stdout.clone())?);
+    let stdout = String::from_utf8(output.stdout.clone())?;
+    let stderr = String::from_utf8(output.stderr.clone())?;
+    println!("output: {:?}", stdout);
+    println!("stderr: {:?}", stderr);
 
     assert!(
         output.status.success(),
@@ -21,8 +24,7 @@ fn confirm_telemetry_flush() -> Result<()> {
     );
 
     // Confirm output flushed
-    let output_str = String::from_utf8(output.stdout.clone())?;
-    assert!(output_str.contains("Successfully sent event command-completed"));
+    assert!(stdout.contains("Successfully sent event command-completed"));
 
     Ok(())
 }

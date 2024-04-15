@@ -12,7 +12,7 @@ pub struct DocGenArgs {
 }
 
 pub(crate) async fn run_docgen(arg: DocGenArgs) -> Result<()> {
-    println!("Writing docs to {}", arg.outpath);
+    log::info!("Writing docs to {}", arg.outpath);
 
     let output = clap_markdown::custom_help_markdown::<App>(clap_markdown::MarkdownOptions {
         title: Some("Grit CLI Reference".to_string()),

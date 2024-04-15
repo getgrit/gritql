@@ -29,14 +29,10 @@ use std::sync::atomic::Ordering;
 use std::collections::BTreeMap;
 use tokio::fs;
 
+use crate::diff::extract_target_ranges;
 use crate::{
-    analyze::par_apply_pattern,
-    community::parse_eslint_output,
-    diff::{extract_modified_ranges, git_diff, parse_modified_ranges},
-    error::GoodError,
-    flags::OutputFormat,
-    messenger_variant::create_emitter,
-    result_formatting::get_human_error,
+    analyze::par_apply_pattern, community::parse_eslint_output, error::GoodError,
+    flags::OutputFormat, messenger_variant::create_emitter, result_formatting::get_human_error,
     updater::Updater,
 };
 
@@ -48,6 +44,7 @@ use marzano_messenger::{
 use crate::resolver::{get_grit_files_from_cwd, GritModuleResolver};
 use crate::utils::has_uncommitted_changes;
 
+use super::apply::SharedApplyArgs;
 use super::init::init_config_from_cwd;
 
 #[derive(Deserialize)]
@@ -103,20 +100,6 @@ pub struct ApplyPatternArgs {
         )]
     pub visibility: VisibilityLevels,
     #[clap(
-        long = "only-in-diff",
-        help = "Only rewrite ranges that are inside the unified diff if a path to the diff is provided, or the results of git diff HEAD if no path is provided.",
-        hide = true,
-        conflicts_with = "only_in_json"
-    )]
-    only_in_diff: Option<Option<PathBuf>>,
-    #[clap(
-        long = "only-in-json",
-        help = "Only rewrite ranges that are inside the provided eslint-style JSON file",
-        hide = true,
-        conflicts_with = "only_in_diff"
-    )]
-    only_in_json: Option<PathBuf>,
-    #[clap(
         long = "output-file",
         help = "Path to a file to write the results to, defaults to stdout"
     )]
@@ -146,8 +129,6 @@ impl Default for ApplyPatternArgs {
             format: Default::default(),
             interactive: Default::default(),
             visibility: VisibilityLevels::Hidden,
-            only_in_diff: Default::default(),
-            only_in_json: Default::default(),
             output_file: Default::default(),
             cache: Default::default(),
             refresh_cache: Default::default(),
@@ -173,6 +154,7 @@ macro_rules! flushable_unwrap {
 #[allow(clippy::too_many_arguments, unused_mut)]
 pub(crate) async fn run_apply_pattern(
     mut pattern: String,
+    shared: SharedApplyArgs,
     paths: Vec<PathBuf>,
     arg: ApplyPatternArgs,
     multi: MultiProgress,
@@ -224,18 +206,11 @@ pub(crate) async fn run_apply_pattern(
     )
     .await?;
 
-    let filter_range = if let Some(json_path) = arg.only_in_json.clone() {
+    let filter_range = if let Some(json_path) = &shared.only_in_json {
         let json_ranges = flushable_unwrap!(emitter, parse_eslint_output(json_path));
         Some(json_ranges)
-    } else if let Some(Some(diff_path)) = &arg.only_in_diff {
-        let diff_ranges = flushable_unwrap!(emitter, extract_modified_ranges(diff_path));
-        Some(diff_ranges)
-    } else if let Some(None) = &arg.only_in_diff {
-        let diff = git_diff(&std::env::current_dir()?)?;
-        let diff_ranges = flushable_unwrap!(emitter, parse_modified_ranges(&diff));
-        Some(diff_ranges)
     } else {
-        None
+        flushable_unwrap!(emitter, extract_target_ranges(&shared.only_in_diff))
     };
 
     let (my_input, lang) = if let Some(pattern_libs) = pattern_libs {
