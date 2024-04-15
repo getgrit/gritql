@@ -134,6 +134,31 @@ mod tests {
     use insta::assert_yaml_snapshot;
 
     #[test]
+    fn parses_verified_baseline() {
+        let diff = r#"diff --git a/crates/cli/src/analyze.rs b/crates/cli/src/analyze.rs
+index 893656e..6218f5e 100644
+--- a/crates/cli/src/analyze.rs
++++ b/crates/cli/src/analyze.rs
+@@ -9,7 +9,7 @@ use tracing::{event, instrument, Level};
+    #[cfg(feature = "grit_tracing")]
+    use tracing_opentelemetry::OpenTelemetrySpanExt as _;
+
+-use grit_cache::paths::cache_for_cwd;
++use THIS WAS CHANGED;
+    use ignore::Walk;
+    use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};"#;
+
+        let parsed = parse_modified_ranges(diff).unwrap();
+        let before_range = &parsed[0].before[0];
+        assert_eq!(before_range.start_line(), 5);
+        assert_eq!(before_range.end_line(), 5);
+        let after_range = &parsed[0].after[0];
+        assert_eq!(after_range.start_line(), 5);
+        assert_eq!(after_range.end_line(), 5);
+        assert_yaml_snapshot!(parsed);
+    }
+
+    #[test]
     fn parse_one_file_diff() {
         let diff = r#"diff --git a/crates/cli_bin/fixtures/es6/empty_export_object.js b/crates/cli_bin/fixtures/es6/empty_export_object.js
 index adacd90..71b96e0 100644
@@ -150,7 +175,6 @@ index adacd90..71b96e0 100644
     export const addTeamToOrgSubscription = () => console.log('cool');
 "#;
         let parsed = parse_modified_ranges(diff).unwrap();
-        println!("{:?}", parsed);
         let before_range = &parsed[0].before[0];
         assert_eq!(before_range.start_line(), 5);
         assert_eq!(before_range.end_line(), 5);

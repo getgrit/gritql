@@ -8,8 +8,7 @@ use tracing::span;
 use tracing::{event, instrument, Level};
 #[cfg(feature = "grit_tracing")]
 use tracing_opentelemetry::OpenTelemetrySpanExt as _;
-
-use grit_cache::paths::cache_for_cwd;
+use what.
 use ignore::Walk;
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 
