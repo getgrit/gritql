@@ -3,7 +3,7 @@ use std::sync::OnceLock;
 
 use crate::{
     language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage},
-    xscript_util::{
+    php_like::{
         php_like_exact_variable_regex, php_like_metavariable_bracket_regex,
         php_like_metavariable_prefix, php_like_metavariable_regex, PHP_ONLY_CODE_SNIPPETS,
     },
