@@ -103,13 +103,13 @@ impl PatternCompiler {
                 return Ok(metavariable);
             }
             if node_types[sort as usize].is_empty() {
-                let content = node.text();
+                let content = node.text()?;
                 if (node.node.named_child_count() == 0)
                     && context
                         .compilation
                         .lang
                         .replaced_metavariable_regex()
-                        .is_match(content)
+                        .is_match(&content)
                 {
                     let regex =
                         implicit_metavariable_regex(&node, context_range, range_map, context)?;
@@ -119,7 +119,7 @@ impl PatternCompiler {
                 }
                 return Ok(Pattern::AstLeafNode(AstLeafNode::new(
                     sort,
-                    content,
+                    &content,
                     context.compilation.lang,
                 )?));
             }
@@ -399,7 +399,9 @@ fn is_metavariable(node: &NodeWithSource, lang: &impl Language) -> bool {
             || (lang
                 .alternate_metavariable_kinds()
                 .contains(&node.node.kind().as_ref())
-                && lang.exact_replaced_variable_regex().is_match(node.text())))
+                && node
+                    .text()
+                    .is_ok_and(|t| lang.exact_replaced_variable_regex().is_match(&t))))
 }
 
 fn make_regex_match_range(text: &str, m: RegexMatch) -> Range {
@@ -419,12 +421,12 @@ fn metavariable_descendent<Q: QueryContext>(
     loop {
         let node = NodeWithSource::new(cursor.node(), node.source);
         if is_metavariable(&node, context.compilation.lang) {
-            let name = node.text();
+            let name = node.text()?;
             if is_reserved_metavariable(name.trim(), Some(context.compilation.lang)) && !is_rhs {
                 bail!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", name.trim_start_matches(context.compilation.lang.metavariable_prefix_substitute()));
             }
             let range = node.range();
-            return text_to_var(name, range, context_range, range_map, context)
+            return text_to_var(&name, range, context_range, range_map, context)
                 .map(|s| Some(s.into()));
         }
         if node.node.child_count() == 1 {

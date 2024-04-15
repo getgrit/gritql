@@ -118,9 +118,6 @@ impl<'a> AstNode for NodeWithSource<'a> {
 
     fn text(&self) -> Result<String, Utf8Error> {
         Ok(self.node.utf8_text(self.source.as_bytes())?.to_string())
-        // let start_byte = self.node.start_byte() as usize;
-        // let end_byte = self.node.end_byte() as usize;
-        // &self.source[start_byte..end_byte]
     }
 
     fn code_range(&self) -> CodeRange {

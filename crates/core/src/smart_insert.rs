@@ -21,7 +21,7 @@ impl<'a> Binding<'a> {
                     if children.len() == 1 {
                         let child = children.first().unwrap();
                         if child.node.end_position().row() > child.node.start_position().row()
-                            && !child.text().ends_with('\n')
+                            && !child.text().is_ok_and(|t| t.ends_with('\n'))
                             && !text.starts_with('\n')
                         {
                             return Some("\n".to_string());

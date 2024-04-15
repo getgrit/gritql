@@ -34,7 +34,7 @@ impl NodeCompiler for AccessorCompiler {
         let key = if key.node.kind() == "variable" {
             AccessorKey::Variable(VariableCompiler::from_node(&key, context)?)
         } else {
-            AccessorKey::String(key.text().to_string())
+            AccessorKey::String(key.text()?.to_string())
         };
 
         Ok(Accessor::new(map, key))

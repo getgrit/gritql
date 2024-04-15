@@ -25,7 +25,7 @@ impl NodeCompiler for LimitCompiler {
         let limit = node
             .child_by_field_name("limit")
             .ok_or_else(|| anyhow!("missing limit in limit"))?;
-        let limit = limit.text().trim().parse::<usize>()?;
+        let limit = limit.text()?.trim().parse::<usize>()?;
         Ok(Pattern::Limit(Box::new(Limit::new(body, limit))))
     }
 }

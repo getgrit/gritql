@@ -29,7 +29,7 @@ impl NodeCompiler for RegexCompiler {
             .ok_or_else(|| anyhow!("malformed regex, check the parser"))?;
 
         let regex = if regex_node.node.kind() == "regex" {
-            let regex = regex_node.text().trim().to_string();
+            let regex = regex_node.text()?.trim().to_string();
             let regex = regex
                 .strip_prefix("r\"")
                 .ok_or_else(|| anyhow!("invalid regex prefix"))?
@@ -41,7 +41,7 @@ impl NodeCompiler for RegexCompiler {
             let back_tick_node = regex_node
                 .child_by_field_name("snippet")
                 .ok_or_else(|| anyhow!("malformed regex, check the parser"))?;
-            let regex = regex_node.text().trim().to_string();
+            let regex = regex_node.text()?.trim().to_string();
             if !context
                 .compilation
                 .lang

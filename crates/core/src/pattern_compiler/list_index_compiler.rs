@@ -34,7 +34,7 @@ impl NodeCompiler for ListIndexCompiler {
         let index = if index_node.node.kind() == "signedIntConstant" {
             ContainerOrIndex::Index(
                 index_node
-                    .text()
+                    .text()?
                     .parse::<isize>()
                     .map_err(|_| anyhow!("list index must be an integer"))?,
             )

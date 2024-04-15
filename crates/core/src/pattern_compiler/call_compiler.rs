@@ -30,7 +30,8 @@ impl NodeCompiler for CallCompiler {
         let sort = node
             .child_by_field_name("name")
             .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
-        let kind = sort.text().trim();
+        let kind = sort.text()?;
+        let kind = kind.trim();
         let lang = context.compilation.lang;
         let sort = lang.get_ts_language().id_for_node_kind(kind, true);
         let expected_params = if let Some(built_in) = context
@@ -151,7 +152,8 @@ impl NodeCompiler for PrCallCompiler {
         let name = node
             .child_by_field_name("name")
             .ok_or_else(|| anyhow!("missing pattern, predicate, or sort name"))?;
-        let name = name.text().trim();
+        let name = name.text()?;
+        let name = name.trim();
         let named_args_count = node.named_children_by_field_name("named_args").count();
         let info = if let Some(info) = context.compilation.predicate_definition_info.get(name) {
             info
@@ -224,7 +226,8 @@ fn node_to_args_pairs<'a>(
         .enumerate()
         .map(|(i, node)| {
             if let Some(var) = node.child_by_field_name("variable") {
-                let name = var.text().trim();
+                let name = var.text()?;
+                let name = name.trim();
                 let name = match name
                     .strip_prefix(lang.metavariable_prefix()) {
                         Some(stripped) => if expected_params.as_ref().is_some_and(|e| !e.contains(&name.to_string()) && !e.contains(&stripped.to_string())) {
@@ -248,7 +251,8 @@ fn node_to_args_pairs<'a>(
                 let name = node
                     .child_by_field_name("name")
                     .ok_or_else(|| anyhow!("missing name of named arg"))?;
-                let name = name.text().trim();
+                let name = name.text()?;
+                let name = name.trim();
                 let pattern = node
                     .child_by_field_name("pattern")
                     .ok_or_else(|| anyhow!("missing pattern of named arg"))?;

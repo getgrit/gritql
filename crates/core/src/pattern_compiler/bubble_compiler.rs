@@ -11,8 +11,9 @@ use crate::pattern::{
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
+use itertools::Itertools;
 use marzano_util::node_with_source::NodeWithSource;
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, str::Utf8Error};
 
 pub(crate) struct BubbleCompiler;
 
@@ -32,8 +33,13 @@ impl NodeCompiler for BubbleCompiler {
 
         let parameters: Vec<_> = node
             .named_children_by_field_name("variables")
-            .map(|n| (n.text().trim().to_string(), n.range()))
-            .collect();
+            .map(|n| {
+                Ok::<(std::string::String, marzano_util::position::Range), Utf8Error>((
+                    n.text()?.trim().to_string(),
+                    n.range(),
+                ))
+            })
+            .collect::<Result<Vec<_>, Utf8Error>>()?;
         if parameters.iter().unique_by(|n| &n.0).count() != parameters.len() {
             bail!("bubble parameters must be unique, but had a repeated name in its parameters.")
         }

@@ -247,7 +247,7 @@ impl<'a> ResolvedSnippet<'a> {
             ResolvedSnippet::Binding(binding) => {
                 // we are now taking the unmodified source code, and replacing the binding with the snippet
                 // we will want to apply effects next
-                Ok(binding.text(language).into())
+                Ok(binding.text(language)?.into())
             }
             ResolvedSnippet::LazyFn(lazy) => lazy.text(state, language),
         }
@@ -852,7 +852,7 @@ impl<'a> ResolvedPattern<'a> {
                 let text = binding
                     .last()
                     .ok_or_else(|| anyhow!("cannot grab text of resolved_pattern with no binding"))?
-                    .text(language);
+                    .text(language)?;
                 text.parse::<f64>().map_err(|_| {
                     anyhow!("Failed to convert binding to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")
                 })
@@ -911,7 +911,7 @@ impl<'a> ResolvedPattern<'a> {
             ResolvedPattern::Binding(binding) => Ok(binding
                 .last()
                 .ok_or_else(|| anyhow!("cannot grab text of resolved_pattern with no binding"))?
-                .text(language)
+                .text(language)?
                 .into()),
             ResolvedPattern::File(file) => Ok(format!(
                 "{}:\n{}",
@@ -937,7 +937,7 @@ impl<'a> ResolvedPattern<'a> {
             return Ok(());
         };
         if let Some(padding) = binding.get_insertion_padding(text, is_first, language) {
-            if padding.chars().next() != binding.text(language).chars().last() {
+            if padding.chars().next() != binding.text(language)?.chars().last() {
                 snippets.push_front(ResolvedSnippet::Text(padding.into()));
             }
         }

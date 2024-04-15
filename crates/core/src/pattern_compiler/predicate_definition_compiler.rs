@@ -23,7 +23,8 @@ impl NodeCompiler for PredicateDefinitionCompiler {
         let name = node
             .child_by_field_name("name")
             .ok_or_else(|| anyhow!("missing name of pattern definition"))?;
-        let name = name.text().trim();
+        let name = name.text()?;
+        let name = name.trim();
         let mut local_vars = BTreeMap::new();
         let (scope_index, mut local_context) = create_scope!(context, local_vars);
         // important that this occurs first, as calls assume
