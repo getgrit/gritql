@@ -4,7 +4,7 @@ use regex::Regex;
 use serde::Serialize;
 use std::{fs::File, io::Read, path::PathBuf, str::FromStr};
 
-pub fn git_diff(path: &PathBuf) -> Result<String> {
+pub fn run_git_diff(path: &PathBuf) -> Result<String> {
     let output = std::process::Command::new("git")
         .arg("diff")
         .arg("HEAD")
