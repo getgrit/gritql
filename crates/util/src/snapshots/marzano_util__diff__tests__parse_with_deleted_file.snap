@@ -21,7 +21,7 @@ expression: parsed
           line: 12
           column: 0
 - old_path: crates/cli_bin/fixtures/es6/export.js
-  new_path: /dev/null
+  new_path: ~
   before:
     - RangeWithoutByte:
         start:

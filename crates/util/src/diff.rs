@@ -242,9 +242,20 @@ index 0000000..7b232cd
 
         assert_eq!(
             parsed[1].old_path,
-            Some("crates/cli_bin/fixtures/es6/export.js".to_string())
+            Some("crates/cli_bin/fixtures/es6/export_object.js".to_string())
         );
-        assert!(parsed[1].new_path.is_none());
+        assert_eq!(
+            parsed[1].new_path,
+            Some("crates/cli_bin/fixtures/es6/export_object.js".to_string())
+        );
+
+        // Finally look at the new one
+        let new_file = &parsed[2];
+        assert_eq!(new_file.old_path, None);
+        assert_eq!(
+            new_file.new_path,
+            Some("crates/cli_bin/fixtures/es6/index.js".to_string())
+        );
 
         assert_yaml_snapshot!(parsed);
     }

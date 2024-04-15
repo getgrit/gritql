@@ -38,7 +38,7 @@ expression: parsed
         end:
           line: 11
           column: 0
-- old_path: /dev/null
+- old_path: ~
   new_path: crates/cli_bin/fixtures/es6/index.js
   before:
     - RangeWithoutByte:
