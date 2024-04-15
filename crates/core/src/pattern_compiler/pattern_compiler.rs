@@ -55,7 +55,7 @@ use crate::{ast_node::ASTNode, context::QueryContext};
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
 use grit_util::{traverse, Order};
-use marzano_language::language::{Field, GritMetaValue, Language, SnippetNode};
+use marzano_language::language::{Field, GritMetaValue, Language, NodeTypes, SnippetNode};
 use marzano_util::{
     cursor_wrapper::CursorWrapper,
     node_with_source::NodeWithSource,

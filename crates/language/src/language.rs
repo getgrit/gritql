@@ -171,8 +171,12 @@ pub(crate) fn kind_and_field_id_for_names(
         .collect()
 }
 
+pub trait NodeTypes {
+    fn node_types(&self) -> &[Vec<Field>];
+}
+
 #[enum_dispatch(TargetLanguage)]
-pub trait Language {
+pub trait Language: NodeTypes {
     /// tree sitter language to parse the source
     fn get_ts_language(&self) -> &TSLanguage;
 
@@ -304,8 +308,6 @@ pub trait Language {
             _metavariable_sort: self.metavariable_sort(),
         }
     }
-
-    fn node_types(&self) -> &[Vec<Field>];
 
     fn metavariable_sort(&self) -> SortId;
 

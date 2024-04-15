@@ -78,7 +78,7 @@ pub async fn parse_input_files(
     let ParsedPattern { libs, tree, lang } =
         get_parsed_pattern(&pattern, lib_paths, lib_contents, parser).await?;
     let node = tree.root_node();
-    let parsed_pattern = tree_sitter_node_to_json(&node, &pattern, Some(&lang)).to_string();
+    let parsed_pattern = tree_sitter_node_to_json(&node, &pattern, &lang).to_string();
 
     let mut results: Vec<MatchResult> = Vec::new();
     for (path, content) in paths.into_iter().zip(contents) {
@@ -86,7 +86,7 @@ pub async fn parse_input_files(
         let mut parser = setup_language_parser((&lang).into()).await?;
         let tree = parser.parse(content.as_bytes(), None).unwrap().unwrap();
         let input_file_debug_text =
-            tree_sitter_node_to_json(&tree.root_node(), &content, Some(&lang)).to_string();
+            tree_sitter_node_to_json(&tree.root_node(), &content, &lang).to_string();
         let input_file = InputFile {
             source_file: path.to_string_lossy().to_string(),
             syntax_tree: input_file_debug_text,
@@ -106,7 +106,7 @@ pub async fn parse_input_files(
         None,
         parser,
         injected_builtins,
-        None
+        None,
     ) {
         Ok(c) => {
             let warning_logs = c
@@ -230,7 +230,7 @@ pub async fn match_pattern(
         None,
         parser,
         injected_builtins,
-        None
+        None,
     ) {
         Ok(c) => c,
         Err(e) => {

@@ -18,12 +18,9 @@ pub fn parse_input_file(lang: &impl Language, input: &str, path: &Path) -> Resul
         .parse(input.as_bytes(), None)
         .context("Failed to parse input")?
         .context("Parsed tree is empty")?;
-    let input_file_debug_text = to_string_pretty(&tree_sitter_node_to_json(
-        &tree.root_node(),
-        input,
-        Some(lang),
-    ))
-    .context("Failed to convert tree to pretty JSON string")?;
+    let input_file_debug_text =
+        to_string_pretty(&tree_sitter_node_to_json(&tree.root_node(), input, lang))
+            .context("Failed to convert tree to pretty JSON string")?;
     Ok(InputFile {
         source_file: path.to_string_lossy().to_string(),
         syntax_tree: input_file_debug_text,

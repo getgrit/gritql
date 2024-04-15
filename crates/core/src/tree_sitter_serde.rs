@@ -1,7 +1,4 @@
-use marzano_language::{
-    grit_ts_node::GRIT_NODE_TYPES,
-    language::{Field, Language},
-};
+use marzano_language::language::{Field, NodeTypes};
 use serde_json::{json, Value};
 use tree_sitter::Node;
 
@@ -13,14 +10,10 @@ use tree_sitter::Node;
 pub fn tree_sitter_node_to_json(
     node: &Node,
     source: &str,
-    language: Option<&impl Language>,
+    language: &impl NodeTypes,
 ) -> serde_json::Value {
     let sort_id = node.kind_id();
-    let node_types = if let Some(language) = language {
-        language.node_types()
-    } else {
-        &GRIT_NODE_TYPES
-    };
+    let node_types = language.node_types();
     let empty: Vec<Field> = vec![];
     let node_fields = if node.is_error() {
         &empty

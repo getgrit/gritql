@@ -1,4 +1,6 @@
-use crate::language::{fields_for_nodes, Field, Language, Replacement, SortId, TSLanguage};
+use crate::language::{
+    fields_for_nodes, Field, Language, NodeTypes, Replacement, SortId, TSLanguage,
+};
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
@@ -45,6 +47,12 @@ impl Python {
     }
 }
 
+impl NodeTypes for Python {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
+}
+
 impl Language for Python {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -65,10 +73,6 @@ impl Language for Python {
             ("", "\ndef GRIT_FUNCTION():\n    return;"),
             ("GRIT_FN(", ")"),
         ]
-    }
-
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
     }
 
     fn metavariable_sort(&self) -> SortId {
