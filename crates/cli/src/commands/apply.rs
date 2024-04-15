@@ -14,6 +14,17 @@ use crate::flags::GlobalFormatFlags;
 use super::apply_migration::{run_apply_migration, ApplyMigrationArgs};
 use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
 
+#[derive(Args, Debug, Serialize, Default)]
+pub struct SharedApplyArgs {
+    #[clap(
+        long = "only-in-diff",
+        help = "Only rewrite ranges that are inside the unified diff if a path to the diff is provided, or the results of git diff HEAD if no path is provided.",
+        hide = true,
+        conflicts_with = "only_in_json"
+    )]
+    pub(crate) only_in_diff: Option<Option<PathBuf>>,
+}
+
 #[derive(Args, Debug, Serialize)]
 pub struct ApplyArgs {
     #[clap(
@@ -36,6 +47,9 @@ pub struct ApplyArgs {
 
     #[command(flatten)]
     apply_pattern_args: ApplyPatternArgs,
+
+    #[command(flatten)]
+    shared_apply_args: SharedApplyArgs,
 }
 
 pub(crate) async fn run_apply(
@@ -48,6 +62,7 @@ pub(crate) async fn run_apply(
     {
         let current_dir = current_dir()?;
         let custom_workflow = find_workflow_file_from(current_dir, &args.pattern_or_workflow).await;
+        println!("ARGS: {:?}", args);
         if let Some(custom_workflow) = custom_workflow {
             return run_apply_migration(
                 custom_workflow,
@@ -61,6 +76,7 @@ pub(crate) async fn run_apply(
 
     run_apply_pattern(
         args.pattern_or_workflow,
+        args.shared_apply_args,
         args.paths,
         args.apply_pattern_args,
         multi,

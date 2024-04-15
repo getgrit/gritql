@@ -2,6 +2,8 @@ use anyhow::Result;
 use marzano_util::position::{FileRange, Position, RangeWithoutByte, UtilRange};
 use std::{fs::File, io::Read, path::PathBuf, str::FromStr};
 
+use crate::commands::apply::SharedApplyArgs;
+
 pub fn git_diff(path: &PathBuf) -> Result<String> {
     let output = std::process::Command::new("git")
         .arg("diff")
@@ -62,6 +64,19 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
     Ok(results)
 }
 
+pub(crate) fn extract_target_ranges(arg: &SharedApplyArgs) -> Result<Option<Vec<FileRange>>> {
+    if let Some(Some(diff_path)) = &arg.only_in_diff {
+        let diff_ranges = extract_modified_ranges(diff_path)?;
+        Ok(Some(diff_ranges))
+    } else if let Some(None) = &arg.only_in_diff {
+        let diff = git_diff(&std::env::current_dir()?)?;
+        let diff_ranges = parse_modified_ranges(&diff)?;
+        Ok(Some(diff_ranges))
+    } else {
+        Ok(None)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -75,12 +90,12 @@ index adacd90..71b96e0 100644
 +++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
 @@ -5,7 +5,7 @@ module.exports = {
     };
-    
+
     export async function createTeam() {
 -  console.log('cool');
 +  console.log('very cool');
     }
-    
+
     export const addTeamToOrgSubscription = () => console.log('cool');
 "#;
         let parsed = parse_modified_ranges(diff).unwrap();
@@ -95,12 +110,12 @@ index adacd90..71b96e0 100644
 +++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
 @@ -5,7 +5,7 @@ module.exports = {
     };
-    
+
     export async function createTeam() {
 -  console.log('cool');
 +  console.log('very cool');
     }
-    
+
     export const addTeamToOrgSubscription = () => console.log('cool');
 diff --git a/crates/cli_bin/fixtures/es6/export_object.js b/crates/cli_bin/fixtures/es6/export_object.js
 index f6e1a2c..2c58ad2 100644
@@ -109,12 +124,12 @@ index f6e1a2c..2c58ad2 100644
 @@ -2,7 +2,9 @@ async function createTeam() {
     console.log('cool');
     }
-    
+
 -const addTeamToOrgSubscription = () => console.log('cool');
 +const addTeamToOrgSubscription = () => {
 +  console.log('cool')
 +};
-    
+
     module.exports = {
     createTeam,
 "#;
@@ -130,12 +145,12 @@ index adacd90..71b96e0 100644
 +++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
 @@ -5,7 +5,7 @@ module.exports = {
     };
-    
+
     export async function createTeam() {
 -  console.log('cool');
 +  console.log('very cool');
     }
-    
+
     export const addTeamToOrgSubscription = () => console.log('cool');
 diff --git a/crates/cli_bin/fixtures/es6/export_object.js b/crates/cli_bin/fixtures/es6/export_object.js
 index f6e1a2c..2c58ad2 100644
@@ -144,12 +159,12 @@ index f6e1a2c..2c58ad2 100644
 @@ -2,7 +2,9 @@ async function createTeam() {
     console.log('cool');
     }
-    
+
 -const addTeamToOrgSubscription = () => console.log('cool');
 +const addTeamToOrgSubscription = () => {
 +  console.log('cool')
 +};
-    
+
     module.exports = {
     createTeam,
 diff --git a/crates/cli_bin/fixtures/es6/index.js b/crates/cli_bin/fixtures/es6/index.js
@@ -183,12 +198,12 @@ index adacd90..71b96e0 100644
 +++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
 @@ -5,7 +5,7 @@ module.exports = {
     };
-    
+
     export async function createTeam() {
 -  console.log('cool');
 +  console.log('very cool');
     }
-    
+
     export const addTeamToOrgSubscription = () => console.log('cool');
 diff --git a/crates/cli_bin/fixtures/es6/export.js b/crates/cli_bin/fixtures/es6/export.js
 deleted file mode 100644
@@ -222,12 +237,12 @@ index f6e1a2c..2c58ad2 100644
 @@ -2,7 +2,9 @@ async function createTeam() {
     console.log('cool');
     }
-    
+
 -const addTeamToOrgSubscription = () => console.log('cool');
 +const addTeamToOrgSubscription = () => {
 +  console.log('cool')
 +};
-    
+
     module.exports = {
     createTeam,
 "#;
