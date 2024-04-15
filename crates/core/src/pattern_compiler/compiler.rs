@@ -155,7 +155,8 @@ fn insert_definition_index(
     let name = definition
         .child_by_field_name("name")
         .ok_or_else(|| anyhow!("missing name of patternDefinition"))?;
-    let name = name.text().trim();
+    let name = name.text();
+    let name = name.trim();
     let parameters: Vec<_> = definition
         .named_children_by_field_name("args")
         .map(|n| (n.text().trim().to_string(), n.range()))

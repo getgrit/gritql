@@ -48,8 +48,10 @@ pub fn get_patterns_from_grit(
             let name_node = pattern_definition
                 .child_by_field_name("name")
                 .ok_or_else(|| anyhow!("missing name of patternDefinition"))?;
-            let name = name_node.text().trim();
-            let plain_body = pattern_definition.text().trim();
+            let name = name_node.text();
+            let name = name.trim();
+            let plain_body = pattern_definition.text();
+            let plain_body = plain_body.trim();
 
             let kind = match pattern_definition.node.kind().as_ref() {
                 "patternDefinition" => Some(DefinitionKind::Pattern),

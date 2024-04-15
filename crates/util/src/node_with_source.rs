@@ -116,10 +116,14 @@ impl<'a> AstNode for NodeWithSource<'a> {
             .map(|sibling| Self::new(sibling, self.source))
     }
 
-    fn text(&self) -> &str {
-        let start_byte = self.node.start_byte() as usize;
-        let end_byte = self.node.end_byte() as usize;
-        &self.source[start_byte..end_byte]
+    fn text(&self) -> String {
+        self.node
+            .utf8_text(self.source.as_bytes())
+            .unwrap()
+            .to_string()
+        // let start_byte = self.node.start_byte() as usize;
+        // let end_byte = self.node.end_byte() as usize;
+        // &self.source[start_byte..end_byte]
     }
 
     fn code_range(&self) -> CodeRange {

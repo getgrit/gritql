@@ -38,7 +38,8 @@ impl NodeCompiler for AsCompiler {
             .child_by_field_name("variable")
             .ok_or_else(|| anyhow!("missing variable of patternWhere"))?;
 
-        let name = variable.text().trim();
+        let name = variable.text();
+        let name = name.trim();
 
         // this just searches the subtree for a variables that share the name.
         // could possible lead to some false positives, but more precise solutions

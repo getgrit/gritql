@@ -25,7 +25,8 @@ impl NodeCompiler for GritFunctionDefinitionCompiler {
         let name = node
             .child_by_field_name("name")
             .ok_or_else(|| anyhow!("missing name of function definition"))?;
-        let name = name.text().trim();
+        let name = name.text();
+        let name = name.trim();
         let mut local_vars = BTreeMap::new();
         let (scope_index, mut local_context) = create_scope!(context, local_vars);
 
@@ -67,7 +68,8 @@ impl NodeCompiler for ForeignFunctionDefinitionCompiler {
         let name = node
             .child_by_field_name("name")
             .ok_or_else(|| anyhow!("missing name of function definition"))?;
-        let name = name.text().trim();
+        let name = name.text();
+        let name = name.trim();
         let mut local_vars = BTreeMap::new();
         let (scope_index, mut local_context) = create_scope!(context, local_vars);
         let params = get_variables(
