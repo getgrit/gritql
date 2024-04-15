@@ -23,6 +23,7 @@ fn language() -> TSLanguage {
 pub struct Rust {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,
+    comment_sorts: [SortId; 2],
     language: &'static TSLanguage,
     optional_empty_field_compilation: &'static Vec<(SortId, FieldId)>,
 }
@@ -32,6 +33,10 @@ impl Rust {
         let language = LANGUAGE.get_or_init(|| lang.unwrap_or_else(language));
         let node_types = NODE_TYPES.get_or_init(|| fields_for_nodes(language, NODE_TYPES_STRING));
         let metavariable_sort = language.id_for_node_kind("grit_metavariable", true);
+        let comment_sorts = [
+            language.id_for_node_kind("line_comment", true),
+            language.id_for_node_kind("block_comment", true),
+        ];
         let optional_empty_field_compilation = OPTIONAL_EMPTY_FIELD_COMPILATION.get_or_init(|| {
             vec![
                 (
@@ -71,6 +76,7 @@ impl Rust {
         Self {
             node_types,
             metavariable_sort,
+            comment_sorts,
             language,
             optional_empty_field_compilation,
         }
@@ -114,6 +120,10 @@ impl Language for Rust {
 
     fn metavariable_sort(&self) -> SortId {
         self.metavariable_sort
+    }
+
+    fn is_comment(&self, id: SortId) -> bool {
+        self.comment_sorts.contains(&id)
     }
 }
 
