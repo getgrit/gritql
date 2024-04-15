@@ -1,5 +1,6 @@
 use anyhow::Result;
 use marzano_util::position::{FileRange, Position, RangeWithoutByte, UtilRange};
+use serde::Serialize;
 use std::{fs::File, io::Read, path::PathBuf, str::FromStr};
 
 use crate::commands::apply::SharedApplyArgs;
@@ -15,7 +16,7 @@ pub fn git_diff(path: &PathBuf) -> Result<String> {
     Ok(String::from_utf8(output.stdout)?)
 }
 
-pub fn extract_modified_ranges(diff_path: &PathBuf) -> Result<Vec<FileRange>> {
+pub fn extract_modified_ranges(diff_path: &PathBuf) -> Result<Vec<FileDiff>> {
     let mut file = File::open(diff_path)?;
     let mut diff = String::new();
 
@@ -23,42 +24,103 @@ pub fn extract_modified_ranges(diff_path: &PathBuf) -> Result<Vec<FileRange>> {
     parse_modified_ranges(&diff)
 }
 
-pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
+// Define a new struct to hold before and after ranges
+#[derive(Debug, Clone, Serialize)]
+pub struct FileDiff {
+    pub file_path: String,
+    pub before: Vec<FileRange>,
+    pub after: Vec<FileRange>,
+}
+
+pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
     let mut results = Vec::new();
     let lines = diff.lines();
 
-    let mut current_file = String::new();
-    let mut start_pos = Position { line: 0, column: 0 };
-    let mut end_pos = Position { line: 0, column: 0 };
+    let mut is_deleted_file = false;
+    let mut current_file_diff = FileDiff {
+        file_path: String::new(),
+        before: Vec::new(),
+        after: Vec::new(),
+    };
+    let mut start_pos_before = Position { line: 0, column: 0 };
+    let mut end_pos_before = Position { line: 0, column: 0 };
+    let mut start_pos_after = Position { line: 0, column: 0 };
+    let mut end_pos_after = Position { line: 0, column: 0 };
 
     for line in lines {
         if line.starts_with("+++") {
-            current_file = line.split_whitespace().nth(1).unwrap_or("").to_string();
-            if current_file.starts_with("b/") {
-                current_file = current_file[2..].to_string();
+            if !current_file_diff.file_path.is_empty() {
+                // If the previous file was marked as deleted, only "before" ranges are relevant.
+                if is_deleted_file {
+                    current_file_diff.after.clear();
+                }
+                results.push(current_file_diff);
             }
+            is_deleted_file = line.contains("/dev/null");
+            current_file_diff = FileDiff {
+                file_path: line
+                    .split_whitespace()
+                    .nth(1)
+                    .unwrap_or("")
+                    .to_string()
+                    .trim_start_matches("b/")
+                    .to_string(),
+                before: Vec::new(),
+                after: Vec::new(),
+            };
         } else if line.starts_with("@@") {
-            if current_file == "/dev/null" {
-                continue;
-            }
-            let range_part = line.split_whitespace().nth(2).unwrap_or("");
-            let range_parts: Vec<&str> = range_part.split(',').collect();
-            if let Ok(line_num) = u32::from_str(range_parts[0].trim_start_matches('+')) {
-                start_pos.line = line_num;
-                end_pos.line = line_num
+            let range_parts: Vec<&str> = line
+                .split_whitespace()
+                .nth(1)
+                .unwrap_or("")
+                .split('+')
+                .collect();
+            let after_range_parts: Vec<&str> = line
+                .split_whitespace()
+                .nth(2)
+                .unwrap_or("")
+                .split('+')
+                .collect();
+
+            if let Ok(line_num_before) = u32::from_str(range_parts[0].trim_start_matches('-')) {
+                start_pos_before.line = line_num_before;
+                end_pos_before.line = line_num_before
                     + range_parts
                         .get(1)
-                        .map_or(1, |&x| x.parse::<u32>().unwrap_or(0));
+                        .map_or(1, |&x| x.parse::<u32>().unwrap_or(1));
             }
 
-            results.push(FileRange {
-                file_path: current_file.clone(),
+            if let Ok(line_num_after) = u32::from_str(after_range_parts[0]) {
+                start_pos_after.line = line_num_after;
+                end_pos_after.line = line_num_after
+                    + after_range_parts
+                        .get(1)
+                        .map_or(1, |&x| x.parse::<u32>().unwrap_or(1));
+            }
+
+            current_file_diff.before.push(FileRange {
+                file_path: current_file_diff.file_path.clone(),
                 range: UtilRange::RangeWithoutByte(RangeWithoutByte {
-                    start: start_pos,
-                    end: end_pos,
+                    start: start_pos_before,
+                    end: end_pos_before,
+                }),
+            });
+
+            current_file_diff.after.push(FileRange {
+                file_path: current_file_diff.file_path.clone(),
+                range: UtilRange::RangeWithoutByte(RangeWithoutByte {
+                    start: start_pos_after,
+                    end: end_pos_after,
                 }),
             });
         }
+    }
+
+    if !current_file_diff.file_path.is_empty() {
+        if is_deleted_file {
+            current_file_diff.after.clear();
+        }
+        results.push(current_file_diff);
     }
 
     Ok(results)
@@ -67,11 +129,15 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
 pub(crate) fn extract_target_ranges(arg: &SharedApplyArgs) -> Result<Option<Vec<FileRange>>> {
     if let Some(Some(diff_path)) = &arg.only_in_diff {
         let diff_ranges = extract_modified_ranges(diff_path)?;
-        Ok(Some(diff_ranges))
+        Ok(Some(
+            diff_ranges.into_iter().flat_map(|x| x.after).collect(),
+        ))
     } else if let Some(None) = &arg.only_in_diff {
         let diff = git_diff(&std::env::current_dir()?)?;
         let diff_ranges = parse_modified_ranges(&diff)?;
-        Ok(Some(diff_ranges))
+        Ok(Some(
+            diff_ranges.into_iter().flat_map(|x| x.after).collect(),
+        ))
     } else {
         Ok(None)
     }
