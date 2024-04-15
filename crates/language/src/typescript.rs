@@ -2,7 +2,8 @@ use std::borrow::Cow;
 use std::sync::OnceLock;
 
 use crate::language::{
-    fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, SortId, TSLanguage,
+    fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, NodeTypes, SortId,
+    TSLanguage,
 };
 use crate::xscript_util::{
     self, js_like_get_statement_sorts, js_like_optional_empty_field_compilation,
@@ -74,6 +75,12 @@ impl TypeScript {
     }
 }
 
+impl NodeTypes for TypeScript {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
+}
+
 impl Language for TypeScript {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -124,10 +131,6 @@ impl Language for TypeScript {
             ("function GRIT_FN(GRIT_ARG", ") { }"),
             ("GRIT_FN<{ ", " }>();"),
         ]
-    }
-
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
     }
 
     fn is_comment(&self, id: SortId) -> bool {

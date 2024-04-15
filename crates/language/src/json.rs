@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
+use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/json-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
@@ -23,6 +23,12 @@ pub struct Json {
     metavariable_sort: SortId,
     comment_sort: SortId,
     language: &'static TSLanguage,
+}
+
+impl NodeTypes for Json {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
 }
 
 impl Json {
@@ -53,10 +59,6 @@ impl Language for Json {
     }
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
         &[("", ""), ("{ ", " }")]
-    }
-
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
     }
 
     fn metavariable_sort(&self) -> SortId {

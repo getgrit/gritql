@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use crate::language::{fields_for_nodes, Field, FieldId, Language, SortId, TSLanguage};
+use crate::language::{fields_for_nodes, Field, FieldId, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/rust-node-types.json");
 
@@ -86,6 +86,12 @@ impl Rust {
     }
 }
 
+impl NodeTypes for Rust {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
+}
+
 impl Language for Rust {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -112,10 +118,6 @@ impl Language for Rust {
             ("fn GRIT_FN(", ") {}"),
             ("fn GRIT_FN(GRIT_ARG:", ") { }"),
         ]
-    }
-
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
     }
 
     fn metavariable_sort(&self) -> SortId {

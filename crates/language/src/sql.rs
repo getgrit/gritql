@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
+use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/sql-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
@@ -43,6 +43,12 @@ impl Sql {
     }
 }
 
+impl NodeTypes for Sql {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
+}
+
 impl Language for Sql {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -66,10 +72,6 @@ impl Language for Sql {
                 ";",
             ),
         ]
-    }
-
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
     }
 
     fn metavariable_sort(&self) -> SortId {

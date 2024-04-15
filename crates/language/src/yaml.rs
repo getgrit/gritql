@@ -2,7 +2,7 @@ use std::{sync::OnceLock, vec};
 
 use crate::language::{
     fields_for_nodes, normalize_double_quote_string, normalize_identity, Field, Language,
-    LeafEquivalenceClass, LeafNormalizer, SortId, TSLanguage,
+    LeafEquivalenceClass, LeafNormalizer, NodeTypes, SortId, TSLanguage,
 };
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/yaml-node-types.json");
@@ -61,6 +61,12 @@ impl Yaml {
     }
 }
 
+impl NodeTypes for Yaml {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
+}
+
 impl Language for Yaml {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -75,10 +81,6 @@ impl Language for Yaml {
     }
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
         &[("", "")]
-    }
-
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
     }
 
     fn metavariable_sort(&self) -> SortId {

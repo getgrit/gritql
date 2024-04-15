@@ -2,8 +2,8 @@ use std::{borrow::Cow, sync::OnceLock};
 
 use crate::{
     language::{
-        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, Replacement,
-        SortId, TSLanguage,
+        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, NodeTypes,
+        Replacement, SortId, TSLanguage,
     },
     xscript_util::{
         self, js_like_optional_empty_field_compilation, js_like_skip_snippet_compilation_sorts,
@@ -73,6 +73,12 @@ impl Tsx {
     }
 }
 
+impl NodeTypes for Tsx {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
+}
+
 impl Language for Tsx {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -123,10 +129,6 @@ impl Language for Tsx {
             ("function GRIT_FN(GRIT_ARG", ") { }"),
             ("GRIT_FN<{ ", " }>();"),
         ]
-    }
-
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
     }
 
     fn is_comment(&self, id: SortId) -> bool {

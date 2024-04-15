@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
+use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/go-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
@@ -43,6 +43,12 @@ impl Go {
     }
 }
 
+impl NodeTypes for Go {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
+}
+
 impl Language for Go {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -59,10 +65,6 @@ impl Language for Go {
             ("func GRIT_FUNC(GRIT_ARG *", ".GRIT_TYPE) {}"),
             ("func GRIT_FUNC(GRIT_ARG *GRIT_PACKAGE.", ") {}"),
         ]
-    }
-
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
     }
 
     fn metavariable_sort(&self) -> SortId {

@@ -2,7 +2,7 @@ use regex::Regex;
 use std::sync::OnceLock;
 
 use crate::{
-    language::{fields_for_nodes, Field, Language, SortId, TSLanguage},
+    language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage},
     xscript_util::{
         php_like_exact_variable_regex, php_like_metavariable_bracket_regex,
         php_like_metavariable_prefix, php_like_metavariable_regex, PHP_ONLY_CODE_SNIPPETS,
@@ -52,6 +52,12 @@ impl PhpOnly {
     }
 }
 
+impl NodeTypes for PhpOnly {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
+}
+
 impl Language for PhpOnly {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -66,10 +72,6 @@ impl Language for PhpOnly {
     }
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
         &PHP_ONLY_CODE_SNIPPETS
-    }
-
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
     }
 
     fn metavariable_sort(&self) -> SortId {
