@@ -27,7 +27,7 @@ impl NodeCompiler for LogCompiler {
         let variable_node = node.child_by_field_name("variable");
         let variable = variable_node
             .map(|n| {
-                let name = n.text().to_string();
+                let name = n.text()?;
                 let variable = VariableCompiler::from_node(&n, context)?;
                 Ok(VariableInfo::new(name, variable))
             })

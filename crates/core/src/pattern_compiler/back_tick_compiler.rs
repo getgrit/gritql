@@ -18,7 +18,7 @@ impl NodeCompiler for BackTickCompiler {
         context: &mut NodeCompilationContext,
         is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
-        let source = node.text().to_string();
+        let source = node.text()?.to_string();
         let mut range = node.range();
         range.adjust_columns(1, -1);
         let content = source
@@ -43,7 +43,7 @@ impl NodeCompiler for RawBackTickCompiler {
         if !is_rhs {
             bail!("raw snippets are only allowed on the right hand side of a rule");
         }
-        let source = node.text().to_string();
+        let source = node.text()?.to_string();
         let mut range = node.range();
         // adjust range by "raw`" and "`"
         range.adjust_columns(4, -1);

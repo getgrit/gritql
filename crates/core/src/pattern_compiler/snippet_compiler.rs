@@ -64,13 +64,13 @@ impl NodeCompiler for LanguageSpecificSnippetCompiler {
         let lang_node = node
             .child_by_field_name("language")
             .ok_or_else(|| anyhow!("missing language of languageSpecificSnippet"))?;
-        let lang_name = lang_node.text().trim().to_string();
+        let lang_name = lang_node.text()?.trim().to_string();
         let _snippet_lang = TargetLanguage::from_string(&lang_name, None)
             .ok_or_else(|| anyhow!("invalid language: {lang_name}"))?;
         let snippet_node = node
             .child_by_field_name("snippet")
             .ok_or_else(|| anyhow!("missing snippet of languageSpecificSnippet"))?;
-        let source = snippet_node.text().to_string();
+        let source = snippet_node.text()?.to_string();
         let mut range = node.range();
         range.adjust_columns(1, -1);
         let content = source

@@ -484,7 +484,7 @@ fn length_fn<'a>(
                 let length = if let Some(list_items) = resolved_pattern.list_items() {
                     list_items.count()
                 } else {
-                    resolved_pattern.text(context.language()).len()
+                    resolved_pattern.text(context.language())?.len()
                 };
                 Ok(ResolvedPattern::Constant(Constant::Integer(length as i64)))
             }

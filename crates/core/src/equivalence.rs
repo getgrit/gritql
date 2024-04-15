@@ -18,9 +18,9 @@ impl<'a> Binding<'a> {
             // should never occur covered by singleton
             Self::Node(node1) => match other {
                 Self::Node(node2) => are_equivalent(node1, node2),
-                Self::String(str, range) => {
-                    str[range.start_byte as usize..range.end_byte as usize] == self.text(language)
-                }
+                Self::String(str, range) => self
+                    .text(language)
+                    .is_ok_and(|t| t == str[range.start_byte as usize..range.end_byte as usize]),
                 Self::FileName(_) | Self::List(..) | Self::Empty(..) | Self::ConstantRef(_) => {
                     false
                 }
@@ -51,9 +51,9 @@ impl<'a> Binding<'a> {
                 | Self::ConstantRef(_) => false,
             },
             Self::ConstantRef(c1) => other.as_constant().map_or(false, |c2| *c1 == c2),
-            Self::String(s1, range) => {
-                s1[range.start_byte as usize..range.end_byte as usize] == other.text(language)
-            }
+            Self::String(s1, range) => other
+                .text(language)
+                .is_ok_and(|t| t == s1[range.start_byte as usize..range.end_byte as usize]),
             Self::FileName(s1) => other.as_filename().map_or(false, |s2| *s1 == s2),
         }
     }

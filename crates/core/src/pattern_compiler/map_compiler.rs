@@ -25,8 +25,7 @@ impl NodeCompiler for MapCompiler {
             let key = element
                 .child_by_field_name("key")
                 .ok_or_else(|| anyhow!("key not found in map element"))?
-                .text()
-                .to_string();
+                .text()?;
             let value = element
                 .child_by_field_name("value")
                 .ok_or_else(|| anyhow!("value not found in map element"))?;

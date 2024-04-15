@@ -34,12 +34,15 @@ fn is_suppress_comment(
     lang: &impl Language,
 ) -> bool {
     let child_range = comment_node.node.range();
-    let text = comment_node.text();
+    let text = match comment_node.text() {
+        Ok(text) => text,
+        Err(_) => return false,
+    };
     let inline_suppress = child_range.end_point().row() >= target_range.start_point().row()
         && child_range.end_point().row() <= target_range.end_point().row();
     if !inline_suppress {
         let pre_suppress = comment_applies_to_range(comment_node, target_range, lang)
-            && comment_occupies_entire_line(text, comment_node);
+            && comment_occupies_entire_line(&text, comment_node);
         if !pre_suppress {
             return false;
         }
@@ -84,7 +87,7 @@ fn comment_applies_to_range(
         if !lang.is_comment(applicable.node.kind_id())
             && !lang.is_comment_wrapper(&applicable.node)
             // Some languages have significant whitespace; continue until we find a non-whitespace non-comment node
-            && !applicable.text().trim().is_empty()
+            && applicable.text().is_ok_and(|t| !t.trim().is_empty())
         {
             break;
         }

@@ -17,7 +17,7 @@ impl NodeCompiler for BooleanConstantCompiler {
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
-        let text = node.text().trim().to_string();
+        let text = node.text()?.trim().to_string();
         let value = match text.as_str() {
             "true" => true,
             "false" => false,
@@ -37,7 +37,7 @@ impl NodeCompiler for FloatConstantCompiler {
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
-        let text = node.text().trim().to_string();
+        let text = node.text()?.trim().to_string();
         let value = text.parse::<f64>()?;
         Ok(FloatConstant::new(value))
     }
@@ -53,7 +53,7 @@ impl NodeCompiler for IntConstantCompiler {
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
-        let text = node.text().trim().to_string();
+        let text = node.text()?.trim().to_string();
         let value = text.parse::<i64>()?;
         Ok(IntConstant::new(value))
     }
@@ -69,7 +69,7 @@ impl NodeCompiler for StringConstantCompiler {
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
-        let text = node.text().trim().to_string();
+        let text = node.text()?.trim().to_string();
         let text = text.strip_prefix('\"').unwrap().strip_suffix('\"').unwrap();
         let text = text.replace("\\\"", "\"").replace("\\\\", "\\");
         Ok(StringConstant::new(text))

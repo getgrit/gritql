@@ -127,7 +127,9 @@ pub(crate) fn jslike_check_replacements(
                 replacement_ranges.push(Replacement::new(range.into(), "{}"));
             }
         }
-    } else if n.node.is_error() && ["var", "let", "const"].contains(&n.text())
+    } else if n.node.is_error()
+        && n.text()
+            .is_ok_and(|t| ["var", "let", "const"].contains(&t.as_str()))
         || n.node.kind() == "empty_statement"
     {
         replacement_ranges.push(Replacement::new(n.range(), ""));
@@ -148,7 +150,7 @@ pub(crate) fn jslike_check_replacements(
                 }
             }
         }
-    } else if n.node.is_error() && n.text() == "," {
+    } else if n.node.is_error() && n.text().is_ok_and(|n| n == ",") {
         for ancestor in n.ancestors() {
             if ancestor.node.kind() == "class_body" {
                 replacement_ranges.push(Replacement::new(n.range(), ""));

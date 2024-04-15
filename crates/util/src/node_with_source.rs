@@ -1,4 +1,4 @@
-use std::ptr;
+use std::{ptr, str::Utf8Error};
 
 use crate::position::Range;
 
@@ -116,10 +116,8 @@ impl<'a> AstNode for NodeWithSource<'a> {
             .map(|sibling| Self::new(sibling, self.source))
     }
 
-    fn text(&self) -> &str {
-        let start_byte = self.node.start_byte() as usize;
-        let end_byte = self.node.end_byte() as usize;
-        &self.source[start_byte..end_byte]
+    fn text(&self) -> Result<String, Utf8Error> {
+        Ok(self.node.utf8_text(self.source.as_bytes())?.to_string())
     }
 
     fn code_range(&self) -> CodeRange {

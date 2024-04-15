@@ -134,7 +134,7 @@ impl Variable {
                         } else {
                             return Ok(Some(
                                 resolved_pattern.text(&state.files, lang)?
-                                    == bindings.last().unwrap().text(lang),
+                                    == bindings.last().unwrap().text(lang)?,
                             ));
                         }
                     }

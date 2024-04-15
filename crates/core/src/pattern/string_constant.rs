@@ -91,11 +91,11 @@ impl<Q: QueryContext> Matcher<Q> for AstLeafNode {
             return Ok(false);
         };
         if let Some(e) = &self.equivalence_class {
-            Ok(e.are_equivalent(node.node.kind_id(), node.text().trim()))
+            Ok(e.are_equivalent(node.node.kind_id(), node.text()?.trim()))
         } else if self.sort != node.node.kind_id() {
             Ok(false)
         } else {
-            Ok(node.text().trim() == self.text)
+            Ok(node.text()?.trim() == self.text)
         }
     }
 }
