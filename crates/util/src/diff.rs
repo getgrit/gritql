@@ -52,7 +52,7 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
 
             results.push(FileDiff {
                 old_path: Some(old_file_name.clone()),
-                new_path: None,
+                new_path: Some(old_file_name),
                 before: Vec::new(),
                 after: Vec::new(),
             });
