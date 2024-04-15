@@ -1,0 +1,1370 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 00d7b2a..a50475c 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -2097,6 +2097,7 @@ dependencies = [
+  "grit-util",
+  "http",
+  "ignore",
++ "insta",
+  "log",
+  "reqwest",
+  "serde",
+diff --git a/crates/cli/src/commands/apply.rs b/crates/cli/src/commands/apply.rs
+index 523ae83..7007b66 100644
+--- a/crates/cli/src/commands/apply.rs
++++ b/crates/cli/src/commands/apply.rs
+@@ -14,6 +14,17 @@ use crate::flags::GlobalFormatFlags;
+ use super::apply_migration::{run_apply_migration, ApplyMigrationArgs};
+ use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
+ 
++#[derive(Args, Debug, Serialize, Default)]
++pub struct SharedApplyArgs {
++    #[clap(
++        long = "only-in-diff",
++        help = "Only rewrite ranges that are inside the unified diff if a path to the diff is provided, or the results of git diff HEAD if no path is provided.",
++        hide = true,
++        conflicts_with = "only_in_json"
++    )]
++    pub(crate) only_in_diff: Option<Option<PathBuf>>,
++}
++
+ #[derive(Args, Debug, Serialize)]
+ pub struct ApplyArgs {
+     #[clap(
+@@ -36,6 +47,9 @@ pub struct ApplyArgs {
+ 
+     #[command(flatten)]
+     apply_pattern_args: ApplyPatternArgs,
++
++    #[command(flatten)]
++    shared_apply_args: SharedApplyArgs,
+ }
+ 
+ pub(crate) async fn run_apply(
+@@ -48,6 +62,7 @@ pub(crate) async fn run_apply(
+     {
+         let current_dir = current_dir()?;
+         let custom_workflow = find_workflow_file_from(current_dir, &args.pattern_or_workflow).await;
++        println!("ARGS: {:?}", args);
+         if let Some(custom_workflow) = custom_workflow {
+             return run_apply_migration(
+                 custom_workflow,
+@@ -61,6 +76,7 @@ pub(crate) async fn run_apply(
+ 
+     run_apply_pattern(
+         args.pattern_or_workflow,
++        args.shared_apply_args,
+         args.paths,
+         args.apply_pattern_args,
+         multi,
+@@ -108,6 +124,7 @@ mod tests {
+             paths,
+             apply_migration_args,
+             apply_pattern_args,
++            shared_apply_args: Default::default(),
+         };
+         run_apply(args, multi, &mut details, &GlobalFormatFlags::default()).await?;
+         Ok(())
+diff --git a/crates/cli/src/commands/apply_pattern.rs b/crates/cli/src/commands/apply_pattern.rs
+index 4c79a03..e6c8991 100644
+--- a/crates/cli/src/commands/apply_pattern.rs
++++ b/crates/cli/src/commands/apply_pattern.rs
+@@ -29,14 +29,10 @@ use std::sync::atomic::Ordering;
+ use std::collections::BTreeMap;
+ use tokio::fs;
+ 
++use crate::diff::extract_target_ranges;
+ use crate::{
+-    analyze::par_apply_pattern,
+-    community::parse_eslint_output,
+-    diff::{extract_modified_ranges, git_diff, parse_modified_ranges},
+-    error::GoodError,
+-    flags::OutputFormat,
+-    messenger_variant::create_emitter,
+-    result_formatting::get_human_error,
++    analyze::par_apply_pattern, community::parse_eslint_output, error::GoodError,
++    flags::OutputFormat, messenger_variant::create_emitter, result_formatting::get_human_error,
+     updater::Updater,
+ };
+ 
+@@ -48,6 +44,7 @@ use marzano_messenger::{
+ use crate::resolver::{get_grit_files_from_cwd, GritModuleResolver};
+ use crate::utils::has_uncommitted_changes;
+ 
++use super::apply::SharedApplyArgs;
+ use super::init::init_config_from_cwd;
+ 
+ #[derive(Deserialize)]
+@@ -102,13 +99,6 @@ pub struct ApplyPatternArgs {
+             hide = true,
+         )]
+     pub visibility: VisibilityLevels,
+-    #[clap(
+-        long = "only-in-diff",
+-        help = "Only rewrite ranges that are inside the unified diff if a path to the diff is provided, or the results of git diff HEAD if no path is provided.",
+-        hide = true,
+-        conflicts_with = "only_in_json"
+-    )]
+-    only_in_diff: Option<Option<PathBuf>>,
+     #[clap(
+         long = "only-in-json",
+         help = "Only rewrite ranges that are inside the provided eslint-style JSON file",
+@@ -146,7 +136,6 @@ impl Default for ApplyPatternArgs {
+             format: Default::default(),
+             interactive: Default::default(),
+             visibility: VisibilityLevels::Hidden,
+-            only_in_diff: Default::default(),
+             only_in_json: Default::default(),
+             output_file: Default::default(),
+             cache: Default::default(),
+@@ -173,6 +162,7 @@ macro_rules! flushable_unwrap {
+ #[allow(clippy::too_many_arguments, unused_mut)]
+ pub(crate) async fn run_apply_pattern(
+     mut pattern: String,
++    shared: SharedApplyArgs,
+     paths: Vec<PathBuf>,
+     arg: ApplyPatternArgs,
+     multi: MultiProgress,
+@@ -227,15 +217,8 @@ pub(crate) async fn run_apply_pattern(
+     let filter_range = if let Some(json_path) = arg.only_in_json.clone() {
+         let json_ranges = flushable_unwrap!(emitter, parse_eslint_output(json_path));
+         Some(json_ranges)
+-    } else if let Some(Some(diff_path)) = &arg.only_in_diff {
+-        let diff_ranges = flushable_unwrap!(emitter, extract_modified_ranges(diff_path));
+-        Some(diff_ranges)
+-    } else if let Some(None) = &arg.only_in_diff {
+-        let diff = git_diff(&std::env::current_dir()?)?;
+-        let diff_ranges = flushable_unwrap!(emitter, parse_modified_ranges(&diff));
+-        Some(diff_ranges)
+     } else {
+-        None
++        flushable_unwrap!(emitter, extract_target_ranges(&shared.only_in_diff))
+     };
+ 
+     let (my_input, lang) = if let Some(pattern_libs) = pattern_libs {
+diff --git a/crates/cli/src/commands/check.rs b/crates/cli/src/commands/check.rs
+index dc6de33..f039e98 100644
+--- a/crates/cli/src/commands/check.rs
++++ b/crates/cli/src/commands/check.rs
+@@ -31,7 +31,7 @@ use marzano_messenger::emit::{Messager, VisibilityLevels};
+ use cli_server::check::CheckMessenger;
+ 
+ use crate::{
+-    diff::{extract_modified_ranges, git_diff, parse_modified_ranges},
++    diff::extract_target_ranges,
+     error::GoodError,
+     flags::{GlobalFormatFlags, OutputFormat},
+     github::{log_check_annotations, write_check_summary},
+@@ -122,16 +122,7 @@ pub(crate) async fn run_check(
+         std::env::current_dir()?
+     };
+ 
+-    let filter_range = if let Some(Some(diff_path)) = &arg.only_in_diff {
+-        let diff_ranges = extract_modified_ranges(diff_path)?;
+-        Some(diff_ranges)
+-    } else if let Some(None) = &arg.only_in_diff {
+-        let diff = git_diff(&std::env::current_dir()?)?;
+-        let diff_ranges = parse_modified_ranges(&diff)?;
+-        Some(diff_ranges)
+-    } else {
+-        None
+-    };
++    let filter_range = extract_target_ranges(&arg.only_in_diff)?;
+ 
+     // Construct a resolver
+     let resolver = GritModuleResolver::new(current_dir.to_str().unwrap());
+diff --git a/crates/cli/src/commands/plumbing.rs b/crates/cli/src/commands/plumbing.rs
+index 7d9e033..0725847 100644
+--- a/crates/cli/src/commands/plumbing.rs
++++ b/crates/cli/src/commands/plumbing.rs
+@@ -18,6 +18,7 @@ use crate::lister::list_applyables;
+ use crate::resolver::{get_grit_files_from, resolve_from, Source};
+ 
+ use super::super::analytics::AnalyticsArgs;
++use super::apply::SharedApplyArgs;
+ use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
+ use super::check::{run_check, CheckArg};
+ use super::init::{init_config_from_cwd, init_global_grit_modules};
+@@ -147,6 +148,7 @@ pub(crate) async fn run_plumbing(
+             };
+             run_apply_pattern(
+                 body,
++                SharedApplyArgs::default(),
+                 input.paths,
+                 apply_pattern_args,
+                 multi,
+diff --git a/crates/cli/src/diff.rs b/crates/cli/src/diff.rs
+index cc0fc6e..3f01fa3 100644
+--- a/crates/cli/src/diff.rs
++++ b/crates/cli/src/diff.rs
+@@ -1,8 +1,13 @@
+-use anyhow::Result;
+-use marzano_util::position::{FileRange, Position, RangeWithoutByte, UtilRange};
++use anyhow::{bail, Result};
++use marzano_util::{
++    diff::{parse_modified_ranges, FileDiff},
++    position::{FileRange, Position, RangeWithoutByte, UtilRange},
++};
++use regex::Regex;
++use serde::Serialize;
+ use std::{fs::File, io::Read, path::PathBuf, str::FromStr};
+ 
+-pub fn git_diff(path: &PathBuf) -> Result<String> {
++pub fn run_git_diff(path: &PathBuf) -> Result<String> {
+     let output = std::process::Command::new("git")
+         .arg("diff")
+         .arg("HEAD")
+@@ -13,7 +18,7 @@ pub fn git_diff(path: &PathBuf) -> Result<String> {
+     Ok(String::from_utf8(output.stdout)?)
+ }
+ 
+-pub fn extract_modified_ranges(diff_path: &PathBuf) -> Result<Vec<FileRange>> {
++pub fn extract_modified_ranges(diff_path: &PathBuf) -> Result<Vec<FileDiff>> {
+     let mut file = File::open(diff_path)?;
+     let mut diff = String::new();
+ 
+@@ -21,217 +26,30 @@ pub fn extract_modified_ranges(diff_path: &PathBuf) -> Result<Vec<FileRange>> {
+     parse_modified_ranges(&diff)
+ }
+ 
+-pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileRange>> {
+-    let mut results = Vec::new();
+-    let lines = diff.lines();
+-
+-    let mut current_file = String::new();
+-    let mut start_pos = Position { line: 0, column: 0 };
+-    let mut end_pos = Position { line: 0, column: 0 };
+-
+-    for line in lines {
+-        if line.starts_with("+++") {
+-            current_file = line.split_whitespace().nth(1).unwrap_or("").to_string();
+-            if current_file.starts_with("b/") {
+-                current_file = current_file[2..].to_string();
+-            }
+-        } else if line.starts_with("@@") {
+-            if current_file == "/dev/null" {
+-                continue;
+-            }
+-            let range_part = line.split_whitespace().nth(2).unwrap_or("");
+-            let range_parts: Vec<&str> = range_part.split(',').collect();
+-            if let Ok(line_num) = u32::from_str(range_parts[0].trim_start_matches('+')) {
+-                start_pos.line = line_num;
+-                end_pos.line = line_num
+-                    + range_parts
+-                        .get(1)
+-                        .map_or(1, |&x| x.parse::<u32>().unwrap_or(0));
+-            }
+-
+-            results.push(FileRange {
+-                file_path: current_file.clone(),
+-                range: UtilRange::RangeWithoutByte(RangeWithoutByte {
+-                    start: start_pos,
+-                    end: end_pos,
+-                }),
+-            });
+-        }
+-    }
+-
+-    Ok(results)
+-}
+-
+-#[cfg(test)]
+-mod tests {
+-    use super::*;
+-    use insta::assert_yaml_snapshot;
+-
+-    #[test]
+-    fn parse_one_file_diff() {
+-        let diff = r#"diff --git a/crates/cli_bin/fixtures/es6/empty_export_object.js b/crates/cli_bin/fixtures/es6/empty_export_object.js
+-index adacd90..71b96e0 100644
+---- a/crates/cli_bin/fixtures/es6/empty_export_object.js
+-+++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
+-@@ -5,7 +5,7 @@ module.exports = {
+-    };
+-    
+-    export async function createTeam() {
+--  console.log('cool');
+-+  console.log('very cool');
+-    }
+-    
+-    export const addTeamToOrgSubscription = () => console.log('cool');
+-"#;
+-        let parsed = parse_modified_ranges(diff).unwrap();
+-        assert_yaml_snapshot!(parsed);
+-    }
+-
+-    #[test]
+-    fn parse_with_multiple_files() {
+-        let diff = r#"diff --git a/crates/cli_bin/fixtures/es6/empty_export_object.js b/crates/cli_bin/fixtures/es6/empty_export_object.js
+-index adacd90..71b96e0 100644
+---- a/crates/cli_bin/fixtures/es6/empty_export_object.js
+-+++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
+-@@ -5,7 +5,7 @@ module.exports = {
+-    };
+-    
+-    export async function createTeam() {
+--  console.log('cool');
+-+  console.log('very cool');
+-    }
+-    
+-    export const addTeamToOrgSubscription = () => console.log('cool');
+-diff --git a/crates/cli_bin/fixtures/es6/export_object.js b/crates/cli_bin/fixtures/es6/export_object.js
+-index f6e1a2c..2c58ad2 100644
+---- a/crates/cli_bin/fixtures/es6/export_object.js
+-+++ b/crates/cli_bin/fixtures/es6/export_object.js
+-@@ -2,7 +2,9 @@ async function createTeam() {
+-    console.log('cool');
+-    }
+-    
+--const addTeamToOrgSubscription = () => console.log('cool');
+-+const addTeamToOrgSubscription = () => {
+-+  console.log('cool')
+-+};
+-    
+-    module.exports = {
+-    createTeam,
+-"#;
+-        let parsed = parse_modified_ranges(diff).unwrap();
+-        assert_yaml_snapshot!(parsed);
+-    }
+-
+-    #[test]
+-    fn parse_with_created_file() {
+-        let diff = r#"diff --git a/crates/cli_bin/fixtures/es6/empty_export_object.js b/crates/cli_bin/fixtures/es6/empty_export_object.js
+-index adacd90..71b96e0 100644
+---- a/crates/cli_bin/fixtures/es6/empty_export_object.js
+-+++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
+-@@ -5,7 +5,7 @@ module.exports = {
+-    };
+-    
+-    export async function createTeam() {
+--  console.log('cool');
+-+  console.log('very cool');
+-    }
+-    
+-    export const addTeamToOrgSubscription = () => console.log('cool');
+-diff --git a/crates/cli_bin/fixtures/es6/export_object.js b/crates/cli_bin/fixtures/es6/export_object.js
+-index f6e1a2c..2c58ad2 100644
+---- a/crates/cli_bin/fixtures/es6/export_object.js
+-+++ b/crates/cli_bin/fixtures/es6/export_object.js
+-@@ -2,7 +2,9 @@ async function createTeam() {
+-    console.log('cool');
+-    }
+-    
+--const addTeamToOrgSubscription = () => console.log('cool');
+-+const addTeamToOrgSubscription = () => {
+-+  console.log('cool')
+-+};
+-    
+-    module.exports = {
+-    createTeam,
+-diff --git a/crates/cli_bin/fixtures/es6/index.js b/crates/cli_bin/fixtures/es6/index.js
+-new file mode 100644
+-index 0000000..7b232cd
+---- /dev/null
+-+++ b/crates/cli_bin/fixtures/es6/index.js
+-@@ -0,0 +1,12 @@
+-+async function createTeam() {
+-+  console.log("cool");
+-+}
+-+
+-+const addTeamToOrgSubscription = () => {
+-+  console.log("cool");
+-+};
+-+
+-+module.exports = {
+-+  createTeam,
+-+  addTeamToOrgSubscription,
+-+};
+-"#;
+-        let parsed = parse_modified_ranges(diff).unwrap();
+-        assert_yaml_snapshot!(parsed);
+-    }
+-
+-    #[test]
+-    fn parse_with_deleted_file() {
+-        let diff = r#"diff --git a/crates/cli_bin/fixtures/es6/empty_export_object.js b/crates/cli_bin/fixtures/es6/empty_export_object.js
+-index adacd90..71b96e0 100644
+---- a/crates/cli_bin/fixtures/es6/empty_export_object.js
+-+++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
+-@@ -5,7 +5,7 @@ module.exports = {
++pub(crate) fn extract_target_ranges(
++    arg: &Option<Option<PathBuf>>,
++) -> Result<Option<Vec<FileRange>>> {
++    let raw_diff = if let Some(Some(diff_path)) = &arg {
++        extract_modified_ranges(diff_path)?
++    } else if let Some(None) = &arg {
++        let diff = run_git_diff(&std::env::current_dir()?)?;
++        parse_modified_ranges(&diff)?
++    } else {
++        return Ok(None);
+     };
+-    
+-    export async function createTeam() {
+--  console.log('cool');
+-+  console.log('very cool');
+-    }
+-    
+-    export const addTeamToOrgSubscription = () => console.log('cool');
+-diff --git a/crates/cli_bin/fixtures/es6/export.js b/crates/cli_bin/fixtures/es6/export.js
+-deleted file mode 100644
+-index 52de8a9..0000000
+---- a/crates/cli_bin/fixtures/es6/export.js
+-+++ /dev/null
+-@@ -1,19 +0,0 @@
+--const king = '9';
+--
+--module.exports = {
+--  king,
+--  queen: '8',
+--};
+--
+--async function createTeam() {
+--  console.log('cool');
+--}
+--
+--const addTeamToOrgSubscription = () => console.log('cool');
+--
+--module.exports = {
+--  createTeam,
+--  addTeamToOrgSubscription,
+--};
+--
+--module.exports.queen = '9';
+-diff --git a/crates/cli_bin/fixtures/es6/export_object.js b/crates/cli_bin/fixtures/es6/export_object.js
+-index f6e1a2c..2c58ad2 100644
+---- a/crates/cli_bin/fixtures/es6/export_object.js
+-+++ b/crates/cli_bin/fixtures/es6/export_object.js
+-@@ -2,7 +2,9 @@ async function createTeam() {
+-    console.log('cool');
+-    }
+-    
+--const addTeamToOrgSubscription = () => console.log('cool');
+-+const addTeamToOrgSubscription = () => {
+-+  console.log('cool')
+-+};
+-    
+-    module.exports = {
+-    createTeam,
+-"#;
+-        let parsed = parse_modified_ranges(diff).unwrap();
+-        assert_yaml_snapshot!(parsed);
+-    }
++    Ok(Some(
++        raw_diff
++            .into_iter()
++            .flat_map(|diff| {
++                if (diff.new_path.is_none()) {
++                    println!("Skipping diff with no new path: {:?}", diff);
++                }
++                let new_path = diff.new_path.as_ref().unwrap().clone();
++                diff.after.into_iter().map(move |range| FileRange {
++                    range,
++                    file_path: new_path.clone(),
++                })
++            })
++            .collect(),
++    ))
+ }
+diff --git a/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_one_file_diff.snap b/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_one_file_diff.snap
+index a4d38fc..638372c 100644
+--- a/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_one_file_diff.snap
++++ b/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_one_file_diff.snap
+@@ -2,12 +2,21 @@
+ source: crates/cli/src/diff.rs
+ expression: parsed
+ ---
+-- filePath: crates/cli_bin/fixtures/es6/empty_export_object.js
+-  range:
+-    RangeWithoutByte:
+-      start:
+-        line: 5
+-        column: 0
+-      end:
+-        line: 12
+-        column: 0
++- old_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  new_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
+diff --git a/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_with_created_file.snap b/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_with_created_file.snap
+index fc37fa8..db10053 100644
+--- a/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_with_created_file.snap
++++ b/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_with_created_file.snap
+@@ -2,30 +2,57 @@
+ source: crates/cli/src/diff.rs
+ expression: parsed
+ ---
+-- filePath: crates/cli_bin/fixtures/es6/empty_export_object.js
+-  range:
+-    RangeWithoutByte:
+-      start:
+-        line: 5
+-        column: 0
+-      end:
+-        line: 12
+-        column: 0
+-- filePath: crates/cli_bin/fixtures/es6/export_object.js
+-  range:
+-    RangeWithoutByte:
+-      start:
+-        line: 2
+-        column: 0
+-      end:
+-        line: 11
+-        column: 0
+-- filePath: crates/cli_bin/fixtures/es6/index.js
+-  range:
+-    RangeWithoutByte:
+-      start:
+-        line: 1
+-        column: 0
+-      end:
+-        line: 13
+-        column: 0
++- old_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  new_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
++- old_path: crates/cli_bin/fixtures/es6/export_object.js
++  new_path: crates/cli_bin/fixtures/es6/export_object.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 2
++          column: 0
++        end:
++          line: 9
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 2
++          column: 0
++        end:
++          line: 11
++          column: 0
++- old_path: /dev/null
++  new_path: crates/cli_bin/fixtures/es6/index.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 0
++          column: 0
++        end:
++          line: 0
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 1
++          column: 0
++        end:
++          line: 13
++          column: 0
+diff --git a/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_with_deleted_file.snap b/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_with_deleted_file.snap
+index a507c75..a478d96 100644
+--- a/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_with_deleted_file.snap
++++ b/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_with_deleted_file.snap
+@@ -2,21 +2,57 @@
+ source: crates/cli/src/diff.rs
+ expression: parsed
+ ---
+-- filePath: crates/cli_bin/fixtures/es6/empty_export_object.js
+-  range:
+-    RangeWithoutByte:
+-      start:
+-        line: 5
+-        column: 0
+-      end:
+-        line: 12
+-        column: 0
+-- filePath: crates/cli_bin/fixtures/es6/export_object.js
+-  range:
+-    RangeWithoutByte:
+-      start:
+-        line: 2
+-        column: 0
+-      end:
+-        line: 11
+-        column: 0
++- old_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  new_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
++- old_path: crates/cli_bin/fixtures/es6/export.js
++  new_path: /dev/null
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 1
++          column: 0
++        end:
++          line: 20
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 0
++          column: 0
++        end:
++          line: 0
++          column: 0
++- old_path: crates/cli_bin/fixtures/es6/export_object.js
++  new_path: crates/cli_bin/fixtures/es6/export_object.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 2
++          column: 0
++        end:
++          line: 9
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 2
++          column: 0
++        end:
++          line: 11
++          column: 0
+diff --git a/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_with_multiple_files.snap b/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_with_multiple_files.snap
+index a507c75..75e2c3f 100644
+--- a/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_with_multiple_files.snap
++++ b/crates/cli/src/snapshots/marzano_cli__diff__tests__parse_with_multiple_files.snap
+@@ -2,21 +2,39 @@
+ source: crates/cli/src/diff.rs
+ expression: parsed
+ ---
+-- filePath: crates/cli_bin/fixtures/es6/empty_export_object.js
+-  range:
+-    RangeWithoutByte:
+-      start:
+-        line: 5
+-        column: 0
+-      end:
+-        line: 12
+-        column: 0
+-- filePath: crates/cli_bin/fixtures/es6/export_object.js
+-  range:
+-    RangeWithoutByte:
+-      start:
+-        line: 2
+-        column: 0
+-      end:
+-        line: 11
+-        column: 0
++- old_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  new_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
++- old_path: crates/cli_bin/fixtures/es6/export_object.js
++  new_path: crates/cli_bin/fixtures/es6/export_object.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 2
++          column: 0
++        end:
++          line: 9
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 2
++          column: 0
++        end:
++          line: 11
++          column: 0
+diff --git a/crates/cli/src/snapshots/marzano_cli__diff__tests__parses_verified_baseline.snap b/crates/cli/src/snapshots/marzano_cli__diff__tests__parses_verified_baseline.snap
+new file mode 100644
+index 0000000..423e9d6
+--- /dev/null
++++ b/crates/cli/src/snapshots/marzano_cli__diff__tests__parses_verified_baseline.snap
+@@ -0,0 +1,22 @@
++---
++source: crates/cli/src/diff.rs
++expression: parsed
++---
++- old_path: crates/cli/src/analyze.rs
++  new_path: crates/cli/src/analyze.rs
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 9
++          column: 0
++        end:
++          line: 16
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 9
++          column: 0
++        end:
++          line: 16
++          column: 0
+diff --git a/crates/cli_bin/tests/apply.rs b/crates/cli_bin/tests/apply.rs
+index 6785249..0f8780c 100644
+--- a/crates/cli_bin/tests/apply.rs
++++ b/crates/cli_bin/tests/apply.rs
+@@ -2319,9 +2319,15 @@ fn apply_only_in_diff() -> Result<()> {
+ 
+     let output = cmd.output()?;
+ 
++    let stderr = String::from_utf8(output.stderr)?;
++    let stdout = String::from_utf8(output.stdout)?;
++
++    println!("stderr: {}", stderr);
++    println!("stdout: {}", stdout);
++
+     assert!(output.status.success(), "Command failed");
+ 
+-    assert!(String::from_utf8(output.stdout)?.contains("Processed 1 files and found 1 match"));
++    assert!(stdout.contains("Processed 1 files and found 1 match"));
+ 
+     let content = std::fs::read_to_string(dir.join("index.js"))?;
+     assert!(!content.contains("console.log('really cool')"));
+diff --git a/crates/util/Cargo.toml b/crates/util/Cargo.toml
+index 042a67d..e20e595 100644
+--- a/crates/util/Cargo.toml
++++ b/crates/util/Cargo.toml
+@@ -27,6 +27,10 @@ serde_json = { version = "1.0.114" }
+ futures = { version = "0.3.29", optional = true }
+ http = { version = "0.2.11" }
+ 
++[dev-dependencies]
++insta = { version = "1.30.0", features = ["yaml", "redactions"] }
++
++
+ [features]
+ finder = ["log", "ignore"]
+ 
+diff --git a/crates/util/src/diff.rs b/crates/util/src/diff.rs
+new file mode 100644
+index 0000000..4004f95
+--- /dev/null
++++ b/crates/util/src/diff.rs
+@@ -0,0 +1,296 @@
++use anyhow::{bail, Result};
++use serde::Serialize;
++use std::str::FromStr;
++
++use crate::position::{Position, RangeWithoutByte, UtilRange};
++
++// Define a new struct to hold before and after ranges
++#[derive(Debug, Clone, Serialize)]
++pub struct FileDiff {
++    pub old_path: Option<String>,
++    pub new_path: Option<String>,
++    pub before: Vec<UtilRange>,
++    pub after: Vec<UtilRange>,
++}
++
++/// Extract the line numbers from a hunk part
++/// Note this does *NOT* necessarily correspond to the actual line numbers in the file, since context can be included in the hunks
++/// But we are choosing to treat this as good enough for now
++fn parse_hunk_part(range_part: &str) -> Result<UtilRange> {
++    let range_parts: Vec<&str> = range_part.split(',').collect();
++    if let Ok(line_num) = u32::from_str(range_parts[0].trim_start_matches(['+', '-'])) {
++        return Ok(UtilRange::RangeWithoutByte(RangeWithoutByte {
++            start: Position {
++                line: line_num,
++                column: 0,
++            },
++            end: Position {
++                line: line_num
++                    + range_parts
++                        .get(1)
++                        .map_or(1, |&x| x.parse::<u32>().unwrap_or(0)),
++                column: 0,
++            },
++        }));
++    }
++    Err(anyhow::anyhow!("Failed to parse hunk part"))
++}
++
++pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
++    let mut results = Vec::new();
++    let lines = diff.lines();
++
++    for line in lines {
++        if line.starts_with("---") {
++            let old_file_name = line
++                .split_whitespace()
++                .nth(1)
++                .unwrap_or("")
++                .to_string()
++                .trim_start_matches("a/")
++                .to_string();
++
++            results.push(FileDiff {
++                old_path: Some(old_file_name.clone()),
++                new_path: None,
++                before: Vec::new(),
++                after: Vec::new(),
++            });
++        } else if line.starts_with("+++") {
++            let new_file_name = line
++                .split_whitespace()
++                .nth(1)
++                .unwrap_or("")
++                .to_string()
++                .trim_start_matches("b/")
++                .to_string();
++
++            if let Some(file_diff) = results.last_mut() {
++                file_diff.new_path = Some(new_file_name);
++            } else {
++                bail!("Encountered new file path without a current file diff");
++            };
++        } else if line.starts_with("@@") {
++            let mut parts = line.split_whitespace();
++            let before_range = parse_hunk_part(parts.nth(1).unwrap_or(""))?;
++            // Note nth mutates the iterator, so after range is the next element
++            let after_range = parse_hunk_part(parts.next().unwrap_or(""))?;
++
++            if let Some(file_diff) = results.last_mut() {
++                file_diff.before.push(before_range);
++                file_diff.after.push(after_range);
++            } else {
++                bail!("Encountered hunk without a current file diff");
++            }
++        }
++    }
++
++    Ok(results)
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use insta::assert_yaml_snapshot;
++
++    #[test]
++    fn parses_verified_baseline() {
++        let diff = r#"diff --git a/crates/cli/src/analyze.rs b/crates/cli/src/analyze.rs
++index 893656e..6218f5e 100644
++--- a/crates/cli/src/analyze.rs
+++++ b/crates/cli/src/analyze.rs
++@@ -9,7 +9,7 @@ use tracing::{event, instrument, Level};
++    #[cfg(feature = "grit_tracing")]
++    use tracing_opentelemetry::OpenTelemetrySpanExt as _;
++
++-use grit_cache::paths::cache_for_cwd;
+++use THIS WAS CHANGED;
++    use ignore::Walk;
++    use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};"#;
++
++        let parsed = parse_modified_ranges(diff).unwrap();
++        let before_range = &parsed[0].before[0];
++        // Yes - this range is much larger than expected. It's because we currently treat the entire hunk as a single range
++        // This means context is a big part of the range
++        assert_eq!(before_range.start_line(), 9);
++        assert_eq!(before_range.end_line(), 16);
++        let after_range = &parsed[0].after[0];
++        assert_eq!(after_range.start_line(), 9);
++        assert_eq!(after_range.end_line(), 16);
++        assert_yaml_snapshot!(parsed);
++    }
++
++    #[test]
++    fn parse_one_file_diff() {
++        let diff = r#"diff --git a/crates/cli_bin/fixtures/es6/empty_export_object.js b/crates/cli_bin/fixtures/es6/empty_export_object.js
++index adacd90..71b96e0 100644
++--- a/crates/cli_bin/fixtures/es6/empty_export_object.js
+++++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
++@@ -5,7 +5,7 @@ module.exports = {
++    };
++
++    export async function createTeam() {
++-  console.log('cool');
+++  console.log('very cool');
++    }
++
++    export const addTeamToOrgSubscription = () => console.log('cool');
++"#;
++        let parsed = parse_modified_ranges(diff).unwrap();
++        let before_range = &parsed[0].before[0];
++        assert_eq!(before_range.start_line(), 5);
++        assert_eq!(before_range.end_line(), 12);
++        let after_range = &parsed[0].after[0];
++        assert_eq!(after_range.start_line(), 5);
++        assert_eq!(after_range.end_line(), 12);
++        assert_yaml_snapshot!(parsed);
++    }
++
++    #[test]
++    fn parse_with_multiple_files() {
++        let diff = r#"diff --git a/crates/cli_bin/fixtures/es6/empty_export_object.js b/crates/cli_bin/fixtures/es6/empty_export_object.js
++index adacd90..71b96e0 100644
++--- a/crates/cli_bin/fixtures/es6/empty_export_object.js
+++++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
++@@ -5,7 +5,7 @@ module.exports = {
++    };
++
++    export async function createTeam() {
++-  console.log('cool');
+++  console.log('very cool');
++    }
++
++    export const addTeamToOrgSubscription = () => console.log('cool');
++diff --git a/crates/cli_bin/fixtures/es6/export_object.js b/crates/cli_bin/fixtures/es6/export_object.js
++index f6e1a2c..2c58ad2 100644
++--- a/crates/cli_bin/fixtures/es6/export_object.js
+++++ b/crates/cli_bin/fixtures/es6/export_object.js
++@@ -2,7 +2,9 @@ async function createTeam() {
++    console.log('cool');
++    }
++
++-const addTeamToOrgSubscription = () => console.log('cool');
+++const addTeamToOrgSubscription = () => {
+++  console.log('cool')
+++};
++
++    module.exports = {
++    createTeam,
++"#;
++        let parsed = parse_modified_ranges(diff).unwrap();
++        assert_yaml_snapshot!(parsed);
++    }
++
++    #[test]
++    fn parse_with_created_file() {
++        let diff = r#"diff --git a/crates/cli_bin/fixtures/es6/empty_export_object.js b/crates/cli_bin/fixtures/es6/empty_export_object.js
++index adacd90..71b96e0 100644
++--- a/crates/cli_bin/fixtures/es6/empty_export_object.js
+++++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
++@@ -5,7 +5,7 @@ module.exports = {
++    };
++
++    export async function createTeam() {
++-  console.log('cool');
+++  console.log('very cool');
++    }
++
++    export const addTeamToOrgSubscription = () => console.log('cool');
++diff --git a/crates/cli_bin/fixtures/es6/export_object.js b/crates/cli_bin/fixtures/es6/export_object.js
++index f6e1a2c..2c58ad2 100644
++--- a/crates/cli_bin/fixtures/es6/export_object.js
+++++ b/crates/cli_bin/fixtures/es6/export_object.js
++@@ -2,7 +2,9 @@ async function createTeam() {
++    console.log('cool');
++    }
++
++-const addTeamToOrgSubscription = () => console.log('cool');
+++const addTeamToOrgSubscription = () => {
+++  console.log('cool')
+++};
++
++    module.exports = {
++    createTeam,
++diff --git a/crates/cli_bin/fixtures/es6/index.js b/crates/cli_bin/fixtures/es6/index.js
++new file mode 100644
++index 0000000..7b232cd
++--- /dev/null
+++++ b/crates/cli_bin/fixtures/es6/index.js
++@@ -0,0 +1,12 @@
+++async function createTeam() {
+++  console.log("cool");
+++}
+++
+++const addTeamToOrgSubscription = () => {
+++  console.log("cool");
+++};
+++
+++module.exports = {
+++  createTeam,
+++  addTeamToOrgSubscription,
+++};
++"#;
++        let parsed = parse_modified_ranges(diff).unwrap();
++        assert_yaml_snapshot!(parsed);
++    }
++
++    #[test]
++    fn parse_with_deleted_file() {
++        let diff = r#"diff --git a/crates/cli_bin/fixtures/es6/empty_export_object.js b/crates/cli_bin/fixtures/es6/empty_export_object.js
++index adacd90..71b96e0 100644
++--- a/crates/cli_bin/fixtures/es6/empty_export_object.js
+++++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
++@@ -5,7 +5,7 @@ module.exports = {
++    };
++
++    export async function createTeam() {
++-  console.log('cool');
+++  console.log('very cool');
++    }
++
++    export const addTeamToOrgSubscription = () => console.log('cool');
++diff --git a/crates/cli_bin/fixtures/es6/export.js b/crates/cli_bin/fixtures/es6/export.js
++deleted file mode 100644
++index 52de8a9..0000000
++--- a/crates/cli_bin/fixtures/es6/export.js
+++++ /dev/null
++@@ -1,19 +0,0 @@
++-const king = '9';
++-
++-module.exports = {
++-  king,
++-  queen: '8',
++-};
++-
++-async function createTeam() {
++-  console.log('cool');
++-}
++-
++-const addTeamToOrgSubscription = () => console.log('cool');
++-
++-module.exports = {
++-  createTeam,
++-  addTeamToOrgSubscription,
++-};
++-
++-module.exports.queen = '9';
++diff --git a/crates/cli_bin/fixtures/es6/export_object.js b/crates/cli_bin/fixtures/es6/export_object.js
++index f6e1a2c..2c58ad2 100644
++--- a/crates/cli_bin/fixtures/es6/export_object.js
+++++ b/crates/cli_bin/fixtures/es6/export_object.js
++@@ -2,7 +2,9 @@ async function createTeam() {
++    console.log('cool');
++    }
++
++-const addTeamToOrgSubscription = () => console.log('cool');
+++const addTeamToOrgSubscription = () => {
+++  console.log('cool')
+++};
++
++    module.exports = {
++    createTeam,
++"#;
++        let parsed = parse_modified_ranges(diff).unwrap();
++        assert_yaml_snapshot!(parsed);
++    }
++}
+diff --git a/crates/util/src/lib.rs b/crates/util/src/lib.rs
+index c024931..fbbcaff 100644
+--- a/crates/util/src/lib.rs
++++ b/crates/util/src/lib.rs
+@@ -2,6 +2,7 @@ pub mod analysis_logs;
+ pub mod base64;
+ pub mod cache;
+ pub mod cursor_wrapper;
++pub mod diff;
+ #[cfg(feature = "finder")]
+ pub mod finder;
+ pub mod hasher;
+diff --git a/crates/util/src/position.rs b/crates/util/src/position.rs
+index d0398fc..3e3014d 100644
+--- a/crates/util/src/position.rs
++++ b/crates/util/src/position.rs
+@@ -312,6 +312,22 @@ pub enum UtilRange {
+     RangeWithoutByte(RangeWithoutByte),
+ }
+ 
++impl UtilRange {
++    pub fn start_line(&self) -> u32 {
++        match self {
++            UtilRange::Range(range) => range.start.line,
++            UtilRange::RangeWithoutByte(range) => range.start.line,
++        }
++    }
++
++    pub fn end_line(&self) -> u32 {
++        match self {
++            UtilRange::Range(range) => range.end.line,
++            UtilRange::RangeWithoutByte(range) => range.end.line,
++        }
++    }
++}
++
+ impl From<Range> for UtilRange {
+     fn from(range: Range) -> Self {
+         Self::Range(range)
+diff --git a/crates/util/src/snapshots/marzano_util__diff__tests__parse_one_file_diff.snap b/crates/util/src/snapshots/marzano_util__diff__tests__parse_one_file_diff.snap
+new file mode 100644
+index 0000000..96f359c
+--- /dev/null
++++ b/crates/util/src/snapshots/marzano_util__diff__tests__parse_one_file_diff.snap
+@@ -0,0 +1,22 @@
++---
++source: crates/util/src/diff.rs
++expression: parsed
++---
++- old_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  new_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
+diff --git a/crates/util/src/snapshots/marzano_util__diff__tests__parse_with_created_file.snap b/crates/util/src/snapshots/marzano_util__diff__tests__parse_with_created_file.snap
+new file mode 100644
+index 0000000..fe1a25f
+--- /dev/null
++++ b/crates/util/src/snapshots/marzano_util__diff__tests__parse_with_created_file.snap
+@@ -0,0 +1,58 @@
++---
++source: crates/util/src/diff.rs
++expression: parsed
++---
++- old_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  new_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
++- old_path: crates/cli_bin/fixtures/es6/export_object.js
++  new_path: crates/cli_bin/fixtures/es6/export_object.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 2
++          column: 0
++        end:
++          line: 9
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 2
++          column: 0
++        end:
++          line: 11
++          column: 0
++- old_path: /dev/null
++  new_path: crates/cli_bin/fixtures/es6/index.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 0
++          column: 0
++        end:
++          line: 0
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 1
++          column: 0
++        end:
++          line: 13
++          column: 0
+diff --git a/crates/util/src/snapshots/marzano_util__diff__tests__parse_with_deleted_file.snap b/crates/util/src/snapshots/marzano_util__diff__tests__parse_with_deleted_file.snap
+new file mode 100644
+index 0000000..4afbd42
+--- /dev/null
++++ b/crates/util/src/snapshots/marzano_util__diff__tests__parse_with_deleted_file.snap
+@@ -0,0 +1,58 @@
++---
++source: crates/util/src/diff.rs
++expression: parsed
++---
++- old_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  new_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
++- old_path: crates/cli_bin/fixtures/es6/export.js
++  new_path: /dev/null
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 1
++          column: 0
++        end:
++          line: 20
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 0
++          column: 0
++        end:
++          line: 0
++          column: 0
++- old_path: crates/cli_bin/fixtures/es6/export_object.js
++  new_path: crates/cli_bin/fixtures/es6/export_object.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 2
++          column: 0
++        end:
++          line: 9
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 2
++          column: 0
++        end:
++          line: 11
++          column: 0
+diff --git a/crates/util/src/snapshots/marzano_util__diff__tests__parse_with_multiple_files.snap b/crates/util/src/snapshots/marzano_util__diff__tests__parse_with_multiple_files.snap
+new file mode 100644
+index 0000000..5cb7dae
+--- /dev/null
++++ b/crates/util/src/snapshots/marzano_util__diff__tests__parse_with_multiple_files.snap
+@@ -0,0 +1,40 @@
++---
++source: crates/util/src/diff.rs
++expression: parsed
++---
++- old_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  new_path: crates/cli_bin/fixtures/es6/empty_export_object.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 5
++          column: 0
++        end:
++          line: 12
++          column: 0
++- old_path: crates/cli_bin/fixtures/es6/export_object.js
++  new_path: crates/cli_bin/fixtures/es6/export_object.js
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 2
++          column: 0
++        end:
++          line: 9
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 2
++          column: 0
++        end:
++          line: 11
++          column: 0
+diff --git a/crates/util/src/snapshots/marzano_util__diff__tests__parses_verified_baseline.snap b/crates/util/src/snapshots/marzano_util__diff__tests__parses_verified_baseline.snap
+new file mode 100644
+index 0000000..24c587b
+--- /dev/null
++++ b/crates/util/src/snapshots/marzano_util__diff__tests__parses_verified_baseline.snap
+@@ -0,0 +1,22 @@
++---
++source: crates/util/src/diff.rs
++expression: parsed
++---
++- old_path: crates/cli/src/analyze.rs
++  new_path: crates/cli/src/analyze.rs
++  before:
++    - RangeWithoutByte:
++        start:
++          line: 9
++          column: 0
++        end:
++          line: 16
++          column: 0
++  after:
++    - RangeWithoutByte:
++        start:
++          line: 9
++          column: 0
++        end:
++          line: 16
++          column: 0

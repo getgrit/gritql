@@ -41,6 +41,9 @@ pub(crate) fn extract_target_ranges(
         raw_diff
             .into_iter()
             .flat_map(|diff| {
+                if (diff.new_path.is_none()) {
+                    println!("Skipping diff with no new path: {:?}", diff);
+                }
                 let new_path = diff.new_path.as_ref().unwrap().clone();
                 diff.after.into_iter().map(move |range| FileRange {
                     range,
