@@ -4,10 +4,11 @@ use crate::{
 };
 use anyhow::anyhow;
 use grit_util::AstNode;
-use regex::Regex;
-use marzano_util::node_with_source::NodeWithSource;
-use tree_sitter::{Parser, Tree};
 use lazy_static::lazy_static;
+
+use marzano_util::node_with_source::NodeWithSource;
+use regex::Regex;
+use tree_sitter::{Parser, Tree};
 
 static STATEMENT_NODE_NAMES: &[&str] = &[
     "break_statement",
@@ -117,6 +118,22 @@ pub(crate) fn parse_file(
     }
 }
 
+pub(crate) fn js_like_is_comment(
+    node: &NodeWithSource,
+    comment_sort: SortId,
+    jsx_sort: SortId,
+) -> bool {
+    let id = node.node.kind_id();
+    id == comment_sort
+        || (id == jsx_sort
+            && node.node.named_child_count() == 1
+            && node
+                .node
+                .named_child(0)
+                .map(|c| c.kind_id() == comment_sort)
+                .is_some_and(|b| b))
+}
+
 pub(crate) fn jslike_check_replacements(
     n: NodeWithSource<'_>,
     replacement_ranges: &mut Vec<Replacement>,
@@ -161,12 +178,12 @@ pub(crate) fn jslike_check_replacements(
 }
 
 lazy_static! {
-    static ref PHP_LIKE_EXACT_VARIABLE_REGEX: Regex =
-        Regex::new(r"^\^([A-Za-z_][A-Za-z0-9_]*)$").expect("Failed to compile PHP_LIKE_EXACT_VARIABLE_REGEX");
-    static ref PHP_LIKE_VARIABLE_REGEX: Regex =
-        Regex::new(r"\^(\.\.\.|[A-Za-z_][A-Za-z0-9_]*)").expect("Failed to compile PHP_LIKE_VARIABLE_REGEX");
-    static ref PHP_LIKE_BRACKET_VAR_REGEX: Regex =
-        Regex::new(r"\^\[([A-Za-z_][A-Za-z0-9_]*)\]").expect("Failed to compile PHP_LIKE_BRACKET_VAR_REGEX");
+    static ref PHP_LIKE_EXACT_VARIABLE_REGEX: Regex = Regex::new(r"^\^([A-Za-z_][A-Za-z0-9_]*)$")
+        .expect("Failed to compile PHP_LIKE_EXACT_VARIABLE_REGEX");
+    static ref PHP_LIKE_VARIABLE_REGEX: Regex = Regex::new(r"\^(\.\.\.|[A-Za-z_][A-Za-z0-9_]*)")
+        .expect("Failed to compile PHP_LIKE_VARIABLE_REGEX");
+    static ref PHP_LIKE_BRACKET_VAR_REGEX: Regex = Regex::new(r"\^\[([A-Za-z_][A-Za-z0-9_]*)\]")
+        .expect("Failed to compile PHP_LIKE_BRACKET_VAR_REGEX");
     pub static ref PHP_ONLY_CODE_SNIPPETS: Vec<(&'static str, &'static str)> = vec![
         ("", ""),
         ("", ";"),
@@ -180,18 +197,18 @@ lazy_static! {
         ("", "{}"),
     ];
     pub static ref PHP_CODE_SNIPPETS: Vec<(&'static str, &'static str)> = {
-        let mut php_tag_modifications:Vec<(&'static str, &'static str)> = PHP_ONLY_CODE_SNIPPETS.
-            clone().
-            into_iter().
-            map(|(s1, s2)| {
+        let mut php_tag_modifications: Vec<(&'static str, &'static str)> = PHP_ONLY_CODE_SNIPPETS
+            .clone()
+            .into_iter()
+            .map(|(s1, s2)| {
                 let owned_str1 = Box::leak(Box::new(format!("<?php {}", s1))) as &'static str;
                 let owned_str2 = Box::leak(Box::new(format!("{} ?>", s2))) as &'static str;
                 (owned_str1, owned_str2)
-            }).collect();
+            })
+            .collect();
         php_tag_modifications.extend(vec![("", "")]);
         php_tag_modifications
     };
-    
 }
 
 pub(crate) fn php_like_metavariable_regex() -> &'static Regex {

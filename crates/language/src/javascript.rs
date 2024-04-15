@@ -4,7 +4,7 @@ use crate::{
         Replacement, SortId, TSLanguage,
     },
     xscript_util::{
-        self, js_like_get_statement_sorts, js_optional_empty_field_compilation,
+        self, js_like_get_statement_sorts, js_like_is_comment, js_optional_empty_field_compilation,
         js_skip_snippet_compilation_sorts, jslike_check_replacements,
     },
 };
@@ -37,6 +37,7 @@ pub struct JavaScript {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,
     comment_sort: SortId,
+    jsx_sort: SortId,
     statement_sorts: &'static [SortId],
     language: &'static TSLanguage,
     skip_snippet_compilation_sorts: &'static Vec<(SortId, FieldId)>,
@@ -49,6 +50,7 @@ impl JavaScript {
         let node_types = NODE_TYPES.get_or_init(|| fields_for_nodes(language, NODE_TYPES_STRING));
         let metavariable_sort = language.id_for_node_kind("grit_metavariable", true);
         let comment_sort = language.id_for_node_kind("comment", true);
+        let jsx_sort = language.id_for_node_kind("jsx_expression", true);
 
         let statement_sorts = STATEMENT_SORTS.get_or_init(|| js_like_get_statement_sorts(language));
 
@@ -64,6 +66,7 @@ impl JavaScript {
             node_types,
             metavariable_sort,
             comment_sort,
+            jsx_sort,
             statement_sorts,
             language,
             skip_snippet_compilation_sorts,
@@ -131,8 +134,12 @@ impl Language for JavaScript {
         ]
     }
 
-    fn is_comment(&self, id: SortId) -> bool {
+    fn is_comment_sort(&self, id: SortId) -> bool {
         id == self.comment_sort
+    }
+
+    fn is_comment_node(&self, node: &NodeWithSource) -> bool {
+        js_like_is_comment(node, self.comment_sort, self.jsx_sort)
     }
 
     fn is_statement(&self, id: SortId) -> bool {

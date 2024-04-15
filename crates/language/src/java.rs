@@ -74,7 +74,7 @@ impl Language for Java {
         self.metavariable_sort
     }
 
-    fn is_comment(&self, id: SortId) -> bool {
+    fn is_comment_sort(&self, id: SortId) -> bool {
         self.comment_sorts.contains(&id)
     }
 }

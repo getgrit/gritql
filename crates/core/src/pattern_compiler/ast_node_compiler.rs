@@ -26,7 +26,7 @@ impl AstNodeCompiler {
         is_rhs: bool,
     ) -> Result<ASTNode> {
         let mut args = Vec::new();
-        if context.compilation.lang.is_comment(sort) {
+        if context.compilation.lang.is_comment_sort(sort) {
             match named_args.len().cmp(&1) {
                 Ordering::Equal => {
                     let (name, node) = named_args.remove(0);
