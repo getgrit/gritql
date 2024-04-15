@@ -100,13 +100,6 @@ pub struct ApplyPatternArgs {
         )]
     pub visibility: VisibilityLevels,
     #[clap(
-        long = "only-in-json",
-        help = "Only rewrite ranges that are inside the provided eslint-style JSON file",
-        hide = true,
-        conflicts_with = "only_in_diff"
-    )]
-    only_in_json: Option<PathBuf>,
-    #[clap(
         long = "output-file",
         help = "Path to a file to write the results to, defaults to stdout"
     )]
@@ -136,7 +129,6 @@ impl Default for ApplyPatternArgs {
             format: Default::default(),
             interactive: Default::default(),
             visibility: VisibilityLevels::Hidden,
-            only_in_json: Default::default(),
             output_file: Default::default(),
             cache: Default::default(),
             refresh_cache: Default::default(),
@@ -214,7 +206,7 @@ pub(crate) async fn run_apply_pattern(
     )
     .await?;
 
-    let filter_range = if let Some(json_path) = arg.only_in_json.clone() {
+    let filter_range = if let Some(json_path) = &shared.only_in_json {
         let json_ranges = flushable_unwrap!(emitter, parse_eslint_output(json_path));
         Some(json_ranges)
     } else {

@@ -32,7 +32,7 @@ struct EslintFile {
     pub messages: Vec<EslintMessage>,
 }
 
-pub fn parse_eslint_output(file_path: PathBuf) -> Result<Vec<FileRange>> {
+pub fn parse_eslint_output(file_path: &PathBuf) -> Result<Vec<FileRange>> {
     let mut file = File::open(file_path)?;
     let mut json = String::new();
 
