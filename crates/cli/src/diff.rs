@@ -167,6 +167,20 @@ index adacd90..71b96e0 100644
     export const addTeamToOrgSubscription = () => console.log('cool');
 "#;
         let parsed = parse_modified_ranges(diff).unwrap();
+        let before_range = &parsed[0].before[0];
+        assert_eq!(
+            before_range.file_path,
+            "crates/cli_bin/fixtures/es6/empty_export_object.js"
+        );
+        assert_eq!(before_range.range.start_line(), 5);
+        assert_eq!(before_range.range.end_line(), 5);
+        let after_range = &parsed[0].after[0];
+        assert_eq!(
+            after_range.file_path,
+            "crates/cli_bin/fixtures/es6/empty_export_object.js"
+        );
+        assert_eq!(after_range.range.start_line(), 5);
+        assert_eq!(after_range.range.end_line(), 5);
         assert_yaml_snapshot!(parsed);
     }
 
