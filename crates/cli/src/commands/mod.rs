@@ -255,8 +255,12 @@ fn write_analytics_event(
             // No analytics worker to send event to, do nothing
         }
         (worker, name_err, event_err) => {
-            log::info!("Failed to serialize analytics event: {:?} {:?} {:?}",
-                worker, name_err, event_err);
+            log::info!(
+                "Failed to serialize analytics event: {:?} {:?} {:?}",
+                worker,
+                name_err,
+                event_err
+            );
         }
     }
 }

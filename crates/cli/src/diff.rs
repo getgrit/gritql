@@ -1,9 +1,8 @@
-use anyhow::{Result};
+use anyhow::Result;
 use marzano_util::{
     diff::{parse_modified_ranges, FileDiff},
-    position::{FileRange},
+    position::FileRange,
 };
-
 
 use std::{fs::File, io::Read, path::PathBuf};
 
