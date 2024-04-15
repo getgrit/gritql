@@ -31,13 +31,8 @@ use tokio::fs;
 
 use crate::diff::extract_target_ranges;
 use crate::{
-    analyze::par_apply_pattern,
-    community::parse_eslint_output,
-    diff::{extract_modified_ranges, git_diff, parse_modified_ranges},
-    error::GoodError,
-    flags::OutputFormat,
-    messenger_variant::create_emitter,
-    result_formatting::get_human_error,
+    analyze::par_apply_pattern, community::parse_eslint_output, error::GoodError,
+    flags::OutputFormat, messenger_variant::create_emitter, result_formatting::get_human_error,
     updater::Updater,
 };
 
