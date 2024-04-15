@@ -51,7 +51,11 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 .to_string();
 
             results.push(FileDiff {
-                old_path: Some(old_file_name.clone()),
+                old_path: if old_file_name == "/dev/null" {
+                    None
+                } else {
+                    Some(old_file_name)
+                },
                 new_path: None,
                 before: Vec::new(),
                 after: Vec::new(),
@@ -66,7 +70,11 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 .to_string();
 
             if let Some(file_diff) = results.last_mut() {
-                file_diff.new_path = Some(new_file_name);
+                file_diff.new_path = if new_file_name == "/dev/null" {
+                    None
+                } else {
+                    Some(new_file_name)
+                };
             } else {
                 bail!("Encountered new file path without a current file diff");
             };
@@ -231,6 +239,13 @@ index 0000000..7b232cd
 +};
 "#;
         let parsed = parse_modified_ranges(diff).unwrap();
+
+        assert_eq!(
+            parsed[1].old_path,
+            Some("crates/cli_bin/fixtures/es6/export.js".to_string())
+        );
+        assert!(parsed[1].new_path.is_none());
+
         assert_yaml_snapshot!(parsed);
     }
 
@@ -291,6 +306,12 @@ index f6e1a2c..2c58ad2 100644
     createTeam,
 "#;
         let parsed = parse_modified_ranges(diff).unwrap();
+        assert_eq!(
+            parsed[1].old_path,
+            Some("crates/cli_bin/fixtures/es6/export.js".to_string())
+        );
+        assert!(parsed[1].new_path.is_none());
+
         assert_yaml_snapshot!(parsed);
     }
 
@@ -301,5 +322,6 @@ index f6e1a2c..2c58ad2 100644
         let parsed_diffs = parse_modified_ranges(diff).expect("Failed to parse diffs");
         assert!(!parsed_diffs.is_empty(), "No diffs parsed");
         assert!(parsed_diffs.iter().all(|diff| diff.new_path.is_some()));
+        assert_eq!(parsed_diffs.len(), 21);
     }
 }
