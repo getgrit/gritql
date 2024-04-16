@@ -14106,3 +14106,66 @@ fn yaml_indents_join() {
     })
     .unwrap();
 }
+
+#[test]
+fn ruby_hello_world() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`puts $string` => `puts $string + " modified"`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |puts "hello world"
+                |puts "hello again"
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |puts "hello world" + " modified"
+                |puts "hello again" + " modified"
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn ruby_if() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`if $x
+                |   puts $success
+                |end` where {
+                |   $x => `y > 2`,
+                |   $success => `"y is greater than 2"`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |if x == 0
+                |   puts "pass"
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |if y > 2
+                |   puts "y is greater than 2"
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
