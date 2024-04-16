@@ -455,7 +455,7 @@ impl<'a> Binding<'a> {
             Self::Empty(_, _) => Ok("".into()),
             Self::Node(node) => Ok(node.text()?),
             Self::String(s, r) => Ok(s[r.start_byte as usize..r.end_byte as usize].into()),
-            Self::FileName(s) => Ok(s.to_string_lossy().into()),
+            Self::FileName(s) => Ok(s.to_string_lossy()),
             Self::List(node, _) => Ok(if let Some(pos) = self.position(language) {
                 node.source[pos.start_byte as usize..pos.end_byte as usize].into()
             } else {
