@@ -14,7 +14,7 @@ impl<'a> Binding<'a> {
         let target_range = node.node.range();
         for n in node.children().chain(node.ancestors()) {
             for c in n.children() {
-                if !(lang.is_comment(c.node.kind_id()) || lang.is_comment_wrapper(&c.node)) {
+                if !(lang.is_comment_node(&c)) {
                     continue;
                 }
                 if is_suppress_comment(&c, &target_range, current_name, lang) {
@@ -84,8 +84,7 @@ fn comment_applies_to_range(
         return false;
     };
     while let Some(next) = applicable.next_named_node() {
-        if !lang.is_comment(applicable.node.kind_id())
-            && !lang.is_comment_wrapper(&applicable.node)
+        if !lang.is_comment_node(&applicable)
             // Some languages have significant whitespace; continue until we find a non-whitespace non-comment node
             && applicable.text().is_ok_and(|t| !t.trim().is_empty())
         {

@@ -593,7 +593,7 @@ fn get_range_nodes_for_list<'a>(
 
     let mut leading_comment = first_node.clone();
     while let Some(comment) = leading_comment.previous_sibling() {
-        if language.is_comment(comment.node.kind_id()) {
+        if language.is_comment_node(&comment) {
             leading_comment = comment;
         } else {
             break;
@@ -601,7 +601,7 @@ fn get_range_nodes_for_list<'a>(
     }
     let mut trailing_comment = end_node;
     while let Some(comment) = trailing_comment.next_sibling() {
-        if language.is_comment(comment.node.kind_id()) {
+        if language.is_comment_node(&comment) {
             trailing_comment = comment;
         } else {
             break;

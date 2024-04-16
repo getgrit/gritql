@@ -246,10 +246,15 @@ pub trait Language: NodeTypes {
         &EXACT_REPLACED_VARIABLE_REGEX
     }
 
-    fn is_comment(&self, _id: SortId) -> bool;
+    // checks if the sort is the languages comment sort
+    fn is_comment_sort(&self, _id: SortId) -> bool;
 
-    fn is_comment_wrapper(&self, _node: &tree_sitter::Node) -> bool {
-        false
+    // checks if a node is a comment. distinct from the above
+    // in that sometimes a node is a comment but doesn't have
+    // a comment sort for example when parsing javascript,
+    // comments embedded in jsx dont have the comment sort
+    fn is_comment_node(&self, node: &NodeWithSource) -> bool {
+        self.is_comment_sort(node.node.kind_id())
     }
 
     fn is_statement(&self, _id: SortId) -> bool {

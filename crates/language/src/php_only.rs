@@ -78,7 +78,7 @@ impl Language for PhpOnly {
         self.metavariable_sort
     }
 
-    fn is_comment(&self, id: SortId) -> bool {
+    fn is_comment_sort(&self, id: SortId) -> bool {
         id == self.comment_sort
     }
 

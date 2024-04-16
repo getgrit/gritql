@@ -4,6 +4,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use grit_util::AstNode;
+
 use marzano_util::node_with_source::NodeWithSource;
 use tree_sitter::{Parser, Tree};
 
@@ -113,6 +114,22 @@ pub(crate) fn parse_file(
     } else {
         default_parse_file(lang.get_ts_language(), name, body, logs, new)
     }
+}
+
+pub(crate) fn js_like_is_comment(
+    node: &NodeWithSource,
+    comment_sort: SortId,
+    jsx_sort: SortId,
+) -> bool {
+    let id = node.node.kind_id();
+    id == comment_sort
+        || (id == jsx_sort
+            && node.node.named_child_count() == 1
+            && node
+                .node
+                .named_child(0)
+                .map(|c| c.kind_id() == comment_sort)
+                .is_some_and(|b| b))
 }
 
 pub(crate) fn jslike_check_replacements(

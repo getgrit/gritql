@@ -72,7 +72,7 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
         if self.args.is_empty() {
             return Ok(true);
         }
-        if context.language().is_comment(self.sort) {
+        if context.language().is_comment_sort(self.sort) {
             let content = context.language().comment_text(&node, source);
             let content = resolve!(content);
 
