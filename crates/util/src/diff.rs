@@ -59,6 +59,9 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
 
     // Next hunk represents a hunk where we know the lines, but haven't yet eliminated any context.
     let mut next_hunk_start_line: Option<(u32, u32)> = None;
+    // If we find a hunk, we'll store it here
+    let mut current_hunk_after_end_position: Option<Position> = None;
+    let mut current_hunk_before_end_position: Option<Position> = None;
 
     for line in lines {
         if line.starts_with("--- ") {
@@ -99,11 +102,16 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
             };
         } else if line.starts_with("@@ ") {
             // If we have a current hunk, add it to the current file diff
-            if let Some(hunk) = current_hunk_range.take() {
+            let new_range = compute_range(
+                next_hunk_start_line,
+                &mut current_hunk_before_end_position,
+                &mut current_hunk_after_end_position,
+            );
+            if let Some(range) = new_range {
                 if let Some(file_diff) = results.last_mut() {
-                    file_diff.ranges.push(hunk);
+                    file_diff.ranges.push(range);
                 } else {
-                    bail!("Encountered hunk without a current file diff");
+                    bail!("Finished hunk without a current file diff");
                 }
             }
 
@@ -113,15 +121,7 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 parsed_hunk.before.start_line(),
                 parsed_hunk.after.start_line(),
             ));
-
-            println!("Next hunk is now {:?}", next_hunk_start_line);
-
-            // if let Some(file_diff) = results.last_mut() {
-            //     file_diff.ranges.push(hunk);
-            // } else {
-            //     bail!("Encountered hunk without a current file diff");
-            // }
-        } else if line.starts_with(" ") {
+        } else if line.starts_with(' ') {
             // println!(
             //     "Ignoring context line: {}, hunk: {:?}",
             //     line, next_hunk_start_line
@@ -130,14 +130,36 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
             if let Some(mut hunk) = next_hunk_start_line {
                 hunk.0 += 1;
                 hunk.1 += 1;
-            } else if let Some(ref mut hunk) = current_hunk_range {
-                println!("Do something with the previous hunk {:?}...", hunk);
             }
         } else if line.starts_with('+') || line.starts_with('-') {
             let is_add = line.starts_with('+');
             let unpadded_length = (line.len() - 1) as u32;
 
-            bail!("Unimplemented");
+            if let Some(ref start_lines) = next_hunk_start_line {
+                if is_add {
+                    if let Some(ref mut ending) = current_hunk_after_end_position {
+                        ending.line += 1;
+                        ending.column = unpadded_length;
+                    } else {
+                        // First line on right hand side
+                        current_hunk_after_end_position = Some(Position {
+                            line: start_lines.1,
+                            column: unpadded_length,
+                        });
+                    }
+                } else if let Some(ref mut ending) = current_hunk_before_end_position {
+                    ending.line += 1;
+                    ending.column = unpadded_length;
+                } else {
+                    // First line we are seeing on left hand size
+                    current_hunk_before_end_position = Some(Position {
+                        line: start_lines.0,
+                        column: unpadded_length,
+                    });
+                }
+            } else {
+                bail!("Encountered line without a hunk");
+            }
         } else {
             // bail!("Unrecognized line in diff: {}", line);
         }
@@ -153,6 +175,77 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
     // }
 
     Ok(results)
+}
+
+fn compute_range(
+    next_hunk_start_line: Option<(u32, u32)>,
+    current_hunk_before_end_position: &mut Option<Position>,
+    current_hunk_after_end_position: &mut Option<Position>,
+) -> Option<RangePair> {
+    match (
+        next_hunk_start_line,
+        current_hunk_before_end_position.take(),
+        current_hunk_after_end_position.take(),
+    ) {
+        (Some(start_line), Some(before), Some(after)) => Some(RangePair {
+            before: RangeWithoutByte {
+                start: Position {
+                    line: start_line.0,
+                    column: 0,
+                },
+                end: before,
+            },
+            after: RangeWithoutByte {
+                start: Position {
+                    line: start_line.1,
+                    column: 0,
+                },
+                end: after,
+            },
+        }),
+        (Some(start_line), Some(before), None) => Some(RangePair {
+            before: RangeWithoutByte {
+                start: Position {
+                    line: start_line.0,
+                    column: 0,
+                },
+                end: before,
+            },
+            after: RangeWithoutByte {
+                start: Position {
+                    line: start_line.1,
+                    column: 0,
+                },
+                end: Position {
+                    line: start_line.1,
+                    column: 0,
+                },
+            },
+        }),
+        (Some(start_line), None, Some(after)) => Some(RangePair {
+            before: RangeWithoutByte {
+                start: Position {
+                    line: start_line.0,
+                    column: 0,
+                },
+                end: Position {
+                    line: start_line.0,
+                    column: 0,
+                },
+            },
+            after: RangeWithoutByte {
+                start: Position {
+                    line: start_line.1,
+                    column: 0,
+                },
+                end: after,
+            },
+        }),
+        _ => {
+            println!("Failed to find range for hunk: {:?}", next_hunk_start_line);
+            None
+        }
+    }
 }
 
 #[cfg(test)]
@@ -418,7 +511,7 @@ mod tests {
         assert_eq!(no_context_parsed[0].ranges[0].before.end_line(), 12);
         assert_eq!(no_context_parsed[0].ranges[0].after.start_line(), 12);
         assert_eq!(no_context_parsed[0].ranges[0].after.end_line(), 12);
-        assert_eq!(no_context_parsed[0].ranges[0].after.end_column(), 9);
+        assert_eq!(no_context_parsed[0].ranges[0].after.end_column(), 8);
         assert_eq!(no_context_parsed.len(), 1);
 
         // These two diffs are *identical* except for the context line length
