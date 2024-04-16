@@ -146,7 +146,7 @@ pub(crate) fn jslike_check_replacements(
         }
     } else if n.node.is_error()
         && n.text()
-            .is_ok_and(|t| ["var", "let", "const"].contains(&t.as_str()))
+            .is_ok_and(|t| ["var", "let", "const"].contains(&t.as_ref()))
         || n.node.kind() == "empty_statement"
     {
         replacement_ranges.push(Replacement::new(n.range(), ""));

@@ -450,18 +450,18 @@ impl<'a> Binding<'a> {
         res
     }
 
-    pub fn text(&self, language: &impl Language) -> Result<String> {
+    pub fn text(&self, language: &impl Language) -> Result<Cow<str>> {
         match self {
-            Self::Empty(_, _) => Ok("".to_string()),
+            Self::Empty(_, _) => Ok("".into()),
             Self::Node(node) => Ok(node.text()?),
             Self::String(s, r) => Ok(s[r.start_byte as usize..r.end_byte as usize].into()),
-            Self::FileName(s) => Ok(s.to_string_lossy().into()),
+            Self::FileName(s) => Ok(s.to_string_lossy()),
             Self::List(node, _) => Ok(if let Some(pos) = self.position(language) {
-                node.source[pos.start_byte as usize..pos.end_byte as usize].to_string()
+                node.source[pos.start_byte as usize..pos.end_byte as usize].into()
             } else {
-                "".to_string()
+                "".into()
             }),
-            Self::ConstantRef(c) => Ok(c.to_string()),
+            Self::ConstantRef(c) => Ok(c.to_string().into()),
         }
     }
 

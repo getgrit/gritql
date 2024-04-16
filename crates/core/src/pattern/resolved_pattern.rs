@@ -246,7 +246,7 @@ impl<'a> ResolvedSnippet<'a> {
             ResolvedSnippet::Binding(binding) => {
                 // we are now taking the unmodified source code, and replacing the binding with the snippet
                 // we will want to apply effects next
-                Ok(binding.text(language)?.into())
+                binding.text(language).map(|c| c.into_owned().into())
             }
             ResolvedSnippet::LazyFn(lazy) => lazy.text(state, language),
         }
@@ -1045,6 +1045,7 @@ impl<'a> ResolvedPattern<'a> {
                 .last()
                 .ok_or_else(|| anyhow!("cannot grab text of resolved_pattern with no binding"))?
                 .text(language)?
+                .into_owned()
                 .into()),
             Self::File(file) => Ok(format!(
                 "{}:\n{}",
