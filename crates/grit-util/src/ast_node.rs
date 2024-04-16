@@ -1,4 +1,4 @@
-use std::str::Utf8Error;
+use std::{borrow::Cow, str::Utf8Error};
 
 use crate::CodeRange;
 
@@ -32,7 +32,7 @@ pub trait AstNode: std::fmt::Debug + Sized {
     fn previous_sibling(&self) -> Option<Self>;
 
     /// Returns the text representation of the node.
-    fn text(&self) -> Result<String, Utf8Error>;
+    fn text(&self) -> Result<Cow<str>, Utf8Error>;
 
     /// Returns the code range of the node.
     fn code_range(&self) -> CodeRange;
