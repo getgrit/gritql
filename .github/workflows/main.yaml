@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [nscloud-ubuntu-22.04-amd64-8x32]
+        os: [nscloud-ubuntu-22.04-amd64-8x32, warp-ubuntu-2204-x64-8x]
     runs-on: ${{ matrix.os }}
     permissions:
       contents: "read"
