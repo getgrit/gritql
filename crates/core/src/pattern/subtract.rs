@@ -28,7 +28,7 @@ impl<Q: QueryContext> Subtract<Q> {
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let res = self.evaluate(state, context, logs)?;
-        Ok(ResolvedPattern::Constant(Constant::Float(res)))
+        Ok(ResolvedPattern::from_constant(Constant::Float(res)))
     }
 
     fn evaluate<'a>(

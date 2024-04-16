@@ -1,7 +1,7 @@
 use super::{
     constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
     patterns::{Matcher, Pattern},
-    resolved_pattern::{File, ResolvedPattern},
+    resolved_pattern::ResolvedPattern,
     state::{FilePtr, State},
 };
 use crate::{
@@ -29,42 +29,6 @@ impl<Q: QueryContext> Step<Q> {
     }
 }
 
-fn extract_file_pointer(file: &File) -> Option<FilePtr> {
-    match file {
-        File::Resolved(_) => None,
-        File::Ptr(ptr) => Some(*ptr),
-    }
-}
-
-fn handle_files(files_list: &ResolvedPattern) -> Option<Vec<FilePtr>> {
-    if let ResolvedPattern::List(files) = files_list {
-        files
-            .iter()
-            .map(|r| {
-                if let ResolvedPattern::File(File::Ptr(ptr)) = r {
-                    Some(*ptr)
-                } else {
-                    None
-                }
-            })
-            .collect()
-    } else {
-        None
-    }
-}
-
-fn extract_file_pointers(binding: &ResolvedPattern) -> Option<Vec<FilePtr>> {
-    match binding {
-        ResolvedPattern::Binding(_) => None,
-        ResolvedPattern::Snippets(_) => None,
-        ResolvedPattern::List(_) => handle_files(binding),
-        ResolvedPattern::Map(_) => None,
-        ResolvedPattern::File(file) => extract_file_pointer(file).map(|f| vec![f]),
-        ResolvedPattern::Files(files) => handle_files(files),
-        ResolvedPattern::Constant(_) => None,
-    }
-}
-
 impl<Q: QueryContext> Matcher<Q> for Step<Q> {
     fn execute<'a>(
         &'a self,
@@ -76,7 +40,7 @@ impl<Q: QueryContext> Matcher<Q> for Step<Q> {
         let mut parser = Parser::new()?;
         parser.set_language(context.language().get_ts_language())?;
 
-        let files = if let Some(files) = extract_file_pointers(binding) {
+        let files = if let Some(files) = binding.get_file_pointers() {
             files
                 .iter()
                 .map(|f| state.files.latest_revision(f))
@@ -86,14 +50,11 @@ impl<Q: QueryContext> Matcher<Q> for Step<Q> {
         };
 
         let binding = if files.len() == 1 {
-            ResolvedPattern::File(File::Ptr(*files.last().unwrap()))
+            ResolvedPattern::from_file_pointer(*files.last().unwrap())
         } else {
-            ResolvedPattern::Files(Box::new(ResolvedPattern::List(
-                files
-                    .iter()
-                    .map(|f| ResolvedPattern::File(File::Ptr(*f)))
-                    .collect(),
-            )))
+            ResolvedPattern::from_files(ResolvedPattern::from_list_parts(
+                files.iter().map(|f| ResolvedPattern::from_file_pointer(*f)),
+            ))
         };
         if !self.pattern.execute(&binding, state, context, logs)? {
             return Ok(false);
@@ -177,44 +138,46 @@ impl<Q: QueryContext> Matcher<Q> for Step<Q> {
             };
         }
 
-        if let Some(ResolvedPattern::List(new_files_vector)) =
-            &state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[NEW_FILES_INDEX].value
-        {
-            for f in new_files_vector {
-                if let ResolvedPattern::File(file) = f {
-                    let name: PathBuf = file
-                        .name(&state.files)
-                        .text(&state.files, context.language())
-                        .unwrap()
-                        .as_ref()
-                        .into();
-                    let body = file
-                        .body(&state.files)
-                        .text(&state.files, context.language())
-                        .unwrap()
-                        .into();
-                    let owned_file =
-                        FileOwner::new(name.clone(), body, None, true, context.language(), logs)?
-                            .ok_or_else(|| {
-                            anyhow!(
-                                "failed to construct new file for file {}",
-                                name.to_string_lossy()
-                            )
-                        })?;
-                    context.files().push(owned_file);
-                    let _ = state.files.push_new_file(context.files().last().unwrap());
-                } else {
-                    bail!("Expected a list of files")
-                }
-            }
-        } else {
+        let Some(new_files) = state.bindings[GLOBAL_VARS_SCOPE_INDEX]
+            .last()
+            .and_then(|binding| binding[NEW_FILES_INDEX].value.as_ref())
+            .and_then(ResolvedPattern::get_list_items)
+        else {
             bail!("Expected a list of files")
+        };
+
+        for f in new_files {
+            let Some(file) = f.get_file() else {
+                bail!("Expected a list of files")
+            };
+
+            let name: PathBuf = file
+                .name(&state.files)
+                .text(&state.files, context.language())
+                .unwrap()
+                .as_ref()
+                .into();
+            let body = file
+                .body(&state.files)
+                .text(&state.files, context.language())
+                .unwrap()
+                .into();
+            let owned_file =
+                FileOwner::new(name.clone(), body, None, true, context.language(), logs)?
+                    .ok_or_else(|| {
+                        anyhow!(
+                            "failed to construct new file for file {}",
+                            name.to_string_lossy()
+                        )
+                    })?;
+            context.files().push(owned_file);
+            let _ = state.files.push_new_file(context.files().last().unwrap());
         }
 
         state.effects = vector![];
         let the_new_files =
             state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[NEW_FILES_INDEX].as_mut();
-        the_new_files.value = Some(ResolvedPattern::List(vector!()));
+        the_new_files.value = Some(ResolvedPattern::from_list_parts([].into_iter()));
         Ok(true)
     }
 }

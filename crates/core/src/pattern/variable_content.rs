@@ -1,10 +1,8 @@
+use super::{resolved_pattern::ResolvedPattern, state::State, variable::Variable};
+use crate::{context::QueryContext, pattern::patterns::Pattern};
 use anyhow::{anyhow, Result};
 use marzano_language::language::Language;
 use std::borrow::Cow;
-
-use crate::{context::QueryContext, pattern::patterns::Pattern};
-
-use super::{resolved_pattern::ResolvedPattern, state::State, variable::Variable};
 
 #[derive(Debug, Clone)]
 pub struct VariableContent<'a, Q: QueryContext> {
@@ -38,7 +36,7 @@ impl<'a, Q: QueryContext> VariableContent<'a, Q> {
         }
     }
 
-    pub(crate) fn set_value(&mut self, value: ResolvedPattern<'a>) -> Option<ResolvedPattern<'a>> {
-        std::mem::replace(&mut self.value, Some(value))
+    pub(crate) fn set_value(&mut self, value: ResolvedPattern<'a>) {
+        self.value = Some(value);
     }
 }

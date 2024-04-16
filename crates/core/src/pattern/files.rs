@@ -5,7 +5,6 @@ use super::{
 };
 use crate::context::QueryContext;
 use anyhow::Result;
-use im::vector;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
@@ -27,17 +26,13 @@ impl<Q: QueryContext> Matcher<Q> for Files<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        match resolved_pattern {
-            ResolvedPattern::Files(files) => self.pattern.execute(files, state, context, logs),
-            ResolvedPattern::File(_) => {
-                let files = ResolvedPattern::List(vector![resolved_pattern.to_owned()]);
-                self.pattern.execute(&files, state, context, logs)
-            }
-            ResolvedPattern::Binding(_)
-            | ResolvedPattern::Snippets(_)
-            | ResolvedPattern::List(_)
-            | ResolvedPattern::Map(_)
-            | ResolvedPattern::Constant(_) => Ok(false),
+        if let Some(files) = resolved_pattern.get_files() {
+            self.pattern.execute(files, state, context, logs)
+        } else if resolved_pattern.get_file().is_some() {
+            let files = ResolvedPattern::from_list_parts([resolved_pattern.to_owned()].into_iter());
+            self.pattern.execute(&files, state, context, logs)
+        } else {
+            Ok(false)
         }
     }
 }

@@ -12,7 +12,6 @@ use crate::{
 };
 use anyhow::{bail, Result};
 use core::fmt::Debug;
-use im::vector;
 use marzano_language::language::{Language, GRIT_METAVARIABLE_PREFIX};
 use marzano_util::analysis_logs::AnalysisLogs;
 use marzano_util::position::Range;
@@ -106,49 +105,30 @@ impl Variable {
             let value = &mut variable_content.value;
 
             if let Some(var_side_resolve_pattern) = value {
-                match var_side_resolve_pattern {
-                    ResolvedPattern::Binding(bindings) => {
-                        if let ResolvedPattern::Binding(cur_bindings) = resolved_pattern.clone() {
-                            if let (Some(var_binding), Some(binding)) =
-                                (bindings.last(), cur_bindings.last())
-                            {
-                                if !var_binding.is_equivalent_to(binding, lang) {
-                                    return Ok(Some(false));
-                                }
-                                let value_history = &mut variable_content.value_history;
-                                bindings.push_back(binding.clone());
+                if let (Some(var_binding), Some(binding)) = (
+                    var_side_resolve_pattern.get_last_binding(),
+                    resolved_pattern.get_last_binding(),
+                ) {
+                    if !var_binding.is_equivalent_to(binding, lang) {
+                        return Ok(Some(false));
+                    }
+                    let value_history = &mut variable_content.value_history;
+                    var_side_resolve_pattern.push_binding(binding.clone())?;
 
-                                // feels wrong maybe we should push ResolvedPattern::Binding(bindings)?
-                                value_history
-                                    .push(ResolvedPattern::Binding(vector![binding.clone()]));
-                                variable_mirrors.extend(variable_content.mirrors.iter().map(
-                                    |mirror| VariableMirror {
-                                        scope: mirror.scope,
-                                        index: mirror.index,
-                                        binding: binding.clone(),
-                                    },
-                                ));
-                            } else {
-                                bail!("either variable or lhs binding is empty");
-                            }
-                        } else {
-                            return Ok(Some(
-                                resolved_pattern.text(&state.files, lang)?
-                                    == bindings.last().unwrap().text(lang)?,
-                            ));
+                    // feels wrong maybe we should push ResolvedPattern::Binding(bindings)?
+                    value_history.push(ResolvedPattern::from_binding(binding.clone()));
+                    variable_mirrors.extend(variable_content.mirrors.iter().map(|mirror| {
+                        VariableMirror {
+                            scope: mirror.scope,
+                            index: mirror.index,
+                            binding: binding.clone(),
                         }
-                    }
-                    ResolvedPattern::Snippets(_)
-                    | ResolvedPattern::List(_)
-                    | ResolvedPattern::Map(_)
-                    | ResolvedPattern::File(_)
-                    | ResolvedPattern::Files(_)
-                    | ResolvedPattern::Constant(_) => {
-                        return Ok(Some(
-                            resolved_pattern.text(&state.files, lang)?
-                                == var_side_resolve_pattern.text(&state.files, lang)?,
-                        ));
-                    }
+                    }));
+                } else {
+                    return Ok(Some(
+                        resolved_pattern.text(&state.files, lang)?
+                            == var_side_resolve_pattern.text(&state.files, lang)?,
+                    ));
                 }
             } else {
                 return Ok(None);
@@ -163,11 +143,12 @@ impl Variable {
                 .unwrap()
                 .get_mut(mirror.index)
                 .unwrap());
-            let value = &mut mirror_content.value;
-            if let Some(ResolvedPattern::Binding(bindings)) = value {
-                bindings.push_back(mirror.binding.clone());
-                let value_history = &mut mirror_content.value_history;
-                value_history.push(ResolvedPattern::Binding(vector![mirror.binding]));
+            if let Some(value) = &mut mirror_content.value {
+                if value.is_binding() {
+                    value.push_binding(mirror.binding.clone())?;
+                    let value_history = &mut mirror_content.value_history;
+                    value_history.push(ResolvedPattern::from_binding(mirror.binding));
+                }
             }
         }
         Ok(Some(true))
