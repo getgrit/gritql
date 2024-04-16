@@ -16,9 +16,3 @@ index 893656e..45815bf 100644
 -    api::{AnalysisLog, DoneFile, MatchResult},
 -    problem::Problem,
 -};
-diff --git a/vendor/tree-sitter-gritql b/vendor/tree-sitter-gritql
---- a/vendor/tree-sitter-gritql
-+++ b/vendor/tree-sitter-gritql
-@@ -1 +1 @@
--Subproject commit 5f4543610f49f7607b5ca54082da017837219a23
-+Subproject commit 5f4543610f49f7607b5ca54082da017837219a23-dirty

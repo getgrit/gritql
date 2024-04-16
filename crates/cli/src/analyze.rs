@@ -9,17 +9,13 @@ use tracing::{event, instrument, Level};
 #[cfg(feature = "grit_tracing")]
 use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 
-use grit_cache::paths::cache_for_cwd;
+use foo;
 use ignore::Walk;
-use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
+use bar;
 
 #[allow(unused_imports)]
-use marzano_core::pattern::built_in_functions::BuiltIns;
+use inserted
 use marzano_core::pattern_compiler::{src_to_problem_libs, CompilationResult};
-use marzano_core::{
-    api::{AnalysisLog, DoneFile, MatchResult},
-    problem::Problem,
-};
 use marzano_language::target_language::PatternLanguage;
 use marzano_util::cache::GritCache;
 use marzano_util::position::{FileRange, Position};
