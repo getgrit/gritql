@@ -53,16 +53,19 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
         context: &'a MarzanoContext,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let binding = if let ResolvedPattern::Binding(binding) = binding {
-            resolve!(binding.last())
-        } else {
+        let Some(binding) = binding.get_last_binding() else {
             return Ok(false);
         };
         let Some(node) = binding.singleton() else {
             return Ok(false);
         };
         if binding.is_list() {
-            return self.execute(&ResolvedPattern::from_node(node), init_state, context, logs);
+            return self.execute(
+                &ResolvedPattern::from_node_binding(node),
+                init_state,
+                context,
+                logs,
+            );
         }
 
         let NodeWithSource { node, source } = node;
@@ -77,7 +80,7 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
             let content = resolve!(content);
 
             return self.args[0].2.execute(
-                &ResolvedPattern::from_range(content.1, source),
+                &ResolvedPattern::from_range_binding(content.1, source),
                 init_state,
                 context,
                 logs,
@@ -89,7 +92,7 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
 
             let res = if *is_list {
                 pattern.execute(
-                    &ResolvedPattern::from_list(
+                    &ResolvedPattern::from_list_binding(
                         NodeWithSource::new(node.clone(), source),
                         *field_id,
                     ),
@@ -99,14 +102,14 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
                 )
             } else if let Some(child) = node.child_by_field_id(*field_id) {
                 pattern.execute(
-                    &ResolvedPattern::from_node(NodeWithSource::new(child, source)),
+                    &ResolvedPattern::from_node_binding(NodeWithSource::new(child, source)),
                     &mut cur_state,
                     context,
                     logs,
                 )
             } else {
                 pattern.execute(
-                    &ResolvedPattern::empty_field(
+                    &ResolvedPattern::from_empty_binding(
                         NodeWithSource::new(node.clone(), source),
                         *field_id,
                     ),

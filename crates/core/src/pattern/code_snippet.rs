@@ -4,10 +4,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{
-    context::{ExecContext, QueryContext},
-    resolve,
-};
+use crate::context::{ExecContext, QueryContext};
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_language::language::SortId;
@@ -44,21 +41,13 @@ impl<Q: QueryContext> Matcher<Q> for CodeSnippet<Q> {
     // wrong, but whatever for now
     fn execute<'a>(
         &'a self,
-        resolved_pattern: &ResolvedPattern<'a>,
+        resolved: &ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let binding = match resolved_pattern {
-            ResolvedPattern::Binding(binding) => resolve!(binding.last()),
-            resolved @ ResolvedPattern::Snippets(_)
-            | resolved @ ResolvedPattern::List(_)
-            | resolved @ ResolvedPattern::Map(_)
-            | resolved @ ResolvedPattern::File(_)
-            | resolved @ ResolvedPattern::Files(_)
-            | resolved @ ResolvedPattern::Constant(_) => {
-                return Ok(resolved.text(&state.files, context.language())?.trim() == self.source)
-            }
+        let Some(binding) = resolved.get_last_binding() else {
+            return Ok(resolved.text(&state.files, context.language())?.trim() == self.source);
         };
 
         let Some(node) = binding.singleton() else {
@@ -70,7 +59,7 @@ impl<Q: QueryContext> Matcher<Q> for CodeSnippet<Q> {
             .iter()
             .find(|(id, _)| *id == node.node.kind_id())
         {
-            pattern.execute(resolved_pattern, state, context, logs)
+            pattern.execute(resolved, state, context, logs)
         } else {
             Ok(false)
         }

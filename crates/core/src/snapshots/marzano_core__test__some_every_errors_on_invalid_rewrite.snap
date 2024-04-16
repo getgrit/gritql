@@ -1,12 +1,12 @@
 ---
-source: apps/marzano/core/src/test.rs
+source: crates/core/src/test.rs
 expression: results
 ---
 - __typename: DoneFile
   relativeFilePath: test-file.tsx
 - __typename: AnalysisLog
   level: 280
-  message: variable on left hand side of rewrite side-conditions cannot be bound to a constant
+  message: variable on left hand side of rewrite side-conditions can only be bound to bindings
   position:
     line: 1
     column: 1
@@ -15,4 +15,3 @@ expression: results
   range: ~
   syntaxTree: ~
   source: ~
-

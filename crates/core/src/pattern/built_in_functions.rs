@@ -19,7 +19,6 @@ use super::{
     MarzanoContext, State,
 };
 use anyhow::{anyhow, bail, Result};
-use im::vector;
 use im::Vector;
 use marzano_language::language::Language;
 
@@ -310,11 +309,11 @@ fn split_fn<'a>(
     } else {
         bail!("split requires parameter separator")
     };
-    let parts: Vector<ResolvedPattern> = string
-        .split(&separator.as_ref())
-        .map(|s| ResolvedPattern::Snippets(vector![ResolvedSnippet::Text(s.to_string().into())]))
-        .collect();
-    Ok(ResolvedPattern::List(parts))
+    let separator = separator.as_ref();
+    let parts = string.split(separator).map(|s| {
+        ResolvedPattern::from_resolved_snippet(ResolvedSnippet::Text(s.to_string().into()))
+    });
+    Ok(ResolvedPattern::from_list_parts(parts))
 }
 
 fn random_fn<'a>(
@@ -333,7 +332,7 @@ fn random_fn<'a>(
             let end = end.parse::<i64>().unwrap();
             // Inclusive range
             let value = state.get_rng().gen_range(start..=end);
-            Ok(ResolvedPattern::Constant(Constant::Integer(value)))
+            Ok(ResolvedPattern::from_constant(Constant::Integer(value)))
         }
         [Some(_), None] => {
             bail!("If you provide a start argument to random(), you must provide an end argument")
@@ -343,7 +342,7 @@ fn random_fn<'a>(
         }
         [None, None] => {
             let value = state.get_rng().gen::<f64>();
-            Ok(ResolvedPattern::Constant(Constant::Float(value)))
+            Ok(ResolvedPattern::from_constant(Constant::Float(value)))
         }
         _ => bail!("random() takes 0 or 2 arguments"),
     }
@@ -363,16 +362,17 @@ fn join_fn<'a>(
         None => return Err(anyhow!("trim takes 2 arguments: list and separator")),
     };
 
-    let list = &args[0];
-    let join = match list {
-        Some(ResolvedPattern::List(list)) => {
-            JoinFn::from_resolved(list.to_owned(), separator.to_string())
+    let join = match &args[0] {
+        Some(list_binding) => {
+            if let Some(items) = list_binding.get_list_items() {
+                JoinFn::from_patterns(items.cloned(), separator.to_string())
+            } else if let Some(items) = list_binding.get_list_binding_items() {
+                JoinFn::from_patterns(items, separator.to_string())
+            } else {
+                bail!("join takes a list as the first argument")
+            }
         }
-        Some(ResolvedPattern::Binding(binding)) => binding
-            .last()
-            .and_then(|b| JoinFn::from_list_binding(b, separator.to_string()))
-            .ok_or_else(|| anyhow!("join takes a list as the first argument"))?,
-        _ => bail!("join takes a list as the first argument"),
+        None => bail!("join takes a list as the first argument"),
     };
     let snippet = ResolvedSnippet::LazyFn(Box::new(LazyBuiltIn::Join(join)));
     Ok(ResolvedPattern::from_resolved_snippet(snippet))
@@ -402,7 +402,7 @@ fn distinct_fn<'a>(
                 if let Some(list_items) = b.list_items() {
                     let mut unique_list = Vector::new();
                     for item in list_items {
-                        let resolved = ResolvedPattern::from_node(item);
+                        let resolved = ResolvedPattern::from_node_binding(item);
                         if !unique_list.contains(&resolved) {
                             unique_list.push_back(resolved);
                         }
@@ -434,35 +434,17 @@ fn shuffle_fn<'a>(
         .ok_or(anyhow!(
             "shuffle requires a non-null list as the first argument"
         ))?;
-    match list {
-        ResolvedPattern::List(list) => {
-            let mut shuffled_list = list.iter().cloned().collect::<Vec<_>>();
-            shuffled_list.shuffle(state.get_rng());
 
-            Ok(ResolvedPattern::List(shuffled_list.into()))
-        }
-        ResolvedPattern::Binding(binding) => match binding.last() {
-            Some(b) => {
-                if let Some(list_items) = b.list_items() {
-                    let mut list: Vec<_> = list_items.collect();
-                    list.shuffle(state.get_rng());
-                    let list: Vector<_> =
-                        list.into_iter().map(ResolvedPattern::from_node).collect();
-                    Ok(ResolvedPattern::List(list))
-                } else {
-                    Err(anyhow!("shuffle takes a list as the first argument"))
-                }
-            }
-            None => Err(anyhow!("shuffle argument must be bound")),
-        },
-        ResolvedPattern::Snippets(_)
-        | ResolvedPattern::Map(_)
-        | ResolvedPattern::File(_)
-        | ResolvedPattern::Files(_)
-        | ResolvedPattern::Constant(_) => {
-            Err(anyhow!("shuffle takes a list as the first argument"))
-        }
-    }
+    let mut shuffled_list: Vec<_> = if let Some(items) = list.get_list_items() {
+        items.cloned().collect()
+    } else if let Some(items) = list.get_list_binding_items() {
+        items.collect()
+    } else {
+        bail!("shuffle takes a list as the first argument");
+    };
+
+    shuffled_list.shuffle(state.get_rng());
+    Ok(ResolvedPattern::from_list_parts(shuffled_list.into_iter()))
 }
 
 fn length_fn<'a>(
@@ -477,7 +459,9 @@ fn length_fn<'a>(
     match &list {
         Some(ResolvedPattern::List(list)) => {
             let length = list.len();
-            Ok(ResolvedPattern::Constant(Constant::Integer(length as i64)))
+            Ok(ResolvedPattern::from_constant(Constant::Integer(
+                length as i64,
+            )))
         }
         Some(ResolvedPattern::Binding(binding)) => match binding.last() {
             Some(resolved_pattern) => {
@@ -486,14 +470,18 @@ fn length_fn<'a>(
                 } else {
                     resolved_pattern.text(context.language())?.len()
                 };
-                Ok(ResolvedPattern::Constant(Constant::Integer(length as i64)))
+                Ok(ResolvedPattern::from_constant(Constant::Integer(
+                    length as i64,
+                )))
             }
             None => Err(anyhow!("length argument must be a list or string")),
         },
         Some(resolved_pattern) => {
             if let Ok(text) = resolved_pattern.text(&state.files, context.language()) {
                 let length = text.len();
-                Ok(ResolvedPattern::Constant(Constant::Integer(length as i64)))
+                Ok(ResolvedPattern::from_constant(Constant::Integer(
+                    length as i64,
+                )))
             } else {
                 Err(anyhow!("length argument must be a list or string"))
             }

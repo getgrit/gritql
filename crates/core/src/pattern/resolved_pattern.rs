@@ -3,7 +3,7 @@ use super::{
     code_snippet::CodeSnippet,
     dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
     functions::GritCall,
-    list_index::ListIndex,
+    list_index::{to_unsigned, ListIndex},
     paths::absolutize,
     patterns::Pattern,
     state::{FilePtr, FileRegistry, State},
@@ -58,7 +58,7 @@ impl<'a> File<'a> {
     pub(crate) fn name(&self, files: &FileRegistry<'a>) -> ResolvedPattern<'a> {
         match self {
             File::Resolved(resolved) => resolved.name.clone(),
-            File::Ptr(ptr) => ResolvedPattern::from_path(&files.get_file(*ptr).name),
+            File::Ptr(ptr) => ResolvedPattern::from_path_binding(&files.get_file(*ptr).name),
         }
     }
 
@@ -73,7 +73,7 @@ impl<'a> File<'a> {
                 let absolute_path = absolutize(name.as_ref())?;
                 Ok(ResolvedPattern::Constant(Constant::String(absolute_path)))
             }
-            File::Ptr(ptr) => Ok(ResolvedPattern::from_path(
+            File::Ptr(ptr) => Ok(ResolvedPattern::from_path_binding(
                 &files.get_file(*ptr).absolute_path,
             )),
         }
@@ -85,7 +85,7 @@ impl<'a> File<'a> {
             File::Ptr(ptr) => {
                 let file = &files.get_file(*ptr);
                 let range = file.tree.root_node().range().into();
-                ResolvedPattern::from_range(range, &file.source)
+                ResolvedPattern::from_range_binding(range, &file.source)
             }
         }
     }
@@ -96,7 +96,7 @@ impl<'a> File<'a> {
             File::Ptr(ptr) => {
                 let file = &files.get_file(*ptr);
                 let node = file.tree.root_node();
-                ResolvedPattern::from_node(NodeWithSource::new(node, &file.source))
+                ResolvedPattern::from_node_binding(NodeWithSource::new(node, &file.source))
             }
         }
     }
@@ -109,15 +109,14 @@ pub struct JoinFn<'a> {
 }
 
 impl<'a> JoinFn<'a> {
-    pub(crate) fn from_resolved(list: Vector<ResolvedPattern<'a>>, separator: String) -> Self {
-        Self { list, separator }
-    }
-
-    pub(crate) fn from_list_binding(binding: &'_ Binding<'a>, separator: String) -> Option<Self> {
-        binding.list_items().map(|list_items| Self {
-            list: list_items.map(ResolvedPattern::from_node).collect(),
+    pub(crate) fn from_patterns(
+        patterns: impl Iterator<Item = ResolvedPattern<'a>>,
+        separator: String,
+    ) -> Self {
+        Self {
+            list: patterns.collect(),
             separator,
-        })
+        }
     }
 
     fn linearized_text(
@@ -299,12 +298,12 @@ impl<'a> ResolvedSnippet<'a> {
 impl<'a> ResolvedPattern<'a> {
     pub fn extend(
         &mut self,
-        mut with: ResolvedPattern<'a>,
+        mut with: Self,
         effects: &mut Vector<Effect<'a>>,
         language: &impl Language,
     ) -> Result<()> {
         match self {
-            ResolvedPattern::Binding(bindings) => {
+            Self::Binding(bindings) => {
                 let new_effects: Result<Vec<Effect>> = bindings
                     .iter()
                     .map(|b| {
@@ -321,30 +320,30 @@ impl<'a> ResolvedPattern<'a> {
                 effects.extend(new_effects);
                 Ok(())
             }
-            ResolvedPattern::Snippets(snippets) => {
+            Self::Snippets(snippets) => {
                 match with {
-                    ResolvedPattern::Snippets(with_snippets) => {
+                    Self::Snippets(with_snippets) => {
                         snippets.extend(with_snippets);
                     }
-                    ResolvedPattern::Binding(binding) => {
+                    Self::Binding(binding) => {
                         let binding = binding
                             .last()
                             .ok_or_else(|| anyhow!("cannot extend with empty binding"))?;
                         snippets.push_back(ResolvedSnippet::Binding(binding.clone()));
                     }
-                    ResolvedPattern::List(_) => {
+                    Self::List(_) => {
                         return Err(anyhow!("cannot extend ResolvedPattern::Snippet with List"))
                     }
-                    ResolvedPattern::File(_) => {
+                    Self::File(_) => {
                         return Err(anyhow!("cannot extend ResolvedPattern::Snippet with File"))
                     }
-                    ResolvedPattern::Files(_) => {
+                    Self::Files(_) => {
                         return Err(anyhow!("cannot extend ResolvedPattern::Snippet with Files"))
                     }
-                    ResolvedPattern::Map(_) => {
+                    Self::Map(_) => {
                         return Err(anyhow!("cannot extend ResolvedPattern::Snippet with Map"))
                     }
-                    ResolvedPattern::Constant(c) => {
+                    Self::Constant(c) => {
                         snippets.push_back(ResolvedSnippet::Text(c.to_string().into()));
                     }
                 }
@@ -353,15 +352,15 @@ impl<'a> ResolvedPattern<'a> {
             // do we want to auto flattern?
             // for now not since don't know what shape we want,
             // but probably will soon
-            ResolvedPattern::List(lst) => {
+            Self::List(lst) => {
                 lst.push_back(with);
                 Ok(())
             }
-            ResolvedPattern::File(_) => Err(anyhow!("cannot extend ResolvedPattern::File")),
-            ResolvedPattern::Files(_) => Err(anyhow!("cannot extend ResolvedPattern::Files")),
-            ResolvedPattern::Map(_) => Err(anyhow!("cannot extend ResolvedPattern::Map")),
-            ResolvedPattern::Constant(Constant::Integer(i)) => {
-                if let ResolvedPattern::Constant(Constant::Integer(j)) = with {
+            Self::File(_) => Err(anyhow!("cannot extend ResolvedPattern::File")),
+            Self::Files(_) => Err(anyhow!("cannot extend ResolvedPattern::Files")),
+            Self::Map(_) => Err(anyhow!("cannot extend ResolvedPattern::Map")),
+            Self::Constant(Constant::Integer(i)) => {
+                if let Self::Constant(Constant::Integer(j)) = with {
                     *i += j;
                     Ok(())
                 } else {
@@ -370,8 +369,8 @@ impl<'a> ResolvedPattern<'a> {
                     ))
                 }
             }
-            ResolvedPattern::Constant(Constant::Float(x)) => {
-                if let ResolvedPattern::Constant(Constant::Float(y)) = with {
+            Self::Constant(Constant::Float(x)) => {
+                if let Self::Constant(Constant::Float(y)) = with {
                     *x += y;
                     Ok(())
                 } else {
@@ -380,12 +379,12 @@ impl<'a> ResolvedPattern<'a> {
                     ))
                 }
             }
-            ResolvedPattern::Constant(_) => Err(anyhow!("cannot extend ResolvedPattern::Constant")),
+            Self::Constant(_) => Err(anyhow!("cannot extend ResolvedPattern::Constant")),
         }
     }
 
     pub(crate) fn position(&self, language: &impl Language) -> Option<Range> {
-        if let ResolvedPattern::Binding(binding) = self {
+        if let Self::Binding(binding) = self {
             if let Some(binding) = binding.last() {
                 return binding.position(language);
             }
@@ -398,30 +397,46 @@ impl<'a> ResolvedPattern<'a> {
     }
 
     pub(crate) fn undefined() -> Self {
-        Self::Constant(Constant::Undefined)
+        Self::from_constant(Constant::Undefined)
     }
 
-    pub fn from_constant(constant: &'a Constant) -> Self {
+    pub fn from_constant(constant: Constant) -> Self {
+        Self::Constant(constant)
+    }
+
+    pub fn from_constant_binding(constant: &'a Constant) -> Self {
         Self::from_binding(Binding::from_constant(constant))
     }
 
-    pub(crate) fn from_node(node: NodeWithSource<'a>) -> Self {
+    pub(crate) fn from_file_pointer(file: FilePtr) -> Self {
+        Self::File(File::Ptr(file))
+    }
+
+    pub(crate) fn from_files(files: Self) -> Self {
+        Self::Files(Box::new(files))
+    }
+
+    pub(crate) fn from_node_binding(node: NodeWithSource<'a>) -> Self {
         Self::from_binding(Binding::from_node(node))
     }
 
-    pub(crate) fn from_list(node: NodeWithSource<'a>, field_id: FieldId) -> Self {
+    pub(crate) fn from_list_parts(parts: impl Iterator<Item = ResolvedPattern<'a>>) -> Self {
+        Self::List(parts.collect())
+    }
+
+    pub(crate) fn from_list_binding(node: NodeWithSource<'a>, field_id: FieldId) -> Self {
         Self::from_binding(Binding::List(node, field_id))
     }
 
-    pub(crate) fn empty_field(node: NodeWithSource<'a>, field_id: FieldId) -> Self {
+    pub(crate) fn from_empty_binding(node: NodeWithSource<'a>, field_id: FieldId) -> Self {
         Self::from_binding(Binding::Empty(node, field_id))
     }
 
-    pub(crate) fn from_path(path: &'a Path) -> Self {
+    pub(crate) fn from_path_binding(path: &'a Path) -> Self {
         Self::from_binding(Binding::from_path(path))
     }
 
-    pub(crate) fn from_range(range: Range, src: &'a str) -> Self {
+    pub(crate) fn from_range_binding(range: Range, src: &'a str) -> Self {
         Self::from_binding(Binding::from_range(range, src))
     }
 
@@ -435,8 +450,8 @@ impl<'a> ResolvedPattern<'a> {
 
     fn to_snippets(&self) -> Result<Vector<ResolvedSnippet<'a>>> {
         match self {
-            ResolvedPattern::Snippets(snippets) => Ok(snippets.clone()),
-            ResolvedPattern::Binding(bindings) => Ok(vector![ResolvedSnippet::from_binding(
+            Self::Snippets(snippets) => Ok(snippets.clone()),
+            Self::Binding(bindings) => Ok(vector![ResolvedSnippet::from_binding(
                 bindings
                     .last()
                     .ok_or_else(|| {
@@ -444,7 +459,7 @@ impl<'a> ResolvedPattern<'a> {
                     })?
                     .to_owned(),
             )]),
-            ResolvedPattern::List(elements) => {
+            Self::List(elements) => {
                 // merge separated by space
                 let mut snippets = Vec::new();
                 for pattern in elements {
@@ -454,7 +469,7 @@ impl<'a> ResolvedPattern<'a> {
                 snippets.pop();
                 Ok(snippets.into())
             }
-            ResolvedPattern::Map(map) => {
+            Self::Map(map) => {
                 let mut snippets = Vec::new();
                 snippets.push(ResolvedSnippet::Text("{".into()));
                 for (key, value) in map {
@@ -466,24 +481,142 @@ impl<'a> ResolvedPattern<'a> {
                 snippets.push(ResolvedSnippet::Text("}".into()));
                 Ok(snippets.into())
             }
-            ResolvedPattern::File(_) => Err(anyhow!(
+            Self::File(_) => Err(anyhow!(
                 "cannot convert ResolvedPattern::File to ResolvedSnippet"
             )),
-            ResolvedPattern::Files(_) => Err(anyhow!(
+            Self::Files(_) => Err(anyhow!(
                 "cannot convert ResolvedPattern::Files to ResolvedSnippet"
             )),
-            ResolvedPattern::Constant(c) => {
-                Ok(vector![ResolvedSnippet::Text(c.to_string().into(),)])
-            }
+            Self::Constant(c) => Ok(vector![ResolvedSnippet::Text(c.to_string().into(),)]),
         }
     }
 
-    pub fn get_binding(&self) -> Option<&Binding> {
-        if let ResolvedPattern::Binding(bindings) = self {
+    pub fn get_bindings(&self) -> Option<impl Iterator<Item = &Binding<'a>>> {
+        if let Self::Binding(bindings) = self {
+            Some(bindings.iter())
+        } else {
+            None
+        }
+    }
+
+    pub fn get_file(&self) -> Option<&File<'a>> {
+        if let Self::File(file) = self {
+            Some(file)
+        } else {
+            None
+        }
+    }
+
+    pub fn get_file_pointers(&self) -> Option<Vec<FilePtr>> {
+        match self {
+            Self::Binding(_) => None,
+            Self::Snippets(_) => None,
+            Self::List(_) => handle_files(self),
+            Self::Map(_) => None,
+            Self::File(file) => extract_file_pointer(file).map(|f| vec![f]),
+            Self::Files(files) => handle_files(files),
+            Self::Constant(_) => None,
+        }
+    }
+
+    pub fn get_files(&self) -> Option<&Self> {
+        if let Self::Files(files) = self {
+            Some(files)
+        } else {
+            None
+        }
+    }
+
+    pub fn get_last_binding(&self) -> Option<&Binding<'a>> {
+        if let Self::Binding(bindings) = self {
             bindings.last()
         } else {
             None
         }
+    }
+
+    pub fn get_list_item_at(&self, index: isize) -> Option<&Self> {
+        if let Self::List(items) = self {
+            to_unsigned(index, items.len()).and_then(|index| items.get(index))
+        } else {
+            None
+        }
+    }
+
+    pub fn get_list_item_at_mut(&mut self, index: isize) -> Option<&mut Self> {
+        if let Self::List(items) = self {
+            to_unsigned(index, items.len()).and_then(|index| items.get_mut(index))
+        } else {
+            None
+        }
+    }
+
+    pub fn get_list_items(&self) -> Option<impl Iterator<Item = &Self>> {
+        if let Self::List(items) = self {
+            Some(items.iter())
+        } else {
+            None
+        }
+    }
+
+    pub fn get_list_binding_items(&self) -> Option<impl Iterator<Item = Self> + Clone> {
+        self.get_last_binding()
+            .and_then(Binding::list_items)
+            .map(|items| items.map(ResolvedPattern::from_node_binding))
+    }
+
+    pub fn get_map(&self) -> Option<&BTreeMap<String, Self>> {
+        if let Self::Map(map) = self {
+            Some(map)
+        } else {
+            None
+        }
+    }
+
+    pub fn get_map_mut(&mut self) -> Option<&mut BTreeMap<String, Self>> {
+        if let Self::Map(map) = self {
+            Some(map)
+        } else {
+            None
+        }
+    }
+
+    pub fn get_snippets(&self) -> Option<impl Iterator<Item = &ResolvedSnippet<'a>>> {
+        if let Self::Snippets(snippets) = self {
+            Some(snippets.iter())
+        } else {
+            None
+        }
+    }
+
+    pub fn is_binding(&self) -> bool {
+        matches!(self, Self::Binding(_))
+    }
+
+    pub fn is_list(&self) -> bool {
+        matches!(self, Self::List(_))
+    }
+
+    pub fn push_binding(&mut self, binding: Binding<'a>) -> Result<()> {
+        let Self::Binding(bindings) = self else {
+            bail!("can only push to bindings");
+        };
+
+        bindings.push_back(binding);
+        Ok(())
+    }
+
+    pub fn set_list_item_at_mut(&mut self, index: isize, value: Self) -> Result<bool> {
+        let Self::List(items) = self else {
+            bail!("can only set items on a list")
+        };
+
+        let Some(index) = to_unsigned(index, items.len()) else {
+            return Ok(false);
+        };
+
+        items.insert(index, value);
+        Ok(true)
     }
 
     pub fn from_dynamic_snippet<Q: QueryContext>(
@@ -570,11 +703,11 @@ impl<'a> ResolvedPattern<'a> {
     ) -> Result<Self> {
         match accessor.get(state, context.language())? {
             Some(PatternOrResolved::Pattern(pattern)) => {
-                ResolvedPattern::from_pattern(pattern, state, context, logs)
+                Self::from_pattern(pattern, state, context, logs)
             }
             Some(PatternOrResolved::ResolvedBinding(resolved)) => Ok(resolved),
             Some(PatternOrResolved::Resolved(resolved)) => Ok(resolved.clone()),
-            None => Ok(ResolvedPattern::from_constant(&Constant::Undefined)),
+            None => Ok(Self::from_constant_binding(&Constant::Undefined)),
         }
     }
 
@@ -586,11 +719,11 @@ impl<'a> ResolvedPattern<'a> {
     ) -> Result<Self> {
         match index.get(state, context.language())? {
             Some(PatternOrResolved::Pattern(pattern)) => {
-                ResolvedPattern::from_pattern(pattern, state, context, logs)
+                Self::from_pattern(pattern, state, context, logs)
             }
             Some(PatternOrResolved::ResolvedBinding(resolved)) => Ok(resolved),
             Some(PatternOrResolved::Resolved(resolved)) => Ok(resolved.clone()),
-            None => Ok(ResolvedPattern::from_constant(&Constant::Undefined)),
+            None => Ok(Self::from_constant_binding(&Constant::Undefined)),
         }
     }
 
@@ -612,15 +745,9 @@ impl<'a> ResolvedPattern<'a> {
             Pattern::StringConstant(string) => Ok(Self::Snippets(vector![ResolvedSnippet::Text(
                 (&string.text).into(),
             )])),
-            Pattern::IntConstant(int) => {
-                Ok(ResolvedPattern::Constant(Constant::Integer(int.value)))
-            }
-            Pattern::FloatConstant(double) => {
-                Ok(ResolvedPattern::Constant(Constant::Float(double.value)))
-            }
-            Pattern::BooleanConstant(bool) => {
-                Ok(ResolvedPattern::Constant(Constant::Boolean(bool.value)))
-            }
+            Pattern::IntConstant(int) => Ok(Self::Constant(Constant::Integer(int.value))),
+            Pattern::FloatConstant(double) => Ok(Self::Constant(Constant::Float(double.value))),
+            Pattern::BooleanConstant(bool) => Ok(Self::Constant(Constant::Boolean(bool.value))),
             Pattern::Variable(var) => {
                 let content = &state.bindings[var.scope].last().unwrap()[var.index];
                 let name = &content.name;
@@ -658,15 +785,16 @@ impl<'a> ResolvedPattern<'a> {
             Pattern::File(file_pattern) => {
                 let name = &file_pattern.name;
                 let body = &file_pattern.body;
-                let name = ResolvedPattern::from_pattern(name, state, context, logs)?;
+                let name = Self::from_pattern(name, state, context, logs)?;
                 let name = name.text(&state.files, context.language())?;
-                let name = ResolvedPattern::Constant(Constant::String(name.to_string()));
-                let body = ResolvedPattern::from_pattern(body, state, context, logs)?;
+                let name = Self::Constant(Constant::String(name.to_string()));
+                let body = Self::from_pattern(body, state, context, logs)?;
                 // todo: replace GENERATED_SOURCE with a computed source once linearization and
                 // on-the-fly rewrites are in place
-                Ok(ResolvedPattern::File(File::Resolved(Box::new(
-                    ResolvedFile { name, body },
-                ))))
+                Ok(Self::File(File::Resolved(Box::new(ResolvedFile {
+                    name,
+                    body,
+                }))))
             }
             Pattern::Add(add_pattern) => add_pattern.call(state, context, logs),
             Pattern::Subtract(subtract_pattern) => subtract_pattern.call(state, context, logs),
@@ -725,7 +853,7 @@ impl<'a> ResolvedPattern<'a> {
         match self {
             // if whitespace is significant we need to distribute indentations
             // across lines within the snippet
-            ResolvedPattern::Snippets(snippets) => {
+            Self::Snippets(snippets) => {
                 if should_pad_snippet {
                     let mut res = String::new();
                     let mut padding = 0;
@@ -754,7 +882,7 @@ impl<'a> ResolvedPattern<'a> {
                 }
             }
             // we may have to distribute indentations as we did for snippets above
-            ResolvedPattern::List(list) => Ok(list
+            Self::List(list) => Ok(list
                 .iter()
                 .map(|pattern| {
                     pattern.linearized_text(
@@ -769,7 +897,7 @@ impl<'a> ResolvedPattern<'a> {
                 .collect::<Result<Vec<_>>>()?
                 .join(",")
                 .into()),
-            ResolvedPattern::Map(map) => Ok(("{".to_string()
+            Self::Map(map) => Ok(("{".to_string()
                 + &map
                     .iter()
                     .map(|(key, value)| {
@@ -796,7 +924,7 @@ impl<'a> ResolvedPattern<'a> {
                 + "}")
                 .into()),
             // might have to handle differently for ResolvedPattern::List containing indent followed by binding
-            ResolvedPattern::Binding(binding) => Ok(binding
+            Self::Binding(binding) => Ok(binding
                 .last()
                 .ok_or_else(|| anyhow!("cannot grab text of resolved_pattern with no binding"))?
                 .linearized_text(
@@ -807,7 +935,7 @@ impl<'a> ResolvedPattern<'a> {
                     should_pad_snippet.then_some(0),
                     logs,
                 )?),
-            ResolvedPattern::File(file) => Ok(format!(
+            Self::File(file) => Ok(format!(
                 "{}:\n{}",
                 file.name(files)
                     .linearized_text(language, effects, files, memo, false, logs)?,
@@ -822,23 +950,23 @@ impl<'a> ResolvedPattern<'a> {
             )
             .into()),
             // unsure if this is correct, taken from text
-            ResolvedPattern::Files(_files) => {
+            Self::Files(_files) => {
                 bail!("cannot linearize files pattern, not implemented yet");
             }
             // unsure if this is correct, taken from text
-            ResolvedPattern::Constant(c) => Ok(c.to_string().into()),
+            Self::Constant(c) => Ok(c.to_string().into()),
         }
     }
 
     pub(crate) fn float(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<f64> {
         match self {
-            ResolvedPattern::Constant(c) => match c {
+            Self::Constant(c) => match c {
                 Constant::Float(d) => Ok(*d),
                 Constant::Integer(i) => Ok(*i as f64),
                 Constant::String(s) => Ok(s.parse::<f64>()?),
                 Constant::Boolean(_) | Constant::Undefined => Err(anyhow!("Cannot convert constant to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")),
             },
-            ResolvedPattern::Snippets(s) => {
+            Self::Snippets(s) => {
                 let text = s
                     .iter()
                     .map(|snippet| snippet.text(state, language))
@@ -848,7 +976,7 @@ impl<'a> ResolvedPattern<'a> {
                     anyhow!("Failed to convert snippet to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")
                 })
             }
-            ResolvedPattern::Binding(binding) => {
+            Self::Binding(binding) => {
                 let text = binding
                     .last()
                     .ok_or_else(|| anyhow!("cannot grab text of resolved_pattern with no binding"))?
@@ -857,42 +985,47 @@ impl<'a> ResolvedPattern<'a> {
                     anyhow!("Failed to convert binding to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")
                 })
             }
-            ResolvedPattern::List(_) | ResolvedPattern::Map(_) | ResolvedPattern::File(_) | ResolvedPattern::Files(_) => Err(anyhow!("Cannot convert type to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")),
+            Self::List(_) | Self::Map(_) | Self::File(_) | Self::Files(_) => Err(anyhow!("Cannot convert type to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")),
         }
     }
 
     pub(crate) fn matches_undefined(&self) -> bool {
         match self {
-            ResolvedPattern::Binding(b) => b
+            Self::Binding(b) => b
                 .last()
                 .and_then(Binding::as_constant)
                 .map_or(false, Constant::is_undefined),
-            ResolvedPattern::Constant(Constant::Undefined) => true,
-            ResolvedPattern::Constant(_)
-            | ResolvedPattern::Snippets(_)
-            | ResolvedPattern::List(_)
-            | ResolvedPattern::Map(_)
-            | ResolvedPattern::File(_)
-            | ResolvedPattern::Files(_) => false,
+            Self::Constant(Constant::Undefined) => true,
+            Self::Constant(_)
+            | Self::Snippets(_)
+            | Self::List(_)
+            | Self::Map(_)
+            | Self::File(_)
+            | Self::Files(_) => false,
         }
+    }
+
+    pub(crate) fn matches_false_or_undefined(&self) -> bool {
+        // should this match a binding to the constant `false` as well?
+        matches!(self, Self::Constant(Constant::Boolean(false))) || self.matches_undefined()
     }
 
     // should we instead return an Option?
     pub fn text(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<Cow<'a, str>> {
         match self {
-            ResolvedPattern::Snippets(snippets) => Ok(snippets
+            Self::Snippets(snippets) => Ok(snippets
                 .iter()
                 .map(|snippet| snippet.text(state, language))
                 .collect::<Result<Vec<_>>>()?
                 .join("")
                 .into()),
-            ResolvedPattern::List(list) => Ok(list
+            Self::List(list) => Ok(list
                 .iter()
                 .map(|pattern| pattern.text(state, language))
                 .collect::<Result<Vec<_>>>()?
                 .join(",")
                 .into()),
-            ResolvedPattern::Map(map) => Ok(("{".to_string()
+            Self::Map(map) => Ok(("{".to_string()
                 + &map
                     .iter()
                     .map(|(key, value)| {
@@ -908,20 +1041,20 @@ impl<'a> ResolvedPattern<'a> {
                     .join(", ")
                 + "}")
                 .into()),
-            ResolvedPattern::Binding(binding) => Ok(binding
+            Self::Binding(binding) => Ok(binding
                 .last()
                 .ok_or_else(|| anyhow!("cannot grab text of resolved_pattern with no binding"))?
                 .text(language)?
                 .into_owned()
                 .into()),
-            ResolvedPattern::File(file) => Ok(format!(
+            Self::File(file) => Ok(format!(
                 "{}:\n{}",
                 file.name(state).text(state, language)?,
                 file.body(state).text(state, language)?
             )
             .into()),
-            ResolvedPattern::Files(files) => files.text(state, language),
-            ResolvedPattern::Constant(constant) => Ok(constant.to_string().into()),
+            Self::Files(files) => files.text(state, language),
+            Self::Constant(constant) => Ok(constant.to_string().into()),
         }
     }
 
@@ -931,7 +1064,7 @@ impl<'a> ResolvedPattern<'a> {
         is_first: bool,
         language: &impl Language,
     ) -> Result<()> {
-        let ResolvedPattern::Snippets(ref mut snippets) = self else {
+        let Self::Snippets(ref mut snippets) = self else {
             return Ok(());
         };
         let Some(ResolvedSnippet::Text(text)) = snippets.front() else {
@@ -1003,6 +1136,20 @@ pub fn patterns_to_resolved<'a, Q: QueryContext>(
             None => Ok(None),
         })
         .collect::<Result<Vec<_>>>()
+}
+
+fn extract_file_pointer(file: &File) -> Option<FilePtr> {
+    match file {
+        File::Resolved(_) => None,
+        File::Ptr(ptr) => Some(*ptr),
+    }
+}
+
+fn handle_files(files_list: &ResolvedPattern) -> Option<Vec<FilePtr>> {
+    let files = files_list.get_list_items()?;
+    files
+        .map(|r| r.get_file().and_then(extract_file_pointer))
+        .collect()
 }
 
 /*

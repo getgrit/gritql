@@ -1,6 +1,5 @@
 use super::{
-    constants::MATCH_VAR, patterns::Pattern, resolved_pattern::ResolvedPattern, variable::Variable,
-    variable_content::VariableContent,
+    constants::MATCH_VAR, patterns::Pattern, variable::Variable, variable_content::VariableContent,
 };
 use crate::context::QueryContext;
 use crate::intervals::{earliest_deadline_sort, get_top_level_intervals_in_range, Interval};
@@ -236,8 +235,8 @@ impl<'a, Q: QueryContext> State<'a, Q> {
                 let mut bindings_count = 0;
                 let mut suppressed_count = 0;
                 for value in content.value_history.iter() {
-                    if let ResolvedPattern::Binding(bindings) = value {
-                        for binding in bindings.iter() {
+                    if let Some(bindings) = value.get_bindings() {
+                        for binding in bindings {
                             bindings_count += 1;
                             if binding.is_suppressed(lang, current_name) {
                                 suppressed_count += 1;

@@ -40,7 +40,7 @@ impl<Q: QueryContext> Container<Q> {
         state: &mut State<'a, Q>,
         lang: &impl Language,
         value: ResolvedPattern<'a>,
-    ) -> Result<Option<ResolvedPattern<'a>>> {
+    ) -> Result<bool> {
         match self {
             Container::Variable(v) => {
                 let var = state.trace_var(v);
@@ -48,7 +48,10 @@ impl<Q: QueryContext> Container<Q> {
                 match content.pattern {
                     Some(Pattern::Accessor(a)) => a.set_resolved(state, lang, value),
                     Some(Pattern::ListIndex(l)) => l.set_resolved(state, lang, value),
-                    None | Some(_) => Ok(content.set_value(value)),
+                    None | Some(_) => {
+                        content.set_value(value);
+                        Ok(true)
+                    }
                 }
             }
             Container::Accessor(a) => a.set_resolved(state, lang, value),

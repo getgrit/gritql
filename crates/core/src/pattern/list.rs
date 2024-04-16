@@ -40,29 +40,14 @@ impl<Q: QueryContext> Matcher<Q> for List<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        match binding {
-            ResolvedPattern::Binding(v) => {
-                let Some(list_items) = v.last().and_then(|b| b.list_items()) else {
-                    return Ok(false);
-                };
-
-                let children: Vec<Cow<ResolvedPattern>> = list_items
-                    .map(ResolvedPattern::from_node)
-                    .map(Cow::Owned)
-                    .collect();
-
-                execute_assoc(&self.patterns, &children, state, context, logs)
-            }
-            ResolvedPattern::List(patterns) => {
-                let patterns: Vec<Cow<ResolvedPattern<'_>>> =
-                    patterns.into_iter().map(Cow::Borrowed).collect();
-                execute_assoc(&self.patterns, &patterns, state, context, logs)
-            }
-            ResolvedPattern::Snippets(_)
-            | ResolvedPattern::File(_)
-            | ResolvedPattern::Files(_)
-            | ResolvedPattern::Map(_)
-            | ResolvedPattern::Constant(_) => Ok(false),
+        if let Some(items) = binding.get_list_binding_items() {
+            let patterns: Vec<_> = items.map(Cow::Owned).collect();
+            execute_assoc(&self.patterns, &patterns, state, context, logs)
+        } else if let Some(items) = binding.get_list_items() {
+            let patterns: Vec<_> = items.map(Cow::Borrowed).collect();
+            execute_assoc(&self.patterns, &patterns, state, context, logs)
+        } else {
+            Ok(false)
         }
     }
 }
