@@ -2,6 +2,9 @@
 name = "marzano"
 version = "0.1.0"
 edition = "2021"
+authors = ["Grit Developers <support@grit.io>"]
+description = "GritQL is a query language for searching, linting, and modifying code."
+homepage = "https://docs.grit.io/"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
