@@ -4,13 +4,18 @@ use std::str::FromStr;
 
 use crate::position::{Position, RangeWithoutByte, UtilRange};
 
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct RangePair {
+    pub before: UtilRange,
+    pub after: UtilRange,
+}
+
 // Define a new struct to hold before and after ranges
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct FileDiff {
     pub old_path: Option<String>,
     pub new_path: Option<String>,
-    pub before: Vec<UtilRange>,
-    pub after: Vec<UtilRange>,
+    pub ranges: Vec<RangePair>,
 }
 
 /// Extract the line numbers from a hunk part
@@ -341,6 +346,10 @@ index f6e1a2c..2c58ad2 100644
         // These two diffs are *identical* except for the context line length
         let normal_diff = include_str!("../fixtures/normal_diff.diff");
         let no_context = include_str!("../fixtures/no_context.diff");
+
+        // Sanity check
+        assert_eq!(no_context.len(), 1);
+        assert_eq!(normal_diff.len(), 1);
 
         // Parse both
         let normal_diffs = parse_modified_ranges(normal_diff).expect("Failed to parse normal diff");
