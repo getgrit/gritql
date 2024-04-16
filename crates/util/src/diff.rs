@@ -102,18 +102,12 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
             };
         } else if line.starts_with("@@ ") {
             // If we have a current hunk, add it to the current file diff
-            let new_range = compute_range(
+            insert_range_if_found(
                 next_hunk_start_line,
                 &mut current_hunk_before_end_position,
                 &mut current_hunk_after_end_position,
-            );
-            if let Some(range) = new_range {
-                if let Some(file_diff) = results.last_mut() {
-                    file_diff.ranges.push(range);
-                } else {
-                    bail!("Finished hunk without a current file diff");
-                }
-            }
+                &mut results,
+            )?;
 
             let parsed_hunk = parse_hunk(line)?;
 
@@ -133,7 +127,7 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
             }
         } else if line.starts_with('+') || line.starts_with('-') {
             let is_add = line.starts_with('+');
-            let unpadded_length = (line.len() - 1) as u32;
+            let unpadded_length = (line.len() - 1) as u32 + 1;
 
             if let Some(ref start_lines) = next_hunk_start_line {
                 if is_add {
@@ -165,14 +159,13 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
         }
     }
 
-    // If we have a final hunk, add it to the last file diff
-    // if let Some(hunk) = current_hunk.take() {
-    //     if let Some(file_diff) = results.last_mut() {
-    //         file_diff.ranges.push(hunk);
-    //     } else {
-    //         bail!("Encountered hunk without a current file diff");
-    //     }
-    // }
+    // If we have a current hunk, add it to the current file diff
+    insert_range_if_found(
+        next_hunk_start_line,
+        &mut current_hunk_before_end_position,
+        &mut current_hunk_after_end_position,
+        &mut results,
+    )?;
 
     Ok(results)
 }
@@ -246,6 +239,26 @@ fn compute_range(
             None
         }
     }
+}
+
+fn insert_range_if_found(
+    next_hunk_start_line: Option<(u32, u32)>,
+    current_hunk_before_end_position: &mut Option<Position>,
+    current_hunk_after_end_position: &mut Option<Position>,
+    results: &mut Vec<FileDiff>,
+) -> Result<()> {
+    if let Some(range) = compute_range(
+        next_hunk_start_line,
+        current_hunk_before_end_position,
+        current_hunk_after_end_position,
+    ) {
+        if let Some(file_diff) = results.last_mut() {
+            file_diff.ranges.push(range);
+        } else {
+            bail!("Encountered hunk without a current file diff");
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -506,13 +519,114 @@ mod tests {
 
         // Sanity check
         assert_eq!(no_context_parsed.len(), 1);
-        assert_eq!(no_context_parsed[0].ranges[0].before.start_line(), 12);
-        assert_eq!(no_context_parsed[0].ranges[0].before.end_column(), 37);
-        assert_eq!(no_context_parsed[0].ranges[0].before.end_line(), 12);
-        assert_eq!(no_context_parsed[0].ranges[0].after.start_line(), 12);
-        assert_eq!(no_context_parsed[0].ranges[0].after.end_line(), 12);
-        assert_eq!(no_context_parsed[0].ranges[0].after.end_column(), 8);
-        assert_eq!(no_context_parsed.len(), 1);
+
+        // @@ -12 +12 @@ use tracing_opentelemetry::OpenTelemetrySpanExt as _;
+        assert_eq!(
+            no_context_parsed[0].ranges[0],
+            RangePair {
+                before: RangeWithoutByte {
+                    start: Position {
+                        line: 12,
+                        column: 0,
+                    },
+                    end: Position {
+                        line: 12,
+                        column: 38,
+                    },
+                },
+                after: RangeWithoutByte {
+                    start: Position {
+                        line: 12,
+                        column: 0,
+                    },
+                    end: Position {
+                        line: 12,
+                        column: 9,
+                    },
+                },
+            }
+        );
+
+        // @@ -14 +14 @@ use ignore::Walk;
+        assert_eq!(
+            no_context_parsed[0].ranges[1],
+            RangePair {
+                before: RangeWithoutByte {
+                    start: Position {
+                        line: 14,
+                        column: 0,
+                    },
+                    end: Position {
+                        line: 14,
+                        column: 80,
+                    },
+                },
+                after: RangeWithoutByte {
+                    start: Position {
+                        line: 14,
+                        column: 0,
+                    },
+                    end: Position {
+                        line: 14,
+                        column: 9,
+                    },
+                },
+            }
+        );
+
+        // @@ -17 +17 @@ use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
+        assert_eq!(
+            no_context_parsed[0].ranges[2],
+            RangePair {
+                before: RangeWithoutByte {
+                    start: Position {
+                        line: 17,
+                        column: 0,
+                    },
+                    end: Position {
+                        line: 17,
+                        column: 57,
+                    },
+                },
+                after: RangeWithoutByte {
+                    start: Position {
+                        line: 17,
+                        column: 0,
+                    },
+                    end: Position {
+                        line: 17,
+                        column: 13,
+                    },
+                },
+            }
+        );
+
+        // @@ -19,4 +18,0 @@ use marzano_core::pattern_compiler::{src_to_problem_libs, CompilationResult};
+        assert_eq!(
+            no_context_parsed[0].ranges[3],
+            RangePair {
+                before: RangeWithoutByte {
+                    start: Position {
+                        line: 19,
+                        column: 0,
+                    },
+                    end: Position {
+                        line: 22,
+                        column: 3,
+                    },
+                },
+                after: RangeWithoutByte {
+                    start: Position {
+                        line: 18,
+                        column: 0,
+                    },
+                    end: Position {
+                        line: 18,
+                        column: 0,
+                    },
+                },
+            }
+        );
 
         // These two diffs are *identical* except for the context line length
         let normal_diff = include_str!("../fixtures/normal_diff.diff");
@@ -522,4 +636,6 @@ mod tests {
         // Ensure they are the same
         // assert_eq!(normal_diff_parsed, no_context_parsed);
     }
+
+    // TODO: add a multiline add case
 }
