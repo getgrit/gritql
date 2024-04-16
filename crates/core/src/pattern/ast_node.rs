@@ -35,9 +35,7 @@ impl Matcher<Q> for ASTNode {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let binding = if let ResolvedPattern::Binding(binding) = binding {
-            resolve!(binding.last())
-        } else {
+        let Some(binding) = binding.get_last_binding() else {
             return Ok(false);
         };
         let Some(node) = binding.singleton() else {
@@ -71,7 +69,7 @@ impl Matcher<Q> for ASTNode {
 
             let res = if *is_list {
                 pattern.execute(
-                    &ResolvedPattern::from_list(
+                    &ResolvedPattern::from_list_binding(
                         NodeWithSource::new(node.clone(), source),
                         *field_id,
                     ),

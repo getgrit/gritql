@@ -84,10 +84,7 @@ impl<Q: QueryContext> Matcher<Q> for AstLeafNode {
         _context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let ResolvedPattern::Binding(b) = binding else {
-            return Ok(false);
-        };
-        let Some(node) = b.last().and_then(Binding::singleton) else {
+        let Some(node) = binding.get_last_binding().and_then(Binding::singleton) else {
             return Ok(false);
         };
         if let Some(e) = &self.equivalence_class {

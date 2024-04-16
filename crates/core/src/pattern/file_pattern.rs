@@ -27,28 +27,23 @@ impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        match resolved_pattern {
-            ResolvedPattern::File(file) => {
-                if !self
-                    .name
-                    .execute(&file.name(&state.files), state, context, logs)?
-                {
-                    return Ok(false);
-                }
-                if !self
-                    .body
-                    .execute(&file.binding(&state.files), state, context, logs)?
-                {
-                    return Ok(false);
-                }
-                Ok(true)
-            }
-            ResolvedPattern::Binding(_)
-            | ResolvedPattern::Snippets(_)
-            | ResolvedPattern::List(_)
-            | ResolvedPattern::Map(_)
-            | ResolvedPattern::Files(_)
-            | ResolvedPattern::Constant(_) => Ok(false),
+        let Some(file) = resolved_pattern.get_file() else {
+            return Ok(false);
+        };
+
+        if !self
+            .name
+            .execute(&file.name(&state.files), state, context, logs)?
+        {
+            return Ok(false);
         }
+        if !self
+            .body
+            .execute(&file.binding(&state.files), state, context, logs)?
+        {
+            return Ok(false);
+        }
+
+        Ok(true)
     }
 }

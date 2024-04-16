@@ -11,7 +11,7 @@ use crate::{
         pattern_definition::PatternDefinition,
         patterns::{Matcher, Pattern},
         predicate_definition::PredicateDefinition,
-        resolved_pattern::{File, ResolvedPattern},
+        resolved_pattern::ResolvedPattern,
         state::{FilePtr, State},
         variable_content::VariableContent,
         MarzanoContext, VariableLocations, MAX_FILE_SIZE,
@@ -87,13 +87,10 @@ impl From<Vec<FilePtr>> for FilePattern {
 impl From<FilePattern> for ResolvedPattern<'_> {
     fn from(val: FilePattern) -> Self {
         match val {
-            FilePattern::Single(file) => ResolvedPattern::File(File::Ptr(file)),
-            FilePattern::Many(files) => ResolvedPattern::Files(Box::new(ResolvedPattern::List(
-                files
-                    .into_iter()
-                    .map(|f| ResolvedPattern::File(File::Ptr(f)))
-                    .collect(),
-            ))),
+            FilePattern::Single(file) => Self::from_file_pointer(file),
+            FilePattern::Many(files) => Self::from_files(Self::from_list_parts(
+                files.into_iter().map(Self::from_file_pointer),
+            )),
         }
     }
 }
@@ -499,7 +496,7 @@ impl Problem {
 
         let the_new_files =
             state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[NEW_FILES_INDEX].as_mut();
-        the_new_files.value = Some(ResolvedPattern::List(vector!()));
+        the_new_files.value = Some(ResolvedPattern::from_list_parts([].into_iter()));
 
         let mut results: Vec<MatchResult> = Vec::new();
         let binding = binding.into();
