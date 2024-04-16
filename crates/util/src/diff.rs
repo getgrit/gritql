@@ -59,7 +59,6 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
 
     // Next hunk represents a hunk where we know the lines, but haven't yet eliminated any context.
     let mut next_hunk_start_line: Option<(u32, u32)> = None;
-    let mut current_hunk_end_position: Option<(Position, Position)> = None;
 
     for line in lines {
         if line.starts_with("--- ") {
@@ -100,7 +99,7 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
             };
         } else if line.starts_with("@@ ") {
             // If we have a current hunk, add it to the current file diff
-            if let Some(hunk) = current_hunk.take() {
+            if let Some(hunk) = current_hunk_range.take() {
                 if let Some(file_diff) = results.last_mut() {
                     file_diff.ranges.push(hunk);
                 } else {
@@ -131,65 +130,27 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
             if let Some(mut hunk) = next_hunk_start_line {
                 hunk.0 += 1;
                 hunk.1 += 1;
-            } else {
-                println!("Do something now...");
+            } else if let Some(ref mut hunk) = current_hunk_range {
+                println!("Do something with the previous hunk {:?}...", hunk);
             }
         } else if line.starts_with('+') || line.starts_with('-') {
             let is_add = line.starts_with('+');
             let unpadded_length = (line.len() - 1) as u32;
-            // This is an added line, ignore it
-            println!(
-                "Add a line {:?} (length = {}) at {:?}",
-                line, unpadded_length, next_hunk_start_line
-            );
-            if let Some(mut hunk) = next_hunk_start_line.take() {
-                current_hunk = Some(RangePair {
-                    before: RangeWithoutByte {
-                        start: Position {
-                            line: hunk.0,
-                            column: 0,
-                        },
-                        end: Position {
-                            line: hunk.0,
-                            column: if is_add { 0 } else { unpadded_length },
-                        },
-                    },
-                    after: RangeWithoutByte {
-                        start: Position {
-                            line: hunk.1,
-                            column: 0,
-                        },
-                        end: Position {
-                            line: hunk.1,
-                            column: if is_add { unpadded_length } else { 0 },
-                        },
-                    },
-                });
-            } else if let Some(ref mut hunk) = current_hunk {
-                // If we have a current hunk, add it to the current file diff
-                if is_add {
-                    hunk.after.end.line += 1;
-                    hunk.after.end.column = unpadded_length;
-                } else {
-                    hunk.before.end.line += 1;
-                    hunk.before.end.column = unpadded_length;
-                }
-            } else {
-                bail!("Encountered line without a current hunk");
-            }
+
+            bail!("Unimplemented");
         } else {
             // bail!("Unrecognized line in diff: {}", line);
         }
     }
 
     // If we have a final hunk, add it to the last file diff
-    if let Some(hunk) = current_hunk.take() {
-        if let Some(file_diff) = results.last_mut() {
-            file_diff.ranges.push(hunk);
-        } else {
-            bail!("Encountered hunk without a current file diff");
-        }
-    }
+    // if let Some(hunk) = current_hunk.take() {
+    //     if let Some(file_diff) = results.last_mut() {
+    //         file_diff.ranges.push(hunk);
+    //     } else {
+    //         bail!("Encountered hunk without a current file diff");
+    //     }
+    // }
 
     Ok(results)
 }
