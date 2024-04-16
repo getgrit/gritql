@@ -18,7 +18,12 @@ mod ux;
 #[cfg(feature = "workflows_v2")]
 mod workflows;
 
-// git2 uses openssl, but breaks windows, so we need
-// to import openssl and specify the vendored feature in order
-// to prevet git2 from breaking on windows
+// We use git2, which depends on openssl, which by-default wants to
+// dynamically link libopenssl. We explicitly depend on openssl to
+// force on the vendored feature, making our binaries more portable.
+//
+// On windows this trick should *not* be used because git2 automatically
+// uses completely different dependencies, and this trick would randomly
+// force openssl into our build, breaking msvc.
+#[cfg(not(windows))]
 use openssl as _;

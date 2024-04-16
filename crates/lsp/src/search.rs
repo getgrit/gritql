@@ -52,7 +52,7 @@ pub async fn search_query(
             None,
             None,
             get_ai_built_in_functions_for_feature(),
-            None
+            None,
         ) {
             Ok(p) => p,
             Err(e) => {

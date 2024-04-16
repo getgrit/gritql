@@ -59,4 +59,3 @@ pub fn extension_to_language_id(extension: &str) -> Option<String> {
     let language = TargetLanguage::from_extension(extension)?;
     Some(target_language_to_language_id(language).to_string())
 }
-
