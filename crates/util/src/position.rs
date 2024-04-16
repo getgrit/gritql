@@ -306,26 +306,28 @@ pub struct RangeWithoutByte {
     pub end: Position,
 }
 
+impl RangeWithoutByte {
+    pub fn start_column(&self) -> u32 {
+        self.start.column
+    }
+
+    pub fn end_column(&self) -> u32 {
+        self.end.column
+    }
+
+    pub fn start_line(&self) -> u32 {
+        self.start.line
+    }
+
+    pub fn end_line(&self) -> u32 {
+        self.end.line
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum UtilRange {
     Range(Range),
     RangeWithoutByte(RangeWithoutByte),
-}
-
-impl UtilRange {
-    pub fn start_line(&self) -> u32 {
-        match self {
-            UtilRange::Range(range) => range.start.line,
-            UtilRange::RangeWithoutByte(range) => range.start.line,
-        }
-    }
-
-    pub fn end_line(&self) -> u32 {
-        match self {
-            UtilRange::Range(range) => range.end.line,
-            UtilRange::RangeWithoutByte(range) => range.end.line,
-        }
-    }
 }
 
 impl From<Range> for UtilRange {
