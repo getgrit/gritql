@@ -40,7 +40,7 @@ impl<Q: QueryContext> Log<Q> {
     ) -> Result<bool> {
         let mut message = String::new();
         if let Some(user_message) = &self.message {
-            let resolved = ResolvedPattern::from_pattern(user_message, state, context, logs)?;
+            let resolved = Q::ResolvedPattern::from_pattern(user_message, state, context, logs)?;
             let text = resolved.text(&state.files)?;
             message.push_str(&format!("{}\n", text));
         }
@@ -83,7 +83,7 @@ impl<Q: QueryContext> Log<Q> {
 impl<Q: QueryContext> Matcher<Q> for Log<Q> {
     fn execute<'a>(
         &'a self,
-        _binding: &ResolvedPattern<'a, Q>,
+        _binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

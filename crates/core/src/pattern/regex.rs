@@ -29,7 +29,7 @@ impl<Q: QueryContext> RegexPattern<Q> {
 
     pub(crate) fn execute_matching<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a, Q>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -42,7 +42,7 @@ impl<Q: QueryContext> RegexPattern<Q> {
                 false => regex.to_string(),
             },
             RegexLike::Pattern(ref pattern) => {
-                let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)?;
+                let resolved = Q::ResolvedPattern::from_pattern(pattern, state, context, logs)?;
                 let text = resolved.text(&state.files)?;
                 match must_match_entire_string {
                     true => format!("^{}$", text),
@@ -86,25 +86,21 @@ impl<Q: QueryContext> RegexPattern<Q> {
                     continue;
                 }
             } else {
-                let res = if let ResolvedPattern::Binding(binding) = binding {
-                    if let Some(binding) = binding.last() {
-                        if let (Some(mut position), Some(source)) =
-                            (binding.position(), binding.source())
-                        {
-                            // this moves the byte-range out of sync with
-                            // the row-col range, maybe we should just
-                            // have a Range<usize> for String bindings?
-                            position.end_byte = position.start_byte + range.end as u32;
-                            position.start_byte += range.start as u32;
-                            ResolvedPattern::from_range(position, source)
-                        } else {
-                            ResolvedPattern::from_string(value.to_string())
-                        }
+                let res = if let Some(binding) = binding.get_binding() {
+                    if let (Some(mut position), Some(source)) =
+                        (binding.position(), binding.source())
+                    {
+                        // this moves the byte-range out of sync with
+                        // the row-col range, maybe we should just
+                        // have a Range<usize> for String bindings?
+                        position.end_byte = position.start_byte + range.end as u32;
+                        position.start_byte += range.start as u32;
+                        Q::ResolvedPattern::from_range(position, source)
                     } else {
-                        bail!("binding has no binding")
+                        Q::ResolvedPattern::from_string(value.to_string())
                     }
                 } else {
-                    ResolvedPattern::from_string(value.to_string())
+                    Q::ResolvedPattern::from_string(value.to_string())
                 };
                 if let Some(pattern) = variable_content.pattern {
                     if !pattern.execute(&res, state, context, logs)? {
@@ -130,7 +126,7 @@ impl<Q: QueryContext> PatternName for RegexPattern<Q> {
 impl<Q: QueryContext> Matcher<Q> for RegexPattern<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a, Q>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

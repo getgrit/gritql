@@ -84,8 +84,8 @@ impl<Q: QueryContext> Accessor<Q> {
     pub(crate) fn set_resolved<'a>(
         &'a self,
         state: &mut State<'a, Q>,
-        value: ResolvedPattern<'a, Q>,
-    ) -> Result<Option<ResolvedPattern<'a, Q>>> {
+        value: Q::ResolvedPattern<'a>,
+    ) -> Result<Option<Q::ResolvedPattern<'a>>> {
         match &self.map {
             AccessorMap::Container(c) => {
                 let key = self.get_key(state)?;
@@ -111,7 +111,7 @@ impl<Q: QueryContext> PatternName for Accessor<Q> {
 impl<Q: QueryContext> Matcher<Q> for Accessor<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a, Q>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -124,27 +124,22 @@ impl<Q: QueryContext> Matcher<Q> for Accessor<Q> {
                 execute_resolved_with_binding(&r, binding, state)
             }
             Some(PatternOrResolved::Pattern(p)) => p.execute(binding, state, context, logs),
-            None => Ok(
-                matches!(binding, ResolvedPattern::Constant(Constant::Boolean(false)))
-                    || binding.matches_undefined(),
-            ),
+            None => Ok(matches!(
+                binding,
+                Q::ResolvedPattern::from_constant(Constant::Boolean(false))
+            ) || binding.matches_undefined()),
         }
     }
 }
 
 pub(crate) fn execute_resolved_with_binding<'a, Q: QueryContext>(
-    r: &ResolvedPattern<'a, Q>,
-    binding: &ResolvedPattern<'a, Q>,
+    r: &Q::ResolvedPattern<'a>,
+    binding: &Q::ResolvedPattern<'a>,
     state: &State<'a, Q>,
 ) -> Result<bool> {
-    if let ResolvedPattern::Binding(r) = r {
-        if let ResolvedPattern::Binding(b) = binding {
-            if let (Some(r), Some(b)) = (r.last(), b.last()) {
-                return Ok(r.is_equivalent_to(b));
-            } else {
-                bail!("Resolved pattern missing binding")
-            }
-        }
+    if let (Some(r), Some(b)) = (r.get_binding(), binding.get_binding()) {
+        Ok(r.is_equivalent_to(b))
+    } else {
+        Ok(r.text(&state.files)? == binding.text(&state.files)?)
     }
-    Ok(r.text(&state.files)? == binding.text(&state.files)?)
 }

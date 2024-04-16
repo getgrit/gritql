@@ -27,7 +27,7 @@ impl<Q: QueryContext> PatternName for Includes<Q> {
 
 fn execute<'a, Q: QueryContext>(
     pattern: &'a Pattern<Q>,
-    binding: &ResolvedPattern<'a, Q>,
+    binding: &Q::ResolvedPattern<'a>,
     state: &mut State<'a, Q>,
     context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
@@ -109,7 +109,7 @@ fn execute<'a, Q: QueryContext>(
         | Pattern::Dots
         | Pattern::Sequential(_)
         | Pattern::Like(_) => {
-            let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)
+            let resolved = Q::ResolvedPattern::from_pattern(pattern, state, context, logs)
                 .context("includes can only be used with patterns that can be resolved")?;
             let substring = resolved.text(&state.files).context(
                 "includes can only be used with patterns that can be resolved to a string",
@@ -131,7 +131,7 @@ fn execute<'a, Q: QueryContext>(
 impl<Q: QueryContext> Matcher<Q> for Includes<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a, Q>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

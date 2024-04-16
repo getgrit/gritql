@@ -38,7 +38,7 @@ impl<Q: QueryContext> PatternDefinition<Q> {
     pub(crate) fn call<'a>(
         &'a self,
         state: &mut State<'a, Q>,
-        binding: &ResolvedPattern<'a, Q>,
+        binding: &Q::ResolvedPattern<'a>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
         args: &'a [Option<Pattern<Q>>],

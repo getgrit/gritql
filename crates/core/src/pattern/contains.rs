@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::{LazyBuiltIn, ResolvedPattern, ResolvedSnippet},
     State,
 };
-use crate::{binding::Binding, context::QueryContext, resolve};
+use crate::{context::QueryContext, resolve};
 use anyhow::Result;
 use core::fmt::Debug;
 use grit_util::{AstCursor, AstNode};
@@ -85,7 +85,7 @@ fn execute_until<'a, Q: QueryContext>(
 impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
     fn execute<'a>(
         &'a self,
-        resolved_pattern: &ResolvedPattern<'a, Q>,
+        resolved_pattern: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

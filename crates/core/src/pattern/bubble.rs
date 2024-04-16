@@ -1,6 +1,7 @@
-use super::patterns::PatternName;
-use super::resolved_pattern::ResolvedPattern;
-use super::{patterns::Matcher, patterns::Pattern, PatternDefinition, State};
+use super::{
+    patterns::{Matcher, Pattern, PatternName},
+    PatternDefinition, State,
+};
 use crate::context::QueryContext;
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -29,7 +30,7 @@ impl<Q: QueryContext> PatternName for Bubble<Q> {
 impl<Q: QueryContext> Matcher<Q> for Bubble<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a, Q>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

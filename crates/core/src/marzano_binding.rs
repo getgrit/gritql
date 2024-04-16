@@ -3,7 +3,10 @@ use crate::constant::Constant;
 use crate::context::QueryContext;
 use crate::equivalence::are_equivalent;
 use crate::inline_snippets::inline_sorted_snippets_with_offset;
-use crate::pattern::state::{get_top_level_effects, FileRegistry};
+use crate::pattern::{
+    resolved_pattern::ResolvedPattern,
+    state::{get_top_level_effects, FileRegistry},
+};
 use crate::problem::{Effect, EffectKind, MarzanoQueryContext};
 use crate::smart_insert::calculate_padding;
 use crate::suppress::is_suppress_comment;

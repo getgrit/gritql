@@ -14,6 +14,7 @@ pub mod fs;
 mod inline_snippets;
 mod intervals;
 pub mod marzano_binding;
+pub mod marzano_resolved_pattern;
 pub mod parse;
 pub mod pattern;
 pub mod pattern_compiler;

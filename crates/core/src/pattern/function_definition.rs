@@ -2,7 +2,7 @@ use super::{
     functions::{Evaluator, FuncEvaluation},
     patterns::Pattern,
     predicates::Predicate,
-    resolved_pattern::patterns_to_resolved,
+    resolved_pattern::ResolvedPattern,
     state::State,
     variable::Variable,
 };
@@ -121,7 +121,7 @@ impl<Q: QueryContext> FunctionDefinition<Q> for ForeignFunctionDefinition {
             .map(|(name, _)| name.clone())
             .collect::<Vec<_>>();
 
-        let resolved = patterns_to_resolved(args, state, context, logs)?;
+        let resolved = Q::ResolvedPattern::from_patterns(args, state, context, logs)?;
         let mut cow_resolved = Vec::with_capacity(resolved.len());
 
         for r in resolved.iter() {
@@ -163,9 +163,7 @@ impl<Q: QueryContext> FunctionDefinition<Q> for ForeignFunctionDefinition {
 
         Ok(FuncEvaluation {
             predicator: true,
-            ret_val: Some(crate::pattern::resolved_pattern::ResolvedPattern::Constant(
-                Constant::String(string),
-            )),
+            ret_val: Some(Q::ResolvedPattern::from_constant(Constant::String(string))),
         })
     }
 }

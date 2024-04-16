@@ -30,7 +30,7 @@ impl PatternName for StringConstant {
 impl<Q: QueryContext> Matcher<Q> for StringConstant {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a, Q>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         _context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,

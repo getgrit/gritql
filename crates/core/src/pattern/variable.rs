@@ -83,7 +83,7 @@ impl Variable {
 
     fn execute_resolved<'a, Q: QueryContext>(
         &self,
-        resolved_pattern: &ResolvedPattern<'a, Q>,
+        resolved_pattern: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
     ) -> Result<Option<bool>> {
         let mut variable_mirrors: Vec<VariableMirror<Q>> = Vec::new();
@@ -99,49 +99,33 @@ impl Variable {
             let value = &mut variable_content.value;
 
             if let Some(var_side_resolve_pattern) = value {
-                match var_side_resolve_pattern {
-                    ResolvedPattern::Binding(bindings) => {
-                        if let ResolvedPattern::Binding(cur_bindings) = resolved_pattern.clone() {
-                            if let (Some(var_binding), Some(binding)) =
-                                (bindings.last(), cur_bindings.last())
-                            {
-                                if !var_binding.is_equivalent_to(binding) {
-                                    return Ok(Some(false));
-                                }
-                                let value_history = &mut variable_content.value_history;
-                                bindings.push_back(binding.clone());
-
-                                // feels wrong maybe we should push ResolvedPattern::Binding(bindings)?
-                                value_history
-                                    .push(ResolvedPattern::Binding(vector![binding.clone()]));
-                                variable_mirrors.extend(variable_content.mirrors.iter().map(
-                                    |mirror| VariableMirror {
-                                        scope: mirror.scope,
-                                        index: mirror.index,
-                                        binding: binding.clone(),
-                                    },
-                                ));
-                            } else {
-                                bail!("either variable or lhs binding is empty");
-                            }
-                        } else {
-                            return Ok(Some(
-                                resolved_pattern.text(&state.files)?
-                                    == bindings.last().unwrap().text(),
-                            ));
+                if let Some(var_binding) = var_side_resolve_pattern.get_binding() {
+                    if let Some(binding) = resolved_pattern.get_binding() {
+                        if !var_binding.is_equivalent_to(binding) {
+                            return Ok(Some(false));
                         }
-                    }
-                    ResolvedPattern::Snippets(_)
-                    | ResolvedPattern::List(_)
-                    | ResolvedPattern::Map(_)
-                    | ResolvedPattern::File(_)
-                    | ResolvedPattern::Files(_)
-                    | ResolvedPattern::Constant(_) => {
+                        let value_history = &mut variable_content.value_history;
+                        bindings.push_back(binding.clone());
+
+                        // feels wrong maybe we should push ResolvedPattern::Binding(bindings)?
+                        value_history.push(Q::ResolvedPattern::from_binding(binding.clone()));
+                        variable_mirrors.extend(variable_content.mirrors.iter().map(|mirror| {
+                            VariableMirror {
+                                scope: mirror.scope,
+                                index: mirror.index,
+                                binding: binding.clone(),
+                            }
+                        }));
+                    } else {
                         return Ok(Some(
-                            resolved_pattern.text(&state.files)?
-                                == var_side_resolve_pattern.text(&state.files)?,
+                            resolved_pattern.text(&state.files)? == var_binding.text(),
                         ));
                     }
+                } else {
+                    return Ok(Some(
+                        resolved_pattern.text(&state.files)?
+                            == var_side_resolve_pattern.text(&state.files)?,
+                    ));
                 }
             } else {
                 return Ok(None);
@@ -265,7 +249,7 @@ impl PatternName for Variable {
 impl<Q: QueryContext> Matcher<Q> for Variable {
     fn execute<'a>(
         &'a self,
-        resolved_pattern: &ResolvedPattern<'a, Q>,
+        resolved_pattern: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

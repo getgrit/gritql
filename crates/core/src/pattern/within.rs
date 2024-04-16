@@ -4,7 +4,7 @@ use super::{
     State,
 };
 use crate::binding::Binding;
-use crate::{context::QueryContext, resolve};
+use crate::context::QueryContext;
 use anyhow::Result;
 use core::fmt::Debug;
 use grit_util::AstNode;
@@ -30,7 +30,7 @@ impl<Q: QueryContext> PatternName for Within<Q> {
 impl<Q: QueryContext> Matcher<Q> for Within<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a, Q>,
+        binding: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -48,9 +48,7 @@ impl<Q: QueryContext> Matcher<Q> for Within<Q> {
             cur_state = state;
         }
 
-        let binding = if let ResolvedPattern::Binding(binding) = binding {
-            resolve!(binding.last())
-        } else {
+        let Some(binding) = binding.get_binding() else {
             return Ok(did_match);
         };
 

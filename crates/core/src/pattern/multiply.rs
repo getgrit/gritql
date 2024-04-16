@@ -23,9 +23,9 @@ impl<Q: QueryContext> Multiply<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a, Q>> {
+    ) -> Result<Q::ResolvedPattern<'a>> {
         let res = self.evaluate(state, context, logs)?;
-        Ok(ResolvedPattern::Constant(Constant::Float(res)))
+        Ok(Q::ResolvedPattern::from_constant(Constant::Float(res)))
     }
 
     fn evaluate<'a>(
@@ -50,7 +50,7 @@ impl<Q: QueryContext> PatternName for Multiply<Q> {
 impl<Q: QueryContext> Matcher<Q> for Multiply<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a, Q>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

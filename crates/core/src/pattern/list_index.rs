@@ -118,8 +118,8 @@ impl<Q: QueryContext> ListIndex<Q> {
     pub(crate) fn set_resolved<'a>(
         &'a self,
         state: &mut State<'a, Q>,
-        value: ResolvedPattern<'a, Q>,
-    ) -> Result<Option<ResolvedPattern<'a, Q>>> {
+        value: Q::ResolvedPattern<'a>,
+    ) -> Result<Option<Q::ResolvedPattern<'a>>> {
         let index = self.get_index(state)?;
         match &self.list {
             ListOrContainer::Container(c) => match c.get_pattern_or_resolved_mut(state)? {
@@ -154,7 +154,7 @@ impl<Q: QueryContext> PatternName for ListIndex<Q> {
 impl<Q: QueryContext> Matcher<Q> for ListIndex<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a, Q>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

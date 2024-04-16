@@ -1,6 +1,5 @@
 use super::{
     patterns::{Matcher, Pattern, PatternName},
-    resolved_pattern::ResolvedPattern,
     State,
 };
 use crate::context::QueryContext;
@@ -31,7 +30,7 @@ impl<Q: QueryContext> Matcher<Q> for Like<Q> {
     #[cfg(feature = "embeddings")]
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a, Q>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -49,7 +48,7 @@ impl<Q: QueryContext> Matcher<Q> for Like<Q> {
     #[cfg(not(feature = "embeddings"))]
     fn execute<'a>(
         &'a self,
-        _binding: &ResolvedPattern<'a, Q>,
+        _binding: &Q::ResolvedPattern<'a>,
         _state: &mut State<'a, Q>,
         _context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,

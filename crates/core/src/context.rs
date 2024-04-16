@@ -23,6 +23,7 @@ pub trait QueryContext: Clone + std::fmt::Debug + Sized {
     type LeafNodePattern: AstLeafNodePattern<Self>;
     type ExecContext<'a>: ExecContext<Self>;
     type Binding<'a>: Binding<'a, Self>;
+    type ResolvedPattern<'a>: ResolvedPattern<'a, Self>;
 }
 
 /// Contains context necessary for query execution.
@@ -43,7 +44,7 @@ pub trait ExecContext<Q: QueryContext> {
         context: &'a Self,
         state: &mut State<'a, Q>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a, Q>>;
+    ) -> Result<Q::ResolvedPattern<'a>>;
 
     #[cfg(all(
         feature = "network_requests_external",

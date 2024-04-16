@@ -40,7 +40,7 @@ impl<Q: QueryContext> Rewrite<Q> {
      */
     pub(crate) fn execute_generalized<'a>(
         &'a self,
-        resolved: Option<&ResolvedPattern<'a, Q>>,
+        resolved: Option<&Q::ResolvedPattern<'a>>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -117,7 +117,7 @@ impl<Q: QueryContext> PatternName for Rewrite<Q> {
 impl<Q: QueryContext> Matcher<Q> for Rewrite<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a, Q>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

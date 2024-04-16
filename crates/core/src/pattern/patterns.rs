@@ -60,7 +60,7 @@ pub trait Matcher<Q: QueryContext>: Debug {
     // it should be stored somewhere in the struct of the implementor
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a, Q>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -220,7 +220,7 @@ impl<Q: QueryContext> PatternName for Pattern<Q> {
 impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a, Q>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

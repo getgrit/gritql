@@ -41,7 +41,7 @@ impl<Q: QueryContext> PatternName for Accumulate<Q> {
 impl<Q: QueryContext> Matcher<Q> for Accumulate<Q> {
     fn execute<'a>(
         &'a self,
-        context_node: &ResolvedPattern<'a, Q>,
+        context_node: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

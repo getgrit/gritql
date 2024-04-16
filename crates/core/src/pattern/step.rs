@@ -1,14 +1,14 @@
 use super::{
     constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
     patterns::{Matcher, Pattern},
-    resolved_pattern::{File, ResolvedPattern},
+    resolved_pattern::ResolvedPattern,
     state::{FilePtr, State},
 };
 use crate::{
     binding::Binding,
     clean::{get_replacement_ranges, replace_cleaned_ranges},
-    context::ExecContext,
-    context::QueryContext,
+    context::{ExecContext, QueryContext},
+    marzano_resolved_pattern::{extract_file_pointers, File},
     problem::{FileOwner, InputRanges, MatchRanges},
     text_unparser::apply_effects,
 };
@@ -30,46 +30,10 @@ impl<Q: QueryContext> Step<Q> {
     }
 }
 
-fn extract_file_pointer<Q: QueryContext>(file: &File<Q>) -> Option<FilePtr> {
-    match file {
-        File::Resolved(_) => None,
-        File::Ptr(ptr) => Some(*ptr),
-    }
-}
-
-fn handle_files<Q: QueryContext>(files_list: &ResolvedPattern<Q>) -> Option<Vec<FilePtr>> {
-    if let ResolvedPattern::List(files) = files_list {
-        files
-            .iter()
-            .map(|r| {
-                if let ResolvedPattern::File(File::Ptr(ptr)) = r {
-                    Some(*ptr)
-                } else {
-                    None
-                }
-            })
-            .collect()
-    } else {
-        None
-    }
-}
-
-fn extract_file_pointers<Q: QueryContext>(binding: &ResolvedPattern<Q>) -> Option<Vec<FilePtr>> {
-    match binding {
-        ResolvedPattern::Binding(_) => None,
-        ResolvedPattern::Snippets(_) => None,
-        ResolvedPattern::List(_) => handle_files(binding),
-        ResolvedPattern::Map(_) => None,
-        ResolvedPattern::File(file) => extract_file_pointer(file).map(|f| vec![f]),
-        ResolvedPattern::Files(files) => handle_files(files),
-        ResolvedPattern::Constant(_) => None,
-    }
-}
-
 impl<Q: QueryContext> Matcher<Q> for Step<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a, Q>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

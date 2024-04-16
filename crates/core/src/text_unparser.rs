@@ -1,7 +1,7 @@
 use crate::binding::Binding;
 use crate::context::QueryContext;
 use crate::marzano_binding::linearize_binding;
-use crate::pattern::state::FileRegistry;
+use crate::pattern::{resolved_pattern::ResolvedPattern, state::FileRegistry};
 use crate::problem::Effect;
 use anyhow::Result;
 use grit_util::CodeRange;

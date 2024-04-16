@@ -1,9 +1,7 @@
-use crate::context::QueryContext;
-
 use super::{
-    accessor::Accessor, list_index::ListIndex, patterns::Pattern,
-    resolved_pattern::ResolvedPattern, state::State, variable::Variable,
+    accessor::Accessor, list_index::ListIndex, patterns::Pattern, state::State, variable::Variable,
 };
+use crate::context::QueryContext;
 use anyhow::Result;
 
 /// A `Container` represents anything which "contains" a reference to a Pattern.
@@ -22,14 +20,14 @@ pub enum Container<Q: QueryContext> {
 #[derive(Debug)]
 pub(crate) enum PatternOrResolved<'a, 'b, Q: QueryContext> {
     Pattern(&'a Pattern<Q>),
-    Resolved(&'b ResolvedPattern<'a, Q>),
-    ResolvedBinding(ResolvedPattern<'a, Q>),
+    Resolved(&'b Q::ResolvedPattern<'a>),
+    ResolvedBinding(Q::ResolvedPattern<'a>),
 }
 
 #[derive(Debug)]
 pub(crate) enum PatternOrResolvedMut<'a, 'b, Q: QueryContext> {
     Pattern(&'a Pattern<Q>),
-    Resolved(&'b mut ResolvedPattern<'a, Q>),
+    Resolved(&'b mut Q::ResolvedPattern<'a>),
     _ResolvedBinding,
 }
 
@@ -37,8 +35,8 @@ impl<Q: QueryContext> Container<Q> {
     pub(crate) fn set_resolved<'a>(
         &'a self,
         state: &mut State<'a, Q>,
-        value: ResolvedPattern<'a, Q>,
-    ) -> Result<Option<ResolvedPattern<'a, Q>>> {
+        value: Q::ResolvedPattern<'a>,
+    ) -> Result<Option<Q::ResolvedPattern<'a>>> {
         match self {
             Container::Variable(v) => {
                 let var = state.trace_var(v);
