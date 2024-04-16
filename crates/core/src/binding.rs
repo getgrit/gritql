@@ -9,7 +9,6 @@ use crate::problem::Effect;
 use anyhow::{bail, Result};
 use grit_util::CodeRange;
 use marzano_language::language::Language;
-use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::AnalysisLogs;
 use marzano_util::position::Range;
 use std::path::Path;
@@ -42,14 +41,14 @@ pub trait Binding<'a, Q: QueryContext>: Clone + std::fmt::Debug + PartialEq + Si
 
     fn get_sexp(&self) -> Option<String>;
 
-    fn position(&self) -> Option<Range>;
+    fn position(&self, language: &impl Language) -> Option<Range>;
 
-    fn code_range(&self) -> Option<CodeRange>;
+    fn code_range(&self, language: &impl Language) -> Option<CodeRange>;
 
     /// Checks whether two bindings are equivalent.
     ///
     /// Bindings are considered equivalent if they refer to the same thing.
-    fn is_equivalent_to(&self, other: &Self) -> bool;
+    fn is_equivalent_to(&self, other: &Self, language: &impl Language) -> bool;
 
     fn is_suppressed(&self, lang: &impl Language, current_name: Option<&str>) -> bool;
 
@@ -58,7 +57,7 @@ pub trait Binding<'a, Q: QueryContext>: Clone + std::fmt::Debug + PartialEq + Si
         &self,
         text: &str,
         is_first: bool,
-        language: &TargetLanguage,
+        language: &impl Language,
     ) -> Option<String>;
 
     fn linearized_text(
@@ -71,7 +70,7 @@ pub trait Binding<'a, Q: QueryContext>: Clone + std::fmt::Debug + PartialEq + Si
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<'a, str>>;
 
-    fn text(&self) -> String;
+    fn text(&self, language: &impl Language) -> Result<Cow<str>>;
 
     fn source(&self) -> Option<&'a str>;
 

@@ -4,10 +4,9 @@ use crate::{
 };
 use anyhow::anyhow;
 use grit_util::AstNode;
-use regex::Regex;
+
 use marzano_util::node_with_source::NodeWithSource;
 use tree_sitter::{Parser, Tree};
-use lazy_static::lazy_static;
 
 static STATEMENT_NODE_NAMES: &[&str] = &[
     "break_statement",
@@ -117,6 +116,22 @@ pub(crate) fn parse_file(
     }
 }
 
+pub(crate) fn js_like_is_comment(
+    node: &NodeWithSource,
+    comment_sort: SortId,
+    jsx_sort: SortId,
+) -> bool {
+    let id = node.node.kind_id();
+    id == comment_sort
+        || (id == jsx_sort
+            && node.node.named_child_count() == 1
+            && node
+                .node
+                .named_child(0)
+                .map(|c| c.kind_id() == comment_sort)
+                .is_some_and(|b| b))
+}
+
 pub(crate) fn jslike_check_replacements(
     n: NodeWithSource<'_>,
     replacement_ranges: &mut Vec<Replacement>,
@@ -129,7 +144,9 @@ pub(crate) fn jslike_check_replacements(
                 replacement_ranges.push(Replacement::new(range.into(), "{}"));
             }
         }
-    } else if n.node.is_error() && ["var", "let", "const"].contains(&n.text())
+    } else if n.node.is_error()
+        && n.text()
+            .is_ok_and(|t| ["var", "let", "const"].contains(&t.as_ref()))
         || n.node.kind() == "empty_statement"
     {
         replacement_ranges.push(Replacement::new(n.range(), ""));
@@ -150,7 +167,7 @@ pub(crate) fn jslike_check_replacements(
                 }
             }
         }
-    } else if n.node.is_error() && n.text() == "," {
+    } else if n.node.is_error() && n.text().is_ok_and(|n| n == ",") {
         for ancestor in n.ancestors() {
             if ancestor.node.kind() == "class_body" {
                 replacement_ranges.push(Replacement::new(n.range(), ""));
@@ -158,56 +175,6 @@ pub(crate) fn jslike_check_replacements(
             }
         }
     }
-}
-
-lazy_static! {
-    static ref PHP_LIKE_EXACT_VARIABLE_REGEX: Regex =
-        Regex::new(r"^\^([A-Za-z_][A-Za-z0-9_]*)$").expect("Failed to compile PHP_LIKE_EXACT_VARIABLE_REGEX");
-    static ref PHP_LIKE_VARIABLE_REGEX: Regex =
-        Regex::new(r"\^(\.\.\.|[A-Za-z_][A-Za-z0-9_]*)").expect("Failed to compile PHP_LIKE_VARIABLE_REGEX");
-    static ref PHP_LIKE_BRACKET_VAR_REGEX: Regex =
-        Regex::new(r"\^\[([A-Za-z_][A-Za-z0-9_]*)\]").expect("Failed to compile PHP_LIKE_BRACKET_VAR_REGEX");
-    pub static ref PHP_ONLY_CODE_SNIPPETS: Vec<(&'static str, &'static str)> = vec![
-        ("", ""),
-        ("", ";"),
-        ("$", ";"),
-        ("class GRIT_CLASS {", "}"),
-        ("class GRIT_CLASS { ", " function GRIT_FN(); }"),
-        (" GRIT_FN(", ") { }"),
-        ("$GRIT_VAR = ", ";"),
-        ("$GRIT_VAR = ", ""),
-        ("[", "];"),
-        ("", "{}"),
-    ];
-    pub static ref PHP_CODE_SNIPPETS: Vec<(&'static str, &'static str)> = {
-        let mut php_tag_modifications:Vec<(&'static str, &'static str)> = PHP_ONLY_CODE_SNIPPETS.
-            clone().
-            into_iter().
-            map(|(s1, s2)| {
-                let owned_str1 = Box::leak(Box::new(format!("<?php {}", s1))) as &'static str;
-                let owned_str2 = Box::leak(Box::new(format!("{} ?>", s2))) as &'static str;
-                (owned_str1, owned_str2)
-            }).collect();
-        php_tag_modifications.extend(vec![("", "")]);
-        php_tag_modifications
-    };
-    
-}
-
-pub(crate) fn php_like_metavariable_regex() -> &'static Regex {
-    &PHP_LIKE_VARIABLE_REGEX
-}
-
-pub(crate) fn php_like_metavariable_bracket_regex() -> &'static Regex {
-    &PHP_LIKE_BRACKET_VAR_REGEX
-}
-
-pub(crate) fn php_like_exact_variable_regex() -> &'static Regex {
-    &PHP_LIKE_EXACT_VARIABLE_REGEX
-}
-
-pub(crate) fn php_like_metavariable_prefix() -> &'static str {
-    "^"
 }
 
 #[cfg(test)]

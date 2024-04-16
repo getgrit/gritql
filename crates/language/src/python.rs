@@ -1,4 +1,6 @@
-use crate::language::{fields_for_nodes, Field, Language, Replacement, SortId, TSLanguage};
+use crate::language::{
+    fields_for_nodes, Field, Language, NodeTypes, Replacement, SortId, TSLanguage,
+};
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
@@ -45,6 +47,12 @@ impl Python {
     }
 }
 
+impl NodeTypes for Python {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
+}
+
 impl Language for Python {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -67,15 +75,11 @@ impl Language for Python {
         ]
     }
 
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
-    }
-
     fn metavariable_sort(&self) -> SortId {
         self.metavariable_sort
     }
 
-    fn is_comment(&self, id: SortId) -> bool {
+    fn is_comment_sort(&self, id: SortId) -> bool {
         id == self.comment_sort
     }
 
@@ -84,7 +88,7 @@ impl Language for Python {
         n: NodeWithSource<'_>,
         replacements: &mut Vec<crate::language::Replacement>,
     ) {
-        if n.node.is_error() && n.text() == "->" {
+        if n.node.is_error() && n.text().is_ok_and(|t| t == "->") {
             replacements.push(Replacement::new(n.range(), ""));
         }
     }

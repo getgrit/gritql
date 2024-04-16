@@ -149,6 +149,15 @@ impl GritServer {
     }
 
     async fn on_change(&self, params: &TextDocumentItem) -> anyhow::Result<()> {
+        if params.uri.as_str().contains("node_modules") {
+            self.client
+                .log_message(
+                    MessageType::LOG,
+                    format!("Skipping file {} in node_modules", params.uri),
+                )
+                .await;
+            return Ok(());
+        }
         let check_info = match get_check_info(params).await? {
             Some(info) => info,
             None => return Ok(()),

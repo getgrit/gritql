@@ -1,9 +1,8 @@
-use anyhow::{anyhow, Result};
-use std::borrow::Cow;
-
-use crate::{context::QueryContext, pattern::patterns::Pattern};
-
 use super::{resolved_pattern::ResolvedPattern, state::State, variable::Variable};
+use crate::{context::QueryContext, pattern::patterns::Pattern};
+use anyhow::{anyhow, Result};
+use marzano_language::language::Language;
+use std::borrow::Cow;
 
 #[derive(Debug, Clone)]
 pub struct VariableContent<'a, Q: QueryContext> {
@@ -29,18 +28,15 @@ impl<'a, Q: QueryContext> VariableContent<'a, Q> {
 
     // should we return an option instead of a Result?
     // should we trace pattern calls here? - currently only used by variable which already traces
-    pub fn text(&self, state: &State<'a, Q>) -> Result<Cow<'a, str>> {
+    pub fn text(&self, state: &State<'a, Q>, language: &impl Language) -> Result<Cow<'a, str>> {
         if let Some(value) = &self.value {
-            value.text(&state.files)
+            value.text(&state.files, language)
         } else {
             Err(anyhow!("no value for variable {}", self.name))
         }
     }
 
-    pub(crate) fn set_value(
-        &mut self,
-        value: Q::ResolvedPattern<'a>,
-    ) -> Option<Q::ResolvedPattern<'a>> {
-        std::mem::replace(&mut self.value, Some(value))
+    pub(crate) fn set_value(&mut self, value: Q::ResolvedPattern<'a>) {
+        self.value = Some(value);
     }
 }

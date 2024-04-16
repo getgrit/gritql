@@ -8,7 +8,7 @@ use crate::{
         container::PatternOrResolved,
         dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
         functions::GritCall,
-        list_index::ListIndex,
+        list_index::{to_unsigned, ListIndex},
         paths::absolutize,
         patterns::{Pattern, PatternName},
         resolved_pattern::{ResolvedPattern, ResolvedSnippet},
@@ -46,23 +46,22 @@ impl<'a> File<'a> {
     pub(crate) fn name(&self, files: &FileRegistry<'a>) -> MarzanoResolvedPattern<'a> {
         match self {
             File::Resolved(resolved) => resolved.name.clone(),
-            File::Ptr(ptr) => MarzanoResolvedPattern::from_path(&files.get_file(*ptr).name),
+            File::Ptr(ptr) => MarzanoResolvedPattern::from_path_binding(&files.get_file(*ptr).name),
         }
     }
 
     pub(crate) fn absolute_path(
         &self,
         files: &FileRegistry<'a>,
+        language: &impl Language,
     ) -> Result<MarzanoResolvedPattern<'a>> {
         match self {
             File::Resolved(resolved) => {
-                let name = resolved.name.text(files)?;
+                let name = resolved.name.text(files, language)?;
                 let absolute_path = absolutize(name.as_ref())?;
-                Ok(MarzanoResolvedPattern::Constant(Constant::String(
-                    absolute_path,
-                )))
+                Ok(ResolvedPattern::Constant(Constant::String(absolute_path)))
             }
-            File::Ptr(ptr) => Ok(MarzanoResolvedPattern::from_path(
+            File::Ptr(ptr) => Ok(ResolvedPattern::from_path_binding(
                 &files.get_file(*ptr).absolute_path,
             )),
         }
@@ -74,7 +73,7 @@ impl<'a> File<'a> {
             File::Ptr(ptr) => {
                 let file = &files.get_file(*ptr);
                 let range = file.tree.root_node().range().into();
-                MarzanoResolvedPattern::from_range(range, &file.source)
+                ResolvedPattern::from_range_binding(range, &file.source)
             }
         }
     }
@@ -85,7 +84,7 @@ impl<'a> File<'a> {
             File::Ptr(ptr) => {
                 let file = &files.get_file(*ptr);
                 let node = file.tree.root_node();
-                MarzanoResolvedPattern::from_node(NodeWithSource::new(node, &file.source))
+                ResolvedPattern::from_node_binding(NodeWithSource::new(node, &file.source))
             }
         }
     }
@@ -171,7 +170,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         language: &impl Language,
     ) -> Result<()> {
         match self {
-            MarzanoResolvedPattern::Binding(bindings) => {
+            Self::Binding(bindings) => {
                 let new_effects: Result<Vec<Effect<MarzanoQueryContext>>> = bindings
                     .iter()
                     .map(|b| {
@@ -188,30 +187,30 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 effects.extend(new_effects);
                 Ok(())
             }
-            MarzanoResolvedPattern::Snippets(snippets) => {
+            Self::Snippets(snippets) => {
                 match with {
-                    MarzanoResolvedPattern::Snippets(with_snippets) => {
+                    Self::Snippets(with_snippets) => {
                         snippets.extend(with_snippets);
                     }
-                    MarzanoResolvedPattern::Binding(binding) => {
+                    Self::Binding(binding) => {
                         let binding = binding
                             .last()
                             .ok_or_else(|| anyhow!("cannot extend with empty binding"))?;
                         snippets.push_back(ResolvedSnippet::Binding(binding.clone()));
                     }
-                    MarzanoResolvedPattern::List(_) => {
+                    Self::List(_) => {
                         return Err(anyhow!("cannot extend ResolvedPattern::Snippet with List"))
                     }
-                    MarzanoResolvedPattern::File(_) => {
+                    Self::File(_) => {
                         return Err(anyhow!("cannot extend ResolvedPattern::Snippet with File"))
                     }
-                    MarzanoResolvedPattern::Files(_) => {
+                    Self::Files(_) => {
                         return Err(anyhow!("cannot extend ResolvedPattern::Snippet with Files"))
                     }
-                    MarzanoResolvedPattern::Map(_) => {
+                    Self::Map(_) => {
                         return Err(anyhow!("cannot extend ResolvedPattern::Snippet with Map"))
                     }
-                    MarzanoResolvedPattern::Constant(c) => {
+                    Self::Constant(c) => {
                         snippets.push_back(ResolvedSnippet::Text(c.to_string().into()));
                     }
                 }
@@ -220,17 +219,15 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             // do we want to auto flattern?
             // for now not since don't know what shape we want,
             // but probably will soon
-            MarzanoResolvedPattern::List(lst) => {
+            Self::List(lst) => {
                 lst.push_back(with);
                 Ok(())
             }
-            MarzanoResolvedPattern::File(_) => Err(anyhow!("cannot extend ResolvedPattern::File")),
-            MarzanoResolvedPattern::Files(_) => {
-                Err(anyhow!("cannot extend ResolvedPattern::Files"))
-            }
-            MarzanoResolvedPattern::Map(_) => Err(anyhow!("cannot extend ResolvedPattern::Map")),
-            MarzanoResolvedPattern::Constant(Constant::Integer(i)) => {
-                if let MarzanoResolvedPattern::Constant(Constant::Integer(j)) = with {
+            Self::File(_) => Err(anyhow!("cannot extend ResolvedPattern::File")),
+            Self::Files(_) => Err(anyhow!("cannot extend ResolvedPattern::Files")),
+            Self::Map(_) => Err(anyhow!("cannot extend ResolvedPattern::Map")),
+            Self::Constant(Constant::Integer(i)) => {
+                if let Self::Constant(Constant::Integer(j)) = with {
                     *i += j;
                     Ok(())
                 } else {
@@ -239,8 +236,8 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                     ))
                 }
             }
-            MarzanoResolvedPattern::Constant(Constant::Float(x)) => {
-                if let MarzanoResolvedPattern::Constant(Constant::Float(y)) = with {
+            Self::Constant(Constant::Float(x)) => {
+                if let Self::Constant(Constant::Float(y)) = with {
                     *x += y;
                     Ok(())
                 } else {
@@ -249,16 +246,14 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                     ))
                 }
             }
-            MarzanoResolvedPattern::Constant(_) => {
-                Err(anyhow!("cannot extend ResolvedPattern::Constant"))
-            }
+            Self::Constant(_) => Err(anyhow!("cannot extend ResolvedPattern::Constant")),
         }
     }
 
-    fn position(&self) -> Option<Range> {
+    fn position(&self, language: &impl Language) -> Option<Range> {
         if let MarzanoResolvedPattern::Binding(binding) = self {
             if let Some(binding) = binding.last() {
-                return binding.position();
+                return binding.position(language);
             }
         }
         None
@@ -276,7 +271,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         Self::from_binding(Binding::from_constant(constant))
     }
 
-    fn from_node(node: NodeWithSource<'a>) -> Self {
+    fn from_node_binding(node: NodeWithSource<'a>) -> Self {
         Self::from_binding(Binding::from_node(node))
     }
 
@@ -292,12 +287,134 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         Self::Snippets(vector![snippet])
     }
 
-    fn get_binding(&self) -> Option<&MarzanoBinding<'a>> {
-        if let MarzanoResolvedPattern::Binding(bindings) = self {
+    fn get_bindings(&self) -> Option<impl Iterator<Item = &'a MarzanoBinding<'a>>> {
+        if let Self::Binding(bindings) = self {
+            Some(bindings.iter())
+        } else {
+            None
+        }
+    }
+
+    fn get_file(&self) -> Option<&File<'a>> {
+        if let Self::File(file) = self {
+            Some(file)
+        } else {
+            None
+        }
+    }
+
+    fn get_file_pointers(&self) -> Option<Vec<FilePtr>> {
+        match self {
+            Self::Binding(_) => None,
+            Self::Snippets(_) => None,
+            Self::List(_) => handle_files(self),
+            Self::Map(_) => None,
+            Self::File(file) => extract_file_pointer(file).map(|f| vec![f]),
+            Self::Files(files) => handle_files(files),
+            Self::Constant(_) => None,
+        }
+    }
+
+    fn get_files(&self) -> Option<&Self> {
+        if let Self::Files(files) = self {
+            Some(files)
+        } else {
+            None
+        }
+    }
+
+    fn get_last_binding(&self) -> Option<&MarzanoBinding<'a>> {
+        if let Self::Binding(bindings) = self {
             bindings.last()
         } else {
             None
         }
+    }
+
+    fn get_list_item_at(&self, index: isize) -> Option<&Self> {
+        if let Self::List(items) = self {
+            to_unsigned(index, items.len()).and_then(|index| items.get(index))
+        } else {
+            None
+        }
+    }
+
+    fn get_list_item_at_mut(&mut self, index: isize) -> Option<&mut Self> {
+        if let Self::List(items) = self {
+            to_unsigned(index, items.len()).and_then(|index| items.get_mut(index))
+        } else {
+            None
+        }
+    }
+
+    fn get_list_items(&self) -> Option<impl Iterator<Item = &Self>> {
+        if let Self::List(items) = self {
+            Some(items.iter())
+        } else {
+            None
+        }
+    }
+
+    fn get_list_binding_items(&self) -> Option<impl Iterator<Item = Self> + Clone> {
+        self.get_last_binding()
+            .and_then(Binding::list_items)
+            .map(|items| items.map(MarzanoResolvedPattern::from_node_binding))
+    }
+
+    fn get_map(&self) -> Option<&BTreeMap<String, Self>> {
+        if let Self::Map(map) = self {
+            Some(map)
+        } else {
+            None
+        }
+    }
+
+    fn get_map_mut(&mut self) -> Option<&mut BTreeMap<String, Self>> {
+        if let Self::Map(map) = self {
+            Some(map)
+        } else {
+            None
+        }
+    }
+
+    fn get_snippets(
+        &self,
+    ) -> Option<impl Iterator<Item = &ResolvedSnippet<'a, MarzanoQueryContext>>> {
+        if let Self::Snippets(snippets) = self {
+            Some(snippets.iter())
+        } else {
+            None
+        }
+    }
+
+    fn is_binding(&self) -> bool {
+        matches!(self, Self::Binding(_))
+    }
+
+    fn is_list(&self) -> bool {
+        matches!(self, Self::List(_))
+    }
+
+    fn push_binding(&mut self, binding: MarzanoBinding<'a>) -> Result<()> {
+        let Self::Binding(bindings) = self else {
+            bail!("can only push to bindings");
+        };
+
+        bindings.push_back(binding);
+        Ok(())
+    }
+
+    fn set_list_item_at_mut(&mut self, index: isize, value: Self) -> Result<bool> {
+        let Self::List(items) = self else {
+            bail!("can only set items on a list")
+        };
+
+        let Some(index) = to_unsigned(index, items.len()) else {
+            return Ok(false);
+        };
+
+        items.insert(index, value);
+        Ok(true)
     }
 
     fn from_dynamic_snippet(
@@ -382,15 +499,13 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
-        match accessor.get(state)? {
+        match accessor.get(state, context.language())? {
             Some(PatternOrResolved::Pattern(pattern)) => {
-                MarzanoResolvedPattern::from_pattern(pattern, state, context, logs)
+                Self::from_pattern(pattern, state, context, logs)
             }
             Some(PatternOrResolved::ResolvedBinding(resolved)) => Ok(resolved),
             Some(PatternOrResolved::Resolved(resolved)) => Ok(resolved.clone()),
-            None => Ok(MarzanoResolvedPattern::from_constant_binding(
-                &Constant::Undefined,
-            )),
+            None => Ok(Self::from_constant_binding(&Constant::Undefined)),
         }
     }
 
@@ -400,15 +515,13 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Self> {
-        match index.get(state)? {
+        match index.get(state, context.language())? {
             Some(PatternOrResolved::Pattern(pattern)) => {
-                MarzanoResolvedPattern::from_pattern(pattern, state, context, logs)
+                Self::from_pattern(pattern, state, context, logs)
             }
             Some(PatternOrResolved::ResolvedBinding(resolved)) => Ok(resolved),
             Some(PatternOrResolved::Resolved(resolved)) => Ok(resolved.clone()),
-            None => Ok(MarzanoResolvedPattern::from_constant_binding(
-                &Constant::Undefined,
-            )),
+            None => Ok(Self::from_constant_binding(&Constant::Undefined)),
         }
     }
 
@@ -430,15 +543,9 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             Pattern::StringConstant(string) => Ok(Self::Snippets(vector![ResolvedSnippet::Text(
                 (&string.text).into(),
             )])),
-            Pattern::IntConstant(int) => Ok(MarzanoResolvedPattern::Constant(Constant::Integer(
-                int.value,
-            ))),
-            Pattern::FloatConstant(double) => Ok(MarzanoResolvedPattern::Constant(
-                Constant::Float(double.value),
-            )),
-            Pattern::BooleanConstant(bool) => Ok(MarzanoResolvedPattern::Constant(
-                Constant::Boolean(bool.value),
-            )),
+            Pattern::IntConstant(int) => Ok(Self::Constant(Constant::Integer(int.value))),
+            Pattern::FloatConstant(double) => Ok(Self::Constant(Constant::Float(double.value))),
+            Pattern::BooleanConstant(bool) => Ok(Self::Constant(Constant::Boolean(bool.value))),
             Pattern::Variable(var) => {
                 let content = &state.bindings[var.scope].last().unwrap()[var.index];
                 let name = &content.name;
@@ -476,15 +583,16 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             Pattern::File(file_pattern) => {
                 let name = &file_pattern.name;
                 let body = &file_pattern.body;
-                let name = MarzanoResolvedPattern::from_pattern(name, state, context, logs)?;
-                let name = name.text(&state.files)?;
-                let name = MarzanoResolvedPattern::Constant(Constant::String(name.to_string()));
-                let body = MarzanoResolvedPattern::from_pattern(body, state, context, logs)?;
+                let name = Self::from_pattern(name, state, context, logs)?;
+                let name = name.text(&state.files, context.language())?;
+                let name = Self::Constant(Constant::String(name.to_string()));
+                let body = Self::from_pattern(body, state, context, logs)?;
                 // todo: replace GENERATED_SOURCE with a computed source once linearization and
                 // on-the-fly rewrites are in place
-                Ok(MarzanoResolvedPattern::File(File::Resolved(Box::new(
-                    ResolvedFile { name, body },
-                ))))
+                Ok(Self::File(File::Resolved(Box::new(ResolvedFile {
+                    name,
+                    body,
+                }))))
             }
             Pattern::Add(add_pattern) => add_pattern.call(state, context, logs),
             Pattern::Subtract(subtract_pattern) => subtract_pattern.call(state, context, logs),
@@ -543,7 +651,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         match self {
             // if whitespace is significant we need to distribute indentations
             // across lines within the snippet
-            MarzanoResolvedPattern::Snippets(snippets) => {
+            Self::Snippets(snippets) => {
                 if should_pad_snippet {
                     let mut res = String::new();
                     let mut padding = 0;
@@ -556,7 +664,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                             Some(padding),
                             logs,
                         )?;
-                        padding = snippet.padding(files)?;
+                        padding = snippet.padding(files, language)?;
                         res.push_str(&text);
                     }
                     Ok(res.into())
@@ -572,7 +680,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 }
             }
             // we may have to distribute indentations as we did for snippets above
-            MarzanoResolvedPattern::List(list) => Ok(list
+            Self::List(list) => Ok(list
                 .iter()
                 .map(|pattern| {
                     pattern.linearized_text(
@@ -587,7 +695,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 .collect::<Result<Vec<_>>>()?
                 .join(",")
                 .into()),
-            MarzanoResolvedPattern::Map(map) => Ok(("{".to_string()
+            Self::Map(map) => Ok(("{".to_string()
                 + &map
                     .iter()
                     .map(|(key, value)| {
@@ -614,7 +722,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 + "}")
                 .into()),
             // might have to handle differently for ResolvedPattern::List containing indent followed by binding
-            MarzanoResolvedPattern::Binding(binding) => Ok(binding
+            Self::Binding(binding) => Ok(binding
                 .last()
                 .ok_or_else(|| anyhow!("cannot grab text of resolved_pattern with no binding"))?
                 .linearized_text(
@@ -625,7 +733,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                     should_pad_snippet.then_some(0),
                     logs,
                 )?),
-            MarzanoResolvedPattern::File(file) => Ok(format!(
+            Self::File(file) => Ok(format!(
                 "{}:\n{}",
                 file.name(files)
                     .linearized_text(language, effects, files, memo, false, logs)?,
@@ -640,103 +748,111 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             )
             .into()),
             // unsure if this is correct, taken from text
-            MarzanoResolvedPattern::Files(_files) => {
+            Self::Files(_files) => {
                 bail!("cannot linearize files pattern, not implemented yet");
             }
             // unsure if this is correct, taken from text
-            MarzanoResolvedPattern::Constant(c) => Ok(c.to_string().into()),
+            Self::Constant(c) => Ok(c.to_string().into()),
         }
     }
 
-    fn float(&self, state: &FileRegistry<'a>) -> Result<f64> {
+    fn float(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<f64> {
         match self {
-            MarzanoResolvedPattern::Constant(c) => match c {
+            Self::Constant(c) => match c {
                 Constant::Float(d) => Ok(*d),
                 Constant::Integer(i) => Ok(*i as f64),
                 Constant::String(s) => Ok(s.parse::<f64>()?),
                 Constant::Boolean(_) | Constant::Undefined => Err(anyhow!("Cannot convert constant to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")),
             },
-            MarzanoResolvedPattern::Snippets(s) => {
+            Self::Snippets(s) => {
                 let text = s
                     .iter()
-                    .map(|snippet| snippet.text(state))
+                    .map(|snippet| snippet.text(state, language))
                     .collect::<Result<Vec<_>>>()?
                     .join("");
                 text.parse::<f64>().map_err(|_| {
                     anyhow!("Failed to convert snippet to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")
                 })
             }
-            MarzanoResolvedPattern::Binding(binding) => {
+            Self::Binding(binding) => {
                 let text = binding
                     .last()
                     .ok_or_else(|| anyhow!("cannot grab text of resolved_pattern with no binding"))?
-                    .text();
+                    .text(language)?;
                 text.parse::<f64>().map_err(|_| {
                     anyhow!("Failed to convert binding to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")
                 })
             }
-            MarzanoResolvedPattern::List(_) | MarzanoResolvedPattern::Map(_) | MarzanoResolvedPattern::File(_) | MarzanoResolvedPattern::Files(_) => Err(anyhow!("Cannot convert type to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")),
+            Self::List(_) | Self::Map(_) | Self::File(_) | Self::Files(_) => Err(anyhow!("Cannot convert type to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")),
         }
     }
 
     fn matches_undefined(&self) -> bool {
         match self {
-            MarzanoResolvedPattern::Binding(b) => b
+            Self::Binding(b) => b
                 .last()
                 .and_then(Binding::as_constant)
                 .map_or(false, Constant::is_undefined),
-            MarzanoResolvedPattern::Constant(Constant::Undefined) => true,
-            MarzanoResolvedPattern::Constant(_)
-            | MarzanoResolvedPattern::Snippets(_)
-            | MarzanoResolvedPattern::List(_)
-            | MarzanoResolvedPattern::Map(_)
-            | MarzanoResolvedPattern::File(_)
-            | MarzanoResolvedPattern::Files(_) => false,
+            Self::Constant(Constant::Undefined) => true,
+            Self::Constant(_)
+            | Self::Snippets(_)
+            | Self::List(_)
+            | Self::Map(_)
+            | Self::File(_)
+            | Self::Files(_) => false,
         }
     }
 
+    fn matches_false_or_undefined(&self) -> bool {
+        // should this match a binding to the constant `false` as well?
+        matches!(self, Self::Constant(Constant::Boolean(false))) || self.matches_undefined()
+    }
+
     // should we instead return an Option?
-    fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
+    fn text(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<Cow<'a, str>> {
         match self {
-            MarzanoResolvedPattern::Snippets(snippets) => Ok(snippets
+            Self::Snippets(snippets) => Ok(snippets
                 .iter()
-                .map(|snippet| snippet.text(state))
+                .map(|snippet| snippet.text(state, language))
                 .collect::<Result<Vec<_>>>()?
                 .join("")
                 .into()),
-            MarzanoResolvedPattern::List(list) => Ok(list
+            Self::List(list) => Ok(list
                 .iter()
-                .map(|pattern| pattern.text(state))
+                .map(|pattern| pattern.text(state, language))
                 .collect::<Result<Vec<_>>>()?
                 .join(",")
                 .into()),
-            MarzanoResolvedPattern::Map(map) => Ok(("{".to_string()
+            Self::Map(map) => Ok(("{".to_string()
                 + &map
                     .iter()
                     .map(|(key, value)| {
                         format!(
                             "\"{}\": {}",
                             key,
-                            value.text(state).expect("failed to get text of map value")
+                            value
+                                .text(state, language)
+                                .expect("failed to get text of map value")
                         )
                     })
                     .collect::<Vec<_>>()
                     .join(", ")
                 + "}")
                 .into()),
-            MarzanoResolvedPattern::Binding(binding) => Ok(binding
+            Self::Binding(binding) => Ok(binding
                 .last()
                 .ok_or_else(|| anyhow!("cannot grab text of resolved_pattern with no binding"))?
-                .text()
+                .text(language)?
+                .into_owned()
                 .into()),
-            MarzanoResolvedPattern::File(file) => Ok(format!(
+            Self::File(file) => Ok(format!(
                 "{}:\n{}",
-                file.name(state).text(state)?,
-                file.body(state).text(state)?
+                file.name(state).text(state, language)?,
+                file.body(state).text(state, language)?
             )
             .into()),
-            MarzanoResolvedPattern::Files(files) => files.text(state),
-            MarzanoResolvedPattern::Constant(constant) => Ok(constant.to_string().into()),
+            Self::Files(files) => files.text(state, language),
+            Self::Constant(constant) => Ok(constant.to_string().into()),
         }
     }
 
@@ -746,21 +862,25 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         is_first: bool,
         language: &impl Language,
     ) -> Result<()> {
-        let MarzanoResolvedPattern::Snippets(ref mut snippets) = self else {
+        let Self::Snippets(ref mut snippets) = self else {
             return Ok(());
         };
         let Some(ResolvedSnippet::Text(text)) = snippets.front() else {
             return Ok(());
         };
         if let Some(padding) = binding.get_insertion_padding(text, is_first, language) {
-            if padding.chars().next() != binding.text().chars().last() {
+            if padding.chars().next() != binding.text(language)?.chars().last() {
                 snippets.push_front(ResolvedSnippet::Text(padding.into()));
             }
         }
         Ok(())
     }
 
-    fn is_truthy(&self, state: &mut State<'a, MarzanoQueryContext>) -> Result<bool> {
+    fn is_truthy(
+        &self,
+        state: &mut State<'a, MarzanoQueryContext>,
+        language: &impl Language,
+    ) -> Result<bool> {
         let truthiness = match self {
             Self::Binding(bindings) => bindings.last().map_or(false, Binding::is_truthy),
             Self::List(elements) => !elements.is_empty(),
@@ -768,7 +888,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             Self::Constant(c) => c.is_truthy(),
             Self::Snippets(s) => {
                 if let Some(s) = s.last() {
-                    s.is_truthy(state)?
+                    s.is_truthy(state, language)?
                 } else {
                     false
                 }

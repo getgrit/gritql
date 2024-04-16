@@ -3,7 +3,10 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::QueryContext;
+use crate::{
+    binding::Binding,
+    context::{ExecContext, QueryContext},
+};
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -32,10 +35,10 @@ impl<Q: QueryContext> Matcher<Q> for StringConstant {
         &'a self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
-        _context: &'a Q::ExecContext<'a>,
+        context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let text = binding.text(&state.files)?;
+        let text = binding.text(&state.files, context.language())?;
         if text == self.text {
             Ok(true)
         } else {

@@ -5,7 +5,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::QueryContext;
+use crate::context::{ExecContext, QueryContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -36,7 +36,8 @@ impl<Q: QueryContext> Matcher<Q> for Assignment<Q> {
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         let resolved = ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
-        self.container.set_resolved(state, resolved)?;
+        self.container
+            .set_resolved(state, context.language(), resolved)?;
         Ok(true)
     }
 }
@@ -50,7 +51,8 @@ impl<Q: QueryContext> Evaluator<Q> for Assignment<Q> {
     ) -> Result<FuncEvaluation<Q>> {
         let resolved: Q::ResolvedPattern<'_> =
             ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
-        self.container.set_resolved(state, resolved)?;
+        self.container
+            .set_resolved(state, context.language(), resolved)?;
         Ok(FuncEvaluation {
             predicator: true,
             ret_val: None,

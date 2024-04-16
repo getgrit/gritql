@@ -3,7 +3,11 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{binding::Binding, context::QueryContext, errors::debug, resolve};
+use crate::{
+    context::{ExecContext, QueryContext},
+    errors::debug,
+    resolve,
+};
 use anyhow::{bail, Result};
 use core::fmt::Debug;
 use grit_util::AstNode;
@@ -31,11 +35,12 @@ impl<Q: QueryContext> After<Q> {
         };
 
         if let Some(next) = node.next_named_node() {
-            Ok(Q::ResolvedPattern::from_node(next))
+            Ok(Q::ResolvedPattern::from_node_binding(next))
         } else {
             debug(
                 logs,
                 state,
+                context.language(),
                 "no node after current node, treating as undefined",
             )?;
             Ok(Q::ResolvedPattern::undefined())
@@ -57,7 +62,7 @@ impl<Q: QueryContext> Matcher<Q> for After<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let Some(binding) = binding.get_binding() else {
+        let Some(binding) = binding.get_last_binding() else {
             return Ok(true);
         };
         let mut cur_state = init_state.clone();
@@ -67,7 +72,7 @@ impl<Q: QueryContext> Matcher<Q> for After<Q> {
         };
         let prev_node = resolve!(node.previous_named_node());
         if !self.after.execute(
-            &ResolvedPattern::from_node(prev_node),
+            &ResolvedPattern::from_node_binding(prev_node),
             &mut cur_state,
             context,
             logs,

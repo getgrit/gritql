@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
+use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/hcl-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
@@ -43,6 +43,12 @@ impl Hcl {
     }
 }
 
+impl NodeTypes for Hcl {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
+}
+
 impl Language for Hcl {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -55,15 +61,11 @@ impl Language for Hcl {
         &[("", ""), ("GRIT_VAL = ", ""), ("GRIT_ID = { ", " }")]
     }
 
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
-    }
-
     fn metavariable_sort(&self) -> SortId {
         self.metavariable_sort
     }
 
-    fn is_comment(&self, id: SortId) -> bool {
+    fn is_comment_sort(&self, id: SortId) -> bool {
         id == self.comment_sort
     }
 

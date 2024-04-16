@@ -14,6 +14,6 @@ impl NodeCompiler for ForeignLanguageCompiler {
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
-        node.text().try_into()
+        node.text()?.try_into()
     }
 }

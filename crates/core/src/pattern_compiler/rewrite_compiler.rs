@@ -122,7 +122,10 @@ impl NodeCompiler for RewriteCompiler {
             ))?,
         };
 
-        let annotation = annotation.map(|n| n.text().trim().to_string());
+        let annotation = annotation.and_then(|n| match n.text() {
+            Ok(t) => Some(t.trim().to_string()),
+            Err(_) => None,
+        });
         Ok(Rewrite::new(left, right, annotation))
     }
 }

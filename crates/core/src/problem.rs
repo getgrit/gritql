@@ -3,7 +3,7 @@ use crate::{
     ast_node::{ASTNode, AstLeafNode},
     context::QueryContext,
     marzano_binding::MarzanoBinding,
-    marzano_resolved_pattern::{File, MarzanoResolvedPattern},
+    marzano_resolved_pattern::MarzanoResolvedPattern,
     pattern::{
         built_in_functions::BuiltIns,
         constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
@@ -87,15 +87,10 @@ impl From<Vec<FilePtr>> for FilePattern {
 impl From<FilePattern> for MarzanoResolvedPattern<'_> {
     fn from(val: FilePattern) -> Self {
         match val {
-            FilePattern::Single(file) => MarzanoResolvedPattern::File(File::Ptr(file)),
-            FilePattern::Many(files) => {
-                MarzanoResolvedPattern::Files(Box::new(MarzanoResolvedPattern::List(
-                    files
-                        .into_iter()
-                        .map(|f| MarzanoResolvedPattern::File(File::Ptr(f)))
-                        .collect(),
-                )))
-            }
+            FilePattern::Single(file) => Self::from_file_pointer(file),
+            FilePattern::Many(files) => Self::from_files(Self::from_list_parts(
+                files.into_iter().map(Self::from_file_pointer),
+            )),
         }
     }
 }
@@ -501,7 +496,7 @@ impl Problem {
 
         let the_new_files =
             state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[NEW_FILES_INDEX].as_mut();
-        the_new_files.value = Some(MarzanoResolvedPattern::List(vector!()));
+        the_new_files.value = Some(MarzanoResolvedPattern::from_list_parts([].into_iter()));
 
         let mut results: Vec<MatchResult> = Vec::new();
         let binding = binding.into();

@@ -5,7 +5,7 @@ use super::{
 use crate::ast_node::ASTNode;
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
-use marzano_language::language::{FieldId, Language, SortId};
+use marzano_language::language::{FieldId, Language, NodeTypes, SortId};
 use marzano_util::node_with_source::NodeWithSource;
 use std::cmp::Ordering;
 
@@ -26,7 +26,7 @@ impl AstNodeCompiler {
         is_rhs: bool,
     ) -> Result<ASTNode> {
         let mut args = Vec::new();
-        if context.compilation.lang.is_comment(sort) {
+        if context.compilation.lang.is_comment_sort(sort) {
             match named_args.len().cmp(&1) {
                 Ordering::Equal => {
                     let (name, node) = named_args.remove(0);

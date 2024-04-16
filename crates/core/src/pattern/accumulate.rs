@@ -67,26 +67,8 @@ impl<Q: QueryContext> Matcher<Q> for Accumulate<Q> {
             } else {
                 Cow::Borrowed(context_node)
             };
-            let bindings = match resolved.as_ref() {
-                ResolvedPattern::Binding(b) => b,
-                ResolvedPattern::Constant(_) => {
-                    bail!("variable on left hand side of insert side-conditions cannot be bound to a constant")
-                }
-                ResolvedPattern::File(_) => {
-                    bail!("variable on left hand side of insert side-conditions cannot be bound to a file, try rewriting the content, or name instead")
-                }
-                ResolvedPattern::Files(_) => {
-                    bail!("variable on left hand side of insert side-conditions cannot be bound to a files node")
-                }
-                ResolvedPattern::List(_) => {
-                    bail!("variable on left hand side of insert side-conditions cannot be bound to a list pattern")
-                }
-                ResolvedPattern::Map(_) => {
-                    bail!("variable on left hand side of insert side-conditions cannot be bound to a map pattern")
-                }
-                ResolvedPattern::Snippets(_) => {
-                    bail!("variable on left hand side of insert side-conditions cannot be bound to snippets")
-                }
+            let Some(bindings) = resolved.get_bindings() else {
+                bail!("variable on left hand side of insert side-conditions can onlybe bound to bindings")
             };
             let dynamic_right = match &self.dynamic_right {
                 Some(r) => r,
@@ -96,10 +78,9 @@ impl<Q: QueryContext> Matcher<Q> for Accumulate<Q> {
                     )
                 }
             };
-            let mut replacement: ResolvedPattern<'_, Q> =
+            let mut replacement =
                 ResolvedPattern::from_dynamic_pattern(dynamic_right, state, context, logs)?;
-            let effects: Result<Vec<Effect<Q>>> = bindings
-                .iter()
+            let effects: Result<Vec<_>> = bindings
                 .map(|b| {
                     let is_first = !state.effects.iter().any(|e| e.binding == *b);
                     replacement.normalize_insert(b, is_first, context.language())?;

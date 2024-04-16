@@ -1,4 +1,5 @@
 use crate::{AstCursor, CodeRange};
+use std::{borrow::Cow, str::Utf8Error};
 
 /// Represents an AST node and offers convenient AST-specific functionality.
 ///
@@ -30,7 +31,7 @@ pub trait AstNode: std::fmt::Debug + Sized {
     fn previous_sibling(&self) -> Option<Self>;
 
     /// Returns the text representation of the node.
-    fn text(&self) -> &str;
+    fn text(&self) -> Result<Cow<str>, Utf8Error>;
 
     /// Returns the code range of the node.
     fn code_range(&self) -> CodeRange;

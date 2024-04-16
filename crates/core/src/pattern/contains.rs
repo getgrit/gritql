@@ -3,11 +3,10 @@ use super::{
     resolved_pattern::{LazyBuiltIn, ResolvedPattern, ResolvedSnippet},
     State,
 };
-use crate::{context::QueryContext, resolve};
+use crate::context::QueryContext;
 use anyhow::Result;
 use core::fmt::Debug;
 use grit_util::{AstCursor, AstNode};
-use im::vector;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
@@ -42,7 +41,7 @@ fn execute_until<'a, Q: QueryContext>(
     let mut still_computing = true;
     while still_computing {
         let node = cursor.node();
-        let node_lhs = ResolvedPattern::from_node(node);
+        let node_lhs = ResolvedPattern::from_node_binding(node);
 
         let state = cur_state.clone();
         if the_contained.execute(&node_lhs, &mut cur_state, context, logs)? {
@@ -90,53 +89,27 @@ impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        match resolved_pattern {
-            ResolvedPattern::Binding(bindings) => {
-                let binding = resolve!(bindings.last());
-                if let Some(node) = binding.as_node() {
-                    execute_until(
-                        init_state,
-                        &node,
+        if let Some(binding) = resolved_pattern.get_last_binding() {
+            if let Some(node) = binding.as_node() {
+                execute_until(
+                    init_state,
+                    &node,
+                    context,
+                    logs,
+                    &self.contains,
+                    &self.until,
+                )
+            } else if let Some(items) = binding.list_items() {
+                let mut cur_state = init_state.clone();
+                let mut did_match = false;
+                for item in items {
+                    let state = cur_state.clone();
+                    if self.execute(
+                        &ResolvedPattern::from_node_binding(item),
+                        &mut cur_state,
                         context,
                         logs,
-                        &self.contains,
-                        &self.until,
-                    )
-                } else if let Some(list_items) = binding.list_items() {
-                    let mut did_match = false;
-                    let mut cur_state = init_state.clone();
-                    for item in list_items {
-                        let state = cur_state.clone();
-                        if self.execute(
-                            &ResolvedPattern::from_node(item),
-                            &mut cur_state,
-                            context,
-                            logs,
-                        )? {
-                            did_match = true;
-                        } else {
-                            cur_state = state;
-                        }
-                    }
-
-                    if did_match {
-                        *init_state = cur_state;
-                    }
-                    Ok(did_match)
-                } else if let Some(_c) = binding.as_constant() {
-                    // this seems like an infinite loop, todo return false?
-                    self.contains
-                        .execute(resolved_pattern, init_state, context, logs)
-                } else {
-                    Ok(false)
-                }
-            }
-            ResolvedPattern::List(elements) => {
-                let mut cur_state = init_state.clone();
-                let mut did_match = false;
-                for element in elements {
-                    let state = cur_state.clone();
-                    if self.execute(element, &mut cur_state, context, logs)? {
+                    )? {
                         did_match = true;
                     } else {
                         cur_state = state;
@@ -147,100 +120,118 @@ impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
                 }
                 *init_state = cur_state;
                 Ok(true)
+            } else if let Some(_c) = binding.as_constant() {
+                // this seems like an infinite loop, todo return false?
+                self.contains
+                    .execute(resolved_pattern, init_state, context, logs)
+            } else {
+                Ok(false)
             }
-            ResolvedPattern::File(file) => {
-                let mut cur_state = init_state.clone();
-                let mut did_match = false;
-                let prev_state = cur_state.clone();
-                if self
-                    .contains
-                    .execute(resolved_pattern, &mut cur_state, context, logs)?
-                {
+        } else if let Some(items) = resolved_pattern.get_list_items() {
+            let mut cur_state = init_state.clone();
+            let mut did_match = false;
+            for item in items {
+                let state = cur_state.clone();
+                if self.execute(item, &mut cur_state, context, logs)? {
                     did_match = true;
                 } else {
-                    cur_state = prev_state;
+                    cur_state = state;
                 }
-                let prev_state = cur_state.clone();
-                if self.contains.execute(
-                    &file.name(&cur_state.files),
-                    &mut cur_state,
-                    context,
-                    logs,
-                )? {
-                    did_match = true;
-                } else {
-                    cur_state = prev_state;
-                }
-                let prev_state = cur_state.clone();
-                if self.execute(
-                    &file.binding(&cur_state.files),
-                    &mut cur_state,
-                    context,
-                    logs,
-                )? {
-                    did_match = true;
-                } else {
-                    cur_state = prev_state;
-                }
-                if !did_match {
-                    return Ok(false);
-                }
-                *init_state = cur_state;
-                Ok(true)
             }
-            ResolvedPattern::Files(files) => {
-                let mut cur_state = init_state.clone();
-                let mut did_match = false;
-                let prev_state = cur_state.clone();
-                if self
-                    .contains
-                    .execute(resolved_pattern, &mut cur_state, context, logs)?
-                {
-                    did_match = true;
-                } else {
-                    cur_state = prev_state;
-                }
-                let prev_state = cur_state.clone();
-                if self.execute(files, &mut cur_state, context, logs)? {
-                    did_match = true;
-                } else {
-                    cur_state = prev_state;
-                }
-                if !did_match {
-                    return Ok(false);
-                }
-                *init_state = cur_state;
-                Ok(true)
+            if !did_match {
+                return Ok(false);
             }
-            ResolvedPattern::Snippets(snippets) => {
-                let mut cur_state = init_state.clone();
-                let mut did_match = false;
-                for snippet in snippets {
-                    let state = cur_state.clone();
-                    let resolved = match snippet {
-                        ResolvedSnippet::Text(_) => {
-                            ResolvedPattern::Snippets(vector![snippet.to_owned()])
-                        }
-                        ResolvedSnippet::Binding(b) => {
-                            ResolvedPattern::Binding(vector![b.to_owned()])
-                        }
-                        ResolvedSnippet::LazyFn(l) => match &**l {
-                            LazyBuiltIn::Join(j) => ResolvedPattern::List(j.list.clone()),
-                        },
-                    };
-                    if self.execute(&resolved, &mut cur_state, context, logs)? {
-                        did_match = true;
-                    } else {
-                        cur_state = state;
+            *init_state = cur_state;
+            Ok(true)
+        } else if let Some(file) = resolved_pattern.get_file() {
+            let mut cur_state = init_state.clone();
+            let mut did_match = false;
+            let prev_state = cur_state.clone();
+            if self
+                .contains
+                .execute(resolved_pattern, &mut cur_state, context, logs)?
+            {
+                did_match = true;
+            } else {
+                cur_state = prev_state;
+            }
+            let prev_state = cur_state.clone();
+            if self
+                .contains
+                .execute(&file.name(&cur_state.files), &mut cur_state, context, logs)?
+            {
+                did_match = true;
+            } else {
+                cur_state = prev_state;
+            }
+            let prev_state = cur_state.clone();
+            if self.execute(
+                &file.binding(&cur_state.files),
+                &mut cur_state,
+                context,
+                logs,
+            )? {
+                did_match = true;
+            } else {
+                cur_state = prev_state;
+            }
+            if !did_match {
+                return Ok(false);
+            }
+            *init_state = cur_state;
+            Ok(true)
+        } else if let Some(files) = resolved_pattern.get_files() {
+            let mut cur_state = init_state.clone();
+            let mut did_match = false;
+            let prev_state = cur_state.clone();
+            if self
+                .contains
+                .execute(resolved_pattern, &mut cur_state, context, logs)?
+            {
+                did_match = true;
+            } else {
+                cur_state = prev_state;
+            }
+            let prev_state = cur_state.clone();
+            if self.execute(files, &mut cur_state, context, logs)? {
+                did_match = true;
+            } else {
+                cur_state = prev_state;
+            }
+            if !did_match {
+                return Ok(false);
+            }
+            *init_state = cur_state;
+            Ok(true)
+        } else if let Some(snippets) = resolved_pattern.get_snippets() {
+            let mut cur_state = init_state.clone();
+            let mut did_match = false;
+            for snippet in snippets {
+                let state = cur_state.clone();
+                let resolved = match snippet {
+                    ResolvedSnippet::Text(_) => {
+                        ResolvedPattern::from_resolved_snippet(snippet.to_owned())
                     }
+                    ResolvedSnippet::Binding(b) => ResolvedPattern::from_binding(b.to_owned()),
+                    ResolvedSnippet::LazyFn(l) => match &**l {
+                        LazyBuiltIn::Join(j) => {
+                            ResolvedPattern::from_list_parts(j.list.iter().cloned())
+                        }
+                    },
+                };
+                if self.execute(&resolved, &mut cur_state, context, logs)? {
+                    did_match = true;
+                } else {
+                    cur_state = state;
                 }
-                if !did_match {
-                    return Ok(false);
-                }
-                *init_state = cur_state;
-                Ok(true)
             }
-            ResolvedPattern::Map(_) | ResolvedPattern::Constant(_) => Ok(false),
+            if !did_match {
+                return Ok(false);
+            }
+            *init_state = cur_state;
+            Ok(true)
+        } else {
+            return Ok(false);
         }
     }
 }

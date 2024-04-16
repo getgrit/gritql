@@ -126,7 +126,7 @@ impl<Q: QueryContext> FunctionDefinition<Q> for ForeignFunctionDefinition {
 
         for r in resolved.iter() {
             match r {
-                Some(r) => match r.text(&state.files) {
+                Some(r) => match r.text(&state.files, context.language()) {
                     Ok(t) => cow_resolved.push(t),
                     Err(e) => bail!("failed to get text from resolved pattern: {}", e),
                 },

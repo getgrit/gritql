@@ -2,15 +2,17 @@ use std::borrow::Cow;
 use std::sync::OnceLock;
 
 use crate::language::{
-    fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, SortId, TSLanguage,
+    fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, NodeTypes, SortId,
+    TSLanguage,
 };
 use crate::xscript_util::{
     self, js_like_get_statement_sorts, js_like_optional_empty_field_compilation,
     js_like_skip_snippet_compilation_sorts, jslike_check_replacements,
 };
+
 use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::position::Range;
-use tree_sitter::{Node, Parser};
+use tree_sitter::Parser;
 
 static NODE_TYPES_STRING: &str =
     include_str!("../../../resources/node-types/typescript-node-types.json");
@@ -74,6 +76,12 @@ impl TypeScript {
     }
 }
 
+impl NodeTypes for TypeScript {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
+}
+
 impl Language for TypeScript {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
@@ -126,21 +134,8 @@ impl Language for TypeScript {
         ]
     }
 
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
-    }
-
-    fn is_comment(&self, id: SortId) -> bool {
+    fn is_comment_sort(&self, id: SortId) -> bool {
         id == self.comment_sort
-    }
-
-    fn is_comment_wrapper(&self, node: &Node) -> bool {
-        node.kind() == "jsx_expression"
-            && node.named_child_count() == 1
-            && node
-                .named_child(0)
-                .map(|c| self.is_comment(c.kind_id()))
-                .is_some_and(|b| b)
     }
 
     fn is_statement(&self, id: SortId) -> bool {

@@ -6,11 +6,12 @@ use super::{
     State,
 };
 use crate::{
-    binding::Binding, context::QueryContext, pattern_compiler::compiler::NodeCompilationContext,
+    binding::Binding,
+    context::{ExecContext, QueryContext},
+    pattern_compiler::compiler::NodeCompilationContext,
 };
 use anyhow::{bail, Result};
 use core::fmt::Debug;
-use im::vector;
 use marzano_language::language::{Language, GRIT_METAVARIABLE_PREFIX};
 use marzano_util::analysis_logs::AnalysisLogs;
 use marzano_util::position::Range;
@@ -77,14 +78,19 @@ impl Variable {
         register_variable_optional_range(name, None, context)
     }
 
-    pub(crate) fn text<'a, Q: QueryContext>(&self, state: &State<'a, Q>) -> Result<Cow<'a, str>> {
-        state.bindings[self.scope].last().unwrap()[self.index].text(state)
+    pub(crate) fn text<'a, Q: QueryContext>(
+        &self,
+        state: &State<'a, Q>,
+        lang: &impl Language,
+    ) -> Result<Cow<'a, str>> {
+        state.bindings[self.scope].last().unwrap()[self.index].text(state, lang)
     }
 
     fn execute_resolved<'a, Q: QueryContext>(
         &self,
         resolved_pattern: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
+        lang: &impl Language,
     ) -> Result<Option<bool>> {
         let mut variable_mirrors: Vec<VariableMirror<Q>> = Vec::new();
         {
@@ -99,32 +105,29 @@ impl Variable {
             let value = &mut variable_content.value;
 
             if let Some(var_side_resolve_pattern) = value {
-                if let Some(var_binding) = var_side_resolve_pattern.get_binding() {
-                    if let Some(binding) = resolved_pattern.get_binding() {
-                        if !var_binding.is_equivalent_to(binding) {
-                            return Ok(Some(false));
-                        }
-                        let value_history = &mut variable_content.value_history;
-                        bindings.push_back(binding.clone());
-
-                        // feels wrong maybe we should push ResolvedPattern::Binding(bindings)?
-                        value_history.push(Q::ResolvedPattern::from_binding(binding.clone()));
-                        variable_mirrors.extend(variable_content.mirrors.iter().map(|mirror| {
-                            VariableMirror {
-                                scope: mirror.scope,
-                                index: mirror.index,
-                                binding: binding.clone(),
-                            }
-                        }));
-                    } else {
-                        return Ok(Some(
-                            resolved_pattern.text(&state.files)? == var_binding.text(),
-                        ));
+                if let (Some(var_binding), Some(binding)) = (
+                    var_side_resolve_pattern.get_last_binding(),
+                    resolved_pattern.get_last_binding(),
+                ) {
+                    if !var_binding.is_equivalent_to(binding, lang) {
+                        return Ok(Some(false));
                     }
+                    let value_history = &mut variable_content.value_history;
+                    var_side_resolve_pattern.push_binding(binding.clone())?;
+
+                    // feels wrong maybe we should push ResolvedPattern::Binding(bindings)?
+                    value_history.push(ResolvedPattern::from_binding(binding.clone()));
+                    variable_mirrors.extend(variable_content.mirrors.iter().map(|mirror| {
+                        VariableMirror {
+                            scope: mirror.scope,
+                            index: mirror.index,
+                            binding: binding.clone(),
+                        }
+                    }));
                 } else {
                     return Ok(Some(
-                        resolved_pattern.text(&state.files)?
-                            == var_side_resolve_pattern.text(&state.files)?,
+                        resolved_pattern.text(&state.files, lang)?
+                            == var_side_resolve_pattern.text(&state.files, lang)?,
                     ));
                 }
             } else {
@@ -140,11 +143,12 @@ impl Variable {
                 .unwrap()
                 .get_mut(mirror.index)
                 .unwrap());
-            let value = &mut mirror_content.value;
-            if let Some(ResolvedPattern::Binding(bindings)) = value {
-                bindings.push_back(mirror.binding.clone());
-                let value_history = &mut mirror_content.value_history;
-                value_history.push(ResolvedPattern::Binding(vector![mirror.binding]));
+            if let Some(value) = &mut mirror_content.value {
+                if value.is_binding() {
+                    value.push_binding(mirror.binding.clone())?;
+                    let value_history = &mut mirror_content.value_history;
+                    value_history.push(ResolvedPattern::from_binding(mirror.binding));
+                }
             }
         }
         Ok(Some(true))
@@ -254,7 +258,7 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        if let Some(res) = self.execute_resolved(resolved_pattern, state)? {
+        if let Some(res) = self.execute_resolved(resolved_pattern, state, context.language())? {
             return Ok(res);
         }
         // we only check the assignment if the variable is not bound already
@@ -293,24 +297,26 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
 
 pub(crate) fn get_absolute_file_name<Q: QueryContext>(
     state: &State<'_, Q>,
+    lang: &impl Language,
 ) -> Result<String, anyhow::Error> {
     let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[ABSOLUTE_PATH_INDEX]
         .value
         .as_ref();
     let file = file
-        .map(|f| f.text(&state.files).map(|s| s.to_string()))
+        .map(|f| f.text(&state.files, lang).map(|s| s.to_string()))
         .unwrap_or(Ok("No File Found".to_string()))?;
     Ok(file)
 }
 
 pub(crate) fn get_file_name<Q: QueryContext>(
     state: &State<'_, Q>,
+    lang: &impl Language,
 ) -> Result<String, anyhow::Error> {
     let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[FILENAME_INDEX]
         .value
         .as_ref();
     let file = file
-        .map(|f| f.text(&state.files).map(|s| s.to_string()))
+        .map(|f| f.text(&state.files, lang).map(|s| s.to_string()))
         .unwrap_or(Ok("No File Found".to_string()))?;
     Ok(file)
 }

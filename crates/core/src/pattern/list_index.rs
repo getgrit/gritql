@@ -6,8 +6,13 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::{binding::Binding, constant::Constant, context::QueryContext, resolve_opt};
+use crate::{
+    binding::Binding,
+    context::{ExecContext, QueryContext},
+    resolve_opt,
+};
 use anyhow::{anyhow, bail, Result};
+use marzano_language::language::Language;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
@@ -29,15 +34,15 @@ pub struct ListIndex<Q: QueryContext> {
 }
 
 impl<Q: QueryContext> ListIndex<Q> {
-    fn get_index<'a>(&'a self, state: &State<'a, Q>) -> Result<isize> {
+    fn get_index<'a>(&'a self, state: &State<'a, Q>, lang: &impl Language) -> Result<isize> {
         match &self.index {
             ContainerOrIndex::Container(c) => {
                 let raw_index = c
-                    .get_pattern_or_resolved(state)?
+                    .get_pattern_or_resolved(state, lang)?
                     .ok_or_else(|| anyhow!("list index must be resolvable: {:?}", self))?;
                 let index = match raw_index {
-                    PatternOrResolved::Resolved(r) => r.text(&state.files)?,
-                    PatternOrResolved::ResolvedBinding(r) => r.text(&state.files)?,
+                    PatternOrResolved::Resolved(r) => r.text(&state.files, lang)?,
+                    PatternOrResolved::ResolvedBinding(r) => r.text(&state.files, lang)?,
                     PatternOrResolved::Pattern(_) => bail!("list index must be resolved"),
                 };
                 let int_index = index
@@ -52,29 +57,33 @@ impl<Q: QueryContext> ListIndex<Q> {
     pub(crate) fn get<'a, 'b>(
         &'a self,
         state: &'b State<'a, Q>,
+        lang: &impl Language,
     ) -> Result<Option<PatternOrResolved<'a, 'b, Q>>> {
-        let index = self.get_index(state)?;
+        let index = self.get_index(state, lang)?;
         match &self.list {
-            ListOrContainer::Container(c) => match c.get_pattern_or_resolved(state)? {
+            ListOrContainer::Container(c) => match c.get_pattern_or_resolved(state, lang)? {
                 None => Ok(None),
                 Some(PatternOrResolved::Pattern(Pattern::List(l))) => {
                     Ok(l.get(index).map(PatternOrResolved::Pattern))
                 }
-                Some(PatternOrResolved::Resolved(ResolvedPattern::Binding(b))) => {
-                    let mut list_items = b
-                        .last()
-                        .and_then(Binding::list_items)
-                        .ok_or_else(|| anyhow!("left side of a listIndex must be a list"))?;
-
-                    let len = list_items.clone().count();
-                    let index = resolve_opt!(to_unsigned(index, len));
-                    return Ok(list_items.nth(index).map(|n| {
-                        PatternOrResolved::ResolvedBinding(ResolvedPattern::from_node(n))
-                    }));
-                }
-                Some(PatternOrResolved::Resolved(ResolvedPattern::List(l))) => {
-                    let index = resolve_opt!(to_unsigned(index, l.len()));
-                    Ok(l.get(index).map(PatternOrResolved::Resolved))
+                Some(PatternOrResolved::Resolved(resolved)) => {
+                    if resolved.is_list() {
+                        Ok(resolved
+                            .get_list_item_at(index)
+                            .map(PatternOrResolved::Resolved))
+                    } else if let Some(mut items) =
+                        resolved.get_last_binding().and_then(Binding::list_items)
+                    {
+                        let len = items.clone().count();
+                        let index = resolve_opt!(to_unsigned(index, len));
+                        Ok(items.nth(index).map(|n| {
+                            PatternOrResolved::ResolvedBinding(ResolvedPattern::from_node_binding(
+                                n,
+                            ))
+                        }))
+                    } else {
+                        bail!("left side of a listIndex must be a list")
+                    }
                 }
                 Some(s) => bail!("left side of a listIndex must be a list but got {:?}", s),
             },
@@ -85,29 +94,29 @@ impl<Q: QueryContext> ListIndex<Q> {
     pub(crate) fn get_mut<'a, 'b>(
         &'a self,
         state: &'b mut State<'a, Q>,
+        lang: &impl Language,
     ) -> Result<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
-        let index = self.get_index(state)?;
+        let index = self.get_index(state, lang)?;
         match &self.list {
-            ListOrContainer::Container(c) => match c.get_pattern_or_resolved_mut(state)? {
+            ListOrContainer::Container(c) => match c.get_pattern_or_resolved_mut(state, lang)? {
                 None => Ok(None),
                 Some(PatternOrResolvedMut::Pattern(Pattern::List(l))) => {
                     Ok(l.get(index).map(PatternOrResolvedMut::Pattern))
                 }
-                Some(PatternOrResolvedMut::Resolved(ResolvedPattern::Binding(b))) => {
-                    let mut list_items = b
-                        .last()
-                        .and_then(Binding::list_items)
-                        .ok_or_else(|| anyhow!("left side of a listIndex must be a list"))?;
-
-                    let len = list_items.clone().count();
-                    let index = resolve_opt!(to_unsigned(index, len));
-                    Ok(list_items
-                        .nth(index)
-                        .map(|_| PatternOrResolvedMut::_ResolvedBinding))
-                }
-                Some(PatternOrResolvedMut::Resolved(ResolvedPattern::List(l))) => {
-                    let index = resolve_opt!(to_unsigned(index, l.len()));
-                    Ok(l.get_mut(index).map(PatternOrResolvedMut::Resolved))
+                Some(PatternOrResolvedMut::Resolved(resolved)) => {
+                    if let Some(mut items) = resolved.get_list_binding_items() {
+                        let len = items.clone().count();
+                        let index = resolve_opt!(to_unsigned(index, len));
+                        Ok(items
+                            .nth(index)
+                            .map(|_| PatternOrResolvedMut::_ResolvedBinding))
+                    } else if resolved.is_list() {
+                        Ok(resolved
+                            .get_list_item_at_mut(index)
+                            .map(PatternOrResolvedMut::Resolved))
+                    } else {
+                        bail!("left side of a listIndex must be a list")
+                    }
                 }
                 Some(s) => bail!("left side of a listIndex must be a list but got {:?}", s),
             },
@@ -118,15 +127,15 @@ impl<Q: QueryContext> ListIndex<Q> {
     pub(crate) fn set_resolved<'a>(
         &'a self,
         state: &mut State<'a, Q>,
+        lang: &impl Language,
         value: Q::ResolvedPattern<'a>,
-    ) -> Result<Option<Q::ResolvedPattern<'a>>> {
-        let index = self.get_index(state)?;
+    ) -> Result<bool> {
+        let index = self.get_index(state, lang)?;
         match &self.list {
-            ListOrContainer::Container(c) => match c.get_pattern_or_resolved_mut(state)? {
-                None => Ok(None),
-                Some(PatternOrResolvedMut::Resolved(ResolvedPattern::List(l))) => {
-                    let index = resolve_opt!(to_unsigned(index, l.len()));
-                    Ok(Some(l.set(index, value)))
+            ListOrContainer::Container(c) => match c.get_pattern_or_resolved_mut(state, lang)? {
+                None => Ok(false),
+                Some(PatternOrResolvedMut::Resolved(resolved)) => {
+                    resolved.set_list_item_at_mut(index, value)
                 }
                 Some(_) => bail!("accessor can only mutate a resolved list"),
             },
@@ -159,18 +168,15 @@ impl<Q: QueryContext> Matcher<Q> for ListIndex<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        match self.get(state)? {
+        match self.get(state, context.language())? {
             Some(PatternOrResolved::Resolved(r)) => {
-                execute_resolved_with_binding(r, binding, state)
+                execute_resolved_with_binding(r, binding, state, context.language())
             }
             Some(PatternOrResolved::ResolvedBinding(r)) => {
-                execute_resolved_with_binding(&r, binding, state)
+                execute_resolved_with_binding(&r, binding, state, context.language())
             }
             Some(PatternOrResolved::Pattern(p)) => p.execute(binding, state, context, logs),
-            None => Ok(
-                matches!(binding, ResolvedPattern::Constant(Constant::Boolean(false)))
-                    || binding.matches_undefined(),
-            ),
+            None => Ok(binding.matches_false_or_undefined()),
         }
     }
 }

@@ -75,30 +75,12 @@ impl<Q: QueryContext> Rewrite<Q> {
                 }
             }
         };
-        let bindings = match resolved.as_ref() {
-            ResolvedPattern::Binding(b) => b,
-            ResolvedPattern::Constant(_) => {
-                bail!("variable on left hand side of rewrite side-conditions cannot be bound to a constant")
-            }
-            ResolvedPattern::File(_) => {
-                bail!("variable on left hand side of rewrite side-conditions cannot be bound to a file, try rewriting the content, or name instead")
-            }
-            ResolvedPattern::Files(_) => {
-                bail!("variable on left hand side of rewrite side-conditions cannot be bound to a files node")
-            }
-            ResolvedPattern::List(_) => {
-                bail!("variable on left hand side of rewrite side-conditions cannot be bound to a list pattern")
-            }
-            ResolvedPattern::Map(_) => {
-                bail!("variable on left hand side of rewrite side-conditions cannot be bound to a map pattern")
-            }
-            ResolvedPattern::Snippets(_) => {
-                bail!("variable on left hand side of rewrite side-conditions cannot be bound to snippets")
-            }
+        let Some(bindings) = resolved.get_bindings() else {
+            bail!("variable on left hand side of rewrite side-conditions can only be bound to bindings")
         };
         let replacement: ResolvedPattern<'_, Q> =
             ResolvedPattern::from_dynamic_pattern(&self.right, state, context, logs)?;
-        let effects = bindings.iter().map(|b| Effect {
+        let effects = bindings.map(|b| Effect {
             binding: b.clone(),
             pattern: replacement.clone(),
             kind: EffectKind::Rewrite,

@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::context::QueryContext;
+use crate::context::{ExecContext, QueryContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -29,11 +29,11 @@ impl<Q: QueryContext> Matcher<Q> for BooleanConstant {
         &'a self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
-        _context: &'a Q::ExecContext<'a>,
+        context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
         binding
-            .is_truthy(state)
+            .is_truthy(state, context.language())
             .map(|truthiness| truthiness == self.value)
     }
 }

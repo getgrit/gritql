@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
+use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/java-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
@@ -23,6 +23,12 @@ pub struct Java {
     metavariable_sort: SortId,
     comment_sorts: [SortId; 2],
     language: &'static TSLanguage,
+}
+
+impl NodeTypes for Java {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
 }
 
 impl Java {
@@ -64,16 +70,12 @@ impl Language for Java {
         ]
     }
 
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
-    }
-
     fn metavariable_sort(&self) -> SortId {
         self.metavariable_sort
     }
 
-    fn is_comment(&self, id: SortId) -> bool {
-        self.comment_sorts.iter().any(|sort| sort == &id)
+    fn is_comment_sort(&self, id: SortId) -> bool {
+        self.comment_sorts.contains(&id)
     }
 }
 

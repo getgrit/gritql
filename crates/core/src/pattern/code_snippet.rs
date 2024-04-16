@@ -4,7 +4,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{binding::Binding, context::QueryContext};
+use crate::context::{ExecContext, QueryContext};
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_language::language::SortId;
@@ -41,13 +41,13 @@ impl<Q: QueryContext> Matcher<Q> for CodeSnippet<Q> {
     // wrong, but whatever for now
     fn execute<'a>(
         &'a self,
-        resolved_pattern: &Q::ResolvedPattern<'a>,
+        resolved: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let Some(binding) = resolved_pattern.get_binding() else {
-            return Ok(resolved_pattern.text(&state.files)?.trim() == self.source);
+        let Some(binding) = resolved.get_last_binding() else {
+            return Ok(resolved.text(&state.files, context.language())?.trim() == self.source);
         };
 
         let Some(node) = binding.singleton() else {
@@ -59,7 +59,7 @@ impl<Q: QueryContext> Matcher<Q> for CodeSnippet<Q> {
             .iter()
             .find(|(id, _)| *id == node.node.kind_id())
         {
-            pattern.execute(resolved_pattern, state, context, logs)
+            pattern.execute(resolved, state, context, logs)
         } else {
             Ok(false)
         }

@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use crate::language::{fields_for_nodes, Field, Language, SortId, TSLanguage};
+use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str =
     include_str!("../../../resources/node-types/markdown-block-node-types.json");
@@ -24,6 +24,12 @@ pub struct MarkdownBlock {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,
     language: &'static TSLanguage,
+}
+
+impl NodeTypes for MarkdownBlock {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
+    }
 }
 
 impl MarkdownBlock {
@@ -55,12 +61,12 @@ impl Language for MarkdownBlock {
         &[("", "")]
     }
 
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
-    }
-
     fn metavariable_sort(&self) -> SortId {
         self.metavariable_sort
+    }
+
+    fn is_comment_sort(&self, _id: SortId) -> bool {
+        false
     }
 
     fn make_single_line_comment(&self, text: &str) -> String {

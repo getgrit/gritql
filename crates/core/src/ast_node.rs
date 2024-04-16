@@ -57,16 +57,19 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
         context: &'a MarzanoContext,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let binding = if let MarzanoResolvedPattern::Binding(binding) = binding {
-            resolve!(binding.last())
-        } else {
+        let Some(binding) = binding.get_last_binding() else {
             return Ok(false);
         };
         let Some(node) = binding.singleton() else {
             return Ok(false);
         };
         if binding.is_list() {
-            return self.execute(&ResolvedPattern::from_node(node), init_state, context, logs);
+            return self.execute(
+                &ResolvedPattern::from_node_binding(node),
+                init_state,
+                context,
+                logs,
+            );
         }
 
         let NodeWithSource { node, source } = node;
@@ -76,12 +79,12 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
         if self.args.is_empty() {
             return Ok(true);
         }
-        if context.language().is_comment(self.sort) {
+        if context.language().is_comment_sort(self.sort) {
             let content = context.language().comment_text(&node, source);
             let content = resolve!(content);
 
             return self.args[0].2.execute(
-                &ResolvedPattern::from_range(content.1, source),
+                &ResolvedPattern::from_range_binding(content.1, source),
                 init_state,
                 context,
                 logs,
@@ -93,7 +96,7 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
 
             let res = if *is_list {
                 pattern.execute(
-                    &MarzanoResolvedPattern::from_list(
+                    &MarzanoResolvedPattern::from_list_binding(
                         NodeWithSource::new(node.clone(), source),
                         *field_id,
                     ),
@@ -103,14 +106,14 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
                 )
             } else if let Some(child) = node.child_by_field_id(*field_id) {
                 pattern.execute(
-                    &MarzanoResolvedPattern::from_node(NodeWithSource::new(child, source)),
+                    &MarzanoResolvedPattern::from_node_binding(NodeWithSource::new(child, source)),
                     &mut cur_state,
                     context,
                     logs,
                 )
             } else {
                 pattern.execute(
-                    &MarzanoResolvedPattern::empty_field(
+                    &MarzanoResolvedPattern::from_empty_binding(
                         NodeWithSource::new(node.clone(), source),
                         *field_id,
                     ),
@@ -167,10 +170,7 @@ impl Matcher<MarzanoQueryContext> for AstLeafNode {
         _context: &'a MarzanoContext<'a>,
         _logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let MarzanoResolvedPattern::Binding(b) = binding else {
-            return Ok(false);
-        };
-        let Some(node) = b.last().and_then(Binding::singleton) else {
+        let Some(node) = binding.get_last_binding().and_then(Binding::singleton) else {
             return Ok(false);
         };
         if let Some(e) = &self.equivalence_class {

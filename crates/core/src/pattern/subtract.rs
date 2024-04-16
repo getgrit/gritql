@@ -3,7 +3,10 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::{constant::Constant, context::QueryContext};
+use crate::{
+    constant::Constant,
+    context::{ExecContext, QueryContext},
+};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -55,7 +58,7 @@ impl<Q: QueryContext> Matcher<Q> for Subtract<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let binding_text = binding.text(&state.files)?;
+        let binding_text = binding.text(&state.files, context.language())?;
         let binding_int = binding_text.parse::<f64>()?;
         let target = self.evaluate(state, context, logs)?;
         Ok(binding_int == target)

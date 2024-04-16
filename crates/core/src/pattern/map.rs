@@ -37,24 +37,24 @@ impl<Q: QueryContext> Matcher<Q> for GritMap<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        if let ResolvedPattern::Map(map) = binding {
-            for element in map.iter() {
-                if let Some(pattern) = self.elements.get(element.0) {
-                    if !pattern.execute(element.1, state, context, logs)? {
-                        return Ok(false);
-                    }
-                } else {
+        let Some(map) = binding.get_map() else {
+            return Ok(false);
+        };
+
+        for element in map.iter() {
+            if let Some(pattern) = self.elements.get(element.0) {
+                if !pattern.execute(element.1, state, context, logs)? {
                     return Ok(false);
                 }
+            } else {
+                return Ok(false);
             }
-            for element in self.elements.iter() {
-                if !map.contains_key(element.0) {
-                    return Ok(false);
-                }
-            }
-            Ok(true)
-        } else {
-            Ok(false)
         }
+        for element in self.elements.iter() {
+            if !map.contains_key(element.0) {
+                return Ok(false);
+            }
+        }
+        Ok(true)
     }
 }

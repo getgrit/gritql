@@ -2,15 +2,16 @@ use std::{borrow::Cow, sync::OnceLock};
 
 use crate::{
     language::{
-        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, Replacement,
-        SortId, TSLanguage,
+        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, NodeTypes,
+        Replacement, SortId, TSLanguage,
     },
     xscript_util::{
-        self, js_like_optional_empty_field_compilation, js_like_skip_snippet_compilation_sorts,
+        self, js_like_is_comment, js_like_optional_empty_field_compilation,
+        js_like_skip_snippet_compilation_sorts,
     },
 };
 use marzano_util::{node_with_source::NodeWithSource, position::Range};
-use tree_sitter::{Node, Parser};
+use tree_sitter::Parser;
 use xscript_util::{js_like_get_statement_sorts, jslike_check_replacements};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/tsx-node-types.json");
@@ -36,6 +37,7 @@ pub struct Tsx {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,
     comment_sort: SortId,
+    jsx_sort: SortId,
     statement_sorts: &'static [SortId],
     language: &'static TSLanguage,
     skip_snippet_compilation_sorts: &'static Vec<(SortId, FieldId)>,
@@ -48,6 +50,7 @@ impl Tsx {
         let node_types = NODE_TYPES.get_or_init(|| fields_for_nodes(language, NODE_TYPES_STRING));
         let metavariable_sort = language.id_for_node_kind("grit_metavariable", true);
         let comment_sort = language.id_for_node_kind("comment", true);
+        let jsx_sort = language.id_for_node_kind("jsx_expression", true);
         let skip_snippet_compilation_sorts = SKIP_SNIPPET_COMPILATION_SORTS.get_or_init(|| {
             kind_and_field_id_for_names(language, js_like_skip_snippet_compilation_sorts())
         });
@@ -62,6 +65,7 @@ impl Tsx {
             node_types,
             metavariable_sort,
             comment_sort,
+            jsx_sort,
             statement_sorts,
             language,
             skip_snippet_compilation_sorts,
@@ -70,6 +74,12 @@ impl Tsx {
     }
     pub(crate) fn is_initialized() -> bool {
         LANGUAGE.get().is_some()
+    }
+}
+
+impl NodeTypes for Tsx {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
     }
 }
 
@@ -125,21 +135,12 @@ impl Language for Tsx {
         ]
     }
 
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
-    }
-
-    fn is_comment(&self, id: SortId) -> bool {
+    fn is_comment_sort(&self, id: SortId) -> bool {
         id == self.comment_sort
     }
 
-    fn is_comment_wrapper(&self, node: &Node) -> bool {
-        node.kind() == "jsx_expression"
-            && node.named_child_count() == 1
-            && node
-                .named_child(0)
-                .map(|c| self.is_comment(c.kind_id()))
-                .is_some_and(|b| b)
+    fn is_comment_node(&self, node: &NodeWithSource) -> bool {
+        js_like_is_comment(node, self.comment_sort, self.jsx_sort)
     }
 
     fn is_statement(&self, id: SortId) -> bool {

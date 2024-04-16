@@ -49,7 +49,7 @@ impl NodeCompiler for PredicateCompiler {
             "predicateCall" => Ok(Predicate::Call(Box::new(PrCallCompiler::from_node(
                 node, context,
             )?))),
-            "booleanConstant" => match node.text().trim() {
+            "booleanConstant" => match node.text()?.trim() {
                 "true" => Ok(Predicate::True),
                 "false" => Ok(Predicate::False),
                 _ => Err(anyhow!("invalid booleanConstant")),

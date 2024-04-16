@@ -2,7 +2,7 @@ use std::{sync::OnceLock, vec};
 
 use crate::language::{
     fields_for_nodes, normalize_double_quote_string, normalize_identity, Field, Language,
-    LeafEquivalenceClass, LeafNormalizer, SortId, TSLanguage,
+    LeafEquivalenceClass, LeafNormalizer, NodeTypes, SortId, TSLanguage,
 };
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/yaml-node-types.json");
@@ -25,6 +25,7 @@ fn built_in_language() -> TSLanguage {
 pub struct Yaml {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,
+    comment_sort: SortId,
     equivalent_leaf_nodes: &'static [Vec<LeafNormalizer>],
     language: &'static TSLanguage,
 }
@@ -46,15 +47,23 @@ impl Yaml {
             ]]
         });
         let metavariable_sort = language.id_for_node_kind("grit_metavariable", true);
+        let comment_sort = language.id_for_node_kind("comment", true);
         Self {
             node_types,
             metavariable_sort,
+            comment_sort,
             equivalent_leaf_nodes,
             language,
         }
     }
     pub(crate) fn is_initialized() -> bool {
         LANGUAGE.get().is_some()
+    }
+}
+
+impl NodeTypes for Yaml {
+    fn node_types(&self) -> &[Vec<Field>] {
+        self.node_types
     }
 }
 
@@ -74,12 +83,12 @@ impl Language for Yaml {
         &[("", "")]
     }
 
-    fn node_types(&self) -> &[Vec<Field>] {
-        self.node_types
-    }
-
     fn metavariable_sort(&self) -> SortId {
         self.metavariable_sort
+    }
+
+    fn is_comment_sort(&self, id: SortId) -> bool {
+        id == self.comment_sort
     }
 
     fn get_equivalence_class(

@@ -3,8 +3,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::binding::Binding;
-use crate::context::QueryContext;
+use crate::{binding::Binding, context::QueryContext};
 use anyhow::Result;
 use core::fmt::Debug;
 use grit_util::AstNode;
@@ -48,17 +47,13 @@ impl<Q: QueryContext> Matcher<Q> for Within<Q> {
             cur_state = state;
         }
 
-        let Some(binding) = binding.get_binding() else {
-            return Ok(did_match);
-        };
-
-        let Some(node) = binding.parent_node() else {
+        let Some(node) = binding.get_last_binding().and_then(Binding::parent_node) else {
             return Ok(did_match);
         };
         for n in node.ancestors() {
             let state = cur_state.clone();
             if self.pattern.execute(
-                &ResolvedPattern::from_node(n),
+                &ResolvedPattern::from_node_binding(n),
                 &mut cur_state,
                 context,
                 logs,

@@ -3,10 +3,13 @@ use super::{
     dynamic_snippet::{DynamicPattern, DynamicSnippet},
     list_index::ListIndex,
     patterns::Pattern,
-    state::{FileRegistry, State},
+    state::{FilePtr, FileRegistry, State},
 };
 use crate::{
-    binding::Binding, constant::Constant, context::QueryContext, marzano_resolved_pattern::File,
+    binding::Binding,
+    constant::Constant,
+    context::{ExecContext, QueryContext},
+    marzano_resolved_pattern::File,
     problem::Effect,
 };
 use anyhow::Result;
@@ -15,7 +18,11 @@ use im::Vector;
 use itertools::Itertools;
 use marzano_language::language::Language;
 use marzano_util::{analysis_logs::AnalysisLogs, position::Range};
-use std::{borrow::Cow, collections::HashMap, fmt::Debug};
+use std::{
+    borrow::Cow,
+    collections::{BTreeMap, HashMap},
+    fmt::Debug,
+};
 
 pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
     fn from_binding(binding: Q::Binding<'a>) -> Self;
@@ -24,7 +31,7 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
 
     fn from_constant_binding(constant: &'a Constant) -> Self;
 
-    fn from_node(node: Q::Node<'a>) -> Self;
+    fn from_node_binding(node: Q::Node<'a>) -> Self;
 
     fn from_range(range: Range, src: &'a str) -> Self;
 
@@ -93,17 +100,37 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
         language: &impl Language,
     ) -> Result<()>;
 
-    fn float(&self, state: &FileRegistry<'a>) -> Result<f64>;
+    fn float(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<f64>;
 
-    fn get_binding(&self) -> Option<&Q::Binding<'a>>;
-
-    fn get_bindings(&self) -> Option<&Vector<Q::Binding<'a>>>;
+    fn get_bindings(&self) -> Option<impl Iterator<Item = &'a Q::Binding<'a>>>;
 
     fn get_file(&self) -> Option<&File<'a>>;
 
-    fn get_map(&self) -> Option<&File<'a>>;
+    fn get_file_pointers(&self) -> Option<Vec<FilePtr>>;
 
-    fn is_truthy(&self, state: &mut State<'a, Q>) -> Result<bool>;
+    fn get_files(&self) -> Option<&Self>;
+
+    fn get_last_binding(&self) -> Option<&Q::Binding<'a>>;
+
+    fn get_list_item_at(&self, index: isize) -> Option<&Self>;
+
+    fn get_list_item_at_mut(&mut self, index: isize) -> Option<&mut Self>;
+
+    fn get_list_items(&self) -> Option<impl Iterator<Item = &Self>>;
+
+    fn get_list_binding_items(&self) -> Option<impl Iterator<Item = Self> + Clone>;
+
+    fn get_map(&self) -> Option<&BTreeMap<String, Self>>;
+
+    fn get_map_mut(&mut self) -> Option<&mut BTreeMap<String, Self>>;
+
+    fn get_snippets(&self) -> Option<impl Iterator<Item = &ResolvedSnippet<'a, Q>>>;
+
+    fn is_binding(&self) -> bool;
+
+    fn is_list(&self) -> bool;
+
+    fn is_truthy(&self, state: &mut State<'a, Q>, language: &impl Language) -> Result<bool>;
 
     fn linearized_text(
         &self,
@@ -117,6 +144,8 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
 
     fn matches_undefined(&self) -> bool;
 
+    fn matches_false_or_undefined(&self) -> bool;
+
     fn normalize_insert(
         &mut self,
         binding: &Q::Binding<'a>,
@@ -124,10 +153,14 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
         language: &impl Language,
     ) -> Result<()>;
 
-    fn position(&self) -> Option<Range>;
+    fn position(&self, language: &impl Language) -> Option<Range>;
+
+    fn push_binding(&mut self, binding: Q::Binding<'a>) -> Result<()>;
+
+    fn set_list_item_at_mut(&mut self, index: isize, value: Self) -> Result<bool>;
 
     // should we instead return an Option?
-    fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>>;
+    fn text(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<Cow<'a, str>>;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -142,27 +175,35 @@ pub enum ResolvedSnippet<'a, Q: QueryContext> {
 
 impl<'a, Q: QueryContext> ResolvedSnippet<'a, Q> {
     pub fn from_binding(binding: Q::Binding<'a>) -> ResolvedSnippet<Q> {
-        ResolvedSnippet::Binding(binding)
+        Self::Binding(binding)
     }
 
     // if the snippet is text consisting of newlines followed by spaces, returns the number of spaces.
     // might not be general enough, but should be good for a first pass
-    pub(crate) fn padding(&self, state: &FileRegistry<'a>) -> Result<usize> {
-        let text = self.text(state)?;
+    pub(crate) fn padding(
+        &self,
+        state: &FileRegistry<'a>,
+        language: &impl Language,
+    ) -> Result<usize> {
+        let text = self.text(state, language)?;
         let len = text.len();
         let trim_len = text.trim_end_matches(' ').len();
         Ok(len - trim_len)
     }
 
-    pub(crate) fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
+    pub(crate) fn text(
+        &self,
+        state: &FileRegistry<'a>,
+        language: &impl Language,
+    ) -> Result<Cow<'a, str>> {
         match self {
             ResolvedSnippet::Text(text) => Ok(text.clone()),
             ResolvedSnippet::Binding(binding) => {
                 // we are now taking the unmodified source code, and replacing the binding with the snippet
                 // we will want to apply effects next
-                Ok(binding.text().into())
+                binding.text(state, language).map(|c| c.into_owned().into())
             }
-            ResolvedSnippet::LazyFn(lazy) => lazy.text(state),
+            ResolvedSnippet::LazyFn(lazy) => lazy.text(state, language),
         }
     }
 
@@ -176,30 +217,34 @@ impl<'a, Q: QueryContext> ResolvedSnippet<'a, Q> {
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<str>> {
         let res = match self {
-            ResolvedSnippet::Text(text) => {
+            Self::Text(text) => {
                 if let Some(indent) = distributed_indent {
                     Ok(pad_text(text, indent).into())
                 } else {
                     Ok(text.clone())
                 }
             }
-            ResolvedSnippet::Binding(binding) => {
+            Self::Binding(binding) => {
                 // we are now taking the unmodified source code, and replacing the binding with the snippet
                 // we will want to apply effects next
                 binding.linearized_text(language, effects, files, memo, distributed_indent, logs)
             }
-            ResolvedSnippet::LazyFn(lazy) => {
+            Self::LazyFn(lazy) => {
                 lazy.linearized_text(language, effects, files, memo, distributed_indent, logs)
             }
         };
         res
     }
 
-    pub(crate) fn is_truthy(&self, state: &mut State<'a, Q>) -> Result<bool> {
+    pub(crate) fn is_truthy(
+        &self,
+        state: &mut State<'a, Q>,
+        language: &impl Language,
+    ) -> Result<bool> {
         let truthiness = match self {
-            Self::Binding(b) => b.is_truthy(),
+            Self::Binding(b) => b.is_truthy(state, language)?,
             Self::Text(t) => !t.is_empty(),
-            Self::LazyFn(t) => !t.text(&state.files)?.is_empty(),
+            Self::LazyFn(t) => !t.text(&state.files, language)?.is_empty(),
         };
         Ok(truthiness)
     }
@@ -227,9 +272,13 @@ impl<'a, Q: QueryContext> LazyBuiltIn<'a, Q> {
         }
     }
 
-    pub(crate) fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
+    pub(crate) fn text(
+        &self,
+        state: &FileRegistry<'a>,
+        language: &impl Language,
+    ) -> Result<Cow<'a, str>> {
         match self {
-            LazyBuiltIn::Join(join) => join.text(state),
+            LazyBuiltIn::Join(join) => join.text(state, language),
         }
     }
 }
@@ -241,18 +290,14 @@ pub struct JoinFn<'a, Q: QueryContext> {
 }
 
 impl<'a, Q: QueryContext> JoinFn<'a, Q> {
-    pub(crate) fn from_resolved(list: Vector<Q::ResolvedPattern<'a>>, separator: String) -> Self {
-        Self { list, separator }
-    }
-
-    pub(crate) fn from_list_binding(
-        binding: &'_ Q::Binding<'a>,
+    pub(crate) fn from_patterns(
+        patterns: impl Iterator<Item = Q::ResolvedPattern<'a>>,
         separator: String,
-    ) -> Option<Self> {
-        binding.list_items().map(|list_items| Self {
-            list: list_items.map(ResolvedPattern::from_node).collect(),
+    ) -> Self {
+        Self {
+            list: patterns.collect(),
             separator,
-        })
+        }
     }
 
     fn linearized_text(
@@ -286,11 +331,11 @@ impl<'a, Q: QueryContext> JoinFn<'a, Q> {
         }
     }
 
-    fn text(&self, state: &FileRegistry<'a>) -> Result<Cow<'a, str>> {
+    fn text(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<Cow<'a, str>> {
         Ok(self
             .list
             .iter()
-            .map(|pattern| pattern.text(state))
+            .map(|pattern| pattern.text(state, language))
             .collect::<Result<Vec<_>>>()?
             .join(&self.separator)
             .into())

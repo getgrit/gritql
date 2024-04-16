@@ -26,7 +26,8 @@ fn walk_call_tree(
         let name = n
             .child_by_field_name("name")
             .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
-        let name = OsStr::new(name.text().trim());
+        let name = name.text()?;
+        let name = OsStr::new(name.trim());
         let maybe_call = libs
             .iter()
             .find(|(k, _)| k.strip_suffix(".grit").unwrap_or(k) == name);
@@ -70,7 +71,7 @@ pub fn is_async(
         let name = n
             .child_by_field_name("name")
             .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
-        let name = name.text().trim();
+        let name = name.text()?;
         Ok(name == "llm_chat")
     })
 }
@@ -85,7 +86,8 @@ pub fn defines_itself(root: &NodeWithSource, root_name: &str) -> Result<bool> {
         let name = n
             .child_by_field_name("name")
             .ok_or_else(|| anyhow!("missing name of patternDefinition"))?;
-        let name = name.text().trim();
+        let name = name.text()?;
+        let name = name.trim();
         if name == root_name {
             return Ok(true);
         }

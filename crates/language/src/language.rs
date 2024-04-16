@@ -171,8 +171,12 @@ pub(crate) fn kind_and_field_id_for_names(
         .collect()
 }
 
+pub trait NodeTypes {
+    fn node_types(&self) -> &[Vec<Field>];
+}
+
 #[enum_dispatch(TargetLanguage)]
-pub trait Language {
+pub trait Language: NodeTypes {
     /// tree sitter language to parse the source
     fn get_ts_language(&self) -> &TSLanguage;
 
@@ -242,12 +246,15 @@ pub trait Language {
         &EXACT_REPLACED_VARIABLE_REGEX
     }
 
-    fn is_comment(&self, _id: SortId) -> bool {
-        false
-    }
+    // checks if the sort is the languages comment sort
+    fn is_comment_sort(&self, _id: SortId) -> bool;
 
-    fn is_comment_wrapper(&self, _node: &tree_sitter::Node) -> bool {
-        false
+    // checks if a node is a comment. distinct from the above
+    // in that sometimes a node is a comment but doesn't have
+    // a comment sort for example when parsing javascript,
+    // comments embedded in jsx dont have the comment sort
+    fn is_comment_node(&self, node: &NodeWithSource) -> bool {
+        self.is_comment_sort(node.node.kind_id())
     }
 
     fn is_statement(&self, _id: SortId) -> bool {
@@ -304,8 +311,6 @@ pub trait Language {
             _metavariable_sort: self.metavariable_sort(),
         }
     }
-
-    fn node_types(&self) -> &[Vec<Field>];
 
     fn metavariable_sort(&self) -> SortId;
 
