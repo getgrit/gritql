@@ -6,6 +6,8 @@ const PREC = {
     AND: -2,
     OR: -2,
     NOT: 5,
+    CLASS: 2,
+    MODULE: 2,
     DEFINED: 10,
     ALIAS: 11,
     ASSIGN: 15,
@@ -265,15 +267,17 @@ const PREC = {
         field('value', $._arg),
       )),
   
-      class: $ => seq(
-        'class',
-        field('name', choice($.constant, $.scope_resolution)),
-        choice(
-          seq(field('superclass', $.superclass), $._terminator),
-          optional($._terminator),
-        ),
-        optional(field('body', $.body_statement)),
-        'end',
+      class: $ => prec(PREC.CLASS, 
+        seq(
+          'class',
+          field('name', choice($.constant, $.scope_resolution, $.grit_metavariable)),
+          choice(
+            seq(field('superclass', $.superclass), $._terminator),
+            optional($._terminator),
+          ),
+          optional(field('body', $.body_statement)),
+          'end',
+        )
       ),
   
       superclass: $ => seq('<', $._expression),
@@ -287,12 +291,14 @@ const PREC = {
         'end',
       ),
   
-      module: $ => seq(
-        'module',
-        field('name', choice($.constant, $.scope_resolution)),
-        optional($._terminator),
-        optional(field('body', $.body_statement)),
-        'end',
+      module: $ => prec(PREC.MODULE, 
+        seq(
+          'module',
+          field('name', choice($.constant, $.scope_resolution, $.grit_metavariable)),
+          optional($._terminator),
+          optional(field('body', $.body_statement)),
+          'end',
+        )
       ),
   
       return_command: $ => prec.left(seq('return', alias($.command_argument_list, $.argument_list))),
@@ -622,8 +628,8 @@ const PREC = {
       body_statement: $ => $._body_statement,
   
       _body_statement: $ => choice(
-        seq($._statements, repeat(choice($.rescue, $.else, $.ensure))),
-        seq(optional($._statements), repeat1(choice($.rescue, $.else, $.ensure))),
+        seq(field('statements', $._statements), repeat(choice($.rescue, $.else, $.ensure))),
+        seq(optional(field('statements', $._statements)), repeat1(choice($.rescue, $.else, $.ensure))),
       ),
   
       // Method calls without parentheses (aka "command calls") are only allowed
@@ -727,9 +733,9 @@ const PREC = {
       scope_resolution: $ => prec.left(PREC.CALL + 1, seq(
         choice(
           '::',
-          seq(field('scope', $._primary), token.immediate('::')),
+          seq(field('scope', choice($._primary, $.grit_metavariable)), token.immediate('::')),
         ),
-        field('name', $.constant),
+        field('name', choice($.constant, $.grit_metavariable)),
       )),
   
       _call_operator: $ => choice('.', '&.', token.immediate('::')),
@@ -1017,7 +1023,7 @@ const PREC = {
           $.rational,
         ),
   
-      right_assignment_list: $ => prec(-1, commaSep1(choice($._arg, $.splat_argument))),
+      right_assignment_list: $ => prec(-1, commaSep1(field('argument', choice($._arg, $.splat_argument)))),
   
       left_assignment_list: $ => $._mlhs,
       _mlhs: $ => prec.left(-1, seq(

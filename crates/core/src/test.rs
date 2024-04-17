@@ -14169,3 +14169,56 @@ fn ruby_if() {
     })
     .unwrap();
 }
+
+#[test]
+fn ruby_class() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`class $x
+                |   def $name(w,h)
+                |      @width, @height = $y, h
+                |   end
+                |   $_
+                |end` where {
+                |   $x => `Foo`,
+                |   $name => `init`,
+                |   $y => `w`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |class Box
+                |   # constructor method
+                |   def initialize(w,h)
+                |      @width, @height = h, h
+                |   end
+                |   # instance method
+                |   def getArea
+                |      @width * @height
+                |   end
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |class Foo
+                |   # constructor method
+                |   def init(w,h)
+                |      @width, @height = w, h
+                |   end
+                |   # instance method
+                |   def getArea
+                |      @width * @height
+                |   end
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}

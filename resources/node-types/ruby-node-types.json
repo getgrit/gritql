@@ -876,21 +876,32 @@
   {
     "type": "begin",
     "named": true,
-    "fields": {},
+    "fields": {
+      "statements": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": ";",
+            "named": false
+          },
+          {
+            "type": "_statement",
+            "named": true
+          },
+          {
+            "type": "empty_statement",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
       "required": false,
       "types": [
         {
-          "type": "_statement",
-          "named": true
-        },
-        {
           "type": "else",
-          "named": true
-        },
-        {
-          "type": "empty_statement",
           "named": true
         },
         {
@@ -1210,21 +1221,32 @@
   {
     "type": "body_statement",
     "named": true,
-    "fields": {},
+    "fields": {
+      "statements": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": ";",
+            "named": false
+          },
+          {
+            "type": "_statement",
+            "named": true
+          },
+          {
+            "type": "empty_statement",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
-      "required": true,
+      "required": false,
       "types": [
         {
-          "type": "_statement",
-          "named": true
-        },
-        {
           "type": "else",
-          "named": true
-        },
-        {
-          "type": "empty_statement",
           "named": true
         },
         {
@@ -1418,6 +1440,10 @@
         "types": [
           {
             "type": "constant",
+            "named": true
+          },
+          {
+            "type": "grit_metavariable",
             "named": true
           },
           {
@@ -2555,6 +2581,10 @@
             "named": true
           },
           {
+            "type": "grit_metavariable",
+            "named": true
+          },
+          {
             "type": "scope_resolution",
             "named": true
           }
@@ -3050,20 +3080,21 @@
   {
     "type": "right_assignment_list",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "_arg",
-          "named": true
-        },
-        {
-          "type": "splat_argument",
-          "named": true
-        }
-      ]
+    "fields": {
+      "argument": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "_arg",
+            "named": true
+          },
+          {
+            "type": "splat_argument",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -3076,6 +3107,10 @@
         "types": [
           {
             "type": "constant",
+            "named": true
+          },
+          {
+            "type": "grit_metavariable",
             "named": true
           }
         ]
@@ -3090,6 +3125,10 @@
           },
           {
             "type": "_primary",
+            "named": true
+          },
+          {
+            "type": "grit_metavariable",
             "named": true
           }
         ]
