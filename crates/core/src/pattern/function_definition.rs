@@ -6,13 +6,6 @@ use super::{
     state::State,
     variable::Variable,
 };
-#[cfg(all(
-    feature = "network_requests_external",
-    feature = "external_functions_ffi",
-    not(feature = "network_requests"),
-    target_arch = "wasm32"
-))]
-use crate::context::ExecContext;
 use crate::{
     constant::Constant,
     context::{ExecContext, QueryContext},
