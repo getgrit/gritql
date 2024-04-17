@@ -235,6 +235,41 @@ impl Range {
         self.end_byte += other_byte;
     }
 
+    pub fn from_byteless(range: RangeWithoutByte, str: &str) -> Self {
+        let mut start_byte = 0;
+        let mut byte_length = 0;
+
+        let start_line_zero_indexed = range.start.line as usize - 1;
+        let end_line_zero_indexed = range.end.line as usize - 1;
+
+        for (current_line, line) in str.lines().enumerate() {
+            if current_line < start_line_zero_indexed {
+                start_byte += line.len() as u32 + 1;
+            } else if current_line == start_line_zero_indexed {
+                start_byte += range.start.column - 1;
+                // If this is *also* the end, we must handle that here
+                if current_line == end_line_zero_indexed {
+                    byte_length += range.end.column - range.start.column;
+                    break;
+                } else {
+                    byte_length += line.len() as u32 - range.start.column + 1;
+                }
+            } else if current_line < end_line_zero_indexed {
+                byte_length += line.len() as u32 + 1;
+            } else if current_line == end_line_zero_indexed {
+                byte_length += range.end.column;
+                break;
+            }
+        }
+
+        Self {
+            start: range.start,
+            end: range.end,
+            start_byte,
+            end_byte: start_byte + byte_length,
+        }
+    }
+
     pub fn from_md(
         start_line: usize,
         start_col: usize,

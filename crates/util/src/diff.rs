@@ -614,13 +614,16 @@ mod tests {
     #[test]
     fn finds_the_right_range() {
         let diff = include_str!("../fixtures/file_diff.diff");
-        let parsed =
-            parse_modified_ranges(diff).expect("Failed to parse no context diff");
+        let parsed = parse_modified_ranges(diff).expect("Failed to parse no context diff");
 
         let old_content = include_str!("../fixtures/file.baseline.js");
-        
-    }
+        let new_content = include_str!("../fixtures/file.changed.js");
 
+        let old_range = parsed[0].ranges[0].before;
+        expect(old_range.start.line).to_equal(12);
+
+        let new_range = parsed[0].ranges[0].after;
+    }
 
     // TODO: add a multiline add case
     // TODO: add a removed newline case
