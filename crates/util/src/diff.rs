@@ -53,6 +53,17 @@ fn parse_hunk(hunk_str: &str) -> Result<RangePair> {
     })
 }
 
+/// parse_modified_ranges is the core function for parsing the unified diff format
+/// This is the format that `git diff` outputs, and is the most common diff format
+///
+/// This will output a list of FileDiff objects, which contain the old and new paths, and the ranges of changes
+/// Each range is a combined pair of before/after ranges
+///
+/// A deletion will have a range with an empty after range, and an addition will have a range with an empty before range
+/// Note that ranges (currently) cover the whole line, not the specific columns that were changed
+///
+/// The output *ignores* all context lines, so the same underlying change will be represented the same way regardless
+/// of how many context lines are included
 pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
     let mut results = Vec::new();
     let lines = diff.lines();
