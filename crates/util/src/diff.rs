@@ -654,5 +654,30 @@ index f6e1a2c..2c58ad2 100644
     }
 
     // TODO: add a multiline add case
+    #[test]
+    fn processes_multiline_edit() {
+        let diff = include_str!("../fixtures/multiline_edit.diff");
+        let parsed = parse_modified_ranges(diff).expect("Failed to parse no context diff");
+        let old_range = &parsed[0].ranges[0].before;
+        let new_range = &parsed[0].ranges[0].after;
+
+        // Make them into byte ranges and index into content
+        let old_content = include_str!("../fixtures/file.baseline.js");
+        let new_content = include_str!("../fixtures/file.multiline.js");
+
+        let old_range = Range::from_byteless(old_range.clone(), old_content);
+        assert_eq!(
+            old_content[old_range.range_index()].to_string(),
+            "function foo() {\n  console.log(\"World\");"
+        );
+        let new_range = Range::from_byteless(new_range.clone(), new_content);
+        assert_eq!(
+            new_content[new_range.range_index()].to_string(),
+            "function nice() {\n  console.log(\"MULTI\\nLINE\\nSTRING\");\n  throw new Error(\"Oh no!\");"
+        );
+
+        assert_yaml_snapshot!(parsed);
+    }
+
     // TODO: add a removed newline case
 }
