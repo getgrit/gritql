@@ -4,7 +4,6 @@ use super::{
     State,
 };
 use crate::{
-    binding::Constant,
     context::{ExecContext, QueryContext},
     errors::debug,
     resolve,
@@ -36,7 +35,7 @@ impl<Q: QueryContext> After<Q> {
         };
 
         if let Some(next) = node.next_named_node() {
-            Ok(ResolvedPattern::from_node(next))
+            Ok(ResolvedPattern::from_node_binding(next))
         } else {
             debug(
                 logs,
@@ -44,7 +43,7 @@ impl<Q: QueryContext> After<Q> {
                 context.language(),
                 "no node after current node, treating as undefined",
             )?;
-            Ok(ResolvedPattern::Constant(Constant::Undefined))
+            Ok(ResolvedPattern::undefined())
         }
     }
 }
@@ -63,14 +62,8 @@ impl<Q: QueryContext> Matcher<Q> for After<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let binding = match binding {
-            ResolvedPattern::Binding(binding) => resolve!(binding.last()),
-            ResolvedPattern::Snippets(_)
-            | ResolvedPattern::List(_)
-            | ResolvedPattern::Map(_)
-            | ResolvedPattern::File(_)
-            | ResolvedPattern::Files(_)
-            | ResolvedPattern::Constant(_) => return Ok(true),
+        let Some(binding) = binding.get_last_binding() else {
+            return Ok(true);
         };
         let mut cur_state = init_state.clone();
         // todo implement for empty and empty list
@@ -79,7 +72,7 @@ impl<Q: QueryContext> Matcher<Q> for After<Q> {
         };
         let prev_node = resolve!(node.previous_named_node());
         if !self.after.execute(
-            &ResolvedPattern::from_node(prev_node),
+            &ResolvedPattern::from_node_binding(prev_node),
             &mut cur_state,
             context,
             logs,

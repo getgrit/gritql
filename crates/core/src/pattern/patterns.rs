@@ -226,7 +226,7 @@ impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        if let ResolvedPattern::File(file) = &binding {
+        if let Some(file) = binding.get_file() {
             state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[FILENAME_INDEX].value =
                 Some(file.name(&state.files));
             state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[ABSOLUTE_PATH_INDEX]

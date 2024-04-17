@@ -4,6 +4,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use grit_util::AstNode;
+
 use marzano_util::node_with_source::NodeWithSource;
 use tree_sitter::{Parser, Tree};
 
@@ -115,6 +116,22 @@ pub(crate) fn parse_file(
     }
 }
 
+pub(crate) fn js_like_is_comment(
+    node: &NodeWithSource,
+    comment_sort: SortId,
+    jsx_sort: SortId,
+) -> bool {
+    let id = node.node.kind_id();
+    id == comment_sort
+        || (id == jsx_sort
+            && node.node.named_child_count() == 1
+            && node
+                .node
+                .named_child(0)
+                .map(|c| c.kind_id() == comment_sort)
+                .is_some_and(|b| b))
+}
+
 pub(crate) fn jslike_check_replacements(
     n: NodeWithSource<'_>,
     replacement_ranges: &mut Vec<Replacement>,
@@ -129,7 +146,7 @@ pub(crate) fn jslike_check_replacements(
         }
     } else if n.node.is_error()
         && n.text()
-            .is_ok_and(|t| ["var", "let", "const"].contains(&t.as_str()))
+            .is_ok_and(|t| ["var", "let", "const"].contains(&t.as_ref()))
         || n.node.kind() == "empty_statement"
     {
         replacement_ranges.push(Replacement::new(n.range(), ""));

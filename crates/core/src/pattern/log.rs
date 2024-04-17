@@ -67,7 +67,7 @@ impl<Q: QueryContext> Log<Q> {
                 })
                 .unwrap_or(Ok("Variable has no source".to_string()))?;
             log_builder.source(src);
-            let node: Option<&Binding> = value.and_then(|v| v.get_binding());
+            let node: Option<&Binding> = value.and_then(|v| v.get_last_binding());
             // todo add support for other types of bindings
             if let Some(node) = node {
                 if let Some(range) = node.position(context.language()) {

@@ -27,7 +27,7 @@ pub struct PatternsDirectory {
     vue: BTreeMap<String, String>,
     toml: BTreeMap<String, String>,
     php: BTreeMap<String, String>,
-    php_only: BTreeMap<String, String>,    
+    php_only: BTreeMap<String, String>,
     universal: BTreeMap<String, String>,
 }
 

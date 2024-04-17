@@ -65,7 +65,7 @@ impl Language for MarkdownInline {
         self.metavariable_sort
     }
 
-    fn is_comment(&self, _id: SortId) -> bool {
+    fn is_comment_sort(&self, _id: SortId) -> bool {
         false
     }
 

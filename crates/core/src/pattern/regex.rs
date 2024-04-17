@@ -90,23 +90,16 @@ impl<Q: QueryContext> RegexPattern<Q> {
                     continue;
                 }
             } else {
-                let res = if let ResolvedPattern::Binding(binding) = binding {
-                    if let Some(binding) = binding.last() {
-                        if let (Some(mut position), Some(source)) =
-                            (binding.position(context.language()), binding.source())
-                        {
-                            // this moves the byte-range out of sync with
-                            // the row-col range, maybe we should just
-                            // have a Range<usize> for String bindings?
-                            position.end_byte = position.start_byte + range.end as u32;
-                            position.start_byte += range.start as u32;
-                            ResolvedPattern::from_range(position, source)
-                        } else {
-                            ResolvedPattern::from_string(value.to_string())
-                        }
-                    } else {
-                        bail!("binding has no binding")
-                    }
+                let res = if let Some((Some(mut position), Some(source))) = binding
+                    .get_last_binding()
+                    .map(|binding| (binding.position(context.language()), binding.source()))
+                {
+                    // this moves the byte-range out of sync with
+                    // the row-col range, maybe we should just
+                    // have a Range<usize> for String bindings?
+                    position.end_byte = position.start_byte + range.end as u32;
+                    position.start_byte += range.start as u32;
+                    ResolvedPattern::from_range_binding(position, source)
                 } else {
                     ResolvedPattern::from_string(value.to_string())
                 };

@@ -111,6 +111,8 @@ impl<Q: QueryContext> FunctionDefinition<Q> for ForeignFunctionDefinition {
         args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation> {
+        use super::resolved_pattern::ResolvedPattern;
+
         let param_names = self
             .params
             .iter()
@@ -159,9 +161,7 @@ impl<Q: QueryContext> FunctionDefinition<Q> for ForeignFunctionDefinition {
 
         Ok(FuncEvaluation {
             predicator: true,
-            ret_val: Some(crate::pattern::resolved_pattern::ResolvedPattern::Constant(
-                Constant::String(string),
-            )),
+            ret_val: Some(ResolvedPattern::from_constant(Constant::String(string))),
         })
     }
 }

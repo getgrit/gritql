@@ -28,7 +28,7 @@ impl<Q: QueryContext> Modulo<Q> {
         logs: &mut AnalysisLogs,
     ) -> Result<ResolvedPattern<'a>> {
         let res = self.evaluate(state, context, logs)?;
-        Ok(ResolvedPattern::Constant(Constant::Integer(res)))
+        Ok(ResolvedPattern::from_constant(Constant::Integer(res)))
     }
 
     fn evaluate<'a>(
