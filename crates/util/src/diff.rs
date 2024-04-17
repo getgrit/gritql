@@ -61,6 +61,9 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
     let mut left_line_cursor = 0;
     let mut right_line_cursor = 0;
 
+    // When there is no context at all, we need to shift deletions by one
+    let mut has_context = false;
+
     // Then we might be adding to a left range, or to a right range.
     let mut current_range_pair: Option<RangePair> = None;
 
@@ -103,14 +106,15 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
             };
         } else if line.starts_with("@@ ") {
             insert_range_if_found(&mut current_range_pair, &mut results)?;
+            has_context = false;
 
             let parsed_hunk = parse_hunk(line)?;
-            println!("Parsed hunk: {:?}", parsed_hunk);
 
             left_line_cursor = parsed_hunk.before.start_line();
             right_line_cursor = parsed_hunk.after.start_line();
         } else if line.starts_with(' ') || line.is_empty() {
             insert_range_if_found(&mut current_range_pair, &mut results)?;
+            has_context = true;
 
             left_line_cursor += 1;
             right_line_cursor += 1;
