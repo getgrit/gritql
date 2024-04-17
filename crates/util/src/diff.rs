@@ -620,7 +620,9 @@ mod tests {
         let new_content = include_str!("../fixtures/file.changed.js");
 
         let old_range = parsed[0].ranges[0].before;
-        expect(old_range.start.line).to_equal(12);
+        assert_eq!(old_range.start.line, 5);
+        assert_eq!(old_range.end.line, 5);
+        assert_eq!(old_range.end.column, 30);
 
         let new_range = parsed[0].ranges[0].after;
     }
