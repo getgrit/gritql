@@ -105,7 +105,7 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 bail!("Encountered new file path without a current file diff");
             };
         } else if line.starts_with("@@ ") {
-            insert_range_if_found(&mut current_range_pair, &mut results)?;
+            insert_range_if_found(&mut current_range_pair, &mut results, has_context)?;
             has_context = false;
 
             let parsed_hunk = parse_hunk(line)?;
@@ -113,7 +113,7 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
             left_line_cursor = parsed_hunk.before.start_line();
             right_line_cursor = parsed_hunk.after.start_line();
         } else if line.starts_with(' ') || line.is_empty() {
-            insert_range_if_found(&mut current_range_pair, &mut results)?;
+            insert_range_if_found(&mut current_range_pair, &mut results, has_context)?;
             has_context = true;
 
             left_line_cursor += 1;
@@ -198,7 +198,7 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
     }
 
     // If we have a current hunk, add it to the current file diff
-    insert_range_if_found(&mut current_range_pair, &mut results)?;
+    insert_range_if_found(&mut current_range_pair, &mut results, has_context)?;
 
     Ok(results)
 }
@@ -206,9 +206,14 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
 fn insert_range_if_found(
     current_range_pair: &mut Option<RangePair>,
     results: &mut [FileDiff],
+    has_context: bool,
 ) -> Result<()> {
-    if let Some(range) = current_range_pair.take() {
-        println!("Injecting range: {:?}", range);
+    if let Some(mut range) = current_range_pair.take() {
+        // Deleted lines with no context are shifted by one
+        if range.after.is_empty() && !has_context {
+            range.after.start.line += 1;
+            range.after.end.line += 1;
+        }
         if let Some(file_diff) = results.last_mut() {
             file_diff.ranges.push(range);
         } else {
@@ -592,7 +597,7 @@ mod tests {
             parse_modified_ranges(no_context).expect("Failed to parse no context diff");
 
         println!("Validating context-less diff...");
-        validate_known_diff(no_context_parsed);
+        validate_known_diff(no_context_parsed.clone());
 
         // These two diffs are *identical* except for the context line length
         println!("Parsing normal diff...");
@@ -601,10 +606,10 @@ mod tests {
             parse_modified_ranges(normal_diff).expect("Failed to parse normal diff");
 
         println!("Validating normal diff...");
-        validate_known_diff(normal_diff_parsed);
+        validate_known_diff(normal_diff_parsed.clone());
 
         // Ensure they are the same
-        // assert_eq!(normal_diff_parsed, no_context_parsed);
+        assert_eq!(normal_diff_parsed, no_context_parsed);
     }
 
     // TODO: add a multiline add case
