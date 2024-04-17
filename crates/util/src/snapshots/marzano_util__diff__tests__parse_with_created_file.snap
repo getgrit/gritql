@@ -4,55 +4,52 @@ expression: parsed
 ---
 - old_path: crates/cli_bin/fixtures/es6/empty_export_object.js
   new_path: crates/cli_bin/fixtures/es6/empty_export_object.js
-  before:
-    - RangeWithoutByte:
+  ranges:
+    - before:
         start:
-          line: 5
-          column: 0
+          line: 8
+          column: 1
         end:
-          line: 12
-          column: 0
-  after:
-    - RangeWithoutByte:
+          line: 8
+          column: 23
+      after:
         start:
-          line: 5
-          column: 0
+          line: 8
+          column: 1
         end:
-          line: 12
-          column: 0
+          line: 8
+          column: 28
 - old_path: crates/cli_bin/fixtures/es6/export_object.js
   new_path: crates/cli_bin/fixtures/es6/export_object.js
-  before:
-    - RangeWithoutByte:
+  ranges:
+    - before:
         start:
-          line: 2
-          column: 0
+          line: 5
+          column: 1
         end:
-          line: 9
-          column: 0
-  after:
-    - RangeWithoutByte:
+          line: 5
+          column: 60
+      after:
         start:
-          line: 2
-          column: 0
+          line: 5
+          column: 1
         end:
-          line: 11
-          column: 0
+          line: 7
+          column: 3
 - old_path: ~
   new_path: crates/cli_bin/fixtures/es6/index.js
-  before:
-    - RangeWithoutByte:
+  ranges:
+    - before:
         start:
           line: 0
-          column: 0
+          column: 1
         end:
           line: 0
-          column: 0
-  after:
-    - RangeWithoutByte:
+          column: 1
+      after:
         start:
           line: 1
-          column: 0
+          column: 1
         end:
-          line: 13
-          column: 0
+          line: 12
+          column: 3

@@ -263,7 +263,7 @@ index 893656e..6218f5e 100644
         assert_eq!(first_range.after.start_line(), 12);
         assert_eq!(first_range.after.end_line(), 12);
 
-        // assert_yaml_snapshot!(parsed);
+        assert_yaml_snapshot!(parsed);
     }
 
     #[test]
@@ -288,7 +288,7 @@ index adacd90..71b96e0 100644
         assert_eq!(parsed[0].ranges[0].after.start_line(), 8);
         assert_eq!(parsed[0].ranges[0].after.end_line(), 8);
 
-        // assert_yaml_snapshot!(parsed);
+        assert_yaml_snapshot!(parsed);
     }
 
     #[test]
@@ -333,7 +333,7 @@ createTeam,
         assert_eq!(parsed[1].ranges[0].before.end_line(), 5);
         assert_eq!(parsed[1].ranges[0].after.start_line(), 5);
         assert_eq!(parsed[1].ranges[0].after.end_line(), 7);
-        // assert_yaml_snapshot!(parsed);
+        assert_yaml_snapshot!(parsed);
     }
 
     #[test]
@@ -404,7 +404,7 @@ index 0000000..7b232cd
             Some("crates/cli_bin/fixtures/es6/index.js".to_string())
         );
 
-        //         assert_yaml_snapshot!(parsed);
+        assert_yaml_snapshot!(parsed);
     }
 
     #[test]
@@ -470,7 +470,7 @@ index f6e1a2c..2c58ad2 100644
         );
         assert!(parsed[1].new_path.is_none());
 
-        // assert_yaml_snapshot!(parsed);
+        assert_yaml_snapshot!(parsed);
     }
 
     #[test]
