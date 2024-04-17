@@ -1,0 +1,22 @@
+---
+source: crates/util/src/diff.rs
+assertion_line: 695
+expression: parsed
+---
+- old_path: crates/util/fixtures/file.baseline.js
+  new_path: crates/util/fixtures/file.baseline.js
+  ranges:
+    - before:
+        start:
+          line: 7
+          column: 1
+        end:
+          line: 8
+          column: 1
+      after:
+        start:
+          line: 7
+          column: 1
+        end:
+          line: 7
+          column: 1
