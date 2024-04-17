@@ -123,14 +123,11 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 line, left_line_cursor, right_line_cursor
             );
         } else if line.starts_with('-') || line.starts_with('+') {
-            let column = (line.len() - 1) as u32 + 1;
-
             if line.starts_with('-') {
                 // Removed sections always come before added sections
                 if let Some(ref mut pair) = current_range_pair {
                     // We already have a pair, so we are just expanding the remove section
                     pair.before.end.line += 1;
-                    pair.before.end.column = column;
                 } else {
                     // Start a new hunk, which will initially be a removal
                     current_range_pair = Some(RangePair {
@@ -162,8 +159,7 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
             } else {
                 if let Some(ref mut pair) = current_range_pair {
                     // We already have a pair, so we are just expanding the add section
-                    pair.after.end.line = right_line_cursor;
-                    pair.after.end.column = column;
+                    pair.after.end.line = right_line_cursor + 1;
                 } else {
                     // We are adding, without any removal
                     current_range_pair = Some(RangePair {
@@ -259,9 +255,9 @@ index 893656e..6218f5e 100644
         println!("{:?}", parsed);
         assert_eq!(parsed[0].ranges.len(), 1);
         let first_range = &parsed[0].ranges[0];
-        assert_eq!(first_range.before.end_line(), 12);
+        assert_eq!(first_range.before.end_line(), 13);
         assert_eq!(first_range.after.start_line(), 12);
-        assert_eq!(first_range.after.end_line(), 12);
+        assert_eq!(first_range.after.end_line(), 13);
 
         assert_yaml_snapshot!(parsed);
     }
@@ -284,9 +280,9 @@ index adacd90..71b96e0 100644
 "#;
         let parsed = parse_modified_ranges(diff).unwrap();
         assert_eq!(parsed[0].ranges[0].before.start_line(), 8);
-        assert_eq!(parsed[0].ranges[0].before.end_line(), 8);
+        assert_eq!(parsed[0].ranges[0].before.end_line(), 9);
         assert_eq!(parsed[0].ranges[0].after.start_line(), 8);
-        assert_eq!(parsed[0].ranges[0].after.end_line(), 8);
+        assert_eq!(parsed[0].ranges[0].after.end_line(), 9);
 
         assert_yaml_snapshot!(parsed);
     }
@@ -325,14 +321,14 @@ createTeam,
         let parsed = parse_modified_ranges(diff).unwrap();
 
         assert_eq!(parsed[0].ranges[0].before.start_line(), 8);
-        assert_eq!(parsed[0].ranges[0].before.end_line(), 8);
+        assert_eq!(parsed[0].ranges[0].before.end_line(), 9);
         assert_eq!(parsed[0].ranges[0].after.start_line(), 8);
-        assert_eq!(parsed[0].ranges[0].after.end_line(), 8);
+        assert_eq!(parsed[0].ranges[0].after.end_line(), 9);
 
         assert_eq!(parsed[1].ranges[0].before.start_line(), 5);
-        assert_eq!(parsed[1].ranges[0].before.end_line(), 5);
+        assert_eq!(parsed[1].ranges[0].before.end_line(), 6);
         assert_eq!(parsed[1].ranges[0].after.start_line(), 5);
-        assert_eq!(parsed[1].ranges[0].after.end_line(), 7);
+        assert_eq!(parsed[1].ranges[0].after.end_line(), 8);
         assert_yaml_snapshot!(parsed);
     }
 
@@ -497,8 +493,8 @@ index f6e1a2c..2c58ad2 100644
                         column: 1,
                     },
                     end: Position {
-                        line: 12,
-                        column: 38,
+                        line: 13,
+                        column: 1,
                     },
                 },
                 after: RangeWithoutByte {
@@ -507,8 +503,8 @@ index f6e1a2c..2c58ad2 100644
                         column: 1,
                     },
                     end: Position {
-                        line: 12,
-                        column: 9,
+                        line: 13,
+                        column: 1,
                     },
                 },
             },
@@ -525,8 +521,8 @@ index f6e1a2c..2c58ad2 100644
                         column: 1,
                     },
                     end: Position {
-                        line: 14,
-                        column: 80,
+                        line: 15,
+                        column: 1,
                     },
                 },
                 after: RangeWithoutByte {
@@ -535,8 +531,8 @@ index f6e1a2c..2c58ad2 100644
                         column: 1,
                     },
                     end: Position {
-                        line: 14,
-                        column: 9,
+                        line: 15,
+                        column: 1,
                     },
                 },
             },
@@ -553,8 +549,8 @@ index f6e1a2c..2c58ad2 100644
                         column: 1,
                     },
                     end: Position {
-                        line: 17,
-                        column: 57,
+                        line: 18,
+                        column: 1,
                     },
                 },
                 after: RangeWithoutByte {
@@ -563,8 +559,8 @@ index f6e1a2c..2c58ad2 100644
                         column: 1,
                     },
                     end: Position {
-                        line: 17,
-                        column: 13,
+                        line: 18,
+                        column: 1,
                     },
                 },
             },
@@ -581,8 +577,8 @@ index f6e1a2c..2c58ad2 100644
                         column: 1,
                     },
                     end: Position {
-                        line: 22,
-                        column: 3,
+                        line: 23,
+                        column: 1,
                     },
                 },
                 after: RangeWithoutByte {
@@ -629,13 +625,11 @@ index f6e1a2c..2c58ad2 100644
 
         let old_range = &parsed[0].ranges[0].before;
         assert_eq!(old_range.start.line, 5);
-        assert_eq!(old_range.end.line, 5);
-        assert_eq!(old_range.end.column, 24);
+        assert_eq!(old_range.end.line, 6);
 
         let new_range = &parsed[0].ranges[0].after;
         assert_eq!(new_range.start.line, 5);
-        assert_eq!(new_range.end.line, 5);
-        assert_eq!(new_range.end.column, 30);
+        assert_eq!(new_range.end.line, 6);
 
         // Make them into byte ranges and index into content
         let old_content = include_str!("../fixtures/file.baseline.js");
@@ -644,12 +638,12 @@ index f6e1a2c..2c58ad2 100644
         let old_range = Range::from_byteless(old_range.clone(), old_content);
         assert_eq!(
             old_content[old_range.range_index()].to_string(),
-            "  console.log(\"World\");"
+            "  console.log(\"World\");\n"
         );
         let new_range = Range::from_byteless(new_range.clone(), new_content);
         assert_eq!(
             new_content[new_range.range_index()].to_string(),
-            "  console.log(\"change this\");"
+            "  console.log(\"change this\");\n"
         );
     }
 
@@ -667,12 +661,12 @@ index f6e1a2c..2c58ad2 100644
         let old_range = Range::from_byteless(old_range.clone(), old_content);
         assert_eq!(
             old_content[old_range.range_index()].to_string(),
-            "function foo() {\n  console.log(\"World\");"
+            "function foo() {\n  console.log(\"World\");\n"
         );
         let new_range = Range::from_byteless(new_range.clone(), new_content);
         assert_eq!(
             new_content[new_range.range_index()].to_string(),
-            "function nice() {\n  console.log(\"MULTI\\nLINE\\nSTRING\");\n  throw new Error(\"Oh no!\");"
+            "function nice() {\n  console.log(\"MULTI\\nLINE\\nSTRING\");\n  throw new Error(\"Oh no!\");\n"
         );
 
         assert_yaml_snapshot!(parsed);
