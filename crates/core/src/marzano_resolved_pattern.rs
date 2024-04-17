@@ -28,7 +28,6 @@ use marzano_util::{
 use std::{
     borrow::Cow,
     collections::{BTreeMap, HashMap},
-    path::Path,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -49,10 +48,6 @@ impl<'a> MarzanoResolvedPattern<'a> {
 
     pub(crate) fn from_list_binding(node: NodeWithSource<'a>, field_id: FieldId) -> Self {
         Self::from_binding(MarzanoBinding::List(node, field_id))
-    }
-
-    pub(crate) fn from_path(path: &'a Path) -> Self {
-        Self::from_binding(Binding::from_path(path))
     }
 
     fn to_snippets(&self) -> Result<Vector<ResolvedSnippet<'a, MarzanoQueryContext>>> {
@@ -904,7 +899,7 @@ fn extract_file_pointer(file: &MarzanoFile) -> Option<FilePtr> {
     }
 }
 
-fn handle_files<'a>(files_list: &MarzanoResolvedPattern<'a>) -> Option<Vec<FilePtr>> {
+fn handle_files(files_list: &MarzanoResolvedPattern) -> Option<Vec<FilePtr>> {
     if let MarzanoResolvedPattern::List(files) = files_list {
         files
             .iter()
@@ -918,20 +913,6 @@ fn handle_files<'a>(files_list: &MarzanoResolvedPattern<'a>) -> Option<Vec<FileP
             .collect()
     } else {
         None
-    }
-}
-
-pub(crate) fn extract_file_pointers<'a>(
-    binding: &MarzanoResolvedPattern<'a>,
-) -> Option<Vec<FilePtr>> {
-    match binding {
-        MarzanoResolvedPattern::Binding(_) => None,
-        MarzanoResolvedPattern::Snippets(_) => None,
-        MarzanoResolvedPattern::List(_) => handle_files(binding),
-        MarzanoResolvedPattern::Map(_) => None,
-        MarzanoResolvedPattern::File(file) => extract_file_pointer(file).map(|f| vec![f]),
-        MarzanoResolvedPattern::Files(files) => handle_files(files),
-        MarzanoResolvedPattern::Constant(_) => None,
     }
 }
 
