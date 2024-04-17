@@ -165,7 +165,7 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                     pair.after.end.line = right_line_cursor;
                     pair.after.end.column = column;
                 } else {
-                    // Start a new hunk, which will initially be an addition
+                    // We are adding, without any removal
                     current_range_pair = Some(RangePair {
                         before: RangeWithoutByte {
                             start: Position {
@@ -183,8 +183,8 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                                 column: 1,
                             },
                             end: Position {
-                                line: right_line_cursor,
-                                column,
+                                line: right_line_cursor + 1,
+                                column: 1,
                             },
                         },
                     });
@@ -683,13 +683,29 @@ index f6e1a2c..2c58ad2 100644
         let diff = include_str!("../fixtures/newline_rm.diff");
         let parsed = parse_modified_ranges(diff).expect("Failed to parse no context diff");
         let old_range = &parsed[0].ranges[0].before;
-        let new_range = &parsed[0].ranges[0].after;
 
         // Make them into byte ranges and index into content
         let old_content = include_str!("../fixtures/file.baseline.js");
 
         let old_range = Range::from_byteless(old_range.clone(), old_content);
         assert_eq!(old_content[old_range.range_index()].to_string(), "\n");
+
+        assert_yaml_snapshot!(parsed);
+    }
+
+    #[test]
+    fn processes_newline_add() {
+        let diff = include_str!("../fixtures/newline_add.diff");
+        let parsed = parse_modified_ranges(diff).expect("Failed to parse no context diff");
+        let old_range = &parsed[0].ranges[0].before;
+
+        let old_content = include_str!("../fixtures/file.baseline.js");
+        let old_range = Range::from_byteless(old_range.clone(), old_content);
+        assert_eq!(old_content[old_range.range_index()].to_string(), "");
+
+        let new_content = include_str!("../fixtures/file.newline.js");
+        let new_range = Range::from_byteless(parsed[0].ranges[0].after.clone(), &new_content);
+        assert_eq!(new_content[new_range.range_index()].to_string(), "\n");
 
         assert_yaml_snapshot!(parsed);
     }

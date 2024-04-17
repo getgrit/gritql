@@ -1,6 +1,5 @@
 ---
 source: crates/util/src/diff.rs
-assertion_line: 695
 expression: parsed
 ---
 - old_path: crates/util/fixtures/file.baseline.js

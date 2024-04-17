@@ -10,8 +10,8 @@ expression: parsed
           line: 8
           column: 1
         end:
-          line: 8
-          column: 23
+          line: 9
+          column: 1
       after:
         start:
           line: 8
@@ -30,7 +30,7 @@ expression: parsed
           line: 1
           column: 1
         end:
-          line: 19
+          line: 20
           column: 28
       after:
         start:
@@ -44,8 +44,8 @@ expression: parsed
           line: 5
           column: 1
         end:
-          line: 5
-          column: 60
+          line: 6
+          column: 1
       after:
         start:
           line: 5
