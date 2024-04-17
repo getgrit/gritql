@@ -140,8 +140,8 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                                 column: 1,
                             },
                             end: Position {
-                                line: left_line_cursor,
-                                column,
+                                line: left_line_cursor + 1,
+                                column: 1,
                             },
                         },
                         after: RangeWithoutByte {
@@ -689,7 +689,6 @@ index f6e1a2c..2c58ad2 100644
         let old_content = include_str!("../fixtures/file.baseline.js");
 
         let old_range = Range::from_byteless(old_range.clone(), old_content);
-        println!("Old range: {:?}", old_range);
         assert_eq!(old_content[old_range.range_index()].to_string(), "\n");
 
         assert_yaml_snapshot!(parsed);
