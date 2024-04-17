@@ -238,58 +238,57 @@ mod tests {
         assert_eq!(parsed.after.end_line(), 12);
     }
 
-    //     #[test]
-    //     fn parses_verified_baseline() {
-    //         let diff = r#"diff --git a/crates/cli/src/analyze.rs b/crates/cli/src/analyze.rs
-    // index 893656e..6218f5e 100644
-    // --- a/crates/cli/src/analyze.rs
-    // +++ b/crates/cli/src/analyze.rs
-    // @@ -9,7 +9,7 @@ use tracing::{event, instrument, Level};
-    //     #[cfg(feature = "grit_tracing")]
-    //     use tracing_opentelemetry::OpenTelemetrySpanExt as _;
+    #[test]
+    fn parses_verified_baseline() {
+        let diff = r#"diff --git a/crates/cli/src/analyze.rs b/crates/cli/src/analyze.rs
+    index 893656e..6218f5e 100644
+    --- a/crates/cli/src/analyze.rs
+    +++ b/crates/cli/src/analyze.rs
+    @@ -9,7 +9,7 @@ use tracing::{event, instrument, Level};
+        #[cfg(feature = "grit_tracing")]
+        use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 
-    // -use grit_cache::paths::cache_for_cwd;
-    // +use THIS WAS CHANGED;
-    //     use ignore::Walk;
-    //     use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};"#;
+    -use grit_cache::paths::cache_for_cwd;
+    +use THIS WAS CHANGED;
+        use ignore::Walk;
+        use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};"#;
 
-    //         let parsed = parse_modified_ranges(diff).unwrap();
-    //         let before_range = &parsed[0].before[0];
-    //         // Yes - this range is much larger than expected. It's because we currently treat the entire hunk as a single range
-    //         // This means context is a big part of the range
-    //         assert_eq!(before_range.start_line(), 9);
-    //         assert_eq!(before_range.end_line(), 16);
-    //         let after_range = &parsed[0].after[0];
-    //         assert_eq!(after_range.start_line(), 9);
-    //         assert_eq!(after_range.end_line(), 16);
-    //         assert_yaml_snapshot!(parsed);
-    //     }
+        let parsed = parse_modified_ranges(diff).unwrap();
+        let before_range = &parsed[0].before[0];
+        // Yes - this range is much larger than expected. It's because we currently treat the entire hunk as a single range
+        // This means context is a big part of the range
+        assert_eq!(before_range.start_line(), 9);
+        assert_eq!(before_range.end_line(), 16);
+        let after_range = &parsed[0].after[0];
+        assert_eq!(after_range.start_line(), 9);
+        assert_eq!(after_range.end_line(), 16);
+        assert_yaml_snapshot!(parsed);
+    }
 
-    //     #[test]
-    //     fn parse_one_file_diff() {
-    //         let diff = r#"diff --git a/crates/cli_bin/fixtures/es6/empty_export_object.js b/crates/cli_bin/fixtures/es6/empty_export_object.js
-    // index adacd90..71b96e0 100644
-    // --- a/crates/cli_bin/fixtures/es6/empty_export_object.js
-    // +++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
-    // @@ -5,7 +5,7 @@ module.exports = {
-    //     };
+    #[test]
+    fn parse_one_file_diff() {
+        let diff = r#"diff --git a/crates/cli_bin/fixtures/es6/empty_export_object.js b/crates/cli_bin/fixtures/es6/empty_export_object.js
+    index adacd90..71b96e0 100644
+    --- a/crates/cli_bin/fixtures/es6/empty_export_object.js
+    +++ b/crates/cli_bin/fixtures/es6/empty_export_object.js
+    @@ -5,7 +5,7 @@ module.exports = {
+        };
 
-    //     export async function createTeam() {
-    // -  console.log('cool');
-    // +  console.log('very cool');
-    //     }
+        export async function createTeam() {
+    -  console.log('cool');
+    +  console.log('very cool');
+        }
 
-    //     export const addTeamToOrgSubscription = () => console.log('cool');
-    // "#;
-    //         let parsed = parse_modified_ranges(diff).unwrap();
-    //         let before_range = &parsed[0].before[0];
-    //         assert_eq!(before_range.start_line(), 5);
-    //         assert_eq!(before_range.end_line(), 12);
-    //         let after_range = &parsed[0].after[0];
-    //         assert_eq!(after_range.start_line(), 5);
-    //         assert_eq!(after_range.end_line(), 12);
-    //         assert_yaml_snapshot!(parsed);
-    //     }
+        export const addTeamToOrgSubscription = () => console.log('cool');
+    "#;
+        let parsed = parse_modified_ranges(diff).unwrap();
+        assert_eq!(parsed[0].ranges[0].before.start_line(), 8);
+        assert_eq!(parsed[0].ranges[0].before.end_line(), 8);
+        assert_eq!(parsed[0].ranges[0].after.start_line(), 8);
+        assert_eq!(parsed[0].ranges[0].after.end_line(), 8);
+
+        assert_yaml_snapshot!(parsed);
+    }
 
     //     #[test]
     //     fn parse_with_multiple_files() {
