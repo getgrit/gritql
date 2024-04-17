@@ -235,6 +235,10 @@ impl Range {
         self.end_byte += other_byte;
     }
 
+    pub fn range_index(&self) -> std::ops::Range<usize> {
+        self.start_byte as usize..self.end_byte as usize
+    }
+
     pub fn from_byteless(range: RangeWithoutByte, str: &str) -> Self {
         let mut start_byte = 0;
         let mut byte_length = 0;
