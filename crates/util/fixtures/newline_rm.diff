@@ -1,0 +1,10 @@
+diff --git a/crates/util/fixtures/file.baseline.js b/crates/util/fixtures/file.baseline.js
+index 5669444..c948073 100644
+--- a/crates/util/fixtures/file.baseline.js
++++ b/crates/util/fixtures/file.baseline.js
+@@ -4,5 +4,4 @@ console.log("Hello");
+ function foo() {
+   console.log("World");
+ }
+-
+ console.log("Wowza");

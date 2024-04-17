@@ -653,7 +653,6 @@ index f6e1a2c..2c58ad2 100644
         );
     }
 
-    // TODO: add a multiline add case
     #[test]
     fn processes_multiline_edit() {
         let diff = include_str!("../fixtures/multiline_edit.diff");
