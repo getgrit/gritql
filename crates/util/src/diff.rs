@@ -103,7 +103,7 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
         } else if line.starts_with("@@ ") {
             // If we have a current hunk, add it to the current file diff
             insert_range_if_found(
-                next_hunk_start_line,
+                &mut next_hunk_start_line,
                 &mut current_hunk_before_end_position,
                 &mut current_hunk_after_end_position,
                 &mut results,
@@ -115,15 +115,20 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 parsed_hunk.before.start_line(),
                 parsed_hunk.after.start_line(),
             ));
-        } else if line.starts_with(' ') {
-            // println!(
-            //     "Ignoring context line: {}, hunk: {:?}",
-            //     line, next_hunk_start_line
-            // );
+        } else if line.starts_with(' ') || line.is_empty() {
+            insert_range_if_found(
+                &mut next_hunk_start_line,
+                &mut current_hunk_before_end_position,
+                &mut current_hunk_after_end_position,
+                &mut results,
+            )?;
             // If we have a next hunk, move it down one line
-            if let Some(mut hunk) = next_hunk_start_line {
+            if let Some(hunk) = next_hunk_start_line.as_mut() {
                 hunk.0 += 1;
                 hunk.1 += 1;
+                println!("processed {}, hunk: {:?}", line, hunk);
+            } else {
+                bail!("Encountered line without a hunk: {:?}", line);
             }
         } else if line.starts_with('+') || line.starts_with('-') {
             let is_add = line.starts_with('+');
@@ -155,13 +160,13 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 bail!("Encountered line without a hunk");
             }
         } else {
-            // bail!("Unrecognized line in diff: {}", line);
+            println!("Unrecognized line in diff: {}", line);
         }
     }
 
     // If we have a current hunk, add it to the current file diff
     insert_range_if_found(
-        next_hunk_start_line,
+        &mut next_hunk_start_line,
         &mut current_hunk_before_end_position,
         &mut current_hunk_after_end_position,
         &mut results,
@@ -171,10 +176,14 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
 }
 
 fn compute_range(
-    next_hunk_start_line: Option<(u32, u32)>,
+    next_hunk_start_line: &Option<(u32, u32)>,
     current_hunk_before_end_position: &mut Option<Position>,
     current_hunk_after_end_position: &mut Option<Position>,
 ) -> Option<RangePair> {
+    println!(
+        "Considering hunk: {:?}, {:?}, {:?}",
+        next_hunk_start_line, current_hunk_before_end_position, current_hunk_after_end_position
+    );
     match (
         next_hunk_start_line,
         current_hunk_before_end_position.take(),
@@ -242,7 +251,7 @@ fn compute_range(
 }
 
 fn insert_range_if_found(
-    next_hunk_start_line: Option<(u32, u32)>,
+    next_hunk_start_line: &mut Option<(u32, u32)>,
     current_hunk_before_end_position: &mut Option<Position>,
     current_hunk_after_end_position: &mut Option<Position>,
     results: &mut Vec<FileDiff>,
@@ -252,6 +261,22 @@ fn insert_range_if_found(
         current_hunk_before_end_position,
         current_hunk_after_end_position,
     ) {
+        next_hunk_start_line.replace((
+            if range.before.is_empty() {
+                range.before.start_line()
+            } else {
+                range.before.end_line()
+            },
+            if range.after.is_empty() {
+                range.after.start_line()
+            } else {
+                range.after.end_line()
+            },
+        ));
+        println!(
+            "Reset next hunk start line to {:?} after inserting {:?}",
+            next_hunk_start_line, range
+        );
         if let Some(file_diff) = results.last_mut() {
             file_diff.ranges.push(range);
         } else {
@@ -511,18 +536,13 @@ mod tests {
     //         assert_eq!(parsed_diffs.len(), 21);
     //     }
 
-    #[test]
-    fn ignores_context() {
-        let no_context = include_str!("../fixtures/no_context.diff");
-        let no_context_parsed =
-            parse_modified_ranges(no_context).expect("Failed to parse no context diff");
-
+    fn validate_known_diff(diff: Vec<FileDiff>) {
         // Sanity check
-        assert_eq!(no_context_parsed.len(), 1);
+        assert_eq!(diff.len(), 1);
 
         // @@ -12 +12 @@ use tracing_opentelemetry::OpenTelemetrySpanExt as _;
         assert_eq!(
-            no_context_parsed[0].ranges[0],
+            diff[0].ranges[0],
             RangePair {
                 before: RangeWithoutByte {
                     start: Position {
@@ -544,12 +564,13 @@ mod tests {
                         column: 9,
                     },
                 },
-            }
+            },
+            "Failed to parse range 1"
         );
 
         // @@ -14 +14 @@ use ignore::Walk;
         assert_eq!(
-            no_context_parsed[0].ranges[1],
+            diff[0].ranges[1],
             RangePair {
                 before: RangeWithoutByte {
                     start: Position {
@@ -571,12 +592,13 @@ mod tests {
                         column: 9,
                     },
                 },
-            }
+            },
+            "Failed to parse range 2"
         );
 
         // @@ -17 +17 @@ use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
         assert_eq!(
-            no_context_parsed[0].ranges[2],
+            diff[0].ranges[2],
             RangePair {
                 before: RangeWithoutByte {
                     start: Position {
@@ -598,12 +620,13 @@ mod tests {
                         column: 13,
                     },
                 },
-            }
+            },
+            "Failed to parse range 3"
         );
 
         // @@ -19,4 +18,0 @@ use marzano_core::pattern_compiler::{src_to_problem_libs, CompilationResult};
         assert_eq!(
-            no_context_parsed[0].ranges[3],
+            diff[0].ranges[3],
             RangePair {
                 before: RangeWithoutByte {
                     start: Position {
@@ -625,13 +648,28 @@ mod tests {
                         column: 0,
                     },
                 },
-            }
+            },
+            "Failed to parse range 4"
         );
+    }
+
+    #[test]
+    fn ignores_context() {
+        let no_context = include_str!("../fixtures/no_context.diff");
+        let no_context_parsed =
+            parse_modified_ranges(no_context).expect("Failed to parse no context diff");
+
+        println!("Validating context-less diff...");
+        validate_known_diff(no_context_parsed);
 
         // These two diffs are *identical* except for the context line length
+        println!("Parsing normal diff...");
         let normal_diff = include_str!("../fixtures/normal_diff.diff");
         let normal_diff_parsed =
             parse_modified_ranges(normal_diff).expect("Failed to parse normal diff");
+
+        println!("Validating normal diff...");
+        validate_known_diff(normal_diff_parsed);
 
         // Ensure they are the same
         // assert_eq!(normal_diff_parsed, no_context_parsed);

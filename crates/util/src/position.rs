@@ -322,6 +322,10 @@ impl RangeWithoutByte {
     pub fn end_line(&self) -> u32 {
         self.end.line
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.start == self.end
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
