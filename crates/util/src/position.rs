@@ -256,7 +256,7 @@ impl Range {
                     byte_length += range.end.column - range.start.column;
                     break;
                 } else {
-                    byte_length += line.len() as u32 - range.start.column + 1;
+                    byte_length += (line.len() as u32 + 1) - range.start.column;
                 }
             } else if current_line < end_line_zero_indexed {
                 byte_length += line.len() as u32 + 1;

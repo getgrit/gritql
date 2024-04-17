@@ -678,5 +678,20 @@ index f6e1a2c..2c58ad2 100644
         assert_yaml_snapshot!(parsed);
     }
 
-    // TODO: add a removed newline case
+    #[test]
+    fn processes_newline_rm() {
+        let diff = include_str!("../fixtures/newline_rm.diff");
+        let parsed = parse_modified_ranges(diff).expect("Failed to parse no context diff");
+        let old_range = &parsed[0].ranges[0].before;
+        let new_range = &parsed[0].ranges[0].after;
+
+        // Make them into byte ranges and index into content
+        let old_content = include_str!("../fixtures/file.baseline.js");
+
+        let old_range = Range::from_byteless(old_range.clone(), old_content);
+        println!("Old range: {:?}", old_range);
+        assert_eq!(old_content[old_range.range_index()].to_string(), "\n");
+
+        assert_yaml_snapshot!(parsed);
+    }
 }
