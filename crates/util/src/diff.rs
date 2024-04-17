@@ -118,10 +118,6 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
 
             left_line_cursor += 1;
             right_line_cursor += 1;
-            println!(
-                "Processed context line: {}, left cursor: {}, right cursor: {}",
-                line, left_line_cursor, right_line_cursor
-            );
         } else if line.starts_with('-') || line.starts_with('+') {
             if line.starts_with('-') {
                 // Removed sections always come before added sections
@@ -189,7 +185,7 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 right_line_cursor += 1;
             }
         } else {
-            println!("Unrecognized line in diff: {}", line);
+            // Ignore other lines
         }
     }
 
