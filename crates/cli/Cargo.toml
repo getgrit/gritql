@@ -73,8 +73,6 @@ buildkite-test-collector = "0.1.1"
 similar = "2.2.1"
 reqwest = { version = "0.11.22", features = ["blocking", "json"] }
 marzano-test-utils = { path = "../test_utils" }
-insta = { version = "1.30.0", features = ["yaml"] }
-
 
 [features]
 default = [
@@ -91,7 +89,15 @@ workflows_v2 = []
 bundled_workflows = []
 remote_redis = []
 remote_pubsub = []
-server = ["workflows_v2", "external_functions", "updater", "remote_redis", "remote_pubsub", "ai_builtins", "dep:cli_server"]
+server = [
+  "workflows_v2",
+  "external_functions",
+  "updater",
+  "remote_redis",
+  "remote_pubsub",
+  "ai_builtins",
+  "dep:cli_server",
+]
 updater = []
 grit_tracing = [
   "dep:opentelemetry-otlp",
@@ -115,7 +121,7 @@ grit_alpha = [
 grit_beta = [
   "external_functions",
   "updater",
-  "ai_builtins"
+  "ai_builtins",
   # "grit_timing",
 ]
 grit_timing = []
