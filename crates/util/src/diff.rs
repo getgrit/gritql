@@ -2,7 +2,7 @@ use anyhow::{bail, Result};
 use serde::Serialize;
 use std::str::FromStr;
 
-use crate::position::{Position, RangeWithoutByte, UtilRange};
+use crate::position::{Position, RangeWithoutByte};
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct RangePair {
@@ -694,7 +694,7 @@ index f6e1a2c..2c58ad2 100644
         assert_eq!(old_content[old_range.range_index()].to_string(), "");
 
         let new_content = include_str!("../fixtures/file.newline.js");
-        let new_range = Range::from_byteless(parsed[0].ranges[0].after.clone(), &new_content);
+        let new_range = Range::from_byteless(parsed[0].ranges[0].after.clone(), new_content);
         assert_eq!(new_content[new_range.range_index()].to_string(), "\n");
 
         assert_yaml_snapshot!(parsed);
