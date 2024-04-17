@@ -9,8 +9,8 @@ pub struct VariableContent<'a, Q: QueryContext> {
     pub name: String,
     pub pattern: Option<&'a Pattern<Q>>,
     // needs to be boxed for lifetime reasons
-    pub(crate) value: Option<ResolvedPattern<'a>>,
-    pub(crate) value_history: Vec<ResolvedPattern<'a>>,
+    pub(crate) value: Option<Q::ResolvedPattern<'a>>,
+    pub(crate) value_history: Vec<Q::ResolvedPattern<'a>>,
     // If the value is a binding, whenever it is updated the mirrors should be updated as well
     pub(crate) mirrors: Vec<&'a Variable>,
 }
@@ -36,7 +36,7 @@ impl<'a, Q: QueryContext> VariableContent<'a, Q> {
         }
     }
 
-    pub(crate) fn set_value(&mut self, value: ResolvedPattern<'a>) {
+    pub(crate) fn set_value(&mut self, value: Q::ResolvedPattern<'a>) {
         self.value = Some(value);
     }
 }

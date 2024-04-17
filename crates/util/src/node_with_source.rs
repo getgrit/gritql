@@ -123,6 +123,10 @@ impl<'a> AstNode for NodeWithSource<'a> {
     fn code_range(&self) -> CodeRange {
         CodeRange::new(self.node.start_byte(), self.node.end_byte(), self.source)
     }
+
+    fn walk(&self) -> impl AstCursor<Node = Self> {
+        CursorWrapper::new(self.node.walk(), self.source)
+    }
 }
 
 impl<'a> From<NodeWithSource<'a>> for CodeRange {

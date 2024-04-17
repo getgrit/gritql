@@ -107,10 +107,12 @@ impl<Q: QueryContext> ListIndex<Q> {
                     if let Some(mut items) = resolved.get_list_binding_items() {
                         let len = items.clone().count();
                         let index = resolve_opt!(to_unsigned(index, len));
-                        Ok(items
+                        return Ok(items
                             .nth(index)
-                            .map(|_| PatternOrResolvedMut::_ResolvedBinding))
-                    } else if resolved.is_list() {
+                            .map(|_| PatternOrResolvedMut::_ResolvedBinding));
+                    }
+
+                    if resolved.is_list() {
                         Ok(resolved
                             .get_list_item_at_mut(index)
                             .map(PatternOrResolvedMut::Resolved))
@@ -128,7 +130,7 @@ impl<Q: QueryContext> ListIndex<Q> {
         &'a self,
         state: &mut State<'a, Q>,
         lang: &impl Language,
-        value: ResolvedPattern<'a>,
+        value: Q::ResolvedPattern<'a>,
     ) -> Result<bool> {
         let index = self.get_index(state, lang)?;
         match &self.list {
@@ -163,7 +165,7 @@ impl<Q: QueryContext> PatternName for ListIndex<Q> {
 impl<Q: QueryContext> Matcher<Q> for ListIndex<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

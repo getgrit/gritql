@@ -42,16 +42,18 @@ use super::{
     where_compiler::WhereCompiler,
     within_compiler::WithinCompiler,
 };
-use crate::pattern::{
-    dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
-    list::List,
-    patterns::Pattern,
-    regex::{RegexLike, RegexPattern},
-    string_constant::AstLeafNode,
-    variable::{is_reserved_metavariable, register_variable, Variable},
-};
 use crate::problem::MarzanoQueryContext;
 use crate::{ast_node::ASTNode, context::QueryContext};
+use crate::{
+    ast_node::AstLeafNode,
+    pattern::{
+        dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
+        list::List,
+        patterns::Pattern,
+        regex::{RegexLike, RegexPattern},
+        variable::{is_reserved_metavariable, register_variable, Variable},
+    },
+};
 use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
 use grit_util::{traverse, Order};

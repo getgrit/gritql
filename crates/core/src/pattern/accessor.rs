@@ -6,7 +6,10 @@ use super::{
     state::State,
     variable::Variable,
 };
-use crate::context::{ExecContext, QueryContext};
+use crate::{
+    binding::Binding,
+    context::{ExecContext, QueryContext},
+};
 use anyhow::{bail, Result};
 use marzano_language::language::Language;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -90,7 +93,7 @@ impl<Q: QueryContext> Accessor<Q> {
         &'a self,
         state: &mut State<'a, Q>,
         lang: &impl Language,
-        value: ResolvedPattern<'a>,
+        value: Q::ResolvedPattern<'a>,
     ) -> Result<bool> {
         match &self.map {
             AccessorMap::Container(c) => {
@@ -122,7 +125,7 @@ impl<Q: QueryContext> PatternName for Accessor<Q> {
 impl<Q: QueryContext> Matcher<Q> for Accessor<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -141,8 +144,8 @@ impl<Q: QueryContext> Matcher<Q> for Accessor<Q> {
 }
 
 pub(crate) fn execute_resolved_with_binding<'a, Q: QueryContext>(
-    r: &ResolvedPattern<'a>,
-    binding: &ResolvedPattern<'a>,
+    r: &Q::ResolvedPattern<'a>,
+    binding: &Q::ResolvedPattern<'a>,
     state: &State<'a, Q>,
     lang: &impl Language,
 ) -> Result<bool> {

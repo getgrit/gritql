@@ -35,7 +35,7 @@ impl<Q: QueryContext> PatternName for List<Q> {
 impl<Q: QueryContext> Matcher<Q> for List<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -54,7 +54,7 @@ impl<Q: QueryContext> Matcher<Q> for List<Q> {
 
 fn execute_assoc<'a, Q: QueryContext>(
     patterns: &'a [Pattern<Q>],
-    children: &[Cow<ResolvedPattern<'a>>],
+    children: &[Cow<Q::ResolvedPattern<'a>>],
     current_state: &mut State<'a, Q>,
     context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,

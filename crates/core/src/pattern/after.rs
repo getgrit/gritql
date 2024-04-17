@@ -1,9 +1,10 @@
 use super::{
     patterns::{Matcher, Pattern, PatternName},
-    resolved_pattern::{pattern_to_binding, ResolvedPattern},
+    resolved_pattern::ResolvedPattern,
     State,
 };
 use crate::{
+    binding::Binding,
     context::{ExecContext, QueryContext},
     errors::debug,
     resolve,
@@ -28,14 +29,14 @@ impl<Q: QueryContext> After<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a>> {
-        let binding = pattern_to_binding(&self.after, state, context, logs)?;
+    ) -> Result<Q::ResolvedPattern<'a>> {
+        let binding = Q::Binding::from_pattern(&self.after, state, context, logs)?;
         let Some(node) = binding.as_node() else {
             bail!("cannot get the node after this binding")
         };
 
         if let Some(next) = node.next_named_node() {
-            Ok(ResolvedPattern::from_node_binding(next))
+            Ok(Q::ResolvedPattern::from_node_binding(next))
         } else {
             debug(
                 logs,
@@ -43,7 +44,7 @@ impl<Q: QueryContext> After<Q> {
                 context.language(),
                 "no node after current node, treating as undefined",
             )?;
-            Ok(ResolvedPattern::undefined())
+            Ok(Q::ResolvedPattern::undefined())
         }
     }
 }
@@ -57,7 +58,7 @@ impl<Q: QueryContext> PatternName for After<Q> {
 impl<Q: QueryContext> Matcher<Q> for After<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

@@ -1,7 +1,6 @@
 use super::{
     function_definition::FunctionDefinition,
     patterns::{Pattern, PatternName},
-    resolved_pattern::ResolvedPattern,
     state::State,
 };
 use crate::{context::ExecContext, context::QueryContext};
@@ -10,9 +9,9 @@ use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
-pub(crate) struct FuncEvaluation<'a> {
+pub(crate) struct FuncEvaluation<'a, Q: QueryContext> {
     pub predicator: bool,
-    pub ret_val: Option<ResolvedPattern<'a>>,
+    pub ret_val: Option<Q::ResolvedPattern<'a>>,
 }
 
 pub(crate) trait Evaluator<Q: QueryContext>: Debug {
@@ -21,7 +20,7 @@ pub(crate) trait Evaluator<Q: QueryContext>: Debug {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation>;
+    ) -> Result<FuncEvaluation<Q>>;
 }
 
 #[derive(Debug, Clone)]
@@ -36,7 +35,7 @@ pub(crate) trait GritCall<Q: QueryContext> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a>>;
+    ) -> Result<Q::ResolvedPattern<'a>>;
 }
 
 impl<Q: QueryContext> CallFunction<Q> {
@@ -51,7 +50,7 @@ impl<Q: QueryContext> GritCall<Q> for CallFunction<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a>> {
+    ) -> Result<Q::ResolvedPattern<'a>> {
         let function_definition = &context.function_definitions()[self.index];
 
         match function_definition
@@ -88,7 +87,7 @@ impl<Q: QueryContext> GritCall<Q> for CallForeignFunction<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a>> {
+    ) -> Result<Q::ResolvedPattern<'a>> {
         let function_definition = &context.foreign_function_definitions()[self.index];
 
         match function_definition

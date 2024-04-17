@@ -40,7 +40,7 @@ impl<Q: QueryContext> Rewrite<Q> {
      */
     pub(crate) fn execute_generalized<'a>(
         &'a self,
-        resolved: Option<&ResolvedPattern<'a>>,
+        resolved: Option<&Q::ResolvedPattern<'a>>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -78,7 +78,7 @@ impl<Q: QueryContext> Rewrite<Q> {
         let Some(bindings) = resolved.get_bindings() else {
             bail!("variable on left hand side of rewrite side-conditions can only be bound to bindings")
         };
-        let replacement: ResolvedPattern<'_> =
+        let replacement: Q::ResolvedPattern<'_> =
             ResolvedPattern::from_dynamic_pattern(&self.right, state, context, logs)?;
         let effects = bindings.map(|b| Effect {
             binding: b.clone(),
@@ -99,7 +99,7 @@ impl<Q: QueryContext> PatternName for Rewrite<Q> {
 impl<Q: QueryContext> Matcher<Q> for Rewrite<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -114,7 +114,7 @@ impl<Q: QueryContext> Evaluator<Q> for Rewrite<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         let predicator = self.execute_generalized(None, state, context, logs)?;
         Ok(FuncEvaluation {
             predicator,

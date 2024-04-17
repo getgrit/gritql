@@ -1,11 +1,13 @@
 use crate::{
+    binding::Binding,
     pattern::{
-        ast_node_pattern::AstNodePattern,
+        ast_node_pattern::{AstLeafNodePattern, AstNodePattern},
         built_in_functions::CallBuiltIn,
         function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
         pattern_definition::PatternDefinition,
+        patterns::CodeSnippet,
         predicate_definition::PredicateDefinition,
-        resolved_pattern::ResolvedPattern,
+        resolved_pattern::{File, ResolvedPattern},
         state::State,
     },
     problem::FileOwners,
@@ -16,10 +18,15 @@ use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 /// Contains various kinds of context about the query being executed.
-pub trait QueryContext: Clone + std::fmt::Debug + Sized {
+pub trait QueryContext: Clone + std::fmt::Debug + Sized + 'static {
     type Node<'a>: AstNode;
     type NodePattern: AstNodePattern<Self>;
+    type LeafNodePattern: AstLeafNodePattern<Self>;
     type ExecContext<'a>: ExecContext<Self>;
+    type Binding<'a>: Binding<'a, Self>;
+    type CodeSnippet: CodeSnippet<Self>;
+    type ResolvedPattern<'a>: ResolvedPattern<'a, Self>;
+    type File<'a>: File<'a, Self>;
 }
 
 /// Contains context necessary for query execution.
@@ -40,7 +47,7 @@ pub trait ExecContext<Q: QueryContext> {
         context: &'a Self,
         state: &mut State<'a, Q>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a>>;
+    ) -> Result<Q::ResolvedPattern<'a>>;
 
     #[cfg(all(
         feature = "network_requests_external",

@@ -36,7 +36,7 @@ impl<Q: QueryContext> Evaluator<Q> for Match<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         match &self.val {
             Container::Variable(var) => {
                 let var = state.trace_var(var);

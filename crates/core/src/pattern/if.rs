@@ -2,7 +2,6 @@ use super::{
     functions::{Evaluator, FuncEvaluation},
     patterns::{Matcher, Pattern, PatternName},
     predicates::Predicate,
-    resolved_pattern::ResolvedPattern,
     State,
 };
 use crate::context::QueryContext;
@@ -35,7 +34,7 @@ impl<Q: QueryContext> PatternName for If<Q> {
 impl<Q: QueryContext> Matcher<Q> for If<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -79,7 +78,7 @@ impl<Q: QueryContext> Evaluator<Q> for PrIf<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         let mut state = init_state.clone();
         let condition = self.if_.execute_func(&mut state, context, logs)?;
         if condition.ret_val.is_some() {

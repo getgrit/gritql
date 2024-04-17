@@ -1,8 +1,10 @@
 use crate::{
     api::{is_match, AnalysisLog, ByteRange, DoneFile, MatchResult},
-    ast_node::ASTNode,
-    binding::Binding,
+    ast_node::{ASTNode, AstLeafNode},
     context::QueryContext,
+    marzano_binding::MarzanoBinding,
+    marzano_code_snippet::MarzanoCodeSnippet,
+    marzano_resolved_pattern::{MarzanoFile, MarzanoResolvedPattern},
     pattern::{
         built_in_functions::BuiltIns,
         constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
@@ -84,7 +86,7 @@ impl From<Vec<FilePtr>> for FilePattern {
     }
 }
 
-impl From<FilePattern> for ResolvedPattern<'_> {
+impl From<FilePattern> for MarzanoResolvedPattern<'_> {
     fn from(val: FilePattern) -> Self {
         match val {
             FilePattern::Single(file) => Self::from_file_pointer(file),
@@ -496,7 +498,7 @@ impl Problem {
 
         let the_new_files =
             state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[NEW_FILES_INDEX].as_mut();
-        the_new_files.value = Some(ResolvedPattern::from_list_parts([].into_iter()));
+        the_new_files.value = Some(MarzanoResolvedPattern::from_list_parts([].into_iter()));
 
         let mut results: Vec<MatchResult> = Vec::new();
         let binding = binding.into();
@@ -546,9 +548,9 @@ pub enum EffectKind {
 }
 
 #[derive(Debug, Clone)]
-pub struct Effect<'a> {
-    pub binding: Binding<'a>,
-    pub(crate) pattern: ResolvedPattern<'a>,
+pub struct Effect<'a, Q: QueryContext> {
+    pub binding: Q::Binding<'a>,
+    pub(crate) pattern: Q::ResolvedPattern<'a>,
     pub kind: EffectKind,
 }
 
@@ -652,11 +654,16 @@ impl MatchRanges {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct MarzanoQueryContext;
 
 impl QueryContext for MarzanoQueryContext {
     type Node<'a> = NodeWithSource<'a>;
     type NodePattern = ASTNode;
+    type LeafNodePattern = AstLeafNode;
     type ExecContext<'a> = MarzanoContext<'a>;
+    type Binding<'a> = MarzanoBinding<'a>;
+    type CodeSnippet = MarzanoCodeSnippet;
+    type ResolvedPattern<'a> = MarzanoResolvedPattern<'a>;
+    type File<'a> = MarzanoFile<'a>;
 }

@@ -1,9 +1,13 @@
 use super::{
     constants::MATCH_VAR, patterns::Pattern, variable::Variable, variable_content::VariableContent,
 };
-use crate::context::QueryContext;
-use crate::intervals::{earliest_deadline_sort, get_top_level_intervals_in_range, Interval};
-use crate::problem::{Effect, FileOwner};
+use crate::{
+    binding::Binding,
+    context::QueryContext,
+    intervals::{earliest_deadline_sort, get_top_level_intervals_in_range, Interval},
+    pattern::resolved_pattern::ResolvedPattern,
+    problem::{Effect, FileOwner},
+};
 use anyhow::{anyhow, bail, Result};
 use grit_util::CodeRange;
 use im::{vector, Vector};
@@ -16,12 +20,12 @@ use std::collections::HashMap;
 use std::ops::Range as StdRange;
 
 #[derive(Debug, Clone)]
-pub struct EffectRange<'a> {
+pub struct EffectRange<'a, Q: QueryContext> {
     range: StdRange<u32>,
-    pub effect: Effect<'a>,
+    pub effect: Effect<'a, Q>,
 }
 
-impl Interval for EffectRange<'_> {
+impl<Q: QueryContext> Interval for EffectRange<'_, Q> {
     fn interval(&self) -> (u32, u32) {
         (self.range.start, self.range.end)
     }
@@ -69,19 +73,19 @@ impl<'a> FileRegistry<'a> {
 #[derive(Clone, Debug)]
 pub struct State<'a, Q: QueryContext> {
     pub bindings: VarRegistry<'a, Q>,
-    pub effects: Vector<Effect<'a>>,
+    pub effects: Vector<Effect<'a, Q>>,
     pub files: FileRegistry<'a>,
     rng: rand::rngs::StdRng,
 }
 
-fn get_top_level_effect_ranges<'a>(
-    effects: &[Effect<'a>],
+fn get_top_level_effect_ranges<'a, Q: QueryContext>(
+    effects: &[Effect<'a, Q>],
     memo: &HashMap<CodeRange, Option<String>>,
     range: &CodeRange,
     language: &impl Language,
     logs: &mut AnalysisLogs,
-) -> Result<Vec<EffectRange<'a>>> {
-    let mut effects: Vec<EffectRange> = effects
+) -> Result<Vec<EffectRange<'a, Q>>> {
+    let mut effects: Vec<EffectRange<Q>> = effects
         .iter()
         .filter(|effect| {
             let binding = &effect.binding;
@@ -108,7 +112,7 @@ fn get_top_level_effect_ranges<'a>(
                 effect: effect.clone(),
             })
         })
-        .collect::<Result<Vec<EffectRange>>>()?;
+        .collect::<Result<Vec<EffectRange<Q>>>>()?;
     if !earliest_deadline_sort(&mut effects) {
         bail!("effects have overlapping ranges");
     }
@@ -119,15 +123,15 @@ fn get_top_level_effect_ranges<'a>(
     ))
 }
 
-pub(crate) fn get_top_level_effects<'a>(
-    effects: &[Effect<'a>],
+pub(crate) fn get_top_level_effects<'a, Q: QueryContext>(
+    effects: &[Effect<'a, Q>],
     memo: &HashMap<CodeRange, Option<String>>,
     range: &CodeRange,
     language: &impl Language,
     logs: &mut AnalysisLogs,
-) -> Result<Vec<Effect<'a>>> {
+) -> Result<Vec<Effect<'a, Q>>> {
     let top_level = get_top_level_effect_ranges(effects, memo, range, language, logs)?;
-    let top_level: Vec<Effect<'a>> = top_level
+    let top_level: Vec<Effect<'a, Q>> = top_level
         .into_iter()
         .map(|e| {
             assert!(e.range.start >= range.start);

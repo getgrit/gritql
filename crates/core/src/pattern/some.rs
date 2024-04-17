@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{binding::Constant, context::QueryContext};
+use crate::{constant::Constant, context::QueryContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -27,7 +27,7 @@ impl<Q: QueryContext> PatternName for Some<Q> {
 impl<Q: QueryContext> Matcher<Q> for Some<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

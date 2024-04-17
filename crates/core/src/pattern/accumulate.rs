@@ -41,7 +41,7 @@ impl<Q: QueryContext> PatternName for Accumulate<Q> {
 impl<Q: QueryContext> Matcher<Q> for Accumulate<Q> {
     fn execute<'a>(
         &'a self,
-        context_node: &ResolvedPattern<'a>,
+        context_node: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -78,14 +78,14 @@ impl<Q: QueryContext> Matcher<Q> for Accumulate<Q> {
                     )
                 }
             };
-            let mut replacement =
+            let mut replacement: Q::ResolvedPattern<'a> =
                 ResolvedPattern::from_dynamic_pattern(dynamic_right, state, context, logs)?;
-            let effects: Result<Vec<Effect>> = bindings
-                .map(|b| {
-                    let is_first = !state.effects.iter().any(|e| e.binding == *b);
-                    replacement.normalize_insert(b, is_first, context.language())?;
+            let effects: Result<Vec<_>> = bindings
+                .map(|binding| {
+                    let is_first = !state.effects.iter().any(|e| e.binding == binding);
+                    replacement.normalize_insert(&binding, is_first, context.language())?;
                     Ok(Effect {
-                        binding: b.clone(),
+                        binding,
                         pattern: replacement.clone(),
                         kind: EffectKind::Insert,
                     })
@@ -104,7 +104,7 @@ impl<Q: QueryContext> Evaluator<Q> for Accumulate<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         if let Pattern::Variable(var) = &self.left {
             let var = state.trace_var(var);
             let append = ResolvedPattern::from_pattern(&self.right, state, context, logs)?;

@@ -27,7 +27,7 @@ impl PatternName for FloatConstant {
 impl<Q: QueryContext> Matcher<Q> for FloatConstant {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,

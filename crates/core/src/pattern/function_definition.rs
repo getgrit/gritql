@@ -2,12 +2,12 @@ use super::{
     functions::{Evaluator, FuncEvaluation},
     patterns::Pattern,
     predicates::Predicate,
-    resolved_pattern::patterns_to_resolved,
+    resolved_pattern::ResolvedPattern,
     state::State,
     variable::Variable,
 };
 use crate::{
-    binding::Constant,
+    constant::Constant,
     context::{ExecContext, QueryContext},
 };
 use anyhow::{bail, Result};
@@ -24,7 +24,7 @@ pub(crate) trait FunctionDefinition<Q: QueryContext> {
         context: &'a Q::ExecContext<'a>,
         args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation>;
+    ) -> Result<FuncEvaluation<Q>>;
 }
 
 #[derive(Clone, Debug)]
@@ -61,7 +61,7 @@ impl<Q: QueryContext> FunctionDefinition<Q> for GritFunctionDefinition<Q> {
         context: &'a Q::ExecContext<'a>,
         args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         state.reset_vars(self.scope, args);
         self.function.execute_func(state, context, logs)
     }
@@ -100,7 +100,7 @@ impl<Q: QueryContext> FunctionDefinition<Q> for ForeignFunctionDefinition {
         _context: &'a Q::ExecContext<'a>,
         _args: &'a [Option<Pattern<Q>>],
         _logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         bail!("External functions are not enabled in your environment")
     }
     #[cfg(feature = "external_functions_common")]
@@ -110,16 +110,14 @@ impl<Q: QueryContext> FunctionDefinition<Q> for ForeignFunctionDefinition {
         context: &'a Q::ExecContext<'a>,
         args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
-        use super::resolved_pattern::ResolvedPattern;
-
+    ) -> Result<FuncEvaluation<Q>> {
         let param_names = self
             .params
             .iter()
             .map(|(name, _)| name.clone())
             .collect::<Vec<_>>();
 
-        let resolved = patterns_to_resolved(args, state, context, logs)?;
+        let resolved = Q::ResolvedPattern::from_patterns(args, state, context, logs)?;
         let mut cow_resolved = Vec::with_capacity(resolved.len());
 
         for r in resolved.iter() {
@@ -161,7 +159,7 @@ impl<Q: QueryContext> FunctionDefinition<Q> for ForeignFunctionDefinition {
 
         Ok(FuncEvaluation {
             predicator: true,
-            ret_val: Some(ResolvedPattern::from_constant(Constant::String(string))),
+            ret_val: Some(Q::ResolvedPattern::from_constant(Constant::String(string))),
         })
     }
 }

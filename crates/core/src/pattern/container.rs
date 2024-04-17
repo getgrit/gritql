@@ -1,9 +1,7 @@
-use crate::context::QueryContext;
-
 use super::{
-    accessor::Accessor, list_index::ListIndex, patterns::Pattern,
-    resolved_pattern::ResolvedPattern, state::State, variable::Variable,
+    accessor::Accessor, list_index::ListIndex, patterns::Pattern, state::State, variable::Variable,
 };
+use crate::context::QueryContext;
 use anyhow::Result;
 use marzano_language::language::Language;
 
@@ -23,14 +21,14 @@ pub enum Container<Q: QueryContext> {
 #[derive(Debug)]
 pub(crate) enum PatternOrResolved<'a, 'b, Q: QueryContext> {
     Pattern(&'a Pattern<Q>),
-    Resolved(&'b ResolvedPattern<'a>),
-    ResolvedBinding(ResolvedPattern<'a>),
+    Resolved(&'b Q::ResolvedPattern<'a>),
+    ResolvedBinding(Q::ResolvedPattern<'a>),
 }
 
 #[derive(Debug)]
 pub(crate) enum PatternOrResolvedMut<'a, 'b, Q: QueryContext> {
     Pattern(&'a Pattern<Q>),
-    Resolved(&'b mut ResolvedPattern<'a>),
+    Resolved(&'b mut Q::ResolvedPattern<'a>),
     _ResolvedBinding,
 }
 
@@ -39,7 +37,7 @@ impl<Q: QueryContext> Container<Q> {
         &'a self,
         state: &mut State<'a, Q>,
         lang: &impl Language,
-        value: ResolvedPattern<'a>,
+        value: Q::ResolvedPattern<'a>,
     ) -> Result<bool> {
         match self {
             Container::Variable(v) => {

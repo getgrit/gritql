@@ -11,7 +11,6 @@ pub mod boolean_constant;
 pub mod bubble;
 pub mod built_in_functions;
 pub mod call;
-pub mod code_snippet;
 pub mod constants;
 pub mod container;
 pub mod contains;
@@ -68,11 +67,11 @@ use self::{
     function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
     pattern_definition::PatternDefinition,
     predicate_definition::PredicateDefinition,
-    resolved_pattern::ResolvedPattern,
     state::State,
 };
 use crate::{
     context::{ExecContext, QueryContext},
+    marzano_resolved_pattern::MarzanoResolvedPattern,
     problem::{FileOwners, MarzanoQueryContext},
 };
 use anyhow::Result;
@@ -82,7 +81,6 @@ use marzano_util::{
 };
 use std::fmt::Debug;
 use std::vec;
-use tree_sitter::Node;
 use variable::VariableSourceLocations;
 
 #[cfg(feature = "grit_tracing")]
@@ -199,7 +197,7 @@ impl<'a> ExecContext<MarzanoQueryContext> for MarzanoContext<'a> {
         context: &'b Self,
         state: &mut State<'b, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'b>> {
+    ) -> Result<MarzanoResolvedPattern<'b>> {
         self.built_ins.call(call, context, state, logs)
     }
 

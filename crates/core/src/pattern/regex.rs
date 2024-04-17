@@ -4,7 +4,10 @@ use super::{
     variable::Variable,
     State,
 };
-use crate::context::{ExecContext, QueryContext};
+use crate::{
+    binding::Binding,
+    context::{ExecContext, QueryContext},
+};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -29,7 +32,7 @@ impl<Q: QueryContext> RegexPattern<Q> {
 
     pub(crate) fn execute_matching<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -42,7 +45,7 @@ impl<Q: QueryContext> RegexPattern<Q> {
                 false => regex.to_string(),
             },
             RegexLike::Pattern(ref pattern) => {
-                let resolved = ResolvedPattern::from_pattern(pattern, state, context, logs)?;
+                let resolved = Q::ResolvedPattern::from_pattern(pattern, state, context, logs)?;
                 let text = resolved.text(&state.files, context.language())?;
                 match must_match_entire_string {
                     true => format!("^{}$", text),
@@ -99,9 +102,9 @@ impl<Q: QueryContext> RegexPattern<Q> {
                     // have a Range<usize> for String bindings?
                     position.end_byte = position.start_byte + range.end as u32;
                     position.start_byte += range.start as u32;
-                    ResolvedPattern::from_range_binding(position, source)
+                    Q::ResolvedPattern::from_range_binding(position, source)
                 } else {
-                    ResolvedPattern::from_string(value.to_string())
+                    Q::ResolvedPattern::from_string(value.to_string())
                 };
                 if let Some(pattern) = variable_content.pattern {
                     if !pattern.execute(&res, state, context, logs)? {
@@ -127,7 +130,7 @@ impl<Q: QueryContext> PatternName for RegexPattern<Q> {
 impl<Q: QueryContext> Matcher<Q> for RegexPattern<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

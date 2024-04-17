@@ -5,9 +5,10 @@ use super::{
     state::{FilePtr, State},
 };
 use crate::{
+    binding::Binding,
     clean::{get_replacement_ranges, replace_cleaned_ranges},
-    context::ExecContext,
-    context::QueryContext,
+    context::{ExecContext, QueryContext},
+    pattern::resolved_pattern::File,
     problem::{FileOwner, InputRanges, MatchRanges},
     text_unparser::apply_effects,
 };
@@ -32,7 +33,7 @@ impl<Q: QueryContext> Step<Q> {
 impl<Q: QueryContext> Matcher<Q> for Step<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

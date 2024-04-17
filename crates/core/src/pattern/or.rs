@@ -6,11 +6,10 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::QueryContext;
+use crate::{binding::Binding, context::QueryContext};
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
-use std::mem::transmute;
 
 #[derive(Debug, Clone)]
 pub struct Or<Q: QueryContext> {
@@ -32,7 +31,7 @@ impl<Q: QueryContext> PatternName for Or<Q> {
 impl<Q: QueryContext> Matcher<Q> for Or<Q> {
     fn execute<'a>(
         &'a self,
-        resolved: &ResolvedPattern<'a>,
+        resolved: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -42,9 +41,7 @@ impl<Q: QueryContext> Matcher<Q> for Or<Q> {
                 // filter out pattern which cannot match because of a mismatched node type
                 if let (Some(binding_node), Pattern::AstNode(node_pattern)) = (binding.as_node(), p)
                 {
-                    // Safety: This is safe as long as `MarzanoProblemContext` is the
-                    // only implementation of `ProblemContext`.
-                    if !node_pattern.matches_kind_of(unsafe { transmute(&binding_node) }) {
+                    if !node_pattern.matches_kind_of(&binding_node) {
                         continue;
                     }
                 }
@@ -92,7 +89,7 @@ impl<Q: QueryContext> Evaluator<Q> for PrOr<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         for p in self.predicates.iter() {
             let mut state = init_state.clone();
             let res = p.execute_func(&mut state, context, logs)?;

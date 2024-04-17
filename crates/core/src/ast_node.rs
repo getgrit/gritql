@@ -1,3 +1,6 @@
+use crate::binding::Binding;
+use crate::marzano_resolved_pattern::MarzanoResolvedPattern;
+use crate::pattern::ast_node_pattern::AstLeafNodePattern;
 use crate::pattern::iter_pattern::PatternOrPredicate;
 use crate::pattern::MarzanoContext;
 use crate::{context::ExecContext, resolve};
@@ -10,8 +13,9 @@ use crate::{
     },
     problem::MarzanoQueryContext,
 };
-use anyhow::Result;
-use marzano_language::language::{FieldId, Language, SortId};
+use anyhow::{anyhow, Result};
+use grit_util::AstNode;
+use marzano_language::language::{FieldId, Language, LeafEquivalenceClass, SortId};
 use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource};
 
 #[derive(Debug, Clone)]
@@ -48,7 +52,7 @@ impl PatternName for ASTNode {
 impl Matcher<MarzanoQueryContext> for ASTNode {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &MarzanoResolvedPattern<'a>,
         init_state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext,
         logs: &mut AnalysisLogs,
@@ -92,7 +96,7 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
 
             let res = if *is_list {
                 pattern.execute(
-                    &ResolvedPattern::from_list_binding(
+                    &MarzanoResolvedPattern::from_list_binding(
                         NodeWithSource::new(node.clone(), source),
                         *field_id,
                     ),
@@ -102,14 +106,14 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
                 )
             } else if let Some(child) = node.child_by_field_id(*field_id) {
                 pattern.execute(
-                    &ResolvedPattern::from_node_binding(NodeWithSource::new(child, source)),
+                    &MarzanoResolvedPattern::from_node_binding(NodeWithSource::new(child, source)),
                     &mut cur_state,
                     context,
                     logs,
                 )
             } else {
                 pattern.execute(
-                    &ResolvedPattern::from_empty_binding(
+                    &MarzanoResolvedPattern::from_empty_binding(
                         NodeWithSource::new(node.clone(), source),
                         *field_id,
                     ),
@@ -126,5 +130,55 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
         }
         *init_state = running_state;
         Ok(true)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct AstLeafNode {
+    sort: SortId,
+    equivalence_class: Option<LeafEquivalenceClass>,
+    text: String,
+}
+
+impl AstLeafNode {
+    pub fn new(sort: SortId, text: &str, language: &impl Language) -> Result<Self> {
+        let equivalence_class = language
+            .get_equivalence_class(sort, text)
+            .map_err(|e| anyhow!(e))?;
+        let text = text.trim();
+        Ok(Self {
+            sort,
+            equivalence_class,
+            text: text.to_owned(),
+        })
+    }
+}
+
+impl AstLeafNodePattern<MarzanoQueryContext> for AstLeafNode {}
+
+impl PatternName for AstLeafNode {
+    fn name(&self) -> &'static str {
+        "AST_LEAF_NODE"
+    }
+}
+
+impl Matcher<MarzanoQueryContext> for AstLeafNode {
+    fn execute<'a>(
+        &'a self,
+        binding: &MarzanoResolvedPattern<'a>,
+        _state: &mut State<'a, MarzanoQueryContext>,
+        _context: &'a MarzanoContext<'a>,
+        _logs: &mut AnalysisLogs,
+    ) -> Result<bool> {
+        let Some(node) = binding.get_last_binding().and_then(Binding::singleton) else {
+            return Ok(false);
+        };
+        if let Some(e) = &self.equivalence_class {
+            Ok(e.are_equivalent(node.node.kind_id(), node.text()?.trim()))
+        } else if self.sort != node.node.kind_id() {
+            Ok(false)
+        } else {
+            Ok(node.text()?.trim() == self.text)
+        }
     }
 }

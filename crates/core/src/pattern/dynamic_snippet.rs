@@ -47,7 +47,7 @@ impl<Q: QueryContext> DynamicPattern<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<String> {
-        let resolved = ResolvedPattern::from_dynamic_pattern(self, state, context, logs)?;
+        let resolved = Q::ResolvedPattern::from_dynamic_pattern(self, state, context, logs)?;
         Ok(resolved.text(&state.files, context.language())?.to_string())
     }
 }
@@ -61,7 +61,7 @@ impl<Q: QueryContext> PatternName for DynamicPattern<Q> {
 impl<Q: QueryContext> Matcher<Q> for DynamicPattern<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

@@ -3,7 +3,6 @@ use super::{
     functions::{Evaluator, FuncEvaluation},
     patterns::Matcher,
     patterns::{Pattern, PatternName},
-    resolved_pattern::ResolvedPattern,
     State,
 };
 use crate::{context::ExecContext, context::QueryContext};
@@ -33,7 +32,7 @@ impl<Q: QueryContext> PatternName for Call<Q> {
 impl<Q: QueryContext> Matcher<Q> for Call<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -68,7 +67,7 @@ impl<Q: QueryContext> Evaluator<Q> for PrCall<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         let predicate_definition = &context.predicate_definitions().get(self.index);
         if let Some(predicate_definition) = predicate_definition {
             let predicator = predicate_definition.call(state, context, &self.args, logs)?;

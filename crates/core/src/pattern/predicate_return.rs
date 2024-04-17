@@ -25,7 +25,7 @@ impl<Q: QueryContext> Evaluator<Q> for PrReturn<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         let resolved = ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
         Ok(FuncEvaluation {
             predicator: false,

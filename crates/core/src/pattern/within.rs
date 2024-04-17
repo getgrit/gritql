@@ -29,7 +29,7 @@ impl<Q: QueryContext> PatternName for Within<Q> {
 impl<Q: QueryContext> Matcher<Q> for Within<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

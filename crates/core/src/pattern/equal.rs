@@ -32,7 +32,7 @@ impl<Q: QueryContext> Evaluator<Q> for Equal<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         let lhs_text = self.var.text(state, context.language())?;
         let rhs_text = self.pattern.text(state, context, logs)?;
         Ok(FuncEvaluation {

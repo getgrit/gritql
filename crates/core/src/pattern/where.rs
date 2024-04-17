@@ -2,7 +2,6 @@ use super::{
     functions::Evaluator,
     patterns::{Matcher, Pattern, PatternName},
     predicates::Predicate,
-    resolved_pattern::ResolvedPattern,
     State,
 };
 use crate::context::QueryContext;
@@ -36,7 +35,7 @@ impl<Q: QueryContext> Matcher<Q> for Where<Q> {
     // should the state be reset on failure?
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

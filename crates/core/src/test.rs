@@ -12833,7 +12833,7 @@ fn rust_match_fn_params() {
                 |impl Matcher for FilePattern {
                 |    fn execute<'a>(
                 |        &'a self,
-                |        resolved_pattern: &ResolvedPattern<'a>,
+                |        resolved_pattern: &Q::ResolvedPattern<'a>,
                 |        state: &mut State<'a>,
                 |        context: &Context<'a>,
                 |        logs: &mut AnalysisLogs,
@@ -12848,7 +12848,7 @@ fn rust_match_fn_params() {
                 |impl Matcher for FilePattern {
                 |    async fn execute<'a>(
                 |        &'a self,
-                |        resolved_pattern: &ResolvedPattern<'a>,
+                |        resolved_pattern: &Q::ResolvedPattern<'a>,
                 |        state: &mut State<'a>,
                 |        context: &Context<'a>,
                 |        logs: &mut AnalysisLogs,

@@ -1,12 +1,13 @@
 use super::{
     patterns::{Matcher, Pattern, PatternName},
     resolved_pattern::{LazyBuiltIn, ResolvedPattern, ResolvedSnippet},
-    Node, State,
+    State,
 };
-use crate::context::QueryContext;
+use crate::{binding::Binding, context::QueryContext, pattern::resolved_pattern::File};
 use anyhow::Result;
 use core::fmt::Debug;
-use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource};
+use grit_util::{AstCursor, AstNode};
+use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
 pub struct Contains<Q: QueryContext> {
@@ -28,8 +29,7 @@ impl<Q: QueryContext> PatternName for Contains<Q> {
 
 fn execute_until<'a, Q: QueryContext>(
     init_state: &mut State<'a, Q>,
-    node: &Node<'a>,
-    src: &'a str,
+    node: &Q::Node<'a>,
     context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
     the_contained: &'a Pattern<Q>,
@@ -41,7 +41,7 @@ fn execute_until<'a, Q: QueryContext>(
     let mut still_computing = true;
     while still_computing {
         let node = cursor.node();
-        let node_lhs = ResolvedPattern::from_node_binding(NodeWithSource::new(node, src));
+        let node_lhs = ResolvedPattern::from_node_binding(node);
 
         let state = cur_state.clone();
         if the_contained.execute(&node_lhs, &mut cur_state, context, logs)? {
@@ -84,7 +84,7 @@ fn execute_until<'a, Q: QueryContext>(
 impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
     fn execute<'a>(
         &'a self,
-        resolved_pattern: &ResolvedPattern<'a>,
+        resolved_pattern: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -93,8 +93,7 @@ impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
             if let Some(node) = binding.as_node() {
                 execute_until(
                     init_state,
-                    &node.node,
-                    node.source,
+                    &node,
                     context,
                     logs,
                     &self.contains,
@@ -214,7 +213,7 @@ impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
                         ResolvedPattern::from_resolved_snippet(snippet.to_owned())
                     }
                     ResolvedSnippet::Binding(b) => ResolvedPattern::from_binding(b.to_owned()),
-                    ResolvedSnippet::LazyFn(l) => match &**l {
+                    ResolvedSnippet::LazyFn(l) => match &*l {
                         LazyBuiltIn::Join(j) => {
                             ResolvedPattern::from_list_parts(j.list.iter().cloned())
                         }

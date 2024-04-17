@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{binding::Constant, context::QueryContext};
+use crate::{constant::Constant, context::QueryContext};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 
@@ -27,7 +27,7 @@ impl<Q: QueryContext> PatternName for Every<Q> {
 impl<Q: QueryContext> Matcher<Q> for Every<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -53,8 +53,9 @@ impl<Q: QueryContext> Matcher<Q> for Every<Q> {
         } else if let Some(map) = binding.get_map() {
             let pattern = &self.pattern;
             for (key, value) in map {
-                let key = ResolvedPattern::from_constant(Constant::String(key.clone()));
-                let resolved = ResolvedPattern::from_list_parts([key, value.clone()].into_iter());
+                let key = Q::ResolvedPattern::from_constant(Constant::String(key.clone()));
+                let resolved =
+                    Q::ResolvedPattern::from_list_parts([key, value.clone()].into_iter());
                 if !pattern.execute(&resolved, init_state, context, logs)? {
                     return Ok(false);
                 }

@@ -1,9 +1,8 @@
+use crate::marzano_binding::EffectRange;
 use anyhow::{anyhow, bail, Result};
 use itertools::Itertools;
 use marzano_language::language::Language;
 use std::{cell::RefCell, collections::HashSet, ops::Range, rc::Rc};
-
-use crate::binding::EffectRange;
 
 fn filter_out_nested(replacements: &mut Vec<(EffectRange, String)>) {
     let max_insert_index = match replacements.first() {

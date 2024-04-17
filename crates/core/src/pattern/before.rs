@@ -1,9 +1,10 @@
 use super::{
     patterns::{Matcher, Pattern, PatternName},
-    resolved_pattern::{pattern_to_binding, ResolvedPattern},
+    resolved_pattern::ResolvedPattern,
     State,
 };
 use crate::{
+    binding::Binding,
     context::{ExecContext, QueryContext},
     errors::debug,
     resolve,
@@ -27,8 +28,8 @@ impl<Q: QueryContext> Before<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<ResolvedPattern<'a>> {
-        let binding = pattern_to_binding(&self.before, state, context, logs)?;
+    ) -> Result<Q::ResolvedPattern<'a>> {
+        let binding = Q::Binding::from_pattern(&self.before, state, context, logs)?;
         let Some(node) = binding.as_node() else {
             bail!("cannot get the node before this binding")
         };
@@ -42,7 +43,7 @@ impl<Q: QueryContext> Before<Q> {
                 context.language(),
                 "no node before current node, treating as undefined",
             )?;
-            Ok(ResolvedPattern::undefined())
+            Ok(Q::ResolvedPattern::undefined())
         }
     }
 }
@@ -56,7 +57,7 @@ impl<Q: QueryContext> PatternName for Before<Q> {
 impl<Q: QueryContext> Matcher<Q> for Before<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

@@ -1,5 +1,7 @@
-use crate::binding::linearize_binding;
-use crate::pattern::state::FileRegistry;
+use crate::binding::Binding;
+use crate::context::QueryContext;
+use crate::marzano_binding::linearize_binding;
+use crate::pattern::{resolved_pattern::ResolvedPattern, state::FileRegistry};
 use crate::problem::Effect;
 use anyhow::Result;
 use grit_util::CodeRange;
@@ -17,9 +19,9 @@ use std::path::{Path, PathBuf};
  */
 
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn apply_effects<'a>(
+pub(crate) fn apply_effects<'a, Q: QueryContext>(
     code: &'a str,
-    effects: Vector<Effect<'a>>,
+    effects: Vector<Effect<'a, Q>>,
     files: &FileRegistry<'a>,
     the_filename: &Path,
     new_filename: &mut PathBuf,

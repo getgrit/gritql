@@ -1,6 +1,5 @@
 use super::{
     patterns::{Matcher, Pattern, PatternName},
-    resolved_pattern::ResolvedPattern,
     state::State,
 };
 use crate::{context::ExecContext, context::QueryContext};
@@ -37,7 +36,7 @@ impl<Q: QueryContext> PatternName for Limit<Q> {
 impl<Q: QueryContext> Matcher<Q> for Limit<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,

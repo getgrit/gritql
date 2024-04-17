@@ -4,8 +4,11 @@ use super::{
 };
 use crate::{
     context::QueryContext,
-    pattern::ast_node_pattern::AstNodePattern,
-    pattern::list_index::{ContainerOrIndex, ListOrContainer},
+    pattern::{
+        ast_node_pattern::AstNodePattern,
+        list_index::{ContainerOrIndex, ListOrContainer},
+        patterns::CodeSnippet,
+    },
 };
 
 pub(crate) struct PatternOrPredicateIterator<'a, Q: QueryContext> {
@@ -243,10 +246,9 @@ impl<Q: QueryContext> Pattern<Q> {
             Pattern::Dynamic(d) => d.children(),
             Pattern::CodeSnippet(c) => {
                 let mut v = Vec::new();
-                let p = c.patterns.iter().map(|p| PatternOrPredicate::Pattern(&p.1));
+                let p = c.patterns().map(|p| PatternOrPredicate::Pattern(p));
                 let d = c
-                    .dynamic_snippet
-                    .as_ref()
+                    .dynamic_snippet()
                     .map(|d| d.children())
                     .unwrap_or(Vec::new());
                 v.extend(p);

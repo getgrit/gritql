@@ -2,7 +2,6 @@ use super::{
     functions::{Evaluator, FuncEvaluation},
     patterns::{Matcher, Pattern, PatternName},
     predicates::Predicate,
-    resolved_pattern::ResolvedPattern,
     State,
 };
 use crate::context::QueryContext;
@@ -30,7 +29,7 @@ impl<Q: QueryContext> PatternName for Not<Q> {
 impl<Q: QueryContext> Matcher<Q> for Not<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &ResolvedPattern<'a>,
+        binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
@@ -64,7 +63,7 @@ impl<Q: QueryContext> Evaluator<Q> for PrNot<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation> {
+    ) -> Result<FuncEvaluation<Q>> {
         let res = self
             .predicate
             .execute_func(&mut state.clone(), context, logs)?;

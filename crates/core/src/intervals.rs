@@ -1,4 +1,4 @@
-use crate::{pattern::state::EffectRange, problem::EffectKind};
+use crate::{context::QueryContext, pattern::state::EffectRange, problem::EffectKind};
 use std::{cmp::Ordering, ops::Range};
 
 pub trait Interval {
@@ -63,11 +63,11 @@ where
     top_level
 }
 
-pub fn get_top_level_intervals_in_range(
-    effects: Vec<EffectRange>,
+pub fn get_top_level_intervals_in_range<Q: QueryContext>(
+    effects: Vec<EffectRange<Q>>,
     left: u32,
     right: u32,
-) -> Vec<EffectRange> {
+) -> Vec<EffectRange<Q>> {
     let mut top_level = Vec::with_capacity(effects.len());
     let mut top_level_open = right;
     for e in effects.into_iter().rev() {

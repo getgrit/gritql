@@ -3,10 +3,8 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::{
-    pattern::{
-        code_snippet::CodeSnippet, dynamic_snippet::DynamicPattern, patterns::Pattern,
-        rewrite::Rewrite,
-    },
+    marzano_code_snippet::MarzanoCodeSnippet,
+    pattern::{dynamic_snippet::DynamicPattern, patterns::Pattern, rewrite::Rewrite},
     problem::MarzanoQueryContext,
 };
 use anyhow::{anyhow, Result};
@@ -36,11 +34,11 @@ impl NodeCompiler for RewriteCompiler {
 
         match (&left, &right) {
             (
-                Pattern::CodeSnippet(CodeSnippet {
+                Pattern::CodeSnippet(MarzanoCodeSnippet {
                     source: left_source,
                     ..
                 }),
-                Pattern::CodeSnippet(CodeSnippet {
+                Pattern::CodeSnippet(MarzanoCodeSnippet {
                     source: right_source,
                     ..
                 }),
@@ -61,7 +59,7 @@ impl NodeCompiler for RewriteCompiler {
         }
         let right = match right {
             Pattern::Dynamic(r) => r,
-            Pattern::CodeSnippet(CodeSnippet {
+            Pattern::CodeSnippet(MarzanoCodeSnippet {
                 dynamic_snippet: Some(r),
                 ..
             }) => r,
