@@ -17,8 +17,8 @@ expression: parsed
           line: 8
           column: 1
         end:
-          line: 8
-          column: 28
+          line: 9
+          column: 1
 - old_path: crates/cli_bin/fixtures/es6/export.js
   new_path: ~
   ranges: []
@@ -31,7 +31,7 @@ expression: parsed
           column: 1
         end:
           line: 20
-          column: 28
+          column: 1
       after:
         start:
           line: 1
@@ -51,5 +51,5 @@ expression: parsed
           line: 5
           column: 1
         end:
-          line: 7
-          column: 3
+          line: 8
+          column: 1

@@ -10,12 +10,12 @@ expression: parsed
           line: 8
           column: 1
         end:
-          line: 8
-          column: 25
+          line: 9
+          column: 1
       after:
         start:
           line: 8
           column: 1
         end:
-          line: 8
-          column: 30
+          line: 9
+          column: 1
