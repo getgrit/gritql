@@ -1,0 +1,10 @@
+diff --git a/crates/util/fixtures/file.baseline.js b/crates/util/fixtures/file.newline.js
+index 5669444..30b77bc 100644
+--- a/crates/util/fixtures/file.baseline.js
++++ b/crates/util/fixtures/file.newline.js
+@@ -5,4 +5,5 @@ function foo() {
+   console.log("World");
+ }
+
++
+ console.log("Wowza");

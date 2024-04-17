@@ -1,0 +1,18 @@
+diff --git a/crates/cli/src/analyze.rs b/crates/cli/src/analyze.rs
+index 893656e..45815bf 100644
+--- a/crates/cli/src/analyze.rs
++++ b/crates/cli/src/analyze.rs
+@@ -12 +12 @@ use tracing_opentelemetry::OpenTelemetrySpanExt as _;
+-use grit_cache::paths::cache_for_cwd;
++use foo;
+@@ -14 +14 @@ use ignore::Walk;
+-use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
++use bar;
+@@ -17 +17 @@ use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
+-use marzano_core::pattern::built_in_functions::BuiltIns;
++use inserted
+@@ -19,4 +18,0 @@ use marzano_core::pattern_compiler::{src_to_problem_libs, CompilationResult};
+-use marzano_core::{
+-    api::{AnalysisLog, DoneFile, MatchResult},
+-    problem::Problem,
+-};

@@ -1,0 +1,16 @@
+diff --git a/crates/util/fixtures/file.baseline.js b/crates/util/fixtures/file.multiline.js
+index 5669444..a943258 100644
+--- a/crates/util/fixtures/file.multiline.js
++++ b/crates/util/fixtures/file.multiline.js
+@@ -1,8 +1,9 @@
+
+ console.log("Hello");
+
+-function foo() {
+-  console.log("World");
++function nice() {
++  console.log("MULTI\nLINE\nSTRING");
++  throw new Error("Oh no!");
+ }
+
+ console.log("Wowza");
