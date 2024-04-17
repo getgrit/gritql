@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::context::QueryContext;
+use crate::{context::QueryContext, pattern::resolved_pattern::File};
 use anyhow::Result;
 use marzano_util::analysis_logs::AnalysisLogs;
 

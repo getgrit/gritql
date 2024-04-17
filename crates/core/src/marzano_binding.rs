@@ -173,7 +173,7 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
         .into_iter()
         .map(|effect| {
             let binding = effect.binding;
-            let binding_range = binding.code_range();
+            let binding_range = binding.code_range(language);
             if let (Some(src), Some(range)) = (binding.source(), binding_range.as_ref()) {
                 match effect.kind {
                     EffectKind::Rewrite => {

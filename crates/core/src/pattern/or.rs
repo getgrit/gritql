@@ -6,7 +6,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::context::QueryContext;
+use crate::{binding::Binding, context::QueryContext};
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;

@@ -11,7 +11,6 @@ use super::{
     bubble::Bubble,
     built_in_functions::CallBuiltIn,
     call::Call,
-    code_snippet::CodeSnippet,
     constants::{ABSOLUTE_PATH_INDEX, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX, PROGRAM_INDEX},
     contains::Contains,
     divide::Divide,
@@ -49,7 +48,10 @@ use super::{
     within::Within,
     State,
 };
-use crate::context::{ExecContext, QueryContext};
+use crate::{
+    context::{ExecContext, QueryContext},
+    pattern::resolved_pattern::File,
+};
 use anyhow::{bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;
@@ -111,7 +113,7 @@ pub enum Pattern<Q: QueryContext> {
     FloatConstant(FloatConstant),
     BooleanConstant(BooleanConstant),
     Dynamic(DynamicPattern<Q>),
-    CodeSnippet(CodeSnippet<Q>),
+    CodeSnippet(Q::CodeSnippet),
     Variable(Variable),
     Rewrite(Box<Rewrite<Q>>),
     Log(Box<Log<Q>>),
@@ -142,9 +144,11 @@ impl<Q: QueryContext> Pattern<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<String> {
-        Ok(ResolvedPattern::from_pattern(self, state, context, logs)?
-            .text(&state.files, context.language())?
-            .to_string())
+        Ok(
+            Q::ResolvedPattern::from_pattern(self, state, context, logs)?
+                .text(&state.files, context.language())?
+                .to_string(),
+        )
     }
 
     pub(crate) fn float<'a>(
@@ -153,7 +157,7 @@ impl<Q: QueryContext> Pattern<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<f64> {
-        ResolvedPattern::from_pattern(self, state, context, logs)?
+        Q::ResolvedPattern::from_pattern(self, state, context, logs)?
             .float(&state.files, context.language())
     }
 }
@@ -305,4 +309,10 @@ impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
             Pattern::Like(like) => like.execute(binding, state, context, logs),
         }
     }
+}
+
+pub trait CodeSnippet<Q: QueryContext + 'static>: Clone + Debug + Matcher<Q> + PatternName {
+    fn patterns(&self) -> impl Iterator<Item = &Pattern<Q>>;
+
+    fn dynamic_snippet(&self) -> Option<&DynamicPattern<Q>>;
 }

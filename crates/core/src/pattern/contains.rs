@@ -3,7 +3,7 @@ use super::{
     resolved_pattern::{LazyBuiltIn, ResolvedPattern, ResolvedSnippet},
     State,
 };
-use crate::context::QueryContext;
+use crate::{binding::Binding, context::QueryContext, pattern::resolved_pattern::File};
 use anyhow::Result;
 use core::fmt::Debug;
 use grit_util::{AstCursor, AstNode};
@@ -213,7 +213,7 @@ impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
                         ResolvedPattern::from_resolved_snippet(snippet.to_owned())
                     }
                     ResolvedSnippet::Binding(b) => ResolvedPattern::from_binding(b.to_owned()),
-                    ResolvedSnippet::LazyFn(l) => match &**l {
+                    ResolvedSnippet::LazyFn(l) => match &*l {
                         LazyBuiltIn::Join(j) => {
                             ResolvedPattern::from_list_parts(j.list.iter().cloned())
                         }

@@ -5,13 +5,7 @@ use super::{
     patterns::Pattern,
     state::{FilePtr, FileRegistry, State},
 };
-use crate::{
-    binding::Binding,
-    constant::Constant,
-    context::{ExecContext, QueryContext},
-    marzano_resolved_pattern::File,
-    problem::Effect,
-};
+use crate::{binding::Binding, constant::Constant, context::QueryContext, problem::Effect};
 use anyhow::Result;
 use grit_util::CodeRange;
 use im::Vector;
@@ -22,6 +16,7 @@ use std::{
     borrow::Cow,
     collections::{BTreeMap, HashMap},
     fmt::Debug,
+    path::Path,
 };
 
 pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
@@ -29,11 +24,27 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
 
     fn from_constant(constant: Constant) -> Self;
 
-    fn from_constant_binding(constant: &'a Constant) -> Self;
+    fn from_constant_binding(constant: &'a Constant) -> Self {
+        Self::from_binding(Binding::from_constant(constant))
+    }
 
-    fn from_node_binding(node: Q::Node<'a>) -> Self;
+    fn from_file_pointer(file: FilePtr) -> Self;
 
-    fn from_range(range: Range, src: &'a str) -> Self;
+    fn from_files(files: Self) -> Self;
+
+    fn from_list_parts(parts: impl Iterator<Item = Self>) -> Self;
+
+    fn from_node_binding(node: Q::Node<'a>) -> Self {
+        Self::from_binding(Binding::from_node(node))
+    }
+
+    fn from_path_binding(path: &'a Path) -> Self {
+        Self::from_binding(Binding::from_path(path))
+    }
+
+    fn from_range_binding(range: Range, src: &'a str) -> Self {
+        Self::from_binding(Binding::from_range(range, src))
+    }
 
     fn from_string(string: String) -> Self;
 
@@ -102,9 +113,9 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
 
     fn float(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<f64>;
 
-    fn get_bindings(&self) -> Option<impl Iterator<Item = &'a Q::Binding<'a>>>;
+    fn get_bindings(&self) -> Option<impl Iterator<Item = Q::Binding<'a>>>;
 
-    fn get_file(&self) -> Option<&File<'a>>;
+    fn get_file(&self) -> Option<&Q::File<'a>>;
 
     fn get_file_pointers(&self) -> Option<Vec<FilePtr>>;
 
@@ -124,7 +135,7 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
 
     fn get_map_mut(&mut self) -> Option<&mut BTreeMap<String, Self>>;
 
-    fn get_snippets(&self) -> Option<impl Iterator<Item = &ResolvedSnippet<'a, Q>>>;
+    fn get_snippets(&self) -> Option<impl Iterator<Item = ResolvedSnippet<'a, Q>>>;
 
     fn is_binding(&self) -> bool;
 
@@ -201,7 +212,7 @@ impl<'a, Q: QueryContext> ResolvedSnippet<'a, Q> {
             ResolvedSnippet::Binding(binding) => {
                 // we are now taking the unmodified source code, and replacing the binding with the snippet
                 // we will want to apply effects next
-                binding.text(state, language).map(|c| c.into_owned().into())
+                binding.text(language).map(|c| c.into_owned().into())
             }
             ResolvedSnippet::LazyFn(lazy) => lazy.text(state, language),
         }
@@ -242,7 +253,7 @@ impl<'a, Q: QueryContext> ResolvedSnippet<'a, Q> {
         language: &impl Language,
     ) -> Result<bool> {
         let truthiness = match self {
-            Self::Binding(b) => b.is_truthy(state, language)?,
+            Self::Binding(b) => b.is_truthy(),
             Self::Text(t) => !t.is_empty(),
             Self::LazyFn(t) => !t.text(&state.files, language)?.is_empty(),
         };
@@ -357,4 +368,24 @@ fn pad_text(text: &str, padding: usize) -> String {
         };
         res
     }
+}
+
+pub trait File<'a, Q: QueryContext> {
+    fn name(&self, files: &FileRegistry<'a>) -> Q::ResolvedPattern<'a>;
+
+    fn absolute_path(
+        &self,
+        files: &FileRegistry<'a>,
+        language: &impl Language,
+    ) -> Result<Q::ResolvedPattern<'a>>;
+
+    fn body(&self, files: &FileRegistry<'a>) -> Q::ResolvedPattern<'a>;
+
+    fn binding(&self, files: &FileRegistry<'a>) -> Q::ResolvedPattern<'a>;
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ResolvedFile<'a, Q: QueryContext> {
+    pub name: Q::ResolvedPattern<'a>,
+    pub body: Q::ResolvedPattern<'a>,
 }

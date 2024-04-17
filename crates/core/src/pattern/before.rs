@@ -4,6 +4,7 @@ use super::{
     State,
 };
 use crate::{
+    binding::Binding,
     context::{ExecContext, QueryContext},
     errors::debug,
     resolve,

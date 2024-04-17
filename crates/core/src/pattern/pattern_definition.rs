@@ -1,6 +1,5 @@
 use super::{
     patterns::{Matcher, Pattern},
-    resolved_pattern::ResolvedPattern,
     variable::Variable,
     State,
 };

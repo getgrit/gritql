@@ -28,7 +28,7 @@ pub trait Binding<'a, Q: QueryContext>: Clone + std::fmt::Debug + PartialEq + Si
         logs: &mut AnalysisLogs,
     ) -> Result<Q::Binding<'a>> {
         let resolved = Q::ResolvedPattern::from_pattern(pattern, state, context, logs)?;
-        if let Some(binding) = resolved.get_binding() {
+        if let Some(binding) = resolved.get_last_binding() {
             Ok(binding.clone())
         } else {
             bail!("cannot create binding from pattern without binding");

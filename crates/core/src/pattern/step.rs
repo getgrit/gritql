@@ -8,6 +8,7 @@ use crate::{
     binding::Binding,
     clean::{get_replacement_ranges, replace_cleaned_ranges},
     context::{ExecContext, QueryContext},
+    pattern::resolved_pattern::File,
     problem::{FileOwner, InputRanges, MatchRanges},
     text_unparser::apply_effects,
 };

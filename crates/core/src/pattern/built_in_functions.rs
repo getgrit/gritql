@@ -389,16 +389,16 @@ fn distinct_fn<'a>(
 
     let list = args.into_iter().next().unwrap();
     match list {
-        Some(ResolvedPattern::List(list)) => {
+        Some(MarzanoResolvedPattern::List(list)) => {
             let mut unique_list = Vector::new();
             for item in list {
                 if !unique_list.contains(&item) {
                     unique_list.push_back(item);
                 }
             }
-            Ok(ResolvedPattern::List(unique_list))
+            Ok(MarzanoResolvedPattern::List(unique_list))
         }
-        Some(ResolvedPattern::Binding(binding)) => match binding.last() {
+        Some(MarzanoResolvedPattern::Binding(binding)) => match binding.last() {
             Some(b) => {
                 if let Some(list_items) = b.list_items() {
                     let mut unique_list = Vector::new();
@@ -408,12 +408,12 @@ fn distinct_fn<'a>(
                             unique_list.push_back(resolved);
                         }
                     }
-                    Ok(ResolvedPattern::List(unique_list))
+                    Ok(MarzanoResolvedPattern::List(unique_list))
                 } else {
                     bail!("distinct takes a list as the first argument")
                 }
             }
-            None => Ok(ResolvedPattern::Binding(binding)),
+            None => Ok(MarzanoResolvedPattern::Binding(binding)),
         },
         _ => Err(anyhow!("distinct takes a list as the first argument")),
     }
@@ -445,7 +445,9 @@ fn shuffle_fn<'a>(
     };
 
     shuffled_list.shuffle(state.get_rng());
-    Ok(ResolvedPattern::from_list_parts(shuffled_list.into_iter()))
+    Ok(MarzanoResolvedPattern::from_list_parts(
+        shuffled_list.into_iter(),
+    ))
 }
 
 fn length_fn<'a>(
@@ -458,13 +460,13 @@ fn length_fn<'a>(
 
     let list = args.into_iter().next().unwrap();
     match &list {
-        Some(ResolvedPattern::List(list)) => {
+        Some(MarzanoResolvedPattern::List(list)) => {
             let length = list.len();
             Ok(ResolvedPattern::from_constant(Constant::Integer(
                 length as i64,
             )))
         }
-        Some(ResolvedPattern::Binding(binding)) => match binding.last() {
+        Some(MarzanoResolvedPattern::Binding(binding)) => match binding.last() {
             Some(resolved_pattern) => {
                 let length = if let Some(list_items) = resolved_pattern.list_items() {
                     list_items.count()

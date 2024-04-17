@@ -4,8 +4,8 @@ use super::{
     NodeCompiler,
 };
 use crate::{
+    marzano_code_snippet::MarzanoCodeSnippet,
     pattern::{
-        code_snippet::CodeSnippet,
         constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
         dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
         patterns::Pattern,
@@ -216,7 +216,7 @@ pub(crate) fn parse_snippet_content(
             .collect::<Result<Vec<(SortId, Pattern<MarzanoQueryContext>)>>>()?;
         let dynamic_snippet = dynamic_snippet_from_source(source, range, context)
             .map_or(None, |s| Some(DynamicPattern::Snippet(s)));
-        Ok(Pattern::CodeSnippet(CodeSnippet::new(
+        Ok(Pattern::CodeSnippet(MarzanoCodeSnippet::new(
             snippet_patterns,
             dynamic_snippet,
             source,

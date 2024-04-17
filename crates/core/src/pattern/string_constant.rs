@@ -3,10 +3,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{
-    binding::Binding,
-    context::{ExecContext, QueryContext},
-};
+use crate::context::{ExecContext, QueryContext};
 use anyhow::Result;
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;

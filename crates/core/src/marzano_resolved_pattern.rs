@@ -1,17 +1,18 @@
 use crate::{
     binding::Binding,
     constant::Constant,
+    context::ExecContext,
     marzano_binding::MarzanoBinding,
+    marzano_code_snippet::MarzanoCodeSnippet,
     pattern::{
         accessor::Accessor,
-        code_snippet::CodeSnippet,
         container::PatternOrResolved,
         dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
         functions::GritCall,
         list_index::{to_unsigned, ListIndex},
         paths::absolutize,
         patterns::{Pattern, PatternName},
-        resolved_pattern::{ResolvedPattern, ResolvedSnippet},
+        resolved_pattern::{File, ResolvedFile, ResolvedPattern, ResolvedSnippet},
         state::{FilePtr, FileRegistry, State},
         MarzanoContext,
     },
@@ -31,83 +32,23 @@ use std::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ResolvedFile<'a> {
-    name: MarzanoResolvedPattern<'a>,
-    body: MarzanoResolvedPattern<'a>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum File<'a> {
-    Resolved(Box<ResolvedFile<'a>>),
-    Ptr(FilePtr),
-}
-
-impl<'a> File<'a> {
-    pub(crate) fn name(&self, files: &FileRegistry<'a>) -> MarzanoResolvedPattern<'a> {
-        match self {
-            File::Resolved(resolved) => resolved.name.clone(),
-            File::Ptr(ptr) => MarzanoResolvedPattern::from_path_binding(&files.get_file(*ptr).name),
-        }
-    }
-
-    pub(crate) fn absolute_path(
-        &self,
-        files: &FileRegistry<'a>,
-        language: &impl Language,
-    ) -> Result<MarzanoResolvedPattern<'a>> {
-        match self {
-            File::Resolved(resolved) => {
-                let name = resolved.name.text(files, language)?;
-                let absolute_path = absolutize(name.as_ref())?;
-                Ok(ResolvedPattern::Constant(Constant::String(absolute_path)))
-            }
-            File::Ptr(ptr) => Ok(ResolvedPattern::from_path_binding(
-                &files.get_file(*ptr).absolute_path,
-            )),
-        }
-    }
-
-    pub(crate) fn body(&self, files: &FileRegistry<'a>) -> MarzanoResolvedPattern<'a> {
-        match self {
-            File::Resolved(resolved) => resolved.body.clone(),
-            File::Ptr(ptr) => {
-                let file = &files.get_file(*ptr);
-                let range = file.tree.root_node().range().into();
-                ResolvedPattern::from_range_binding(range, &file.source)
-            }
-        }
-    }
-
-    pub(crate) fn binding(&self, files: &FileRegistry<'a>) -> MarzanoResolvedPattern<'a> {
-        match self {
-            File::Resolved(resolved) => resolved.body.clone(),
-            File::Ptr(ptr) => {
-                let file = &files.get_file(*ptr);
-                let node = file.tree.root_node();
-                ResolvedPattern::from_node_binding(NodeWithSource::new(node, &file.source))
-            }
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub enum MarzanoResolvedPattern<'a> {
     Binding(Vector<MarzanoBinding<'a>>),
     Snippets(Vector<ResolvedSnippet<'a, MarzanoQueryContext>>),
     List(Vector<MarzanoResolvedPattern<'a>>),
     Map(BTreeMap<String, MarzanoResolvedPattern<'a>>),
-    File(File<'a>),
+    File(MarzanoFile<'a>),
     Files(Box<MarzanoResolvedPattern<'a>>),
     Constant(Constant),
 }
 
 impl<'a> MarzanoResolvedPattern<'a> {
-    pub(crate) fn from_list(node: NodeWithSource<'a>, field_id: FieldId) -> Self {
-        Self::from_binding(MarzanoBinding::List(node, field_id))
+    pub(crate) fn from_empty_binding(node: NodeWithSource<'a>, field_id: FieldId) -> Self {
+        Self::from_binding(MarzanoBinding::Empty(node, field_id))
     }
 
-    pub(crate) fn empty_field(node: NodeWithSource<'a>, field_id: FieldId) -> Self {
-        Self::from_binding(MarzanoBinding::Empty(node, field_id))
+    pub(crate) fn from_list_binding(node: NodeWithSource<'a>, field_id: FieldId) -> Self {
+        Self::from_binding(MarzanoBinding::List(node, field_id))
     }
 
     pub(crate) fn from_path(path: &'a Path) -> Self {
@@ -267,16 +208,16 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         Self::Constant(constant)
     }
 
-    fn from_constant_binding(constant: &'a Constant) -> Self {
-        Self::from_binding(Binding::from_constant(constant))
+    fn from_file_pointer(file: FilePtr) -> Self {
+        Self::File(MarzanoFile::Ptr(file))
     }
 
-    fn from_node_binding(node: NodeWithSource<'a>) -> Self {
-        Self::from_binding(Binding::from_node(node))
+    fn from_files(files: Self) -> Self {
+        Self::Files(Box::new(files))
     }
 
-    fn from_range(range: Range, src: &'a str) -> Self {
-        Self::from_binding(Binding::from_range(range, src))
+    fn from_list_parts(parts: impl Iterator<Item = Self>) -> Self {
+        Self::List(parts.collect())
     }
 
     fn from_string(string: String) -> Self {
@@ -287,15 +228,15 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         Self::Snippets(vector![snippet])
     }
 
-    fn get_bindings(&self) -> Option<impl Iterator<Item = &'a MarzanoBinding<'a>>> {
+    fn get_bindings(&self) -> Option<impl Iterator<Item = MarzanoBinding<'a>>> {
         if let Self::Binding(bindings) = self {
-            Some(bindings.iter())
+            Some(bindings.iter().cloned())
         } else {
             None
         }
     }
 
-    fn get_file(&self) -> Option<&File<'a>> {
+    fn get_file(&self) -> Option<&MarzanoFile<'a>> {
         if let Self::File(file) = self {
             Some(file)
         } else {
@@ -379,9 +320,9 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
 
     fn get_snippets(
         &self,
-    ) -> Option<impl Iterator<Item = &ResolvedSnippet<'a, MarzanoQueryContext>>> {
+    ) -> Option<impl Iterator<Item = ResolvedSnippet<'a, MarzanoQueryContext>>> {
         if let Self::Snippets(snippets) = self {
-            Some(snippets.iter())
+            Some(snippets.iter().cloned())
         } else {
             None
         }
@@ -533,7 +474,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
     ) -> Result<Self> {
         match pattern {
             Pattern::Dynamic(pattern) => Self::from_dynamic_pattern(pattern, state, context, logs),
-            Pattern::CodeSnippet(CodeSnippet {
+            Pattern::CodeSnippet(MarzanoCodeSnippet {
                 dynamic_snippet: Some(pattern),
                 ..
             }) => Self::from_dynamic_pattern(pattern, state, context, logs),
@@ -589,7 +530,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 let body = Self::from_pattern(body, state, context, logs)?;
                 // todo: replace GENERATED_SOURCE with a computed source once linearization and
                 // on-the-fly rewrites are in place
-                Ok(Self::File(File::Resolved(Box::new(ResolvedFile {
+                Ok(Self::File(MarzanoFile::Resolved(Box::new(ResolvedFile {
                     name,
                     body,
                 }))))
@@ -900,10 +841,66 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
     }
 }
 
-fn extract_file_pointer(file: &File) -> Option<FilePtr> {
+#[derive(Debug, Clone, PartialEq)]
+pub enum MarzanoFile<'a> {
+    Resolved(Box<ResolvedFile<'a, MarzanoQueryContext>>),
+    Ptr(FilePtr),
+}
+
+impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
+    fn name(&self, files: &FileRegistry<'a>) -> MarzanoResolvedPattern<'a> {
+        match self {
+            Self::Resolved(resolved) => resolved.name.clone(),
+            Self::Ptr(ptr) => MarzanoResolvedPattern::from_path_binding(&files.get_file(*ptr).name),
+        }
+    }
+
+    fn absolute_path(
+        &self,
+        files: &FileRegistry<'a>,
+        language: &impl Language,
+    ) -> Result<MarzanoResolvedPattern<'a>> {
+        match self {
+            Self::Resolved(resolved) => {
+                let name = resolved.name.text(files, language)?;
+                let absolute_path = absolutize(name.as_ref())?;
+                Ok(ResolvedPattern::from_constant(Constant::String(
+                    absolute_path,
+                )))
+            }
+            Self::Ptr(ptr) => Ok(ResolvedPattern::from_path_binding(
+                &files.get_file(*ptr).absolute_path,
+            )),
+        }
+    }
+
+    fn body(&self, files: &FileRegistry<'a>) -> MarzanoResolvedPattern<'a> {
+        match self {
+            Self::Resolved(resolved) => resolved.body.clone(),
+            Self::Ptr(ptr) => {
+                let file = &files.get_file(*ptr);
+                let range = file.tree.root_node().range().into();
+                ResolvedPattern::from_range_binding(range, &file.source)
+            }
+        }
+    }
+
+    fn binding(&self, files: &FileRegistry<'a>) -> MarzanoResolvedPattern<'a> {
+        match self {
+            Self::Resolved(resolved) => resolved.body.clone(),
+            Self::Ptr(ptr) => {
+                let file = &files.get_file(*ptr);
+                let node = file.tree.root_node();
+                ResolvedPattern::from_node_binding(NodeWithSource::new(node, &file.source))
+            }
+        }
+    }
+}
+
+fn extract_file_pointer(file: &MarzanoFile) -> Option<FilePtr> {
     match file {
-        File::Resolved(_) => None,
-        File::Ptr(ptr) => Some(*ptr),
+        MarzanoFile::Resolved(_) => None,
+        MarzanoFile::Ptr(ptr) => Some(*ptr),
     }
 }
 
@@ -912,7 +909,7 @@ fn handle_files<'a>(files_list: &MarzanoResolvedPattern<'a>) -> Option<Vec<FileP
         files
             .iter()
             .map(|r| {
-                if let ResolvedPattern::File(File::Ptr(ptr)) = r {
+                if let MarzanoResolvedPattern::File(MarzanoFile::Ptr(ptr)) = r {
                     Some(*ptr)
                 } else {
                     None

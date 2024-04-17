@@ -1,10 +1,13 @@
 use super::{
     constants::MATCH_VAR, patterns::Pattern, variable::Variable, variable_content::VariableContent,
 };
-use crate::binding::Binding;
-use crate::context::QueryContext;
-use crate::intervals::{earliest_deadline_sort, get_top_level_intervals_in_range, Interval};
-use crate::problem::{Effect, FileOwner};
+use crate::{
+    binding::Binding,
+    context::QueryContext,
+    intervals::{earliest_deadline_sort, get_top_level_intervals_in_range, Interval},
+    pattern::resolved_pattern::ResolvedPattern,
+    problem::{Effect, FileOwner},
+};
 use anyhow::{anyhow, bail, Result};
 use grit_util::CodeRange;
 use im::{vector, Vector};

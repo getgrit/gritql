@@ -78,7 +78,7 @@ impl<Q: QueryContext> Rewrite<Q> {
         let Some(bindings) = resolved.get_bindings() else {
             bail!("variable on left hand side of rewrite side-conditions can only be bound to bindings")
         };
-        let replacement: ResolvedPattern<'_, Q> =
+        let replacement: Q::ResolvedPattern<'_> =
             ResolvedPattern::from_dynamic_pattern(&self.right, state, context, logs)?;
         let effects = bindings.map(|b| Effect {
             binding: b.clone(),

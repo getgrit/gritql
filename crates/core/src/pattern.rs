@@ -11,7 +11,6 @@ pub mod boolean_constant;
 pub mod bubble;
 pub mod built_in_functions;
 pub mod call;
-pub mod code_snippet;
 pub mod constants;
 pub mod container;
 pub mod contains;

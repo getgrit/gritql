@@ -13,7 +13,10 @@ use super::{
     target_arch = "wasm32"
 ))]
 use crate::context::ExecContext;
-use crate::{constant::Constant, context::QueryContext};
+use crate::{
+    constant::Constant,
+    context::{ExecContext, QueryContext},
+};
 use anyhow::{bail, Result};
 #[cfg(feature = "external_functions")]
 use marzano_externals::function::ExternalFunction;

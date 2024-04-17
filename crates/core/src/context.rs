@@ -5,8 +5,9 @@ use crate::{
         built_in_functions::CallBuiltIn,
         function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
         pattern_definition::PatternDefinition,
+        patterns::CodeSnippet,
         predicate_definition::PredicateDefinition,
-        resolved_pattern::ResolvedPattern,
+        resolved_pattern::{File, ResolvedPattern},
         state::State,
     },
     problem::FileOwners,
@@ -17,13 +18,15 @@ use marzano_language::target_language::TargetLanguage;
 use marzano_util::analysis_logs::AnalysisLogs;
 
 /// Contains various kinds of context about the query being executed.
-pub trait QueryContext: Clone + std::fmt::Debug + Sized {
+pub trait QueryContext: Clone + std::fmt::Debug + Sized + 'static {
     type Node<'a>: AstNode;
     type NodePattern: AstNodePattern<Self>;
     type LeafNodePattern: AstLeafNodePattern<Self>;
     type ExecContext<'a>: ExecContext<Self>;
     type Binding<'a>: Binding<'a, Self>;
+    type CodeSnippet: CodeSnippet<Self>;
     type ResolvedPattern<'a>: ResolvedPattern<'a, Self>;
+    type File<'a>: File<'a, Self>;
 }
 
 /// Contains context necessary for query execution.

@@ -4,7 +4,10 @@ use super::{
     variable::Variable,
     State,
 };
-use crate::context::{ExecContext, QueryContext};
+use crate::{
+    binding::Binding,
+    context::{ExecContext, QueryContext},
+};
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
 use marzano_util::analysis_logs::AnalysisLogs;

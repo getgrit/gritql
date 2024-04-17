@@ -107,10 +107,12 @@ impl<Q: QueryContext> ListIndex<Q> {
                     if let Some(mut items) = resolved.get_list_binding_items() {
                         let len = items.clone().count();
                         let index = resolve_opt!(to_unsigned(index, len));
-                        Ok(items
+                        return Ok(items
                             .nth(index)
-                            .map(|_| PatternOrResolvedMut::_ResolvedBinding))
-                    } else if resolved.is_list() {
+                            .map(|_| PatternOrResolvedMut::_ResolvedBinding));
+                    }
+
+                    if resolved.is_list() {
                         Ok(resolved
                             .get_list_item_at_mut(index)
                             .map(PatternOrResolvedMut::Resolved))

@@ -3,7 +3,8 @@ use crate::{
     ast_node::{ASTNode, AstLeafNode},
     context::QueryContext,
     marzano_binding::MarzanoBinding,
-    marzano_resolved_pattern::MarzanoResolvedPattern,
+    marzano_code_snippet::MarzanoCodeSnippet,
+    marzano_resolved_pattern::{MarzanoFile, MarzanoResolvedPattern},
     pattern::{
         built_in_functions::BuiltIns,
         constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
@@ -12,6 +13,7 @@ use crate::{
         pattern_definition::PatternDefinition,
         patterns::{Matcher, Pattern},
         predicate_definition::PredicateDefinition,
+        resolved_pattern::ResolvedPattern,
         state::{FilePtr, State},
         variable_content::VariableContent,
         MarzanoContext, VariableLocations, MAX_FILE_SIZE,
@@ -661,5 +663,7 @@ impl QueryContext for MarzanoQueryContext {
     type LeafNodePattern = AstLeafNode;
     type ExecContext<'a> = MarzanoContext<'a>;
     type Binding<'a> = MarzanoBinding<'a>;
+    type CodeSnippet = MarzanoCodeSnippet;
     type ResolvedPattern<'a> = MarzanoResolvedPattern<'a>;
+    type File<'a> = MarzanoFile<'a>;
 }

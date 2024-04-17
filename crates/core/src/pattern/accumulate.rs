@@ -78,14 +78,14 @@ impl<Q: QueryContext> Matcher<Q> for Accumulate<Q> {
                     )
                 }
             };
-            let mut replacement =
+            let mut replacement: Q::ResolvedPattern<'a> =
                 ResolvedPattern::from_dynamic_pattern(dynamic_right, state, context, logs)?;
             let effects: Result<Vec<_>> = bindings
-                .map(|b| {
-                    let is_first = !state.effects.iter().any(|e| e.binding == *b);
-                    replacement.normalize_insert(b, is_first, context.language())?;
+                .map(|binding| {
+                    let is_first = !state.effects.iter().any(|e| e.binding == binding);
+                    replacement.normalize_insert(&binding, is_first, context.language())?;
                     Ok(Effect {
-                        binding: b.clone(),
+                        binding,
                         pattern: replacement.clone(),
                         kind: EffectKind::Insert,
                     })

@@ -6,7 +6,10 @@ use super::{
     state::State,
     variable::Variable,
 };
-use crate::context::{ExecContext, QueryContext};
+use crate::{
+    binding::Binding,
+    context::{ExecContext, QueryContext},
+};
 use anyhow::{bail, Result};
 use marzano_language::language::Language;
 use marzano_util::analysis_logs::AnalysisLogs;
