@@ -57,11 +57,12 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
     let mut results = Vec::new();
     let lines = diff.lines();
 
-    // Next hunk represents a hunk where we know the lines, but haven't yet eliminated any context.
-    let mut next_hunk_start_line: Option<(u32, u32)> = None;
-    // If we find a hunk, we'll store it here
-    let mut current_hunk_after_end_position: Option<Position> = None;
-    let mut current_hunk_before_end_position: Option<Position> = None;
+    // We keep a cursor for the current left and right lines (this gets reset when encountering hunks)
+    let mut left_line_cursor = 0;
+    let mut right_line_cursor = 0;
+
+    // Then we might be adding to a left range, or to a right range.
+    let mut current_range_pair: Option<RangePair> = None;
 
     for line in lines {
         if line.starts_with("--- ") {
@@ -101,63 +102,91 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 bail!("Encountered new file path without a current file diff");
             };
         } else if line.starts_with("@@ ") {
-            // If we have a current hunk, add it to the current file diff
-            insert_range_if_found(
-                &mut next_hunk_start_line,
-                &mut current_hunk_before_end_position,
-                &mut current_hunk_after_end_position,
-                &mut results,
-            )?;
+            insert_range_if_found(&mut current_range_pair, &mut results)?;
 
             let parsed_hunk = parse_hunk(line)?;
+            println!("Parsed hunk: {:?}", parsed_hunk);
 
-            next_hunk_start_line = Some((
-                parsed_hunk.before.start_line(),
-                parsed_hunk.after.start_line(),
-            ));
+            left_line_cursor = parsed_hunk.before.start_line();
+            right_line_cursor = parsed_hunk.after.start_line();
         } else if line.starts_with(' ') || line.is_empty() {
-            insert_range_if_found(
-                &mut next_hunk_start_line,
-                &mut current_hunk_before_end_position,
-                &mut current_hunk_after_end_position,
-                &mut results,
-            )?;
-            // If we have a next hunk, move it down one line
-            if let Some(hunk) = next_hunk_start_line.as_mut() {
-                hunk.0 += 1;
-                hunk.1 += 1;
-                println!("processed {}, hunk: {:?}", line, hunk);
-            } else {
-                bail!("Encountered line without a hunk: {:?}", line);
-            }
-        } else if line.starts_with('+') || line.starts_with('-') {
-            let is_add = line.starts_with('+');
-            let unpadded_length = (line.len() - 1) as u32 + 1;
+            insert_range_if_found(&mut current_range_pair, &mut results)?;
 
-            if let Some(ref start_lines) = next_hunk_start_line {
-                if is_add {
-                    if let Some(ref mut ending) = current_hunk_after_end_position {
-                        ending.line += 1;
-                        ending.column = unpadded_length;
-                    } else {
-                        // First line on right hand side
-                        current_hunk_after_end_position = Some(Position {
-                            line: start_lines.1,
-                            column: unpadded_length,
-                        });
-                    }
-                } else if let Some(ref mut ending) = current_hunk_before_end_position {
-                    ending.line += 1;
-                    ending.column = unpadded_length;
+            left_line_cursor += 1;
+            right_line_cursor += 1;
+            println!(
+                "Processed context line: {}, left cursor: {}, right cursor: {}",
+                line, left_line_cursor, right_line_cursor
+            );
+        } else if line.starts_with('-') || line.starts_with('+') {
+            let column = (line.len() - 1) as u32 + 1;
+
+            if line.starts_with('-') {
+                // Removed sections always come before added sections
+                if let Some(ref mut pair) = current_range_pair {
+                    // We already have a pair, so we are just expanding the remove section
+                    pair.before.end.line += 1;
+                    pair.before.end.column = column;
                 } else {
-                    // First line we are seeing on left hand size
-                    current_hunk_before_end_position = Some(Position {
-                        line: start_lines.0,
-                        column: unpadded_length,
+                    // Start a new hunk, which will initially be a removal
+                    current_range_pair = Some(RangePair {
+                        before: RangeWithoutByte {
+                            start: Position {
+                                line: left_line_cursor,
+                                column: 0,
+                            },
+                            end: Position {
+                                line: left_line_cursor,
+                                column,
+                            },
+                        },
+                        after: RangeWithoutByte {
+                            start: Position {
+                                line: right_line_cursor,
+                                column: 0,
+                            },
+                            end: Position {
+                                line: right_line_cursor,
+                                column: 0,
+                            },
+                        },
                     });
                 }
+
+                // This *always* advances the left cursor by one line
+                left_line_cursor += 1;
             } else {
-                bail!("Encountered line without a hunk");
+                if let Some(ref mut pair) = current_range_pair {
+                    // We already have a pair, so we are just expanding the add section
+                    pair.after.end.line = right_line_cursor;
+                    pair.after.end.column = column;
+                } else {
+                    // Start a new hunk, which will initially be an addition
+                    current_range_pair = Some(RangePair {
+                        before: RangeWithoutByte {
+                            start: Position {
+                                line: left_line_cursor,
+                                column: 0,
+                            },
+                            end: Position {
+                                line: left_line_cursor,
+                                column: 0,
+                            },
+                        },
+                        after: RangeWithoutByte {
+                            start: Position {
+                                line: right_line_cursor,
+                                column: 0,
+                            },
+                            end: Position {
+                                line: right_line_cursor,
+                                column,
+                            },
+                        },
+                    });
+                }
+
+                right_line_cursor += 1;
             }
         } else {
             println!("Unrecognized line in diff: {}", line);
@@ -165,118 +194,17 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
     }
 
     // If we have a current hunk, add it to the current file diff
-    insert_range_if_found(
-        &mut next_hunk_start_line,
-        &mut current_hunk_before_end_position,
-        &mut current_hunk_after_end_position,
-        &mut results,
-    )?;
+    insert_range_if_found(&mut current_range_pair, &mut results)?;
 
     Ok(results)
 }
 
-fn compute_range(
-    next_hunk_start_line: &Option<(u32, u32)>,
-    current_hunk_before_end_position: &mut Option<Position>,
-    current_hunk_after_end_position: &mut Option<Position>,
-) -> Option<RangePair> {
-    println!(
-        "Considering hunk: {:?}, {:?}, {:?}",
-        next_hunk_start_line, current_hunk_before_end_position, current_hunk_after_end_position
-    );
-    match (
-        next_hunk_start_line,
-        current_hunk_before_end_position.take(),
-        current_hunk_after_end_position.take(),
-    ) {
-        (Some(start_line), Some(before), Some(after)) => Some(RangePair {
-            before: RangeWithoutByte {
-                start: Position {
-                    line: start_line.0,
-                    column: 0,
-                },
-                end: before,
-            },
-            after: RangeWithoutByte {
-                start: Position {
-                    line: start_line.1,
-                    column: 0,
-                },
-                end: after,
-            },
-        }),
-        (Some(start_line), Some(before), None) => Some(RangePair {
-            before: RangeWithoutByte {
-                start: Position {
-                    line: start_line.0,
-                    column: 0,
-                },
-                end: before,
-            },
-            after: RangeWithoutByte {
-                start: Position {
-                    line: start_line.1,
-                    column: 0,
-                },
-                end: Position {
-                    line: start_line.1,
-                    column: 0,
-                },
-            },
-        }),
-        (Some(start_line), None, Some(after)) => Some(RangePair {
-            before: RangeWithoutByte {
-                start: Position {
-                    line: start_line.0,
-                    column: 0,
-                },
-                end: Position {
-                    line: start_line.0,
-                    column: 0,
-                },
-            },
-            after: RangeWithoutByte {
-                start: Position {
-                    line: start_line.1,
-                    column: 0,
-                },
-                end: after,
-            },
-        }),
-        _ => {
-            println!("Failed to find range for hunk: {:?}", next_hunk_start_line);
-            None
-        }
-    }
-}
-
 fn insert_range_if_found(
-    next_hunk_start_line: &mut Option<(u32, u32)>,
-    current_hunk_before_end_position: &mut Option<Position>,
-    current_hunk_after_end_position: &mut Option<Position>,
-    results: &mut Vec<FileDiff>,
+    current_range_pair: &mut Option<RangePair>,
+    results: &mut [FileDiff],
 ) -> Result<()> {
-    if let Some(range) = compute_range(
-        next_hunk_start_line,
-        current_hunk_before_end_position,
-        current_hunk_after_end_position,
-    ) {
-        next_hunk_start_line.replace((
-            if range.before.is_empty() {
-                range.before.start_line()
-            } else {
-                range.before.end_line()
-            },
-            if range.after.is_empty() {
-                range.after.start_line()
-            } else {
-                range.after.end_line()
-            },
-        ));
-        println!(
-            "Reset next hunk start line to {:?} after inserting {:?}",
-            next_hunk_start_line, range
-        );
+    if let Some(range) = current_range_pair.take() {
+        println!("Injecting range: {:?}", range);
         if let Some(file_diff) = results.last_mut() {
             file_diff.ranges.push(range);
         } else {
@@ -640,11 +568,11 @@ mod tests {
                 },
                 after: RangeWithoutByte {
                     start: Position {
-                        line: 18,
+                        line: 19,
                         column: 0,
                     },
                     end: Position {
-                        line: 18,
+                        line: 19,
                         column: 0,
                     },
                 },
@@ -676,4 +604,5 @@ mod tests {
     }
 
     // TODO: add a multiline add case
+    // TODO: add a removed newline case
 }
