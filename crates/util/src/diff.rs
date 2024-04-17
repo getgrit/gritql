@@ -611,6 +611,17 @@ mod tests {
         assert_eq!(normal_diff_parsed, no_context_parsed);
     }
 
+    #[test]
+    fn finds_the_right_range() {
+        let diff = include_str!("../fixtures/file_diff.diff");
+        let parsed =
+            parse_modified_ranges(diff).expect("Failed to parse no context diff");
+
+        let old_content = include_str!("../fixtures/file.baseline.js");
+        
+    }
+
+
     // TODO: add a multiline add case
     // TODO: add a removed newline case
 }
