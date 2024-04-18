@@ -1,7 +1,7 @@
 use anyhow::Result;
 use marzano_util::{
     diff::{parse_modified_ranges, FileDiff},
-    position::FileRange,
+    position::{FileRange, UtilRange},
 };
 
 use std::{fs::File, io::Read, path::PathBuf};
@@ -41,8 +41,8 @@ pub(crate) fn extract_target_ranges(
             .into_iter()
             .flat_map(|diff| match diff.new_path {
                 Some(new_path) => {
-                    let mapped = diff.after.into_iter().map(move |range| FileRange {
-                        range,
+                    let mapped = diff.ranges.into_iter().map(move |range| FileRange {
+                        range: UtilRange::RangeWithoutByte(range.after),
                         file_path: new_path.clone(),
                     });
                     mapped.collect::<Vec<_>>()

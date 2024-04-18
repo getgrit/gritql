@@ -17,7 +17,11 @@ pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
     let serialized: SerializedGritConfig = match serde_yaml::from_str(source) {
         Ok(config) => config,
         Err(err) => {
-            bail!("Invalid grit.yml: {}", err.to_string())
+            bail!(
+                "Invalid configuration file '{}': {}",
+                source_path,
+                err.to_string()
+            )
         }
     };
 
@@ -130,7 +134,7 @@ patterns:
         let grit_yaml = "invalid config";
         let gritmodules = extract_grit_modules(grit_yaml, ".grit/grit.yaml");
         if let Err(e) = gritmodules {
-            assert!(e.to_string().contains("Invalid grit.yml"));
+            assert!(e.to_string().contains("Invalid configuration file"));
         } else {
             panic!("Expected error");
         }
