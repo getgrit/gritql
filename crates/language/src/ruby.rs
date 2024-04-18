@@ -1,5 +1,7 @@
 use std::sync::OnceLock;
 
+use marzano_util::file_owner::FileParser;
+
 use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/ruby-node-types.json");
@@ -50,11 +52,13 @@ impl NodeTypes for Ruby {
     }
 }
 
-impl Language for Ruby {
+impl FileParser for Ruby {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
     }
+}
 
+impl Language for Ruby {
     fn comment_prefix(&self) -> &'static str {
         "#"
     }

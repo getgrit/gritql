@@ -4,8 +4,8 @@ use api::MatchResult;
 use insta::{assert_debug_snapshot, assert_snapshot, assert_yaml_snapshot};
 use lazy_static::lazy_static;
 use marzano_auth::testing::get_testing_auth_info;
-use marzano_language::language::Language;
 use marzano_language::target_language::{PatternLanguage, TargetLanguage};
+use marzano_util::file_owner::FileParser;
 use marzano_util::position::{Range, VariableMatch};
 use marzano_util::rich_path::RichFile;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
@@ -100,6 +100,7 @@ fn match_pattern_libs(
     let pattern =
         src_to_problem_libs(pattern, libs, default_language, None, None, None, None)?.problem;
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), src.to_owned()), context);
+    println!("RESULTS: {results:#?}");
     let mut execution_result = ExecutionResult {
         input_file_debug_text: "".to_string(),
         the_match: None,
@@ -2051,6 +2052,39 @@ fn prefer_is_nan() {
             if (isNaN(foo)) {}
             if (!isNaN(foo)) {}"#
                 .to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+#[ignore = "in progress will be fixed in follow up"]
+fn python_handle_multiline_strings() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |engine marzano(0.1)
+                |language python
+                |
+                |`$_ = $x` => `$x`"#
+                .trim_margin()
+                .unwrap(),
+            source: r#"
+                |def test_yaml_file():
+                |    """some test comment"""
+                |    variable = """
+                |title: "Title"
+                |        """"#
+                .trim_margin()
+                .unwrap(),
+            expected: r#"
+            |def test_yaml_file():
+            |    """some test comment"""
+            |    """
+            |title: "Title"
+            |        """"#
+                .trim_margin()
+                .unwrap(),
         }
     })
     .unwrap();

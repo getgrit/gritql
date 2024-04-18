@@ -2,7 +2,7 @@ use crate::language::{
     fields_for_nodes, Field, Language, NodeTypes, Replacement, SortId, TSLanguage,
 };
 use grit_util::AstNode;
-use marzano_util::node_with_source::NodeWithSource;
+use marzano_util::{file_owner::FileParser, node_with_source::NodeWithSource};
 use std::sync::OnceLock;
 
 static NODE_TYPES_STRING: &str =
@@ -26,6 +26,7 @@ pub struct Python {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,
     comment_sort: SortId,
+    skip_padding_sorts: [SortId; 1],
     language: &'static TSLanguage,
 }
 
@@ -35,10 +36,12 @@ impl Python {
         let node_types = NODE_TYPES.get_or_init(|| fields_for_nodes(language, NODE_TYPES_STRING));
         let metavariable_sort = language.id_for_node_kind("grit_metavariable", true);
         let comment_sort = language.id_for_node_kind("comment", true);
+        let skip_padding_sorts = [language.id_for_node_kind("string", true)];
         Self {
             node_types,
             metavariable_sort,
             comment_sort,
+            skip_padding_sorts,
             language,
         }
     }
@@ -53,11 +56,13 @@ impl NodeTypes for Python {
     }
 }
 
-impl Language for Python {
+impl FileParser for Python {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
     }
+}
 
+impl Language for Python {
     fn language_name(&self) -> &'static str {
         "Python"
     }
@@ -95,6 +100,10 @@ impl Language for Python {
 
     fn should_pad_snippet(&self) -> bool {
         true
+    }
+
+    fn skip_padding_sort(&self, id: SortId) -> bool {
+        self.skip_padding_sorts.contains(&id)
     }
 
     fn make_single_line_comment(&self, text: &str) -> String {

@@ -3,6 +3,7 @@ pub mod base64;
 pub mod cache;
 pub mod cursor_wrapper;
 pub mod diff;
+pub mod file_owner;
 #[cfg(feature = "finder")]
 pub mod finder;
 pub mod hasher;

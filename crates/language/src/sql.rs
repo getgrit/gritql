@@ -1,5 +1,7 @@
 use std::sync::OnceLock;
 
+use marzano_util::file_owner::FileParser;
+
 use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/sql-node-types.json");
@@ -49,11 +51,13 @@ impl NodeTypes for Sql {
     }
 }
 
-impl Language for Sql {
+impl FileParser for Sql {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
     }
+}
 
+impl Language for Sql {
     fn language_name(&self) -> &'static str {
         "SQL"
     }

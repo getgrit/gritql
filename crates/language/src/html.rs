@@ -1,5 +1,7 @@
 use std::sync::OnceLock;
 
+use marzano_util::file_owner::FileParser;
+
 use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/html-node-types.json");
@@ -50,11 +52,13 @@ impl NodeTypes for Html {
     }
 }
 
-impl Language for Html {
+impl FileParser for Html {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
     }
+}
 
+impl Language for Html {
     fn language_name(&self) -> &'static str {
         "HTML"
     }

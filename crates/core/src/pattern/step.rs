@@ -14,7 +14,7 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use im::vector;
-use marzano_language::language::Language;
+use marzano_util::file_owner::FileParser;
 use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource};
 use std::path::PathBuf;
 use tree_sitter::Parser;
@@ -63,7 +63,7 @@ impl<Q: QueryContext> Matcher<Q> for Step<Q> {
 
         // todo, for multifile we need to split up the matches by file.
         let (variables, ranges, suppressed) =
-            state.bindings_history_to_ranges(context.language(), context.name());
+            state.bindings_history_to_ranges(context.language(), ExecContext::name(context));
 
         let input_ranges = InputRanges {
             ranges,
@@ -101,7 +101,7 @@ impl<Q: QueryContext> Matcher<Q> for Step<Q> {
                     &file.name,
                     &mut new_filename,
                     context.language(),
-                    context.name(),
+                    ExecContext::name(context),
                     logs,
                 )?;
                 if let Some(new_ranges) = new_ranges {

@@ -5,6 +5,14 @@ use std::{borrow::Cow, str::Utf8Error};
 ///
 /// This trait should be free from dependencies on TreeSitter.
 pub trait AstNode: std::fmt::Debug + Sized {
+    // returns the id of the node kind
+    fn kind_id(&self) -> u16;
+
+    // returns the node kind
+    fn kind(&self) -> Cow<str>;
+
+    // fn from_file_owner
+
     /// Returns an iterator over the node's ancestors, starting with the node
     /// itself and moving up to the root.
     fn ancestors(&self) -> impl Iterator<Item = Self>;

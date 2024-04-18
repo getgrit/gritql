@@ -1,13 +1,11 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use enum_dispatch::enum_dispatch;
-use grit_util::{traverse, Order};
 use itertools::{self, Itertools};
 use lazy_static::lazy_static;
 use marzano_util::{
-    analysis_logs::{AnalysisLogBuilder, AnalysisLogs},
-    cursor_wrapper::CursorWrapper,
+    file_owner::FileParser,
     node_with_source::NodeWithSource,
-    position::{len, Position, Range},
+    position::{len, Range},
 };
 use regex::Regex;
 use serde_json::Value;
@@ -176,10 +174,7 @@ pub trait NodeTypes {
 }
 
 #[enum_dispatch(TargetLanguage)]
-pub trait Language: NodeTypes {
-    /// tree sitter language to parse the source
-    fn get_ts_language(&self) -> &TSLanguage;
-
+pub trait Language: NodeTypes + FileParser {
     fn language_name(&self) -> &'static str;
 
     fn skip_snippet_compilation_of_field(&self, _sort_id: SortId, _field_id: FieldId) -> bool {
@@ -255,6 +250,10 @@ pub trait Language: NodeTypes {
     // comments embedded in jsx dont have the comment sort
     fn is_comment_node(&self, node: &NodeWithSource) -> bool {
         self.is_comment_sort(node.node.kind_id())
+    }
+
+    fn skip_padding_sort(&self, _id: SortId) -> bool {
+        false
     }
 
     fn is_statement(&self, _id: SortId) -> bool {
@@ -335,16 +334,6 @@ pub trait Language: NodeTypes {
         }
     }
 
-    fn parse_file(
-        &self,
-        name: &str,
-        body: &str,
-        logs: &mut AnalysisLogs,
-        new: bool,
-    ) -> Result<Option<Tree>> {
-        default_parse_file(self.get_ts_language(), name, body, logs, new)
-    }
-
     fn should_pad_snippet(&self) -> bool {
         false
     }
@@ -352,55 +341,6 @@ pub trait Language: NodeTypes {
     fn make_single_line_comment(&self, text: &str) -> String {
         format!("// {}\n", text)
     }
-}
-
-pub(crate) fn default_parse_file(
-    lang: &TSLanguage,
-    name: &str,
-    body: &str,
-    logs: &mut AnalysisLogs,
-    new: bool,
-) -> Result<Option<Tree>> {
-    let mut parser = Parser::new()?;
-    parser.set_language(lang)?;
-    let tree = parser
-        .parse(body, None)?
-        .ok_or_else(|| anyhow!("failed to parse tree"))?;
-    let mut errors = file_parsing_error(&tree, name, body, new)?;
-    logs.append(&mut errors);
-    Ok(Some(tree))
-}
-
-fn file_parsing_error(
-    tree: &Tree,
-    file_name: &str,
-    body: &str,
-    is_new: bool,
-) -> Result<AnalysisLogs> {
-    let mut errors = vec![];
-    let cursor = tree.walk();
-    let mut log_builder = AnalysisLogBuilder::default();
-    let level: u16 = if is_new { 531 } else { 300 };
-    log_builder
-        .level(level)
-        .engine_id("marzano(0.1)".to_owned())
-        .file(file_name.to_owned());
-
-    for n in traverse(CursorWrapper::new(cursor, body), Order::Pre) {
-        let node = &n.node;
-        if node.is_error() || node.is_missing() {
-            let position: Position = node.range().start_point().into();
-            let message = format!("Error parsing source code at {}:{} in {}. This may cause otherwise applicable queries to not match.",
-                node.range().start_point().row() + 1, node.range().start_point().column() + 1, file_name);
-            let log = log_builder
-                .clone()
-                .message(message)
-                .position(position)
-                .build()?;
-            errors.push(log);
-        }
-    }
-    Ok(errors.into())
 }
 
 #[derive(Debug, Clone)]
@@ -539,6 +479,7 @@ pub fn fields_for_nodes(language: &TSLanguage, types: &str) -> Vec<Vec<Field>> {
 mod tests {
     use super::nodes_from_indices;
     use crate::{language::Language, tsx::Tsx};
+    use marzano_util::file_owner::FileParser;
     use tree_sitter::Parser;
     use trim_margin::MarginTrimmable;
 

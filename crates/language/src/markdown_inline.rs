@@ -1,5 +1,7 @@
 use std::sync::OnceLock;
 
+use marzano_util::file_owner::FileParser;
+
 use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str =
@@ -48,11 +50,13 @@ impl NodeTypes for MarkdownInline {
     }
 }
 
-impl Language for MarkdownInline {
+impl FileParser for MarkdownInline {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
     }
+}
 
+impl Language for MarkdownInline {
     fn language_name(&self) -> &'static str {
         "MarkdownInline"
     }
