@@ -1,7 +1,5 @@
 use std::{sync::OnceLock, vec};
 
-use marzano_util::file_owner::FileParser;
-
 use crate::language::{
     fields_for_nodes, normalize_double_quote_string, normalize_identity, Field, Language,
     LeafEquivalenceClass, LeafNormalizer, NodeTypes, SortId, TSLanguage,
@@ -69,13 +67,11 @@ impl NodeTypes for Yaml {
     }
 }
 
-impl FileParser for Yaml {
+impl Language for Yaml {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
     }
-}
 
-impl Language for Yaml {
     fn comment_prefix(&self) -> &'static str {
         "#"
     }

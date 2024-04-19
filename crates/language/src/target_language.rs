@@ -29,7 +29,6 @@ use anyhow::Result;
 use clap::ValueEnum;
 use enum_dispatch::enum_dispatch;
 use marzano_util::analysis_logs::AnalysisLogs;
-use marzano_util::file_owner::FileParser;
 use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::position::Range;
 use regex::Regex;
@@ -456,67 +455,6 @@ pub fn expand_paths(
 
     let final_walker = file_walker.standard_filters(true).hidden(false).build();
     Ok(final_walker)
-}
-
-impl FileParser for TargetLanguage {
-    fn get_ts_language(&self) -> &TSLanguage {
-        match self {
-            TargetLanguage::JavaScript(l) => l.get_ts_language(),
-            TargetLanguage::TypeScript(l) => l.get_ts_language(),
-            TargetLanguage::Tsx(l) => l.get_ts_language(),
-            TargetLanguage::Html(l) => l.get_ts_language(),
-            TargetLanguage::Css(l) => l.get_ts_language(),
-            TargetLanguage::Json(l) => l.get_ts_language(),
-            TargetLanguage::Java(l) => l.get_ts_language(),
-            TargetLanguage::CSharp(l) => l.get_ts_language(),
-            TargetLanguage::Python(l) => l.get_ts_language(),
-            TargetLanguage::MarkdownBlock(l) => l.get_ts_language(),
-            TargetLanguage::MarkdownInline(l) => l.get_ts_language(),
-            TargetLanguage::Go(l) => l.get_ts_language(),
-            TargetLanguage::Rust(l) => l.get_ts_language(),
-            TargetLanguage::Ruby(l) => l.get_ts_language(),
-            TargetLanguage::Solidity(l) => l.get_ts_language(),
-            TargetLanguage::Hcl(l) => l.get_ts_language(),
-            TargetLanguage::Yaml(l) => l.get_ts_language(),
-            TargetLanguage::Vue(l) => l.get_ts_language(),
-            TargetLanguage::Toml(l) => l.get_ts_language(),
-            TargetLanguage::Sql(l) => l.get_ts_language(),
-            TargetLanguage::Php(l) => l.get_ts_language(),
-            TargetLanguage::PhpOnly(l) => l.get_ts_language(),
-        }
-    }
-    fn parse_file(
-        &self,
-        name: &str,
-        body: &str,
-        logs: &mut AnalysisLogs,
-        new: bool,
-    ) -> anyhow::Result<Option<tree_sitter::Tree>> {
-        match self {
-            TargetLanguage::JavaScript(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::TypeScript(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Tsx(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Html(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Css(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Json(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Java(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::CSharp(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Python(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::MarkdownBlock(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::MarkdownInline(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Go(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Rust(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Ruby(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Solidity(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Hcl(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Yaml(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Vue(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Toml(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Sql(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::Php(l) => l.parse_file(name, body, logs, new),
-            TargetLanguage::PhpOnly(l) => l.parse_file(name, body, logs, new),
-        }
-    }
 }
 
 impl NodeTypes for TargetLanguage {

@@ -10,7 +10,6 @@ use crate::xscript_util::{
     js_like_skip_snippet_compilation_sorts, jslike_check_replacements,
 };
 
-use marzano_util::file_owner::FileParser;
 use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::position::Range;
 use tree_sitter::Parser;
@@ -83,25 +82,11 @@ impl NodeTypes for TypeScript {
     }
 }
 
-impl FileParser for TypeScript {
+impl Language for TypeScript {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
     }
 
-    fn parse_file(
-        &self,
-        name: &str,
-        body: &str,
-        logs: &mut marzano_util::analysis_logs::AnalysisLogs,
-        new: bool,
-    ) -> anyhow::Result<Option<tree_sitter::Tree>> {
-        let mut parser = Parser::new().unwrap();
-        parser.set_language(self.get_ts_language())?;
-        xscript_util::parse_file(self, name, body, logs, new, &mut parser)
-    }
-}
-
-impl Language for TypeScript {
     fn optional_empty_field_compilation(
         &self,
         sort_id: SortId,
@@ -192,5 +177,17 @@ impl Language for TypeScript {
         replacements: &mut Vec<crate::language::Replacement>,
     ) {
         jslike_check_replacements(n, replacements)
+    }
+
+    fn parse_file(
+        &self,
+        name: &str,
+        body: &str,
+        logs: &mut marzano_util::analysis_logs::AnalysisLogs,
+        new: bool,
+    ) -> anyhow::Result<Option<tree_sitter::Tree>> {
+        let mut parser = Parser::new().unwrap();
+        parser.set_language(self.get_ts_language())?;
+        xscript_util::parse_file(self, name, body, logs, new, &mut parser)
     }
 }

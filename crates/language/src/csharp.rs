@@ -1,7 +1,5 @@
 use std::sync::OnceLock;
 
-use marzano_util::file_owner::FileParser;
-
 use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str =
@@ -52,13 +50,11 @@ impl NodeTypes for CSharp {
     }
 }
 
-impl FileParser for CSharp {
+impl Language for CSharp {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
     }
-}
 
-impl Language for CSharp {
     fn language_name(&self) -> &'static str {
         "CSharp"
     }

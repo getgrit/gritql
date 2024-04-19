@@ -7,7 +7,7 @@ static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 use anyhow::{anyhow, Result};
 use grit_util::{traverse, Order};
-use marzano_util::{cursor_wrapper::CursorWrapper, file_owner::FileParser};
+use marzano_util::cursor_wrapper::CursorWrapper;
 use tree_sitter::{Node, Parser, Range};
 
 #[cfg(not(feature = "builtin-parser"))]
@@ -53,13 +53,11 @@ impl NodeTypes for Vue {
     }
 }
 
-impl FileParser for Vue {
+impl Language for Vue {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
     }
-}
 
-impl Language for Vue {
     fn language_name(&self) -> &'static str {
         "Vue"
     }

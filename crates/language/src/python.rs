@@ -2,7 +2,7 @@ use crate::language::{
     fields_for_nodes, Field, Language, NodeTypes, Replacement, SortId, TSLanguage,
 };
 use grit_util::AstNode;
-use marzano_util::{file_owner::FileParser, node_with_source::NodeWithSource};
+use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
 
 static NODE_TYPES_STRING: &str =
@@ -56,13 +56,11 @@ impl NodeTypes for Python {
     }
 }
 
-impl FileParser for Python {
+impl Language for Python {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
     }
-}
 
-impl Language for Python {
     fn language_name(&self) -> &'static str {
         "Python"
     }

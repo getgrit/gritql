@@ -9,7 +9,7 @@ use crate::{
     },
 };
 use anyhow::Result;
-use marzano_util::{file_owner::FileParser, node_with_source::NodeWithSource, position::Range};
+use marzano_util::{node_with_source::NodeWithSource, position::Range};
 use std::{borrow::Cow, sync::OnceLock};
 use tree_sitter::Parser;
 
@@ -84,26 +84,11 @@ impl NodeTypes for JavaScript {
     }
 }
 
-impl FileParser for JavaScript {
+impl Language for JavaScript {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
     }
 
-    /// This needs a special implementation to parse only the JS ranges inside a vue file
-    fn parse_file(
-        &self,
-        name: &str,
-        body: &str,
-        logs: &mut marzano_util::analysis_logs::AnalysisLogs,
-        new: bool,
-    ) -> Result<Option<tree_sitter::Tree>> {
-        let mut parser = Parser::new().unwrap();
-        parser.set_language(self.get_ts_language())?;
-        xscript_util::parse_file(self, name, body, logs, new, &mut parser)
-    }
-}
-
-impl Language for JavaScript {
     fn optional_empty_field_compilation(
         &self,
         sort_id: SortId,
@@ -191,6 +176,19 @@ impl Language for JavaScript {
 
     fn check_replacements(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Replacement>) {
         jslike_check_replacements(n, orphan_ranges)
+    }
+
+    /// This needs a special implementation to parse only the JS ranges inside a vue file
+    fn parse_file(
+        &self,
+        name: &str,
+        body: &str,
+        logs: &mut marzano_util::analysis_logs::AnalysisLogs,
+        new: bool,
+    ) -> Result<Option<tree_sitter::Tree>> {
+        let mut parser = Parser::new().unwrap();
+        parser.set_language(self.get_ts_language())?;
+        xscript_util::parse_file(self, name, body, logs, new, &mut parser)
     }
 }
 

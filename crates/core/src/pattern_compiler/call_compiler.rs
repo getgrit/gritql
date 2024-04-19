@@ -14,7 +14,6 @@ use anyhow::{anyhow, bail, Result};
 use grit_util::AstNode;
 use itertools::Itertools;
 use marzano_language::language::Language;
-use marzano_util::file_owner::FileParser;
 use marzano_util::{node_with_source::NodeWithSource, position::Range};
 use std::collections::BTreeMap;
 pub(crate) struct CallCompiler;

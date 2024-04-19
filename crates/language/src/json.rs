@@ -1,7 +1,5 @@
 use std::sync::OnceLock;
 
-use marzano_util::file_owner::FileParser;
-
 use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/json-node-types.json");
@@ -51,13 +49,11 @@ impl Json {
     }
 }
 
-impl FileParser for Json {
+impl Language for Json {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
     }
-}
 
-impl Language for Json {
     fn language_name(&self) -> &'static str {
         "JSON"
     }

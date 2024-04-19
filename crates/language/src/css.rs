@@ -1,11 +1,12 @@
 use std::sync::OnceLock;
 
 use crate::{
-    language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage},
+    language::{
+        default_parse_file, fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage,
+    },
     vue::get_vue_ranges,
 };
 use anyhow::anyhow;
-use marzano_util::file_owner::{default_parse_file, FileParser};
 use tree_sitter::{Parser, Tree};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/css-node-types.json");
@@ -56,9 +57,28 @@ impl NodeTypes for Css {
     }
 }
 
-impl FileParser for Css {
+impl Language for Css {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
+    }
+
+    fn language_name(&self) -> &'static str {
+        "CSS"
+    }
+    fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
+        &[
+            ("", ""),
+            ("GRIT_BLOCK { ", " }"),
+            ("GRIT_BLOCK { GRIT_PROPERTY: ", " }"),
+        ]
+    }
+
+    fn metavariable_sort(&self) -> SortId {
+        self.metavariable_sort
+    }
+
+    fn is_comment_sort(&self, id: SortId) -> bool {
+        id == self.comment_sort
     }
 
     fn parse_file(
@@ -84,27 +104,6 @@ impl FileParser for Css {
         } else {
             default_parse_file(self.get_ts_language(), name, body, logs, new)
         }
-    }
-}
-
-impl Language for Css {
-    fn language_name(&self) -> &'static str {
-        "CSS"
-    }
-    fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[
-            ("", ""),
-            ("GRIT_BLOCK { ", " }"),
-            ("GRIT_BLOCK { GRIT_PROPERTY: ", " }"),
-        ]
-    }
-
-    fn metavariable_sort(&self) -> SortId {
-        self.metavariable_sort
-    }
-
-    fn is_comment_sort(&self, id: SortId) -> bool {
-        id == self.comment_sort
     }
 
     fn make_single_line_comment(&self, text: &str) -> String {

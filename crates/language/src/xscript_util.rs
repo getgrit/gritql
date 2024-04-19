@@ -1,11 +1,11 @@
 use crate::{
-    language::{Language, Replacement, SortId, TSLanguage},
+    language::{default_parse_file, Language, Replacement, SortId, TSLanguage},
     vue::get_vue_ranges,
 };
 use anyhow::anyhow;
 use grit_util::AstNode;
 
-use marzano_util::{file_owner::default_parse_file, node_with_source::NodeWithSource};
+use marzano_util::node_with_source::NodeWithSource;
 use tree_sitter::{Parser, Tree};
 
 static STATEMENT_NODE_NAMES: &[&str] = &[
@@ -182,7 +182,7 @@ mod tests {
 
     use super::*;
     use crate::tsx::Tsx;
-    use marzano_util::{file_owner::FileParser, print_node::print_node};
+    use marzano_util::print_node::print_node;
 
     #[test]
     fn gets_ranges() {

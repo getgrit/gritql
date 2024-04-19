@@ -1,4 +1,3 @@
-use marzano_util::file_owner::FileParser;
 use regex::Regex;
 use std::sync::OnceLock;
 
@@ -58,13 +57,11 @@ impl NodeTypes for Php {
     }
 }
 
-impl FileParser for Php {
+impl Language for Php {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
     }
-}
 
-impl Language for Php {
     fn comment_prefix(&self) -> &'static str {
         "//"
     }

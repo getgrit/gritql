@@ -1,8 +1,8 @@
 use grit_util::{traverse, Order};
 use marzano_core::analysis::defines_itself;
 use marzano_core::parse::make_grit_parser;
+use marzano_language::language::Language;
 use marzano_util::cursor_wrapper::CursorWrapper;
-use marzano_util::file_owner::FileParser;
 use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::position::Position;
 use marzano_util::rich_path::RichFile;

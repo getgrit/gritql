@@ -14,7 +14,7 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use im::vector;
-use marzano_util::file_owner::FileParser;
+use marzano_language::language::Language;
 use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource};
 use std::path::PathBuf;
 use tree_sitter::Parser;
@@ -94,8 +94,9 @@ impl<Q: QueryContext> Matcher<Q> for Step<Q> {
                 .cloned()
                 .is_some()
             {
+                let code = NodeWithSource::new(file.tree.root_node(), &file.source);
                 let (new_src, new_ranges) = apply_effects(
-                    src,
+                    code,
                     state.effects.clone(),
                     &state.files,
                     &file.name,
