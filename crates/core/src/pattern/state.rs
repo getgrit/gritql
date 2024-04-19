@@ -9,13 +9,11 @@ use crate::{
     problem::{Effect, FileOwner},
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::CodeRange;
+use grit_util::{AnalysisLogs, CodeRange, Range};
 use im::{vector, Vector};
 use marzano_language::language::Language;
-use marzano_util::analysis_logs::AnalysisLogs;
-use marzano_util::position::Range;
-use marzano_util::position::VariableMatch;
 use rand::SeedableRng;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::ops::Range as StdRange;
 
@@ -272,3 +270,21 @@ impl<'a, Q: QueryContext> State<'a, Q> {
 }
 
 type VarRegistry<'a, P> = Vector<Vector<Vector<Box<VariableContent<'a, P>>>>>;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "camelCase")]
+pub struct VariableMatch {
+    pub name: String,
+    pub scoped_name: String,
+    pub ranges: Vec<Range>,
+}
+
+impl VariableMatch {
+    fn new(name: String, scoped_name: String, ranges: Vec<Range>) -> Self {
+        Self {
+            name,
+            scoped_name,
+            ranges,
+        }
+    }
+}

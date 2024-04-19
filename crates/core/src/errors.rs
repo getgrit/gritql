@@ -1,6 +1,6 @@
 use anyhow::{bail, Result};
+use grit_util::{AnalysisLogBuilder, AnalysisLogs};
 use marzano_language::language::Language;
-use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
 
 use crate::{
     context::QueryContext,

@@ -1,8 +1,7 @@
 use anyhow::Result;
-use core::fmt;
-use std::{collections::HashMap, fs::read_to_string};
-
 use colored::Colorize;
+use core::fmt;
+use grit_util::{Position, Range};
 use log::info;
 use marzano_core::{
     api::{EnforcementLevel, MatchResult},
@@ -11,8 +10,8 @@ use marzano_core::{
 use marzano_gritmodule::{
     config::ResolvedGritDefinition, testing::SampleTestResult, utils::extract_path,
 };
-use marzano_util::position::{Position, Range};
 use similar::{ChangeTag, TextDiff};
+use std::{collections::HashMap, fs::read_to_string};
 
 use crate::analyze::{extract_rewritten_content, group_checks};
 

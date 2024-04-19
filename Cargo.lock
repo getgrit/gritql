@@ -1308,6 +1308,10 @@ dependencies = [
 [[package]]
 name = "grit-util"
 version = "0.1.0"
+dependencies = [
+ "derive_builder",
+ "serde",
+]
 
 [[package]]
 name = "grit_cache"
@@ -1911,6 +1915,7 @@ dependencies = [
  "env_logger",
  "flate2",
  "git2",
+ "grit-util",
  "grit_cache",
  "ignore",
  "indicatif",
@@ -2058,6 +2063,7 @@ dependencies = [
  "ai_builtins",
  "anyhow",
  "dashmap",
+ "grit-util",
  "grit_cache",
  "marzano-core",
  "marzano-gritmodule",
@@ -2091,7 +2097,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64",
- "derive_builder",
  "futures",
  "grit-util",
  "http",
@@ -2113,6 +2118,7 @@ dependencies = [
  "ai_builtins",
  "anyhow",
  "console_error_panic_hook",
+ "grit-util",
  "marzano-core",
  "marzano-language",
  "marzano-util",
@@ -2133,11 +2139,11 @@ dependencies = [
  "clap",
  "colored",
  "dialoguer",
+ "grit-util",
  "indicatif",
  "log",
  "marzano-core",
  "marzano-language",
- "marzano-util",
  "serde",
  "serde_json",
 ]

@@ -8,7 +8,7 @@ use super::{
 use crate::problem::{Effect, EffectKind};
 use crate::{context::ExecContext, context::QueryContext};
 use anyhow::{bail, Result};
-use marzano_util::analysis_logs::AnalysisLogs;
+use grit_util::AnalysisLogs;
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]

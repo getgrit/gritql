@@ -11,13 +11,10 @@ use crate::{
     split_snippet::split_snippet,
 };
 use anyhow::{anyhow, Result};
-use grit_util::AstNode;
 use grit_util::{traverse, Order};
+use grit_util::{AnalysisLogBuilder, AstNode};
 use marzano_language::language::Language;
-use marzano_util::{
-    analysis_logs::AnalysisLogBuilder, cursor_wrapper::CursorWrapper,
-    node_with_source::NodeWithSource,
-};
+use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
 
 pub(crate) struct AsCompiler;
 

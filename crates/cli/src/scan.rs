@@ -1,10 +1,8 @@
-use std::{collections::HashMap, path::PathBuf};
-
-use marzano_core::{api::EnforcementLevel, fs::extract_ranges};
-use marzano_util::position::Range;
-use serde::Serialize;
-
 use crate::ux::CheckResult;
+use grit_util::Range;
+use marzano_core::{api::EnforcementLevel, fs::extract_ranges};
+use serde::Serialize;
+use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Debug, Serialize)]
 struct SemgrepPosition {

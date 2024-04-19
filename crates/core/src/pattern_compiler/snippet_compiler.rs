@@ -15,15 +15,12 @@ use crate::{
 };
 use crate::{pattern_compiler::compiler::NodeCompilationContext, split_snippet::split_snippet};
 use anyhow::{anyhow, bail, Result};
-use grit_util::AstNode;
+use grit_util::{AstNode, Position, Range};
 use marzano_language::{
     language::{nodes_from_indices, Language, SortId},
     target_language::TargetLanguage,
 };
-use marzano_util::{
-    node_with_source::NodeWithSource,
-    position::{Position, Range},
-};
+use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct CodeSnippetCompiler;
 
@@ -96,16 +93,16 @@ pub(crate) fn dynamic_snippet_from_source(
         .replace("\\\"", "\"")
         .replace("\\\\", "\\");
     let source = source_string.as_str();
-    let mut metavariables = split_snippet(source, context.compilation.lang);
-    metavariables.reverse();
-    let mut parts = Vec::new();
+    let metavariables = split_snippet(source, context.compilation.lang);
+    let mut parts = Vec::with_capacity(2 * metavariables.len() + 1);
     let mut last = 0;
     let mut last_pos = source_range.start;
-    for (byte_range, var) in metavariables {
+    // Reverse the iterator so we go over the variables in ascending order.
+    for (byte_range, var) in metavariables.into_iter().rev() {
         parts.push(DynamicSnippetPart::String(
             source[last as usize..byte_range.start as usize].to_string(),
         ));
-        let start_pos = Position::from_byte_index(source, Some((last_pos, last)), byte_range.start);
+        let start_pos = position_from_previous(last_pos, source, last, byte_range.start);
         // todo: does this handle utf8 correctly?
         last_pos = Position::new(start_pos.line, start_pos.column + var.len() as u32);
         let range = Range::new(
@@ -114,7 +111,7 @@ pub(crate) fn dynamic_snippet_from_source(
             source_range.start_byte + byte_range.start,
             source_range.start_byte + byte_range.start + var.len() as u32,
         );
-        if let Some(var) = context.vars.get(&var.to_string()) {
+        if let Some(var) = context.vars.get(var.as_ref()) {
             context.vars_array[context.scope_index][*var]
                 .locations
                 .insert(range);
@@ -122,7 +119,7 @@ pub(crate) fn dynamic_snippet_from_source(
                 context.scope_index,
                 *var,
             )));
-        } else if let Some(var) = context.global_vars.get(&var.to_string()) {
+        } else if let Some(var) = context.global_vars.get(var.as_ref()) {
             if context.compilation.file == DEFAULT_FILE_NAME {
                 context.vars_array[GLOBAL_VARS_SCOPE_INDEX][*var]
                     .locations
@@ -136,11 +133,7 @@ pub(crate) fn dynamic_snippet_from_source(
             let variable = register_variable(&var, range, context)?;
             parts.push(DynamicSnippetPart::Variable(variable));
         } else {
-            bail!(
-                "Could not find variable {} in this context, for snippet {}",
-                var,
-                source
-            );
+            bail!("Could not find variable {var} in this context, for snippet {source}");
         }
         last = byte_range.end;
     }
@@ -222,4 +215,18 @@ pub(crate) fn parse_snippet_content(
             source,
         )))
     }
+}
+
+fn position_from_previous(
+    prev_position: Position,
+    source: &str,
+    start_index: u32,
+    end_index: u32,
+) -> Position {
+    let mut pos = Position::from_byte_index(
+        &source[start_index as usize..],
+        (end_index - start_index) as usize,
+    );
+    pos.add(prev_position);
+    pos
 }

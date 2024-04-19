@@ -1,7 +1,5 @@
 use anyhow::{anyhow, bail, Context, Result};
-use std::collections::HashMap;
-use uuid::Uuid;
-
+use grit_util::Position;
 use marzano_core::{
     api::MatchResult, parse::make_grit_parser, pattern_compiler::src_to_problem_libs,
 };
@@ -10,12 +8,13 @@ use marzano_gritmodule::{
     resolver::get_grit_files,
     testing::{get_sample_name, test_pattern_sample, GritTestResultState},
 };
-use marzano_util::position::Position;
 use marzano_util::runtime::ExecutionContext;
+use std::collections::HashMap;
 use tower_lsp::{
     lsp_types::{MessageType, TextDocumentItem},
     Client,
 };
+use uuid::Uuid;
 
 use crate::{
     commands::{GritHighlightKind, ShowGritHighlights, ShowGritHighlightsRequest},

@@ -1,10 +1,9 @@
-use grit_util::{traverse, Order};
+use grit_util::{traverse, AstNode, Order, Position};
 use marzano_core::analysis::defines_itself;
 use marzano_core::parse::make_grit_parser;
 use marzano_language::language::Language as _;
 use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::node_with_source::NodeWithSource;
-use marzano_util::position::Position;
 use marzano_util::rich_path::RichFile;
 use std::fs::OpenOptions;
 use std::io::{Read, Seek, Write};
@@ -102,7 +101,7 @@ pub fn get_patterns_from_md(
             if current_code_block_language == Some(std::borrow::Cow::Borrowed("grit")) {
                 let definition = MarkdownBody {
                     body: content.to_string(),
-                    position: n.node.range().start_point().into(),
+                    position: n.range().start,
                     section_heading: current_heading.1.clone(),
                     section_level: current_heading.0,
                     samples: Vec::new(),
@@ -113,7 +112,7 @@ pub fn get_patterns_from_md(
                 // Check if we have an open sample
                 if let Some(mut open_sample) = last_config.open_sample.take() {
                     open_sample.output = Some(content.to_string());
-                    open_sample.output_range = Some(n.node.range().into());
+                    open_sample.output_range = Some(n.range());
                     last_config.samples.push(open_sample);
                 } else {
                     // Start a new sample
@@ -125,7 +124,7 @@ pub fn get_patterns_from_md(
                         },
                         input: content.to_string(),
                         output: None,
-                        input_range: Some(n.node.range().into()),
+                        input_range: Some(n.range()),
                         output_range: None,
                     };
                     last_config.open_sample = Some(sample);

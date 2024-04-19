@@ -9,6 +9,7 @@ use tracing::span;
 #[cfg(feature = "grit_tracing")]
 use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 
+use grit_util::Position;
 use indicatif::MultiProgress;
 use log::debug;
 use marzano_core::api::{AllDone, AllDoneReason, AnalysisLog, MatchResult};
@@ -18,15 +19,12 @@ use marzano_gritmodule::markdown::get_body_from_md_content;
 use marzano_gritmodule::searcher::find_grit_modules_dir;
 use marzano_gritmodule::utils::is_pattern_name;
 use marzano_language::target_language::{expand_paths, PatternLanguage};
-
-use marzano_util::position::Position;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::env;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicI32;
 use std::sync::atomic::Ordering;
-
-use std::collections::BTreeMap;
 use tokio::fs;
 
 use crate::diff::extract_target_ranges;
@@ -367,7 +365,7 @@ pub(crate) async fn run_apply_pattern(
     } = match pattern.compile(&my_input.pattern_libs, lang, filter_range, arg.limit) {
         Ok(c) => c,
         Err(e) => {
-            let log = match e.downcast::<marzano_util::analysis_logs::AnalysisLog>() {
+            let log = match e.downcast::<grit_util::AnalysisLog>() {
                 Ok(al) => AnalysisLog::from(al),
                 Err(er) => AnalysisLog {
                     level: 200,

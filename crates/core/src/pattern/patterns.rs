@@ -54,7 +54,7 @@ use crate::{
 };
 use anyhow::{bail, Result};
 use core::fmt::Debug;
-use marzano_util::analysis_logs::AnalysisLogs;
+use grit_util::AnalysisLogs;
 
 pub trait Matcher<Q: QueryContext>: Debug {
     // it is important that any implementors of Pattern

@@ -13,9 +13,8 @@ use crate::{
     problem::FileOwners,
 };
 use anyhow::Result;
-use grit_util::AstNode;
-use marzano_language::target_language::TargetLanguage;
-use marzano_util::analysis_logs::AnalysisLogs;
+use grit_util::{AnalysisLogs, AstNode};
+use marzano_language::language::Language;
 
 /// Contains various kinds of context about the query being executed.
 pub trait QueryContext: Clone + std::fmt::Debug + Sized + 'static {
@@ -66,7 +65,7 @@ pub trait ExecContext<Q: QueryContext> {
     fn files(&self) -> &FileOwners;
 
     // FIXME: This introduces a dependency on TreeSitter.
-    fn language(&self) -> &TargetLanguage;
+    fn language(&self) -> &impl Language;
 
     fn name(&self) -> Option<&str>;
 }

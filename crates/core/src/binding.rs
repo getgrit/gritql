@@ -7,10 +7,8 @@ use crate::pattern::{
 };
 use crate::problem::Effect;
 use anyhow::{bail, Result};
-use grit_util::CodeRange;
+use grit_util::{AnalysisLogs, CodeRange, Range};
 use marzano_language::language::Language;
-use marzano_util::analysis_logs::AnalysisLogs;
-use marzano_util::position::Range;
 use std::path::Path;
 use std::{borrow::Cow, collections::HashMap};
 

@@ -67,7 +67,7 @@ use self::{
     function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
     pattern_definition::PatternDefinition,
     predicate_definition::PredicateDefinition,
-    state::State,
+    state::{State, VariableMatch},
 };
 use crate::{
     context::{ExecContext, QueryContext},
@@ -75,10 +75,9 @@ use crate::{
     problem::{FileOwners, MarzanoQueryContext},
 };
 use anyhow::Result;
-use marzano_language::target_language::TargetLanguage;
-use marzano_util::{
-    analysis_logs::AnalysisLogs, position::VariableMatch, runtime::ExecutionContext,
-};
+use grit_util::AnalysisLogs;
+use marzano_language::{language::Language, target_language::TargetLanguage};
+use marzano_util::runtime::ExecutionContext;
 use std::fmt::Debug;
 use std::vec;
 use variable::VariableSourceLocations;
@@ -222,7 +221,7 @@ impl<'a> ExecContext<MarzanoQueryContext> for MarzanoContext<'a> {
     }
 
     // FIXME: This introduces a dependency on TreeSitter.
-    fn language(&self) -> &TargetLanguage {
+    fn language(&self) -> &impl Language {
         self.language
     }
 

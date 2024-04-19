@@ -5,7 +5,7 @@ use super::{
 };
 use crate::context::QueryContext;
 use anyhow::Result;
-use marzano_util::analysis_logs::AnalysisLogs;
+use grit_util::AnalysisLogs;
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]

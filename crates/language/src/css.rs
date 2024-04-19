@@ -7,6 +7,7 @@ use crate::{
     vue::get_vue_ranges,
 };
 use anyhow::anyhow;
+use grit_util::AnalysisLogs;
 use tree_sitter::{Parser, Tree};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/css-node-types.json");
@@ -85,7 +86,7 @@ impl Language for Css {
         &self,
         name: &str,
         body: &str,
-        logs: &mut marzano_util::analysis_logs::AnalysisLogs,
+        logs: &mut AnalysisLogs,
         new: bool,
     ) -> anyhow::Result<Option<Tree>> {
         let mut parser = Parser::new().unwrap();

@@ -14,10 +14,10 @@ use crate::{
     problem::MarzanoQueryContext,
 };
 use anyhow::{anyhow, bail, Result};
+use grit_util::AnalysisLogs;
 use im::Vector;
 use itertools::Itertools;
 use marzano_language::language::Language;
-use marzano_util::analysis_logs::AnalysisLogs;
 use rand::prelude::SliceRandom;
 use rand::Rng;
 use std::collections::BTreeMap;

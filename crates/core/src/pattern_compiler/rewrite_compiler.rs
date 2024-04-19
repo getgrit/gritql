@@ -8,8 +8,8 @@ use crate::{
     problem::MarzanoQueryContext,
 };
 use anyhow::{anyhow, Result};
-use grit_util::AstNode;
-use marzano_util::{analysis_logs::AnalysisLogBuilder, node_with_source::NodeWithSource};
+use grit_util::{AnalysisLogBuilder, AstNode};
+use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct RewriteCompiler;
 
@@ -43,12 +43,13 @@ impl NodeCompiler for RewriteCompiler {
                     ..
                 }),
             ) if left_source == right_source => {
+                let range = node.range();
                 let log = AnalysisLogBuilder::default()
                 .level(441_u16)
                 .file(context.compilation.file)
                 .source(node.source)
-                .position(node.node.start_position())
-                .range(node.range())
+                .position(range.start)
+                .range(range)
                 .message(
                     format!("Warning: This is rewriting `{}` into the identical string `{}`, will have no effect.", left_source, right_source)
                 )

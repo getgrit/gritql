@@ -10,9 +10,9 @@ use tracing::{event, instrument, Level};
 use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 
 use grit_cache::paths::cache_for_cwd;
+use grit_util::{FileRange, Position};
 use ignore::Walk;
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
-
 #[allow(unused_imports)]
 use marzano_core::pattern::built_in_functions::BuiltIns;
 use marzano_core::pattern_compiler::{src_to_problem_libs, CompilationResult};
@@ -22,7 +22,6 @@ use marzano_core::{
 };
 use marzano_language::target_language::PatternLanguage;
 use marzano_util::cache::GritCache;
-use marzano_util::position::{FileRange, Position};
 use marzano_util::runtime::ExecutionContext;
 
 use std::collections::HashMap;

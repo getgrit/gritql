@@ -19,9 +19,8 @@ log = { version = "0.4.19" }
 indicatif = { version = "0.17.5" }
 serde_json = { version = "1.0.113" }
 
-
+grit-util = { path = "../grit-util" }
 marzano-core = { path = "../core", features = [
   "non_wasm",
 ], default-features = false }
-marzano-util = { path = "../util", features = ["finder"] }
 marzano-language = { path = "../language", features = ["finder"] }
