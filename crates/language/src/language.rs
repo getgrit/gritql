@@ -257,6 +257,10 @@ pub trait Language: NodeTypes {
         self.is_comment_sort(node.node.kind_id())
     }
 
+    fn skip_padding_sort(&self, _id: SortId) -> bool {
+        false
+    }
+
     fn is_statement(&self, _id: SortId) -> bool {
         false
     }
