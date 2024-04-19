@@ -302,7 +302,7 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
     let skip_padding_ranges = get_skip_padding_ranges(&source, language);
     // we need to update the ranges of the replacements to account for padding discrepency
     let adjusted_source = adjust_padding(
-        &source.source,
+        source.source,
         &range,
         &skip_padding_ranges,
         distributed_indent,
