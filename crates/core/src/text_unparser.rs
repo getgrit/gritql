@@ -8,6 +8,7 @@ use grit_util::CodeRange;
 use im::Vector;
 use marzano_language::language::Language;
 use marzano_util::analysis_logs::AnalysisLogs;
+use marzano_util::node_with_source::NodeWithSource;
 use std::collections::HashMap;
 use std::ops::Range;
 use std::path::{Path, PathBuf};
@@ -20,7 +21,7 @@ use std::path::{Path, PathBuf};
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn apply_effects<'a, Q: QueryContext>(
-    code: &'a str,
+    code: NodeWithSource<'a>,
     effects: Vector<Effect<'a, Q>>,
     files: &FileRegistry<'a>,
     the_filename: &Path,
@@ -34,7 +35,7 @@ pub(crate) fn apply_effects<'a, Q: QueryContext>(
         .filter(|effect| !effect.binding.is_suppressed(language, current_name))
         .collect();
     if effects.is_empty() {
-        return Ok((code.to_string(), None));
+        return Ok((code.source.to_string(), None));
     }
     let mut memo: HashMap<CodeRange, Option<String>> = HashMap::new();
     let (from_inline, ranges) = linearize_binding(
@@ -42,8 +43,9 @@ pub(crate) fn apply_effects<'a, Q: QueryContext>(
         &effects,
         files,
         &mut memo,
-        code,
-        CodeRange::new(0, code.len() as u32, code),
+        code.source,
+        // code.code_range(),
+        CodeRange::new(0, code.source.len() as u32, code.source),
         language.should_pad_snippet().then_some(0),
         logs,
     )?;
