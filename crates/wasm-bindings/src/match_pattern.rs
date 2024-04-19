@@ -235,7 +235,7 @@ pub async fn match_pattern(
     ) {
         Ok(c) => c,
         Err(e) => {
-            let log = match e.downcast::<marzano_util::analysis_logs::AnalysisLog>() {
+            let log = match e.downcast::<grit_util::AnalysisLog>() {
                 Ok(al) => MatchResult::AnalysisLog(AnalysisLog::from(al)),
                 Err(er) => MatchResult::AnalysisLog(AnalysisLog {
                     level: 200,

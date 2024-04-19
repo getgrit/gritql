@@ -1,0 +1,6 @@
+---
+source: crates/cli_bin/tests/apply.rs
+assertion_line: 1103
+expression: stdout
+---
+

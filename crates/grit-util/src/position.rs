@@ -54,6 +54,30 @@ impl Position {
             .sum();
         line_start_index + (self.column as usize) - 1
     }
+
+    /// Converts a position expressed in byte indices to a position expressed in
+    /// character offsets.
+    fn byte_position_to_char_position(self, context: &str) -> Self {
+        let mut char_pos = Position { line: 1, column: 1 };
+        let mut bytes_processed = 0;
+
+        for c in context.chars() {
+            bytes_processed += c.len_utf8();
+
+            if self.line == char_pos.line && bytes_processed >= self.column as usize {
+                break;
+            }
+
+            if c == '\n' {
+                char_pos.line += 1;
+                char_pos.column = 1;
+            } else {
+                char_pos.column += 1;
+            }
+        }
+
+        char_pos
+    }
 }
 
 impl Display for Position {
@@ -184,6 +208,21 @@ impl Range {
         };
         Some((start as usize, end as usize))
     }
+
+    /// Converts a range expressed in byte indices to a range expressed in
+    /// character offets.
+    pub fn byte_range_to_char_range(self, context: &str) -> Self {
+        let start = self.start.byte_position_to_char_position(context);
+        let end = self.end.byte_position_to_char_position(context);
+        let start_byte = byte_index_to_char_offset(self.start_byte, context);
+        let end_byte = byte_index_to_char_offset(self.end_byte, context);
+        Self {
+            start,
+            end,
+            start_byte,
+            end_byte,
+        }
+    }
 }
 
 // A simple range, without byte information
@@ -240,6 +279,12 @@ pub struct FileRange {
     pub range: UtilRange,
 }
 
+fn byte_index_to_char_offset(index: u32, text: &str) -> u32 {
+    text.char_indices()
+        .take_while(|(i, _)| *i < index as usize)
+        .count() as u32
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -269,5 +314,21 @@ mod tests {
         assert_eq!(end, 1);
         let content_highlighted = line[start..end].to_string();
         assert_eq!(content_highlighted, "8");
+    }
+
+    #[test]
+    fn byte_range_to_char_range() {
+        let range = Range::new(Position::new(1, 8), Position::new(1, 10), 7, 9);
+        let new_range = range.byte_range_to_char_range("const [µb, fµa]");
+        assert_eq!(
+            new_range,
+            Range::new(Position::new(1, 8), Position::new(1, 9), 7, 8)
+        );
+        let range = Range::new(Position::new(1, 16), Position::new(1, 18), 15, 17);
+        let new_range = range.byte_range_to_char_range("const [µb, fµa]");
+        assert_eq!(
+            new_range,
+            Range::new(Position::new(1, 14), Position::new(1, 16), 13, 15)
+        );
     }
 }
