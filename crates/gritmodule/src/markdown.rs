@@ -277,8 +277,8 @@ pub fn replace_sample_in_md_file(
         bail!("Sample does not have an output range, cannot replace in file");
     };
 
-    let byte_range = (range.start_offset as isize + offset) as usize
-        ..(range.end_byte as isize + offset) as usize;
+    let byte_range =
+        (range.start_byte as isize + offset) as usize..(range.end_byte as isize + offset) as usize;
 
     let mut file = OpenOptions::new()
         .read(true)
@@ -291,10 +291,10 @@ pub fn replace_sample_in_md_file(
 
     let new_offset = if let Some(actual_output) = &sample.output {
         content.replace_range(byte_range, actual_output);
-        actual_output.len() as isize - (range.end_byte - range.start_offset) as isize
+        actual_output.len() as isize - (range.end_byte - range.start_byte) as isize
     } else {
         content.replace_range(byte_range, "");
-        -((range.end_byte - range.start_offset) as isize)
+        -((range.end_byte - range.start_byte) as isize)
     };
 
     file.seek(SeekFrom::Start(0))?;
@@ -884,7 +884,7 @@ $$ LANGUAGE plpgsql;
 
         // Check that the output range is correct
         let sample = &patterns[0].config.samples.as_ref().unwrap()[0];
-        let output_content = rich_file.content[sample.output_range.as_ref().unwrap().start_offset
+        let output_content = rich_file.content[sample.output_range.as_ref().unwrap().start_byte
             as usize
             ..sample.output_range.as_ref().unwrap().end_byte as usize]
             .to_string();
