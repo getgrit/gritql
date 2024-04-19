@@ -70,6 +70,14 @@ impl<'a> PartialEq for NodeWithSource<'a> {
 }
 
 impl<'a> AstNode for NodeWithSource<'a> {
+    fn kind_id(&self) -> u16 {
+        self.node.kind_id()
+    }
+
+    fn kind(&self) -> Cow<str> {
+        self.node.kind()
+    }
+
     fn ancestors(&self) -> impl Iterator<Item = Self> {
         AncestorIterator::new(self)
     }
