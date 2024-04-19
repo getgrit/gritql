@@ -35,14 +35,16 @@ impl Position {
 
     /// Creates a position for the given `byte_index` in the given `source`.
     pub fn from_byte_index(source: &str, byte_index: usize) -> Self {
-        let mut line_count = 0;
-        let mut last_line = source;
-        for line in source[..byte_index].lines() {
-            line_count += 1;
-            last_line = line;
+        let mut pos = Self::first();
+        for c in source[..byte_index].chars() {
+            if c == '\n' {
+                pos.line += 1;
+                pos.column = 1;
+            } else {
+                pos.column += c.len_utf8() as u32;
+            }
         }
-        let last_line_length = last_line.len() as u32;
-        Self::new(line_count.max(1), last_line_length + 1)
+        pos
     }
 
     /// Returns the byte index for this `Position` within the given `source`.
