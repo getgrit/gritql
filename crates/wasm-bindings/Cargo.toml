@@ -11,12 +11,13 @@ rust.unused_crate_dependencies = "warn"
 crate-type = ["cdylib"]
 
 [dependencies]
+grit-util = { path = "../grit-util" }
 marzano-core = { path = "../core", features = [
     "wasm_core",
 ], default-features = false }
 marzano-language = { path = "../language", default-features = false }
 marzano-util = { path = "../util" }
-ai_builtins = { git = "https://github.com/getgrit/ai_builtins.git", optional = true}
+ai_builtins = { git = "https://github.com/getgrit/ai_builtins.git", optional = true }
 wasm-bindgen = { version = "0.2.89", features = ["serde-serialize"] }
 wasm-bindgen-futures = { version = "0.4.39" }
 serde-wasm-bindgen = { version = "0.6" }

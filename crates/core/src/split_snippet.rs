@@ -2,17 +2,10 @@ use std::{borrow::Cow, ops::Range};
 
 use marzano_language::language::Language;
 
-/**
- * Takes a snippet with metavariables and returns
- * a list of ranges and the corresponding metavariables.
- *
- * The ranges are in descending order.
- *
- * The regex for identifying metavariables are:
- * /[\$\^#A-Za-z_][A-Za-z0-9_]/
- * \$\[[A-Za-z_][A-Za-z0-9_]*\]
- */
-
+/// Takes a snippet with metavariables and returns a list of ranges and the
+/// corresponding metavariables.
+///
+/// The ranges are in descending order.
 pub fn split_snippet<'a>(
     snippet: &'a str,
     lang: &impl Language,

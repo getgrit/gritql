@@ -1,7 +1,6 @@
 use anyhow::Result;
-use marzano_util::position::{FileRange, Position, RangeWithoutByte};
+use grit_util::{FileRange, Position, RangeWithoutByte};
 use serde::Deserialize;
-
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
@@ -28,7 +27,7 @@ impl From<EslintMessage> for RangeWithoutByte {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct EslintFile {
-    pub file_path: String,
+    pub file_path: PathBuf,
     pub messages: Vec<EslintMessage>,
 }
 

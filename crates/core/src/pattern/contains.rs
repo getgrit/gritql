@@ -6,8 +6,8 @@ use super::{
 use crate::{binding::Binding, context::QueryContext, pattern::resolved_pattern::File};
 use anyhow::Result;
 use core::fmt::Debug;
+use grit_util::AnalysisLogs;
 use grit_util::{AstCursor, AstNode};
-use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
 pub struct Contains<Q: QueryContext> {

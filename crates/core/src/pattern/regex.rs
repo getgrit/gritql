@@ -10,7 +10,7 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
-use marzano_util::analysis_logs::AnalysisLogs;
+use grit_util::AnalysisLogs;
 use regex::Regex;
 
 #[derive(Debug, Clone)]

@@ -10,7 +10,7 @@ use crate::context::QueryContext;
 use crate::problem::{Effect, EffectKind};
 use anyhow::{bail, Result};
 use core::fmt::Debug;
-use marzano_util::analysis_logs::AnalysisLogs;
+use grit_util::AnalysisLogs;
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]

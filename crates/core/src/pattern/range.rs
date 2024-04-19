@@ -5,8 +5,7 @@ use super::{
 };
 use crate::context::{ExecContext, QueryContext};
 use anyhow::{anyhow, Result};
-use marzano_util::analysis_logs::AnalysisLogs;
-use marzano_util::position::UtilRange;
+use grit_util::{AnalysisLogs, UtilRange};
 
 #[derive(Debug, Clone)]
 pub struct Point {

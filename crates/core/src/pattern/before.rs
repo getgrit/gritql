@@ -7,11 +7,9 @@ use crate::{
     binding::Binding,
     context::{ExecContext, QueryContext},
     errors::debug,
-    resolve,
 };
 use anyhow::{bail, Result};
-use grit_util::AstNode;
-use marzano_util::analysis_logs::AnalysisLogs;
+use grit_util::{AnalysisLogs, AstNode};
 
 #[derive(Debug, Clone)]
 pub struct Before<Q: QueryContext> {
@@ -70,7 +68,9 @@ impl<Q: QueryContext> Matcher<Q> for Before<Q> {
         let Some(node) = binding.as_node() else {
             return Ok(true);
         };
-        let next_node = resolve!(node.next_named_node());
+        let Some(next_node) = node.next_named_node() else {
+            return Ok(false);
+        };
         if !self.before.execute(
             &ResolvedPattern::from_node_binding(next_node),
             &mut cur_state,

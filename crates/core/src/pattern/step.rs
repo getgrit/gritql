@@ -13,9 +13,10 @@ use crate::{
     text_unparser::apply_effects,
 };
 use anyhow::{anyhow, bail, Result};
+use grit_util::AnalysisLogs;
 use im::vector;
 use marzano_language::language::Language;
-use marzano_util::{analysis_logs::AnalysisLogs, node_with_source::NodeWithSource};
+use marzano_util::node_with_source::NodeWithSource;
 use std::path::PathBuf;
 use tree_sitter::Parser;
 

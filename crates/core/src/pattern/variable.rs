@@ -12,9 +12,8 @@ use crate::{
 };
 use anyhow::{bail, Result};
 use core::fmt::Debug;
+use grit_util::{AnalysisLogs, Range};
 use marzano_language::language::{Language, GRIT_METAVARIABLE_PREFIX};
-use marzano_util::analysis_logs::AnalysisLogs;
-use marzano_util::position::Range;
 
 #[derive(Clone, Debug, Copy)]
 pub struct Variable {

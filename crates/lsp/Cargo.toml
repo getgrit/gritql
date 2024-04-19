@@ -18,6 +18,7 @@ marzano-gritmodule = { path = "../gritmodule" }
 grit_cache = { path = "../gritcache", optional = true }
 marzano-language = { path = "../language" }
 ai_builtins = { git = "https://github.com/getgrit/ai_builtins.git", optional = true }
+grit-util = { path = "../grit-util" }
 marzano-util = { path = "../util", features = ["finder"] }
 anyhow = { version = "1.0.70" }
 dashmap = { version = "5.5.3" }

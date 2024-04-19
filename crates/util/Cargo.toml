@@ -17,7 +17,6 @@ anyhow = { version = "1.0.70" }
 log = { version = "0.4.20", optional = true }
 ignore = { version = "0.4.21", optional = true }
 sha2 = { version = "0.10.8" }
-derive_builder = { version = "0.13.1" }
 reqwest = { version = "0.11.22", features = [
   "blocking",
   "json",

@@ -11,8 +11,8 @@ use crate::{
     context::{ExecContext, QueryContext},
 };
 use anyhow::{bail, Result};
+use grit_util::AnalysisLogs;
 use marzano_language::language::Language;
-use marzano_util::analysis_logs::AnalysisLogs;
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]

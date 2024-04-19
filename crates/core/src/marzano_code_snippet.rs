@@ -12,8 +12,8 @@ use crate::{
     problem::MarzanoQueryContext,
 };
 use anyhow::Result;
+use grit_util::AnalysisLogs;
 use marzano_language::language::SortId;
-use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
 pub struct MarzanoCodeSnippet {

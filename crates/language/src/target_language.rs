@@ -28,12 +28,10 @@ use crate::{
 use anyhow::Result;
 use clap::ValueEnum;
 use enum_dispatch::enum_dispatch;
-use marzano_util::analysis_logs::AnalysisLogs;
+use grit_util::{AnalysisLogs, AstNode, Range};
 use marzano_util::node_with_source::NodeWithSource;
-use marzano_util::position::Range;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 use std::fmt;
 use std::hash::Hash;
 use tree_sitter::{Parser, Tree};

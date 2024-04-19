@@ -19,12 +19,10 @@ use crate::{
     problem::{Effect, EffectKind, MarzanoQueryContext},
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::CodeRange;
+use grit_util::{AnalysisLogs, AstNode, CodeRange, Range};
 use im::{vector, Vector};
 use marzano_language::language::{FieldId, Language};
-use marzano_util::{
-    analysis_logs::AnalysisLogs, node_with_source::NodeWithSource, position::Range,
-};
+use marzano_util::node_with_source::NodeWithSource;
 use std::{
     borrow::Cow,
     collections::{BTreeMap, HashMap},
@@ -874,7 +872,8 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
             Self::Resolved(resolved) => resolved.body.clone(),
             Self::Ptr(ptr) => {
                 let file = &files.get_file(*ptr);
-                let range = file.tree.root_node().range().into();
+                let root = NodeWithSource::new(file.tree.root_node(), &file.source);
+                let range = root.range();
                 ResolvedPattern::from_range_binding(range, &file.source)
             }
         }

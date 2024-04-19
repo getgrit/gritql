@@ -1,11 +1,14 @@
-use crate::problem::{FileOwner, InputRanges, Problem};
-use crate::{fs, tree_sitter_serde::tree_sitter_node_to_json};
+use crate::{
+    fs,
+    pattern::state::VariableMatch,
+    problem::{FileOwner, InputRanges, Problem},
+    tree_sitter_serde::tree_sitter_node_to_json,
+};
 use anyhow::{bail, Result};
+use grit_util::{AnalysisLog as GritAnalysisLog, Position, Range};
 use im::Vector;
 use marzano_language::grit_ts_node::grit_node_types;
 use marzano_language::language::Language;
-use marzano_util::analysis_logs::AnalysisLog as MarzanoAnalysisLog;
-use marzano_util::position::{Position, Range, VariableMatch};
 use serde::{Deserialize, Serialize};
 use serde_json::to_string_pretty;
 use std::path::PathBuf;
@@ -606,8 +609,8 @@ impl AnalysisLog {
     }
 }
 
-impl From<MarzanoAnalysisLog> for AnalysisLog {
-    fn from(log: MarzanoAnalysisLog) -> Self {
+impl From<GritAnalysisLog> for AnalysisLog {
+    fn from(log: GritAnalysisLog) -> Self {
         Self {
             level: log.level.unwrap_or(280),
             message: log.message,

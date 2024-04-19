@@ -1,7 +1,7 @@
-use std::{collections::HashSet, path::Path};
-
 use anyhow::{bail, Result};
-use marzano_util::{position::Position, rich_path::RichFile};
+use grit_util::Position;
+use marzano_util::rich_path::RichFile;
+use std::{collections::HashSet, path::Path};
 use tokio::fs;
 
 use crate::{
@@ -47,11 +47,7 @@ pub fn get_patterns_from_yaml(
     for pattern in config.patterns.iter_mut() {
         pattern.kind = Some(DefinitionKind::Pattern);
         let offset = file.content.find(&pattern.name).unwrap_or(0);
-        pattern.position = Some(Position::from_byte_index(
-            &file.content,
-            None,
-            offset as u32,
-        ));
+        pattern.position = Some(Position::from_byte_index(&file.content, offset));
     }
 
     config

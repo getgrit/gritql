@@ -9,11 +9,10 @@ use super::{
 use crate::{
     binding::Binding,
     context::{ExecContext, QueryContext},
-    resolve_opt,
 };
 use anyhow::{anyhow, bail, Result};
+use grit_util::AnalysisLogs;
 use marzano_language::language::Language;
-use marzano_util::analysis_logs::AnalysisLogs;
 
 #[derive(Debug, Clone)]
 pub enum ListOrContainer<Q: QueryContext> {
@@ -75,12 +74,13 @@ impl<Q: QueryContext> ListIndex<Q> {
                         resolved.get_last_binding().and_then(Binding::list_items)
                     {
                         let len = items.clone().count();
-                        let index = resolve_opt!(to_unsigned(index, len));
-                        Ok(items.nth(index).map(|n| {
-                            PatternOrResolved::ResolvedBinding(ResolvedPattern::from_node_binding(
-                                n,
-                            ))
-                        }))
+                        return Ok(to_unsigned(index, len)
+                            .and_then(|index| items.nth(index))
+                            .map(|n| {
+                                PatternOrResolved::ResolvedBinding(
+                                    ResolvedPattern::from_node_binding(n),
+                                )
+                            }));
                     } else {
                         bail!("left side of a listIndex must be a list")
                     }
@@ -106,9 +106,8 @@ impl<Q: QueryContext> ListIndex<Q> {
                 Some(PatternOrResolvedMut::Resolved(resolved)) => {
                     if let Some(mut items) = resolved.get_list_binding_items() {
                         let len = items.clone().count();
-                        let index = resolve_opt!(to_unsigned(index, len));
-                        return Ok(items
-                            .nth(index)
+                        return Ok(to_unsigned(index, len)
+                            .and_then(|index| items.nth(index))
                             .map(|_| PatternOrResolvedMut::_ResolvedBinding));
                     }
 

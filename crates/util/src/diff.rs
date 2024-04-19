@@ -1,8 +1,7 @@
 use anyhow::{bail, Result};
+use grit_util::{Position, RangeWithoutByte};
 use serde::Serialize;
 use std::str::FromStr;
-
-use crate::position::{Position, RangeWithoutByte};
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct RangePair {
@@ -228,9 +227,8 @@ fn insert_range_if_found(
 
 #[cfg(test)]
 mod tests {
-    use crate::position::Range;
-
     use super::*;
+    use grit_util::Range;
     use insta::assert_yaml_snapshot;
 
     #[test]

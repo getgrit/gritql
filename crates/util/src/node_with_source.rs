@@ -1,9 +1,6 @@
-use std::{borrow::Cow, ptr, str::Utf8Error};
-
-use crate::position::Range;
-
 use super::cursor_wrapper::CursorWrapper;
-use grit_util::{AstCursor, AstNode, CodeRange};
+use grit_util::{AstCursor, AstNode, CodeRange, Position, Range};
+use std::{borrow::Cow, ptr, str::Utf8Error};
 use tree_sitter::Node;
 
 /// A TreeSitter node, including a reference to the source code from which it
@@ -17,6 +14,12 @@ pub struct NodeWithSource<'a> {
 impl<'a> NodeWithSource<'a> {
     pub fn new(node: Node<'a>, source: &'a str) -> Self {
         Self { node, source }
+    }
+
+    pub fn child_by_field_id(&self, field_id: u16) -> Option<Self> {
+        self.node
+            .child_by_field_id(field_id)
+            .map(|child| Self::new(child, self.source))
     }
 
     pub fn child_by_field_name(&self, field_name: &str) -> Option<Self> {
@@ -53,10 +56,6 @@ impl<'a> NodeWithSource<'a> {
             .field_id_for_name(field_name)
             .unwrap_or_default();
         self.named_children_by_field_id(field_id)
-    }
-
-    pub fn range(&self) -> Range {
-        Range::from(self.node.range())
     }
 }
 
@@ -126,6 +125,18 @@ impl<'a> AstNode for NodeWithSource<'a> {
 
     fn text(&self) -> Result<Cow<str>, Utf8Error> {
         self.node.utf8_text(self.source.as_bytes())
+    }
+
+    fn range(&self) -> Range {
+        let ts_range = self.node.range();
+        let start = ts_range.start_point();
+        let end = ts_range.end_point();
+        Range {
+            start: Position::new(start.row() + 1, start.column() + 1),
+            end: Position::new(end.row() + 1, end.column() + 1),
+            start_byte: ts_range.start_byte(),
+            end_byte: ts_range.end_byte(),
+        }
     }
 
     fn code_range(&self) -> CodeRange {

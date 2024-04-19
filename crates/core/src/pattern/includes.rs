@@ -6,7 +6,7 @@ use super::{
 use crate::context::{ExecContext, QueryContext};
 use anyhow::{Context as _, Result};
 use core::fmt::Debug;
-use marzano_util::analysis_logs::AnalysisLogs;
+use grit_util::AnalysisLogs;
 
 #[derive(Debug, Clone)]
 pub struct Includes<Q: QueryContext> {

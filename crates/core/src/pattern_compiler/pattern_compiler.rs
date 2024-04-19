@@ -55,14 +55,9 @@ use crate::{
     },
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::AstNode;
-use grit_util::{traverse, Order};
+use grit_util::{traverse, AstNode, Order, Position, Range};
 use marzano_language::language::{Field, GritMetaValue, Language, NodeTypes, SnippetNode};
-use marzano_util::{
-    cursor_wrapper::CursorWrapper,
-    node_with_source::NodeWithSource,
-    position::{char_index_to_byte_index, Position, Range},
-};
+use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
 use regex::Match as RegexMatch;
 use std::collections::HashMap;
 
@@ -407,8 +402,8 @@ fn is_metavariable(node: &NodeWithSource, lang: &impl Language) -> bool {
 }
 
 fn make_regex_match_range(text: &str, m: RegexMatch) -> Range {
-    let start = Position::from_byte_index(text, None, m.start() as u32);
-    let end = Position::from_byte_index(text, None, m.end() as u32);
+    let start = Position::from_byte_index(text, m.start());
+    let end = Position::from_byte_index(text, m.end());
     Range::new(start, end, m.start() as u32, m.end() as u32)
 }
 
@@ -567,4 +562,11 @@ fn text_to_var(
             Ok(SnippetValues::Variable(var))
         }
     }
+}
+
+fn char_index_to_byte_index(index: u32, text: &str) -> u32 {
+    text.chars()
+        .take(index as usize)
+        .map(|c| c.len_utf8() as u32)
+        .sum()
 }

@@ -7,7 +7,7 @@ use super::{
 use crate::context::QueryContext;
 use anyhow::{anyhow, Result};
 use core::fmt::Debug;
-use marzano_util::analysis_logs::AnalysisLogs;
+use grit_util::AnalysisLogs;
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]

@@ -20,7 +20,6 @@ pub mod parse;
 pub mod pattern;
 pub mod pattern_compiler;
 pub mod problem;
-mod resolve;
 mod smart_insert;
 mod split_snippet;
 mod suppress;
