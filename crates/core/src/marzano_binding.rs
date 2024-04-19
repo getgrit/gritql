@@ -75,7 +75,7 @@ pub(crate) fn pad_snippet(padding: &str, snippet: &str, lang: &impl Language) ->
     let skip_ranges = get_skip_padding_ranges_for_snippet(lang, snippet)?;
     for line in lines {
         let index = get_slice_byte_offset(snippet, line);
-        if !is_index_in_range(index, &skip_ranges) {
+        if !is_index_in_ranges(index, &skip_ranges) {
             result.push_str(&format!("\n{}{}", &padding, line))
         } else {
             result.push_str(&format!("\n{}", line))
@@ -95,7 +95,7 @@ fn adjust_ranges(substitutions: &mut [(EffectRange, String)], index: usize, delt
     }
 }
 
-pub(crate) fn is_index_in_range(index: u32, skip_ranges: &[CodeRange]) -> bool {
+pub(crate) fn is_index_in_ranges(index: u32, skip_ranges: &[CodeRange]) -> bool {
     skip_ranges
         .iter()
         .any(|r| r.start <= index && index < r.end)
@@ -139,7 +139,7 @@ fn adjust_padding<'a>(
         for line in lines {
             result.push('\n');
             let index = get_slice_byte_offset(src, line);
-            if !is_index_in_range(index, skip_ranges) {
+            if !is_index_in_ranges(index, skip_ranges) {
                 if line.trim().is_empty() {
                     adjust_ranges(substitutions, offset + result.len(), -(line.len() as isize));
                     continue;
