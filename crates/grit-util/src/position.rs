@@ -42,7 +42,7 @@ impl Position {
             last_line = line;
         }
         let last_line_length = last_line.len() as u32;
-        Self::new(line_count, last_line_length + 1)
+        Self::new(line_count.max(1), last_line_length + 1)
     }
 
     /// Returns the byte index for this `Position` within the given `source`.
