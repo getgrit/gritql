@@ -1,3 +1,4 @@
+use grit_util::Position;
 use marzano_core::{
     api::{AnalysisLog, InputFile, MatchResult, PatternInfo},
     pattern::built_in_functions::BuiltIns,
@@ -5,8 +6,8 @@ use marzano_core::{
     tree_sitter_serde::tree_sitter_node_to_json,
 };
 use marzano_language::target_language::{PatternLanguage, TargetLanguage};
+use marzano_util::rich_path::RichFile;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
-use marzano_util::{position::Position, rich_path::RichFile};
 use std::{
     collections::{BTreeMap, HashMap},
     path::PathBuf,
@@ -126,7 +127,7 @@ pub async fn parse_input_files(
             results.extend(warning_logs);
         }
         Err(e) => {
-            let log = match e.downcast::<marzano_util::analysis_logs::AnalysisLog>() {
+            let log = match e.downcast::<grit_util::AnalysisLog>() {
                 Ok(al) => MatchResult::AnalysisLog(AnalysisLog::from(al)),
                 Err(er) => MatchResult::AnalysisLog(AnalysisLog {
                     level: 200,

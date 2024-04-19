@@ -10,7 +10,7 @@ use crate::{
     context::{ExecContext, QueryContext},
 };
 use anyhow::Result;
-use marzano_util::analysis_logs::{AnalysisLogBuilder, AnalysisLogs};
+use grit_util::{AnalysisLogBuilder, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct VariableInfo {

@@ -9,8 +9,9 @@ use crate::{
     },
 };
 use anyhow::Result;
-use marzano_util::{node_with_source::NodeWithSource, position::Range};
-use std::{borrow::Cow, sync::OnceLock};
+use grit_util::{AnalysisLogs, AstNode, Range};
+use marzano_util::node_with_source::NodeWithSource;
+use std::sync::OnceLock;
 use tree_sitter::Parser;
 
 static NODE_TYPES_STRING: &str =
@@ -147,24 +148,14 @@ impl Language for JavaScript {
     }
 
     // assumes trim doesn't do anything otherwise range is off
-    fn comment_text<'a>(
-        &self,
-        node: &tree_sitter::Node,
-        text: &'a str,
-    ) -> Option<(Cow<'a, str>, Range)> {
-        let text = node.utf8_text(text.as_bytes()).unwrap();
-        let mut range: Range = node.range().into();
-        if let Some(text) = text.strip_prefix("//") {
-            if !range.adjust_columns(2, 0) {
-                return None;
-            }
-            Some((Cow::Owned(text.to_owned()), range))
-        } else if let Some(text) = text.strip_prefix("/*") {
-            if !range.adjust_columns(2, -2) {
-                return None;
-            }
-            text.strip_suffix("*/")
-                .map(|s| (Cow::Owned(s.to_owned()), range))
+    fn comment_text_range(&self, node: &impl AstNode) -> Option<Range> {
+        let content_text = node.text().ok()?;
+        let content_text = content_text.trim();
+        let mut range = node.range();
+        if content_text.starts_with("//") {
+            range.adjust_columns(2, 0).then_some(range)
+        } else if content_text.starts_with("/*") && content_text.ends_with("*/") {
+            range.adjust_columns(2, -2).then_some(range)
         } else {
             None
         }
@@ -183,7 +174,7 @@ impl Language for JavaScript {
         &self,
         name: &str,
         body: &str,
-        logs: &mut marzano_util::analysis_logs::AnalysisLogs,
+        logs: &mut AnalysisLogs,
         new: bool,
     ) -> Result<Option<tree_sitter::Tree>> {
         let mut parser = Parser::new().unwrap();

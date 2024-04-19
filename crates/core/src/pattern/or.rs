@@ -9,7 +9,7 @@ use super::{
 use crate::{binding::Binding, context::QueryContext};
 use anyhow::Result;
 use core::fmt::Debug;
-use marzano_util::analysis_logs::AnalysisLogs;
+use grit_util::AnalysisLogs;
 
 #[derive(Debug, Clone)]
 pub struct Or<Q: QueryContext> {

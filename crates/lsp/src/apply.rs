@@ -1,14 +1,11 @@
-use std::collections::HashMap;
-
+use grit_util::{FileRange, Range};
 use marzano_core::api::MatchResult;
 use marzano_core::pattern_compiler::src_to_problem_libs;
 use marzano_gritmodule::patterns_directory::PatternsDirectory;
 use marzano_language::target_language::PatternLanguage;
+use marzano_util::rich_path::RichFile;
 use marzano_util::runtime::ExecutionContext;
-use marzano_util::{
-    position::{FileRange, Range},
-    rich_path::RichFile,
-};
+use std::collections::HashMap;
 use tower_lsp::{
     lsp_types::{MessageType, TextDocumentItem, TextEdit, Url, WorkspaceEdit},
     Client,
@@ -65,35 +62,31 @@ pub async fn apply_pattern_body(
             return;
         }
     };
+    let file_path_string = file_path.to_string_lossy().to_string();
     let problem = match src_to_problem_libs(
         body.to_owned(),
         &pattern_libs,
         lang.try_into().unwrap(),
         name,
-        range.map(|r| {
+        range.map(|range| {
             vec![FileRange {
-                file_path: file_path.to_string_lossy().to_string(),
-                range: marzano_util::position::UtilRange::Range(r),
+                file_path,
+                range: range.into(),
             }]
         }),
         get_ai_built_in_functions_for_feature(),
         None,
     ) {
-        Ok(p) => p,
+        Ok(p) => p.problem,
         Err(e) => {
-            let message = format!("{}", e);
-            client.show_message(MessageType::ERROR, message).await;
+            client.show_message(MessageType::ERROR, e.to_string()).await;
             return;
         }
-    }
-    .problem;
+    };
 
     let file_content = &document.text;
     let execution_result = problem.execute_file(
-        &RichFile::new(
-            file_path.to_string_lossy().to_string(),
-            file_content.to_owned(),
-        ),
+        &RichFile::new(file_path_string, file_content.to_owned()),
         &context,
     );
     let mut text_edits = HashMap::new();

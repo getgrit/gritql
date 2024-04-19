@@ -98,7 +98,7 @@ pub(crate) fn parse_file(
     lang: &impl Language,
     name: &str,
     body: &str,
-    logs: &mut marzano_util::analysis_logs::AnalysisLogs,
+    logs: &mut grit_util::AnalysisLogs,
     new: bool,
     parser: &mut Parser,
 ) -> anyhow::Result<Option<Tree>> {
@@ -137,11 +137,11 @@ pub(crate) fn jslike_check_replacements(
     replacement_ranges: &mut Vec<Replacement>,
 ) {
     if n.node.kind() == "arrow_function" {
-        let child = n.node.child_by_field_name("body");
+        let child = n.child_by_field_name("body");
         if let Some(child) = child {
             let range = child.range();
-            if range.start_byte() == range.end_byte() {
-                replacement_ranges.push(Replacement::new(range.into(), "{}"));
+            if range.start_byte == range.end_byte {
+                replacement_ranges.push(Replacement::new(range, "{}"));
             }
         }
     } else if n.node.is_error()

@@ -5,7 +5,7 @@ use super::{
 };
 use crate::context::QueryContext;
 use anyhow::Result;
-use marzano_util::analysis_logs::AnalysisLogs;
+use grit_util::AnalysisLogs;
 
 #[derive(Clone, Debug)]
 pub struct PatternDefinition<Q: QueryContext> {

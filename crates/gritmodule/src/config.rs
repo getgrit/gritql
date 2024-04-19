@@ -1,6 +1,6 @@
+use grit_util::{Position, Range};
 use marzano_core::api::EnforcementLevel;
 use marzano_language::target_language::PatternLanguage;
-use marzano_util::position::{Position, Range};
 use serde::{Deserialize, Serialize};
 use std::{
     cmp::Ordering,

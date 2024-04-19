@@ -26,7 +26,7 @@ use crate::{
     },
 };
 use anyhow::Result;
-use marzano_util::position::FileRange;
+use grit_util::FileRange;
 use std::collections::BTreeMap;
 
 pub(super) fn auto_wrap_pattern<Q: QueryContext>(
@@ -393,7 +393,9 @@ fn wrap_pattern_in_range<Q: QueryContext>(
         let file_match = Predicate::Match(Box::new(Match::new(
             Container::Variable(Variable::file_name()),
             Some(Pattern::Includes(Box::new(Includes::new(
-                Pattern::StringConstant(StringConstant::new(file_range.file_path.clone())),
+                Pattern::StringConstant(StringConstant::new(
+                    file_range.file_path.to_string_lossy().to_string(),
+                )),
             )))),
         )));
         predicates.push(Predicate::And(Box::new(PrAnd::new(vec![

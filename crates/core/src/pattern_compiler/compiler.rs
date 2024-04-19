@@ -25,16 +25,10 @@ use crate::{
     problem::{MarzanoQueryContext, Problem},
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::AstNode;
-use grit_util::{traverse, Order};
+use grit_util::{traverse, AnalysisLogBuilder, AnalysisLogs, AstNode, FileRange, Order, Range};
 use itertools::Itertools;
 use marzano_language::{self, target_language::TargetLanguage};
-use marzano_util::{
-    analysis_logs::{AnalysisLogBuilder, AnalysisLogs},
-    cursor_wrapper::CursorWrapper,
-    node_with_source::NodeWithSource,
-    position::{FileRange, Position, Range},
-};
+use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
 use regex::Regex;
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -100,9 +94,9 @@ fn grit_parsing_errors(tree: &Tree, src: &str, file_name: &str) -> Result<Analys
 
     for n in traverse(CursorWrapper::new(cursor, src), Order::Pre) {
         if n.node.is_error() || n.node.is_missing() {
-            let position: Position = n.node.range().start_point().into();
+            let position = n.range().start;
 
-            let error_node = n.node.utf8_text(src.as_bytes())?;
+            let error_node = n.text()?;
             let identifier_regex = Regex::new(r"^([A-Za-z0-9_]*)\(\)$")?;
             let message = if let Some(found) = identifier_regex.find(&error_node) {
                 format!(
@@ -116,11 +110,13 @@ fn grit_parsing_errors(tree: &Tree, src: &str, file_name: &str) -> Result<Analys
                     format!(" in {}", file_name)
                 };
                 format!(
-                        "Pattern syntax error at {}:{}{}. If you hit this error while running grit apply on a pattern from the Grit standard library, try running grit init. If you are running a custom pattern, check out the docs at https://docs.grit.io/ for help with writing patterns.",
-                        n.node.range().start_point().row() + 1,
-                        n.node.range().start_point().column() + 1,
-                        file_locations_str
-                    )
+                    "Pattern syntax error at {position}{file_locations_str}. \
+                        If you hit this error while running grit apply on a \
+                        pattern from the Grit standard library, try running \
+                        grit init. If you are running a custom pattern, check \
+                        out the docs at https://docs.grit.io/ for help with \
+                        writing patterns.",
+                )
             };
 
             let log = log_builder
@@ -160,12 +156,7 @@ fn insert_definition_index(
     let name = name.trim();
     let parameters: Vec<_> = definition
         .named_children_by_field_name("args")
-        .map(|n| {
-            Ok::<(std::string::String, marzano_util::position::Range), Utf8Error>((
-                n.text()?.trim().to_string(),
-                n.range(),
-            ))
-        })
+        .map(|n| Ok::<(String, Range), Utf8Error>((n.text()?.trim().to_string(), n.range())))
         .collect::<Result<Vec<_>, Utf8Error>>()?;
     let duplicates = get_duplicates(&parameters);
     if !duplicates.is_empty() {

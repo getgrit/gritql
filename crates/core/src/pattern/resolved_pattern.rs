@@ -7,11 +7,10 @@ use super::{
 };
 use crate::{binding::Binding, constant::Constant, context::QueryContext, problem::Effect};
 use anyhow::Result;
-use grit_util::CodeRange;
+use grit_util::{AnalysisLogs, CodeRange, Range};
 use im::Vector;
 use itertools::Itertools;
 use marzano_language::language::Language;
-use marzano_util::{analysis_logs::AnalysisLogs, position::Range};
 use std::{
     borrow::Cow,
     collections::{BTreeMap, HashMap},

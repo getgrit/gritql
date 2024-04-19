@@ -7,7 +7,7 @@ use super::{
 };
 use crate::{context::ExecContext, context::QueryContext};
 use anyhow::{bail, Result};
-use marzano_util::analysis_logs::AnalysisLogs;
+use grit_util::AnalysisLogs;
 
 #[derive(Clone, Debug)]
 pub struct Call<Q: QueryContext> {

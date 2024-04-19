@@ -1,7 +1,7 @@
 use super::{resolved_pattern::ResolvedPattern, state::State};
 use crate::context::QueryContext;
 use anyhow::Result;
-use marzano_util::analysis_logs::AnalysisLogs;
+use grit_util::AnalysisLogs;
 
 // Undefined is a pattern that matches when a *Grit variable* is undefined.
 // It is *not* meant to match against a *JavaScript* `undefined` value.

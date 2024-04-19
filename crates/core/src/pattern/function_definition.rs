@@ -11,10 +11,10 @@ use crate::{
     context::{ExecContext, QueryContext},
 };
 use anyhow::{bail, Result};
+use grit_util::AnalysisLogs;
 #[cfg(feature = "external_functions")]
 use marzano_externals::function::ExternalFunction;
 use marzano_language::foreign_language::ForeignLanguage;
-use marzano_util::analysis_logs::AnalysisLogs;
 use std::borrow::Cow;
 
 pub(crate) trait FunctionDefinition<Q: QueryContext> {

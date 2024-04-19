@@ -1,13 +1,7 @@
-use std::path::PathBuf;
-
 use anyhow::{anyhow, Result};
 use marzano_core::{api::Rewrite, pattern::built_in_functions::BuiltIns};
-use marzano_util::{
-    position::{
-        map_one_indexed_position_to_zero_indexed, map_zero_indexed_position_to_one_indexed,
-    },
-    rich_path::RichFile,
-};
+use marzano_util::rich_path::RichFile;
+use std::path::PathBuf;
 use tower_lsp::lsp_types::{Position, Range, TextDocumentItem, TextEdit, Url};
 
 pub fn uri_to_file_path(uri: &str) -> Result<PathBuf> {
@@ -18,21 +12,15 @@ pub fn uri_to_file_path(uri: &str) -> Result<PathBuf> {
     }
 }
 
-pub fn convert_grit_position_to_lsp_position(pos: &marzano_util::position::Position) -> Position {
-    let new_pos = map_one_indexed_position_to_zero_indexed(pos);
-    Position::new(new_pos.line, new_pos.column)
+pub fn convert_grit_position_to_lsp_position(pos: &grit_util::Position) -> Position {
+    Position::new(pos.line - 1, pos.column - 1)
 }
 
-pub fn convert_lsp_position_to_grit_position(pos: &Position) -> marzano_util::position::Position {
-    map_zero_indexed_position_to_one_indexed(&marzano_util::position::Position::new(
-        pos.line,
-        pos.character,
-    ))
+pub fn convert_lsp_position_to_grit_position(pos: &Position) -> grit_util::Position {
+    grit_util::Position::new(pos.line + 1, pos.character + 1)
 }
 
-pub fn convert_grit_range_to_lsp_range(
-    pos: &marzano_util::position::Range,
-) -> tower_lsp::lsp_types::Range {
+pub fn convert_grit_range_to_lsp_range(pos: &grit_util::Range) -> tower_lsp::lsp_types::Range {
     let start = convert_grit_position_to_lsp_position(&pos.start);
     let end = convert_grit_position_to_lsp_position(&pos.end);
     tower_lsp::lsp_types::Range { start, end }
@@ -41,12 +29,12 @@ pub fn convert_grit_range_to_lsp_range(
 pub fn convert_lsp_range_to_grit_range(
     range: &tower_lsp::lsp_types::Range,
     src: &str,
-) -> marzano_util::position::Range {
+) -> grit_util::Range {
     let start = convert_lsp_position_to_grit_position(&range.start);
     let end = convert_lsp_position_to_grit_position(&range.end);
     let start_byte = one_based_position_to_byte(&start, src);
     let end_byte = one_based_position_to_byte(&end, src);
-    marzano_util::position::Range {
+    grit_util::Range {
         start,
         end,
         start_byte: start_byte as u32,
@@ -54,7 +42,7 @@ pub fn convert_lsp_range_to_grit_range(
     }
 }
 
-fn one_based_position_to_byte(position: &marzano_util::position::Position, content: &str) -> usize {
+fn one_based_position_to_byte(position: &grit_util::Position, content: &str) -> usize {
     let mut line = 1;
     let mut column = 0;
     let mut byte = 0;
@@ -178,7 +166,7 @@ mod tests {
     #[test]
     fn position_to_byte() {
         let content = "function foo() {\n    return 1;\n}";
-        let position = marzano_util::position::Position::new(3, 1);
+        let position = grit_util::Position::new(3, 1);
         let byte = one_based_position_to_byte(&position, content);
         assert_eq!(byte, content.len() - 1);
     }
@@ -186,7 +174,7 @@ mod tests {
     #[test]
     fn position_to_middle_byte() {
         let content = "function foo() {\n    return 1;\n}";
-        let position = marzano_util::position::Position::new(2, 5);
+        let position = grit_util::Position::new(2, 5);
         let byte = one_based_position_to_byte(&position, content);
         assert_eq!(byte, 21);
     }

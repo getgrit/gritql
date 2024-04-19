@@ -15,15 +15,12 @@ use crate::{
 };
 use crate::{pattern_compiler::compiler::NodeCompilationContext, split_snippet::split_snippet};
 use anyhow::{anyhow, bail, Result};
-use grit_util::AstNode;
+use grit_util::{AstNode, Position, Range};
 use marzano_language::{
     language::{nodes_from_indices, Language, SortId},
     target_language::TargetLanguage,
 };
-use marzano_util::{
-    node_with_source::NodeWithSource,
-    position::{Position, Range},
-};
+use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct CodeSnippetCompiler;
 
@@ -105,7 +102,7 @@ pub(crate) fn dynamic_snippet_from_source(
         parts.push(DynamicSnippetPart::String(
             source[last as usize..byte_range.start as usize].to_string(),
         ));
-        let start_pos = Position::from_byte_index(source, Some((last_pos, last)), byte_range.start);
+        let start_pos = position_from_previous(last_pos, source, last, byte_range.start);
         // todo: does this handle utf8 correctly?
         last_pos = Position::new(start_pos.line, start_pos.column + var.len() as u32);
         let range = Range::new(
@@ -222,4 +219,18 @@ pub(crate) fn parse_snippet_content(
             source,
         )))
     }
+}
+
+fn position_from_previous(
+    prev_position: Position,
+    source: &str,
+    start_index: u32,
+    end_index: u32,
+) -> Position {
+    let mut pos = Position::from_byte_index(
+        &source[start_index as usize..],
+        (end_index - start_index) as usize,
+    );
+    pos.add(prev_position);
+    pos
 }

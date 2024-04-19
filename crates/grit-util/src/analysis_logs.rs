@@ -1,6 +1,4 @@
 use crate::position::{Position, Range};
-use anyhow::bail;
-use anyhow::Result;
 use derive_builder::Builder;
 use std::fmt::{self, Debug, Display};
 use std::ops;
@@ -8,8 +6,7 @@ use std::ops;
 // TypedBuilder offers type safe builds at compile time.
 // unfortunatly it's a consuming builder, I don't believe it's
 // possible to make a non consuming typed-builder.
-#[derive(Debug, Clone, Default, Builder)]
-#[builder(public, setter(into))]
+#[derive(Builder, Clone, Debug, Default)]
 pub struct AnalysisLog {
     #[builder(setter(into, strip_option), default)]
     pub engine_id: Option<String>,
@@ -17,9 +14,12 @@ pub struct AnalysisLog {
     pub file: Option<String>,
     #[builder(setter(into, strip_option), default)]
     pub level: Option<u16>,
+    #[builder(setter(into))]
     pub message: String,
     #[builder(setter(into, strip_option), default)]
     pub position: Option<Position>,
+    // FIXME: We seem to only need this for the end position, and I don't see
+    // any usages for the byte indices either. We can probably trim this.
     #[builder(setter(into, strip_option), default)]
     pub range: Option<Range>,
     #[builder(setter(into, strip_option), default)]
@@ -33,20 +33,6 @@ pub struct AnalysisLogs(Vec<AnalysisLog>);
 impl AnalysisLogs {
     pub fn logs(self) -> Vec<AnalysisLog> {
         self.0
-    }
-
-    pub fn debug_no_state(&mut self, message: &str) -> Result<()> {
-        let mut builder = AnalysisLogBuilder::default();
-        builder.level(501_u16);
-        builder.message(message);
-        let log = builder.build();
-        match log {
-            Ok(log) => self.0.push(log),
-            Err(err) => {
-                bail!(err);
-            }
-        }
-        Ok(())
     }
 }
 
@@ -89,35 +75,5 @@ impl Display for AnalysisLog {
             "engine_id: {:?}\nfile_name: {:?}\nlevel: {:?}\nmessage: {:?}\nposition: {:?}",
             self.engine_id, self.file, self.level, self.message, self.position
         )
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use anyhow::{anyhow, Result};
-
-    fn analysis_error(o: Option<usize>) -> Result<usize> {
-        o.ok_or_else(|| {
-            anyhow!(AnalysisLogBuilder::default()
-                .message("test".to_string())
-                .build()
-                .unwrap())
-        })
-    }
-
-    fn call_analysis_error() -> Result<usize> {
-        analysis_error(None)?;
-        analysis_error(Some(1))
-    }
-
-    #[test]
-    fn test_analysis_log_downcast() {
-        let result = call_analysis_error();
-        assert!(result.is_err());
-        let err = result.unwrap_err();
-        assert!(err.is::<AnalysisLog>());
-        let log = err.downcast::<AnalysisLog>().unwrap();
-        assert_eq!(log.message, "test");
     }
 }

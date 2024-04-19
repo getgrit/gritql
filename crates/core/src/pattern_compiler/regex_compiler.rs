@@ -7,9 +7,9 @@ use crate::{
     problem::MarzanoQueryContext,
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::AstNode;
+use grit_util::{AnalysisLogBuilder, AstNode};
 use marzano_language::language::Language;
-use marzano_util::{analysis_logs::AnalysisLogBuilder, node_with_source::NodeWithSource};
+use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct RegexCompiler;
 

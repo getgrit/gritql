@@ -10,7 +10,8 @@ use crate::pattern::{
 };
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
-use marzano_util::{analysis_logs::AnalysisLogBuilder, node_with_source::NodeWithSource};
+use grit_util::{AnalysisLogBuilder, AstNode};
+use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct NotCompiler;
 

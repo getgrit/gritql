@@ -1,17 +1,12 @@
 use anyhow::{anyhow, Result};
 use enum_dispatch::enum_dispatch;
-use grit_util::{traverse, Order};
+use grit_util::{traverse, AnalysisLogBuilder, AnalysisLogs, AstNode, Order, Range};
 use itertools::{self, Itertools};
 use lazy_static::lazy_static;
-use marzano_util::{
-    analysis_logs::{AnalysisLogBuilder, AnalysisLogs},
-    cursor_wrapper::CursorWrapper,
-    node_with_source::NodeWithSource,
-    position::{len, Position, Range},
-};
+use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
 use regex::Regex;
 use serde_json::Value;
-use std::{borrow::Cow, cmp::max, collections::HashMap};
+use std::{cmp::max, collections::HashMap};
 pub(crate) use tree_sitter::Language as TSLanguage;
 use tree_sitter::{Parser, Tree};
 // todo decide where this belongs, not good to
@@ -262,15 +257,8 @@ pub trait Language: NodeTypes {
     }
 
     // assumes trim doesn't do anything otherwise range is off
-    fn comment_text<'a>(
-        &self,
-        node: &tree_sitter::Node,
-        text: &'a str,
-    ) -> Option<(Cow<'a, str>, Range)> {
-        let text = node.utf8_text(text.as_bytes()).unwrap();
-        let range = node.range().into();
-        // text.trim
-        Some((text, range))
+    fn comment_text_range(&self, node: &impl AstNode) -> Option<Range> {
+        Some(node.range())
     }
 
     fn substitute_metavariable_prefix(&self, src: &str) -> String {
@@ -299,13 +287,20 @@ pub trait Language: NodeTypes {
     fn src_to_snippet(&self, pre: &'static str, source: &str, post: &'static str) -> SnippetTree {
         let mut parser = Parser::new().unwrap();
         parser.set_language(self.get_ts_language()).unwrap();
-        let context = format!("{}{}{}", pre, source, post);
+        let context = format!("{pre}{source}{post}");
+
+        let len = if cfg!(target_arch = "wasm32") {
+            |src: &str| src.chars().count() as u32
+        } else {
+            |src: &str| src.len() as u32
+        };
+
         SnippetTree {
             parse_tree: parser.parse(&context, None).unwrap().unwrap(),
             snippet_prefix: pre,
             snippet_postfix: post,
             snippet_start: (len(pre) + len(source) - len(source.trim_start())),
-            snippet_end: (len(&context) - len(post) - len(source) + len(source.trim_end())),
+            snippet_end: (len(pre) + len(source.trim_end())),
             snippet: source.to_owned(),
             context,
             _metavariable_sort: self.metavariable_sort(),
@@ -387,11 +382,12 @@ fn file_parsing_error(
         .file(file_name.to_owned());
 
     for n in traverse(CursorWrapper::new(cursor, body), Order::Pre) {
-        let node = &n.node;
-        if node.is_error() || node.is_missing() {
-            let position: Position = node.range().start_point().into();
-            let message = format!("Error parsing source code at {}:{} in {}. This may cause otherwise applicable queries to not match.",
-                node.range().start_point().row() + 1, node.range().start_point().column() + 1, file_name);
+        if n.node.is_error() || n.node.is_missing() {
+            let position = n.range().start;
+            let message = format!(
+                "Error parsing source code at {position} in {file_name}. This \
+                may cause otherwise applicable queries to not match."
+            );
             let log = log_builder
                 .clone()
                 .message(message)

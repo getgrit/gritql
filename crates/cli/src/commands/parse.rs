@@ -1,6 +1,3 @@
-use std::io;
-use std::path::PathBuf;
-
 use crate::{
     flags::GlobalFormatFlags,
     jsonl::JSONLineMessenger,
@@ -8,6 +5,7 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use clap::Args;
+use grit_util::Position;
 use marzano_core::{
     api::{AnalysisLog, MatchResult, PatternInfo},
     parse::parse_input_file,
@@ -17,8 +15,9 @@ use marzano_messenger::{
     emit::{Messager, VisibilityLevels},
     output_mode::OutputMode,
 };
-use marzano_util::position::Position;
 use serde::{Deserialize, Serialize};
+use std::io;
+use std::path::PathBuf;
 use tokio::fs;
 
 #[derive(Args, Debug, Serialize)]
@@ -97,7 +96,7 @@ async fn parse_one_pattern(body: String, path: Option<&PathBuf>) -> Result<Match
     let problem = match pattern.compile(&pattern_libs, None, None, None) {
         Ok(problem) => problem,
         Err(e) => {
-            let log = match e.downcast::<marzano_util::analysis_logs::AnalysisLog>() {
+            let log = match e.downcast::<grit_util::AnalysisLog>() {
                 Ok(al) => MatchResult::AnalysisLog(AnalysisLog::from(al)),
                 Err(er) => MatchResult::AnalysisLog(AnalysisLog {
                     level: 200,

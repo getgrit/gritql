@@ -14,22 +14,21 @@ use crate::{
         patterns::{Matcher, Pattern},
         predicate_definition::PredicateDefinition,
         resolved_pattern::ResolvedPattern,
-        state::{FilePtr, State},
+        state::{FilePtr, State, VariableMatch},
         variable_content::VariableContent,
         MarzanoContext, VariableLocations, MAX_FILE_SIZE,
     },
 };
 use anyhow::{bail, Result};
 use elsa::FrozenVec;
+use grit_util::{AnalysisLogs, Position, Range};
 use im::vector;
 use log::error;
 use marzano_language::{language::Language, target_language::TargetLanguage};
 use marzano_util::{
-    analysis_logs::AnalysisLogs,
     cache::{GritCache, NullCache},
     hasher::hash,
     node_with_source::NodeWithSource,
-    position::{Position, Range, VariableMatch},
     rich_path::{FileName, RichFile, RichPath, TryIntoInputFile},
     runtime::ExecutionContext,
 };
