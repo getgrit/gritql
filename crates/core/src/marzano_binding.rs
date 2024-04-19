@@ -102,7 +102,7 @@ pub(crate) fn is_index_in_ranges(index: u32, skip_ranges: &[CodeRange]) -> bool 
 }
 
 // safety ensure that sup and sub are slices of the same string.
-pub(crate) fn get_slice_byte_offset(sup: &str, sub: &str) -> u32 {
+fn get_slice_byte_offset(sup: &str, sub: &str) -> u32 {
     unsafe { sub.as_ptr().byte_offset_from(sup.as_ptr()) }.unsigned_abs() as u32
 }
 
