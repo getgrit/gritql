@@ -2057,38 +2057,37 @@ fn prefer_is_nan() {
     .unwrap();
 }
 
-// #[test]
-// #[ignore = "in progress will be fixed in follow up"]
-// fn python_handle_multiline_strings() {
-//     run_test_expected({
-//         TestArgExpected {
-//             pattern: r#"
-//                 |engine marzano(0.1)
-//                 |language python
-//                 |
-//                 |`$_ = $x` => `$x`"#
-//                 .trim_margin()
-//                 .unwrap(),
-//             source: r#"
-//                 |def test_yaml_file():
-//                 |    """some test comment"""
-//                 |    variable = """
-//                 |title: "Title"
-//                 |        """"#
-//                 .trim_margin()
-//                 .unwrap(),
-//             expected: r#"
-//             |def test_yaml_file():
-//             |    """some test comment"""
-//             |    """
-//             |title: "Title"
-//             |        """"#
-//                 .trim_margin()
-//                 .unwrap(),
-//         }
-//     })
-//     .unwrap();
-// }
+#[test]
+fn python_handle_multiline_strings() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |engine marzano(0.1)
+                |language python
+                |
+                |`$_ = $x` => `$x`"#
+                .trim_margin()
+                .unwrap(),
+            source: r#"
+                |def test_yaml_file():
+                |    """some test comment"""
+                |    variable = """
+                |title: "Title"
+                |        """"#
+                .trim_margin()
+                .unwrap(),
+            expected: r#"
+            |def test_yaml_file():
+            |    """some test comment"""
+            |    """
+            |title: "Title"
+            |        """"#
+                .trim_margin()
+                .unwrap(),
+        }
+    })
+    .unwrap();
+}
 
 #[test]
 fn import_specifier_rewrite() {
