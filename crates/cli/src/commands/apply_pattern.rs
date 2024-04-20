@@ -240,9 +240,9 @@ pub(crate) async fn run_apply_pattern(
             let proceed = flushable_unwrap!(emitter, Confirm::new()
                 .with_prompt("Your working tree currently has untracked changes and Grit will rewrite files in place. Do you want to proceed?")
                 .default(false)
-                .interact());
+                .interact_opt());
 
-            if !proceed {
+            if proceed != Some(true) {
                 return Ok(());
             }
         }
