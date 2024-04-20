@@ -2399,9 +2399,7 @@ fn tty_behavior() -> Result<()> {
 
     // Confirm the explanation is good
     assert!(!stderr.contains("Not a terminal"));
-    assert!(stderr.contains(
-        "Your working tree currently has untracked changes and Grit will rewrite files in place by default."
-    ));
+    assert!(stderr.contains("Untracked changes detected."));
     assert!(stderr.contains("--force"));
 
     // Confirm file is not modified
