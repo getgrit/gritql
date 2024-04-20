@@ -237,12 +237,17 @@ pub(crate) async fn run_apply_pattern(
         let warn_uncommitted =
             !arg.dry_run && !arg.force && has_uncommitted_changes(cwd.clone()).await;
         if warn_uncommitted {
+            let term = console::Term::stderr();
+            if !term.is_term() {
+                bail!("Error: Untracked changes detected. Grit will not proceed with rewriting files in non-TTY environments unless '--force' is used. Please commit all changes or use '--force' to override this safety check.");
+            }
+
             let proceed = flushable_unwrap!(emitter, Confirm::new()
                 .with_prompt("Your working tree currently has untracked changes and Grit will rewrite files in place. Do you want to proceed?")
                 .default(false)
-                .interact());
+                .interact_opt());
 
-            if !proceed {
+            if proceed != Some(true) {
                 return Ok(());
             }
         }

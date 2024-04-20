@@ -2371,3 +2371,58 @@ fn markdown_pattern_with_invalid_name() -> Result<()> {
 
     Ok(())
 }
+
+/// If we don't have interactive inputs available, apply should hard fail if there are git diffs.
+#[test]
+fn tty_behavior() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("yaml_padding", true)?;
+
+    // Init an empty git repo
+    let mut git_init_cmd = Command::new("git");
+    git_init_cmd.arg("init").current_dir(dir.clone());
+    let output = git_init_cmd.output()?;
+    assert!(output.status.success(), "Git init failed");
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.clone());
+    apply_cmd.arg("apply").arg("pattern.grit").arg("file.yaml");
+
+    let output = apply_cmd.output()?;
+    let stdout = String::from_utf8(output.stdout)?;
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stdout: {:?}", stdout);
+    println!("stderr: {:?}", stderr);
+
+    // Expect it to fail
+    assert!(!output.status.success(), "Command should have failed");
+
+    // Confirm the explanation is good
+    assert!(!stderr.contains("Not a terminal"));
+    assert!(stderr.contains("Untracked changes detected."));
+    assert!(stderr.contains("--force"));
+
+    // Confirm file is not modified
+    let content = std::fs::read_to_string(dir.join("file.yaml"))?;
+    assert_snapshot!(content);
+
+    // Run again with force
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.clone());
+    apply_cmd
+        .arg("apply")
+        .arg("pattern.grit")
+        .arg("file.yaml")
+        .arg("--force");
+
+    let output = apply_cmd.output()?;
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully"
+    );
+
+    let content = std::fs::read_to_string(dir.join("file.yaml"))?;
+    assert_snapshot!(content);
+
+    Ok(())
+}

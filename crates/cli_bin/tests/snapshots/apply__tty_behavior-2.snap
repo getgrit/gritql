@@ -1,0 +1,14 @@
+---
+source: crates/cli_bin/tests/apply.rs
+expression: content
+---
+this list:
+  - nice: car
+    second: detail
+  - item: two
+map:
+  stuff: good
+  things: bad
+  indented:
+    item: pig
+    distro: true
