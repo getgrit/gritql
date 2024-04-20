@@ -2408,5 +2408,23 @@ fn tty_behavior() -> Result<()> {
     let content = std::fs::read_to_string(dir.join("file.yaml"))?;
     assert_snapshot!(content);
 
+    // Run again with force
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.clone());
+    apply_cmd
+        .arg("apply")
+        .arg("pattern.grit")
+        .arg("file.yaml")
+        .arg("--force");
+
+    let output = apply_cmd.output()?;
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully"
+    );
+
+    let content = std::fs::read_to_string(dir.join("file.yaml"))?;
+    assert_snapshot!(content);
+
     Ok(())
 }
