@@ -799,9 +799,9 @@ pub fn parse_one(parser: &mut Parser, src: &str, file_name: &str) -> Result<Tree
 
 #[cfg(test)]
 mod tests {
-    use marzano_language::{language::Language, target_language::PatternLanguage};
-
     use super::*;
+    use grit_util::Language;
+    use marzano_language::target_language::PatternLanguage;
 
     #[test]
     fn test_typescript_flavor() {

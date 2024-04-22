@@ -11,9 +11,10 @@ use crate::problem::{Effect, EffectKind, MarzanoQueryContext};
 use crate::smart_insert::calculate_padding;
 use crate::suppress::is_suppress_comment;
 use anyhow::{anyhow, Result};
-use grit_util::{AnalysisLogBuilder, AnalysisLogs, AstNode, CodeRange, Position, Range};
+use grit_util::{AnalysisLogBuilder, AnalysisLogs, AstNode, CodeRange, Language, Position, Range};
 use itertools::{EitherOrBoth, Itertools};
-use marzano_language::language::{FieldId, Language};
+use marzano_language::language::{FieldId, MarzanoLanguage};
+use marzano_language::target_language::TargetLanguage;
 use marzano_util::node_with_source::NodeWithSource;
 use std::ops::Range as StdRange;
 use std::path::Path;
@@ -156,7 +157,7 @@ impl EffectRange {
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn linearize_binding<'a, Q: QueryContext>(
-    language: &impl Language,
+    language: &Q::Language<'a>,
     effects: &[Effect<'a, Q>],
     files: &FileRegistry<'a>,
     memo: &mut HashMap<CodeRange, Option<String>>,
@@ -309,7 +310,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
     }
 
     // todo implement for empty and empty list
-    fn position(&self, language: &impl Language) -> Option<Range> {
+    fn position(&self, language: &TargetLanguage) -> Option<Range> {
         match self {
             Self::Empty(_, _) => None,
             Self::Node(node) => Some(node.range()),
@@ -336,7 +337,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
     }
 
     // todo implement for empty and empty list
-    fn code_range(&self, language: &impl Language) -> Option<CodeRange> {
+    fn code_range(&self, language: &TargetLanguage) -> Option<CodeRange> {
         match self {
             Self::Empty(_, _) => None,
             Self::Node(node) => Some(node.code_range()),
@@ -357,7 +358,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         }
     }
 
-    fn is_equivalent_to(&self, other: &Self, language: &impl Language) -> bool {
+    fn is_equivalent_to(&self, other: &Self, language: &TargetLanguage) -> bool {
         // covers Node, and List with one element
         if let (Some(s1), Some(s2)) = (self.singleton(), other.singleton()) {
             return are_equivalent(&s1, &s2);
@@ -407,7 +408,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         }
     }
 
-    fn is_suppressed(&self, lang: &impl Language, current_name: Option<&str>) -> bool {
+    fn is_suppressed(&self, language: &TargetLanguage, current_name: Option<&str>) -> bool {
         let node = match self {
             Self::Node(node) | Self::List(node, _) | Self::Empty(node, _) => node.clone(),
             Self::String(_, _) | Self::FileName(_) | Self::ConstantRef(_) => return false,
@@ -415,10 +416,10 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         let target_range = node.node.range();
         for n in node.children().chain(node.ancestors()) {
             for c in n.children() {
-                if !(lang.is_comment_node(&c)) {
+                if !language.is_comment(&c) {
                     continue;
                 }
-                if is_suppress_comment(&c, &target_range, current_name, lang) {
+                if is_suppress_comment(&c, &target_range, current_name, language) {
                     return true;
                 }
             }
@@ -431,7 +432,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         &self,
         text: &str,
         is_first: bool,
-        language: &impl Language,
+        language: &TargetLanguage,
     ) -> Option<String> {
         match self {
             Self::List(node, field_id) => {
@@ -453,7 +454,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
                 })
             }
             Self::Node(node) => {
-                if language.is_statement(node.node.kind_id())
+                if language.is_statement(&node)
                     && !node.text().is_ok_and(|t| t.ends_with('\n'))
                     && !text.starts_with('\n')
                 {
@@ -468,7 +469,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
 
     fn linearized_text(
         &self,
-        language: &impl Language,
+        language: &TargetLanguage,
         effects: &[Effect<'a, MarzanoQueryContext>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
@@ -517,7 +518,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         res
     }
 
-    fn text(&self, language: &impl Language) -> Result<Cow<str>> {
+    fn text(&self, language: &TargetLanguage) -> Result<Cow<str>> {
         match self {
             Self::Empty(_, _) => Ok("".into()),
             Self::Node(node) => Ok(node.text()?),
@@ -617,28 +618,37 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         }
     }
 
+    fn get_node_with_field_name(
+        &self,
+        language: &TargetLanguage,
+    ) -> Option<(&NodeWithSource<'a>, Cow<'a, str>)> {
+        match self {
+            Self::Empty(node, field) | Self::List(node, field) => language
+                .get_ts_language()
+                .field_name_for_id(*field)
+                .map(|field_name| (node, field_name)),
+            Self::String(_, _) | Self::FileName(_) | Self::Node(_) | Self::ConstantRef(_) => None,
+        }
+    }
+
     fn log_empty_field_rewrite_error(
         &self,
-        language: &impl Language,
+        language: &TargetLanguage,
         logs: &mut AnalysisLogs,
     ) -> Result<()> {
-        match self {
-            Self::Empty(node, field) | Self::List(node, field) => {
-                let range = node.range();
-                let log = AnalysisLogBuilder::default()
-                        .level(441_u16)
-                        .source(node.source)
-                        .position(range.start)
-                        .range(range)
-                        .message(format!(
-                            "Error: failed to rewrite binding, cannot derive range of empty field {} of node {}",
-                            language.get_ts_language().field_name_for_id(*field).unwrap(),
-                            node.node.kind()
-                        ))
-                        .build()?;
-                logs.push(log);
-            }
-            Self::String(_, _) | Self::FileName(_) | Self::Node(_) | Self::ConstantRef(_) => {}
+        if let Some((node, field_name)) = self.get_node_with_field_name(language) {
+            let range = node.range();
+            let log = AnalysisLogBuilder::default()
+                .level(441_u16)
+                .source(node.source)
+                .position(range.start)
+                .range(range)
+                .message(format!(
+                    "Error: failed to rewrite binding, cannot derive range of empty field {field_name} of node {}",
+                    node.node.kind()
+                ))
+                .build()?;
+            logs.push(log);
         }
 
         Ok(())
@@ -648,7 +658,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
 fn get_range_nodes_for_list<'a>(
     parent_node: &NodeWithSource<'a>,
     field_id: &FieldId,
-    language: &impl Language,
+    language: &impl Language<Node<'a> = NodeWithSource<'a>>,
 ) -> Option<(NodeWithSource<'a>, NodeWithSource<'a>)> {
     let mut children = parent_node.children_by_field_id(*field_id);
     let first_node = children.next()?;
@@ -660,7 +670,7 @@ fn get_range_nodes_for_list<'a>(
 
     let mut leading_comment = first_node.clone();
     while let Some(comment) = leading_comment.previous_sibling() {
-        if language.is_comment_node(&comment) {
+        if language.is_comment(&comment) {
             leading_comment = comment;
         } else {
             break;
@@ -668,7 +678,7 @@ fn get_range_nodes_for_list<'a>(
     }
     let mut trailing_comment = end_node;
     while let Some(comment) = trailing_comment.next_sibling() {
-        if language.is_comment_node(&comment) {
+        if language.is_comment(&comment) {
             trailing_comment = comment;
         } else {
             break;

@@ -1,6 +1,5 @@
+use grit_util::Language;
 use std::{borrow::Cow, ops::Range};
-
-use marzano_language::language::Language;
 
 /// Takes a snippet with metavariables and returns a list of ranges and the
 /// corresponding metavariables.

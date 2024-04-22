@@ -24,7 +24,7 @@ use elsa::FrozenVec;
 use grit_util::{AnalysisLogs, Position, Range};
 use im::vector;
 use log::error;
-use marzano_language::{language::Language, target_language::TargetLanguage};
+use marzano_language::{language::MarzanoLanguage, target_language::TargetLanguage};
 use marzano_util::{
     cache::{GritCache, NullCache},
     hasher::hash,
@@ -599,21 +599,19 @@ pub struct FileOwner {
 }
 
 impl FileOwner {
-    pub(crate) fn new(
+    pub(crate) fn new<'a>(
         name: impl Into<PathBuf>,
         source: String,
         matches: Option<MatchRanges>,
         new: bool,
-        language: &impl Language,
+        language: &impl MarzanoLanguage<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Option<Self>> {
         let name = name.into();
-        let Some(tree) =
-            language.parse_file(name.to_string_lossy().as_ref(), &source, logs, new)?
-        else {
+        let Some(tree) = language.parse_file(&name, &source, logs, new)? else {
             return Ok(None);
         };
-        let absolute_path = PathBuf::from(absolutize(name.to_string_lossy().as_ref())?);
+        let absolute_path = PathBuf::from(absolutize(&name)?);
         Ok(Some(FileOwner {
             name,
             absolute_path,
@@ -664,5 +662,6 @@ impl QueryContext for MarzanoQueryContext {
     type Binding<'a> = MarzanoBinding<'a>;
     type CodeSnippet = MarzanoCodeSnippet;
     type ResolvedPattern<'a> = MarzanoResolvedPattern<'a>;
+    type Language<'a> = TargetLanguage;
     type File<'a> = MarzanoFile<'a>;
 }

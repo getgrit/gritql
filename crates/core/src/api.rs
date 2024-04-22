@@ -8,7 +8,7 @@ use anyhow::{bail, Result};
 use grit_util::{AnalysisLog as GritAnalysisLog, Position, Range};
 use im::Vector;
 use marzano_language::grit_ts_node::grit_node_types;
-use marzano_language::language::Language;
+use marzano_language::language::MarzanoLanguage;
 use serde::{Deserialize, Serialize};
 use serde_json::to_string_pretty;
 use std::path::PathBuf;
@@ -95,9 +95,9 @@ impl MatchResult {
         }
     }
 
-    pub(crate) fn file_to_match_result(
+    pub(crate) fn file_to_match_result<'a>(
         file: &Vector<&FileOwner>,
-        language: &impl Language,
+        language: &impl MarzanoLanguage<'a>,
     ) -> Result<Option<MatchResult>> {
         if file.is_empty() {
             bail!("cannot have file with no versions")
@@ -167,9 +167,9 @@ impl MatchResult {
 
     /// Given a MatchResult, create a MatchResult::Rewrite that suppresses the match.
     /// Returns None if it has any issues.
-    pub fn get_rewrite_to_suppress(
+    pub fn get_rewrite_to_suppress<'a>(
         &self,
-        language: &impl Language,
+        language: &impl MarzanoLanguage<'a>,
         pattern_name: Option<&str>,
     ) -> Option<MatchResult> {
         let comment = make_suppress_comment(pattern_name, language);
@@ -192,7 +192,10 @@ impl MatchResult {
     }
 }
 
-pub fn make_suppress_comment(pattern_name: Option<&str>, language: &impl Language) -> String {
+pub fn make_suppress_comment<'a>(
+    pattern_name: Option<&str>,
+    language: &impl MarzanoLanguage<'a>,
+) -> String {
     match pattern_name {
         None => language.make_single_line_comment("grit-ignore"),
         Some(pattern_name) => {
@@ -285,12 +288,12 @@ pub struct Match {
 }
 
 impl Match {
-    fn file_to_match(
+    fn file_to_match<'a>(
         match_ranges: &InputRanges,
         file: &str,
         name: &str,
         tree: &Tree,
-        language: &impl Language,
+        language: &impl MarzanoLanguage<'a>,
     ) -> Self {
         let input_file_debug_text =
             to_string_pretty(&tree_sitter_node_to_json(&tree.root_node(), file, language)).unwrap();
@@ -354,10 +357,10 @@ impl From<Rewrite> for MatchResult {
 }
 
 impl Rewrite {
-    fn file_to_rewrite(
+    fn file_to_rewrite<'a>(
         initial: &FileOwner,
         rewrite: &FileOwner,
-        language: &impl Language,
+        language: &impl MarzanoLanguage<'a>,
     ) -> Result<Self> {
         let original = if let Some(ranges) = &initial.matches.borrow().input_matches {
             Match::file_to_match(
@@ -615,7 +618,10 @@ impl From<GritAnalysisLog> for AnalysisLog {
             level: log.level.unwrap_or(280),
             message: log.message,
             position: log.position.unwrap_or_else(Position::first),
-            file: log.file.unwrap_or_default(),
+            file: log
+                .file
+                .map(|file| file.to_string_lossy().to_string())
+                .unwrap_or_default(),
             engine_id: log.engine_id.unwrap_or_else(|| "marzano".to_string()),
             range: log.range,
             syntax_tree: log.syntax_tree,

@@ -1,11 +1,15 @@
 use crate::api::InputFile;
 use anyhow::Result;
-use marzano_language::language::Language;
+use marzano_language::language::MarzanoLanguage;
 use std::path::Path;
 use tree_sitter::Parser;
 
 #[cfg(feature = "grit-parser")]
-pub fn parse_input_file(lang: &impl Language, input: &str, path: &Path) -> Result<InputFile> {
+pub fn parse_input_file<'a>(
+    lang: &impl MarzanoLanguage<'a>,
+    input: &str,
+    path: &Path,
+) -> Result<InputFile> {
     use crate::tree_sitter_serde::tree_sitter_node_to_json;
     use anyhow::Context;
     use serde_json::to_string_pretty;
@@ -27,7 +31,11 @@ pub fn parse_input_file(lang: &impl Language, input: &str, path: &Path) -> Resul
     })
 }
 #[cfg(not(feature = "grit-parser"))]
-pub fn parse_input_file(_lang: &impl Language, _input: &str, _path: &Path) -> Result<InputFile> {
+pub fn parse_input_file<'a>(
+    _lang: &impl MarzanoLanguage<'a>,
+    _input: &str,
+    _path: &Path,
+) -> Result<InputFile> {
     use anyhow::anyhow;
 
     Err(anyhow!(

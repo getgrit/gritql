@@ -1,7 +1,7 @@
 use grit_util::{traverse, AstNode, Order, Position};
 use marzano_core::analysis::defines_itself;
 use marzano_core::parse::make_grit_parser;
-use marzano_language::language::Language as _;
+use marzano_language::language::MarzanoLanguage as _;
 use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::rich_path::RichFile;

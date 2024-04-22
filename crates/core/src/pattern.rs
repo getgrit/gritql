@@ -76,7 +76,7 @@ use crate::{
 };
 use anyhow::Result;
 use grit_util::AnalysisLogs;
-use marzano_language::{language::Language, target_language::TargetLanguage};
+use marzano_language::target_language::TargetLanguage;
 use marzano_util::runtime::ExecutionContext;
 use std::fmt::Debug;
 use std::vec;
@@ -169,7 +169,7 @@ impl<'a> MarzanoContext<'a> {
     }
 }
 
-impl<'a> ExecContext<MarzanoQueryContext> for MarzanoContext<'a> {
+impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
     fn pattern_definitions(&self) -> &[PatternDefinition<MarzanoQueryContext>] {
         self.pattern_definitions
     }
@@ -190,13 +190,13 @@ impl<'a> ExecContext<MarzanoQueryContext> for MarzanoContext<'a> {
         self.runtime.ignore_limit_pattern
     }
 
-    fn call_built_in<'b>(
+    fn call_built_in(
         &self,
-        call: &'b CallBuiltIn<MarzanoQueryContext>,
-        context: &'b Self,
-        state: &mut State<'b, MarzanoQueryContext>,
+        call: &'a CallBuiltIn<MarzanoQueryContext>,
+        context: &'a Self,
+        state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
-    ) -> Result<MarzanoResolvedPattern<'b>> {
+    ) -> Result<MarzanoResolvedPattern<'a>> {
         self.built_ins.call(call, context, state, logs)
     }
 
@@ -220,8 +220,7 @@ impl<'a> ExecContext<MarzanoQueryContext> for MarzanoContext<'a> {
         self.files
     }
 
-    // FIXME: This introduces a dependency on TreeSitter.
-    fn language(&self) -> &impl Language {
+    fn language(&self) -> &TargetLanguage {
         self.language
     }
 

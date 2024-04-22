@@ -1,6 +1,9 @@
+use crate::language::{
+    fields_for_nodes, Field, FieldId, MarzanoLanguage, NodeTypes, SortId, TSLanguage,
+};
+use grit_util::Language;
+use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
-
-use crate::language::{fields_for_nodes, Field, FieldId, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/rust-node-types.json");
 
@@ -93,6 +96,32 @@ impl NodeTypes for Rust {
 }
 
 impl Language for Rust {
+    type Node<'a> = NodeWithSource<'a>;
+
+    fn language_name(&self) -> &'static str {
+        "Rust"
+    }
+
+    fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
+        &[
+            ("", ""),
+            ("", ";"),
+            ("let GRIT_VAR = ", ";"),
+            ("fn GRIT_FN(", ") {}"),
+            ("fn GRIT_FN(GRIT_ARG:", ") { }"),
+        ]
+    }
+
+    fn is_comment(&self, node: &NodeWithSource) -> bool {
+        MarzanoLanguage::is_comment_node(self, node)
+    }
+
+    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
+        MarzanoLanguage::is_metavariable_node(self, node)
+    }
+}
+
+impl<'a> MarzanoLanguage<'a> for Rust {
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
     }
@@ -107,25 +136,12 @@ impl Language for Rust {
             .any(|(s, f)| *s == sort_id && *f == field_id)
     }
 
-    fn language_name(&self) -> &'static str {
-        "Rust"
-    }
-    fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[
-            ("", ""),
-            ("", ";"),
-            ("let GRIT_VAR = ", ";"),
-            ("fn GRIT_FN(", ") {}"),
-            ("fn GRIT_FN(GRIT_ARG:", ") { }"),
-        ]
+    fn is_comment_sort(&self, sort: SortId) -> bool {
+        self.comment_sorts.contains(&sort)
     }
 
     fn metavariable_sort(&self) -> SortId {
         self.metavariable_sort
-    }
-
-    fn is_comment_sort(&self, id: SortId) -> bool {
-        self.comment_sorts.contains(&id)
     }
 }
 

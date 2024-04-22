@@ -1,9 +1,10 @@
-use std::{sync::OnceLock, vec};
-
 use crate::language::{
-    fields_for_nodes, normalize_double_quote_string, normalize_identity, Field, Language,
-    LeafEquivalenceClass, LeafNormalizer, NodeTypes, SortId, TSLanguage,
+    fields_for_nodes, normalize_double_quote_string, normalize_identity, Field,
+    LeafEquivalenceClass, LeafNormalizer, MarzanoLanguage, NodeTypes, SortId, TSLanguage,
 };
+use grit_util::Language;
+use marzano_util::node_with_source::NodeWithSource;
+use std::{sync::OnceLock, vec};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/yaml-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
@@ -68,27 +69,59 @@ impl NodeTypes for Yaml {
 }
 
 impl Language for Yaml {
-    fn get_ts_language(&self) -> &TSLanguage {
-        self.language
+    type Node<'a> = NodeWithSource<'a>;
+
+    fn language_name(&self) -> &'static str {
+        "YAML"
+    }
+
+    fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
+        &[("", "")]
     }
 
     fn comment_prefix(&self) -> &'static str {
         "#"
     }
 
-    fn language_name(&self) -> &'static str {
-        "YAML"
+    fn is_comment(&self, node: &NodeWithSource) -> bool {
+        MarzanoLanguage::is_comment_node(self, node)
     }
-    fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[("", "")]
+
+    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
+        MarzanoLanguage::is_metavariable_node(self, node)
+    }
+
+    // Given a character, return the character that should be used to pad the snippet (if any)
+    fn take_padding(&self, current: char, next: Option<char>) -> Option<char> {
+        if current.is_whitespace() {
+            Some(current)
+        } else if current == '-' && next == Some(' ') {
+            Some(' ')
+        } else {
+            None
+        }
+    }
+
+    fn should_pad_snippet(&self) -> bool {
+        true
+    }
+
+    fn make_single_line_comment(&self, text: &str) -> String {
+        format!("# {}\n", text)
+    }
+}
+
+impl<'a> MarzanoLanguage<'a> for Yaml {
+    fn get_ts_language(&self) -> &TSLanguage {
+        self.language
+    }
+
+    fn is_comment_sort(&self, sort: SortId) -> bool {
+        sort == self.comment_sort
     }
 
     fn metavariable_sort(&self) -> SortId {
         self.metavariable_sort
-    }
-
-    fn is_comment_sort(&self, id: SortId) -> bool {
-        id == self.comment_sort
     }
 
     fn get_equivalence_class(
@@ -105,25 +138,6 @@ impl Language for Yaml {
         } else {
             Ok(None)
         }
-    }
-
-    // Given a character, return the character that should be used to pad the snippet (if any)
-    fn take_padding(&self, current: char, next: Option<&char>) -> Option<char> {
-        if current.is_whitespace() {
-            Some(current)
-        } else if current == '-' && next == Some(&' ') {
-            Some(' ')
-        } else {
-            None
-        }
-    }
-
-    fn should_pad_snippet(&self) -> bool {
-        true
-    }
-
-    fn make_single_line_comment(&self, text: &str) -> String {
-        format!("# {}\n", text)
     }
 }
 

@@ -1,12 +1,13 @@
-use crate::binding::Binding;
-use crate::context::QueryContext;
-use crate::marzano_binding::linearize_binding;
-use crate::pattern::{resolved_pattern::ResolvedPattern, state::FileRegistry};
-use crate::problem::Effect;
+use crate::{
+    binding::Binding,
+    context::{ExecContext, QueryContext},
+    marzano_binding::linearize_binding,
+    pattern::{resolved_pattern::ResolvedPattern, state::FileRegistry},
+    problem::Effect,
+};
 use anyhow::Result;
-use grit_util::{AnalysisLogs, CodeRange};
+use grit_util::{AnalysisLogs, CodeRange, Language};
 use im::Vector;
-use marzano_language::language::Language;
 use std::collections::HashMap;
 use std::ops::Range;
 use std::path::{Path, PathBuf};
@@ -24,10 +25,12 @@ pub(crate) fn apply_effects<'a, Q: QueryContext>(
     files: &FileRegistry<'a>,
     the_filename: &Path,
     new_filename: &mut PathBuf,
-    language: &impl Language,
-    current_name: Option<&str>,
+    context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<(String, Option<Vec<Range<usize>>>)> {
+    let language = context.language();
+    let current_name = context.name();
+
     let effects: Vec<_> = effects
         .into_iter()
         .filter(|effect| !effect.binding.is_suppressed(language, current_name))

@@ -13,23 +13,23 @@ use crate::{
     problem::FileOwners,
 };
 use anyhow::Result;
-use grit_util::{AnalysisLogs, AstNode};
-use marzano_language::language::Language;
+use grit_util::{AnalysisLogs, AstNode, Language};
 
 /// Contains various kinds of context about the query being executed.
 pub trait QueryContext: Clone + std::fmt::Debug + Sized + 'static {
     type Node<'a>: AstNode;
     type NodePattern: AstNodePattern<Self>;
     type LeafNodePattern: AstLeafNodePattern<Self>;
-    type ExecContext<'a>: ExecContext<Self>;
+    type ExecContext<'a>: ExecContext<'a, Self>;
     type Binding<'a>: Binding<'a, Self>;
     type CodeSnippet: CodeSnippet<Self>;
     type ResolvedPattern<'a>: ResolvedPattern<'a, Self>;
+    type Language<'a>: Language<Node<'a> = Self::Node<'a>>;
     type File<'a>: File<'a, Self>;
 }
 
 /// Contains context necessary for query execution.
-pub trait ExecContext<Q: QueryContext> {
+pub trait ExecContext<'a, Q: QueryContext> {
     fn pattern_definitions(&self) -> &[PatternDefinition<Q>];
 
     fn predicate_definitions(&self) -> &[PredicateDefinition<Q>];
@@ -40,7 +40,7 @@ pub trait ExecContext<Q: QueryContext> {
 
     fn ignore_limit_pattern(&self) -> bool;
 
-    fn call_built_in<'a>(
+    fn call_built_in(
         &self,
         call: &'a CallBuiltIn<Q>,
         context: &'a Self,
@@ -64,8 +64,7 @@ pub trait ExecContext<Q: QueryContext> {
     // FIXME: Don't depend on Grit's file handling in Context.
     fn files(&self) -> &FileOwners;
 
-    // FIXME: This introduces a dependency on TreeSitter.
-    fn language(&self) -> &impl Language;
+    fn language(&self) -> &Q::Language<'a>;
 
     fn name(&self) -> Option<&str>;
 }

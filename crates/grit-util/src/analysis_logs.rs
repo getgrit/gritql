@@ -2,6 +2,7 @@ use crate::position::{Position, Range};
 use derive_builder::Builder;
 use std::fmt::{self, Debug, Display};
 use std::ops;
+use std::path::PathBuf;
 
 // TypedBuilder offers type safe builds at compile time.
 // unfortunatly it's a consuming builder, I don't believe it's
@@ -11,7 +12,7 @@ pub struct AnalysisLog {
     #[builder(setter(into, strip_option), default)]
     pub engine_id: Option<String>,
     #[builder(setter(into, strip_option), default)]
-    pub file: Option<String>,
+    pub file: Option<PathBuf>,
     #[builder(setter(into, strip_option), default)]
     pub level: Option<u16>,
     #[builder(setter(into))]

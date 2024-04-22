@@ -1,5 +1,3 @@
-use crate::language::{GritMetaValue, LeafEquivalenceClass, SnippetTree, TSLanguage};
-use crate::language::{NodeTypes, Replacement};
 use crate::{
     csharp::CSharp,
     css::Css,
@@ -9,7 +7,10 @@ use crate::{
     java::Java,
     javascript::JavaScript,
     json::Json,
-    language::{Field, FieldId, Language, SortId},
+    language::{
+        Field, FieldId, LeafEquivalenceClass, MarzanoLanguage, NodeTypes, SnippetTree, SortId,
+        TSLanguage,
+    },
     markdown_block::MarkdownBlock,
     markdown_inline::MarkdownInline,
     php::Php,
@@ -28,12 +29,13 @@ use crate::{
 use anyhow::Result;
 use clap::ValueEnum;
 use enum_dispatch::enum_dispatch;
-use grit_util::{AnalysisLogs, AstNode, Range};
+use grit_util::{AnalysisLogs, Language};
 use marzano_util::node_with_source::NodeWithSource;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::hash::Hash;
+use std::path::Path;
 use tree_sitter::{Parser, Tree};
 
 #[cfg(feature = "finder")]
@@ -485,7 +487,6 @@ impl NodeTypes for TargetLanguage {
 }
 
 #[derive(Debug, Clone)]
-#[enum_dispatch]
 pub enum TargetLanguage {
     JavaScript(JavaScript),
     TypeScript(TypeScript),
@@ -509,6 +510,40 @@ pub enum TargetLanguage {
     Sql(Sql),
     Php(Php),
     PhpOnly(PhpOnly),
+}
+
+impl Language for TargetLanguage {
+    type Node<'a> = NodeWithSource<'a>;
+
+    fn language_name(&self) -> &'static str {
+        todo!()
+    }
+
+    fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
+        todo!()
+    }
+
+    fn is_comment(&self, node: &Self::Node<'_>) -> bool {
+        todo!()
+    }
+
+    fn is_metavariable(&self, node: &Self::Node<'_>) -> bool {
+        todo!()
+    }
+}
+
+impl<'a> MarzanoLanguage<'a> for TargetLanguage {
+    fn get_ts_language(&self) -> &TSLanguage {
+        todo!()
+    }
+
+    fn metavariable_sort(&self) -> SortId {
+        todo!()
+    }
+
+    fn is_comment_sort(&self, sort: SortId) -> bool {
+        todo!()
+    }
 }
 
 // when built to wasm the language must be initialized with a parser at least once

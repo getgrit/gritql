@@ -1,9 +1,6 @@
 use anyhow::Result;
-use grit_util::{traverse, Order};
+use grit_util::{traverse, AstNode, Language, Order, Replacement};
 use itertools::Itertools;
-use marzano_language::language::Language;
-use marzano_language::language::Replacement;
-use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
 
 fn merge_ranges(ranges: Vec<Replacement>) -> Vec<Replacement> {
     if ranges.is_empty() {
@@ -50,10 +47,14 @@ pub(crate) fn replace_cleaned_ranges(
     Ok(Some(src))
 }
 
-pub fn get_replacement_ranges(node: NodeWithSource, lang: &impl Language) -> Vec<Replacement> {
+pub fn get_replacement_ranges<'a, N, Lang>(node: N, lang: &Lang) -> Vec<Replacement>
+where
+    N: AstNode,
+    Lang: Language<Node<'a> = N>,
+{
     let mut replacement_ranges = vec![];
-    let cursor = node.node.walk();
-    for n in traverse(CursorWrapper::new(cursor, node.source), Order::Pre) {
+    let cursor = node.walk();
+    for n in traverse(cursor, Order::Pre) {
         lang.check_replacements(n, &mut replacement_ranges);
     }
     replacement_ranges

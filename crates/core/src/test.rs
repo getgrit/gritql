@@ -7,7 +7,7 @@ use insta::{assert_debug_snapshot, assert_snapshot, assert_yaml_snapshot};
 use lazy_static::lazy_static;
 use marzano_auth::env::ENV_VAR_GRIT_API_URL;
 use marzano_auth::testing::get_testing_auth_info;
-use marzano_language::language::Language;
+use marzano_language::language::MarzanoLanguage;
 use marzano_language::target_language::{PatternLanguage, TargetLanguage};
 use marzano_util::rich_path::RichFile;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
