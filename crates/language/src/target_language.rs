@@ -28,7 +28,6 @@ use crate::{
 };
 use anyhow::Result;
 use clap::ValueEnum;
-use enum_dispatch::enum_dispatch;
 use grit_util::{AnalysisLogs, Language};
 use marzano_util::node_with_source::NodeWithSource;
 use regex::Regex;
@@ -116,62 +115,11 @@ impl fmt::Display for PatternLanguage {
 
 impl From<&TargetLanguage> for PatternLanguage {
     fn from(value: &TargetLanguage) -> Self {
-        match value {
-            TargetLanguage::JavaScript(_) => PatternLanguage::JavaScript,
-            TargetLanguage::TypeScript(_) => PatternLanguage::TypeScript,
-            TargetLanguage::Tsx(_) => PatternLanguage::Tsx,
-            TargetLanguage::Html(_) => PatternLanguage::Html,
-            TargetLanguage::Css(_) => PatternLanguage::Css,
-            TargetLanguage::Json(_) => PatternLanguage::Json,
-            TargetLanguage::Java(_) => PatternLanguage::Java,
-            TargetLanguage::CSharp(_) => PatternLanguage::CSharp,
-            TargetLanguage::Python(_) => PatternLanguage::Python,
-            TargetLanguage::MarkdownBlock(_) => PatternLanguage::MarkdownBlock,
-            TargetLanguage::MarkdownInline(_) => PatternLanguage::MarkdownInline,
-            TargetLanguage::Go(_) => PatternLanguage::Go,
-            TargetLanguage::Rust(_) => PatternLanguage::Rust,
-            TargetLanguage::Ruby(_) => PatternLanguage::Ruby,
-            TargetLanguage::Solidity(_) => PatternLanguage::Solidity,
-            TargetLanguage::Hcl(_) => PatternLanguage::Hcl,
-            TargetLanguage::Yaml(_) => PatternLanguage::Yaml,
-            TargetLanguage::Sql(_) => PatternLanguage::Sql,
-            TargetLanguage::Vue(_) => PatternLanguage::Vue,
-            TargetLanguage::Toml(_) => PatternLanguage::Toml,
-            TargetLanguage::Php(_) => PatternLanguage::Php,
-            TargetLanguage::PhpOnly(_) => PatternLanguage::PhpOnly,
-        }
+        value.to_module_language()
     }
 }
 
 impl PatternLanguage {
-    pub fn is_initialized(&self) -> bool {
-        match self {
-            PatternLanguage::JavaScript => JavaScript::is_initialized(),
-            PatternLanguage::TypeScript => TypeScript::is_initialized(),
-            PatternLanguage::Tsx => Tsx::is_initialized(),
-            PatternLanguage::Html => Html::is_initialized(),
-            PatternLanguage::Css => Css::is_initialized(),
-            PatternLanguage::Json => Json::is_initialized(),
-            PatternLanguage::Java => Java::is_initialized(),
-            PatternLanguage::CSharp => CSharp::is_initialized(),
-            PatternLanguage::Python => Python::is_initialized(),
-            PatternLanguage::MarkdownBlock => MarkdownBlock::is_initialized(),
-            PatternLanguage::MarkdownInline => MarkdownInline::is_initialized(),
-            PatternLanguage::Go => Go::is_initialized(),
-            PatternLanguage::Rust => Rust::is_initialized(),
-            PatternLanguage::Ruby => Ruby::is_initialized(),
-            PatternLanguage::Solidity => Solidity::is_initialized(),
-            PatternLanguage::Hcl => Hcl::is_initialized(),
-            PatternLanguage::Yaml => Yaml::is_initialized(),
-            PatternLanguage::Sql => Sql::is_initialized(),
-            PatternLanguage::Vue => Vue::is_initialized(),
-            PatternLanguage::Toml => Toml::is_initialized(),
-            PatternLanguage::Php => Php::is_initialized(),
-            PatternLanguage::PhpOnly => PhpOnly::is_initialized(),
-            PatternLanguage::Universal => false,
-        }
-    }
-
     pub fn from_tree(tree: &Tree, src: &str) -> Option<Self> {
         let root = tree.root_node();
         let langdecl = root.child_by_field_name("language")?;
@@ -338,34 +286,6 @@ impl PatternLanguage {
             .unwrap_or("Universal")
     }
 
-    // todo use strum_crate enum_iter, and disable Universal variant
-    pub fn enumerate() -> Vec<PatternLanguage> {
-        vec![
-            PatternLanguage::JavaScript,
-            PatternLanguage::TypeScript,
-            PatternLanguage::Tsx,
-            PatternLanguage::Html,
-            PatternLanguage::Css,
-            PatternLanguage::Json,
-            PatternLanguage::Java,
-            PatternLanguage::CSharp,
-            PatternLanguage::Python,
-            PatternLanguage::MarkdownBlock,
-            PatternLanguage::MarkdownInline,
-            PatternLanguage::Go,
-            PatternLanguage::Rust,
-            PatternLanguage::Ruby,
-            PatternLanguage::Solidity,
-            PatternLanguage::Hcl,
-            PatternLanguage::Yaml,
-            PatternLanguage::Sql,
-            PatternLanguage::Vue,
-            PatternLanguage::Toml,
-            PatternLanguage::Php,
-            PatternLanguage::PhpOnly,
-        ]
-    }
-
     #[cfg(target_arch = "wasm32")]
     pub fn to_target_with_ts_lang(self, lang: TSLanguage) -> Result<TargetLanguage, String> {
         match self {
@@ -457,132 +377,290 @@ pub fn expand_paths(
     Ok(final_walker)
 }
 
-impl NodeTypes for TargetLanguage {
-    fn node_types(&self) -> &[Vec<Field>] {
-        match self {
-            TargetLanguage::JavaScript(l) => l.node_types(),
-            TargetLanguage::TypeScript(l) => l.node_types(),
-            TargetLanguage::Tsx(l) => l.node_types(),
-            TargetLanguage::Html(l) => l.node_types(),
-            TargetLanguage::Css(l) => l.node_types(),
-            TargetLanguage::Json(l) => l.node_types(),
-            TargetLanguage::Java(l) => l.node_types(),
-            TargetLanguage::CSharp(l) => l.node_types(),
-            TargetLanguage::Python(l) => l.node_types(),
-            TargetLanguage::MarkdownBlock(l) => l.node_types(),
-            TargetLanguage::MarkdownInline(l) => l.node_types(),
-            TargetLanguage::Go(l) => l.node_types(),
-            TargetLanguage::Rust(l) => l.node_types(),
-            TargetLanguage::Ruby(l) => l.node_types(),
-            TargetLanguage::Solidity(l) => l.node_types(),
-            TargetLanguage::Hcl(l) => l.node_types(),
-            TargetLanguage::Yaml(l) => l.node_types(),
-            TargetLanguage::Vue(l) => l.node_types(),
-            TargetLanguage::Toml(l) => l.node_types(),
-            TargetLanguage::Sql(l) => l.node_types(),
-            TargetLanguage::Php(l) => l.node_types(),
-            TargetLanguage::PhpOnly(l) => l.node_types(),
+// We used to use `enum_dispatch` for this, but it didn't handle the fact
+// `TargetLanguage` needs to dispatch to two different traits. It didn't like
+// the lifetime argument on `MarzanoLanguage` either.
+//
+// It's a bit of a pita, since we need to add all methods to dispatch here. But
+// on the upside, we can now generate methods we used to implement manually.
+// For convenience, we even generate a few `PatternLanguage` methods now.
+macro_rules! generate_target_language {
+    ($($language:ident),+) => {
+        #[derive(Debug, Clone)]
+        pub enum TargetLanguage {
+            $($language($language)),+
         }
-    }
-}
 
-#[derive(Debug, Clone)]
-pub enum TargetLanguage {
-    JavaScript(JavaScript),
-    TypeScript(TypeScript),
-    Tsx(Tsx),
-    Html(Html),
-    Css(Css),
-    Json(Json),
-    Java(Java),
-    CSharp(CSharp),
-    Python(Python),
-    MarkdownBlock(MarkdownBlock),
-    MarkdownInline(MarkdownInline),
-    Go(Go),
-    Rust(Rust),
-    Ruby(Ruby),
-    Solidity(Solidity),
-    Hcl(Hcl),
-    Yaml(Yaml),
-    Vue(Vue),
-    Toml(Toml),
-    Sql(Sql),
-    Php(Php),
-    PhpOnly(PhpOnly),
-}
+        impl Language for TargetLanguage {
+            type Node<'a> = NodeWithSource<'a>;
 
-impl Language for TargetLanguage {
-    type Node<'a> = NodeWithSource<'a>;
-
-    fn language_name(&self) -> &'static str {
-        todo!()
-    }
-
-    fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        todo!()
-    }
-
-    fn is_comment(&self, node: &Self::Node<'_>) -> bool {
-        todo!()
-    }
-
-    fn is_metavariable(&self, node: &Self::Node<'_>) -> bool {
-        todo!()
-    }
-}
-
-impl<'a> MarzanoLanguage<'a> for TargetLanguage {
-    fn get_ts_language(&self) -> &TSLanguage {
-        todo!()
-    }
-
-    fn metavariable_sort(&self) -> SortId {
-        todo!()
-    }
-
-    fn is_comment_sort(&self, sort: SortId) -> bool {
-        todo!()
-    }
-}
-
-// when built to wasm the language must be initialized with a parser at least once
-// before it can be created without a parser.
-impl TryFrom<PatternLanguage> for TargetLanguage {
-    type Error = String;
-    fn try_from(l: PatternLanguage) -> Result<TargetLanguage, String> {
-        match l {
-            PatternLanguage::JavaScript => Ok(TargetLanguage::JavaScript(JavaScript::new(None))),
-            PatternLanguage::TypeScript => Ok(TargetLanguage::TypeScript(TypeScript::new(None))),
-            PatternLanguage::Tsx => Ok(TargetLanguage::Tsx(Tsx::new(None))),
-            PatternLanguage::Html => Ok(TargetLanguage::Html(Html::new(None))),
-            PatternLanguage::Css => Ok(TargetLanguage::Css(Css::new(None))),
-            PatternLanguage::Json => Ok(TargetLanguage::Json(Json::new(None))),
-            PatternLanguage::Java => Ok(TargetLanguage::Java(Java::new(None))),
-            PatternLanguage::CSharp => Ok(TargetLanguage::CSharp(CSharp::new(None))),
-            PatternLanguage::Python => Ok(TargetLanguage::Python(Python::new(None))),
-            PatternLanguage::MarkdownBlock => {
-                Ok(TargetLanguage::MarkdownBlock(MarkdownBlock::new(None)))
+            fn language_name(&self) -> &'static str {
+                match self {
+                    $(Self::$language(lang) => Language::language_name(lang)),+
+                }
             }
-            PatternLanguage::MarkdownInline => {
-                Ok(TargetLanguage::MarkdownInline(MarkdownInline::new(None)))
+
+            fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
+                match self {
+                    $(Self::$language(lang) => Language::snippet_context_strings(lang)),+
+                }
             }
-            PatternLanguage::Go => Ok(TargetLanguage::Go(Go::new(None))),
-            PatternLanguage::Rust => Ok(TargetLanguage::Rust(Rust::new(None))),
-            PatternLanguage::Ruby => Ok(TargetLanguage::Ruby(Ruby::new(None))),
-            PatternLanguage::Solidity => Ok(TargetLanguage::Solidity(Solidity::new(None))),
-            PatternLanguage::Hcl => Ok(TargetLanguage::Hcl(Hcl::new(None))),
-            PatternLanguage::Yaml => Ok(TargetLanguage::Yaml(Yaml::new(None))),
-            PatternLanguage::Sql => Ok(TargetLanguage::Sql(Sql::new(None))),
-            PatternLanguage::Vue => Ok(TargetLanguage::Vue(Vue::new(None))),
-            PatternLanguage::Toml => Ok(TargetLanguage::Toml(Toml::new(None))),
-            PatternLanguage::Php => Ok(TargetLanguage::Php(Php::new(None))),
-            PatternLanguage::PhpOnly => Ok(TargetLanguage::PhpOnly(PhpOnly::new(None))),
-            PatternLanguage::Universal => {
-                Err("cannot instantiate Universal as a target language".to_string())
+
+            fn alternate_metavariable_kinds(&self) -> &[&'static str] {
+                match self {
+                    $(Self::$language(lang) => Language::alternate_metavariable_kinds(lang)),+
+                }
+            }
+
+            fn metavariable_prefix(&self) -> &'static str {
+                match self {
+                    $(Self::$language(lang) => Language::metavariable_prefix(lang)),+
+                }
+            }
+
+            fn comment_prefix(&self) -> &'static str {
+                match self {
+                    $(Self::$language(lang) => Language::comment_prefix(lang)),+
+                }
+            }
+
+            fn metavariable_prefix_substitute(&self) -> &'static str {
+                match self {
+                    $(Self::$language(lang) => Language::metavariable_prefix_substitute(lang)),+
+                }
+            }
+
+            fn metavariable_regex(&self) -> &'static Regex {
+                match self {
+                    $(Self::$language(lang) => Language::metavariable_regex(lang)),+
+                }
+            }
+
+            fn replaced_metavariable_regex(&self) -> &'static Regex {
+                match self {
+                    $(Self::$language(lang) => Language::replaced_metavariable_regex(lang)),+
+                }
+            }
+
+            fn metavariable_bracket_regex(&self) -> &'static Regex {
+                match self {
+                    $(Self::$language(lang) => Language::metavariable_bracket_regex(lang)),+
+                }
+            }
+
+            fn exact_variable_regex(&self) -> &'static Regex {
+                match self {
+                    $(Self::$language(lang) => Language::exact_variable_regex(lang)),+
+                }
+            }
+
+            fn exact_replaced_variable_regex(&self) -> &'static Regex {
+                match self {
+                    $(Self::$language(lang) => Language::exact_replaced_variable_regex(lang)),+
+                }
+            }
+
+            fn is_comment(&self, node: &Self::Node<'_>) -> bool {
+                match self {
+                    $(Self::$language(lang) => Language::is_comment(lang, node)),+
+                }
+            }
+
+            fn is_metavariable(&self, node: &Self::Node<'_>) -> bool {
+                match self {
+                    $(Self::$language(lang) => Language::is_metavariable(lang, node)),+
+                }
+            }
+
+            fn is_statement(&self, node: &Self::Node<'_>) -> bool {
+                match self {
+                    $(Self::$language(lang) => Language::is_statement(lang, node)),+
+                }
+            }
+
+            fn comment_text_range(&self, node: &Self::Node<'_>) -> Option<grit_util::Range> {
+                match self {
+                    $(Self::$language(lang) => Language::comment_text_range(lang, node)),+
+                }
+            }
+
+            fn substitute_metavariable_prefix(&self, src: &str) -> String {
+                match self {
+                    $(Self::$language(lang) => Language::substitute_metavariable_prefix(lang, src)),+
+                }
+            }
+
+            fn snippet_metavariable_to_grit_metavariable(&self, src: &str) -> Option<grit_util::GritMetaValue> {
+                match self {
+                    $(Self::$language(lang) => Language::snippet_metavariable_to_grit_metavariable(lang, src)),+
+                }
+            }
+
+            fn check_replacements(&self, node: Self::Node<'_>, replacements: &mut Vec<grit_util::Replacement>) {
+                match self {
+                    $(Self::$language(lang) => Language::check_replacements(lang, node, replacements)),+
+                }
+            }
+
+            fn take_padding(&self, current: char, next: Option<char>) -> Option<char> {
+                match self {
+                    $(Self::$language(lang) => Language::take_padding(lang, current, next)),+
+                }
+            }
+
+            fn should_pad_snippet(&self) -> bool {
+                match self {
+                    $(Self::$language(lang) => Language::should_pad_snippet(lang)),+
+                }
+            }
+
+            fn make_single_line_comment(&self, text: &str) -> String {
+                match self {
+                    $(Self::$language(lang) => Language::make_single_line_comment(lang, text)),+
+                }
             }
         }
-    }
+
+        impl NodeTypes for TargetLanguage {
+            fn node_types(&self) -> &[Vec<Field>] {
+                match self {
+                    $(Self::$language(lang) => NodeTypes::node_types(lang)),+
+                }
+            }
+        }
+
+        impl<'a> MarzanoLanguage<'a> for TargetLanguage {
+            fn get_ts_language(&self) -> &TSLanguage {
+                match self {
+                    $(Self::$language(lang) => MarzanoLanguage::get_ts_language(lang)),+
+                }
+            }
+
+            fn parse_file(
+                &self,
+                name: &Path,
+                body: &str,
+                logs: &mut AnalysisLogs,
+                new: bool,
+            ) -> Result<Option<Tree>> {
+                match self {
+                    $(Self::$language(lang) => MarzanoLanguage::parse_file(lang, name, body, logs, new)),+
+                }
+            }
+
+            fn parse_snippet(&self, pre: &'static str, snippet: &str, post: &'static str) -> SnippetTree {
+                match self {
+                    $(Self::$language(lang) => MarzanoLanguage::parse_snippet(lang, pre, snippet, post)),+
+                }
+            }
+
+            fn parse_snippet_contexts(&self, source: &str) -> Vec<SnippetTree> {
+                match self {
+                    $(Self::$language(lang) => MarzanoLanguage::parse_snippet_contexts(lang, source)),+
+                }
+            }
+
+            fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
+                match self {
+                    $(Self::$language(lang) => MarzanoLanguage::skip_snippet_compilation_of_field(lang, sort_id, field_id)),+
+                }
+            }
+
+            fn optional_empty_field_compilation(&self, sort_id: SortId, field_id: FieldId) -> bool {
+                match self {
+                    $(Self::$language(lang) => MarzanoLanguage::optional_empty_field_compilation(lang, sort_id, field_id)),+
+                }
+            }
+
+            fn is_comment_sort(&self, sort: SortId) -> bool {
+                match self {
+                    $(Self::$language(lang) => MarzanoLanguage::is_comment_sort(lang, sort)),+
+                }
+            }
+
+            fn is_comment_node(&self, node: &NodeWithSource<'_>) -> bool {
+                match self {
+                    $(Self::$language(lang) => MarzanoLanguage::is_comment_node(lang, node)),+
+                }
+            }
+
+            fn metavariable_sort(&self) -> SortId {
+                match self {
+                    $(Self::$language(lang) => MarzanoLanguage::metavariable_sort(lang)),+
+                }
+            }
+
+            fn get_equivalence_class(
+                &self,
+                sort: SortId,
+                text: &str,
+            ) -> Result<Option<LeafEquivalenceClass>, String> {
+                match self {
+                    $(Self::$language(lang) => MarzanoLanguage::get_equivalence_class(lang, sort, text)),+
+                }
+            }
+        }
+
+        // when built to wasm the language must be initialized with a parser at least once
+        // before it can be created without a parser.
+        impl TryFrom<PatternLanguage> for TargetLanguage {
+            type Error = String;
+            fn try_from(lang: PatternLanguage) -> Result<Self, String> {
+                match lang {
+                    $(PatternLanguage::$language => Ok(Self::$language($language::new(None)))),+,
+                    PatternLanguage::Universal => {
+                        Err("cannot instantiate Universal as a target language".to_string())
+                    }
+                }
+            }
+        }
+
+        impl PatternLanguage {
+            pub fn enumerate() -> Vec<Self> {
+                vec![$(Self::$language),+]
+            }
+
+            pub fn is_initialized(&self) -> bool {
+                match self {
+                    $(Self::$language => $language::is_initialized()),+,
+                    Self::Universal => false,
+                }
+            }
+        }
+
+        impl TargetLanguage {
+            pub fn to_module_language(&self) -> PatternLanguage {
+                match self {
+                    $(Self::$language(_) => PatternLanguage::$language),+
+                }
+            }
+        }
+    };
+}
+
+generate_target_language! {
+    JavaScript,
+    TypeScript,
+    Tsx,
+    Html,
+    Css,
+    Json,
+    Java,
+    CSharp,
+    Python,
+    MarkdownBlock,
+    MarkdownInline,
+    Go,
+    Rust,
+    Ruby,
+    Solidity,
+    Hcl,
+    Yaml,
+    Vue,
+    Toml,
+    Sql,
+    Php,
+    PhpOnly
 }
 
 impl fmt::Display for TargetLanguage {
@@ -629,33 +707,6 @@ impl TargetLanguage {
 
     pub fn from_string(name: &str, flavor: Option<&str>) -> Option<Self> {
         PatternLanguage::from_string(name, flavor).map(|l| l.try_into().ok())?
-    }
-
-    pub fn to_module_language(&self) -> PatternLanguage {
-        match self {
-            TargetLanguage::JavaScript(_) => PatternLanguage::JavaScript,
-            TargetLanguage::TypeScript(_) => PatternLanguage::TypeScript,
-            TargetLanguage::Tsx(_) => PatternLanguage::Tsx,
-            TargetLanguage::Html(_) => PatternLanguage::Html,
-            TargetLanguage::Css(_) => PatternLanguage::Css,
-            TargetLanguage::Json(_) => PatternLanguage::Json,
-            TargetLanguage::Java(_) => PatternLanguage::Java,
-            TargetLanguage::CSharp(_) => PatternLanguage::CSharp,
-            TargetLanguage::Python(_) => PatternLanguage::Python,
-            TargetLanguage::MarkdownBlock(_) => PatternLanguage::MarkdownBlock,
-            TargetLanguage::MarkdownInline(_) => PatternLanguage::MarkdownInline,
-            TargetLanguage::Go(_) => PatternLanguage::Go,
-            TargetLanguage::Rust(_) => PatternLanguage::Rust,
-            TargetLanguage::Ruby(_) => PatternLanguage::Ruby,
-            TargetLanguage::Solidity(_) => PatternLanguage::Solidity,
-            TargetLanguage::Hcl(_) => PatternLanguage::Hcl,
-            TargetLanguage::Yaml(_) => PatternLanguage::Yaml,
-            TargetLanguage::Sql(_) => PatternLanguage::Sql,
-            TargetLanguage::Vue(_) => PatternLanguage::Vue,
-            TargetLanguage::Toml(_) => PatternLanguage::Toml,
-            TargetLanguage::Php(_) => PatternLanguage::Php,
-            TargetLanguage::PhpOnly(_) => PatternLanguage::PhpOnly,
-        }
     }
 
     pub fn get_default_extension(&self) -> &'static str {
