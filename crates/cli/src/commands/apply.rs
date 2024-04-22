@@ -18,8 +18,7 @@ use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
 pub struct SharedApplyArgs {
     #[clap(
         long = "only-in-json",
-        help = "Only rewrite ranges that are inside the provided eslint-style JSON file",
-        hide = true,
+        help = r#"Only rewrite ranges inside a provided eslint-style JSON file. The JSON file should be an array of objects formatted as `{"filePath": "path/to/file", "messages": [{"ruleId": "rule-id", "message": "message", "line": 1, "column": 1, "endLine": 1, "endColumn": 1}]}`."#,
         conflicts_with = "only_in_diff"
     )]
     pub(crate) only_in_json: Option<PathBuf>,
