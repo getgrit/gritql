@@ -381,7 +381,7 @@ fn pattern_language_to_path(lang: &PatternLanguage) -> Result<String, JsError> {
 
 #[cfg(target_arch = "wasm32")]
 async fn get_lang(parser_path: &str) -> Result<TSLanguage, JsError> {
-    let lang = TSLanguage::load_path(parser_path)
+    let lang = web_tree_sitter_sg::Language::load_path(parser_path)
         .await
         .map_err(tree_sitter::LanguageError::from)?;
     Ok(TSLanguage::from(lang))
@@ -393,7 +393,7 @@ async fn get_lang(_path: &str) -> Result<TSLanguage, JsError> {
 }
 
 #[cfg(target_arch = "wasm32")]
-fn get_lang_store(language: &PatternLanguage) -> Result<&'static OnceLock<Language>, JsError> {
+fn get_lang_store(language: &PatternLanguage) -> Result<&'static OnceLock<TSLanguage>, JsError> {
     match language {
         PatternLanguage::JavaScript => Ok(&JAVASCRIPT_LANGUAGE),
         PatternLanguage::TypeScript => Ok(&TYPESCRIPT_LANGUAGE),

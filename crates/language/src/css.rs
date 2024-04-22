@@ -116,12 +116,15 @@ impl Parser for MarzanoCssParser {
 
     fn parse_file(
         &mut self,
-        path: &Path,
         body: &str,
+        path: Option<&Path>,
         logs: &mut AnalysisLogs,
         new: bool,
     ) -> Option<Tree> {
-        if path.extension().is_some_and(|ext| ext == "vue") {
+        if path
+            .and_then(Path::extension)
+            .is_some_and(|ext| ext == "vue")
+        {
             let parent_node_kind = "style_element";
             let ranges = get_vue_ranges(body, parent_node_kind, None).ok()?;
             if ranges.is_empty() {
@@ -135,7 +138,7 @@ impl Parser for MarzanoCssParser {
                 .ok()?
                 .map(|tree| Tree::new(tree, body))
         } else {
-            self.0.parse_file(path, body, logs, new)
+            self.0.parse_file(body, path, logs, new)
         }
     }
 
@@ -222,7 +225,12 @@ defineProps<{
         let css = Css::new(None);
         let mut parser = MarzanoCssParser::new(&css);
         let tree = parser
-            .parse_file(Path::new("test.vue"), snippet, &mut vec![].into(), false)
+            .parse_file(
+                snippet,
+                Some(Path::new("test.vue")),
+                &mut vec![].into(),
+                false,
+            )
             .unwrap();
         print_node(&tree.root_node().node);
     }

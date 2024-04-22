@@ -105,12 +105,15 @@ impl Parser for MarzanoJsLikeParser {
 
     fn parse_file(
         &mut self,
-        path: &Path,
         body: &str,
+        path: Option<&Path>,
         logs: &mut AnalysisLogs,
         new: bool,
     ) -> Option<Tree> {
-        if path.extension().is_some_and(|ext| ext == "vue") {
+        if path
+            .and_then(Path::extension)
+            .is_some_and(|ext| ext == "vue")
+        {
             let js_name_array = ["js", "ts", "tsx", "jsx", "javascript", "typescript"];
             let parent_node_kind = "script_element";
             let ranges = get_vue_ranges(body, parent_node_kind, Some(&js_name_array)).ok()?;
@@ -122,7 +125,7 @@ impl Parser for MarzanoJsLikeParser {
                 .ok()?
                 .map(|tree| Tree::new(tree, body))
         } else {
-            self.0.parse_file(path, body, logs, new)
+            self.0.parse_file(body, path, logs, new)
         }
     }
 
@@ -235,7 +238,12 @@ defineProps<{
         let ts = Tsx::new(None);
         let mut parser = MarzanoJsLikeParser(MarzanoParser::new(&ts));
         let tree = parser
-            .parse_file(Path::new("test.vue"), snippet, &mut vec![].into(), false)
+            .parse_file(
+                snippet,
+                Some(Path::new("test.vue")),
+                &mut vec![].into(),
+                false,
+            )
             .unwrap();
         print_node(&tree.root_node().node);
     }

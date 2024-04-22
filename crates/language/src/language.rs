@@ -178,8 +178,8 @@ impl Parser for MarzanoParser {
 
     fn parse_file(
         &mut self,
-        path: &Path,
         body: &str,
+        path: Option<&Path>,
         logs: &mut AnalysisLogs,
         new: bool,
     ) -> Option<Tree> {
@@ -187,8 +187,11 @@ impl Parser for MarzanoParser {
             return None;
         };
 
-        let mut errors = file_parsing_error(&tree, path, body, new).ok()?;
-        logs.append(&mut errors);
+        if let Some(path) = path {
+            let mut errors = file_parsing_error(&tree, path, body, new).ok()?;
+            logs.append(&mut errors);
+        }
+
         Some(Tree::new(tree, body))
     }
 

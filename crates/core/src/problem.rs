@@ -607,7 +607,10 @@ impl FileOwner {
         logs: &mut AnalysisLogs,
     ) -> Result<Option<Self>> {
         let name = name.into();
-        let Some(tree) = language.get_parser().parse_file(&name, &source, logs, new) else {
+        let Some(tree) = language
+            .get_parser()
+            .parse_file(&source, Some(&name), logs, new)
+        else {
             return Ok(None);
         };
         let absolute_path = absolutize(&name)?;

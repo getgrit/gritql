@@ -6,8 +6,8 @@ pub trait Parser {
 
     fn parse_file(
         &mut self,
-        path: &Path,
         body: &str,
+        path: Option<&Path>,
         logs: &mut AnalysisLogs,
         new: bool,
     ) -> Option<Self::Tree>;

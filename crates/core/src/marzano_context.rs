@@ -13,7 +13,7 @@ use crate::{
     clean::{get_replacement_ranges, replace_cleaned_ranges},
     context::ExecContext,
     marzano_resolved_pattern::MarzanoResolvedPattern,
-    pattern::{constants::DEFAULT_FILE_NAME, resolved_pattern::File},
+    pattern::resolved_pattern::File,
     problem::{FileOwner, FileOwners, InputRanges, MarzanoQueryContext, MatchRanges},
     text_unparser::apply_effects,
 };
@@ -22,7 +22,7 @@ use grit_util::{AnalysisLogs, Ast};
 use im::vector;
 use marzano_language::{language::MarzanoLanguage, target_language::TargetLanguage};
 use marzano_util::runtime::ExecutionContext;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub struct MarzanoContext<'a> {
     pub pattern_definitions: &'a Vec<PatternDefinition<MarzanoQueryContext>>,
@@ -189,9 +189,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     logs,
                 )?;
                 if let Some(new_ranges) = new_ranges {
-                    let tree = parser
-                        .parse_file(Path::new(DEFAULT_FILE_NAME), &new_src, logs, true)
-                        .unwrap();
+                    let tree = parser.parse_file(&new_src, None, logs, true).unwrap();
                     let root = tree.root_node();
                     let replacement_ranges = get_replacement_ranges(root, self.language());
                     let cleaned_src = replace_cleaned_ranges(replacement_ranges, &new_src)?;
