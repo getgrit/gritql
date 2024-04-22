@@ -1,11 +1,16 @@
-use grit_util::Position;
+use anyhow::Context;
+use grit_util::{Ast, Position};
 use marzano_core::{
     api::{AnalysisLog, InputFile, MatchResult, PatternInfo},
     pattern::built_in_functions::BuiltIns,
     pattern_compiler::{src_to_problem_libs_for_language, CompilationResult},
     tree_sitter_serde::tree_sitter_node_to_json,
 };
-use marzano_language::target_language::{PatternLanguage, TargetLanguage};
+use marzano_language::{
+    grit_parser::MarzanoGritParser,
+    language::Tree,
+    target_language::{PatternLanguage, TargetLanguage},
+};
 use marzano_util::rich_path::RichFile;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
 use std::{
@@ -13,34 +18,32 @@ use std::{
     path::PathBuf,
     sync::OnceLock,
 };
-use tree_sitter as ts;
-use tree_sitter::Language;
-use ts::{Parser, Tree};
+use tree_sitter::{Language as TSLanguage, Parser as TSParser};
 use wasm_bindgen::prelude::*;
 
-static GRIT_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static JAVASCRIPT_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static TYPESCRIPT_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static TSX_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static HTML_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static CSS_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static JSON_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static JAVA_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static CSHARP_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static PYTHON_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static MARKDOWN_BLOCK_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static MARKDOWN_INLINE_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static GO_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static RUST_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static RUBY_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static SOLIDITY_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static HCL_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static YAML_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static SQL_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static VUE_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static TOML_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static PHP_LANGUAGE: OnceLock<Language> = OnceLock::new();
-static PHP_ONLY_LANGUAGE: OnceLock<Language> = OnceLock::new();
+static GRIT_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static JAVASCRIPT_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static TYPESCRIPT_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static TSX_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static HTML_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static CSS_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static JSON_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static JAVA_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static CSHARP_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static PYTHON_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static MARKDOWN_BLOCK_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static MARKDOWN_INLINE_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static GO_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static RUST_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static RUBY_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static SOLIDITY_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static HCL_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static YAML_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static SQL_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static VUE_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static TOML_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static PHP_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static PHP_ONLY_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 
 #[wasm_bindgen(js_name = initializeTreeSitter)]
 pub async fn initialize_tree_sitter() -> Result<(), JsError> {
@@ -79,7 +82,7 @@ pub async fn parse_input_files(
     let ParsedPattern { libs, tree, lang } =
         get_parsed_pattern(&pattern, lib_paths, lib_contents, parser).await?;
     let node = tree.root_node();
-    let parsed_pattern = tree_sitter_node_to_json(&node, &pattern, &lang).to_string();
+    let parsed_pattern = tree_sitter_node_to_json(&node.node, &pattern, &lang).to_string();
 
     let mut results: Vec<MatchResult> = Vec::new();
     for (path, content) in paths.into_iter().zip(contents) {
@@ -271,11 +274,13 @@ async fn get_parsed_pattern(
     pattern: &str,
     lib_paths: Vec<String>,
     lib_contents: Vec<String>,
-    parser: &mut Parser,
+    parser: &mut MarzanoGritParser,
 ) -> Result<ParsedPattern, JsError> {
     let libs = lib_paths.into_iter().zip(lib_contents).collect();
-    let tree = parser.parse(pattern, None)?.unwrap();
-    let lang = get_language_for_tree(&tree, pattern).await?;
+    let tree = parser
+        .parse(pattern, None)
+        .map_err(|err| JsError::new(&err.to_string()))?;
+    let lang = get_language_for_tree(&tree).await?;
     Ok(ParsedPattern { libs, tree, lang })
 }
 
@@ -288,14 +293,14 @@ fn get_parser_path() -> String {
     "/wasm_parsers".to_string()
 }
 
-async fn setup_language_parser(lang: PatternLanguage) -> Result<Parser, JsError> {
-    let mut parser = ts::Parser::new()?;
+async fn setup_language_parser(lang: PatternLanguage) -> Result<TSParser, JsError> {
+    let mut parser = TSParser::new()?;
     let lang = get_cached_lang(&lang).await?;
     parser.set_language(lang)?;
     Ok(parser)
 }
 
-async fn get_cached_lang(lang: &PatternLanguage) -> Result<&'static Language, JsError> {
+async fn get_cached_lang(lang: &PatternLanguage) -> Result<&'static TSLanguage, JsError> {
     let lang_store = get_lang_store(lang)?;
     if let Some(lang) = lang_store.get() {
         Ok(lang)
@@ -306,8 +311,8 @@ async fn get_cached_lang(lang: &PatternLanguage) -> Result<&'static Language, Js
     }
 }
 
-async fn setup_grit_parser() -> Result<Parser, JsError> {
-    let mut parser = ts::Parser::new()?;
+async fn setup_grit_parser() -> Result<MarzanoGritParser, JsError> {
+    let mut parser = TSParser::new()?;
     let lang_path = format!("{}{}", get_parser_path(), "/tree-sitter-gritql.wasm");
     let lang = if let Some(lang) = GRIT_LANGUAGE.get() {
         lang
@@ -316,11 +321,11 @@ async fn setup_grit_parser() -> Result<Parser, JsError> {
         GRIT_LANGUAGE.get().unwrap()
     };
     parser.set_language(lang)?;
-    Ok(parser)
+    Ok(MarzanoGritParser::from_initialized_ts_parser(parser))
 }
 
-async fn get_language_for_tree(tree: &Tree, src: &str) -> Result<TargetLanguage, JsError> {
-    let lang = PatternLanguage::from_tree(tree, src).unwrap_or_default();
+async fn get_language_for_tree(tree: &Tree) -> Result<TargetLanguage, JsError> {
+    let lang = PatternLanguage::from_tree(tree).unwrap_or_default();
     if lang.is_initialized() {
         TargetLanguage::try_from(lang).map_err(|s| JsError::new(&s))
     } else {
@@ -375,15 +380,15 @@ fn pattern_language_to_path(lang: &PatternLanguage) -> Result<String, JsError> {
 }
 
 #[cfg(target_arch = "wasm32")]
-async fn get_lang(parser_path: &str) -> Result<ts::Language, JsError> {
-    let lang = web_tree_sitter_sg::Language::load_path(parser_path)
+async fn get_lang(parser_path: &str) -> Result<TSLanguage, JsError> {
+    let lang = TSLanguage::load_path(parser_path)
         .await
-        .map_err(ts::LanguageError::from)?;
-    Ok(ts::Language::from(lang))
+        .map_err(tree_sitter::LanguageError::from)?;
+    Ok(TSLanguage::from(lang))
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-async fn get_lang(_path: &str) -> Result<ts::Language, JsError> {
+async fn get_lang(_path: &str) -> Result<TSLanguage, JsError> {
     unreachable!()
 }
 
@@ -417,7 +422,7 @@ fn get_lang_store(language: &PatternLanguage) -> Result<&'static OnceLock<Langua
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn get_lang_store(_language: &PatternLanguage) -> Result<&'static OnceLock<Language>, JsError> {
+fn get_lang_store(_language: &PatternLanguage) -> Result<&'static OnceLock<TSLanguage>, JsError> {
     unreachable!()
 }
 

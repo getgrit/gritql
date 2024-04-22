@@ -294,7 +294,7 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
 }
 
 pub(crate) fn get_absolute_file_name<'a, Q: QueryContext>(
-    state: &State<'_, Q>,
+    state: &State<'a, Q>,
     lang: &Q::Language<'a>,
 ) -> Result<String, anyhow::Error> {
     let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[ABSOLUTE_PATH_INDEX]
@@ -307,7 +307,7 @@ pub(crate) fn get_absolute_file_name<'a, Q: QueryContext>(
 }
 
 pub(crate) fn get_file_name<'a, Q: QueryContext>(
-    state: &State<'_, Q>,
+    state: &State<'a, Q>,
     lang: &Q::Language<'a>,
 ) -> Result<String, anyhow::Error> {
     let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[FILENAME_INDEX]

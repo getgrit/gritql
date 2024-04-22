@@ -4,6 +4,7 @@ use crate::{
     context::QueryContext,
     marzano_binding::MarzanoBinding,
     marzano_code_snippet::MarzanoCodeSnippet,
+    marzano_context::MarzanoContext,
     marzano_resolved_pattern::{MarzanoFile, MarzanoResolvedPattern},
     pattern::{
         built_in_functions::BuiltIns,
@@ -16,7 +17,7 @@ use crate::{
         resolved_pattern::ResolvedPattern,
         state::{FilePtr, State, VariableMatch},
         variable_content::VariableContent,
-        MarzanoContext, VariableLocations, MAX_FILE_SIZE,
+        VariableLocations, MAX_FILE_SIZE,
     },
 };
 use anyhow::{bail, Result};
@@ -24,7 +25,10 @@ use elsa::FrozenVec;
 use grit_util::{AnalysisLogs, Position, Range};
 use im::vector;
 use log::error;
-use marzano_language::{language::MarzanoLanguage, target_language::TargetLanguage};
+use marzano_language::{
+    language::{MarzanoLanguage, Tree},
+    target_language::TargetLanguage,
+};
 use marzano_util::{
     cache::{GritCache, NullCache},
     hasher::hash,
@@ -42,11 +46,9 @@ use std::{
 };
 use std::{cell::RefCell, fmt::Debug};
 use tracing::{event, Level};
-use tree_sitter::Tree;
 
 #[derive(Debug)]
 pub struct Problem {
-    pub src: String,
     pub tree: Tree,
     pub pattern: Pattern<MarzanoQueryContext>,
     pub language: TargetLanguage,
@@ -112,7 +114,6 @@ fn send(tx: &Sender<Vec<MatchResult>>, value: Vec<MatchResult>) {
 impl Problem {
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
-        src: String,
         tree: Tree,
         pattern: Pattern<MarzanoQueryContext>,
         language: TargetLanguage,
@@ -142,7 +143,6 @@ impl Problem {
         let hash = hasher.finalize().into();
 
         Self {
-            src,
             tree,
             pattern,
             language,
@@ -593,7 +593,6 @@ pub struct FileOwner {
     // todo wrap in Rc<RefCell<Option<>>>
     // so that we can lazily parse
     pub tree: Tree,
-    pub source: String,
     pub matches: RefCell<MatchRanges>,
     pub new: bool,
 }
@@ -608,15 +607,14 @@ impl FileOwner {
         logs: &mut AnalysisLogs,
     ) -> Result<Option<Self>> {
         let name = name.into();
-        let Some(tree) = language.parse_file(&name, &source, logs, new)? else {
+        let Some(tree) = language.get_parser().parse_file(&name, &source, logs, new) else {
             return Ok(None);
         };
-        let absolute_path = PathBuf::from(absolutize(&name)?);
+        let absolute_path = absolutize(&name)?;
         Ok(Some(FileOwner {
             name,
             absolute_path,
             tree,
-            source,
             matches: matches.unwrap_or_default().into(),
             new,
         }))
@@ -625,7 +623,7 @@ impl FileOwner {
 
 impl PartialEq for FileOwner {
     fn eq(&self, other: &Self) -> bool {
-        self.name == other.name && self.source == other.source
+        self.name == other.name && self.tree.source == other.tree.source
     }
 }
 

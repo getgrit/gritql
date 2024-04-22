@@ -1,13 +1,13 @@
 use crate::{
     binding::Binding,
     context::ExecContext,
+    marzano_context::MarzanoContext,
     marzano_resolved_pattern::MarzanoResolvedPattern,
     pattern::{
         dynamic_snippet::DynamicPattern,
         patterns::{CodeSnippet, Matcher, Pattern, PatternName},
         resolved_pattern::ResolvedPattern,
         state::State,
-        MarzanoContext,
     },
     problem::MarzanoQueryContext,
 };

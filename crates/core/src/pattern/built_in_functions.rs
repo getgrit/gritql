@@ -4,12 +4,13 @@ use super::{
     patterns::{Pattern, PatternName},
     resolved_pattern::{JoinFn, LazyBuiltIn, ResolvedPattern, ResolvedSnippet},
     variable::get_absolute_file_name,
-    MarzanoContext, State,
+    State,
 };
 use crate::{
     binding::Binding,
     constant::Constant,
     context::{ExecContext, QueryContext},
+    marzano_context::MarzanoContext,
     marzano_resolved_pattern::MarzanoResolvedPattern,
     problem::MarzanoQueryContext,
 };

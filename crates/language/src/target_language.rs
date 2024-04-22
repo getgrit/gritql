@@ -2,14 +2,14 @@ use crate::{
     csharp::CSharp,
     css::Css,
     go::Go,
+    grit_parser::MarzanoGritParser,
     hcl::Hcl,
     html::Html,
     java::Java,
     javascript::JavaScript,
     json::Json,
     language::{
-        Field, FieldId, LeafEquivalenceClass, MarzanoLanguage, NodeTypes, SnippetTree, SortId,
-        TSLanguage,
+        Field, FieldId, LeafEquivalenceClass, MarzanoLanguage, NodeTypes, SortId, TSLanguage, Tree,
     },
     markdown_block::MarkdownBlock,
     markdown_inline::MarkdownInline,
@@ -28,14 +28,12 @@ use crate::{
 };
 use anyhow::Result;
 use clap::ValueEnum;
-use grit_util::{AnalysisLogs, Language};
+use grit_util::{Ast, AstNode, Language, Parser, SnippetTree};
 use marzano_util::node_with_source::NodeWithSource;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::hash::Hash;
-use std::path::Path;
-use tree_sitter::{Parser, Tree};
 
 #[cfg(feature = "finder")]
 use anyhow::Error;
@@ -120,36 +118,30 @@ impl From<&TargetLanguage> for PatternLanguage {
 }
 
 impl PatternLanguage {
-    pub fn from_tree(tree: &Tree, src: &str) -> Option<Self> {
+    pub fn from_tree(tree: &Tree) -> Option<Self> {
         let root = tree.root_node();
         let langdecl = root.child_by_field_name("language")?;
-        let lang = langdecl
-            .child_by_field_name("name")?
-            .utf8_text(src.as_bytes())
-            .ok()?;
+        let lang = langdecl.child_by_field_name("name")?;
+        let lang = lang.text().ok()?;
         let lang = lang.trim();
-        let flavor = langdecl
-            .child_by_field_name("flavor")
-            .and_then(|f| f.utf8_text(src.as_bytes()).ok());
+        let flavor = langdecl.child_by_field_name("flavor");
+        let flavor = flavor.as_ref().and_then(|f| f.text().ok());
         Self::from_string(lang, flavor.as_deref())
     }
 
     #[cfg(not(feature = "builtin-parser"))]
-    pub fn get_language_with_parser(_parser: &mut Parser, _body: &str) -> Option<Self> {
+    pub fn get_language_with_parser(_parser: &mut MarzanoGritParser, _body: &str) -> Option<Self> {
         unimplemented!("grit_parser is unavailable when feature flag [builtin-parser] is off.")
     }
 
     #[cfg(feature = "builtin-parser")]
-    pub fn get_language_with_parser(parser: &mut Parser, body: &str) -> Option<Self> {
-        parser
-            .set_language(&tree_sitter_gritql::language().into())
-            .unwrap();
-        let tree = parser.parse(body, None).unwrap();
-        tree.and_then(|t| Self::from_tree(&t, body))
+    pub fn get_language_with_parser(parser: &mut MarzanoGritParser, body: &str) -> Option<Self> {
+        let tree = parser.parse(body, None);
+        tree.ok().and_then(|tree| Self::from_tree(&tree))
     }
 
     pub fn get_language(src: &str) -> Option<Self> {
-        let mut parser: Parser = Parser::new().unwrap();
+        let mut parser = MarzanoGritParser::new().unwrap();
         Self::get_language_with_parser(&mut parser, src)
     }
 
@@ -536,25 +528,13 @@ macro_rules! generate_target_language {
                 }
             }
 
-            fn parse_file(
-                &self,
-                name: &Path,
-                body: &str,
-                logs: &mut AnalysisLogs,
-                new: bool,
-            ) -> Result<Option<Tree>> {
+            fn get_parser(&self) -> Box<dyn Parser<Tree = Tree>> {
                 match self {
-                    $(Self::$language(lang) => MarzanoLanguage::parse_file(lang, name, body, logs, new)),+
+                    $(Self::$language(lang) => MarzanoLanguage::get_parser(lang)),+
                 }
             }
 
-            fn parse_snippet(&self, pre: &'static str, snippet: &str, post: &'static str) -> SnippetTree {
-                match self {
-                    $(Self::$language(lang) => MarzanoLanguage::parse_snippet(lang, pre, snippet, post)),+
-                }
-            }
-
-            fn parse_snippet_contexts(&self, source: &str) -> Vec<SnippetTree> {
+            fn parse_snippet_contexts(&self, source: &str) -> Vec<SnippetTree<Tree>> {
                 match self {
                     $(Self::$language(lang) => MarzanoLanguage::parse_snippet_contexts(lang, source)),+
                 }
@@ -572,9 +552,9 @@ macro_rules! generate_target_language {
                 }
             }
 
-            fn is_comment_sort(&self, sort: SortId) -> bool {
+            fn is_comment_sort(&self, id: SortId) -> bool {
                 match self {
-                    $(Self::$language(lang) => MarzanoLanguage::is_comment_sort(lang, sort)),+
+                    $(Self::$language(lang) => MarzanoLanguage::is_comment_sort(lang, id)),+
                 }
             }
 
@@ -693,12 +673,8 @@ impl fmt::Display for TargetLanguage {
 }
 
 impl TargetLanguage {
-    pub fn from_tree(tree: &Tree, src: &str) -> Option<Self> {
-        PatternLanguage::from_tree(tree, src).map(|l| l.try_into().ok())?
-    }
-
-    pub fn get_language_with_parser(parser: &mut Parser, body: &str) -> Option<Self> {
-        PatternLanguage::get_language_with_parser(parser, body).map(|l| l.try_into().ok())?
+    pub fn from_tree(tree: &Tree) -> Option<Self> {
+        PatternLanguage::from_tree(tree).map(|l| l.try_into().ok())?
     }
 
     pub fn get_language(src: &str) -> Option<TargetLanguage> {

@@ -136,8 +136,8 @@ impl<'a> MarzanoLanguage<'a> for Rust {
             .any(|(s, f)| *s == sort_id && *f == field_id)
     }
 
-    fn is_comment_sort(&self, sort: SortId) -> bool {
-        self.comment_sorts.contains(&sort)
+    fn is_comment_sort(&self, id: SortId) -> bool {
+        self.comment_sorts.contains(&id)
     }
 
     fn metavariable_sort(&self) -> SortId {

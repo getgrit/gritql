@@ -4,7 +4,7 @@ use marzano_util::node_with_source::NodeWithSource;
 use tree_sitter::Range;
 
 pub(crate) fn is_suppress_comment<'a>(
-    comment_node: &NodeWithSource,
+    comment_node: &'a NodeWithSource,
     target_range: &Range,
     current_name: Option<&str>,
     lang: &impl Language<Node<'a> = NodeWithSource<'a>>,
@@ -52,7 +52,7 @@ pub(crate) fn is_suppress_comment<'a>(
 }
 
 fn comment_applies_to_range<'a>(
-    comment_node: &NodeWithSource,
+    comment_node: &'a NodeWithSource,
     range: &Range,
     lang: &impl Language<Node<'a> = NodeWithSource<'a>>,
 ) -> bool {

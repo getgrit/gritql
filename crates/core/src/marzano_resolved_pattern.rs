@@ -4,6 +4,7 @@ use crate::{
     context::ExecContext,
     marzano_binding::MarzanoBinding,
     marzano_code_snippet::MarzanoCodeSnippet,
+    marzano_context::MarzanoContext,
     pattern::{
         accessor::Accessor,
         container::PatternOrResolved,
@@ -14,12 +15,11 @@ use crate::{
         patterns::{Pattern, PatternName},
         resolved_pattern::{File, ResolvedFile, ResolvedPattern, ResolvedSnippet},
         state::{FilePtr, FileRegistry, State},
-        MarzanoContext,
     },
     problem::{Effect, EffectKind, MarzanoQueryContext},
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::{AnalysisLogs, AstNode, CodeRange, Range};
+use grit_util::{AnalysisLogs, Ast, AstNode, CodeRange, Range};
 use im::{vector, Vector};
 use marzano_language::{language::FieldId, target_language::TargetLanguage};
 use marzano_util::node_with_source::NodeWithSource;
@@ -873,9 +873,9 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
             Self::Resolved(resolved) => resolved.body.clone(),
             Self::Ptr(ptr) => {
                 let file = &files.get_file(*ptr);
-                let root = NodeWithSource::new(file.tree.root_node(), &file.source);
+                let root = file.tree.root_node();
                 let range = root.range();
-                ResolvedPattern::from_range_binding(range, &file.source)
+                ResolvedPattern::from_range_binding(range, &file.tree.source)
             }
         }
     }
@@ -885,8 +885,7 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
             Self::Resolved(resolved) => resolved.body.clone(),
             Self::Ptr(ptr) => {
                 let file = &files.get_file(*ptr);
-                let node = file.tree.root_node();
-                ResolvedPattern::from_node_binding(NodeWithSource::new(node, &file.source))
+                ResolvedPattern::from_node_binding(file.tree.root_node())
             }
         }
     }

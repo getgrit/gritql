@@ -1,15 +1,13 @@
 use crate::{
     language::{
-        fields_for_nodes, Field, MarzanoLanguage, MarzanoParser, NodeTypes, SnippetTree, SortId,
-        TSLanguage,
+        fields_for_nodes, Field, MarzanoLanguage, MarzanoParser, NodeTypes, SortId, TSLanguage,
+        Tree,
     },
     vue::get_vue_ranges,
 };
-use anyhow::{anyhow, Result};
-use grit_util::{AnalysisLogs, Language};
+use grit_util::{AnalysisLogs, Language, Parser, SnippetTree};
 use marzano_util::node_with_source::NodeWithSource;
 use std::{path::Path, sync::OnceLock};
-use tree_sitter::Tree;
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/css-node-types.json");
 
@@ -88,26 +86,16 @@ impl Language for Css {
 }
 
 impl<'a> MarzanoLanguage<'a> for Css {
-    fn parse_file(
-        &self,
-        name: &Path,
-        body: &str,
-        logs: &mut AnalysisLogs,
-        new: bool,
-    ) -> Result<Option<Tree>> {
-        MarzanoCssParser::new(self).parse_file(name, body, logs, new)
-    }
-
-    fn parse_snippet(&self, pre: &'static str, snippet: &str, post: &'static str) -> SnippetTree {
-        MarzanoCssParser::new(self).parse_snippet(pre, snippet, post)
-    }
-
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
     }
 
-    fn is_comment_sort(&self, sort: SortId) -> bool {
-        sort == self.comment_sort
+    fn get_parser(&self) -> Box<dyn Parser<Tree = Tree>> {
+        Box::new(MarzanoCssParser::new(self))
+    }
+
+    fn is_comment_sort(&self, id: SortId) -> bool {
+        id == self.comment_sort
     }
 
     fn metavariable_sort(&self) -> SortId {
@@ -115,12 +103,16 @@ impl<'a> MarzanoLanguage<'a> for Css {
     }
 }
 
-struct MarzanoCssParser(MarzanoParser);
+pub(crate) struct MarzanoCssParser(MarzanoParser);
 
 impl MarzanoCssParser {
-    fn new<'a>(lang: &impl MarzanoLanguage<'a>) -> Self {
+    pub(crate) fn new<'a>(lang: &impl MarzanoLanguage<'a>) -> Self {
         Self(MarzanoParser::new(lang))
     }
+}
+
+impl Parser for MarzanoCssParser {
+    type Tree = Tree;
 
     fn parse_file(
         &mut self,
@@ -128,19 +120,20 @@ impl MarzanoCssParser {
         body: &str,
         logs: &mut AnalysisLogs,
         new: bool,
-    ) -> Result<Option<Tree>> {
+    ) -> Option<Tree> {
         if path.extension().is_some_and(|ext| ext == "vue") {
             let parent_node_kind = "style_element";
-            let ranges = get_vue_ranges(body, parent_node_kind, None)?;
+            let ranges = get_vue_ranges(body, parent_node_kind, None).ok()?;
             if ranges.is_empty() {
-                return Ok(None);
+                return None;
             }
-            self.0.parser.set_included_ranges(&ranges)?;
+
+            self.0.parser.set_included_ranges(&ranges).ok()?;
             self.0
                 .parser
-                .parse(body, None)?
-                .ok_or(anyhow!("missing tree"))
-                .map(Some)
+                .parse(body, None)
+                .ok()?
+                .map(|tree| Tree::new(tree, body))
         } else {
             self.0.parse_file(path, body, logs, new)
         }
@@ -151,7 +144,7 @@ impl MarzanoCssParser {
         pre: &'static str,
         source: &str,
         post: &'static str,
-    ) -> SnippetTree {
+    ) -> SnippetTree<Tree> {
         self.0.parse_snippet(pre, source, post)
     }
 }
@@ -160,6 +153,7 @@ impl MarzanoCssParser {
 mod tests {
     use super::*;
     use crate::language::nodes_from_indices;
+    use grit_util::Ast;
     use marzano_util::print_node::print_node;
 
     #[test]
@@ -229,8 +223,7 @@ defineProps<{
         let mut parser = MarzanoCssParser::new(&css);
         let tree = parser
             .parse_file(Path::new("test.vue"), snippet, &mut vec![].into(), false)
-            .unwrap()
             .unwrap();
-        print_node(&tree.root_node());
+        print_node(&tree.root_node().node);
     }
 }

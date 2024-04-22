@@ -102,7 +102,7 @@ fn pad_snippet(
         .peekable();
     let mut padding = Vec::new();
     while let Some(c) = chars.next() {
-        if let Some(padding_value) = language.take_padding(c, chars.peek().map(|c| *c)) {
+        if let Some(padding_value) = language.take_padding(c, chars.peek().copied()) {
             padding.push(padding_value);
         } else {
             break;

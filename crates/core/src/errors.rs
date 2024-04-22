@@ -7,7 +7,7 @@ use grit_util::{AnalysisLogBuilder, AnalysisLogs};
 
 pub fn debug<'a, Q: QueryContext>(
     analysis_logs: &mut AnalysisLogs,
-    state: &State<'_, Q>,
+    state: &State<'a, Q>,
     lang: &Q::Language<'a>,
     message: &str,
 ) -> Result<()> {

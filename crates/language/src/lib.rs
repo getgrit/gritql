@@ -2,6 +2,7 @@ pub mod csharp;
 pub mod css;
 pub mod foreign_language;
 pub mod go;
+pub mod grit_parser;
 pub mod grit_ts_node;
 pub mod hcl;
 pub mod html;

@@ -4,14 +4,11 @@ use crate::js_like::{
 };
 use crate::language::{
     fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, MarzanoLanguage, NodeTypes,
-    SnippetTree, SortId, TSLanguage,
+    SortId, TSLanguage, Tree,
 };
-use anyhow::Result;
-use grit_util::{AnalysisLogs, AstNode, Language, Range, Replacement};
+use grit_util::{AstNode, Language, Parser, Range, Replacement};
 use marzano_util::node_with_source::NodeWithSource;
-use std::path::Path;
 use std::sync::OnceLock;
-use tree_sitter::Tree;
 
 static NODE_TYPES_STRING: &str =
     include_str!("../../../resources/node-types/typescript-node-types.json");
@@ -147,22 +144,12 @@ impl Language for TypeScript {
 }
 
 impl<'a> MarzanoLanguage<'a> for TypeScript {
-    fn parse_file(
-        &self,
-        name: &Path,
-        body: &str,
-        logs: &mut AnalysisLogs,
-        new: bool,
-    ) -> Result<Option<Tree>> {
-        MarzanoJsLikeParser::new(self).parse_file(name, body, logs, new)
-    }
-
-    fn parse_snippet(&self, pre: &'static str, snippet: &str, post: &'static str) -> SnippetTree {
-        MarzanoJsLikeParser::new(self).parse_snippet(pre, snippet, post)
-    }
-
     fn get_ts_language(&self) -> &TSLanguage {
         self.language
+    }
+
+    fn get_parser(&self) -> Box<dyn Parser<Tree = Tree>> {
+        Box::new(MarzanoJsLikeParser::new(self))
     }
 
     fn optional_empty_field_compilation(
@@ -181,8 +168,8 @@ impl<'a> MarzanoLanguage<'a> for TypeScript {
             .any(|(s, f)| *s == sort_id && *f == field_id)
     }
 
-    fn is_comment_sort(&self, sort: SortId) -> bool {
-        sort == self.comment_sort
+    fn is_comment_sort(&self, id: SortId) -> bool {
+        id == self.comment_sort
     }
 
     fn metavariable_sort(&self) -> SortId {

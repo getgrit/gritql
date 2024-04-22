@@ -5,7 +5,7 @@ use crate::{
         built_in_functions::CallBuiltIn,
         function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
         pattern_definition::PatternDefinition,
-        patterns::CodeSnippet,
+        patterns::{CodeSnippet, Pattern},
         predicate_definition::PredicateDefinition,
         resolved_pattern::{File, ResolvedPattern},
         state::State,
@@ -65,6 +65,14 @@ pub trait ExecContext<'a, Q: QueryContext> {
     fn files(&self) -> &FileOwners;
 
     fn language(&self) -> &Q::Language<'a>;
+
+    fn exec_step(
+        &'a self,
+        step: &'a Pattern<Q>,
+        binding: &Q::ResolvedPattern<'a>,
+        state: &mut State<'a, Q>,
+        logs: &mut AnalysisLogs,
+    ) -> Result<bool>;
 
     fn name(&self) -> Option<&str>;
 }

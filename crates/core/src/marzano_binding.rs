@@ -454,7 +454,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
                 })
             }
             Self::Node(node) => {
-                if language.is_statement(&node)
+                if language.is_statement(node)
                     && !node.text().is_ok_and(|t| t.ends_with('\n'))
                     && !text.starts_with('\n')
                 {
@@ -618,37 +618,28 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         }
     }
 
-    fn get_node_with_field_name(
-        &self,
-        language: &TargetLanguage,
-    ) -> Option<(&NodeWithSource<'a>, Cow<'a, str>)> {
-        match self {
-            Self::Empty(node, field) | Self::List(node, field) => language
-                .get_ts_language()
-                .field_name_for_id(*field)
-                .map(|field_name| (node, field_name)),
-            Self::String(_, _) | Self::FileName(_) | Self::Node(_) | Self::ConstantRef(_) => None,
-        }
-    }
-
     fn log_empty_field_rewrite_error(
         &self,
         language: &TargetLanguage,
         logs: &mut AnalysisLogs,
     ) -> Result<()> {
-        if let Some((node, field_name)) = self.get_node_with_field_name(language) {
-            let range = node.range();
-            let log = AnalysisLogBuilder::default()
-                .level(441_u16)
-                .source(node.source)
-                .position(range.start)
-                .range(range)
-                .message(format!(
-                    "Error: failed to rewrite binding, cannot derive range of empty field {field_name} of node {}",
-                    node.node.kind()
-                ))
-                .build()?;
-            logs.push(log);
+        match self {
+            Self::Empty(node, field) | Self::List(node, field) => {
+                let range = node.range();
+                let log = AnalysisLogBuilder::default()
+                        .level(441_u16)
+                        .source(node.source)
+                        .position(range.start)
+                        .range(range)
+                        .message(format!(
+                            "Error: failed to rewrite binding, cannot derive range of empty field {} of node {}",
+                            language.get_ts_language().field_name_for_id(*field).unwrap(),
+                            node.node.kind()
+                        ))
+                        .build()?;
+                logs.push(log);
+            }
+            Self::String(_, _) | Self::FileName(_) | Self::Node(_) | Self::ConstantRef(_) => {}
         }
 
         Ok(())

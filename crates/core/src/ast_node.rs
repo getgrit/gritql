@@ -1,13 +1,13 @@
-use crate::binding::Binding;
-use crate::marzano_resolved_pattern::MarzanoResolvedPattern;
 use crate::{
+    binding::Binding,
+    marzano_context::MarzanoContext,
+    marzano_resolved_pattern::MarzanoResolvedPattern,
     pattern::{
         ast_node_pattern::{AstLeafNodePattern, AstNodePattern},
         iter_pattern::PatternOrPredicate,
         patterns::{Matcher, Pattern, PatternName},
         resolved_pattern::ResolvedPattern,
         state::State,
-        MarzanoContext,
     },
     problem::MarzanoQueryContext,
 };

@@ -1,12 +1,10 @@
 use crate::{
-    language::{MarzanoLanguage, MarzanoParser, SnippetTree, SortId, TSLanguage},
+    language::{MarzanoLanguage, MarzanoParser, SortId, TSLanguage, Tree},
     vue::get_vue_ranges,
 };
-use anyhow::{anyhow, Result};
-use grit_util::{AnalysisLogs, AstNode, Replacement};
+use grit_util::{AnalysisLogs, AstNode, Parser, Replacement, SnippetTree};
 use marzano_util::node_with_source::NodeWithSource;
 use std::path::Path;
-use tree_sitter::Tree;
 
 static STATEMENT_NODE_NAMES: &[&str] = &[
     "break_statement",
@@ -100,35 +98,40 @@ impl MarzanoJsLikeParser {
     pub(crate) fn new<'a>(lang: &impl MarzanoLanguage<'a>) -> Self {
         Self(MarzanoParser::new(lang))
     }
+}
 
-    pub(crate) fn parse_file(
+impl Parser for MarzanoJsLikeParser {
+    type Tree = Tree;
+
+    fn parse_file(
         &mut self,
         path: &Path,
         body: &str,
         logs: &mut AnalysisLogs,
         new: bool,
-    ) -> Result<Option<Tree>> {
+    ) -> Option<Tree> {
         if path.extension().is_some_and(|ext| ext == "vue") {
             let js_name_array = ["js", "ts", "tsx", "jsx", "javascript", "typescript"];
             let parent_node_kind = "script_element";
-            let ranges = get_vue_ranges(body, parent_node_kind, Some(&js_name_array))?;
-            self.0.parser.set_included_ranges(&ranges)?;
+            let ranges = get_vue_ranges(body, parent_node_kind, Some(&js_name_array)).ok()?;
+
+            self.0.parser.set_included_ranges(&ranges).ok()?;
             self.0
                 .parser
-                .parse(body, None)?
-                .ok_or(anyhow!("missing tree"))
-                .map(Some)
+                .parse(body, None)
+                .ok()?
+                .map(|tree| Tree::new(tree, body))
         } else {
             self.0.parse_file(path, body, logs, new)
         }
     }
 
-    pub(crate) fn parse_snippet(
+    fn parse_snippet(
         &mut self,
         pre: &'static str,
         source: &str,
         post: &'static str,
-    ) -> SnippetTree {
+    ) -> SnippetTree<Tree> {
         self.0.parse_snippet(pre, source, post)
     }
 }
@@ -198,6 +201,7 @@ pub(crate) fn jslike_check_replacements(
 mod tests {
     use super::*;
     use crate::tsx::Tsx;
+    use grit_util::Ast;
     use marzano_util::print_node::print_node;
     use std::path::Path;
 
@@ -232,8 +236,7 @@ defineProps<{
         let mut parser = MarzanoJsLikeParser(MarzanoParser::new(&ts));
         let tree = parser
             .parse_file(Path::new("test.vue"), snippet, &mut vec![].into(), false)
-            .unwrap()
             .unwrap();
-        print_node(&tree.root_node());
+        print_node(&tree.root_node().node);
     }
 }

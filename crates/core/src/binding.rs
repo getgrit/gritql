@@ -97,11 +97,6 @@ pub trait Binding<'a, Q: QueryContext>: Clone + std::fmt::Debug + PartialEq + Si
 
     fn is_truthy(&self) -> bool;
 
-    fn get_node_with_field_name(
-        &'a self,
-        language: &Q::Language<'_>,
-    ) -> Option<(&Q::Node<'a>, Cow<'a, str>)>;
-
     fn log_empty_field_rewrite_error(
         &self,
         language: &Q::Language<'a>,

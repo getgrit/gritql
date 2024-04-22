@@ -4,6 +4,7 @@ mod ast_node_traversal;
 mod code_range;
 pub mod constants;
 mod language;
+mod parser;
 mod position;
 
 pub use analysis_logs::{AnalysisLog, AnalysisLogBuilder, AnalysisLogs};
@@ -11,4 +12,5 @@ pub use ast_node::AstNode;
 pub use ast_node_traversal::{traverse, AstCursor, Order};
 pub use code_range::CodeRange;
 pub use language::{GritMetaValue, Language, Replacement};
+pub use parser::{Ast, Parser, SnippetTree};
 pub use position::{FileRange, Position, Range, RangeWithoutByte, UtilRange};

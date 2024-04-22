@@ -1,12 +1,13 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use enum_dispatch::enum_dispatch;
-use grit_util::{traverse, AnalysisLogBuilder, AnalysisLogs, AstNode, Language, Order};
+use grit_util::{
+    traverse, AnalysisLogBuilder, AnalysisLogs, Ast, AstNode, Language, Order, Parser, SnippetTree,
+};
 use itertools::Itertools;
 use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
 use serde_json::Value;
 use std::{cmp::max, collections::HashMap, path::Path};
-pub(crate) use tree_sitter::Language as TSLanguage;
-use tree_sitter::{Parser, Tree};
+pub(crate) use tree_sitter::{Language as TSLanguage, Parser as TSParser, Tree as TSTree};
 
 pub type SortId = u16;
 pub type FieldId = u16;
@@ -135,42 +136,69 @@ pub trait NodeTypes {
     fn node_types(&self) -> &[Vec<Field>];
 }
 
+#[derive(Clone, Debug)]
+pub struct Tree {
+    tree: TSTree,
+    pub source: String,
+}
+
+impl Tree {
+    pub fn new(tree: TSTree, source: impl Into<String>) -> Self {
+        Self {
+            tree,
+            source: source.into(),
+        }
+    }
+}
+
+impl Ast for Tree {
+    type Node<'a> = NodeWithSource<'a>;
+
+    fn root_node(&self) -> Self::Node<'_> {
+        NodeWithSource::new(self.tree.root_node(), &self.source)
+    }
+}
+
 pub struct MarzanoParser {
-    pub(crate) parser: Parser,
+    pub(crate) parser: TSParser,
 }
 
 impl MarzanoParser {
     pub fn new<'a>(lang: &impl MarzanoLanguage<'a>) -> Self {
-        let mut parser = Parser::new().unwrap();
+        let mut parser = TSParser::new().unwrap();
         parser
             .set_language(lang.get_ts_language())
             .expect("failed to set TreeSitter language");
         Self { parser }
     }
+}
 
-    pub fn parse_file(
+impl Parser for MarzanoParser {
+    type Tree = Tree;
+
+    fn parse_file(
         &mut self,
         path: &Path,
         body: &str,
         logs: &mut AnalysisLogs,
         new: bool,
-    ) -> Result<Option<Tree>> {
-        let tree = self
-            .parser
-            .parse(body, None)?
-            .ok_or_else(|| anyhow!("failed to parse tree"))?;
-        let mut errors = file_parsing_error(&tree, path, body, new)?;
+    ) -> Option<Tree> {
+        let Some(tree) = self.parser.parse(body, None).ok()? else {
+            return None;
+        };
+
+        let mut errors = file_parsing_error(&tree, path, body, new).ok()?;
         logs.append(&mut errors);
-        Ok(Some(tree))
+        Some(Tree::new(tree, body))
     }
 
-    pub fn parse_snippet(
+    fn parse_snippet(
         &mut self,
-        pre: &'static str,
+        prefix: &'static str,
         source: &str,
-        post: &'static str,
-    ) -> SnippetTree {
-        let context = format!("{pre}{source}{post}");
+        postfix: &'static str,
+    ) -> SnippetTree<Tree> {
+        let context = format!("{prefix}{source}{postfix}");
 
         let len = if cfg!(target_arch = "wasm32") {
             |src: &str| src.chars().count() as u32
@@ -178,14 +206,15 @@ impl MarzanoParser {
             |src: &str| src.len() as u32
         };
 
+        let tree = self.parser.parse(&context, None).unwrap().unwrap();
+
         SnippetTree {
-            parse_tree: self.parser.parse(&context, None).unwrap().unwrap(),
-            snippet_prefix: pre,
-            snippet_postfix: post,
-            snippet_start: (len(pre) + len(source) - len(source.trim_start())),
-            snippet_end: (len(pre) + len(source.trim_end())),
-            snippet: source.to_owned(),
+            tree: Tree::new(tree, context.clone()),
             context,
+            prefix,
+            postfix,
+            snippet_start: (len(prefix) + len(source) - len(source.trim_start())),
+            snippet_end: (len(prefix) + len(source.trim_end())),
         }
     }
 }
@@ -195,29 +224,20 @@ pub trait MarzanoLanguage<'a>: Language<Node<'a> = NodeWithSource<'a>> + NodeTyp
     /// tree sitter language to parse the source
     fn get_ts_language(&self) -> &TSLanguage;
 
-    fn parse_file(
-        &self,
-        name: &Path,
-        body: &str,
-        logs: &mut AnalysisLogs,
-        new: bool,
-    ) -> Result<Option<Tree>> {
-        MarzanoParser::new(self).parse_file(name, body, logs, new)
+    fn get_parser(&self) -> Box<dyn Parser<Tree = Tree>> {
+        Box::new(MarzanoParser::new(self))
     }
 
-    fn parse_snippet(&self, pre: &'static str, snippet: &str, post: &'static str) -> SnippetTree {
-        MarzanoParser::new(self).parse_snippet(pre, snippet, post)
-    }
-
-    fn parse_snippet_contexts(&self, source: &str) -> Vec<SnippetTree> {
+    fn parse_snippet_contexts(&self, source: &str) -> Vec<SnippetTree<Tree>> {
         let source = self.substitute_metavariable_prefix(source);
+        let mut parser = self.get_parser();
         self.snippet_context_strings()
             .iter()
-            .map(|(pre, post)| self.parse_snippet(pre, &source, post))
+            .map(|(pre, post)| parser.parse_snippet(pre, &source, post))
             .filter(|result| {
-                !(result.parse_tree.root_node().has_error()
-                    || result.parse_tree.root_node().is_error()
-                    || result.parse_tree.root_node().is_missing())
+                !(result.tree.root_node().node.has_error()
+                    || result.tree.root_node().node.is_error()
+                    || result.tree.root_node().node.is_missing())
             })
             .collect()
     }
@@ -267,7 +287,7 @@ pub trait MarzanoLanguage<'a>: Language<Node<'a> = NodeWithSource<'a>> + NodeTyp
 }
 
 fn file_parsing_error(
-    tree: &Tree,
+    tree: &TSTree,
     file_name: &Path,
     body: &str,
     is_new: bool,
@@ -302,18 +322,7 @@ fn file_parsing_error(
     Ok(errors.into())
 }
 
-#[derive(Debug, Clone)]
-pub struct SnippetTree {
-    pub parse_tree: Tree,
-    pub snippet_prefix: &'static str,
-    pub snippet_postfix: &'static str,
-    pub snippet: String,
-    pub context: String,
-    pub snippet_start: u32,
-    pub snippet_end: u32,
-}
-
-pub fn nodes_from_indices(indices: &[SnippetTree]) -> Vec<NodeWithSource> {
+pub fn nodes_from_indices(indices: &[SnippetTree<Tree>]) -> Vec<NodeWithSource> {
     indices
         .iter()
         .flat_map(snippet_nodes_from_index)
@@ -321,13 +330,12 @@ pub fn nodes_from_indices(indices: &[SnippetTree]) -> Vec<NodeWithSource> {
         .collect()
 }
 
-fn snippet_nodes_from_index(snippet: &SnippetTree) -> Option<NodeWithSource> {
-    let snippet_root = snippet.parse_tree.root_node();
-    if snippet_root.is_missing() {
+fn snippet_nodes_from_index(snippet: &SnippetTree<Tree>) -> Option<NodeWithSource> {
+    let mut snippet_root = snippet.tree.root_node();
+    if snippet_root.node.is_missing() {
         return None;
     }
 
-    let mut snippet_root = NodeWithSource::new(snippet_root, &snippet.snippet);
     let mut id = snippet_root.node.id();
 
     // find the the most senior node with the same index as the snippet
@@ -335,7 +343,7 @@ fn snippet_nodes_from_index(snippet: &SnippetTree) -> Option<NodeWithSource> {
         || snippet_root.node.end_byte() > snippet.snippet_end
     {
         if snippet_root.named_children().count() == 0 {
-            if snippet_root.text().unwrap().trim() == snippet.snippet.trim() {
+            if snippet_root.text().unwrap().trim() == snippet.tree.source.trim() {
                 return Some(snippet_root);
             } else {
                 return None;
@@ -351,7 +359,7 @@ fn snippet_nodes_from_index(snippet: &SnippetTree) -> Option<NodeWithSource> {
         }
         // sanity check to avoid infinite loop
         if snippet_root.node.id() == id {
-            if snippet_root.text().unwrap().trim() != snippet.snippet.trim() {
+            if snippet_root.text().unwrap().trim() != snippet.tree.source.trim() {
                 return None;
             }
             break;
@@ -422,7 +430,7 @@ mod tests {
         language::{MarzanoLanguage, MarzanoParser},
         tsx::Tsx,
     };
-    use grit_util::Language;
+    use grit_util::{Language, Parser};
     use trim_margin::MarginTrimmable;
 
     #[test]

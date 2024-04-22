@@ -1,8 +1,8 @@
 use crate::api::InputFile;
 use anyhow::Result;
+use grit_util::Ast;
 use marzano_language::language::MarzanoLanguage;
 use std::path::Path;
-use tree_sitter::Parser;
 
 #[cfg(feature = "grit-parser")]
 pub fn parse_input_file<'a>(
@@ -14,17 +14,16 @@ pub fn parse_input_file<'a>(
     use anyhow::Context;
     use serde_json::to_string_pretty;
 
-    let mut parser = Parser::new().context("Failed to create new parser")?;
-    parser
-        .set_language(lang.get_ts_language())
-        .context("Failed to set language for parser")?;
+    let mut parser = lang.get_parser();
     let tree = parser
-        .parse(input.as_bytes(), None)
-        .context("Failed to parse input")?
+        .parse_file(path, input, &mut vec![].into(), false)
         .context("Parsed tree is empty")?;
-    let input_file_debug_text =
-        to_string_pretty(&tree_sitter_node_to_json(&tree.root_node(), input, lang))
-            .context("Failed to convert tree to pretty JSON string")?;
+    let input_file_debug_text = to_string_pretty(&tree_sitter_node_to_json(
+        &tree.root_node().node,
+        input,
+        lang,
+    ))
+    .context("Failed to convert tree to pretty JSON string")?;
     Ok(InputFile {
         source_file: path.to_string_lossy().to_string(),
         syntax_tree: input_file_debug_text,
@@ -40,25 +39,5 @@ pub fn parse_input_file<'a>(
 
     Err(anyhow!(
         "enable grit-parser feature flag to parse a grit file"
-    ))
-}
-
-#[cfg(feature = "grit-parser")]
-pub fn make_grit_parser() -> Result<Parser> {
-    use anyhow::Context;
-
-    let mut parser = Parser::new().unwrap();
-    parser
-        .set_language(&tree_sitter_gritql::language().into())
-        .with_context(|| "Failed to load grit language")?;
-    Ok(parser)
-}
-
-#[cfg(not(feature = "grit-parser"))]
-pub fn make_grit_parser() -> Result<Parser> {
-    use anyhow::anyhow;
-
-    Err(anyhow!(
-        "enable grit-parser feature flag to make a grit parser"
     ))
 }

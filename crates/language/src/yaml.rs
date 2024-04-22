@@ -116,8 +116,8 @@ impl<'a> MarzanoLanguage<'a> for Yaml {
         self.language
     }
 
-    fn is_comment_sort(&self, sort: SortId) -> bool {
-        sort == self.comment_sort
+    fn is_comment_sort(&self, id: SortId) -> bool {
+        id == self.comment_sort
     }
 
     fn metavariable_sort(&self) -> SortId {
