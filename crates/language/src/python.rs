@@ -1,5 +1,5 @@
 use crate::language::{fields_for_nodes, Field, MarzanoLanguage, NodeTypes, SortId, TSLanguage};
-use grit_util::{AstNode, Language, Replacement};
+use grit_util::{Ast, AstNode, CodeRange, Language, Replacement};
 use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
 
@@ -24,6 +24,7 @@ pub struct Python {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,
     comment_sort: SortId,
+    skip_padding_sorts: [SortId; 1],
     language: &'static TSLanguage,
 }
 
@@ -33,10 +34,12 @@ impl Python {
         let node_types = NODE_TYPES.get_or_init(|| fields_for_nodes(language, NODE_TYPES_STRING));
         let metavariable_sort = language.id_for_node_kind("grit_metavariable", true);
         let comment_sort = language.id_for_node_kind("comment", true);
+        let skip_padding_sorts = [language.id_for_node_kind("string", true)];
         Self {
             node_types,
             metavariable_sort,
             comment_sort,
+            skip_padding_sorts,
             language,
         }
     }
@@ -87,6 +90,17 @@ impl Language for Python {
 
     fn should_pad_snippet(&self) -> bool {
         true
+    }
+
+    fn should_skip_padding(&self, node: &NodeWithSource<'_>) -> bool {
+        self.skip_padding_sorts.contains(&node.kind_id())
+    }
+
+    fn get_skip_padding_ranges_for_snippet(&self, snippet: &str) -> Vec<CodeRange> {
+        let mut parser = self.get_parser();
+        let snippet = parser.parse_snippet("", snippet, "");
+        let root = snippet.tree.root_node();
+        self.get_skip_padding_ranges(&root)
     }
 
     fn make_single_line_comment(&self, text: &str) -> String {

@@ -161,6 +161,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
             let mut match_log = file.matches.borrow_mut();
 
             let filename_path = &file.name;
+
             let mut new_filename = filename_path.clone();
 
             let src = &file.tree.source;
@@ -179,8 +180,9 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 .cloned()
                 .is_some()
             {
+                let code = file.tree.root_node();
                 let (new_src, new_ranges) = apply_effects(
-                    src,
+                    code,
                     state.effects.clone(),
                     &state.files,
                     &file.name,
@@ -193,7 +195,11 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     let root = tree.root_node();
                     let replacement_ranges = get_replacement_ranges(root, self.language());
                     let cleaned_src = replace_cleaned_ranges(replacement_ranges, &new_src)?;
-                    let new_src = cleaned_src.unwrap_or(new_src);
+                    let new_src = if let Some(src) = cleaned_src {
+                        src
+                    } else {
+                        new_src
+                    };
 
                     let ranges =
                         MatchRanges::new(new_ranges.into_iter().map(|r| r.into()).collect());

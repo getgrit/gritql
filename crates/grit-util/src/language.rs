@@ -1,4 +1,4 @@
-use crate::{constants::*, AstNode, Range};
+use crate::{constants::*, traverse, AstNode, CodeRange, Order, Range};
 use regex::Regex;
 
 pub enum GritMetaValue {
@@ -62,6 +62,30 @@ pub trait Language: Sized {
     // assumes trim doesn't do anything otherwise range is off
     fn comment_text_range(&self, node: &Self::Node<'_>) -> Option<Range> {
         Some(node.range())
+    }
+
+    // in languages we pad such as python or yaml there are
+    // some kinds of nodes we don't want to pad, such as python strings.
+    // this function identifies those nodes.
+    #[allow(unused_variables)]
+    fn should_skip_padding(&self, node: &Self::Node<'_>) -> bool {
+        false
+    }
+
+    #[allow(unused_variables)]
+    fn get_skip_padding_ranges_for_snippet(&self, snippet: &str) -> Vec<CodeRange> {
+        Vec::new()
+    }
+
+    #[allow(unused_variables)]
+    fn get_skip_padding_ranges(&self, node: &Self::Node<'_>) -> Vec<CodeRange> {
+        let mut ranges = Vec::new();
+        for n in traverse(node.walk(), Order::Pre) {
+            if self.should_skip_padding(&n) {
+                ranges.push(n.code_range())
+            }
+        }
+        ranges
     }
 
     fn substitute_metavariable_prefix(&self, src: &str) -> String {

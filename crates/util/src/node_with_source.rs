@@ -69,6 +69,14 @@ impl<'a> PartialEq for NodeWithSource<'a> {
 }
 
 impl<'a> AstNode for NodeWithSource<'a> {
+    fn kind_id(&self) -> u16 {
+        self.node.kind_id()
+    }
+
+    fn kind(&self) -> Cow<str> {
+        self.node.kind()
+    }
+
     fn ancestors(&self) -> impl Iterator<Item = Self> {
         AncestorIterator::new(self)
     }
@@ -133,6 +141,10 @@ impl<'a> AstNode for NodeWithSource<'a> {
 
     fn code_range(&self) -> CodeRange {
         CodeRange::new(self.node.start_byte(), self.node.end_byte(), self.source)
+    }
+
+    fn full_source(&self) -> &str {
+        self.source
     }
 
     fn walk(&self) -> impl AstCursor<Node = Self> {

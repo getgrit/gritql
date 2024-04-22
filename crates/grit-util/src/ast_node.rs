@@ -5,6 +5,12 @@ use std::{borrow::Cow, str::Utf8Error};
 ///
 /// This trait should be free from dependencies on TreeSitter.
 pub trait AstNode: std::fmt::Debug + Sized {
+    // returns the id of the node kind
+    fn kind_id(&self) -> u16;
+
+    // returns the node kind
+    fn kind(&self) -> Cow<str>;
+
     /// Returns an iterator over the node's ancestors, starting with the node
     /// itself and moving up to the root.
     fn ancestors(&self) -> impl Iterator<Item = Self>;
@@ -38,6 +44,10 @@ pub trait AstNode: std::fmt::Debug + Sized {
 
     /// Returns the code range of the node.
     fn code_range(&self) -> CodeRange;
+
+    /// Returns the full source code of the parse tree to which the node
+    /// belongs.
+    fn full_source(&self) -> &str;
 
     /// Returns a cursor for traversing the tree, starting at the current node.
     fn walk(&self) -> impl AstCursor<Node = Self>;

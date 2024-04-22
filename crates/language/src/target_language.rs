@@ -28,7 +28,7 @@ use crate::{
 };
 use anyhow::Result;
 use clap::ValueEnum;
-use grit_util::{Ast, AstNode, Language, Parser, SnippetTree};
+use grit_util::{Ast, AstNode, CodeRange, Language, Parser, SnippetTree};
 use marzano_util::node_with_source::NodeWithSource;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -503,6 +503,18 @@ macro_rules! generate_target_language {
             fn should_pad_snippet(&self) -> bool {
                 match self {
                     $(Self::$language(lang) => Language::should_pad_snippet(lang)),+
+                }
+            }
+
+            fn should_skip_padding(&self, node: &NodeWithSource<'_>) -> bool {
+                match self {
+                    $(Self::$language(lang) => Language::should_skip_padding(lang, node)),+
+                }
+            }
+
+            fn get_skip_padding_ranges_for_snippet(&self, snippet: &str) -> Vec<CodeRange> {
+                match self {
+                    $(Self::$language(lang) => Language::get_skip_padding_ranges_for_snippet(lang, snippet)),+
                 }
             }
 

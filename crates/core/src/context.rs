@@ -17,7 +17,7 @@ use grit_util::{AnalysisLogs, AstNode, Language};
 
 /// Contains various kinds of context about the query being executed.
 pub trait QueryContext: Clone + std::fmt::Debug + Sized + 'static {
-    type Node<'a>: AstNode;
+    type Node<'a>: AstNode + Clone;
     type NodePattern: AstNodePattern<Self>;
     type LeafNodePattern: AstLeafNodePattern<Self>;
     type ExecContext<'a>: ExecContext<'a, Self>;

@@ -100,6 +100,7 @@ fn match_pattern_libs(
     let pattern =
         src_to_problem_libs(pattern, libs, default_language, None, None, None, None)?.problem;
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), src.to_owned()), context);
+    println!("RESULTS: {results:#?}");
     let mut execution_result = ExecutionResult {
         input_file_debug_text: "".to_string(),
         the_match: None,
@@ -2051,6 +2052,38 @@ fn prefer_is_nan() {
             if (isNaN(foo)) {}
             if (!isNaN(foo)) {}"#
                 .to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn python_handle_multiline_strings() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |engine marzano(0.1)
+                |language python
+                |
+                |`$_ = $x` => `$x`"#
+                .trim_margin()
+                .unwrap(),
+            source: r#"
+                |def test_yaml_file():
+                |    """some test comment"""
+                |    variable = """
+                |title: "Title"
+                |        """"#
+                .trim_margin()
+                .unwrap(),
+            expected: r#"
+            |def test_yaml_file():
+            |    """some test comment"""
+            |    """
+            |title: "Title"
+            |        """"#
+                .trim_margin()
+                .unwrap(),
         }
     })
     .unwrap();
