@@ -1,3 +1,4 @@
+use crate::marzano_binding;
 use crate::marzano_binding::EffectRange;
 use anyhow::{anyhow, bail, Result};
 use itertools::Itertools;
@@ -110,14 +111,7 @@ fn pad_snippet(
     }
 
     let padding = padding.into_iter().collect::<String>();
-
-    // Write first snippet line as is, without extra padding
-    let mut lines = snippet.split('\n');
-    let mut result = lines.next().unwrap_or_default().to_string();
-
-    // Add the rest of lines in the snippet with padding
-    lines.for_each(|line| result.push_str(&format!("\n{}{}", &padding, line)));
-    Ok(result)
+    marzano_binding::pad_snippet(&padding, snippet, language)
 }
 
 // checks on this one are likely redundant as

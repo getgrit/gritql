@@ -252,6 +252,13 @@ pub trait Language: NodeTypes {
         self.is_comment_sort(node.node.kind_id())
     }
 
+    // in languages we pad such as python or yaml there are
+    // some sorts we don't want to pad such as python strings,
+    // this function identifies those sorts
+    fn skip_padding_sort(&self, _id: SortId) -> bool {
+        false
+    }
+
     fn is_statement(&self, _id: SortId) -> bool {
         false
     }

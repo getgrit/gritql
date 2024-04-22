@@ -64,7 +64,7 @@ impl<Q: QueryContext> Matcher<Q> for Step<Q> {
 
         // todo, for multifile we need to split up the matches by file.
         let (variables, ranges, suppressed) =
-            state.bindings_history_to_ranges(context.language(), context.name());
+            state.bindings_history_to_ranges(context.language(), ExecContext::name(context));
 
         let input_ranges = InputRanges {
             ranges,
@@ -95,14 +95,15 @@ impl<Q: QueryContext> Matcher<Q> for Step<Q> {
                 .cloned()
                 .is_some()
             {
+                let code = NodeWithSource::new(file.tree.root_node(), &file.source);
                 let (new_src, new_ranges) = apply_effects(
-                    src,
+                    code,
                     state.effects.clone(),
                     &state.files,
                     &file.name,
                     &mut new_filename,
                     context.language(),
-                    context.name(),
+                    ExecContext::name(context),
                     logs,
                 )?;
                 if let Some(new_ranges) = new_ranges {

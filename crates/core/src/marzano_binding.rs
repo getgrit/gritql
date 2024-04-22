@@ -11,13 +11,16 @@ use crate::problem::{Effect, EffectKind, MarzanoQueryContext};
 use crate::smart_insert::calculate_padding;
 use crate::suppress::is_suppress_comment;
 use anyhow::{anyhow, Result};
-use grit_util::{AnalysisLogBuilder, AnalysisLogs, AstNode, CodeRange, Position, Range};
+use grit_util::{
+    traverse, AnalysisLogBuilder, AnalysisLogs, AstNode, CodeRange, Order, Position, Range,
+};
 use itertools::{EitherOrBoth, Itertools};
 use marzano_language::language::{FieldId, Language};
 use marzano_util::node_with_source::NodeWithSource;
 use std::ops::Range as StdRange;
 use std::path::Path;
 use std::{borrow::Cow, collections::HashMap};
+use tree_sitter::Parser as TSParser;
 
 #[derive(Debug, Clone)]
 // &str points to the file source
@@ -50,14 +53,35 @@ impl PartialEq for MarzanoBinding<'_> {
     }
 }
 
-fn pad_snippet(padding: &str, snippet: &str) -> String {
-    // Write first snippet line as is, without extra padding
+fn get_skip_padding_ranges_for_snippet(
+    lang: &impl Language,
+    snippet: &str,
+) -> Result<Vec<CodeRange>> {
+    let mut parser = TSParser::new()?;
+    parser.set_language(lang.get_ts_language())?;
+    let tree = parser
+        .parse(snippet, None)?
+        .ok_or(anyhow!("failed to parse snippet"))?;
+    let root = tree.root_node();
+    let node = NodeWithSource::new(root, snippet);
+    Ok(get_skip_padding_ranges(&node, lang))
+}
+
+pub(crate) fn pad_snippet(padding: &str, snippet: &str, lang: &impl Language) -> Result<String> {
     let mut lines = snippet.split('\n');
     let mut result = lines.next().unwrap_or_default().to_string();
 
     // Add the rest of lines in the snippet with padding
-    lines.for_each(|line| result.push_str(&format!("\n{}{}", &padding, line)));
-    result
+    let skip_ranges = get_skip_padding_ranges_for_snippet(lang, snippet)?;
+    for line in lines {
+        let index = get_slice_byte_offset(snippet, line);
+        if !is_index_in_ranges(index, &skip_ranges) {
+            result.push_str(&format!("\n{}{}", &padding, line))
+        } else {
+            result.push_str(&format!("\n{}", line))
+        }
+    }
+    Ok(result)
 }
 
 fn adjust_ranges(substitutions: &mut [(EffectRange, String)], index: usize, delta: isize) {
@@ -71,14 +95,27 @@ fn adjust_ranges(substitutions: &mut [(EffectRange, String)], index: usize, delt
     }
 }
 
+pub(crate) fn is_index_in_ranges(index: u32, skip_ranges: &[CodeRange]) -> bool {
+    skip_ranges
+        .iter()
+        .any(|r| r.start <= index && index < r.end)
+}
+
+// safety ensure that sup and sub are slices of the same string.
+fn get_slice_byte_offset(sup: &str, sub: &str) -> u32 {
+    unsafe { sub.as_ptr().byte_offset_from(sup.as_ptr()) }.unsigned_abs() as u32
+}
+
 // in multiline snippets, remove padding from every line equal to the padding of the first line,
 // such that the first line is left-aligned.
 fn adjust_padding<'a>(
     src: &'a str,
     range: &CodeRange,
+    skip_ranges: &[CodeRange],
     new_padding: Option<usize>,
     offset: usize,
     substitutions: &mut [(EffectRange, String)],
+    lang: &impl Language,
 ) -> Result<Cow<'a, str>> {
     if let Some(new_padding) = new_padding {
         let newline_index = src[0..range.start as usize].rfind('\n');
@@ -98,31 +135,31 @@ fn adjust_padding<'a>(
         let delta: isize = (new_padding as isize) - (pad_strip_amount as isize);
         let padding = " ".repeat(pad_strip_amount);
         let new_padding = " ".repeat(new_padding);
-        let mut index = offset;
         result.push_str(lines.next().unwrap_or_default());
-        index += result.len();
         for line in lines {
             result.push('\n');
-            index += 1;
-            if line.trim().is_empty() {
-                adjust_ranges(substitutions, index, -(line.len() as isize));
-                continue;
-            }
-            adjust_ranges(substitutions, index, delta);
-            let line = line.strip_prefix(&padding).ok_or_else(|| {
+            let index = get_slice_byte_offset(src, line);
+            if !is_index_in_ranges(index, skip_ranges) {
+                if line.trim().is_empty() {
+                    adjust_ranges(substitutions, offset + result.len(), -(line.len() as isize));
+                    continue;
+                }
+                adjust_ranges(substitutions, offset + result.len(), delta);
+                let line = line.strip_prefix(&padding).ok_or_else(|| {
                 anyhow!(
                     "expected line \n{}\n to start with {} spaces, code is either not indented with spaces, or does not consistently indent code blocks",
                     line,
                     pad_strip_amount
                 )
             })?;
-            result.push_str(&new_padding);
-            index += new_padding.len();
-            result.push_str(line);
-            index += line.len();
+                result.push_str(&new_padding);
+                result.push_str(line);
+            } else {
+                result.push_str(line)
+            }
         }
         for (_, snippet) in substitutions.iter_mut() {
-            *snippet = pad_snippet(&new_padding, snippet);
+            *snippet = pad_snippet(&new_padding, snippet, lang)?;
         }
         Ok(result.into())
     } else {
@@ -154,13 +191,26 @@ impl EffectRange {
     }
 }
 
+pub(crate) fn get_skip_padding_ranges<N: AstNode>(
+    node: &N,
+    lang: &impl Language,
+) -> Vec<CodeRange> {
+    let mut ranges = Vec::new();
+    for n in traverse(node.walk(), Order::Pre) {
+        if lang.skip_padding_sort(n.kind_id()) {
+            ranges.push(n.code_range())
+        }
+    }
+    ranges
+}
+
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn linearize_binding<'a, Q: QueryContext>(
     language: &impl Language,
     effects: &[Effect<'a, Q>],
     files: &FileRegistry<'a>,
     memo: &mut HashMap<CodeRange, Option<String>>,
-    source: &'a str,
+    source: NodeWithSource<'a>,
     range: CodeRange,
     distributed_indent: Option<usize>,
     logs: &mut AnalysisLogs,
@@ -171,7 +221,7 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
         .into_iter()
         .map(|effect| {
             let binding = effect.binding;
-            let binding_range = binding.code_range(language);
+            let binding_range = Binding::code_range(&binding, language);
             if let (Some(src), Some(range)) = (binding.source(), binding_range.as_ref()) {
                 match effect.kind {
                     EffectKind::Rewrite => {
@@ -179,9 +229,22 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
                             if let Some(s) = o {
                                 return Ok((binding, s.to_owned().into(), effect.kind));
                             } else {
+                                let skip_padding_ranges = binding
+                                    .as_node()
+                                    .map(|n| get_skip_padding_ranges(&n, language))
+                                    .unwrap_or_default();
+
                                 return Ok((
                                     binding,
-                                    adjust_padding(src, range, distributed_indent, 0, &mut [])?,
+                                    adjust_padding(
+                                        src,
+                                        range,
+                                        &skip_padding_ranges,
+                                        distributed_indent,
+                                        0,
+                                        &mut [],
+                                        language,
+                                    )?,
                                     effect.kind,
                                 ));
                             }
@@ -236,13 +299,16 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
         })
         .collect::<Result<Vec<_>>>()?;
 
+    let skip_padding_ranges = get_skip_padding_ranges(&source, language);
     // we need to update the ranges of the replacements to account for padding discrepency
     let adjusted_source = adjust_padding(
-        source,
+        source.source,
         &range,
+        &skip_padding_ranges,
         distributed_indent,
         range.start as usize,
         &mut replacements,
+        language,
     )?;
     let (res, offset) = inline_sorted_snippets_with_offset(
         language,
@@ -482,7 +548,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
                 effects,
                 files,
                 memo,
-                node.source,
+                node.clone(),
                 node.code_range(),
                 distributed_indent,
                 logs,
@@ -502,7 +568,9 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
                         effects,
                         files,
                         memo,
-                        parent_node.source,
+                        // ideally we should be passing list as an ast_node
+                        // a little tricky atm
+                        parent_node.clone(),
                         range,
                         distributed_indent,
                         logs,
