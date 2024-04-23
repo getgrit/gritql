@@ -31,7 +31,6 @@ use marzano_messenger::emit::{Messager, VisibilityLevels};
 use cli_server::check::CheckMessenger;
 
 use crate::{
-    diff::extract_target_ranges,
     error::GoodError,
     flags::{GlobalFormatFlags, OutputFormat},
     github::{log_check_annotations, write_check_summary},

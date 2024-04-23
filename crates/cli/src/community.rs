@@ -1,8 +1,8 @@
 use anyhow::Result;
 use grit_util::{FileRange, Position, RangeWithoutByte};
 use serde::Deserialize;
-use std::fs::File;
-use std::io::Read;
+
+
 use std::path::PathBuf;
 
 #[derive(Debug, Deserialize)]
@@ -32,7 +32,7 @@ struct EslintFile {
 }
 
 pub fn parse_eslint_output(json: &str) -> Result<Vec<FileRange>> {
-    let output: Vec<EslintFile> = serde_json::from_str(&json)?;
+    let output: Vec<EslintFile> = serde_json::from_str(json)?;
     let items = output
         .into_iter()
         .flat_map(|file| {

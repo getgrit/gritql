@@ -28,9 +28,9 @@ use std::sync::atomic::Ordering;
 use tokio::fs;
 
 use crate::commands::filters::extract_filter_ranges;
-use crate::diff::extract_target_ranges;
+
 use crate::{
-    analyze::par_apply_pattern, community::parse_eslint_output, error::GoodError,
+    analyze::par_apply_pattern, error::GoodError,
     flags::OutputFormat, messenger_variant::create_emitter, result_formatting::get_human_error,
     updater::Updater,
 };

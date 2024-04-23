@@ -1,7 +1,7 @@
 use anyhow::Result;
 use grit_util::{FileRange, UtilRange};
-use marzano_util::diff::{parse_modified_ranges, FileDiff};
-use std::{fs::File, io::Read, path::PathBuf};
+use marzano_util::diff::{parse_modified_ranges};
+use std::{path::PathBuf};
 
 pub fn run_git_diff(path: &PathBuf) -> Result<String> {
     let output = std::process::Command::new("git")
@@ -18,7 +18,7 @@ pub(crate) fn extract_target_ranges(
     diff_arg: &Option<Option<String>>,
 ) -> Result<Option<Vec<FileRange>>> {
     let raw_diff = if let Some(Some(diff_content)) = &diff_arg {
-        parse_modified_ranges(&diff_content)?
+        parse_modified_ranges(diff_content)?
     } else if let Some(None) = &diff_arg {
         let diff = run_git_diff(&std::env::current_dir()?)?;
         parse_modified_ranges(&diff)?
