@@ -1,31 +1,16 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use enum_dispatch::enum_dispatch;
-use grit_util::{traverse, AnalysisLogBuilder, AnalysisLogs, AstNode, Order, Range};
-use itertools::{self, Itertools};
-use lazy_static::lazy_static;
+use grit_util::{
+    traverse, AnalysisLogBuilder, AnalysisLogs, Ast, AstNode, Language, Order, Parser, SnippetTree,
+};
+use itertools::Itertools;
 use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
-use regex::Regex;
 use serde_json::Value;
-use std::{cmp::max, collections::HashMap};
-pub(crate) use tree_sitter::Language as TSLanguage;
-use tree_sitter::{Parser, Tree};
-// todo decide where this belongs, not good to
-// define static variable twice. (also in core/config.rs)
-pub static GRIT_METAVARIABLE_PREFIX: &str = "$";
+use std::{cmp::max, collections::HashMap, path::Path};
+pub(crate) use tree_sitter::{Language as TSLanguage, Parser as TSParser, Tree as TSTree};
+
 pub type SortId = u16;
 pub type FieldId = u16;
-
-#[derive(Debug, Clone)]
-pub struct Replacement {
-    pub range: Range,
-    pub replacement: &'static str,
-}
-
-impl Replacement {
-    pub fn new(range: Range, replacement: &'static str) -> Self {
-        Self { range, replacement }
-    }
-}
 
 #[derive(Debug, Clone)]
 pub(crate) struct LeafNormalizer {
@@ -82,19 +67,6 @@ impl LeafEquivalenceClass {
     }
 }
 
-lazy_static! {
-    pub static ref EXACT_VARIABLE_REGEX: Regex =
-        Regex::new(r"^\$([A-Za-z_][A-Za-z0-9_]*)$").unwrap();
-    pub static ref EXACT_REPLACED_VARIABLE_REGEX: Regex =
-        Regex::new(r"^µ([A-Za-z_][A-Za-z0-9_]*)$").unwrap();
-    pub static ref VARIABLE_REGEX: Regex =
-        Regex::new(r"\$(\.\.\.|[A-Za-z_][A-Za-z0-9_]*)").unwrap();
-    pub static ref REPLACED_VARIABLE_REGEX: Regex =
-        Regex::new(r"µ(\.\.\.|[A-Za-z_][A-Za-z0-9_]*)").unwrap();
-    pub static ref BRACKET_VAR_REGEX: Regex =
-        Regex::new(r"\$\[([A-Za-z_][A-Za-z0-9_]*)\]").unwrap();
-}
-
 #[derive(Debug)]
 pub struct Field {
     name: String,
@@ -103,12 +75,6 @@ pub struct Field {
     multiple: bool,
     // for now empty, eventually we'll want to capture possible sort types
     sorts: Vec<SortId>,
-}
-
-pub enum GritMetaValue {
-    Underscore,
-    Dots,
-    Variable(String),
 }
 
 impl Field {
@@ -170,12 +136,110 @@ pub trait NodeTypes {
     fn node_types(&self) -> &[Vec<Field>];
 }
 
-#[enum_dispatch(TargetLanguage)]
-pub trait Language: NodeTypes {
+#[derive(Clone, Debug)]
+pub struct Tree {
+    tree: TSTree,
+    pub source: String,
+}
+
+impl Tree {
+    pub fn new(tree: TSTree, source: impl Into<String>) -> Self {
+        Self {
+            tree,
+            source: source.into(),
+        }
+    }
+}
+
+impl Ast for Tree {
+    type Node<'a> = NodeWithSource<'a>;
+
+    fn root_node(&self) -> Self::Node<'_> {
+        NodeWithSource::new(self.tree.root_node(), &self.source)
+    }
+}
+
+pub struct MarzanoParser {
+    pub(crate) parser: TSParser,
+}
+
+impl MarzanoParser {
+    pub fn new<'a>(lang: &impl MarzanoLanguage<'a>) -> Self {
+        let mut parser = TSParser::new().unwrap();
+        parser
+            .set_language(lang.get_ts_language())
+            .expect("failed to set TreeSitter language");
+        Self { parser }
+    }
+}
+
+impl Parser for MarzanoParser {
+    type Tree = Tree;
+
+    fn parse_file(
+        &mut self,
+        body: &str,
+        path: Option<&Path>,
+        logs: &mut AnalysisLogs,
+        new: bool,
+    ) -> Option<Tree> {
+        let tree = self.parser.parse(body, None).ok()??;
+
+        if let Some(path) = path {
+            let mut errors = file_parsing_error(&tree, path, body, new).ok()?;
+            logs.append(&mut errors);
+        }
+
+        Some(Tree::new(tree, body))
+    }
+
+    fn parse_snippet(
+        &mut self,
+        prefix: &'static str,
+        source: &str,
+        postfix: &'static str,
+    ) -> SnippetTree<Tree> {
+        let context = format!("{prefix}{source}{postfix}");
+
+        let len = if cfg!(target_arch = "wasm32") {
+            |src: &str| src.chars().count() as u32
+        } else {
+            |src: &str| src.len() as u32
+        };
+
+        let tree = self.parser.parse(&context, None).unwrap().unwrap();
+
+        SnippetTree {
+            tree: Tree::new(tree, context),
+            source: source.to_owned(),
+            prefix,
+            postfix,
+            snippet_start: (len(prefix) + len(source) - len(source.trim_start())),
+            snippet_end: (len(prefix) + len(source.trim_end())),
+        }
+    }
+}
+
+#[enum_dispatch]
+pub trait MarzanoLanguage<'a>: Language<Node<'a> = NodeWithSource<'a>> + NodeTypes {
     /// tree sitter language to parse the source
     fn get_ts_language(&self) -> &TSLanguage;
 
-    fn language_name(&self) -> &'static str;
+    fn get_parser(&self) -> Box<dyn Parser<Tree = Tree>> {
+        Box::new(MarzanoParser::new(self))
+    }
+
+    fn parse_snippet_contexts(&self, source: &str) -> Vec<SnippetTree<Tree>> {
+        let source = self.substitute_metavariable_prefix(source);
+        self.snippet_context_strings()
+            .iter()
+            .map(|(pre, post)| self.get_parser().parse_snippet(pre, &source, post))
+            .filter(|result| {
+                let root_node = &result.tree.root_node().node;
+                !(root_node.has_error() || root_node.is_error() || root_node.is_missing())
+            })
+            .collect()
+    }
 
     fn skip_snippet_compilation_of_field(&self, _sort_id: SortId, _field_id: FieldId) -> bool {
         false
@@ -188,138 +252,29 @@ pub trait Language: NodeTypes {
         false
     }
 
-    fn snippet_context_strings(&self) -> &[(&'static str, &'static str)];
+    fn is_comment_sort(&self, sort: SortId) -> bool;
 
-    // todo maybe iterate over every node and check for is_missing/is_error?
-    // has error only checks for unresolved errors.
-    fn parse_snippet_contexts(&self, source: &str) -> Vec<SnippetTree> {
-        let source = self.substitute_metavariable_prefix(source);
-        self.snippet_context_strings()
-            .iter()
-            .map(|(pre, post)| self.src_to_snippet(pre, &source, post))
-            .filter(|result| {
-                !(result.parse_tree.root_node().has_error()
-                    || result.parse_tree.root_node().is_error()
-                    || result.parse_tree.root_node().is_missing())
-            })
-            .collect()
-    }
-
-    fn alternate_metavariable_kinds(&self) -> &[&'static str] {
-        &[]
-    }
-
-    fn metavariable_prefix(&self) -> &'static str {
-        "$"
-    }
-
-    fn comment_prefix(&self) -> &'static str {
-        "//"
-    }
-
-    fn metavariable_prefix_substitute(&self) -> &'static str {
-        "µ"
-    }
-
-    fn metavariable_regex(&self) -> &'static Regex {
-        &VARIABLE_REGEX
-    }
-
-    fn replaced_metavariable_regex(&self) -> &'static Regex {
-        &REPLACED_VARIABLE_REGEX
-    }
-
-    fn metavariable_bracket_regex(&self) -> &'static Regex {
-        &BRACKET_VAR_REGEX
-    }
-
-    fn exact_variable_regex(&self) -> &'static Regex {
-        &EXACT_VARIABLE_REGEX
-    }
-
-    fn exact_replaced_variable_regex(&self) -> &'static Regex {
-        &EXACT_REPLACED_VARIABLE_REGEX
-    }
-
-    // checks if the sort is the languages comment sort
-    fn is_comment_sort(&self, _id: SortId) -> bool;
-
-    // checks if a node is a comment. distinct from the above
-    // in that sometimes a node is a comment but doesn't have
-    // a comment sort for example when parsing javascript,
-    // comments embedded in jsx dont have the comment sort
-    fn is_comment_node(&self, node: &NodeWithSource) -> bool {
+    // Same as `Language::is_comment()`.
+    //
+    // Distinct from `is_comment_sort()` because sometimes a node is a comment
+    // but doesn't have a comment sort. For example when parsing JavaScript,
+    // comments embedded in JSX dont have the comment sort.
+    fn is_comment_node(&self, node: &NodeWithSource<'_>) -> bool {
         self.is_comment_sort(node.node.kind_id())
-    }
-
-    // in languages we pad such as python or yaml there are
-    // some sorts we don't want to pad such as python strings,
-    // this function identifies those sorts
-    fn skip_padding_sort(&self, _id: SortId) -> bool {
-        false
-    }
-
-    fn is_statement(&self, _id: SortId) -> bool {
-        false
-    }
-
-    // assumes trim doesn't do anything otherwise range is off
-    fn comment_text_range(&self, node: &impl AstNode) -> Option<Range> {
-        Some(node.range())
-    }
-
-    fn substitute_metavariable_prefix(&self, src: &str) -> String {
-        self.metavariable_regex()
-            .replace_all(
-                src,
-                format!("{}$1", self.metavariable_prefix_substitute()).as_str(),
-            )
-            .to_string()
-    }
-
-    fn snippet_metavariable_to_grit_metavariable(&self, src: &str) -> Option<GritMetaValue> {
-        src.trim()
-            .strip_prefix(self.metavariable_prefix_substitute())
-            .map(|s| match s {
-                "_" => GritMetaValue::Underscore,
-                "..." => GritMetaValue::Dots,
-                _ => {
-                    let mut s = s.to_owned();
-                    s.insert_str(0, self.metavariable_prefix());
-                    GritMetaValue::Variable(s)
-                }
-            })
-    }
-
-    fn src_to_snippet(&self, pre: &'static str, source: &str, post: &'static str) -> SnippetTree {
-        let mut parser = Parser::new().unwrap();
-        parser.set_language(self.get_ts_language()).unwrap();
-        let context = format!("{pre}{source}{post}");
-
-        let len = if cfg!(target_arch = "wasm32") {
-            |src: &str| src.chars().count() as u32
-        } else {
-            |src: &str| src.len() as u32
-        };
-
-        SnippetTree {
-            parse_tree: parser.parse(&context, None).unwrap().unwrap(),
-            snippet_prefix: pre,
-            snippet_postfix: post,
-            snippet_start: (len(pre) + len(source) - len(source.trim_start())),
-            snippet_end: (len(pre) + len(source.trim_end())),
-            snippet: source.to_owned(),
-            context,
-            _metavariable_sort: self.metavariable_sort(),
-        }
     }
 
     fn metavariable_sort(&self) -> SortId;
 
-    /// Check for nodes that should be removed or replaced
-    /// This is used to "repair" the program after rewriting, such as by deleting orphaned ranges (like a variable declaration without any variables)
-    /// If the node should be removed, add range with a None value, if the node should be replaced, add a range with the replacement value
-    fn check_replacements(&self, _n: NodeWithSource<'_>, _replacements: &mut Vec<Replacement>) {}
+    fn is_metavariable_node(&self, node: &NodeWithSource<'_>) -> bool {
+        node.node.is_named()
+            && (node.node.kind_id() == self.metavariable_sort()
+                || (self
+                    .alternate_metavariable_kinds()
+                    .contains(&node.node.kind().as_ref())
+                    && node
+                        .text()
+                        .is_ok_and(|t| self.exact_replaced_variable_regex().is_match(&t))))
+    }
 
     fn get_equivalence_class(
         &self,
@@ -328,54 +283,11 @@ pub trait Language: NodeTypes {
     ) -> Result<Option<LeafEquivalenceClass>, String> {
         Ok(None)
     }
-
-    fn take_padding(&self, current: char, _next: Option<&char>) -> Option<char> {
-        if current.is_whitespace() {
-            Some(current)
-        } else {
-            None
-        }
-    }
-
-    fn parse_file(
-        &self,
-        name: &str,
-        body: &str,
-        logs: &mut AnalysisLogs,
-        new: bool,
-    ) -> Result<Option<Tree>> {
-        default_parse_file(self.get_ts_language(), name, body, logs, new)
-    }
-
-    fn should_pad_snippet(&self) -> bool {
-        false
-    }
-
-    fn make_single_line_comment(&self, text: &str) -> String {
-        format!("// {}\n", text)
-    }
-}
-
-pub(crate) fn default_parse_file(
-    lang: &TSLanguage,
-    name: &str,
-    body: &str,
-    logs: &mut AnalysisLogs,
-    new: bool,
-) -> Result<Option<Tree>> {
-    let mut parser = Parser::new()?;
-    parser.set_language(lang)?;
-    let tree = parser
-        .parse(body, None)?
-        .ok_or_else(|| anyhow!("failed to parse tree"))?;
-    let mut errors = file_parsing_error(&tree, name, body, new)?;
-    logs.append(&mut errors);
-    Ok(Some(tree))
 }
 
 fn file_parsing_error(
-    tree: &Tree,
-    file_name: &str,
+    tree: &TSTree,
+    file_name: &Path,
     body: &str,
     is_new: bool,
 ) -> Result<AnalysisLogs> {
@@ -392,116 +304,88 @@ fn file_parsing_error(
         if n.node.is_error() || n.node.is_missing() {
             let position = n.range().start;
             let message = format!(
-                "Error parsing source code at {position} in {file_name}. This \
-                may cause otherwise applicable queries to not match."
+                "Error parsing source code at {position} in {}. This may cause \
+                otherwise applicable queries to not match.",
+                file_name.display()
             );
-            let log = log_builder
+            if let Ok(log) = log_builder
                 .clone()
                 .message(message)
                 .position(position)
-                .build()?;
-            errors.push(log);
+                .build()
+            {
+                errors.push(log);
+            }
         }
     }
     Ok(errors.into())
 }
 
-#[derive(Debug, Clone)]
-pub struct SnippetTree {
-    pub parse_tree: Tree,
-    pub snippet_prefix: &'static str,
-    pub snippet_postfix: &'static str,
-    pub snippet: String,
-    pub context: String,
-    pub snippet_start: u32,
-    pub snippet_end: u32,
-    _metavariable_sort: SortId,
-}
-
-#[derive(Debug, Clone)]
-pub struct SnippetNode<'a> {
-    pub node: tree_sitter::Node<'a>,
-    pub context: String,
-}
-
-impl<'a> SnippetNode<'a> {
-    pub fn new(node: tree_sitter::Node<'a>, context: String) -> Self {
-        Self { node, context }
-    }
-}
-
-impl SnippetTree {
-    // pub for testing
-    pub fn snippet_nodes_from_index(&self) -> Option<SnippetNode> {
-        let mut snippet_root = self.parse_tree.root_node();
-        let mut cursor = self.parse_tree.walk();
-        let mut id = snippet_root.id();
-
-        // find the the most senior node with the same index as the snippet
-        while snippet_root.start_byte() < self.snippet_start
-            || snippet_root.end_byte() > self.snippet_end
-        {
-            if snippet_root.named_child_count() == 0 {
-                if snippet_root
-                    .utf8_text(self.context.as_bytes())
-                    .unwrap()
-                    .trim()
-                    == self.snippet.trim()
-                {
-                    return Some(SnippetNode::new(snippet_root, self.context.clone()));
-                } else {
-                    return None;
-                }
-            }
-            for child in snippet_root.named_children(&mut cursor) {
-                if child.start_byte() <= self.snippet_start && child.end_byte() >= self.snippet_end
-                {
-                    snippet_root = child;
-                    break;
-                }
-            }
-            // sanity check to avoid infinite loop
-            if snippet_root.id() == id {
-                if snippet_root
-                    .utf8_text(self.context.as_bytes())
-                    .unwrap()
-                    .trim()
-                    != self.snippet.trim()
-                {
-                    return None;
-                }
-                break;
-            }
-            id = snippet_root.id();
-        }
-        // in order to handle white space and other superfluos
-        // stuff in the snippet we assume the root
-        // is correct as long as it's the largest node within
-        // the snippet length. Maybe this is too permissive?
-        let mut nodes = vec![];
-        let root_start = snippet_root.start_byte();
-        let root_end = snippet_root.end_byte();
-        if root_start > self.snippet_start || root_end < self.snippet_end {
-            return None;
-        }
-        while snippet_root.start_byte() == root_start && snippet_root.end_byte() == root_end {
-            nodes.push(SnippetNode::new(snippet_root.clone(), self.context.clone()));
-            if let Some(child) = snippet_root.named_child(0) {
-                snippet_root = child
-            } else {
-                break;
-            }
-        }
-        nodes.last().cloned()
-    }
-}
-
-pub fn nodes_from_indices(indices: &[SnippetTree]) -> Vec<SnippetNode> {
+pub fn nodes_from_indices(indices: &[SnippetTree<Tree>]) -> Vec<NodeWithSource> {
     indices
         .iter()
-        .flat_map(|s| s.snippet_nodes_from_index())
+        .flat_map(snippet_nodes_from_index)
         .unique_by(|n| n.node.kind_id())
         .collect()
+}
+
+fn snippet_nodes_from_index(snippet: &SnippetTree<Tree>) -> Option<NodeWithSource> {
+    let mut snippet_root = snippet.tree.root_node();
+    if snippet_root.node.is_missing() {
+        return None;
+    }
+
+    let mut id = snippet_root.node.id();
+
+    // find the the most senior node with the same index as the snippet
+    while snippet_root.node.start_byte() < snippet.snippet_start
+        || snippet_root.node.end_byte() > snippet.snippet_end
+    {
+        if snippet_root.named_children().count() == 0 {
+            if snippet_root.text().unwrap().trim() == snippet.source.trim() {
+                return Some(snippet_root);
+            } else {
+                return None;
+            }
+        }
+        for child in snippet_root.named_children() {
+            if child.node.start_byte() <= snippet.snippet_start
+                && child.node.end_byte() >= snippet.snippet_end
+            {
+                snippet_root = child;
+                break;
+            }
+        }
+        // sanity check to avoid infinite loop
+        if snippet_root.node.id() == id {
+            if snippet_root.text().unwrap().trim() != snippet.source.trim() {
+                return None;
+            }
+            break;
+        }
+        id = snippet_root.node.id();
+    }
+
+    // in order to handle white space and other superfluos
+    // stuff in the snippet we assume the root
+    // is correct as long as it's the largest node within
+    // the snippet length. Maybe this is too permissive?
+    let mut nodes = vec![];
+    let root_start = snippet_root.node.start_byte();
+    let root_end = snippet_root.node.end_byte();
+    if root_start > snippet.snippet_start || root_end < snippet.snippet_end {
+        return None;
+    }
+    while snippet_root.node.start_byte() == root_start && snippet_root.node.end_byte() == root_end {
+        let first_child = snippet_root.named_children().next();
+        nodes.push(snippet_root);
+        if let Some(child) = first_child {
+            snippet_root = child
+        } else {
+            break;
+        }
+    }
+    nodes.last().cloned()
 }
 
 // todo
@@ -540,9 +424,12 @@ pub fn fields_for_nodes(language: &TSLanguage, types: &str) -> Vec<Vec<Field>> {
 
 #[cfg(test)]
 mod tests {
-    use super::nodes_from_indices;
-    use crate::{language::Language, tsx::Tsx};
-    use tree_sitter::Parser;
+    use super::{nodes_from_indices, snippet_nodes_from_index};
+    use crate::{
+        language::{MarzanoLanguage, MarzanoParser},
+        tsx::Tsx,
+    };
+    use grit_util::{Language, Parser};
     use trim_margin::MarginTrimmable;
 
     #[test]
@@ -551,18 +438,15 @@ mod tests {
         let post = "\n  }\n}";
         let snippet = "\n   foo('moment')  \n".to_string();
         let lang = Tsx::new(None);
-        let mut parser = Parser::new().unwrap();
-        parser.set_language(lang.get_ts_language()).unwrap();
-        let snippet_index = lang.src_to_snippet(pre, &snippet, post);
-        let node = snippet_index.snippet_nodes_from_index();
+        let snippet_index = MarzanoParser::new(&lang).parse_snippet(pre, &snippet, post);
+        let node = snippet_nodes_from_index(&snippet_index);
         assert!(node.is_some())
     }
 
     #[test]
     fn snippet_to_nodes() {
         let snippet = "foo('bar')";
-        let lang = Tsx::new(None);
-        let snippets = lang.parse_snippet_contexts(snippet);
+        let snippets = Tsx::new(None).parse_snippet_contexts(snippet);
         let nodes = nodes_from_indices(&snippets);
         assert_eq!(nodes.len(), 2);
     }

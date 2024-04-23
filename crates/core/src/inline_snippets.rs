@@ -1,8 +1,8 @@
 use crate::marzano_binding;
 use crate::marzano_binding::EffectRange;
 use anyhow::{anyhow, bail, Result};
+use grit_util::Language;
 use itertools::Itertools;
-use marzano_language::language::Language;
 use std::{cell::RefCell, collections::HashSet, ops::Range, rc::Rc};
 
 fn filter_out_nested(replacements: &mut Vec<(EffectRange, String)>) {
@@ -103,7 +103,7 @@ fn pad_snippet(
         .peekable();
     let mut padding = Vec::new();
     while let Some(c) = chars.next() {
-        if let Some(padding_value) = language.take_padding(c, chars.peek()) {
+        if let Some(padding_value) = language.take_padding(c, chars.peek().copied()) {
             padding.push(padding_value);
         } else {
             break;

@@ -1,13 +1,12 @@
 use grit_util::{Position, Range};
 use marzano_core::api::EnforcementLevel;
-use marzano_language::target_language::PatternLanguage;
+use marzano_language::{grit_parser::MarzanoGritParser, target_language::PatternLanguage};
 use serde::{Deserialize, Serialize};
 use std::{
     cmp::Ordering,
     path::{Path, PathBuf},
     vec::Vec,
 };
-use tree_sitter::Parser;
 
 use crate::{fetcher::ModuleRepo, parser::PatternFileExt, utils::is_pattern_name};
 use anyhow::{bail, Result};
@@ -126,11 +125,8 @@ pub struct ModuleGritPattern {
 }
 
 impl ModuleGritPattern {
-    pub fn language(&self, parser: &mut Parser) -> Option<PatternLanguage> {
-        let body = match self.config.body.as_ref() {
-            Some(body) => body,
-            None => return None,
-        };
+    pub fn language(&self, parser: &mut MarzanoGritParser) -> Option<PatternLanguage> {
+        let body = self.config.body.as_ref()?;
         Some(PatternLanguage::get_language_with_parser(parser, body).unwrap_or_default())
     }
 }

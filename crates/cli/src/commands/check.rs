@@ -201,7 +201,7 @@ pub(crate) async fn run_check(
                 cache.put_no_matches(hash, pattern.hash).unwrap();
             }
         }
-        let mut entry = results.entry(pattern.src.clone()).or_default();
+        let mut entry = results.entry(pattern.tree.source.clone()).or_default();
         entry.extend(result.into_iter().filter(is_match));
         pg.inc(1);
     });

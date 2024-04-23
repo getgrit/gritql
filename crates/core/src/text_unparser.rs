@@ -1,13 +1,13 @@
-use crate::binding::Binding;
-use crate::context::QueryContext;
-use crate::marzano_binding::linearize_binding;
-use crate::pattern::{resolved_pattern::ResolvedPattern, state::FileRegistry};
-use crate::problem::Effect;
+use crate::{
+    binding::Binding,
+    context::{ExecContext, QueryContext},
+    marzano_binding::linearize_binding,
+    pattern::{resolved_pattern::ResolvedPattern, state::FileRegistry},
+    problem::Effect,
+};
 use anyhow::Result;
-use grit_util::{AnalysisLogs, CodeRange};
+use grit_util::{AnalysisLogs, AstNode, CodeRange, Language};
 use im::Vector;
-use marzano_language::language::Language;
-use marzano_util::node_with_source::NodeWithSource;
 use std::collections::HashMap;
 use std::ops::Range;
 use std::path::{Path, PathBuf};
@@ -20,21 +20,23 @@ use std::path::{Path, PathBuf};
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn apply_effects<'a, Q: QueryContext>(
-    code: NodeWithSource<'a>,
+    code: Q::Node<'a>,
     effects: Vector<Effect<'a, Q>>,
     files: &FileRegistry<'a>,
     the_filename: &Path,
     new_filename: &mut PathBuf,
-    language: &impl Language,
-    current_name: Option<&str>,
+    context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<(String, Option<Vec<Range<usize>>>)> {
+    let language = context.language();
+    let current_name = context.name();
+
     let effects: Vec<_> = effects
         .into_iter()
         .filter(|effect| !effect.binding.is_suppressed(language, current_name))
         .collect();
     if effects.is_empty() {
-        return Ok((code.source.to_string(), None));
+        return Ok((code.full_source().to_owned(), None));
     }
     let mut memo: HashMap<CodeRange, Option<String>> = HashMap::new();
     let (from_inline, ranges) = linearize_binding(
@@ -43,7 +45,7 @@ pub(crate) fn apply_effects<'a, Q: QueryContext>(
         files,
         &mut memo,
         code.clone(),
-        CodeRange::new(0, code.source.len() as u32, code.source),
+        CodeRange::new(0, code.full_source().len() as u32, code.full_source()),
         language.should_pad_snippet().then_some(0),
         logs,
     )?;
