@@ -27,6 +27,7 @@ use std::sync::atomic::AtomicI32;
 use std::sync::atomic::Ordering;
 use tokio::fs;
 
+use crate::commands::filters::extract_filter_ranges;
 use crate::diff::extract_target_ranges;
 use crate::{
     analyze::par_apply_pattern, community::parse_eslint_output, error::GoodError,
@@ -204,12 +205,7 @@ pub(crate) async fn run_apply_pattern(
     )
     .await?;
 
-    let filter_range = if let Some(json_path) = &shared.only_in_json {
-        let json_ranges = flushable_unwrap!(emitter, parse_eslint_output(json_path));
-        Some(json_ranges)
-    } else {
-        flushable_unwrap!(emitter, extract_target_ranges(&shared.only_in_diff))
-    };
+    let filter_range = flushable_unwrap!(emitter, extract_filter_ranges(&shared));
 
     let (my_input, lang) = if let Some(pattern_libs) = pattern_libs {
         (

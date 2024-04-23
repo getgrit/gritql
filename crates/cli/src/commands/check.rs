@@ -45,7 +45,7 @@ use crate::{
     ux::{get_check_summary, log_file, print_config, CheckResult},
 };
 
-use super::filters::SharedFilterArgs;
+use super::filters::{extract_filter_ranges, SharedFilterArgs};
 
 #[derive(Args, Serialize, Debug)]
 pub struct CheckArg {
@@ -120,7 +120,7 @@ pub(crate) async fn run_check(
         std::env::current_dir()?
     };
 
-    let filter_range = extract_target_ranges(&arg.only_in_diff)?;
+    let filter_range = extract_filter_ranges(&arg.shared_filters)?;
 
     // Construct a resolver
     let resolver = GritModuleResolver::new(current_dir.to_str().unwrap());
