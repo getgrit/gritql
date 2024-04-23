@@ -183,9 +183,7 @@ impl Parser for MarzanoParser {
         logs: &mut AnalysisLogs,
         new: bool,
     ) -> Option<Tree> {
-        let Some(tree) = self.parser.parse(body, None).ok()? else {
-            return None;
-        };
+        let tree = self.parser.parse(body, None).ok()??;
 
         if let Some(path) = path {
             let mut errors = file_parsing_error(&tree, path, body, new).ok()?;

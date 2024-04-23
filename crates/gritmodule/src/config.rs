@@ -126,9 +126,7 @@ pub struct ModuleGritPattern {
 
 impl ModuleGritPattern {
     pub fn language(&self, parser: &mut MarzanoGritParser) -> Option<PatternLanguage> {
-        let Some(body) = self.config.body.as_ref() else {
-            return None;
-        };
+        let body = self.config.body.as_ref()?;
         Some(PatternLanguage::get_language_with_parser(parser, body).unwrap_or_default())
     }
 }
