@@ -31,13 +31,7 @@ struct EslintFile {
     pub messages: Vec<EslintMessage>,
 }
 
-pub fn parse_eslint_output(file_path: &PathBuf) -> Result<Vec<FileRange>> {
-    let mut file = File::open(file_path)?;
-    let mut json = String::new();
-
-    // TODO(perf): skip reading the whole string into memory, parse the JSON iteratively
-    file.read_to_string(&mut json)?;
-
+pub fn parse_eslint_output(json: &str) -> Result<Vec<FileRange>> {
     let output: Vec<EslintFile> = serde_json::from_str(&json)?;
     let items = output
         .into_iter()
