@@ -11,7 +11,7 @@ pub fn get_grit_api_url() -> String {
 #[cfg(test)]
 impl From<crate::info::AuthInfo> for marzano_util::runtime::LanguageModelAPI {
     fn from(auth_info: crate::info::AuthInfo) -> Self {
-        let base_endpoint = env::var("GRIT_API_URL").unwrap();
+        let base_endpoint = env::var(ENV_VAR_GRIT_API_URL).unwrap();
 
         Self {
             base_endpoint,
