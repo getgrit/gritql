@@ -45,6 +45,8 @@ use crate::{
     ux::{get_check_summary, log_file, print_config, CheckResult},
 };
 
+use super::filters::SharedFilterArgs;
+
 #[derive(Args, Serialize, Debug)]
 pub struct CheckArg {
     /// The target paths to apply the checks to
@@ -68,12 +70,8 @@ pub struct CheckArg {
     /// Output annotations for a GitHub actions workflow
     #[clap(long = "github-actions")]
     pub github_actions: bool,
-    #[clap(
-        long = "only-in-diff",
-        help = "Only check ranges that are inside the unified diff if one is provided, or the results of git diff HEAD if no diff is provided.",
-        hide = true
-    )]
-    pub only_in_diff: Option<Option<String>>,
+    #[clap(flatten)]
+    pub shared_filters: SharedFilterArgs,
 }
 
 pub(crate) async fn run_check(

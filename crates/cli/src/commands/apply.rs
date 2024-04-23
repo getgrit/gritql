@@ -12,25 +12,10 @@ use crate::flags::GlobalFormatFlags;
 
 #[cfg(feature = "workflows_v2")]
 use super::apply_migration::{run_apply_migration, ApplyMigrationArgs};
-use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
-
-#[derive(Args, Debug, Serialize, Default)]
-/// Shared arguments for apply and check commands.
-pub struct SharedFilterArgs {
-    #[clap(
-        long = "only-in-json",
-        help = r#"Only rewrite ranges inside a provided eslint-style JSON string. The JSON should be an array of objects formatted as `[{"filePath": "path/to/file", "messages": [{"line": 1, "column": 1, "endLine": 1, "endColumn": 1}]}]`."#,
-        conflicts_with = "only_in_diff"
-    )]
-    pub(crate) only_in_json: Option<String>,
-    #[clap(
-        long = "only-in-diff",
-        help = "Only rewrite ranges that are inside the provided unified diff, or the results of git diff HEAD if no diff is provided.",
-        hide = true,
-        conflicts_with = "only_in_json"
-    )]
-    pub(crate) only_in_diff: Option<Option<String>>,
-}
+use super::{
+    apply_pattern::{run_apply_pattern, ApplyPatternArgs},
+    filters::SharedFilterArgs,
+};
 
 #[derive(Args, Debug, Serialize)]
 pub struct ApplyArgs {

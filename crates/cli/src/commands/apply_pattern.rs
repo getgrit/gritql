@@ -42,7 +42,7 @@ use marzano_messenger::{
 use crate::resolver::{get_grit_files_from_cwd, GritModuleResolver};
 use crate::utils::has_uncommitted_changes;
 
-use super::apply::SharedFilterArgs;
+use super::filters::SharedFilterArgs;
 use super::init::init_config_from_cwd;
 
 #[derive(Deserialize)]
