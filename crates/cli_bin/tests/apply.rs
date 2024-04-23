@@ -1311,13 +1311,15 @@ fn embedding_like() -> Result<()> {
 fn filtered_apply() -> Result<()> {
     let (_temp_dir, dir) = get_fixture("filtered_apply", true)?;
 
+    let eslint_content = std::fs::read_to_string(dir.join("eslint.json"))?;
+
     let mut apply_cmd = get_test_cmd()?;
     apply_cmd.current_dir(dir.clone());
     apply_cmd
         .arg("apply")
         .arg("fix.grit")
         .arg("--only-in-json")
-        .arg("eslint.json");
+        .arg(eslint_content);
 
     let output = apply_cmd.output()?;
     assert!(

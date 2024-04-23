@@ -70,10 +70,10 @@ pub struct CheckArg {
     pub github_actions: bool,
     #[clap(
         long = "only-in-diff",
-        help = "Only check ranges that are inside the unified diff if a path to the diff is provided, or the results of git diff HEAD if no path is provided.",
+        help = "Only check ranges that are inside the unified diff if one is provided, or the results of git diff HEAD if no diff is provided.",
         hide = true
     )]
-    pub only_in_diff: Option<Option<PathBuf>>,
+    pub only_in_diff: Option<Option<String>>,
 }
 
 pub(crate) async fn run_check(

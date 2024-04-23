@@ -19,7 +19,7 @@ pub(crate) fn extract_target_ranges(
 ) -> Result<Option<Vec<FileRange>>> {
     let raw_diff = if let Some(Some(diff_content)) = &diff_arg {
         parse_modified_ranges(&diff_content)?
-    } else if let Some(None) = &arg {
+    } else if let Some(None) = &diff_arg {
         let diff = run_git_diff(&std::env::current_dir()?)?;
         parse_modified_ranges(&diff)?
     } else {
