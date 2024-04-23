@@ -31,7 +31,7 @@ fn walk_call_tree(
             .iter()
             .find(|(k, _)| k.strip_suffix(".grit").unwrap_or(k) == name);
         if let Some((file_name, body)) = maybe_call {
-            let src_tree = grit_parser.parse(body, Some(Path::new(file_name)))?;
+            let src_tree = grit_parser.parse_file(body, Some(Path::new(file_name)))?;
             return walk_call_tree(&src_tree.root_node(), libs, grit_parser, predicate);
         }
     }
@@ -107,7 +107,7 @@ mod tests {
         let libs = BTreeMap::new();
         let mut parser = MarzanoGritParser::new().unwrap();
         let parsed = parser
-            .parse(&src_code, Some(Path::new("test.grit")))
+            .parse_file(&src_code, Some(Path::new("test.grit")))
             .unwrap();
         assert!(!is_async(&parsed.root_node(), &libs, &mut parser).unwrap());
     }
@@ -121,7 +121,7 @@ mod tests {
         let libs = BTreeMap::new();
         let mut parser = MarzanoGritParser::new().unwrap();
         let parsed = parser
-            .parse(&src_code, Some(Path::new("test.grit")))
+            .parse_file(&src_code, Some(Path::new("test.grit")))
             .unwrap();
         assert!(is_async(&parsed.root_node(), &libs, &mut parser).unwrap());
     }
@@ -138,7 +138,7 @@ mod tests {
         let libs = BTreeMap::new();
         let mut parser = MarzanoGritParser::new().unwrap();
         let parsed = parser
-            .parse(&src_code, Some(Path::new("test.grit")))
+            .parse_file(&src_code, Some(Path::new("test.grit")))
             .unwrap();
         assert!(is_async(&parsed.root_node(), &libs, &mut parser).unwrap());
     }
@@ -156,7 +156,7 @@ mod tests {
         );
         let mut parser = MarzanoGritParser::new().unwrap();
         let parsed = parser
-            .parse(&src_code, Some(Path::new("test.grit")))
+            .parse_file(&src_code, Some(Path::new("test.grit")))
             .unwrap();
         let decided = is_async(&parsed.root_node(), &libs, &mut parser).unwrap();
         assert!(decided);

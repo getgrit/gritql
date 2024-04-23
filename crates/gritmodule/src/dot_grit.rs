@@ -18,8 +18,7 @@ pub fn get_patterns_from_grit(
     root: &Option<String>,
 ) -> Result<Vec<ModuleGritPattern>> {
     let mut parser = MarzanoGritParser::new()?;
-    let source = &file.content;
-    let tree = parser.parse(source, None)?;
+    let tree = parser.parse(&file.content)?;
     let root_node = tree.root_node();
     let language = PatternLanguage::from_tree(&tree);
     let mut pattern_definitions: HashMap<String, ModuleGritPattern> = HashMap::new();

@@ -211,7 +211,7 @@ js"hello world"
                 p.samples.push(last_sample);
             }
             let src_tree = grit_parser
-                .parse(&p.body, None)?;
+                .parse(&p.body)?;
             if defines_itself(&src_tree.root_node(), name)? {
                 bail!("Pattern {} attempts to define itself - this is not allowed. Tip: Markdown patterns use the file name as their pattern name.", name);
             };

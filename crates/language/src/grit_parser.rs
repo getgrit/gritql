@@ -28,13 +28,9 @@ impl MarzanoGritParser {
         Self { parser }
     }
 
-    pub fn parse(&mut self, source: &str, file_name: Option<&Path>) -> Result<Tree> {
-        let tree = self
-            .parser
-            .parse(source, None)?
-            .ok_or_else(|| anyhow!("parse error"))?;
+    pub fn parse_file(&mut self, source: &str, file_name: Option<&Path>) -> Result<Tree> {
+        let tree = self.parse(source)?;
 
-        let tree = Tree::new(tree, source);
         let parse_errors = grit_parsing_errors(&tree, file_name)?;
         if !parse_errors.is_empty() {
             let error = parse_errors[0].clone();
@@ -42,6 +38,13 @@ impl MarzanoGritParser {
         }
 
         Ok(tree)
+    }
+
+    pub fn parse(&mut self, source: &str) -> Result<Tree> {
+        self.parser
+            .parse(source, None)?
+            .map(|tree| Tree::new(tree, source))
+            .ok_or_else(|| anyhow!("parse error"))
     }
 }
 

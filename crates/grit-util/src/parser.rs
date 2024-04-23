@@ -31,7 +31,7 @@ pub trait Ast: Sized {
 #[derive(Clone, Debug)]
 pub struct SnippetTree<Tree: Ast> {
     pub tree: Tree,
-    pub context: String,
+    pub source: String,
     pub prefix: &'static str,
     pub postfix: &'static str,
     pub snippet_start: u32,

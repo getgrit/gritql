@@ -136,7 +136,7 @@ impl PatternLanguage {
 
     #[cfg(feature = "builtin-parser")]
     pub fn get_language_with_parser(parser: &mut MarzanoGritParser, body: &str) -> Option<Self> {
-        let tree = parser.parse(body, None);
+        let tree = parser.parse_file(body, None);
         tree.ok().and_then(|tree| Self::from_tree(&tree))
     }
 

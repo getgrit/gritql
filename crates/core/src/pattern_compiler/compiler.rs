@@ -185,7 +185,7 @@ fn get_definition_info(
     let mut foreign_function_indices: BTreeMap<String, DefinitionInfo> = BTreeMap::new();
     let mut foreign_function_index = 0;
     for (file, pattern) in libs.iter() {
-        let tree = parser.parse(pattern, Some(Path::new(file)))?;
+        let tree = parser.parse_file(pattern, Some(Path::new(file)))?;
         let root = tree.root_node();
         node_to_definition_info(
             &root,
@@ -319,7 +319,7 @@ fn get_definitions(
             logs,
         };
 
-        let tree = parser.parse(pattern, Some(Path::new(file)))?;
+        let tree = parser.parse_file(pattern, Some(Path::new(file)))?;
         let root = tree.root_node();
         node_to_definitions(
             &root,
@@ -391,7 +391,7 @@ fn defs_to_filenames(
     let mut functions = BTreeMap::new();
     let mut foreign_functions = BTreeMap::new();
     for (file, pattern) in libs.iter() {
-        let tree = parser.parse(pattern, Some(Path::new(file)))?;
+        let tree = parser.parse_file(pattern, Some(Path::new(file)))?;
         let node = tree.root_node();
         for definition in node.named_children_by_field_name("definitions") {
             if let Some(pattern_definition) = definition.child_by_field_name("pattern") {
@@ -489,7 +489,7 @@ fn filter_libs(
 ) -> Result<Vec<(String, String)>> {
     let node_like = "nodeLike";
     let predicate_call = "predicateCall";
-    let tree = parser.parse(src, None)?;
+    let tree = parser.parse_file(src, None)?;
     let DefsToFilenames {
         patterns: pattern_file,
         predicates: predicate_file,
@@ -501,9 +501,9 @@ fn filter_libs(
 
     let mut stack: Vec<Tree> = if will_autowrap {
         let before_each_file = "before_each_file()";
-        let before_tree = parser.parse(before_each_file, None)?;
+        let before_tree = parser.parse_file(before_each_file, None)?;
         let after_each_file = "after_each_file()";
-        let after_tree = parser.parse(after_each_file, None)?;
+        let after_tree = parser.parse_file(after_each_file, None)?;
 
         vec![tree, before_tree, after_tree]
     } else {
@@ -560,7 +560,7 @@ fn find_definition_if_exists(
         if !filtered.contains_key(file_name) {
             if let Some(file_body) = libs.get(file_name) {
                 filtered.insert(file_name.to_owned(), file_body.to_owned());
-                let tree = parser.parse(file_body, Some(Path::new(file_name)))?;
+                let tree = parser.parse_file(file_body, Some(Path::new(file_name)))?;
                 return Ok(Some(tree));
             }
         }
@@ -587,7 +587,7 @@ pub fn src_to_problem_libs(
     injected_limit: Option<usize>,
 ) -> Result<CompilationResult> {
     let mut parser = MarzanoGritParser::new()?;
-    let src_tree = parser.parse(&src, None)?;
+    let src_tree = parser.parse_file(&src, None)?;
     let lang = TargetLanguage::from_tree(&src_tree).unwrap_or(default_lang);
     src_to_problem_libs_for_language(
         src,
@@ -616,7 +616,7 @@ pub fn src_to_problem_libs_for_language(
         let error = ". never matches and should not be used as a pattern. Did you mean to run 'grit apply <pattern> .'?";
         bail!(error);
     }
-    let src_tree = grit_parser.parse(&src, None)?;
+    let src_tree = grit_parser.parse_file(&src, None)?;
 
     let root = src_tree.root_node();
     let mut built_ins = BuiltIns::get_built_in_functions();

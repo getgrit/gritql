@@ -278,7 +278,7 @@ async fn get_parsed_pattern(
 ) -> Result<ParsedPattern, JsError> {
     let libs = lib_paths.into_iter().zip(lib_contents).collect();
     let tree = parser
-        .parse(pattern, None)
+        .parse_file(pattern, None)
         .map_err(|err| JsError::new(&err.to_string()))?;
     let lang = get_language_for_tree(&tree).await?;
     Ok(ParsedPattern { libs, tree, lang })

@@ -210,8 +210,8 @@ impl Parser for MarzanoParser {
         let tree = self.parser.parse(&context, None).unwrap().unwrap();
 
         SnippetTree {
-            tree: Tree::new(tree, context.clone()),
-            context,
+            tree: Tree::new(tree, context),
+            source: source.to_owned(),
             prefix,
             postfix,
             snippet_start: (len(prefix) + len(source) - len(source.trim_start())),
@@ -231,14 +231,12 @@ pub trait MarzanoLanguage<'a>: Language<Node<'a> = NodeWithSource<'a>> + NodeTyp
 
     fn parse_snippet_contexts(&self, source: &str) -> Vec<SnippetTree<Tree>> {
         let source = self.substitute_metavariable_prefix(source);
-        let mut parser = self.get_parser();
         self.snippet_context_strings()
             .iter()
-            .map(|(pre, post)| parser.parse_snippet(pre, &source, post))
+            .map(|(pre, post)| self.get_parser().parse_snippet(pre, &source, post))
             .filter(|result| {
-                !(result.tree.root_node().node.has_error()
-                    || result.tree.root_node().node.is_error()
-                    || result.tree.root_node().node.is_missing())
+                let root_node = &result.tree.root_node().node;
+                !(root_node.has_error() || root_node.is_error() || root_node.is_missing())
             })
             .collect()
     }
@@ -344,7 +342,7 @@ fn snippet_nodes_from_index(snippet: &SnippetTree<Tree>) -> Option<NodeWithSourc
         || snippet_root.node.end_byte() > snippet.snippet_end
     {
         if snippet_root.named_children().count() == 0 {
-            if snippet_root.text().unwrap().trim() == snippet.tree.source.trim() {
+            if snippet_root.text().unwrap().trim() == snippet.source.trim() {
                 return Some(snippet_root);
             } else {
                 return None;
@@ -360,7 +358,7 @@ fn snippet_nodes_from_index(snippet: &SnippetTree<Tree>) -> Option<NodeWithSourc
         }
         // sanity check to avoid infinite loop
         if snippet_root.node.id() == id {
-            if snippet_root.text().unwrap().trim() != snippet.tree.source.trim() {
+            if snippet_root.text().unwrap().trim() != snippet.source.trim() {
                 return None;
             }
             break;
