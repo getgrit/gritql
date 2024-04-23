@@ -18,13 +18,13 @@ use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
 pub struct SharedApplyArgs {
     #[clap(
         long = "only-in-json",
-        help = r#"Only rewrite ranges inside a provided eslint-style JSON string. The JSON file should be an array of objects formatted as `{"filePath": "path/to/file", "messages": [{"ruleId": "rule-id", "message": "message", "line": 1, "column": 1, "endLine": 1, "endColumn": 1}]}`."#,
+        help = r#"Only rewrite ranges inside a provided eslint-style JSON string. The JSON should be an array of objects formatted as `[{"filePath": "path/to/file", "messages": [{"line": 1, "column": 1, "endLine": 1, "endColumn": 1}]}]`."#,
         conflicts_with = "only_in_diff"
     )]
     pub(crate) only_in_json: Option<String>,
     #[clap(
         long = "only-in-diff",
-        help = "Only rewrite ranges that are inside the provided unified diff, or the results of git diff HEAD if no path is provided.",
+        help = "Only rewrite ranges that are inside the provided unified diff, or the results of git diff HEAD if no diff is provided.",
         hide = true,
         conflicts_with = "only_in_json"
     )]
