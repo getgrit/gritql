@@ -15,7 +15,8 @@ use super::apply_migration::{run_apply_migration, ApplyMigrationArgs};
 use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
 
 #[derive(Args, Debug, Serialize, Default)]
-pub struct SharedApplyArgs {
+/// Shared arguments for apply and check commands.
+pub struct SharedFilterArgs {
     #[clap(
         long = "only-in-json",
         help = r#"Only rewrite ranges inside a provided eslint-style JSON string. The JSON should be an array of objects formatted as `[{"filePath": "path/to/file", "messages": [{"line": 1, "column": 1, "endLine": 1, "endColumn": 1}]}]`."#,
@@ -55,7 +56,7 @@ pub struct ApplyArgs {
     apply_pattern_args: ApplyPatternArgs,
 
     #[command(flatten)]
-    shared_apply_args: SharedApplyArgs,
+    shared_apply_args: SharedFilterArgs,
 }
 
 pub(crate) async fn run_apply(

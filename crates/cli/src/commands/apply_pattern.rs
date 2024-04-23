@@ -42,7 +42,7 @@ use marzano_messenger::{
 use crate::resolver::{get_grit_files_from_cwd, GritModuleResolver};
 use crate::utils::has_uncommitted_changes;
 
-use super::apply::SharedApplyArgs;
+use super::apply::SharedFilterArgs;
 use super::init::init_config_from_cwd;
 
 #[derive(Deserialize)]
@@ -152,7 +152,7 @@ macro_rules! flushable_unwrap {
 #[allow(clippy::too_many_arguments, unused_mut)]
 pub(crate) async fn run_apply_pattern(
     mut pattern: String,
-    shared: SharedApplyArgs,
+    shared: SharedFilterArgs,
     paths: Vec<PathBuf>,
     arg: ApplyPatternArgs,
     multi: MultiProgress,
