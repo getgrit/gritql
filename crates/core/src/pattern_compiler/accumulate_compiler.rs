@@ -3,9 +3,11 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::marzano_code_snippet::MarzanoCodeSnippet;
-use crate::pattern::{accumulate::Accumulate, dynamic_snippet::DynamicPattern, patterns::Pattern};
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
+use grit_core_patterns::pattern::{
+    accumulate::Accumulate, dynamic_snippet::DynamicPattern, patterns::Pattern,
+};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct AccumulateCompiler;

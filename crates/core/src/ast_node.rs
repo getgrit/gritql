@@ -1,7 +1,10 @@
 use crate::{
+    marzano_context::MarzanoContext, marzano_resolved_pattern::MarzanoResolvedPattern,
+    problem::MarzanoQueryContext,
+};
+use anyhow::{anyhow, Result};
+use grit_core_patterns::{
     binding::Binding,
-    marzano_context::MarzanoContext,
-    marzano_resolved_pattern::MarzanoResolvedPattern,
     pattern::{
         ast_node_pattern::{AstLeafNodePattern, AstNodePattern},
         iter_pattern::PatternOrPredicate,
@@ -9,9 +12,7 @@ use crate::{
         resolved_pattern::ResolvedPattern,
         state::State,
     },
-    problem::MarzanoQueryContext,
 };
-use anyhow::{anyhow, Result};
 use grit_util::{AnalysisLogs, AstNode, Language};
 use marzano_language::language::{FieldId, LeafEquivalenceClass, MarzanoLanguage, SortId};
 use marzano_util::node_with_source::NodeWithSource;

@@ -1,0 +1,17 @@
+[package]
+name = "grit-core-patterns"
+version = "0.1.0"
+edition = "2021"
+
+[lints]
+rust.unused_crate_dependencies = "warn"
+
+[dependencies]
+anyhow = { version = "1.0.70" }
+elsa = { version = "1.9.0" }
+getrandom = { version = "0.2.11", optional = true }
+grit-util = { path = "../grit-util" }
+im = { version = "15.1.0" }
+itertools = { version = "0.10.5" }
+rand = { version = "0.8.5" }
+regex = { version = "1.7.3" }

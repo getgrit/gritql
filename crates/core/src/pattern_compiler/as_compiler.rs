@@ -2,15 +2,11 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler, variable_compiler::VariableCompiler,
 };
-use crate::problem::MarzanoQueryContext;
-use crate::{
-    pattern::{
-        container::Container, patterns::Pattern, predicates::Predicate, r#match::Match,
-        r#where::Where,
-    },
-    split_snippet::split_snippet,
-};
+use crate::{problem::MarzanoQueryContext, split_snippet::split_snippet};
 use anyhow::{anyhow, Result};
+use grit_core_patterns::pattern::{
+    container::Container, patterns::Pattern, predicates::Predicate, r#match::Match, r#where::Where,
+};
 use grit_util::{traverse, AnalysisLogBuilder, AstNode, Language, Order};
 use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
 

@@ -4,17 +4,19 @@ use super::{
     NodeCompiler,
 };
 use crate::{
-    marzano_code_snippet::MarzanoCodeSnippet,
-    pattern::{
-        constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
-        dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
-        patterns::Pattern,
-        variable::{register_variable, Variable},
-    },
-    problem::MarzanoQueryContext,
+    marzano_code_snippet::MarzanoCodeSnippet, problem::MarzanoQueryContext,
+    variables::register_variable,
 };
 use crate::{pattern_compiler::compiler::NodeCompilationContext, split_snippet::split_snippet};
 use anyhow::{anyhow, bail, Result};
+use grit_core_patterns::{
+    constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
+    pattern::{
+        dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
+        patterns::Pattern,
+        variable::Variable,
+    },
+};
 use grit_util::{AstNode, Language, Position, Range};
 use marzano_language::{
     language::{nodes_from_indices, MarzanoLanguage, SortId},

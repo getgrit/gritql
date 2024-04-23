@@ -1,4 +1,4 @@
-use crate::position::{Position, Range};
+use crate::{Position, Range};
 use derive_builder::Builder;
 use std::fmt::{self, Debug, Display};
 use std::ops;

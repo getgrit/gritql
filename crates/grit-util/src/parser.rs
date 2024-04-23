@@ -20,7 +20,7 @@ pub trait Parser {
     ) -> SnippetTree<Self::Tree>;
 }
 
-pub trait Ast: Sized {
+pub trait Ast: std::fmt::Debug + PartialEq + Sized {
     type Node<'a>: AstNode
     where
         Self: 'a;

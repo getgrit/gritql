@@ -1,11 +1,14 @@
+use crate::variables::variable_from_name;
+
 use super::compiler::{DefinitionInfo, NodeCompilationContext};
-use crate::{
+use anyhow::Result;
+use grit_core_patterns::{
+    constants::{GRIT_RANGE_VAR, MATCH_VAR},
     context::QueryContext,
     pattern::{
         and::{And, PrAnd},
         bubble::Bubble,
         call::Call,
-        constants::{GRIT_RANGE_VAR, MATCH_VAR},
         container::Container,
         contains::Contains,
         file_pattern::FilePattern,
@@ -25,7 +28,6 @@ use crate::{
         variable::Variable,
     },
 };
-use anyhow::Result;
 use grit_util::FileRange;
 use std::collections::BTreeMap;
 
@@ -236,7 +238,7 @@ fn extract_limit_pattern<Q: QueryContext>(
         Pattern::Rewrite(r) => {
             let extracted = extract_limit_pattern(r.left, pattern_definitions);
             let pattern =
-                Pattern::Rewrite(Box::new(Rewrite::new(extracted.0, r.right, r._annotation)));
+                Pattern::Rewrite(Box::new(Rewrite::new(extracted.0, r.right, r.annotation)));
             (pattern, extracted.1)
         }
         Pattern::Bubble(b) => {
@@ -381,7 +383,7 @@ fn wrap_pattern_in_range<Q: QueryContext>(
     ranges: Vec<FileRange>,
     context: &mut NodeCompilationContext,
 ) -> Result<Pattern<Q>> {
-    let var = Variable::from_name(var_name, context)?;
+    let var = variable_from_name(var_name, context)?;
     let mut predicates = Vec::new();
     for file_range in ranges {
         let range = file_range.range.clone();
@@ -422,7 +424,7 @@ fn wrap_pattern_in_contains<Q: QueryContext>(
     pattern: Pattern<Q>,
     context: &mut NodeCompilationContext,
 ) -> Result<Pattern<Q>> {
-    let var = Variable::from_name(var_name, context)?;
+    let var = variable_from_name(var_name, context)?;
     let pattern = Pattern::Where(Box::new(Where::new(
         Pattern::Variable(var),
         Predicate::Match(Box::new(Match::new(

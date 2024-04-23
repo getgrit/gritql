@@ -2,12 +2,11 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::{
-    marzano_code_snippet::MarzanoCodeSnippet,
-    pattern::{dynamic_snippet::DynamicPattern, patterns::Pattern, rewrite::Rewrite},
-    problem::MarzanoQueryContext,
-};
+use crate::{marzano_code_snippet::MarzanoCodeSnippet, problem::MarzanoQueryContext};
 use anyhow::{anyhow, Result};
+use grit_core_patterns::pattern::{
+    dynamic_snippet::DynamicPattern, patterns::Pattern, rewrite::Rewrite,
+};
 use grit_util::{AnalysisLogBuilder, AstNode};
 use marzano_util::node_with_source::NodeWithSource;
 

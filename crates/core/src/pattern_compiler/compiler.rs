@@ -10,21 +10,21 @@ use super::{
 };
 use crate::{
     analysis::{has_limit, is_multifile},
-    pattern::{
-        built_in_functions::BuiltIns,
-        constants::{
-            ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
-        },
-        function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
-        pattern_definition::PatternDefinition,
-        predicate_definition::PredicateDefinition,
-        variable::VariableSourceLocations,
-        VariableLocations,
-    },
+    built_in_functions::BuiltIns,
+    foreign_function_definition::ForeignFunctionDefinition,
     problem::{MarzanoQueryContext, Problem},
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::{traverse, AnalysisLogs, Ast, AstNode, FileRange, Order, Range};
+use grit_core_patterns::{
+    constants::{
+        ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
+    },
+    pattern::{
+        function_definition::GritFunctionDefinition, pattern_definition::PatternDefinition,
+        predicate_definition::PredicateDefinition, variable::VariableSourceLocations,
+    },
+};
+use grit_util::{traverse, AnalysisLogs, Ast, AstNode, FileRange, Order, Range, VariableMatch};
 use itertools::Itertools;
 use marzano_language::{
     self, grit_parser::MarzanoGritParser, language::Tree, target_language::TargetLanguage,
@@ -715,6 +715,33 @@ pub fn src_to_problem_libs_for_language(
         problem,
     };
     Ok(result)
+}
+
+#[derive(Debug, Default)]
+pub struct VariableLocations {
+    pub(crate) locations: Vec<Vec<VariableSourceLocations>>,
+}
+
+impl VariableLocations {
+    pub(crate) fn new(locations: Vec<Vec<VariableSourceLocations>>) -> Self {
+        Self { locations }
+    }
+
+    pub(crate) fn compiled_vars(&self) -> Vec<VariableMatch> {
+        let mut variables = vec![];
+        for (i, scope) in self.locations.iter().enumerate() {
+            for (j, var) in scope.iter().enumerate() {
+                if var.file == DEFAULT_FILE_NAME {
+                    variables.push(VariableMatch {
+                        name: var.name.clone(),
+                        scoped_name: format!("{}_{}_{}", i, j, var.name),
+                        ranges: var.locations.iter().cloned().collect(),
+                    });
+                }
+            }
+        }
+        variables
+    }
 }
 
 #[cfg(test)]

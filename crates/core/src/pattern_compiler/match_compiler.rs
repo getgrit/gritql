@@ -2,9 +2,9 @@ use super::{
     compiler::NodeCompilationContext, container_compiler::ContainerCompiler,
     node_compiler::NodeCompiler, pattern_compiler::PatternCompiler,
 };
-use crate::pattern::r#match::Match;
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
+use grit_core_patterns::pattern::r#match::Match;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct MatchCompiler;

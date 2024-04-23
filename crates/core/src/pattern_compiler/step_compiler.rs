@@ -2,9 +2,9 @@ use super::auto_wrap::wrap_pattern_in_before_and_after_each_file;
 use super::compiler::NodeCompilationContext;
 use super::pattern_compiler::PatternCompiler;
 use super::NodeCompiler;
-use crate::pattern::{patterns::Pattern, step::Step};
 use crate::problem::MarzanoQueryContext;
 use anyhow::Result;
+use grit_core_patterns::pattern::{patterns::Pattern, step::Step};
 use grit_util::{AnalysisLogBuilder, AstNode};
 use marzano_util::node_with_source::NodeWithSource;
 

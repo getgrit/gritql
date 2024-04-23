@@ -1,26 +1,34 @@
-use super::pattern::{
-    built_in_functions::{BuiltIns, CallBuiltIn},
-    constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
-    function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
-    pattern_definition::PatternDefinition,
-    patterns::{Matcher, Pattern},
-    predicate_definition::PredicateDefinition,
-    resolved_pattern::ResolvedPattern,
-    state::{FilePtr, State},
-};
 use crate::{
-    binding::Binding,
+    built_in_functions::BuiltIns,
     clean::{get_replacement_ranges, replace_cleaned_ranges},
-    context::ExecContext,
+    foreign_function_definition::ForeignFunctionDefinition,
     marzano_resolved_pattern::MarzanoResolvedPattern,
-    pattern::resolved_pattern::File,
-    problem::{FileOwner, FileOwners, InputRanges, MarzanoQueryContext, MatchRanges},
+    pattern_compiler::file_owner_compiler::FileOwnerCompiler,
+    problem::MarzanoQueryContext,
     text_unparser::apply_effects,
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::{AnalysisLogs, Ast};
+use grit_core_patterns::{
+    binding::Binding,
+    constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
+    context::ExecContext,
+    file_owners::FileOwners,
+    pattern::{
+        call_built_in::CallBuiltIn,
+        function_definition::GritFunctionDefinition,
+        pattern_definition::PatternDefinition,
+        patterns::{Matcher, Pattern},
+        predicate_definition::PredicateDefinition,
+        resolved_pattern::{File, ResolvedPattern},
+        state::{FilePtr, State},
+    },
+};
+use grit_util::{AnalysisLogs, Ast, InputRanges, MatchRanges};
 use im::vector;
-use marzano_language::{language::MarzanoLanguage, target_language::TargetLanguage};
+use marzano_language::{
+    language::{MarzanoLanguage, Tree},
+    target_language::TargetLanguage,
+};
 use marzano_util::runtime::ExecutionContext;
 use std::path::PathBuf;
 
@@ -29,7 +37,7 @@ pub struct MarzanoContext<'a> {
     pub predicate_definitions: &'a Vec<PredicateDefinition<MarzanoQueryContext>>,
     pub function_definitions: &'a Vec<GritFunctionDefinition<MarzanoQueryContext>>,
     pub foreign_function_definitions: &'a Vec<ForeignFunctionDefinition>,
-    pub files: &'a FileOwners,
+    pub files: &'a FileOwners<Tree>,
     pub built_ins: &'a BuiltIns,
     pub language: &'a TargetLanguage,
     pub runtime: &'a ExecutionContext,
@@ -43,7 +51,7 @@ impl<'a> MarzanoContext<'a> {
         predicate_definitions: &'a Vec<PredicateDefinition<MarzanoQueryContext>>,
         function_definitions: &'a Vec<GritFunctionDefinition<MarzanoQueryContext>>,
         foreign_function_definitions: &'a Vec<ForeignFunctionDefinition>,
-        files: &'a FileOwners,
+        files: &'a FileOwners<Tree>,
         built_ins: &'a BuiltIns,
         language: &'a TargetLanguage,
         runtime: &'a ExecutionContext,
@@ -61,6 +69,25 @@ impl<'a> MarzanoContext<'a> {
             name,
         }
     }
+
+    #[cfg(all(
+        feature = "network_requests_external",
+        feature = "external_functions_ffi",
+        not(feature = "network_requests"),
+        target_arch = "wasm32"
+    ))]
+    pub fn exec_external(
+        &self,
+        code: &[u8],
+        param_names: Vec<String>,
+        input_bindings: &[&str],
+    ) -> Result<Vec<u8>> {
+        (self.runtime.exec_external)(code, param_names, input_bindings)
+    }
+
+    pub(crate) fn foreign_function_definitions(&self) -> &[ForeignFunctionDefinition] {
+        self.foreign_function_definitions
+    }
 }
 
 impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
@@ -74,10 +101,6 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
 
     fn function_definitions(&self) -> &[GritFunctionDefinition<MarzanoQueryContext>] {
         self.function_definitions
-    }
-
-    fn foreign_function_definitions(&self) -> &[ForeignFunctionDefinition] {
-        self.foreign_function_definitions
     }
 
     fn ignore_limit_pattern(&self) -> bool {
@@ -94,23 +117,8 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
         self.built_ins.call(call, context, state, logs)
     }
 
-    #[cfg(all(
-        feature = "network_requests_external",
-        feature = "external_functions_ffi",
-        not(feature = "network_requests"),
-        target_arch = "wasm32"
-    ))]
-    fn exec_external(
-        &self,
-        code: &[u8],
-        param_names: Vec<String>,
-        input_bindings: &[&str],
-    ) -> Result<Vec<u8>> {
-        (self.runtime.exec_external)(code, param_names, input_bindings)
-    }
-
     // FIXME: Don't depend on Grit's file handling in context.
-    fn files(&self) -> &FileOwners {
+    fn files(&self) -> &FileOwners<Tree> {
         self.files
     }
 
@@ -203,7 +211,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
 
                     let ranges =
                         MatchRanges::new(new_ranges.into_iter().map(|r| r.into()).collect());
-                    let owned_file = FileOwner::new(
+                    let owned_file = FileOwnerCompiler::from_matches(
                         new_filename.clone(),
                         new_src,
                         Some(ranges),
@@ -249,13 +257,20 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 .text(&state.files, self.language())
                 .unwrap()
                 .into();
-            let owned_file = FileOwner::new(name.clone(), body, None, true, self.language(), logs)?
-                .ok_or_else(|| {
-                    anyhow!(
-                        "failed to construct new file for file {}",
-                        name.to_string_lossy()
-                    )
-                })?;
+            let owned_file = FileOwnerCompiler::from_matches(
+                name.clone(),
+                body,
+                None,
+                true,
+                self.language(),
+                logs,
+            )?
+            .ok_or_else(|| {
+                anyhow!(
+                    "failed to construct new file for file {}",
+                    name.to_string_lossy()
+                )
+            })?;
             self.files().push(owned_file);
             let _ = state.files.push_new_file(self.files().last().unwrap());
         }

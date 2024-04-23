@@ -2,14 +2,14 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::pattern::{
-    bubble::Bubble,
-    pattern_definition::PatternDefinition,
-    patterns::Pattern,
-    variable::{get_variables, register_variable},
+use crate::{
+    problem::MarzanoQueryContext,
+    variables::{get_variables, register_variable},
 };
-use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, bail, Result};
+use grit_core_patterns::pattern::{
+    bubble::Bubble, pattern_definition::PatternDefinition, patterns::Pattern,
+};
 use grit_util::{AstNode, Range};
 use itertools::Itertools;
 use marzano_util::node_with_source::NodeWithSource;

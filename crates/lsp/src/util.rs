@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use marzano_core::{api::Rewrite, pattern::built_in_functions::BuiltIns};
+use marzano_core::{api::Rewrite, built_in_functions::BuiltIns};
 use marzano_util::rich_path::RichFile;
 use std::path::PathBuf;
 use tower_lsp::lsp_types::{Position, Range, TextDocumentItem, TextEdit, Url};

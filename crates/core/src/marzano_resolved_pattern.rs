@@ -1,24 +1,24 @@
 use crate::{
+    marzano_binding::MarzanoBinding, marzano_code_snippet::MarzanoCodeSnippet,
+    marzano_context::MarzanoContext, paths::absolutize, problem::MarzanoQueryContext,
+};
+use anyhow::{anyhow, bail, Result};
+use grit_core_patterns::{
     binding::Binding,
     constant::Constant,
     context::ExecContext,
-    marzano_binding::MarzanoBinding,
-    marzano_code_snippet::MarzanoCodeSnippet,
-    marzano_context::MarzanoContext,
+    effects::{Effect, EffectKind},
     pattern::{
         accessor::Accessor,
         container::PatternOrResolved,
         dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
         functions::GritCall,
         list_index::{to_unsigned, ListIndex},
-        paths::absolutize,
         patterns::{Pattern, PatternName},
         resolved_pattern::{File, ResolvedFile, ResolvedPattern, ResolvedSnippet},
         state::{FilePtr, FileRegistry, State},
     },
-    problem::{Effect, EffectKind, MarzanoQueryContext},
 };
-use anyhow::{anyhow, bail, Result};
 use grit_util::{AnalysisLogs, Ast, AstNode, CodeRange, Range};
 use im::{vector, Vector};
 use marzano_language::{language::FieldId, target_language::TargetLanguage};
@@ -578,7 +578,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         &self,
         language: &TargetLanguage,
         effects: &[Effect<'a, MarzanoQueryContext>],
-        files: &FileRegistry<'a>,
+        files: &FileRegistry<'a, MarzanoQueryContext>,
         memo: &mut HashMap<CodeRange, Option<String>>,
         should_pad_snippet: bool,
         logs: &mut AnalysisLogs,
@@ -691,7 +691,11 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         }
     }
 
-    fn float(&self, state: &FileRegistry<'a>, language: &TargetLanguage) -> Result<f64> {
+    fn float(
+        &self,
+        state: &FileRegistry<'a, MarzanoQueryContext>,
+        language: &TargetLanguage,
+    ) -> Result<f64> {
         match self {
             Self::Constant(c) => match c {
                 Constant::Float(d) => Ok(*d),
@@ -744,7 +748,11 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
     }
 
     // should we instead return an Option?
-    fn text(&self, state: &FileRegistry<'a>, language: &TargetLanguage) -> Result<Cow<'a, str>> {
+    fn text(
+        &self,
+        state: &FileRegistry<'a, MarzanoQueryContext>,
+        language: &TargetLanguage,
+    ) -> Result<Cow<'a, str>> {
         match self {
             Self::Snippets(snippets) => Ok(snippets
                 .iter()
@@ -842,7 +850,7 @@ pub enum MarzanoFile<'a> {
 }
 
 impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
-    fn name(&self, files: &FileRegistry<'a>) -> MarzanoResolvedPattern<'a> {
+    fn name(&self, files: &FileRegistry<'a, MarzanoQueryContext>) -> MarzanoResolvedPattern<'a> {
         match self {
             Self::Resolved(resolved) => resolved.name.clone(),
             Self::Ptr(ptr) => MarzanoResolvedPattern::from_path_binding(&files.get_file(*ptr).name),
@@ -851,7 +859,7 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
 
     fn absolute_path(
         &self,
-        files: &FileRegistry<'a>,
+        files: &FileRegistry<'a, MarzanoQueryContext>,
         language: &TargetLanguage,
     ) -> Result<MarzanoResolvedPattern<'a>> {
         match self {
@@ -868,7 +876,7 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
         }
     }
 
-    fn body(&self, files: &FileRegistry<'a>) -> MarzanoResolvedPattern<'a> {
+    fn body(&self, files: &FileRegistry<'a, MarzanoQueryContext>) -> MarzanoResolvedPattern<'a> {
         match self {
             Self::Resolved(resolved) => resolved.body.clone(),
             Self::Ptr(ptr) => {
@@ -880,7 +888,7 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
         }
     }
 
-    fn binding(&self, files: &FileRegistry<'a>) -> MarzanoResolvedPattern<'a> {
+    fn binding(&self, files: &FileRegistry<'a, MarzanoQueryContext>) -> MarzanoResolvedPattern<'a> {
         match self {
             Self::Resolved(resolved) => resolved.body.clone(),
             Self::Ptr(ptr) => {

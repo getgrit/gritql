@@ -43,18 +43,21 @@ use super::{
     within_compiler::WithinCompiler,
 };
 use crate::problem::MarzanoQueryContext;
-use crate::{ast_node::ASTNode, context::QueryContext};
 use crate::{
-    ast_node::AstLeafNode,
+    ast_node::{ASTNode, AstLeafNode},
+    variables::register_variable,
+};
+use anyhow::{anyhow, bail, Result};
+use grit_core_patterns::{
+    context::QueryContext,
     pattern::{
         dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
         list::List,
         patterns::Pattern,
         regex::{RegexLike, RegexPattern},
-        variable::{is_reserved_metavariable, register_variable, Variable},
+        variable::{is_reserved_metavariable, Variable},
     },
 };
-use anyhow::{anyhow, bail, Result};
 use grit_util::{traverse, AstCursor, AstNode, GritMetaValue, Language, Order, Position, Range};
 use marzano_language::language::{Field, MarzanoLanguage, NodeTypes};
 use marzano_util::node_with_source::NodeWithSource;
