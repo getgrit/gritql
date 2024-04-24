@@ -102,7 +102,6 @@ async fn fetch_project_rules(repo: &ModuleRepo) -> Result<Vec<AutoReviewRule>> {
         host: &repo.host,
     };
 
-    println!("Sending with variables {:?}", variables);
     let graphql_query = RulesQuery { query, variables };
     let url = format!("{}/graphql", get_graphql_api_url());
     let res = client
@@ -123,20 +122,4 @@ async fn fetch_project_rules(repo: &ModuleRepo) -> Result<Vec<AutoReviewRule>> {
     let rules = mem::take(&mut project.review_rules);
 
     Ok(rules)
-}
-
-#[tokio::test]
-async fn test_fetch_project_rules() {
-    let repo = ModuleRepo {
-        full_name: "custodian-sample-org/demo-shop".to_string(),
-        host: "github.com".to_string(),
-        remote: "something".to_string(),
-        provider_name: "github.com/custodian-sample-org/demo-shop".to_string(),
-    };
-    let rules = match fetch_project_rules(&repo).await {
-        Ok(r) => r,
-        Err(e) => panic!("Error sending request: {}", e),
-    };
-    println!("{:?}", rules);
-    panic!("What the fuck");
 }
