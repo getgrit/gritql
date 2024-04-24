@@ -2,6 +2,8 @@
 name = "marzano"
 version = "0.1.0"
 edition = "2021"
+description = "GritQL is a query language for searching, linting, and modifying code"
+homepage = "https://docs.grit.io/"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -29,3 +31,7 @@ grit_tracing = [
   "marzano-cli/grit_tracing",
 ]
 docgen = ["marzano-cli/docgen"]
+
+[package.metadata.dist]
+default-features = false
+features = ["marzano-cli/grit_beta"]
