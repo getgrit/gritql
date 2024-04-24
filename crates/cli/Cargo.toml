@@ -33,6 +33,7 @@ grit-util = { path = "../grit-util" }
 marzano-core = { path = "../core", features = [
   "non_wasm",
 ], default-features = false }
+marzano-graphql = { path = "../graphql" }
 marzano-gritmodule = { path = "../gritmodule" }
 marzano-language = { path = "../language", features = ["finder"] }
 marzano-lsp = { path = "../lsp" }

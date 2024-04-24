@@ -1,11 +1,9 @@
 use anyhow::{bail, Context, Result};
-use marzano_auth::env::get_graphql_api_url;
+use marzano_auth::{env::get_graphql_api_url, info::AuthInfo};
 use marzano_gritmodule::fetcher::ModuleRepo;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::{mem, str::FromStr};
-
-use crate::updater::Updater;
 
 #[derive(Serialize, Debug)]
 struct RepoInput<'a> {
@@ -63,24 +61,9 @@ impl FromStr for PatternLevel {
     }
 }
 
-async fn fetch_project_rules(repo: &ModuleRepo) -> Result<Vec<AutoReviewRule>> {
-    let updater = Updater::from_current_bin().await?;
-    let auth = updater.get_auth();
-    let token = match auth {
-        Some(auth) => {
-            if auth.is_expired()? {
-                bail!(
-                    "Auth token expired: {}. Run grit auth login to refresh.",
-                    auth.get_expiry()?
-                );
-            }
-            auth.access_token
-        }
-        None => {
-            bail!("You are not authenticated. Run grit auth login to authenticate.");
-        }
-    };
-
+#[allow(dead_code)]
+async fn fetch_project_rules(repo: &ModuleRepo, auth: &AuthInfo) -> Result<Vec<AutoReviewRule>> {
+    let token = &auth.access_token;
     let client = Client::new();
     let query = r#"
         query GetProjectRules($repo: String!, $host: String!) {

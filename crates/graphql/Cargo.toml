@@ -1,0 +1,16 @@
+[package]
+name = "marzano-graphql"
+version = "0.1.0"
+edition = "2021"
+
+[lints]
+rust.unused_crate_dependencies = "warn"
+
+[dependencies]
+marzano-auth = { path = "../auth", features = [], default-features = true }
+marzano-gritmodule = { path = "../gritmodule" }
+serde = { version = "1.0.164", features = ["derive"] }
+serde_json = { version = "1.0.96" }
+anyhow = { version = "1.0.70" }
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.11.22", features = ["blocking", "json"] }

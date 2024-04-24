@@ -11,7 +11,6 @@ mod lister;
 mod messenger_variant;
 mod resolver;
 mod result_formatting;
-mod rules;
 mod scan;
 mod updater;
 mod utils;
