@@ -4,6 +4,7 @@ use crate::{
     context::ExecContext,
     marzano_binding::MarzanoBinding,
     marzano_code_snippet::MarzanoCodeSnippet,
+    marzano_context::MarzanoContext,
     pattern::{
         accessor::Accessor,
         container::PatternOrResolved,
@@ -14,18 +15,18 @@ use crate::{
         patterns::{Pattern, PatternName},
         resolved_pattern::{File, ResolvedFile, ResolvedPattern, ResolvedSnippet},
         state::{FilePtr, FileRegistry, State},
-        MarzanoContext,
     },
     problem::{Effect, EffectKind, MarzanoQueryContext},
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::{AnalysisLogs, AstNode, CodeRange, Range};
+use grit_util::{AnalysisLogs, Ast, AstNode, CodeRange, Range};
 use im::{vector, Vector};
-use marzano_language::language::{FieldId, Language};
+use marzano_language::{language::FieldId, target_language::TargetLanguage};
 use marzano_util::node_with_source::NodeWithSource;
 use std::{
     borrow::Cow,
     collections::{BTreeMap, HashMap},
+    path::Path,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -101,7 +102,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         &mut self,
         mut with: MarzanoResolvedPattern<'a>,
         effects: &mut Vector<Effect<'a, MarzanoQueryContext>>,
-        language: &impl Language,
+        language: &TargetLanguage,
     ) -> Result<()> {
         match self {
             Self::Binding(bindings) => {
@@ -184,7 +185,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         }
     }
 
-    fn position(&self, language: &impl Language) -> Option<Range> {
+    fn position(&self, language: &TargetLanguage) -> Option<Range> {
         if let MarzanoResolvedPattern::Binding(binding) = self {
             if let Some(binding) = binding.last() {
                 return binding.position(language);
@@ -518,7 +519,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 let name = &file_pattern.name;
                 let body = &file_pattern.body;
                 let name = Self::from_pattern(name, state, context, logs)?;
-                let name = name.text(&state.files, context.language())?;
+                let name = name.text(&state.files, context.language)?;
                 let name = Self::Constant(Constant::String(name.to_string()));
                 let body = Self::from_pattern(body, state, context, logs)?;
                 // todo: replace GENERATED_SOURCE with a computed source once linearization and
@@ -575,7 +576,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
 
     fn linearized_text(
         &self,
-        language: &impl Language,
+        language: &TargetLanguage,
         effects: &[Effect<'a, MarzanoQueryContext>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
@@ -690,7 +691,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         }
     }
 
-    fn float(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<f64> {
+    fn float(&self, state: &FileRegistry<'a>, language: &TargetLanguage) -> Result<f64> {
         match self {
             Self::Constant(c) => match c {
                 Constant::Float(d) => Ok(*d),
@@ -743,7 +744,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
     }
 
     // should we instead return an Option?
-    fn text(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<Cow<'a, str>> {
+    fn text(&self, state: &FileRegistry<'a>, language: &TargetLanguage) -> Result<Cow<'a, str>> {
         match self {
             Self::Snippets(snippets) => Ok(snippets
                 .iter()
@@ -794,7 +795,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         &mut self,
         binding: &MarzanoBinding<'a>,
         is_first: bool,
-        language: &impl Language,
+        language: &TargetLanguage,
     ) -> Result<()> {
         let Self::Snippets(ref mut snippets) = self else {
             return Ok(());
@@ -813,7 +814,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
     fn is_truthy(
         &self,
         state: &mut State<'a, MarzanoQueryContext>,
-        language: &impl Language,
+        language: &TargetLanguage,
     ) -> Result<bool> {
         let truthiness = match self {
             Self::Binding(bindings) => bindings.last().map_or(false, Binding::is_truthy),
@@ -851,14 +852,14 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
     fn absolute_path(
         &self,
         files: &FileRegistry<'a>,
-        language: &impl Language,
+        language: &TargetLanguage,
     ) -> Result<MarzanoResolvedPattern<'a>> {
         match self {
             Self::Resolved(resolved) => {
                 let name = resolved.name.text(files, language)?;
-                let absolute_path = absolutize(name.as_ref())?;
+                let absolute_path = absolutize(Path::new(name.as_ref()))?;
                 Ok(ResolvedPattern::from_constant(Constant::String(
-                    absolute_path,
+                    absolute_path.to_string_lossy().to_string(),
                 )))
             }
             Self::Ptr(ptr) => Ok(ResolvedPattern::from_path_binding(
@@ -872,9 +873,9 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
             Self::Resolved(resolved) => resolved.body.clone(),
             Self::Ptr(ptr) => {
                 let file = &files.get_file(*ptr);
-                let root = NodeWithSource::new(file.tree.root_node(), &file.source);
+                let root = file.tree.root_node();
                 let range = root.range();
-                ResolvedPattern::from_range_binding(range, &file.source)
+                ResolvedPattern::from_range_binding(range, &file.tree.source)
             }
         }
     }
@@ -884,8 +885,7 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
             Self::Resolved(resolved) => resolved.body.clone(),
             Self::Ptr(ptr) => {
                 let file = &files.get_file(*ptr);
-                let node = file.tree.root_node();
-                ResolvedPattern::from_node_binding(NodeWithSource::new(node, &file.source))
+                ResolvedPattern::from_node_binding(file.tree.root_node())
             }
         }
     }

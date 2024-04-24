@@ -4,20 +4,20 @@ use super::{
     patterns::{Pattern, PatternName},
     resolved_pattern::{JoinFn, LazyBuiltIn, ResolvedPattern, ResolvedSnippet},
     variable::get_absolute_file_name,
-    MarzanoContext, State,
+    State,
 };
 use crate::{
     binding::Binding,
     constant::Constant,
     context::{ExecContext, QueryContext},
+    marzano_context::MarzanoContext,
     marzano_resolved_pattern::MarzanoResolvedPattern,
     problem::MarzanoQueryContext,
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::AnalysisLogs;
+use grit_util::{AnalysisLogs, Language};
 use im::Vector;
 use itertools::Itertools;
-use marzano_language::language::Language;
 use rand::prelude::SliceRandom;
 use rand::Rng;
 use std::collections::BTreeMap;

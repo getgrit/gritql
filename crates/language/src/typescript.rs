@@ -1,15 +1,14 @@
+use crate::js_like::{
+    js_like_get_statement_sorts, js_like_optional_empty_field_compilation,
+    js_like_skip_snippet_compilation_sorts, jslike_check_replacements, MarzanoJsLikeParser,
+};
 use crate::language::{
-    fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, NodeTypes, SortId,
-    TSLanguage,
+    fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, MarzanoLanguage, NodeTypes,
+    SortId, TSLanguage, Tree,
 };
-use crate::xscript_util::{
-    self, js_like_get_statement_sorts, js_like_optional_empty_field_compilation,
-    js_like_skip_snippet_compilation_sorts, jslike_check_replacements,
-};
-use grit_util::{AnalysisLogs, AstNode, Range};
+use grit_util::{AstNode, Language, Parser, Range, Replacement};
 use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
-use tree_sitter::Parser;
 
 static NODE_TYPES_STRING: &str =
     include_str!("../../../resources/node-types/typescript-node-types.json");
@@ -80,32 +79,14 @@ impl NodeTypes for TypeScript {
 }
 
 impl Language for TypeScript {
-    fn get_ts_language(&self) -> &TSLanguage {
-        self.language
-    }
+    type Node<'a> = NodeWithSource<'a>;
 
-    fn optional_empty_field_compilation(
-        &self,
-        sort_id: SortId,
-        field_id: crate::language::FieldId,
-    ) -> bool {
-        self.optional_empty_field_compilation
-            .iter()
-            .any(|(s, f)| *s == sort_id && *f == field_id)
-    }
-
-    fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
-        self.skip_snippet_compilation_sorts
-            .iter()
-            .any(|(s, f)| *s == sort_id && *f == field_id)
+    fn language_name(&self) -> &'static str {
+        "TypeScript"
     }
 
     fn alternate_metavariable_kinds(&self) -> &[&'static str] {
         &["template_content", "template_literal_type_content"]
-    }
-
-    fn language_name(&self) -> &'static str {
-        "TypeScript"
     }
 
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
@@ -131,16 +112,20 @@ impl Language for TypeScript {
         ]
     }
 
-    fn is_comment_sort(&self, id: SortId) -> bool {
-        id == self.comment_sort
+    fn is_comment(&self, node: &NodeWithSource) -> bool {
+        MarzanoLanguage::is_comment_node(self, node)
     }
 
-    fn is_statement(&self, id: SortId) -> bool {
-        self.statement_sorts.contains(&id)
+    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
+        MarzanoLanguage::is_metavariable_node(self, node)
+    }
+
+    fn is_statement(&self, node: &NodeWithSource) -> bool {
+        self.statement_sorts.contains(&node.node.kind_id())
     }
 
     // assumes trim doesn't do anything otherwise range is off
-    fn comment_text_range(&self, node: &impl AstNode) -> Option<Range> {
+    fn comment_text_range(&self, node: &NodeWithSource) -> Option<Range> {
         let content_text = node.text().ok()?;
         let content_text = content_text.trim();
         let mut range = node.range();
@@ -153,27 +138,41 @@ impl Language for TypeScript {
         }
     }
 
-    fn metavariable_sort(&self) -> SortId {
-        self.metavariable_sort
-    }
-
-    fn check_replacements(
-        &self,
-        n: NodeWithSource<'_>,
-        replacements: &mut Vec<crate::language::Replacement>,
-    ) {
+    fn check_replacements(&self, n: NodeWithSource<'_>, replacements: &mut Vec<Replacement>) {
         jslike_check_replacements(n, replacements)
     }
+}
 
-    fn parse_file(
+impl<'a> MarzanoLanguage<'a> for TypeScript {
+    fn get_ts_language(&self) -> &TSLanguage {
+        self.language
+    }
+
+    fn get_parser(&self) -> Box<dyn Parser<Tree = Tree>> {
+        Box::new(MarzanoJsLikeParser::new(self))
+    }
+
+    fn optional_empty_field_compilation(
         &self,
-        name: &str,
-        body: &str,
-        logs: &mut AnalysisLogs,
-        new: bool,
-    ) -> anyhow::Result<Option<tree_sitter::Tree>> {
-        let mut parser = Parser::new().unwrap();
-        parser.set_language(self.get_ts_language())?;
-        xscript_util::parse_file(self, name, body, logs, new, &mut parser)
+        sort_id: SortId,
+        field_id: crate::language::FieldId,
+    ) -> bool {
+        self.optional_empty_field_compilation
+            .iter()
+            .any(|(s, f)| *s == sort_id && *f == field_id)
+    }
+
+    fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
+        self.skip_snippet_compilation_sorts
+            .iter()
+            .any(|(s, f)| *s == sort_id && *f == field_id)
+    }
+
+    fn is_comment_sort(&self, id: SortId) -> bool {
+        id == self.comment_sort
+    }
+
+    fn metavariable_sort(&self) -> SortId {
+        self.metavariable_sort
     }
 }

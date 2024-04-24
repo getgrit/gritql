@@ -8,4 +8,6 @@ rust.unused_crate_dependencies = "warn"
 
 [dependencies]
 derive_builder = { version = "0.13.1" }
+once_cell = { version = "1.19.0" }
+regex = { version = "1.7.3" }
 serde = { version = "1.0.164", features = ["derive"] }

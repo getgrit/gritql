@@ -55,9 +55,9 @@ use crate::{
     },
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::{traverse, AstNode, Order, Position, Range};
-use marzano_language::language::{Field, GritMetaValue, Language, NodeTypes, SnippetNode};
-use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
+use grit_util::{traverse, AstCursor, AstNode, GritMetaValue, Language, Order, Position, Range};
+use marzano_language::language::{Field, MarzanoLanguage, NodeTypes};
+use marzano_util::node_with_source::NodeWithSource;
 use regex::Match as RegexMatch;
 use std::collections::HashMap;
 
@@ -72,13 +72,12 @@ impl PatternCompiler {
     // cannot fix yet as other code relies on this bug
 
     pub(crate) fn from_snippet_node(
-        node: SnippetNode,
+        node: NodeWithSource,
         context_range: Range,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
     ) -> Result<Pattern<MarzanoQueryContext>> {
         let snippet_start = node.node.start_byte();
-        let node = NodeWithSource::new(node.node, &node.context);
         let ranges = metavariable_ranges(&node, context.compilation.lang);
         let range_map = metavariable_range_mapping(ranges, snippet_start);
 
@@ -390,17 +389,6 @@ fn implicit_metavariable_regex<Q: QueryContext>(
     Ok(Some(RegexPattern::new(regex, variables)))
 }
 
-fn is_metavariable(node: &NodeWithSource, lang: &impl Language) -> bool {
-    node.node.is_named()
-        && (node.node.kind_id() == lang.metavariable_sort()
-            || (lang
-                .alternate_metavariable_kinds()
-                .contains(&node.node.kind().as_ref())
-                && node
-                    .text()
-                    .is_ok_and(|t| lang.exact_replaced_variable_regex().is_match(&t))))
-}
-
 fn make_regex_match_range(text: &str, m: RegexMatch) -> Range {
     let start = Position::from_byte_index(text, m.start());
     let end = Position::from_byte_index(text, m.end());
@@ -414,10 +402,10 @@ fn metavariable_descendent<Q: QueryContext>(
     context: &mut NodeCompilationContext,
     is_rhs: bool,
 ) -> Result<Option<Pattern<Q>>> {
-    let mut cursor = node.node.walk();
+    let mut cursor = node.walk();
     loop {
-        let node = NodeWithSource::new(cursor.node(), node.source);
-        if is_metavariable(&node, context.compilation.lang) {
+        let node = cursor.node();
+        if context.compilation.lang.is_metavariable(&node) {
             let name = node.text()?;
             if is_reserved_metavariable(name.trim(), Some(context.compilation.lang)) && !is_rhs {
                 bail!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", name.trim_start_matches(context.compilation.lang.metavariable_prefix_substitute()));
@@ -434,13 +422,15 @@ fn metavariable_descendent<Q: QueryContext>(
     }
 }
 
-fn metavariable_ranges(node: &NodeWithSource, lang: &impl Language) -> Vec<Range> {
-    let cursor = node.node.walk();
-    traverse(CursorWrapper::new(cursor, node.source), Order::Pre)
-        .flat_map(|n| {
-            let child = NodeWithSource::new(n.node.clone(), node.source);
-            if is_metavariable(&child, lang) {
-                vec![n.range()]
+fn metavariable_ranges<'a, Lang: Language<Node<'a> = NodeWithSource<'a>>>(
+    node: &NodeWithSource<'a>,
+    lang: &Lang,
+) -> Vec<Range> {
+    let cursor = node.walk();
+    traverse(cursor, Order::Pre)
+        .flat_map(|child| {
+            if lang.is_metavariable(&child) {
+                vec![child.range()]
             } else {
                 node_sub_variables(child, lang)
             }
