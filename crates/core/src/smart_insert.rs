@@ -1,4 +1,4 @@
-use grit_util::Language;
+use marzano_language::language::Language;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) fn calculate_padding(

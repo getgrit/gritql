@@ -12,6 +12,7 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use grit_util::AnalysisLogs;
+use marzano_language::language::Language;
 
 #[derive(Debug, Clone)]
 pub enum ListOrContainer<Q: QueryContext> {
@@ -32,7 +33,7 @@ pub struct ListIndex<Q: QueryContext> {
 }
 
 impl<Q: QueryContext> ListIndex<Q> {
-    fn get_index<'a>(&'a self, state: &State<'a, Q>, lang: &Q::Language<'a>) -> Result<isize> {
+    fn get_index<'a>(&'a self, state: &State<'a, Q>, lang: &impl Language) -> Result<isize> {
         match &self.index {
             ContainerOrIndex::Container(c) => {
                 let raw_index = c
@@ -55,7 +56,7 @@ impl<Q: QueryContext> ListIndex<Q> {
     pub(crate) fn get<'a, 'b>(
         &'a self,
         state: &'b State<'a, Q>,
-        lang: &Q::Language<'a>,
+        lang: &impl Language,
     ) -> Result<Option<PatternOrResolved<'a, 'b, Q>>> {
         let index = self.get_index(state, lang)?;
         match &self.list {
@@ -93,7 +94,7 @@ impl<Q: QueryContext> ListIndex<Q> {
     pub(crate) fn get_mut<'a, 'b>(
         &'a self,
         state: &'b mut State<'a, Q>,
-        lang: &Q::Language<'a>,
+        lang: &impl Language,
     ) -> Result<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
         let index = self.get_index(state, lang)?;
         match &self.list {
@@ -127,7 +128,7 @@ impl<Q: QueryContext> ListIndex<Q> {
     pub(crate) fn set_resolved<'a>(
         &'a self,
         state: &mut State<'a, Q>,
-        lang: &Q::Language<'a>,
+        lang: &impl Language,
         value: Q::ResolvedPattern<'a>,
     ) -> Result<bool> {
         let index = self.get_index(state, lang)?;

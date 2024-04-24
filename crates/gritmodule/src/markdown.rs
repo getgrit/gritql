@@ -1,16 +1,7 @@
-use crate::config::{DefinitionKind, GritPatternMetadata, RawGritDefinition};
-use crate::{
-    config::{GritDefinitionConfig, GritPatternSample, ModuleGritPattern},
-    fetcher::ModuleRepo,
-    parser::extract_relative_file_path,
-    utils::is_pattern_name,
-};
-use anyhow::{bail, Context, Result};
-use grit_util::{traverse, Ast, AstNode, Order, Position};
+use grit_util::{traverse, AstNode, Order, Position};
 use marzano_core::analysis::defines_itself;
-use marzano_core::api::EnforcementLevel;
-use marzano_language::grit_parser::MarzanoGritParser;
-use marzano_language::language::MarzanoLanguage as _;
+use marzano_core::parse::make_grit_parser;
+use marzano_language::language::Language as _;
 use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::rich_path::RichFile;
@@ -19,6 +10,17 @@ use std::io::{Read, Seek, Write};
 use std::path::Path;
 use tokio::io::SeekFrom;
 use tree_sitter::Parser;
+
+use crate::config::{DefinitionKind, GritPatternMetadata, RawGritDefinition};
+use crate::{
+    config::{GritDefinitionConfig, GritPatternSample, ModuleGritPattern},
+    fetcher::ModuleRepo,
+    parser::extract_relative_file_path,
+    utils::is_pattern_name,
+};
+
+use anyhow::{anyhow, bail, Context, Result};
+use marzano_core::api::EnforcementLevel;
 
 fn parse_metadata(yaml_content: &str) -> Result<GritPatternMetadata> {
     let result = serde_yaml::from_str::<GritPatternMetadata>(yaml_content)?;
@@ -192,7 +194,7 @@ js"hello world"
         meta.level = Some(EnforcementLevel::Info);
     }
 
-    let mut grit_parser = MarzanoGritParser::new()?;
+    let mut grit_parser = make_grit_parser()?;
 
     let patterns = patterns
         .into_iter()
@@ -211,8 +213,9 @@ js"hello world"
                 p.samples.push(last_sample);
             }
             let src_tree = grit_parser
-                .parse(&p.body)?;
-            if defines_itself(&src_tree.root_node(), name)? {
+                .parse(&p.body, None)?
+                .ok_or_else(|| anyhow!("parse error"))?;
+            if defines_itself(&NodeWithSource::new(src_tree.root_node(), &p.body), name)? {
                 bail!("Pattern {} attempts to define itself - this is not allowed. Tip: Markdown patterns use the file name as their pattern name.", name);
             };
             Ok(ModuleGritPattern {

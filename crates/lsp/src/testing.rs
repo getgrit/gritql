@@ -1,12 +1,13 @@
 use anyhow::{anyhow, bail, Context, Result};
 use grit_util::Position;
-use marzano_core::{api::MatchResult, pattern_compiler::src_to_problem_libs};
+use marzano_core::{
+    api::MatchResult, parse::make_grit_parser, pattern_compiler::src_to_problem_libs,
+};
 use marzano_gritmodule::{
     markdown::get_patterns_from_md,
     resolver::get_grit_files,
     testing::{get_sample_name, test_pattern_sample, GritTestResultState},
 };
-use marzano_language::grit_parser::MarzanoGritParser;
 use marzano_util::runtime::ExecutionContext;
 use std::collections::HashMap;
 use tower_lsp::{
@@ -92,7 +93,7 @@ pub async fn maybe_test_pattern(
     let test_run_id = Uuid::new_v4().to_string();
     let test_id = our_pattern.config.path.clone();
 
-    let mut parser = MarzanoGritParser::new()?;
+    let mut parser = make_grit_parser()?;
     let language = our_pattern.language(&mut parser).unwrap_or_default();
     let body = match our_pattern.config.body.as_ref() {
         Some(body) => body,

@@ -62,11 +62,22 @@ pub mod r#where;
 pub mod within;
 
 use self::{
+    built_in_functions::{BuiltIns, CallBuiltIn},
     constants::DEFAULT_FILE_NAME,
+    function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
     pattern_definition::PatternDefinition,
+    predicate_definition::PredicateDefinition,
     state::{State, VariableMatch},
 };
-use crate::context::QueryContext;
+use crate::{
+    context::{ExecContext, QueryContext},
+    marzano_resolved_pattern::MarzanoResolvedPattern,
+    problem::{FileOwners, MarzanoQueryContext},
+};
+use anyhow::Result;
+use grit_util::AnalysisLogs;
+use marzano_language::{language::Language, target_language::TargetLanguage};
+use marzano_util::runtime::ExecutionContext;
 use std::fmt::Debug;
 use std::vec;
 use variable::VariableSourceLocations;
@@ -116,5 +127,105 @@ impl VariableLocations {
             }
         }
         variables
+    }
+}
+
+pub struct MarzanoContext<'a> {
+    pub pattern_definitions: &'a Vec<PatternDefinition<MarzanoQueryContext>>,
+    pub predicate_definitions: &'a Vec<PredicateDefinition<MarzanoQueryContext>>,
+    pub function_definitions: &'a Vec<GritFunctionDefinition<MarzanoQueryContext>>,
+    pub foreign_function_definitions: &'a Vec<ForeignFunctionDefinition>,
+    pub files: &'a FileOwners,
+    pub built_ins: &'a BuiltIns,
+    pub language: &'a TargetLanguage,
+    pub runtime: &'a ExecutionContext,
+    pub name: Option<String>,
+}
+
+impl<'a> MarzanoContext<'a> {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        pattern_definitions: &'a Vec<PatternDefinition<MarzanoQueryContext>>,
+        predicate_definitions: &'a Vec<PredicateDefinition<MarzanoQueryContext>>,
+        function_definitions: &'a Vec<GritFunctionDefinition<MarzanoQueryContext>>,
+        foreign_function_definitions: &'a Vec<ForeignFunctionDefinition>,
+        files: &'a FileOwners,
+        built_ins: &'a BuiltIns,
+        language: &'a TargetLanguage,
+        runtime: &'a ExecutionContext,
+        name: Option<String>,
+    ) -> Self {
+        Self {
+            pattern_definitions,
+            predicate_definitions,
+            function_definitions,
+            foreign_function_definitions,
+            files,
+            built_ins,
+            language,
+            runtime,
+            name,
+        }
+    }
+}
+
+impl<'a> ExecContext<MarzanoQueryContext> for MarzanoContext<'a> {
+    fn pattern_definitions(&self) -> &[PatternDefinition<MarzanoQueryContext>] {
+        self.pattern_definitions
+    }
+
+    fn predicate_definitions(&self) -> &[PredicateDefinition<MarzanoQueryContext>] {
+        self.predicate_definitions
+    }
+
+    fn function_definitions(&self) -> &[GritFunctionDefinition<MarzanoQueryContext>] {
+        self.function_definitions
+    }
+
+    fn foreign_function_definitions(&self) -> &[ForeignFunctionDefinition] {
+        self.foreign_function_definitions
+    }
+
+    fn ignore_limit_pattern(&self) -> bool {
+        self.runtime.ignore_limit_pattern
+    }
+
+    fn call_built_in<'b>(
+        &self,
+        call: &'b CallBuiltIn<MarzanoQueryContext>,
+        context: &'b Self,
+        state: &mut State<'b, MarzanoQueryContext>,
+        logs: &mut AnalysisLogs,
+    ) -> Result<MarzanoResolvedPattern<'b>> {
+        self.built_ins.call(call, context, state, logs)
+    }
+
+    #[cfg(all(
+        feature = "network_requests_external",
+        feature = "external_functions_ffi",
+        not(feature = "network_requests"),
+        target_arch = "wasm32"
+    ))]
+    fn exec_external(
+        &self,
+        code: &[u8],
+        param_names: Vec<String>,
+        input_bindings: &[&str],
+    ) -> Result<Vec<u8>> {
+        (self.runtime.exec_external)(code, param_names, input_bindings)
+    }
+
+    // FIXME: Don't depend on Grit's file handling in context.
+    fn files(&self) -> &FileOwners {
+        self.files
+    }
+
+    // FIXME: This introduces a dependency on TreeSitter.
+    fn language(&self) -> &impl Language {
+        self.language
+    }
+
+    fn name(&self) -> Option<&str> {
+        self.name.as_deref()
     }
 }

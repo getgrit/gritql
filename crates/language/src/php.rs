@@ -1,14 +1,13 @@
+use regex::Regex;
+use std::sync::OnceLock;
+
 use crate::{
-    language::{fields_for_nodes, Field, MarzanoLanguage, NodeTypes, SortId, TSLanguage},
+    language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage},
     php_like::{
         php_like_exact_variable_regex, php_like_metavariable_bracket_regex,
         php_like_metavariable_prefix, php_like_metavariable_regex, PHP_CODE_SNIPPETS,
     },
 };
-use grit_util::Language;
-use marzano_util::node_with_source::NodeWithSource;
-use regex::Regex;
-use std::sync::OnceLock;
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/php-node-types.json");
 
@@ -59,26 +58,27 @@ impl NodeTypes for Php {
 }
 
 impl Language for Php {
-    type Node<'a> = NodeWithSource<'a>;
-
-    fn language_name(&self) -> &'static str {
-        "PhpWithHTML"
-    }
-
-    fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &PHP_CODE_SNIPPETS
+    fn get_ts_language(&self) -> &TSLanguage {
+        self.language
     }
 
     fn comment_prefix(&self) -> &'static str {
         "//"
     }
 
-    fn is_comment(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_comment_node(self, node)
+    fn language_name(&self) -> &'static str {
+        "PhpWithHTML"
+    }
+    fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
+        &PHP_CODE_SNIPPETS
     }
 
-    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_metavariable_node(self, node)
+    fn metavariable_sort(&self) -> SortId {
+        self.metavariable_sort
+    }
+
+    fn is_comment_sort(&self, id: SortId) -> bool {
+        id == self.comment_sort
     }
 
     fn metavariable_prefix(&self) -> &'static str {
@@ -102,24 +102,9 @@ impl Language for Php {
     }
 }
 
-impl<'a> MarzanoLanguage<'a> for Php {
-    fn get_ts_language(&self) -> &TSLanguage {
-        self.language
-    }
-
-    fn is_comment_sort(&self, id: SortId) -> bool {
-        id == self.comment_sort
-    }
-
-    fn metavariable_sort(&self) -> SortId {
-        self.metavariable_sort
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::Php;
-    use grit_util::Language;
+    use crate::{language::Language, php::Php};
 
     #[test]
     fn test_php_substitute_variable() {

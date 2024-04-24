@@ -1,16 +1,18 @@
 use crate::{
-    js_like::{
-        js_like_get_statement_sorts, js_like_is_comment, js_optional_empty_field_compilation,
-        js_skip_snippet_compilation_sorts, jslike_check_replacements, MarzanoJsLikeParser,
-    },
     language::{
-        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, MarzanoLanguage, NodeTypes,
-        SortId, TSLanguage, Tree,
+        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, NodeTypes,
+        Replacement, SortId, TSLanguage,
+    },
+    xscript_util::{
+        self, js_like_get_statement_sorts, js_like_is_comment, js_optional_empty_field_compilation,
+        js_skip_snippet_compilation_sorts, jslike_check_replacements,
     },
 };
-use grit_util::{AstNode, Language, Parser, Range, Replacement};
+use anyhow::Result;
+use grit_util::{AnalysisLogs, AstNode, Range};
 use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
+use tree_sitter::Parser;
 
 static NODE_TYPES_STRING: &str =
     include_str!("../../../resources/node-types/javascript-node-types.json");
@@ -84,12 +86,33 @@ impl NodeTypes for JavaScript {
 }
 
 impl Language for JavaScript {
-    type Node<'a> = NodeWithSource<'a>;
+    fn get_ts_language(&self) -> &TSLanguage {
+        self.language
+    }
+
+    fn optional_empty_field_compilation(
+        &self,
+        sort_id: SortId,
+        field_id: crate::language::FieldId,
+    ) -> bool {
+        self.optional_empty_field_compilation
+            .iter()
+            .any(|(s, f)| *s == sort_id && *f == field_id)
+    }
+
+    fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
+        self.skip_snippet_compilation_sorts
+            .iter()
+            .any(|(s, f)| *s == sort_id && *f == field_id)
+    }
+
+    fn alternate_metavariable_kinds(&self) -> &[&'static str] {
+        &["template_content"]
+    }
 
     fn language_name(&self) -> &'static str {
         "JavaScript"
     }
-
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
         &[
             ("", ""),
@@ -112,24 +135,20 @@ impl Language for JavaScript {
         ]
     }
 
-    fn is_comment(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_comment_node(self, node)
+    fn is_comment_sort(&self, id: SortId) -> bool {
+        id == self.comment_sort
     }
 
-    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_metavariable_node(self, node)
+    fn is_comment_node(&self, node: &NodeWithSource) -> bool {
+        js_like_is_comment(node, self.comment_sort, self.jsx_sort)
     }
 
-    fn is_statement(&self, node: &NodeWithSource) -> bool {
-        self.statement_sorts.contains(&node.node.kind_id())
-    }
-
-    fn alternate_metavariable_kinds(&self) -> &[&'static str] {
-        &["template_content"]
+    fn is_statement(&self, id: SortId) -> bool {
+        self.statement_sorts.contains(&id)
     }
 
     // assumes trim doesn't do anything otherwise range is off
-    fn comment_text_range(&self, node: &NodeWithSource) -> Option<Range> {
+    fn comment_text_range(&self, node: &impl AstNode) -> Option<Range> {
         let content_text = node.text().ok()?;
         let content_text = content_text.trim();
         let mut range = node.range();
@@ -142,47 +161,25 @@ impl Language for JavaScript {
         }
     }
 
+    fn metavariable_sort(&self) -> SortId {
+        self.metavariable_sort
+    }
+
     fn check_replacements(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Replacement>) {
         jslike_check_replacements(n, orphan_ranges)
     }
-}
 
-impl<'a> MarzanoLanguage<'a> for JavaScript {
-    fn get_ts_language(&self) -> &TSLanguage {
-        self.language
-    }
-
-    fn get_parser(&self) -> Box<dyn Parser<Tree = Tree>> {
-        Box::new(MarzanoJsLikeParser::new(self))
-    }
-
-    fn optional_empty_field_compilation(
+    /// This needs a special implementation to parse only the JS ranges inside a vue file
+    fn parse_file(
         &self,
-        sort_id: SortId,
-        field_id: crate::language::FieldId,
-    ) -> bool {
-        self.optional_empty_field_compilation
-            .iter()
-            .any(|(s, f)| *s == sort_id && *f == field_id)
-    }
-
-    fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
-        self.skip_snippet_compilation_sorts
-            .iter()
-            .any(|(s, f)| *s == sort_id && *f == field_id)
-    }
-
-    fn is_comment_sort(&self, id: SortId) -> bool {
-        id == self.comment_sort
-    }
-
-    fn is_comment_node(&self, node: &NodeWithSource) -> bool {
-        self.is_comment_sort(node.node.kind_id())
-            || js_like_is_comment(node, self.comment_sort, self.jsx_sort)
-    }
-
-    fn metavariable_sort(&self) -> SortId {
-        self.metavariable_sort
+        name: &str,
+        body: &str,
+        logs: &mut AnalysisLogs,
+        new: bool,
+    ) -> Result<Option<tree_sitter::Tree>> {
+        let mut parser = Parser::new().unwrap();
+        parser.set_language(self.get_ts_language())?;
+        xscript_util::parse_file(self, name, body, logs, new, &mut parser)
     }
 }
 

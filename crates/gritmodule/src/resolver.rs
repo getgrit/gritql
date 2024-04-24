@@ -23,7 +23,8 @@ use crate::{
 };
 use anyhow::{bail, Context, Result};
 use homedir::get_my_home;
-use marzano_language::{grit_parser::MarzanoGritParser, target_language::PatternLanguage};
+use marzano_core::parse::make_grit_parser;
+use marzano_language::target_language::PatternLanguage;
 use tokio::{fs, join};
 
 pub async fn find_local_patterns(
@@ -63,7 +64,7 @@ pub async fn find_user_patterns() -> Result<Vec<ResolvedGritDefinition>> {
         .await?;
         for (local_name, patterns) in user_patterns {
             for pattern in patterns {
-                let language = pattern.language(&mut MarzanoGritParser::new()?).unwrap();
+                let language = pattern.language(&mut make_grit_parser()?).unwrap();
                 let language_string = language.to_string();
                 let local_name_map = resolved_patterns.entry(local_name.clone()).or_default();
                 let kind = pattern.config.kind.as_ref().cloned().unwrap_or_default();
@@ -326,7 +327,7 @@ pub async fn resolve_patterns(
         .await?;
         for (local_name, patterns) in user_patterns {
             for pattern in patterns {
-                let language = pattern.language(&mut MarzanoGritParser::new()?).unwrap();
+                let language = pattern.language(&mut make_grit_parser()?).unwrap();
                 let language_string = language.to_string();
                 let local_name_map = resolved_patterns.entry(local_name.clone()).or_default();
                 // only insert if there is not already an entry - we never want user patterns to override repo patterns
@@ -612,7 +613,7 @@ async fn resolve_patterns_for_module(
         .into_iter()
         .chain(md_patterns)
         .chain(grit_patterns);
-    let mut parser = MarzanoGritParser::new()?;
+    let mut parser = make_grit_parser()?;
 
     for referenced_pattern in patterns {
         if let Some(module) = referenced_pattern

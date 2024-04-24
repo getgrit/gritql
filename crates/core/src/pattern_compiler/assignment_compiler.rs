@@ -5,8 +5,8 @@ use super::{
 use crate::pattern::{assignment::Assignment, variable::is_reserved_metavariable};
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, bail, Result};
-use grit_util::{constants::GRIT_METAVARIABLE_PREFIX, AstNode};
-use marzano_language::target_language::TargetLanguage;
+use grit_util::AstNode;
+use marzano_language::{language::GRIT_METAVARIABLE_PREFIX, target_language::TargetLanguage};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct AssignmentCompiler;

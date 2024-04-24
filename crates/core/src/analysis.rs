@@ -1,21 +1,22 @@
+use crate::pattern_compiler::parse_one;
 use anyhow::{anyhow, Result};
-use grit_util::{traverse, Ast, AstNode, Order};
-use marzano_language::grit_parser::MarzanoGritParser;
+use grit_util::AstNode;
+use grit_util::{traverse, Order};
 use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
 use std::collections::BTreeMap;
 use std::ffi::OsStr;
-use std::path::Path;
+use tree_sitter::Parser;
 
 /// Walks the call tree and returns true if the predicate is true for any node.
 /// This is potentially error-prone, so not entirely recommended
 fn walk_call_tree(
     node: &NodeWithSource,
     libs: &BTreeMap<String, String>,
-    grit_parser: &mut MarzanoGritParser,
+    grit_parser: &mut Parser,
     predicate: &dyn Fn(&NodeWithSource) -> Result<bool>,
 ) -> Result<bool> {
-    let cursor = node.walk();
-    for n in traverse(cursor, Order::Pre) {
+    let cursor = node.node.walk();
+    for n in traverse(CursorWrapper::new(cursor, node.source), Order::Pre) {
         if predicate(&n)? {
             return Ok(true);
         }
@@ -30,9 +31,10 @@ fn walk_call_tree(
         let maybe_call = libs
             .iter()
             .find(|(k, _)| k.strip_suffix(".grit").unwrap_or(k) == name);
-        if let Some((file_name, body)) = maybe_call {
-            let src_tree = grit_parser.parse_file(body, Some(Path::new(file_name)))?;
-            return walk_call_tree(&src_tree.root_node(), libs, grit_parser, predicate);
+        if let Some((k, v)) = maybe_call {
+            let src_tree = parse_one(grit_parser, v, k)?;
+            let source_file = NodeWithSource::new(src_tree.root_node(), v);
+            return walk_call_tree(&source_file, libs, grit_parser, predicate);
         }
     }
     Ok(false)
@@ -41,7 +43,7 @@ fn walk_call_tree(
 pub fn is_multifile(
     root: &NodeWithSource,
     libs: &BTreeMap<String, String>,
-    grit_parser: &mut MarzanoGritParser,
+    grit_parser: &mut Parser,
 ) -> Result<bool> {
     walk_call_tree(root, libs, grit_parser, &|n| Ok(n.node.kind() == "files"))
 }
@@ -49,7 +51,7 @@ pub fn is_multifile(
 pub fn has_limit(
     root: &NodeWithSource,
     libs: &BTreeMap<String, String>,
-    grit_parser: &mut MarzanoGritParser,
+    grit_parser: &mut Parser,
 ) -> Result<bool> {
     walk_call_tree(root, libs, grit_parser, &|n| {
         Ok(n.node.kind() == "patternLimit")
@@ -60,7 +62,7 @@ pub fn has_limit(
 pub fn is_async(
     root: &NodeWithSource,
     libs: &BTreeMap<String, String>,
-    grit_parser: &mut MarzanoGritParser,
+    grit_parser: &mut Parser,
 ) -> Result<bool> {
     walk_call_tree(root, libs, grit_parser, &|n| {
         if n.node.kind() != "nodeLike" {
@@ -95,8 +97,11 @@ pub fn defines_itself(root: &NodeWithSource, root_name: &str) -> Result<bool> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::collections::BTreeMap;
+
+    use crate::parse::make_grit_parser;
+
+    use super::*;
 
     #[test]
     fn test_non_async() {
@@ -105,11 +110,14 @@ mod tests {
         "#
         .to_string();
         let libs = BTreeMap::new();
-        let mut parser = MarzanoGritParser::new().unwrap();
-        let parsed = parser
-            .parse_file(&src_code, Some(Path::new("test.grit")))
-            .unwrap();
-        assert!(!is_async(&parsed.root_node(), &libs, &mut parser).unwrap());
+        let mut parser = make_grit_parser().unwrap();
+        let parsed = parse_one(&mut parser, &src_code, "test.grit").unwrap();
+        assert!(!is_async(
+            &NodeWithSource::new(parsed.root_node(), &src_code),
+            &libs,
+            &mut parser
+        )
+        .unwrap());
     }
 
     #[test]
@@ -119,11 +127,14 @@ mod tests {
         "#
         .to_string();
         let libs = BTreeMap::new();
-        let mut parser = MarzanoGritParser::new().unwrap();
-        let parsed = parser
-            .parse_file(&src_code, Some(Path::new("test.grit")))
-            .unwrap();
-        assert!(is_async(&parsed.root_node(), &libs, &mut parser).unwrap());
+        let mut parser = make_grit_parser().unwrap();
+        let parsed = parse_one(&mut parser, &src_code, "test.grit").unwrap();
+        assert!(is_async(
+            &NodeWithSource::new(parsed.root_node(), &src_code),
+            &libs,
+            &mut parser
+        )
+        .unwrap());
     }
 
     #[test]
@@ -136,11 +147,14 @@ mod tests {
         "#
         .to_string();
         let libs = BTreeMap::new();
-        let mut parser = MarzanoGritParser::new().unwrap();
-        let parsed = parser
-            .parse_file(&src_code, Some(Path::new("test.grit")))
-            .unwrap();
-        assert!(is_async(&parsed.root_node(), &libs, &mut parser).unwrap());
+        let mut parser = make_grit_parser().unwrap();
+        let parsed = parse_one(&mut parser, &src_code, "test.grit").unwrap();
+        assert!(is_async(
+            &NodeWithSource::new(parsed.root_node(), &src_code),
+            &libs,
+            &mut parser
+        )
+        .unwrap());
     }
 
     #[test]
@@ -154,11 +168,14 @@ mod tests {
             "async_foo.grit".to_string(),
             "llm_chat(messages=[])".to_string(),
         );
-        let mut parser = MarzanoGritParser::new().unwrap();
-        let parsed = parser
-            .parse_file(&src_code, Some(Path::new("test.grit")))
-            .unwrap();
-        let decided = is_async(&parsed.root_node(), &libs, &mut parser).unwrap();
+        let mut parser = make_grit_parser().unwrap();
+        let parsed = parse_one(&mut parser, &src_code, "test.grit").unwrap();
+        let decided = is_async(
+            &NodeWithSource::new(parsed.root_node(), &src_code),
+            &libs,
+            &mut parser,
+        )
+        .unwrap();
         assert!(decided);
     }
 }

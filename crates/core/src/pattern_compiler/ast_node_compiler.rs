@@ -5,7 +5,7 @@ use super::{
 use crate::ast_node::ASTNode;
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
-use marzano_language::language::{FieldId, MarzanoLanguage, NodeTypes, SortId};
+use marzano_language::language::{FieldId, Language, NodeTypes, SortId};
 use marzano_util::node_with_source::NodeWithSource;
 use std::cmp::Ordering;
 

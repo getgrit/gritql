@@ -12,7 +12,8 @@ use crate::{
 };
 use anyhow::{bail, Result};
 use core::fmt::Debug;
-use grit_util::{constants::GRIT_METAVARIABLE_PREFIX, AnalysisLogs, Language, Range};
+use grit_util::{AnalysisLogs, Range};
+use marzano_language::language::{Language, GRIT_METAVARIABLE_PREFIX};
 
 #[derive(Clone, Debug, Copy)]
 pub struct Variable {
@@ -79,7 +80,7 @@ impl Variable {
     pub(crate) fn text<'a, Q: QueryContext>(
         &self,
         state: &State<'a, Q>,
-        lang: &Q::Language<'a>,
+        lang: &impl Language,
     ) -> Result<Cow<'a, str>> {
         state.bindings[self.scope].last().unwrap()[self.index].text(state, lang)
     }
@@ -88,7 +89,7 @@ impl Variable {
         &self,
         resolved_pattern: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
-        language: &Q::Language<'a>,
+        lang: &impl Language,
     ) -> Result<Option<bool>> {
         let mut variable_mirrors: Vec<VariableMirror<Q>> = Vec::new();
         {
@@ -107,7 +108,7 @@ impl Variable {
                     var_side_resolve_pattern.get_last_binding(),
                     resolved_pattern.get_last_binding(),
                 ) {
-                    if !var_binding.is_equivalent_to(binding, language) {
+                    if !var_binding.is_equivalent_to(binding, lang) {
                         return Ok(Some(false));
                     }
                     let value_history = &mut variable_content.value_history;
@@ -124,8 +125,8 @@ impl Variable {
                     }));
                 } else {
                     return Ok(Some(
-                        resolved_pattern.text(&state.files, language)?
-                            == var_side_resolve_pattern.text(&state.files, language)?,
+                        resolved_pattern.text(&state.files, lang)?
+                            == var_side_resolve_pattern.text(&state.files, lang)?,
                     ));
                 }
             } else {
@@ -293,9 +294,9 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
     }
 }
 
-pub(crate) fn get_absolute_file_name<'a, Q: QueryContext>(
-    state: &State<'a, Q>,
-    lang: &Q::Language<'a>,
+pub(crate) fn get_absolute_file_name<Q: QueryContext>(
+    state: &State<'_, Q>,
+    lang: &impl Language,
 ) -> Result<String, anyhow::Error> {
     let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[ABSOLUTE_PATH_INDEX]
         .value
@@ -306,9 +307,9 @@ pub(crate) fn get_absolute_file_name<'a, Q: QueryContext>(
     Ok(file)
 }
 
-pub(crate) fn get_file_name<'a, Q: QueryContext>(
-    state: &State<'a, Q>,
-    lang: &Q::Language<'a>,
+pub(crate) fn get_file_name<Q: QueryContext>(
+    state: &State<'_, Q>,
+    lang: &impl Language,
 ) -> Result<String, anyhow::Error> {
     let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[FILENAME_INDEX]
         .value
