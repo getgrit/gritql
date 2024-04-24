@@ -1,14 +1,13 @@
 use anyhow::{bail, Context, Result};
-use log::info;
 use marzano_auth::env::get_graphql_api_url;
 use marzano_gritmodule::fetcher::ModuleRepo;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
+use std::{mem, str::FromStr};
 
 use crate::updater::Updater;
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct RepoInput<'a> {
     repo: &'a str,
     host: &'a str,
@@ -20,12 +19,28 @@ struct RulesQuery<'a> {
     variables: RepoInput<'a>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AutoReviewRule {
     id: String,
     title: String,
     description: String,
     level: String,
     created_at: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct RuleProject {
+    review_rules: Vec<AutoReviewRule>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct RulesData {
+    pattern_analysis_project: Vec<RuleProject>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct RulesResponse {
+    data: RulesData,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -87,6 +102,7 @@ async fn fetch_project_rules(repo: &ModuleRepo) -> Result<Vec<AutoReviewRule>> {
         host: &repo.host,
     };
 
+    println!("Sending with variables {:?}", variables);
     let graphql_query = RulesQuery { query, variables };
     let url = format!("{}/graphql", get_graphql_api_url());
     let res = client
@@ -97,12 +113,16 @@ async fn fetch_project_rules(repo: &ModuleRepo) -> Result<Vec<AutoReviewRule>> {
         .await?;
 
     let response_body = res.text().await?;
-    // deserialize the response
-    let response = serde_json::from_str::<serde_json::Value>(&response_body)
+    let mut response = serde_json::from_str::<RulesResponse>(&response_body)
         .context("Failed to parse rules response")?;
-    println!("Response: {}", response);
+    let project = response
+        .data
+        .pattern_analysis_project
+        .get_mut(0)
+        .context("No project found")?;
+    let rules = mem::take(&mut project.review_rules);
 
-    Ok(vec![])
+    Ok(rules)
 }
 
 #[tokio::test]
@@ -113,9 +133,10 @@ async fn test_fetch_project_rules() {
         remote: "something".to_string(),
         provider_name: "github.com/custodian-sample-org/demo-shop".to_string(),
     };
-    match fetch_project_rules(&repo).await {
-        Ok(_) => println!("Request sent successfully"),
-        Err(e) => println!("Error sending request: {}", e),
-    }
+    let rules = match fetch_project_rules(&repo).await {
+        Ok(r) => r,
+        Err(e) => panic!("Error sending request: {}", e),
+    };
+    println!("{:?}", rules);
     panic!("What the fuck");
 }
