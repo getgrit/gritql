@@ -89,7 +89,7 @@ async fn fetch_project_rules(repo: &ModuleRepo, auth: &AuthInfo) -> Result<Vec<A
     let url = format!("{}/graphql", get_graphql_api_url());
     let res = client
         .post(&url)
-        .bearer_auth(&token)
+        .bearer_auth(token)
         .json(&graphql_query)
         .send()
         .await?;
