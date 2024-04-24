@@ -2,9 +2,9 @@ use super::{
     compiler::NodeCompilationContext, container_compiler::ContainerCompiler,
     map_compiler::MapCompiler, node_compiler::NodeCompiler, variable_compiler::VariableCompiler,
 };
-use crate::pattern::accessor::{Accessor, AccessorKey, AccessorMap};
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
+use grit_core_patterns::pattern::accessor::{Accessor, AccessorKey, AccessorMap};
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 

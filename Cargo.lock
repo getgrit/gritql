@@ -1306,6 +1306,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "grit-core-patterns"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "elsa",
+ "getrandom",
+ "grit-util",
+ "im",
+ "itertools 0.10.5",
+ "rand",
+ "regex",
+]
+
+[[package]]
 name = "grit-util"
 version = "0.1.0"
 dependencies = [
@@ -1956,9 +1970,9 @@ name = "marzano-core"
 version = "0.2.0"
 dependencies = [
  "anyhow",
- "elsa",
  "embeddings",
  "getrandom",
+ "grit-core-patterns",
  "grit-util",
  "im",
  "insta",

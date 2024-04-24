@@ -1,8 +1,7 @@
-use self::pattern::state::VariableMatch;
 use crate::pattern_compiler::src_to_problem_libs;
 use anyhow::{anyhow, Context, Result};
 use api::MatchResult;
-use grit_util::Range;
+use grit_util::{Range, VariableMatch};
 use insta::{assert_debug_snapshot, assert_snapshot, assert_yaml_snapshot};
 use lazy_static::lazy_static;
 use marzano_auth::env::ENV_VAR_GRIT_API_URL;

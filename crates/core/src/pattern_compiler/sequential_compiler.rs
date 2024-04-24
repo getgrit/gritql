@@ -1,11 +1,11 @@
 use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler, step_compiler::StepCompiler,
 };
-use crate::{
-    pattern::{files::Files, patterns::Pattern, sequential::Sequential, some::Some, step::Step},
-    problem::MarzanoQueryContext,
-};
+use crate::problem::MarzanoQueryContext;
 use anyhow::Result;
+use grit_core_patterns::pattern::{
+    files::Files, patterns::Pattern, sequential::Sequential, some::Some, step::Step,
+};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct SequentialCompiler;

@@ -2,7 +2,7 @@ use anyhow::Context;
 use grit_util::{Ast, Position};
 use marzano_core::{
     api::{AnalysisLog, InputFile, MatchResult, PatternInfo},
-    pattern::built_in_functions::BuiltIns,
+    built_in_functions::BuiltIns,
     pattern_compiler::{src_to_problem_libs_for_language, CompilationResult},
     tree_sitter_serde::tree_sitter_node_to_json,
 };

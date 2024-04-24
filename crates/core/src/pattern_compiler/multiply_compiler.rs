@@ -2,9 +2,9 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::pattern::multiply::Multiply;
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
+use grit_core_patterns::pattern::multiply::Multiply;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct MultiplyCompiler;

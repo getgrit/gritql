@@ -1,16 +1,19 @@
-use crate::binding::Binding;
-use crate::constant::Constant;
-use crate::context::QueryContext;
 use crate::equivalence::are_equivalent;
 use crate::inline_snippets::inline_sorted_snippets_with_offset;
-use crate::pattern::{
-    resolved_pattern::ResolvedPattern,
-    state::{get_top_level_effects, FileRegistry},
-};
-use crate::problem::{Effect, EffectKind, MarzanoQueryContext};
+use crate::problem::MarzanoQueryContext;
 use crate::smart_insert::calculate_padding;
 use crate::suppress::is_suppress_comment;
 use anyhow::{anyhow, Result};
+use grit_core_patterns::{
+    binding::Binding,
+    constant::Constant,
+    context::QueryContext,
+    effects::{Effect, EffectKind},
+    pattern::{
+        resolved_pattern::ResolvedPattern,
+        state::{get_top_level_effects, FileRegistry},
+    },
+};
 use grit_util::{AnalysisLogBuilder, AnalysisLogs, AstNode, CodeRange, Language, Position, Range};
 use itertools::{EitherOrBoth, Itertools};
 use marzano_language::language::{FieldId, MarzanoLanguage};
@@ -179,7 +182,7 @@ impl EffectRange {
 pub(crate) fn linearize_binding<'a, Q: QueryContext>(
     language: &Q::Language<'a>,
     effects: &[Effect<'a, Q>],
-    files: &FileRegistry<'a>,
+    files: &FileRegistry<'a, Q>,
     memo: &mut HashMap<CodeRange, Option<String>>,
     source: Q::Node<'a>,
     range: CodeRange,
@@ -507,7 +510,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         &self,
         language: &TargetLanguage,
         effects: &[Effect<'a, MarzanoQueryContext>],
-        files: &FileRegistry<'a>,
+        files: &FileRegistry<'a, MarzanoQueryContext>,
         memo: &mut HashMap<CodeRange, Option<String>>,
         distributed_indent: Option<usize>,
         logs: &mut AnalysisLogs,

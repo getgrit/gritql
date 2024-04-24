@@ -1,9 +1,9 @@
 use super::{compiler::NodeCompilationContext, node_compiler::NodeCompiler};
-use crate::pattern::{
+use anyhow::Result;
+use grit_core_patterns::pattern::{
     boolean_constant::BooleanConstant, float_constant::FloatConstant, int_constant::IntConstant,
     string_constant::StringConstant,
 };
-use anyhow::Result;
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 

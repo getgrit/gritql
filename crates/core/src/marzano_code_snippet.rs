@@ -1,17 +1,18 @@
 use crate::{
+    marzano_context::MarzanoContext, marzano_resolved_pattern::MarzanoResolvedPattern,
+    problem::MarzanoQueryContext,
+};
+use anyhow::Result;
+use grit_core_patterns::{
     binding::Binding,
     context::ExecContext,
-    marzano_context::MarzanoContext,
-    marzano_resolved_pattern::MarzanoResolvedPattern,
     pattern::{
         dynamic_snippet::DynamicPattern,
         patterns::{CodeSnippet, Matcher, Pattern, PatternName},
         resolved_pattern::ResolvedPattern,
         state::State,
     },
-    problem::MarzanoQueryContext,
 };
-use anyhow::Result;
 use grit_util::AnalysisLogs;
 use marzano_language::language::SortId;
 

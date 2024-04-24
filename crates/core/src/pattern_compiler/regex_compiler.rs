@@ -2,11 +2,9 @@ use super::{
     back_tick_compiler::BackTickCompiler, compiler::NodeCompilationContext,
     node_compiler::NodeCompiler, variable_compiler::VariableCompiler,
 };
-use crate::{
-    pattern::regex::{RegexLike, RegexPattern},
-    problem::MarzanoQueryContext,
-};
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, bail, Result};
+use grit_core_patterns::pattern::regex::{RegexLike, RegexPattern};
 use grit_util::{AnalysisLogBuilder, AstNode, Language};
 use marzano_util::node_with_source::NodeWithSource;
 

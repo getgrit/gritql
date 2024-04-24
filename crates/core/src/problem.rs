@@ -1,34 +1,34 @@
 use crate::{
-    api::{is_match, AnalysisLog, ByteRange, DoneFile, MatchResult},
+    api::{is_match, AnalysisLog, DoneFile, MatchResult},
     ast_node::{ASTNode, AstLeafNode},
-    context::QueryContext,
+    built_in_functions::BuiltIns,
+    foreign_function_definition::ForeignFunctionDefinition,
     marzano_binding::MarzanoBinding,
     marzano_code_snippet::MarzanoCodeSnippet,
     marzano_context::MarzanoContext,
     marzano_resolved_pattern::{MarzanoFile, MarzanoResolvedPattern},
+    pattern_compiler::{compiler::VariableLocations, file_owner_compiler::FileOwnerCompiler},
+};
+use anyhow::{bail, Result};
+use grit_core_patterns::{
+    constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
+    context::QueryContext,
+    file_owners::{FileOwner, FileOwners},
     pattern::{
-        built_in_functions::BuiltIns,
-        constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
-        function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
-        paths::absolutize,
+        function_definition::GritFunctionDefinition,
         pattern_definition::PatternDefinition,
         patterns::{Matcher, Pattern},
         predicate_definition::PredicateDefinition,
         resolved_pattern::ResolvedPattern,
-        state::{FilePtr, State, VariableMatch},
+        state::{FilePtr, State},
         variable_content::VariableContent,
-        VariableLocations, MAX_FILE_SIZE,
+        MAX_FILE_SIZE,
     },
 };
-use anyhow::{bail, Result};
-use elsa::FrozenVec;
-use grit_util::{AnalysisLogs, Position, Range};
+use grit_util::{Position, VariableMatch};
 use im::vector;
 use log::error;
-use marzano_language::{
-    language::{MarzanoLanguage, Tree},
-    target_language::TargetLanguage,
-};
+use marzano_language::{language::Tree, target_language::TargetLanguage};
 use marzano_util::{
     cache::{GritCache, NullCache},
     hasher::hash,
@@ -38,13 +38,12 @@ use marzano_util::{
 };
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use sha2::{Digest, Sha256};
+use std::fmt::Debug;
 use std::{
     borrow::Cow,
-    fmt, ops,
     path::PathBuf,
     sync::mpsc::{self, Sender},
 };
-use std::{cell::RefCell, fmt::Debug};
 use tracing::{event, Level};
 
 #[derive(Debug)]
@@ -100,7 +99,7 @@ impl From<FilePattern> for MarzanoResolvedPattern<'_> {
 
 struct FilePatternOutput {
     file_pattern: Option<FilePattern>,
-    file_owners: FileOwners,
+    file_owners: FileOwners<Tree>,
     done_files: Vec<MatchResult>,
     error_files: Vec<MatchResult>,
 }
@@ -200,7 +199,7 @@ impl Problem {
                     }));
                 } else {
                     let mut logs = vec![].into();
-                    let owned_file = FileOwner::new(
+                    let owned_file = FileOwnerCompiler::from_matches(
                         file.path.to_owned(),
                         file.content.to_owned(),
                         None,
@@ -266,7 +265,7 @@ impl Problem {
         tx: &Sender<Vec<MatchResult>>,
         files: &[impl TryIntoInputFile + FileName],
         binding: FilePattern,
-        owned_files: &FileOwners,
+        owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
         mut done_files: Vec<MatchResult>,
     ) {
@@ -463,7 +462,7 @@ impl Problem {
     fn execute(
         &self,
         binding: FilePattern,
-        owned_files: &FileOwners,
+        owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
     ) -> Result<Vec<MatchResult>> {
         let mut user_logs = vec![].into();
@@ -492,7 +491,7 @@ impl Problem {
             })
             .collect();
 
-        let file_refs: Vec<&FileOwner> = context.files.iter().collect();
+        let file_refs: Vec<&FileOwner<Tree>> = context.files.iter().collect();
         let mut state = State::new(bindings, file_refs);
 
         let the_new_files =
@@ -540,118 +539,6 @@ fn is_file_too_big(file: &RichFile) -> Option<AnalysisLog> {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum EffectKind {
-    Rewrite,
-    Insert,
-}
-
-#[derive(Debug, Clone)]
-pub struct Effect<'a, Q: QueryContext> {
-    pub binding: Q::Binding<'a>,
-    pub(crate) pattern: Q::ResolvedPattern<'a>,
-    pub kind: EffectKind,
-}
-
-pub struct FileOwners(FrozenVec<Box<FileOwner>>);
-
-impl FileOwners {
-    pub fn new() -> Self {
-        Self(FrozenVec::new())
-    }
-
-    pub fn push(&self, file: FileOwner) {
-        self.0.push(Box::new(file))
-    }
-}
-impl Default for FileOwners {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl ops::Deref for FileOwners {
-    type Target = FrozenVec<Box<FileOwner>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl Debug for FileOwners {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0
-            .iter()
-            .try_fold((), |_, file| writeln!(f, "{}", file.name.display()))
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct FileOwner {
-    pub absolute_path: PathBuf,
-    pub name: PathBuf,
-    // todo wrap in Rc<RefCell<Option<>>>
-    // so that we can lazily parse
-    pub tree: Tree,
-    pub matches: RefCell<MatchRanges>,
-    pub new: bool,
-}
-
-impl FileOwner {
-    pub(crate) fn new<'a>(
-        name: impl Into<PathBuf>,
-        source: String,
-        matches: Option<MatchRanges>,
-        new: bool,
-        language: &impl MarzanoLanguage<'a>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<Option<Self>> {
-        let name = name.into();
-        let Some(tree) = language
-            .get_parser()
-            .parse_file(&source, Some(&name), logs, new)
-        else {
-            return Ok(None);
-        };
-        let absolute_path = absolutize(&name)?;
-        Ok(Some(FileOwner {
-            name,
-            absolute_path,
-            tree,
-            matches: matches.unwrap_or_default().into(),
-            new,
-        }))
-    }
-}
-
-impl PartialEq for FileOwner {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name && self.tree.source == other.tree.source
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct InputRanges {
-    pub ranges: Vec<Range>,
-    pub variables: Vec<VariableMatch>,
-    pub suppressed: bool,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct MatchRanges {
-    pub input_matches: Option<InputRanges>,
-    pub byte_ranges: Option<Vec<ByteRange>>,
-}
-
-impl MatchRanges {
-    pub(crate) fn new(byte_ranges: Vec<ByteRange>) -> Self {
-        Self {
-            input_matches: None,
-            byte_ranges: Some(byte_ranges),
-        }
-    }
-}
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct MarzanoQueryContext;
 
@@ -665,4 +552,5 @@ impl QueryContext for MarzanoQueryContext {
     type ResolvedPattern<'a> = MarzanoResolvedPattern<'a>;
     type Language<'a> = TargetLanguage;
     type File<'a> = MarzanoFile<'a>;
+    type Tree = Tree;
 }

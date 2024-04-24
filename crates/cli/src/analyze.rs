@@ -14,7 +14,7 @@ use grit_util::{FileRange, Position};
 use ignore::Walk;
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 #[allow(unused_imports)]
-use marzano_core::pattern::built_in_functions::BuiltIns;
+use marzano_core::built_in_functions::BuiltIns;
 use marzano_core::pattern_compiler::{src_to_problem_libs, CompilationResult};
 use marzano_core::{
     api::{AnalysisLog, DoneFile, MatchResult},

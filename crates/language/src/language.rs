@@ -159,6 +159,13 @@ impl Ast for Tree {
     }
 }
 
+impl PartialEq for Tree {
+    fn eq(&self, other: &Self) -> bool {
+        // Equal sources must parse to the same trees.
+        self.source == other.source
+    }
+}
+
 pub struct MarzanoParser {
     pub(crate) parser: TSParser,
 }

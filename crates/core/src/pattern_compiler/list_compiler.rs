@@ -2,9 +2,9 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::pattern::{list::List, patterns::Pattern};
 use crate::problem::MarzanoQueryContext;
 use anyhow::{bail, Result};
+use grit_core_patterns::pattern::{list::List, patterns::Pattern};
 use marzano_language::language::Field;
 use marzano_util::node_with_source::NodeWithSource;
 

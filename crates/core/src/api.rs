@@ -1,18 +1,15 @@
-use crate::{
-    fs,
-    pattern::state::VariableMatch,
-    problem::{FileOwner, InputRanges, Problem},
-    tree_sitter_serde::tree_sitter_node_to_json,
-};
+use crate::{fs, problem::Problem, tree_sitter_serde::tree_sitter_node_to_json};
 use anyhow::{bail, Result};
-use grit_util::{AnalysisLog as GritAnalysisLog, Ast, Position, Range};
+use grit_core_patterns::file_owners::FileOwner;
+pub use grit_util::ByteRange;
+use grit_util::{AnalysisLog as GritAnalysisLog, Ast, InputRanges, Position, Range, VariableMatch};
 use im::Vector;
 use marzano_language::grit_ts_node::grit_node_types;
 use marzano_language::language::{MarzanoLanguage, Tree};
 use serde::{Deserialize, Serialize};
 use serde_json::to_string_pretty;
 use std::path::PathBuf;
-use std::{fmt, ops::Range as StdRange, str::FromStr, vec};
+use std::{fmt, str::FromStr, vec};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
@@ -95,7 +92,7 @@ impl MatchResult {
     }
 
     pub(crate) fn file_to_match_result<'a>(
-        file: &Vector<&FileOwner>,
+        file: &Vector<&FileOwner<Tree>>,
         language: &impl MarzanoLanguage<'a>,
     ) -> Result<Option<MatchResult>> {
         if file.is_empty() {
@@ -359,8 +356,8 @@ impl From<Rewrite> for MatchResult {
 
 impl Rewrite {
     fn file_to_rewrite<'a>(
-        initial: &FileOwner,
-        rewrite: &FileOwner,
+        initial: &FileOwner<Tree>,
+        rewrite: &FileOwner<Tree>,
         language: &impl MarzanoLanguage<'a>,
     ) -> Result<Self> {
         let original = if let Some(ranges) = &initial.matches.borrow().input_matches {
@@ -566,22 +563,6 @@ pub enum AllDoneReason {
     AllMatchesFound,
     MaxResultsReached,
     Aborted,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(rename_all = "camelCase")]
-pub struct ByteRange {
-    pub start: usize,
-    pub end: usize,
-}
-
-impl From<StdRange<usize>> for ByteRange {
-    fn from(range: StdRange<usize>) -> Self {
-        Self {
-            start: range.start,
-            end: range.end,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]

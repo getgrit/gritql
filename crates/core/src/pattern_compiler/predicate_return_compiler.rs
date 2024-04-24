@@ -2,8 +2,9 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::{pattern::predicate_return::PrReturn, problem::MarzanoQueryContext};
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
+use grit_core_patterns::pattern::predicate_return::PrReturn;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct PredicateReturnCompiler;

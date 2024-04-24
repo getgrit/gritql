@@ -2,9 +2,9 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::pattern::modulo::Modulo;
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
+use grit_core_patterns::pattern::modulo::Modulo;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct ModuloCompiler;

@@ -40,6 +40,7 @@ pub(crate) mod contains_compiler;
 pub(crate) mod divide_compiler;
 pub(crate) mod equal_compiler;
 pub(crate) mod every_compiler;
+pub(crate) mod file_owner_compiler;
 pub(crate) mod foreign_language_compiler;
 pub(crate) mod function_definition_compiler;
 pub(crate) mod if_compiler;

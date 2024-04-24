@@ -2,8 +2,9 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler, predicate_compiler::PredicateCompiler,
 };
-use crate::{pattern::r#where::Where, problem::MarzanoQueryContext};
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
+use grit_core_patterns::pattern::r#where::Where;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct WhereCompiler;

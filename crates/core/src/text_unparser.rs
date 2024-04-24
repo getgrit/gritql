@@ -1,11 +1,11 @@
-use crate::{
+use crate::marzano_binding::linearize_binding;
+use anyhow::Result;
+use grit_core_patterns::{
     binding::Binding,
     context::{ExecContext, QueryContext},
-    marzano_binding::linearize_binding,
+    effects::Effect,
     pattern::{resolved_pattern::ResolvedPattern, state::FileRegistry},
-    problem::Effect,
 };
-use anyhow::Result;
 use grit_util::{AnalysisLogs, AstNode, CodeRange, Language};
 use im::Vector;
 use std::collections::HashMap;
@@ -22,7 +22,7 @@ use std::path::{Path, PathBuf};
 pub(crate) fn apply_effects<'a, Q: QueryContext>(
     code: Q::Node<'a>,
     effects: Vector<Effect<'a, Q>>,
-    files: &FileRegistry<'a>,
+    files: &FileRegistry<'a, Q>,
     the_filename: &Path,
     new_filename: &mut PathBuf,
     context: &'a Q::ExecContext<'a>,

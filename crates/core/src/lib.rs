@@ -2,23 +2,21 @@
 pub mod analysis;
 pub mod api;
 pub mod ast_node;
-pub mod binding;
+pub mod built_in_functions;
 mod clean;
 pub mod compact_api;
-pub mod constant;
-pub mod context;
+pub mod constants;
 mod effects_dependency_graph;
 mod equivalence;
-pub mod errors;
+mod foreign_function_definition;
 pub mod fs;
 mod inline_snippets;
-mod intervals;
 pub mod marzano_binding;
 pub mod marzano_code_snippet;
 pub mod marzano_context;
 pub mod marzano_resolved_pattern;
 pub mod parse;
-pub mod pattern;
+mod paths;
 pub mod pattern_compiler;
 pub mod problem;
 mod smart_insert;
@@ -26,6 +24,7 @@ mod split_snippet;
 mod suppress;
 mod text_unparser;
 pub mod tree_sitter_serde;
+mod variables;
 
 // getrandom is a deeply nested dependency used by many things eg. uuid
 // to get wasm working we needed to enable a feature for this crate, so

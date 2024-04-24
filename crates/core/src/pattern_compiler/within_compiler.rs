@@ -2,8 +2,9 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::{pattern::within::Within, problem::MarzanoQueryContext};
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
+use grit_core_patterns::pattern::within::Within;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct WithinCompiler;

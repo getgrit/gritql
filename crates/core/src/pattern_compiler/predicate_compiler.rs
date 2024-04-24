@@ -7,8 +7,9 @@ use super::{
     or_compiler::PrOrCompiler, predicate_return_compiler::PredicateReturnCompiler,
     rewrite_compiler::RewriteCompiler,
 };
-use crate::{pattern::predicates::Predicate, problem::MarzanoQueryContext};
+use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, bail, Result};
+use grit_core_patterns::pattern::predicates::Predicate;
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 
