@@ -1,6 +1,7 @@
+use crate::language::{fields_for_nodes, Field, MarzanoLanguage, NodeTypes, SortId, TSLanguage};
+use grit_util::Language;
+use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
-
-use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str =
     include_str!("../../../resources/node-types/markdown-block-node-types.json");
@@ -49,9 +50,7 @@ impl MarkdownBlock {
 }
 
 impl Language for MarkdownBlock {
-    fn get_ts_language(&self) -> &TSLanguage {
-        self.language
-    }
+    type Node<'a> = NodeWithSource<'a>;
 
     fn language_name(&self) -> &'static str {
         "MarkdownBlock"
@@ -61,16 +60,30 @@ impl Language for MarkdownBlock {
         &[("", "")]
     }
 
-    fn metavariable_sort(&self) -> SortId {
-        self.metavariable_sort
+    fn is_comment(&self, node: &NodeWithSource) -> bool {
+        MarzanoLanguage::is_comment_node(self, node)
     }
 
-    fn is_comment_sort(&self, _id: SortId) -> bool {
-        false
+    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
+        MarzanoLanguage::is_metavariable_node(self, node)
     }
 
     fn make_single_line_comment(&self, text: &str) -> String {
         format!("<!-- {} -->\n", text)
+    }
+}
+
+impl<'a> MarzanoLanguage<'a> for MarkdownBlock {
+    fn get_ts_language(&self) -> &TSLanguage {
+        self.language
+    }
+
+    fn is_comment_sort(&self, _sort: SortId) -> bool {
+        false
+    }
+
+    fn metavariable_sort(&self) -> SortId {
+        self.metavariable_sort
     }
 }
 

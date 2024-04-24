@@ -15,9 +15,9 @@ use crate::{
 };
 use crate::{pattern_compiler::compiler::NodeCompilationContext, split_snippet::split_snippet};
 use anyhow::{anyhow, bail, Result};
-use grit_util::{AstNode, Position, Range};
+use grit_util::{AstNode, Language, Position, Range};
 use marzano_language::{
-    language::{nodes_from_indices, Language, SortId},
+    language::{nodes_from_indices, MarzanoLanguage, SortId},
     target_language::TargetLanguage,
 };
 use marzano_util::node_with_source::NodeWithSource;

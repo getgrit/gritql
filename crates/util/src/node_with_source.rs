@@ -143,6 +143,10 @@ impl<'a> AstNode for NodeWithSource<'a> {
         CodeRange::new(self.node.start_byte(), self.node.end_byte(), self.source)
     }
 
+    fn full_source(&self) -> &str {
+        self.source
+    }
+
     fn walk(&self) -> impl AstCursor<Node = Self> {
         CursorWrapper::new(self.node.walk(), self.source)
     }

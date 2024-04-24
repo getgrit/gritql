@@ -1310,6 +1310,8 @@ name = "grit-util"
 version = "0.1.0"
 dependencies = [
  "derive_builder",
+ "once_cell",
+ "regex",
  "serde",
 ]
 
@@ -1978,7 +1980,6 @@ dependencies = [
  "tracing",
  "tracing-opentelemetry",
  "tree-sitter-facade-sg",
- "tree-sitter-gritql",
  "trim-margin",
  "walkdir",
 ]

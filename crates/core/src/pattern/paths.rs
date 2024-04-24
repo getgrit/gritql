@@ -1,21 +1,18 @@
 use anyhow::anyhow;
 use anyhow::Result;
-use std::borrow::Cow;
-use std::path::Path;
-
 use path_absolutize::Absolutize;
+use std::borrow::Cow;
+use std::path::{Path, PathBuf};
 
 #[cfg(feature = "absolute_filename")]
-pub(crate) fn absolutize(path: &str) -> Result<String> {
-    Ok(Path::new(path)
-        .absolutize()?
-        .to_str()
-        .ok_or_else(|| anyhow!("could not build absolute path from file name"))?
-        .to_owned())
+pub(crate) fn absolutize(path: &Path) -> Result<PathBuf> {
+    path.absolutize()
+        .map(|path| path.to_path_buf())
+        .map_err(|_| anyhow!("could not build absolute path from file name"))
 }
 
 #[cfg(not(feature = "absolute_filename"))]
-pub(crate) fn absolutize(path: &str) -> Result<String> {
+pub(crate) fn absolutize(path: &Path) -> Result<PathBuf> {
     Ok(path.to_owned())
 }
 
