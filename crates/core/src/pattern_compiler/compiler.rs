@@ -489,7 +489,7 @@ fn filter_libs(
 ) -> Result<Vec<(String, String)>> {
     let node_like = "nodeLike";
     let predicate_call = "predicateCall";
-    let tree = parser.parse_file(src, None)?;
+    let tree = parser.parse_file(src, Some(Path::new(DEFAULT_FILE_NAME)))?;
     let DefsToFilenames {
         patterns: pattern_file,
         predicates: predicate_file,
@@ -501,9 +501,10 @@ fn filter_libs(
 
     let mut stack: Vec<Tree> = if will_autowrap {
         let before_each_file = "before_each_file()";
-        let before_tree = parser.parse_file(before_each_file, None)?;
+        let before_tree =
+            parser.parse_file(before_each_file, Some(Path::new(DEFAULT_FILE_NAME)))?;
         let after_each_file = "after_each_file()";
-        let after_tree = parser.parse_file(after_each_file, None)?;
+        let after_tree = parser.parse_file(after_each_file, Some(Path::new(DEFAULT_FILE_NAME)))?;
 
         vec![tree, before_tree, after_tree]
     } else {
@@ -587,7 +588,7 @@ pub fn src_to_problem_libs(
     injected_limit: Option<usize>,
 ) -> Result<CompilationResult> {
     let mut parser = MarzanoGritParser::new()?;
-    let src_tree = parser.parse_file(&src, None)?;
+    let src_tree = parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
     let lang = TargetLanguage::from_tree(&src_tree).unwrap_or(default_lang);
     src_to_problem_libs_for_language(
         src,
@@ -616,7 +617,7 @@ pub fn src_to_problem_libs_for_language(
         let error = ". never matches and should not be used as a pattern. Did you mean to run 'grit apply <pattern> .'?";
         bail!(error);
     }
-    let src_tree = grit_parser.parse_file(&src, None)?;
+    let src_tree = grit_parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
 
     let root = src_tree.root_node();
     let mut built_ins = BuiltIns::get_built_in_functions();

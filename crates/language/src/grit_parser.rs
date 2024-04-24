@@ -28,10 +28,10 @@ impl MarzanoGritParser {
         Self { parser }
     }
 
-    pub fn parse_file(&mut self, source: &str, file_name: Option<&Path>) -> Result<Tree> {
+    pub fn parse_file(&mut self, source: &str, path: Option<&Path>) -> Result<Tree> {
         let tree = self.parse(source)?;
 
-        let parse_errors = grit_parsing_errors(&tree, file_name)?;
+        let parse_errors = grit_parsing_errors(&tree, path)?;
         if !parse_errors.is_empty() {
             let error = parse_errors[0].clone();
             bail!(error);
@@ -48,15 +48,22 @@ impl MarzanoGritParser {
     }
 }
 
-fn grit_parsing_errors(tree: &Tree, file_name: Option<&Path>) -> Result<AnalysisLogs> {
+fn grit_parsing_errors(tree: &Tree, path: Option<&Path>) -> Result<AnalysisLogs> {
     let mut errors = vec![];
     let mut log_builder = AnalysisLogBuilder::default();
-    let level: u16 = if file_name.is_some() { 300 } else { 299 };
+    let level: u16 = if path
+        .and_then(Path::file_name)
+        .is_some_and(|f| f != "PlaygroundPattern")
+    {
+        300
+    } else {
+        299
+    };
     log_builder
         .level(level)
         .engine_id("marzano(0.1)".to_owned());
-    if let Some(file_name) = file_name {
-        log_builder.file(file_name.to_owned());
+    if let Some(path) = path {
+        log_builder.file(path.to_owned());
     }
 
     let root = tree.root_node();
@@ -73,8 +80,9 @@ fn grit_parsing_errors(tree: &Tree, file_name: Option<&Path>) -> Result<Analysis
                     found.as_str().trim_end_matches("()")
                 )
             } else {
-                let file_locations_str = file_name
-                    .map(|file_name| format!(" in {}", file_name.display()))
+                let file_locations_str = path
+                    .filter(|path| path.file_name().is_some_and(|f| f != "PlaygroundPattern"))
+                    .map(|path| format!(" in {}", path.display()))
                     .unwrap_or_default();
                 format!(
                     "Pattern syntax error at {position}{file_locations_str}. \
