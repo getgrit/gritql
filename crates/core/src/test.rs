@@ -70,7 +70,7 @@ fn create_test_context() -> Result<ExecutionContext> {
     // Exchange client tokens for a test token
     let auth = get_testing_auth_info()?;
 
-    let api = env::var("GRIT_API_URL")
+    let api = env::var(ENV_VAR_GRIT_API_URL)
         .with_context(|| format!("{} env var not set", ENV_VAR_GRIT_API_URL))?;
 
     let api = LanguageModelAPI {

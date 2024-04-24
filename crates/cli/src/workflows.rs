@@ -1,6 +1,7 @@
 use anyhow::{bail, Result};
 use console::style;
 use log::debug;
+use marzano_auth::env::ENV_VAR_GRIT_AUTH_TOKEN;
 use marzano_gritmodule::searcher::find_grit_dir_from;
 use marzano_messenger::{emit::Messager, workflows::PackagedWorkflowOutcome};
 use serde::Serialize;
@@ -94,7 +95,7 @@ where
     let mut child = Command::new(runner_path)
         .arg(tempfile_path.to_string_lossy().to_string())
         .env("GRIT_MARZANO_PATH", marzano_bin)
-        .env("GRIT_AUTH_TOKEN", grit_token)
+        .env(ENV_VAR_GRIT_AUTH_TOKEN, grit_token)
         .arg("--file")
         .arg(&tempfile_path)
         .kill_on_drop(true)
