@@ -10,6 +10,7 @@ use anyhow::Result;
 use grit_util::{AnalysisLogs, CodeRange, Range};
 use im::Vector;
 use itertools::Itertools;
+use marzano_language::language::Language;
 use std::{
     borrow::Cow,
     collections::{BTreeMap, HashMap},
@@ -106,10 +107,10 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
         &mut self,
         with: Q::ResolvedPattern<'a>,
         effects: &mut Vector<Effect<'a, Q>>,
-        language: &Q::Language<'a>,
+        language: &impl Language,
     ) -> Result<()>;
 
-    fn float(&self, state: &FileRegistry<'a>, language: &Q::Language<'a>) -> Result<f64>;
+    fn float(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<f64>;
 
     fn get_bindings(&self) -> Option<impl Iterator<Item = Q::Binding<'a>>>;
 
@@ -139,11 +140,11 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
 
     fn is_list(&self) -> bool;
 
-    fn is_truthy(&self, state: &mut State<'a, Q>, language: &Q::Language<'a>) -> Result<bool>;
+    fn is_truthy(&self, state: &mut State<'a, Q>, language: &impl Language) -> Result<bool>;
 
     fn linearized_text(
         &self,
-        language: &Q::Language<'a>,
+        language: &impl Language,
         effects: &[Effect<'a, Q>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
@@ -159,17 +160,17 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
         &mut self,
         binding: &Q::Binding<'a>,
         is_first: bool,
-        language: &Q::Language<'a>,
+        language: &impl Language,
     ) -> Result<()>;
 
-    fn position(&self, language: &Q::Language<'a>) -> Option<Range>;
+    fn position(&self, language: &impl Language) -> Option<Range>;
 
     fn push_binding(&mut self, binding: Q::Binding<'a>) -> Result<()>;
 
     fn set_list_item_at_mut(&mut self, index: isize, value: Self) -> Result<bool>;
 
     // should we instead return an Option?
-    fn text(&self, state: &FileRegistry<'a>, language: &Q::Language<'a>) -> Result<Cow<'a, str>>;
+    fn text(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<Cow<'a, str>>;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -192,7 +193,7 @@ impl<'a, Q: QueryContext> ResolvedSnippet<'a, Q> {
     pub(crate) fn padding(
         &self,
         state: &FileRegistry<'a>,
-        language: &Q::Language<'a>,
+        language: &impl Language,
     ) -> Result<usize> {
         let text = self.text(state, language)?;
         let len = text.len();
@@ -203,7 +204,7 @@ impl<'a, Q: QueryContext> ResolvedSnippet<'a, Q> {
     pub(crate) fn text(
         &self,
         state: &FileRegistry<'a>,
-        language: &Q::Language<'a>,
+        language: &impl Language,
     ) -> Result<Cow<'a, str>> {
         match self {
             ResolvedSnippet::Text(text) => Ok(text.clone()),
@@ -218,7 +219,7 @@ impl<'a, Q: QueryContext> ResolvedSnippet<'a, Q> {
 
     pub(crate) fn linearized_text(
         &self,
-        language: &Q::Language<'a>,
+        language: &impl Language,
         effects: &[Effect<'a, Q>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
@@ -248,7 +249,7 @@ impl<'a, Q: QueryContext> ResolvedSnippet<'a, Q> {
     pub(crate) fn is_truthy(
         &self,
         state: &mut State<'a, Q>,
-        language: &Q::Language<'a>,
+        language: &impl Language,
     ) -> Result<bool> {
         let truthiness = match self {
             Self::Binding(b) => b.is_truthy(),
@@ -267,7 +268,7 @@ pub enum LazyBuiltIn<'a, Q: QueryContext> {
 impl<'a, Q: QueryContext> LazyBuiltIn<'a, Q> {
     fn linearized_text(
         &self,
-        language: &Q::Language<'a>,
+        language: &impl Language,
         effects: &[Effect<'a, Q>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
@@ -284,7 +285,7 @@ impl<'a, Q: QueryContext> LazyBuiltIn<'a, Q> {
     pub(crate) fn text(
         &self,
         state: &FileRegistry<'a>,
-        language: &Q::Language<'a>,
+        language: &impl Language,
     ) -> Result<Cow<'a, str>> {
         match self {
             LazyBuiltIn::Join(join) => join.text(state, language),
@@ -311,7 +312,7 @@ impl<'a, Q: QueryContext> JoinFn<'a, Q> {
 
     fn linearized_text(
         &self,
-        language: &Q::Language<'a>,
+        language: &impl Language,
         effects: &[Effect<'a, Q>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
@@ -340,7 +341,7 @@ impl<'a, Q: QueryContext> JoinFn<'a, Q> {
         }
     }
 
-    fn text(&self, state: &FileRegistry<'a>, language: &Q::Language<'a>) -> Result<Cow<'a, str>> {
+    fn text(&self, state: &FileRegistry<'a>, language: &impl Language) -> Result<Cow<'a, str>> {
         Ok(self
             .list
             .iter()
@@ -374,7 +375,7 @@ pub trait File<'a, Q: QueryContext> {
     fn absolute_path(
         &self,
         files: &FileRegistry<'a>,
-        language: &Q::Language<'a>,
+        language: &impl Language,
     ) -> Result<Q::ResolvedPattern<'a>>;
 
     fn body(&self, files: &FileRegistry<'a>) -> Q::ResolvedPattern<'a>;

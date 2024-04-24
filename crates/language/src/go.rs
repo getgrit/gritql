@@ -1,7 +1,6 @@
-use crate::language::{fields_for_nodes, Field, MarzanoLanguage, NodeTypes, SortId, TSLanguage};
-use grit_util::Language;
-use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
+
+use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/go-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
@@ -51,12 +50,13 @@ impl NodeTypes for Go {
 }
 
 impl Language for Go {
-    type Node<'a> = NodeWithSource<'a>;
+    fn get_ts_language(&self) -> &TSLanguage {
+        self.language
+    }
 
     fn language_name(&self) -> &'static str {
         "Go"
     }
-
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
         &[
             ("", ""),
@@ -67,26 +67,12 @@ impl Language for Go {
         ]
     }
 
-    fn is_comment(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_comment_node(self, node)
-    }
-
-    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_metavariable_node(self, node)
-    }
-}
-
-impl<'a> MarzanoLanguage<'a> for Go {
-    fn get_ts_language(&self) -> &TSLanguage {
-        self.language
+    fn metavariable_sort(&self) -> SortId {
+        self.metavariable_sort
     }
 
     fn is_comment_sort(&self, id: SortId) -> bool {
         id == self.comment_sort
-    }
-
-    fn metavariable_sort(&self) -> SortId {
-        self.metavariable_sort
     }
 }
 

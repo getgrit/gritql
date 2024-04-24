@@ -11,9 +11,9 @@ use crate::pattern::{
 };
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, bail, Result};
-use grit_util::{AstNode, Language, Range};
+use grit_util::{AstNode, Range};
 use itertools::Itertools;
-use marzano_language::language::MarzanoLanguage;
+use marzano_language::language::Language;
 use marzano_util::node_with_source::NodeWithSource;
 use std::collections::BTreeMap;
 

@@ -11,6 +11,7 @@ use crate::{
 use anyhow::{anyhow, bail, Result};
 use grit_util::{AnalysisLogs, CodeRange, Range};
 use im::{vector, Vector};
+use marzano_language::language::Language;
 use rand::SeedableRng;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -79,7 +80,7 @@ fn get_top_level_effect_ranges<'a, Q: QueryContext>(
     effects: &[Effect<'a, Q>],
     memo: &HashMap<CodeRange, Option<String>>,
     range: &CodeRange,
-    language: &Q::Language<'a>,
+    language: &impl Language,
     logs: &mut AnalysisLogs,
 ) -> Result<Vec<EffectRange<'a, Q>>> {
     let mut effects: Vec<EffectRange<Q>> = effects
@@ -124,7 +125,7 @@ pub(crate) fn get_top_level_effects<'a, Q: QueryContext>(
     effects: &[Effect<'a, Q>],
     memo: &HashMap<CodeRange, Option<String>>,
     range: &CodeRange,
-    language: &Q::Language<'a>,
+    language: &impl Language,
     logs: &mut AnalysisLogs,
 ) -> Result<Vec<Effect<'a, Q>>> {
     let top_level = get_top_level_effect_ranges(effects, memo, range, language, logs)?;
@@ -223,7 +224,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
 
     pub(crate) fn bindings_history_to_ranges(
         &self,
-        language: &Q::Language<'a>,
+        lang: &impl Language,
         current_name: Option<&str>,
     ) -> (Vec<VariableMatch>, Vec<Range>, bool) {
         let mut matches = vec![];
@@ -239,11 +240,11 @@ impl<'a, Q: QueryContext> State<'a, Q> {
                     if let Some(bindings) = value.get_bindings() {
                         for binding in bindings {
                             bindings_count += 1;
-                            if binding.is_suppressed(language, current_name) {
+                            if binding.is_suppressed(lang, current_name) {
                                 suppressed_count += 1;
                                 continue;
                             }
-                            if let Some(match_position) = binding.position(language) {
+                            if let Some(match_position) = binding.position(lang) {
                                 // TODO, this check only needs to be done at the global scope right?
                                 if name == MATCH_VAR {
                                     // apply_match = true;

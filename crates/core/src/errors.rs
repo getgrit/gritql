@@ -1,14 +1,16 @@
+use anyhow::{bail, Result};
+use grit_util::{AnalysisLogBuilder, AnalysisLogs};
+use marzano_language::language::Language;
+
 use crate::{
     context::QueryContext,
     pattern::{state::State, variable::get_file_name},
 };
-use anyhow::{bail, Result};
-use grit_util::{AnalysisLogBuilder, AnalysisLogs};
 
-pub fn debug<'a, Q: QueryContext>(
+pub fn debug<Q: QueryContext>(
     analysis_logs: &mut AnalysisLogs,
-    state: &State<'a, Q>,
-    lang: &Q::Language<'a>,
+    state: &State<'_, Q>,
+    lang: &impl Language,
     message: &str,
 ) -> Result<()> {
     let mut builder = AnalysisLogBuilder::default();

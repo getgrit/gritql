@@ -1,13 +1,14 @@
-use crate::language::{fields_for_nodes, Field, MarzanoLanguage, NodeTypes, SortId, TSLanguage};
-use anyhow::{anyhow, Result};
-use grit_util::{traverse, Language, Order};
-use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
 use std::sync::OnceLock;
-use tree_sitter::{Node, Parser, Range};
+
+use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/vue-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+use anyhow::{anyhow, Result};
+use grit_util::{traverse, Order};
+use marzano_util::cursor_wrapper::CursorWrapper;
+use tree_sitter::{Node, Parser, Range};
 
 #[cfg(not(feature = "builtin-parser"))]
 fn language() -> TSLanguage {
@@ -53,40 +54,27 @@ impl NodeTypes for Vue {
 }
 
 impl Language for Vue {
-    type Node<'a> = NodeWithSource<'a>;
+    fn get_ts_language(&self) -> &TSLanguage {
+        self.language
+    }
 
     fn language_name(&self) -> &'static str {
         "Vue"
     }
-
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
         &[("", "")]
     }
 
-    fn is_comment(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_comment_node(self, node)
-    }
-
-    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_metavariable_node(self, node)
-    }
-
-    fn make_single_line_comment(&self, text: &str) -> String {
-        format!("<!-- {} -->\n", text)
-    }
-}
-
-impl<'a> MarzanoLanguage<'a> for Vue {
-    fn get_ts_language(&self) -> &TSLanguage {
-        self.language
+    fn metavariable_sort(&self) -> SortId {
+        self.metavariable_sort
     }
 
     fn is_comment_sort(&self, id: SortId) -> bool {
         id == self.comment_sort
     }
 
-    fn metavariable_sort(&self) -> SortId {
-        self.metavariable_sort
+    fn make_single_line_comment(&self, text: &str) -> String {
+        format!("<!-- {} -->\n", text)
     }
 }
 

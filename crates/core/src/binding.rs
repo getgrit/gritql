@@ -8,6 +8,7 @@ use crate::pattern::{
 use crate::problem::Effect;
 use anyhow::{bail, Result};
 use grit_util::{AnalysisLogs, CodeRange, Range};
+use marzano_language::language::Language;
 use std::path::Path;
 use std::{borrow::Cow, collections::HashMap};
 
@@ -38,28 +39,28 @@ pub trait Binding<'a, Q: QueryContext>: Clone + std::fmt::Debug + PartialEq + Si
 
     fn get_sexp(&self) -> Option<String>;
 
-    fn position(&self, language: &Q::Language<'a>) -> Option<Range>;
+    fn position(&self, language: &impl Language) -> Option<Range>;
 
-    fn code_range(&self, language: &Q::Language<'a>) -> Option<CodeRange>;
+    fn code_range(&self, language: &impl Language) -> Option<CodeRange>;
 
     /// Checks whether two bindings are equivalent.
     ///
     /// Bindings are considered equivalent if they refer to the same thing.
-    fn is_equivalent_to(&self, other: &Self, language: &Q::Language<'a>) -> bool;
+    fn is_equivalent_to(&self, other: &Self, language: &impl Language) -> bool;
 
-    fn is_suppressed(&self, language: &Q::Language<'a>, current_name: Option<&str>) -> bool;
+    fn is_suppressed(&self, lang: &impl Language, current_name: Option<&str>) -> bool;
 
     /// Returns the padding to use for inserting the given text.
     fn get_insertion_padding(
         &self,
         text: &str,
         is_first: bool,
-        language: &Q::Language<'a>,
+        language: &impl Language,
     ) -> Option<String>;
 
     fn linearized_text(
         &self,
-        language: &Q::Language<'a>,
+        language: &impl Language,
         effects: &[Effect<'a, Q>],
         files: &FileRegistry<'a>,
         memo: &mut HashMap<CodeRange, Option<String>>,
@@ -67,7 +68,7 @@ pub trait Binding<'a, Q: QueryContext>: Clone + std::fmt::Debug + PartialEq + Si
         logs: &mut AnalysisLogs,
     ) -> Result<Cow<'a, str>>;
 
-    fn text(&self, language: &Q::Language<'a>) -> Result<Cow<str>>;
+    fn text(&self, language: &impl Language) -> Result<Cow<str>>;
 
     fn source(&self) -> Option<&'a str>;
 
@@ -99,7 +100,7 @@ pub trait Binding<'a, Q: QueryContext>: Clone + std::fmt::Debug + PartialEq + Si
 
     fn log_empty_field_rewrite_error(
         &self,
-        language: &Q::Language<'a>,
+        language: &impl Language,
         logs: &mut AnalysisLogs,
     ) -> Result<()>;
 }

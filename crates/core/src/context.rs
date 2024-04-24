@@ -5,7 +5,7 @@ use crate::{
         built_in_functions::CallBuiltIn,
         function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
         pattern_definition::PatternDefinition,
-        patterns::{CodeSnippet, Pattern},
+        patterns::CodeSnippet,
         predicate_definition::PredicateDefinition,
         resolved_pattern::{File, ResolvedPattern},
         state::State,
@@ -13,23 +13,23 @@ use crate::{
     problem::FileOwners,
 };
 use anyhow::Result;
-use grit_util::{AnalysisLogs, AstNode, Language};
+use grit_util::{AnalysisLogs, AstNode};
+use marzano_language::language::Language;
 
 /// Contains various kinds of context about the query being executed.
 pub trait QueryContext: Clone + std::fmt::Debug + Sized + 'static {
-    type Node<'a>: AstNode + Clone;
+    type Node<'a>: AstNode;
     type NodePattern: AstNodePattern<Self>;
     type LeafNodePattern: AstLeafNodePattern<Self>;
-    type ExecContext<'a>: ExecContext<'a, Self>;
+    type ExecContext<'a>: ExecContext<Self>;
     type Binding<'a>: Binding<'a, Self>;
     type CodeSnippet: CodeSnippet<Self>;
     type ResolvedPattern<'a>: ResolvedPattern<'a, Self>;
-    type Language<'a>: Language<Node<'a> = Self::Node<'a>>;
     type File<'a>: File<'a, Self>;
 }
 
 /// Contains context necessary for query execution.
-pub trait ExecContext<'a, Q: QueryContext> {
+pub trait ExecContext<Q: QueryContext> {
     fn pattern_definitions(&self) -> &[PatternDefinition<Q>];
 
     fn predicate_definitions(&self) -> &[PredicateDefinition<Q>];
@@ -40,7 +40,7 @@ pub trait ExecContext<'a, Q: QueryContext> {
 
     fn ignore_limit_pattern(&self) -> bool;
 
-    fn call_built_in(
+    fn call_built_in<'a>(
         &self,
         call: &'a CallBuiltIn<Q>,
         context: &'a Self,
@@ -64,15 +64,8 @@ pub trait ExecContext<'a, Q: QueryContext> {
     // FIXME: Don't depend on Grit's file handling in Context.
     fn files(&self) -> &FileOwners;
 
-    fn language(&self) -> &Q::Language<'a>;
-
-    fn exec_step(
-        &'a self,
-        step: &'a Pattern<Q>,
-        binding: &Q::ResolvedPattern<'a>,
-        state: &mut State<'a, Q>,
-        logs: &mut AnalysisLogs,
-    ) -> Result<bool>;
+    // FIXME: This introduces a dependency on TreeSitter.
+    fn language(&self) -> &impl Language;
 
     fn name(&self) -> Option<&str>;
 }

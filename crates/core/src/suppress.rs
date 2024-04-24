@@ -1,13 +1,14 @@
-use grit_util::{AstNode, Language};
+use grit_util::AstNode;
 use itertools::{EitherOrBoth, Itertools};
+use marzano_language::language::Language;
 use marzano_util::node_with_source::NodeWithSource;
 use tree_sitter::Range;
 
-pub(crate) fn is_suppress_comment<'a>(
-    comment_node: &'a NodeWithSource,
+pub(crate) fn is_suppress_comment(
+    comment_node: &NodeWithSource,
     target_range: &Range,
     current_name: Option<&str>,
-    lang: &impl Language<Node<'a> = NodeWithSource<'a>>,
+    lang: &impl Language,
 ) -> bool {
     let child_range = comment_node.node.range();
     let text = match comment_node.text() {
@@ -51,16 +52,16 @@ pub(crate) fn is_suppress_comment<'a>(
         .contains(&current_name)
 }
 
-fn comment_applies_to_range<'a>(
-    comment_node: &'a NodeWithSource,
+fn comment_applies_to_range(
+    comment_node: &NodeWithSource,
     range: &Range,
-    lang: &impl Language<Node<'a> = NodeWithSource<'a>>,
+    lang: &impl Language,
 ) -> bool {
     let Some(mut applicable) = comment_node.next_named_node() else {
         return false;
     };
     while let Some(next) = applicable.next_named_node() {
-        if !lang.is_comment(&applicable)
+        if !lang.is_comment_node(&applicable)
             // Some languages have significant whitespace; continue until we find a non-whitespace non-comment node
             && applicable.text().is_ok_and(|t| !t.trim().is_empty())
         {

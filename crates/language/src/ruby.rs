@@ -1,7 +1,6 @@
-use crate::language::{fields_for_nodes, Field, MarzanoLanguage, NodeTypes, SortId, TSLanguage};
-use grit_util::Language;
-use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
+
+use crate::language::{fields_for_nodes, Field, Language, NodeTypes, SortId, TSLanguage};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/ruby-node-types.json");
 
@@ -52,43 +51,30 @@ impl NodeTypes for Ruby {
 }
 
 impl Language for Ruby {
-    type Node<'a> = NodeWithSource<'a>;
-
-    fn language_name(&self) -> &'static str {
-        "Ruby"
-    }
-
-    fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[("", "")]
+    fn get_ts_language(&self) -> &TSLanguage {
+        self.language
     }
 
     fn comment_prefix(&self) -> &'static str {
         "#"
     }
 
-    fn is_comment(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_comment_node(self, node)
+    fn language_name(&self) -> &'static str {
+        "Ruby"
+    }
+    fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
+        &[("", "")]
     }
 
-    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_metavariable_node(self, node)
-    }
-
-    fn make_single_line_comment(&self, text: &str) -> String {
-        format!("# {}\n", text)
-    }
-}
-
-impl<'a> MarzanoLanguage<'a> for Ruby {
-    fn get_ts_language(&self) -> &TSLanguage {
-        self.language
+    fn metavariable_sort(&self) -> SortId {
+        self.metavariable_sort
     }
 
     fn is_comment_sort(&self, id: SortId) -> bool {
         id == self.comment_sort
     }
 
-    fn metavariable_sort(&self) -> SortId {
-        self.metavariable_sort
+    fn make_single_line_comment(&self, text: &str) -> String {
+        format!("# {}\n", text)
     }
 }

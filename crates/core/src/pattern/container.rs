@@ -3,6 +3,7 @@ use super::{
 };
 use crate::context::QueryContext;
 use anyhow::Result;
+use marzano_language::language::Language;
 
 /// A `Container` represents anything which "contains" a reference to a Pattern.
 ///
@@ -35,7 +36,7 @@ impl<Q: QueryContext> Container<Q> {
     pub(crate) fn set_resolved<'a>(
         &'a self,
         state: &mut State<'a, Q>,
-        lang: &Q::Language<'a>,
+        lang: &impl Language,
         value: Q::ResolvedPattern<'a>,
     ) -> Result<bool> {
         match self {
@@ -59,7 +60,7 @@ impl<Q: QueryContext> Container<Q> {
     pub(crate) fn get_pattern_or_resolved<'a, 'b>(
         &'a self,
         state: &'b State<'a, Q>,
-        lang: &Q::Language<'a>,
+        lang: &impl Language,
     ) -> Result<Option<PatternOrResolved<'a, 'b, Q>>> {
         match self {
             Container::Variable(v) => v.get_pattern_or_resolved(state),
@@ -71,7 +72,7 @@ impl<Q: QueryContext> Container<Q> {
     pub(crate) fn get_pattern_or_resolved_mut<'a, 'b>(
         &'a self,
         state: &'b mut State<'a, Q>,
-        lang: &Q::Language<'a>,
+        lang: &impl Language,
     ) -> Result<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
         match self {
             Container::Variable(v) => v.get_pattern_or_resolved_mut(state),

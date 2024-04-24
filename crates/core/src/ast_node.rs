@@ -1,19 +1,20 @@
+use crate::binding::Binding;
+use crate::context::ExecContext;
+use crate::marzano_resolved_pattern::MarzanoResolvedPattern;
 use crate::{
-    binding::Binding,
-    marzano_context::MarzanoContext,
-    marzano_resolved_pattern::MarzanoResolvedPattern,
     pattern::{
         ast_node_pattern::{AstLeafNodePattern, AstNodePattern},
         iter_pattern::PatternOrPredicate,
         patterns::{Matcher, Pattern, PatternName},
         resolved_pattern::ResolvedPattern,
         state::State,
+        MarzanoContext,
     },
     problem::MarzanoQueryContext,
 };
 use anyhow::{anyhow, Result};
-use grit_util::{AnalysisLogs, AstNode, Language};
-use marzano_language::language::{FieldId, LeafEquivalenceClass, MarzanoLanguage, SortId};
+use grit_util::{AnalysisLogs, AstNode};
+use marzano_language::language::{FieldId, Language, LeafEquivalenceClass, SortId};
 use marzano_util::node_with_source::NodeWithSource;
 
 #[derive(Debug, Clone)]
@@ -76,8 +77,8 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
         if self.args.is_empty() {
             return Ok(true);
         }
-        if context.language.is_comment_sort(self.sort) {
-            let Some(content) = context.language.comment_text_range(&node) else {
+        if context.language().is_comment_sort(self.sort) {
+            let Some(content) = context.language().comment_text_range(&node) else {
                 return Ok(false);
             };
 
@@ -133,7 +134,7 @@ pub struct AstLeafNode {
 }
 
 impl AstLeafNode {
-    pub fn new<'a>(sort: SortId, text: &str, language: &impl MarzanoLanguage<'a>) -> Result<Self> {
+    pub fn new(sort: SortId, text: &str, language: &impl Language) -> Result<Self> {
         let equivalence_class = language
             .get_equivalence_class(sort, text)
             .map_err(|e| anyhow!(e))?;

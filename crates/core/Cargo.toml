@@ -10,6 +10,7 @@ rust.unused_crate_dependencies = "warn"
 # todo remove all these since we should be interfacing through the language crate.
 [dependencies]
 tree-sitter = { path = "../../vendor/tree-sitter-facade", package = "tree-sitter-facade-sg" }
+tree-sitter-gritql = { path = "../../vendor/tree-sitter-gritql", optional = true }
 marzano-language = { path = "../language", default-features = false }
 marzano-util = { path = "../util" }
 marzano-externals = { path = "../externals", optional = true }
@@ -77,6 +78,6 @@ wasm_core = [
 ]
 grit_tracing = ["dep:tracing-opentelemetry"]
 language-parsers = ["marzano-language/builtin-parser"]
-grit-parser = ["marzano-language/grit-parser"]
+grit-parser = ["tree-sitter-gritql"]
 absolute_filename = []
 non_wasm = ["absolute_filename"]

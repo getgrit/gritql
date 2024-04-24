@@ -1,5 +1,7 @@
-use crate::language::{fields_for_nodes, Field, MarzanoLanguage, NodeTypes, SortId, TSLanguage};
-use grit_util::{Ast, AstNode, CodeRange, Language, Replacement};
+use crate::language::{
+    fields_for_nodes, Field, Language, NodeTypes, Replacement, SortId, TSLanguage,
+};
+use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
 
@@ -55,10 +57,16 @@ impl NodeTypes for Python {
 }
 
 impl Language for Python {
-    type Node<'a> = NodeWithSource<'a>;
+    fn get_ts_language(&self) -> &TSLanguage {
+        self.language
+    }
 
     fn language_name(&self) -> &'static str {
         "Python"
+    }
+
+    fn comment_prefix(&self) -> &'static str {
+        "#"
     }
 
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
@@ -70,19 +78,19 @@ impl Language for Python {
         ]
     }
 
-    fn comment_prefix(&self) -> &'static str {
-        "#"
+    fn metavariable_sort(&self) -> SortId {
+        self.metavariable_sort
     }
 
-    fn is_comment(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_comment_node(self, node)
+    fn is_comment_sort(&self, id: SortId) -> bool {
+        id == self.comment_sort
     }
 
-    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_metavariable_node(self, node)
-    }
-
-    fn check_replacements(&self, n: NodeWithSource<'_>, replacements: &mut Vec<Replacement>) {
+    fn check_replacements(
+        &self,
+        n: NodeWithSource<'_>,
+        replacements: &mut Vec<crate::language::Replacement>,
+    ) {
         if n.node.is_error() && n.text().is_ok_and(|t| t == "->") {
             replacements.push(Replacement::new(n.range(), ""));
         }
@@ -92,33 +100,12 @@ impl Language for Python {
         true
     }
 
-    fn should_skip_padding(&self, node: &NodeWithSource<'_>) -> bool {
-        self.skip_padding_sorts.contains(&node.kind_id())
-    }
-
-    fn get_skip_padding_ranges_for_snippet(&self, snippet: &str) -> Vec<CodeRange> {
-        let mut parser = self.get_parser();
-        let snippet = parser.parse_snippet("", snippet, "");
-        let root = snippet.tree.root_node();
-        self.get_skip_padding_ranges(&root)
+    fn skip_padding_sort(&self, id: SortId) -> bool {
+        self.skip_padding_sorts.contains(&id)
     }
 
     fn make_single_line_comment(&self, text: &str) -> String {
         format!("# {}\n", text)
-    }
-}
-
-impl<'a> MarzanoLanguage<'a> for Python {
-    fn get_ts_language(&self) -> &TSLanguage {
-        self.language
-    }
-
-    fn is_comment_sort(&self, id: SortId) -> bool {
-        id == self.comment_sort
-    }
-
-    fn metavariable_sort(&self) -> SortId {
-        self.metavariable_sort
     }
 }
 
