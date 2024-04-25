@@ -109,7 +109,7 @@ pub async fn maybe_test_pattern(
     let compiled = match src_to_problem_libs(
         body.to_string(),
         &pattern_libs,
-        language.try_into().map_err(|e: String| anyhow!(e))?,
+        language.try_into()?,
         Some(our_pattern.local_name.to_string()),
         None,
         get_ai_built_in_functions_for_feature(),

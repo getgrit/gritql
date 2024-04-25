@@ -62,25 +62,20 @@ extern "C" {
     ) -> Result<String, JsValue>;
 }
 
-#[wasm_bindgen(js_name = parseInputFiles)]
-pub async fn parse_input_files(
+
+pub async fn parse_input_files_internal(
     pattern: String,
-    // The paths of the target language files to parse.
     paths: Vec<String>,
-    // The contents of the target language files to parse, in the same order as `paths`.
     contents: Vec<String>,
-    // Library file names, for the language of the pattern.
     lib_paths: Vec<String>,
-    // Library file contents, in the same order as `lib_paths`.
     lib_contents: Vec<String>,
-) -> Result<JsValue, JsError> {
+) -> anyhow::Result<Vec<MatchResult>> {
     console_error_panic_hook::set_once();
     // TODO remove this line once initialize_tree_sitter function works
     let _ = web_tree_sitter_sg::TreeSitter::init().await;
     let mut pure_parser = setup_grit_parser().await?;
     let parser = &mut pure_parser;
-    let ParsedPattern { libs, tree, lang } =
-        get_parsed_pattern(&pattern, lib_paths, lib_contents, parser).await?;
+    let ParsedPattern { libs, tree, lang } = get_parsed_pattern(&pattern, lib_paths, lib_contents, parser).await?;
     let node = tree.root_node();
     let parsed_pattern = tree_sitter_node_to_json(&node.node, &pattern, &lang).to_string();
 
@@ -130,43 +125,50 @@ pub async fn parse_input_files(
             results.extend(warning_logs);
         }
         Err(e) => {
-            let log = match e.downcast::<grit_util::AnalysisLog>() {
-                Ok(al) => MatchResult::AnalysisLog(AnalysisLog::from(al)),
-                Err(er) => MatchResult::AnalysisLog(AnalysisLog {
-                    level: 200,
-                    message: er.to_string(),
-                    position: Position::first(),
-                    file: "PlaygroundPattern".to_string(),
-                    engine_id: "marzano".to_string(),
-                    syntax_tree: None,
-                    range: None,
-                    source: None,
-                }),
-            };
+            let log = error_to_log(e);
             results.push(log);
         }
     };
 
-    Ok(serde_wasm_bindgen::to_value(&results)?)
+    Ok(results)
 }
 
-#[wasm_bindgen(js_name = matchPattern)]
-#[cfg(target_arch = "wasm32")]
-pub async fn match_pattern(
+#[wasm_bindgen(js_name = parseInputFiles)]
+pub async fn parse_input_files(
     pattern: String,
-    // The paths of the files to match against.
+    // The paths of the target language files to parse.
     paths: Vec<String>,
-    // The contents of the files to match against, in the same order as `paths`.
+    // The contents of the target language files to parse, in the same order as `paths`.
     contents: Vec<String>,
     // Library file names, for the language of the pattern.
     lib_paths: Vec<String>,
     // Library file contents, in the same order as `lib_paths`.
     lib_contents: Vec<String>,
-    // LLM API base
+) -> Result<JsValue, JsError> {
+    let results = match parse_input_files_internal(
+        pattern,
+        paths,
+        contents,
+        lib_paths,
+        lib_contents,
+    ).await {
+        Ok(r) => r,
+        Err(e) => vec![error_to_log(e)],
+    };
+    Ok(serde_wasm_bindgen::to_value(&results)?)
+}
+
+#[cfg(target_arch = "wasm32")]
+async fn match_pattern_internal(
+    pattern: String,
+    paths: Vec<String>,
+    contents: Vec<String>,
+    lib_paths: Vec<String>,
+    lib_contents: Vec<String>,
     llm_api_base: String,
     // LLM API bearer token
     llm_api_bearer_token: String,
-) -> Result<JsValue, JsError> {
+) -> anyhow::Result<Vec<MatchResult>> {
     // TODO remove this line once initialize_tree_sitter function works
     let _ = web_tree_sitter_sg::TreeSitter::init().await;
     let mut pure_parser = setup_grit_parser().await?;
@@ -226,7 +228,7 @@ pub async fn match_pattern(
     let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
     let CompilationResult {
         problem: pattern, ..
-    } = match src_to_problem_libs_for_language(
+    } = src_to_problem_libs_for_language(
         pattern,
         &libs,
         lang,
@@ -235,33 +237,62 @@ pub async fn match_pattern(
         parser,
         injected_builtins,
         None,
-    ) {
-        Ok(c) => c,
-        Err(e) => {
-            let log = match e.downcast::<grit_util::AnalysisLog>() {
-                Ok(al) => MatchResult::AnalysisLog(AnalysisLog::from(al)),
-                Err(er) => MatchResult::AnalysisLog(AnalysisLog {
-                    level: 200,
-                    message: er.to_string(),
-                    position: Position::first(),
-                    file: "PlaygroundPattern".to_string(),
-                    engine_id: "marzano".to_string(),
-                    syntax_tree: None,
-                    range: None,
-                    source: None,
-                }),
-            };
-            let results = vec![log];
-            return Ok(serde_wasm_bindgen::to_value(&results)?);
-        }
-    };
+    )?;
     let files: Vec<RichFile> = paths
         .into_iter()
         .zip(contents)
         .map(|(p, c)| RichFile::new(p, c))
         .collect();
     let results = pattern.execute_files(&files, &context);
-    Ok(serde_wasm_bindgen::to_value(&results)?)
+    Ok(results)
+}
+
+fn error_to_log(e: anyhow::Error) -> MatchResult {
+    match e.downcast::<grit_util::AnalysisLog>() {
+        Ok(al) => MatchResult::AnalysisLog(AnalysisLog::from(al)),
+        Err(er) => MatchResult::AnalysisLog(AnalysisLog {
+            level: 200,
+            message: er.to_string(),
+            position: Position::first(),
+            file: "PlaygroundPattern".to_string(),
+            engine_id: "marzano".to_string(),
+            syntax_tree: None,
+            range: None,
+            source: None,
+        }),
+    }
+}
+
+#[wasm_bindgen(js_name = matchPattern)]
+#[cfg(target_arch = "wasm32")]
+pub async fn match_pattern(
+    pattern: String,
+    // The paths of the files to match against.
+    paths: Vec<String>,
+    // The contents of the files to match against, in the same order as `paths`.
+    contents: Vec<String>,
+    // Library file names, for the language of the pattern.
+    lib_paths: Vec<String>,
+    // Library file contents, in the same order as `lib_paths`.
+    lib_contents: Vec<String>,
+    // LLM API base
+    llm_api_base: String,
+    // LLM API bearer token
+    llm_api_bearer_token: String,
+) -> Result<JsValue, JsError> {
+    let result = match match_pattern_internal(
+        pattern,
+        paths,
+        contents,
+        lib_paths,
+        lib_contents,
+        llm_api_base,
+        llm_api_bearer_token,
+    ).await {
+        Ok(r) => r,
+        Err(e) => vec![error_to_log(e)],
+    };
+    Ok(serde_wasm_bindgen::to_value(&result)?)
 }
 
 struct ParsedPattern {
@@ -275,11 +306,9 @@ async fn get_parsed_pattern(
     lib_paths: Vec<String>,
     lib_contents: Vec<String>,
     parser: &mut MarzanoGritParser,
-) -> Result<ParsedPattern, JsError> {
+) -> anyhow::Result<ParsedPattern> {
     let libs = lib_paths.into_iter().zip(lib_contents).collect();
-    let tree = parser
-        .parse_file(pattern, None)
-        .map_err(|err| JsError::new(&err.to_string()))?;
+    let tree = parser.parse_file(pattern, None)?;
     let lang = get_language_for_tree(&tree).await?;
     Ok(ParsedPattern { libs, tree, lang })
 }
@@ -293,41 +322,41 @@ fn get_parser_path() -> String {
     "/wasm_parsers".to_string()
 }
 
-async fn setup_language_parser(lang: PatternLanguage) -> Result<TSParser, JsError> {
+async fn setup_language_parser(lang: PatternLanguage) -> anyhow::Result<TSParser> {
     let mut parser = TSParser::new()?;
     let lang = get_cached_lang(&lang).await?;
     parser.set_language(lang)?;
     Ok(parser)
 }
 
-async fn get_cached_lang(lang: &PatternLanguage) -> Result<&'static TSLanguage, JsError> {
+async fn get_cached_lang(lang: &PatternLanguage) -> anyhow::Result<&'static TSLanguage> {
     let lang_store = get_lang_store(lang)?;
     if let Some(lang) = lang_store.get() {
         Ok(lang)
     } else {
         let path = pattern_language_to_path(lang)?;
         let _language_already_set = lang_store.set(get_lang(&path).await?);
-        Ok(lang_store.get().unwrap())
+        Ok(lang_store.get().ok_or_else(|| anyhow::anyhow!("Failed to get language"))?)
     }
 }
 
-async fn setup_grit_parser() -> Result<MarzanoGritParser, JsError> {
+async fn setup_grit_parser() -> anyhow::Result<MarzanoGritParser> {
     let mut parser = TSParser::new()?;
     let lang_path = format!("{}{}", get_parser_path(), "/tree-sitter-gritql.wasm");
     let lang = if let Some(lang) = GRIT_LANGUAGE.get() {
         lang
     } else {
         let _language_already_set = GRIT_LANGUAGE.set(get_lang(&lang_path).await?);
-        GRIT_LANGUAGE.get().unwrap()
+        GRIT_LANGUAGE.get().ok_or_else(|| anyhow::anyhow!("Failed to setup GRIT_LANGUAGE"))?
     };
     parser.set_language(lang)?;
     Ok(MarzanoGritParser::from_initialized_ts_parser(parser))
 }
 
-async fn get_language_for_tree(tree: &Tree) -> Result<TargetLanguage, JsError> {
+async fn get_language_for_tree(tree: &Tree) -> anyhow::Result<TargetLanguage> {
     let lang = PatternLanguage::from_tree(tree).unwrap_or_default();
     if lang.is_initialized() {
-        TargetLanguage::try_from(lang).map_err(|s| JsError::new(&s))
+        Ok(TargetLanguage::try_from(lang)?)
     } else {
         if matches!(
             lang,
@@ -339,17 +368,15 @@ async fn get_language_for_tree(tree: &Tree) -> Result<TargetLanguage, JsError> {
             // javascript also parses vue files to look for javascript so
             // we need to initialize the Vue struct with a wasm parser
             let vue_lang = get_cached_lang(&PatternLanguage::Vue).await?;
-            PatternLanguage::Vue
-                .to_target_with_ts_lang(vue_lang.clone())
-                .map_err(|s| JsError::new(&s))?;
+            let _ = PatternLanguage::Vue
+                .to_target_with_ts_lang(vue_lang.clone());
         }
         let ts_lang = get_cached_lang(&lang).await?;
-        lang.to_target_with_ts_lang(ts_lang.clone())
-            .map_err(|s| JsError::new(&s))
+        Ok(lang.to_target_with_ts_lang(ts_lang.clone())?)
     }
 }
 
-fn pattern_language_to_path(lang: &PatternLanguage) -> Result<String, JsError> {
+fn pattern_language_to_path(lang: &PatternLanguage) -> anyhow::Result<String> {
     let wasm_file = match lang {
         PatternLanguage::JavaScript => Ok("/tree-sitter-javascript.wasm"),
         PatternLanguage::TypeScript => Ok("/tree-sitter-typescript.wasm"),
@@ -358,7 +385,7 @@ fn pattern_language_to_path(lang: &PatternLanguage) -> Result<String, JsError> {
         PatternLanguage::Css => Ok("/tree-sitter-css.wasm"),
         PatternLanguage::Json => Ok("/tree-sitter-json.wasm"),
         PatternLanguage::Java => Ok("/tree-sitter-java.wasm"),
-        PatternLanguage::CSharp => Err(JsError::new("CSharp wasm is not currently supported")),
+        PatternLanguage::CSharp => Err(anyhow::anyhow!("CSharp wasm is not currently supported")),
         PatternLanguage::Python => Ok("/tree-sitter-python.wasm"),
         PatternLanguage::MarkdownBlock => Ok("/tree-sitter-markdown-block.wasm"), // def wrong
         PatternLanguage::MarkdownInline => Ok("/tree-sitter-markdown_inline.wasm"), // def wrong
@@ -373,14 +400,14 @@ fn pattern_language_to_path(lang: &PatternLanguage) -> Result<String, JsError> {
         PatternLanguage::Toml => Ok("/tree-sitter-toml.wasm"),
         PatternLanguage::Php => Ok("/tree-sitter-php.wasm"),
         PatternLanguage::PhpOnly => Ok("/tree-sitter-php_only.wasm"),
-        PatternLanguage::Universal => Err(JsError::new("Universal does not have a parser")),
+        PatternLanguage::Universal => Err(anyhow::anyhow!("Universal does not have a parser")),
     }?;
     let final_file = format!("{}{}", get_parser_path(), wasm_file);
     Ok(final_file)
 }
 
 #[cfg(target_arch = "wasm32")]
-async fn get_lang(parser_path: &str) -> Result<TSLanguage, JsError> {
+async fn get_lang(parser_path: &str) -> anyhow::Result<TSLanguage> {
     let lang = web_tree_sitter_sg::Language::load_path(parser_path)
         .await
         .map_err(tree_sitter::LanguageError::from)?;
@@ -388,12 +415,12 @@ async fn get_lang(parser_path: &str) -> Result<TSLanguage, JsError> {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-async fn get_lang(_path: &str) -> Result<TSLanguage, JsError> {
+async fn get_lang(_path: &str) -> anyhow::Result<TSLanguage> {
     unreachable!()
 }
 
 #[cfg(target_arch = "wasm32")]
-fn get_lang_store(language: &PatternLanguage) -> Result<&'static OnceLock<TSLanguage>, JsError> {
+fn get_lang_store(language: &PatternLanguage) -> anyhow::Result<&'static OnceLock<TSLanguage>> {
     match language {
         PatternLanguage::JavaScript => Ok(&JAVASCRIPT_LANGUAGE),
         PatternLanguage::TypeScript => Ok(&TYPESCRIPT_LANGUAGE),
@@ -417,12 +444,12 @@ fn get_lang_store(language: &PatternLanguage) -> Result<&'static OnceLock<TSLang
         PatternLanguage::Toml => Ok(&TOML_LANGUAGE),
         PatternLanguage::Php => Ok(&PHP_LANGUAGE),
         PatternLanguage::PhpOnly => Ok(&PHP_ONLY_LANGUAGE),
-        PatternLanguage::Universal => Err(JsError::new("Universal does not have a parser")),
+        PatternLanguage::Universal => Err(anyhow::anyhow!("Universal does not have a parser")),
     }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn get_lang_store(_language: &PatternLanguage) -> Result<&'static OnceLock<TSLanguage>, JsError> {
+fn get_lang_store(_language: &PatternLanguage) -> anyhow::Result<&'static OnceLock<TSLanguage>> {
     unreachable!()
 }
 

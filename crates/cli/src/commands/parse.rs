@@ -3,7 +3,7 @@ use crate::{
     jsonl::JSONLineMessenger,
     resolver::{get_grit_files_from_cwd, GritModuleResolver},
 };
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use clap::Args;
 use grit_util::Position;
 use marzano_core::{
@@ -57,8 +57,7 @@ pub(crate) async fn run_parse(
     // we should be reading the default from a config
     let lang: TargetLanguage = PatternLanguage::get_language(&parse_input.pattern_body)
         .unwrap_or_default()
-        .try_into()
-        .map_err(|e: String| anyhow!(e))?;
+        .try_into()?;
     let visibility = VisibilityLevels::Hidden;
 
     if let Some(body) = pattern_body {
