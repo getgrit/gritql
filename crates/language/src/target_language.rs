@@ -279,7 +279,7 @@ impl PatternLanguage {
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub fn to_target_with_ts_lang(self, lang: TSLanguage) -> Result<TargetLanguage, String> {
+    pub fn to_target_with_ts_lang(self, lang: TSLanguage) -> Result<TargetLanguage> {
         match self {
             PatternLanguage::JavaScript => {
                 Ok(TargetLanguage::JavaScript(JavaScript::new(Some(lang))))
@@ -311,12 +311,14 @@ impl PatternLanguage {
             PatternLanguage::Toml => Ok(TargetLanguage::Toml(Toml::new(Some(lang)))),
             PatternLanguage::Php => Ok(TargetLanguage::Php(Php::new(Some(lang)))),
             PatternLanguage::PhpOnly => Ok(TargetLanguage::PhpOnly(PhpOnly::new(Some(lang)))),
-            PatternLanguage::Universal => Err("Cannot convert universal to TSLang".to_string()),
+            PatternLanguage::Universal => Err(anyhow::anyhow!(
+                "Cannot convert universal to TSLang".to_string()
+            )),
         }
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn to_target_with_ts_lang(self, _lang: TSLanguage) -> Result<TargetLanguage, String> {
+    pub fn to_target_with_ts_lang(self, _lang: TSLanguage) -> Result<TargetLanguage> {
         unreachable!()
     }
 }
@@ -596,13 +598,13 @@ macro_rules! generate_target_language {
         // when built to wasm the language must be initialized with a parser at least once
         // before it can be created without a parser.
         impl TryFrom<PatternLanguage> for TargetLanguage {
-            type Error = String;
-            fn try_from(lang: PatternLanguage) -> Result<Self, String> {
+            type Error = anyhow::Error;
+            fn try_from(lang: PatternLanguage) -> Result<Self> {
                 match lang {
                     $(PatternLanguage::$language => Ok(Self::$language($language::new(None)))),+,
-                    PatternLanguage::Universal => {
-                        Err("cannot instantiate Universal as a target language".to_string())
-                    }
+                    PatternLanguage::Universal => Err(
+                        anyhow::anyhow!("cannot instantiate Universal as a target language".to_string())
+                    )
                 }
             }
         }
