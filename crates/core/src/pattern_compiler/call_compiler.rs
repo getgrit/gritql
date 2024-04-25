@@ -4,11 +4,8 @@ use super::{
 };
 use crate::{built_in_functions::BuiltIns, problem::MarzanoQueryContext};
 use anyhow::{anyhow, bail, Result};
-use grit_core_patterns::pattern::{
-    call::{Call, PrCall},
-    file_pattern::FilePattern,
-    functions::{CallForeignFunction, CallFunction},
-    patterns::Pattern,
+use grit_pattern_matcher::pattern::{
+    Call, CallForeignFunction, CallFunction, FilePattern, Pattern, PrCall,
 };
 use grit_util::{AstNode, Language, Range};
 use itertools::Itertools;

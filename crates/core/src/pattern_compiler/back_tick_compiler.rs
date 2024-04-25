@@ -4,7 +4,7 @@ use super::{
 };
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, bail, Result};
-use grit_core_patterns::pattern::patterns::Pattern;
+use grit_pattern_matcher::pattern::Pattern;
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 

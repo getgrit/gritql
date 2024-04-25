@@ -1,10 +1,10 @@
 use crate::marzano_binding::linearize_binding;
 use anyhow::Result;
-use grit_core_patterns::{
+use grit_pattern_matcher::{
     binding::Binding,
     context::{ExecContext, QueryContext},
     effects::Effect,
-    pattern::{resolved_pattern::ResolvedPattern, state::FileRegistry},
+    pattern::{FileRegistry, ResolvedPattern},
 };
 use grit_util::{AnalysisLogs, AstNode, CodeRange, Language};
 use im::Vector;

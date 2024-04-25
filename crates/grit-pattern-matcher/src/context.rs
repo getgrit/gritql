@@ -2,14 +2,8 @@ use crate::{
     binding::Binding,
     file_owners::FileOwners,
     pattern::{
-        ast_node_pattern::{AstLeafNodePattern, AstNodePattern},
-        call_built_in::CallBuiltIn,
-        function_definition::GritFunctionDefinition,
-        pattern_definition::PatternDefinition,
-        patterns::{CodeSnippet, Pattern},
-        predicate_definition::PredicateDefinition,
-        resolved_pattern::{File, ResolvedPattern},
-        state::State,
+        AstLeafNodePattern, AstNodePattern, CallBuiltIn, CodeSnippet, File, GritFunctionDefinition,
+        Pattern, PatternDefinition, PredicateDefinition, ResolvedPattern, State,
     },
 };
 use anyhow::Result;

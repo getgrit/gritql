@@ -1,6 +1,6 @@
 use crate::{
     context::QueryContext,
-    pattern::{state::State, variable::get_file_name},
+    pattern::{get_file_name, State},
 };
 use anyhow::{bail, Result};
 use grit_util::{AnalysisLogBuilder, AnalysisLogs};

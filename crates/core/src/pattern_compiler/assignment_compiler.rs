@@ -4,7 +4,7 @@ use super::{
 };
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, bail, Result};
-use grit_core_patterns::pattern::{assignment::Assignment, variable::is_reserved_metavariable};
+use grit_pattern_matcher::pattern::{is_reserved_metavariable, Assignment};
 use grit_util::{constants::GRIT_METAVARIABLE_PREFIX, AstNode};
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::node_with_source::NodeWithSource;

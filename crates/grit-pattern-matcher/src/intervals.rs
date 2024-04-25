@@ -1,4 +1,4 @@
-use crate::{context::QueryContext, effects::EffectKind, pattern::state::EffectRange};
+use crate::{context::QueryContext, effects::EffectKind, pattern::EffectRange};
 use std::{cmp::Ordering, ops::Range};
 
 pub trait Interval {

@@ -4,15 +4,12 @@ use crate::problem::MarzanoQueryContext;
 use crate::smart_insert::calculate_padding;
 use crate::suppress::is_suppress_comment;
 use anyhow::{anyhow, Result};
-use grit_core_patterns::{
+use grit_pattern_matcher::{
     binding::Binding,
     constant::Constant,
     context::QueryContext,
     effects::{Effect, EffectKind},
-    pattern::{
-        resolved_pattern::ResolvedPattern,
-        state::{get_top_level_effects, FileRegistry},
-    },
+    pattern::{get_top_level_effects, FileRegistry, ResolvedPattern},
 };
 use grit_util::{AnalysisLogBuilder, AnalysisLogs, AstNode, CodeRange, Language, Position, Range};
 use itertools::{EitherOrBoth, Itertools};

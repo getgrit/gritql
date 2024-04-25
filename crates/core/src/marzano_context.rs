@@ -8,19 +8,14 @@ use crate::{
     text_unparser::apply_effects,
 };
 use anyhow::{anyhow, bail, Result};
-use grit_core_patterns::{
+use grit_pattern_matcher::{
     binding::Binding,
     constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
     context::ExecContext,
     file_owners::FileOwners,
     pattern::{
-        call_built_in::CallBuiltIn,
-        function_definition::GritFunctionDefinition,
-        pattern_definition::PatternDefinition,
-        patterns::{Matcher, Pattern},
-        predicate_definition::PredicateDefinition,
-        resolved_pattern::{File, ResolvedPattern},
-        state::{FilePtr, State},
+        CallBuiltIn, File, FilePtr, GritFunctionDefinition, Matcher, Pattern, PatternDefinition,
+        PredicateDefinition, ResolvedPattern, State,
     },
 };
 use grit_util::{AnalysisLogs, Ast, InputRanges, MatchRanges};

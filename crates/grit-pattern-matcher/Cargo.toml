@@ -1,5 +1,6 @@
 [package]
-name = "grit-core-patterns"
+name = "grit-pattern-matcher"
+description = "Grit pattern definitions and matching logic"
 version = "0.1.0"
 edition = "2021"
 

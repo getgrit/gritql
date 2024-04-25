@@ -3,9 +3,7 @@ use super::{
 };
 use crate::problem::MarzanoQueryContext;
 use anyhow::Result;
-use grit_core_patterns::pattern::{
-    files::Files, patterns::Pattern, sequential::Sequential, some::Some, step::Step,
-};
+use grit_pattern_matcher::pattern::{Files, Pattern, Sequential, Some, Step};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct SequentialCompiler;

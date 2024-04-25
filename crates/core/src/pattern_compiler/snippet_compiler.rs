@@ -9,13 +9,9 @@ use crate::{
 };
 use crate::{pattern_compiler::compiler::NodeCompilationContext, split_snippet::split_snippet};
 use anyhow::{anyhow, bail, Result};
-use grit_core_patterns::{
+use grit_pattern_matcher::{
     constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
-    pattern::{
-        dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
-        patterns::Pattern,
-        variable::Variable,
-    },
+    pattern::{DynamicPattern, DynamicSnippet, DynamicSnippetPart, Pattern, Variable},
 };
 use grit_util::{AstNode, Language, Position, Range};
 use marzano_language::{

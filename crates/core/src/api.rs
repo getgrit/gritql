@@ -1,6 +1,6 @@
 use crate::{fs, problem::Problem, tree_sitter_serde::tree_sitter_node_to_json};
 use anyhow::{bail, Result};
-use grit_core_patterns::file_owners::FileOwner;
+use grit_pattern_matcher::file_owners::FileOwner;
 pub use grit_util::ByteRange;
 use grit_util::{AnalysisLog as GritAnalysisLog, Ast, InputRanges, Position, Range, VariableMatch};
 use im::Vector;

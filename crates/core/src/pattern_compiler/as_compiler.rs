@@ -4,9 +4,7 @@ use super::{
 };
 use crate::{problem::MarzanoQueryContext, split_snippet::split_snippet};
 use anyhow::{anyhow, Result};
-use grit_core_patterns::pattern::{
-    container::Container, patterns::Pattern, predicates::Predicate, r#match::Match, r#where::Where,
-};
+use grit_pattern_matcher::pattern::{Container, Match, Pattern, Predicate, Where};
 use grit_util::{traverse, AnalysisLogBuilder, AstNode, Language, Order};
 use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
 

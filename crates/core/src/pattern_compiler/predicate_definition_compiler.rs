@@ -3,7 +3,7 @@ use super::{
 };
 use crate::{problem::MarzanoQueryContext, variables::get_variables};
 use anyhow::{anyhow, Result};
-use grit_core_patterns::pattern::predicate_definition::PredicateDefinition;
+use grit_pattern_matcher::pattern::PredicateDefinition;
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 use std::collections::BTreeMap;

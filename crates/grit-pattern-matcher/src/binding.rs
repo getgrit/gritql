@@ -2,11 +2,7 @@ use crate::{
     constant::Constant,
     context::QueryContext,
     effects::Effect,
-    pattern::{
-        patterns::Pattern,
-        resolved_pattern::ResolvedPattern,
-        state::{FileRegistry, State},
-    },
+    pattern::{FileRegistry, Pattern, ResolvedPattern, State},
 };
 use anyhow::{bail, Result};
 use grit_util::{AnalysisLogs, CodeRange, Range};

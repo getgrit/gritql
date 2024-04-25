@@ -3,16 +3,13 @@ use crate::{
     paths::resolve, problem::MarzanoQueryContext,
 };
 use anyhow::{anyhow, bail, Result};
-use grit_core_patterns::{
+use grit_pattern_matcher::{
     binding::Binding,
     constant::Constant,
     context::ExecContext,
     pattern::{
-        call_built_in::CallBuiltIn,
-        patterns::Pattern,
-        resolved_pattern::{JoinFn, LazyBuiltIn, ResolvedPattern, ResolvedSnippet},
-        state::State,
-        variable::get_absolute_file_name,
+        get_absolute_file_name, CallBuiltIn, JoinFn, LazyBuiltIn, Pattern, ResolvedPattern,
+        ResolvedSnippet, State,
     },
 };
 use grit_util::{AnalysisLogs, Language};
