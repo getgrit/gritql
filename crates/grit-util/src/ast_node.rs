@@ -3,14 +3,11 @@ use std::{borrow::Cow, str::Utf8Error};
 
 /// Represents an AST node and offers convenient AST-specific functionality.
 ///
-/// This trait should be free from dependencies on TreeSitter.
+/// This trait should be free from dependencies on TreeSitter. This also implies
+/// it should not expose details about the node that may make it infeasible to
+/// implement the trait by implementations that use different node
+/// representations internally.
 pub trait AstNode: std::fmt::Debug + Sized {
-    // returns the id of the node kind
-    fn kind_id(&self) -> u16;
-
-    // returns the node kind
-    fn kind(&self) -> Cow<str>;
-
     /// Returns an iterator over the node's ancestors, starting with the node
     /// itself and moving up to the root.
     fn ancestors(&self) -> impl Iterator<Item = Self>;

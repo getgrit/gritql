@@ -93,7 +93,7 @@ impl Language for Python {
     }
 
     fn should_skip_padding(&self, node: &NodeWithSource<'_>) -> bool {
-        self.skip_padding_sorts.contains(&node.kind_id())
+        self.skip_padding_sorts.contains(&node.node.kind_id())
     }
 
     fn get_skip_padding_ranges_for_snippet(&self, snippet: &str) -> Vec<CodeRange> {
