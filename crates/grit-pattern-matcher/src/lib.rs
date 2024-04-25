@@ -13,5 +13,3 @@ pub mod errors;
 pub mod file_owners;
 pub mod intervals;
 pub mod pattern;
-
-pub use grit_util as util;
