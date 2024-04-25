@@ -302,11 +302,6 @@ struct ParsedPattern {
     lang: TargetLanguage,
 }
 
-enum ParseResult {
-    Parsed(ParsedPattern),
-    Error(AnalysisLog),
-}
-
 async fn get_parsed_pattern(
     pattern: &str,
     lib_paths: Vec<String>,
