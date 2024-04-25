@@ -3,14 +3,11 @@ use crate::{
     problem::MarzanoQueryContext,
 };
 use anyhow::{anyhow, Result};
-use grit_core_patterns::{
+use grit_pattern_matcher::{
     binding::Binding,
     pattern::{
-        ast_node_pattern::{AstLeafNodePattern, AstNodePattern},
-        iter_pattern::PatternOrPredicate,
-        patterns::{Matcher, Pattern, PatternName},
-        resolved_pattern::ResolvedPattern,
-        state::State,
+        AstLeafNodePattern, AstNodePattern, Matcher, Pattern, PatternName, PatternOrPredicate,
+        ResolvedPattern, State,
     },
 };
 use grit_util::{AnalysisLogs, AstNode, Language};

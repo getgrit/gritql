@@ -7,7 +7,7 @@ members = [
   "crates/language",
   "crates/gritmodule",
   "crates/gritcache",
-  "crates/grit-core-patterns",
+  "crates/grit-pattern-matcher",
   "crates/grit-util",
   "crates/auth",
   "crates/externals",

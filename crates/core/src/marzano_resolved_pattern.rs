@@ -3,20 +3,15 @@ use crate::{
     marzano_context::MarzanoContext, paths::absolutize, problem::MarzanoQueryContext,
 };
 use anyhow::{anyhow, bail, Result};
-use grit_core_patterns::{
+use grit_pattern_matcher::{
     binding::Binding,
     constant::Constant,
     context::ExecContext,
     effects::{Effect, EffectKind},
     pattern::{
-        accessor::Accessor,
-        container::PatternOrResolved,
-        dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
-        functions::GritCall,
-        list_index::{to_unsigned, ListIndex},
-        patterns::{Pattern, PatternName},
-        resolved_pattern::{File, ResolvedFile, ResolvedPattern, ResolvedSnippet},
-        state::{FilePtr, FileRegistry, State},
+        to_unsigned, Accessor, DynamicPattern, DynamicSnippet, DynamicSnippetPart, File, FilePtr,
+        FileRegistry, GritCall, ListIndex, Pattern, PatternName, PatternOrResolved, ResolvedFile,
+        ResolvedPattern, ResolvedSnippet, State,
     },
 };
 use grit_util::{AnalysisLogs, Ast, AstNode, CodeRange, Range};

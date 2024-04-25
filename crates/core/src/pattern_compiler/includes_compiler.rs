@@ -4,7 +4,7 @@ use super::{
 };
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
-use grit_core_patterns::pattern::includes::Includes;
+use grit_pattern_matcher::pattern::Includes;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct IncludesCompiler;

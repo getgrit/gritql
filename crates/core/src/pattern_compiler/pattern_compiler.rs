@@ -48,14 +48,11 @@ use crate::{
     variables::register_variable,
 };
 use anyhow::{anyhow, bail, Result};
-use grit_core_patterns::{
+use grit_pattern_matcher::{
     context::QueryContext,
     pattern::{
-        dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
-        list::List,
-        patterns::Pattern,
-        regex::{RegexLike, RegexPattern},
-        variable::{is_reserved_metavariable, Variable},
+        is_reserved_metavariable, DynamicPattern, DynamicSnippet, DynamicSnippetPart, List,
+        Pattern, RegexLike, RegexPattern, Variable,
     },
 };
 use grit_util::{traverse, AstCursor, AstNode, GritMetaValue, Language, Order, Position, Range};

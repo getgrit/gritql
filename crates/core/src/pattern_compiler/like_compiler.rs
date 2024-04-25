@@ -4,7 +4,7 @@ use super::{
 };
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
-use grit_core_patterns::pattern::{float_constant::FloatConstant, like::Like, patterns::Pattern};
+use grit_pattern_matcher::pattern::{FloatConstant, Like, Pattern};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct LikeCompiler;

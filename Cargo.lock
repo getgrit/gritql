@@ -1306,7 +1306,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "grit-core-patterns"
+name = "grit-pattern-matcher"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -1971,7 +1971,7 @@ dependencies = [
  "anyhow",
  "embeddings",
  "getrandom",
- "grit-core-patterns",
+ "grit-pattern-matcher",
  "grit-util",
  "im",
  "insta",

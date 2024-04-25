@@ -7,9 +7,7 @@ use crate::{
     variables::{get_variables, register_variable},
 };
 use anyhow::{anyhow, bail, Result};
-use grit_core_patterns::pattern::{
-    bubble::Bubble, pattern_definition::PatternDefinition, patterns::Pattern,
-};
+use grit_pattern_matcher::pattern::{Bubble, Pattern, PatternDefinition};
 use grit_util::{AstNode, Range};
 use itertools::Itertools;
 use marzano_util::node_with_source::NodeWithSource;

@@ -4,7 +4,7 @@ use super::{
 };
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
-use grit_core_patterns::pattern::divide::Divide;
+use grit_pattern_matcher::pattern::Divide;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct DivideCompiler;

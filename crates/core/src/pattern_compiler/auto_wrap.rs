@@ -2,30 +2,13 @@ use crate::variables::variable_from_name;
 
 use super::compiler::{DefinitionInfo, NodeCompilationContext};
 use anyhow::Result;
-use grit_core_patterns::{
+use grit_pattern_matcher::{
     constants::{GRIT_RANGE_VAR, MATCH_VAR},
     context::QueryContext,
     pattern::{
-        and::{And, PrAnd},
-        bubble::Bubble,
-        call::Call,
-        container::Container,
-        contains::Contains,
-        file_pattern::FilePattern,
-        includes::Includes,
-        limit::Limit,
-        maybe::Maybe,
-        or::PrOr,
-        pattern_definition::PatternDefinition,
-        patterns::Pattern,
-        predicates::Predicate,
-        r#match::Match,
-        r#where::Where,
-        range::Range as PRange,
-        rewrite::Rewrite,
-        step::Step,
-        string_constant::StringConstant,
-        variable::Variable,
+        And, Bubble, Call, Container, Contains, FilePattern, Includes, Limit, Match, Maybe,
+        Pattern, PatternDefinition, PrAnd, PrOr, Predicate, Range as PRange, Rewrite, Step,
+        StringConstant, Variable, Where,
     },
 };
 use grit_util::FileRange;

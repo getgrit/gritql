@@ -3,15 +3,10 @@ use crate::{
     problem::MarzanoQueryContext,
 };
 use anyhow::Result;
-use grit_core_patterns::{
+use grit_pattern_matcher::{
     binding::Binding,
     context::ExecContext,
-    pattern::{
-        dynamic_snippet::DynamicPattern,
-        patterns::{CodeSnippet, Matcher, Pattern, PatternName},
-        resolved_pattern::ResolvedPattern,
-        state::State,
-    },
+    pattern::{CodeSnippet, DynamicPattern, Matcher, Pattern, PatternName, ResolvedPattern, State},
 };
 use grit_util::AnalysisLogs;
 use marzano_language::language::SortId;

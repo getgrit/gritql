@@ -1,6 +1,6 @@
 #![allow(warnings)]
 use anyhow::{bail, Result};
-use grit_core_patterns::intervals::{
+use grit_pattern_matcher::intervals::{
     earliest_deadline_sort, get_top_level_intervals, pop_out_of_range_intervals, Interval,
 };
 use std::{
@@ -263,7 +263,7 @@ mod tests {
     use super::{
         get_effects_order, linearize_graph, EffectInterval, FileInterval, ToEffectInterval,
     };
-    use grit_core_patterns::intervals::{earliest_deadline_sort, Interval};
+    use grit_pattern_matcher::intervals::{earliest_deadline_sort, Interval};
     use std::collections::{HashMap, HashSet};
 
     type NestedVec = Vec<((u32, u32), Vec<(u32, u32)>)>;

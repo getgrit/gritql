@@ -4,12 +4,7 @@ use super::{
 };
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
-use grit_core_patterns::pattern::{
-    iter_pattern::PatternOrPredicate,
-    not::{Not, PrNot},
-    patterns::Pattern,
-    predicates::Predicate,
-};
+use grit_pattern_matcher::pattern::{Not, Pattern, PatternOrPredicate, PrNot, Predicate};
 use grit_util::{AnalysisLogBuilder, AstNode};
 use marzano_util::node_with_source::NodeWithSource;
 

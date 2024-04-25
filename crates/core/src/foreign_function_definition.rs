@@ -3,16 +3,12 @@ use crate::{
     problem::MarzanoQueryContext,
 };
 use anyhow::{bail, Result};
-use grit_core_patterns::{
+use grit_pattern_matcher::{
     constant::Constant,
     context::ExecContext,
     pattern::{
-        function_definition::FunctionDefinition,
-        functions::{CallForeignFunction, FuncEvaluation, GritCall},
-        patterns::Pattern,
-        resolved_pattern::ResolvedPattern,
-        state::State,
-        variable::Variable,
+        CallForeignFunction, FuncEvaluation, FunctionDefinition, GritCall, Pattern,
+        ResolvedPattern, State, Variable,
     },
 };
 use grit_util::AnalysisLogs;

@@ -2,6 +2,7 @@ use crate::{
     api::{is_match, AnalysisLog, DoneFile, MatchResult},
     ast_node::{ASTNode, AstLeafNode},
     built_in_functions::BuiltIns,
+    constants::MAX_FILE_SIZE,
     foreign_function_definition::ForeignFunctionDefinition,
     marzano_binding::MarzanoBinding,
     marzano_code_snippet::MarzanoCodeSnippet,
@@ -10,19 +11,13 @@ use crate::{
     pattern_compiler::{compiler::VariableLocations, file_owner_compiler::FileOwnerCompiler},
 };
 use anyhow::{bail, Result};
-use grit_core_patterns::{
+use grit_pattern_matcher::{
     constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
     context::QueryContext,
     file_owners::{FileOwner, FileOwners},
     pattern::{
-        function_definition::GritFunctionDefinition,
-        pattern_definition::PatternDefinition,
-        patterns::{Matcher, Pattern},
-        predicate_definition::PredicateDefinition,
-        resolved_pattern::ResolvedPattern,
-        state::{FilePtr, State},
-        variable_content::VariableContent,
-        MAX_FILE_SIZE,
+        FilePtr, GritFunctionDefinition, Matcher, Pattern, PatternDefinition, PredicateDefinition,
+        ResolvedPattern, State, VariableContent,
     },
 };
 use grit_util::{Position, VariableMatch};

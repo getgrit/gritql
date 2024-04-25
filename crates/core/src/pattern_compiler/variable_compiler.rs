@@ -1,7 +1,7 @@
 use super::{compiler::NodeCompilationContext, node_compiler::NodeCompiler};
 use crate::variables::register_variable;
 use anyhow::Result;
-use grit_core_patterns::pattern::variable::Variable;
+use grit_pattern_matcher::pattern::Variable;
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 

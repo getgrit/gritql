@@ -4,11 +4,7 @@ use super::{
 };
 use crate::problem::MarzanoQueryContext;
 use anyhow::Result;
-use grit_core_patterns::pattern::{
-    and::{And, PrAnd},
-    patterns::Pattern,
-    predicates::Predicate,
-};
+use grit_pattern_matcher::pattern::{And, Pattern, PrAnd, Predicate};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct AndCompiler;

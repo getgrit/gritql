@@ -1,6 +1,6 @@
 use crate::paths::absolutize;
 use anyhow::Result;
-use grit_core_patterns::file_owners::FileOwner;
+use grit_pattern_matcher::file_owners::FileOwner;
 use grit_util::{AnalysisLogs, MatchRanges};
 use marzano_language::language::{MarzanoLanguage, Tree};
 use std::path::PathBuf;

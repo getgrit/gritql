@@ -7,7 +7,7 @@ use crate::{
     variables::get_variables,
 };
 use anyhow::{anyhow, Result};
-use grit_core_patterns::pattern::function_definition::GritFunctionDefinition;
+use grit_pattern_matcher::pattern::GritFunctionDefinition;
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 use std::collections::BTreeMap;

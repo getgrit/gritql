@@ -15,13 +15,12 @@ use crate::{
     problem::{MarzanoQueryContext, Problem},
 };
 use anyhow::{anyhow, bail, Result};
-use grit_core_patterns::{
+use grit_pattern_matcher::{
     constants::{
         ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
     },
     pattern::{
-        function_definition::GritFunctionDefinition, pattern_definition::PatternDefinition,
-        predicate_definition::PredicateDefinition, variable::VariableSourceLocations,
+        GritFunctionDefinition, PatternDefinition, PredicateDefinition, VariableSourceLocations,
     },
 };
 use grit_util::{traverse, AnalysisLogs, Ast, AstNode, FileRange, Order, Range, VariableMatch};

@@ -1,8 +1,8 @@
 use crate::pattern_compiler::compiler::NodeCompilationContext;
 use anyhow::Result;
-use grit_core_patterns::{
+use grit_pattern_matcher::{
     constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
-    pattern::variable::{Variable, VariableSourceLocations},
+    pattern::{Variable, VariableSourceLocations},
 };
 use grit_util::Range;
 use std::collections::BTreeSet;
