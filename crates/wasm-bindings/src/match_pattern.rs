@@ -248,7 +248,7 @@ async fn match_pattern_internal(
 }
 
 fn error_to_log(e: anyhow::Error) -> MatchResult {
-    let log = match e.downcast::<grit_util::AnalysisLog>() {
+    match e.downcast::<grit_util::AnalysisLog>() {
         Ok(al) => MatchResult::AnalysisLog(AnalysisLog::from(al)),
         Err(er) => MatchResult::AnalysisLog(AnalysisLog {
             level: 200,
@@ -260,8 +260,7 @@ fn error_to_log(e: anyhow::Error) -> MatchResult {
             range: None,
             source: None,
         }),
-    };
-    log
+    }
 }
 
 #[wasm_bindgen(js_name = matchPattern)]

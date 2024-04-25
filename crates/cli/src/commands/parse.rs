@@ -3,7 +3,7 @@ use crate::{
     jsonl::JSONLineMessenger,
     resolver::{get_grit_files_from_cwd, GritModuleResolver},
 };
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use clap::Args;
 use grit_util::Position;
 use marzano_core::{

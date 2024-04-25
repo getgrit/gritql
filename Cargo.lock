@@ -1926,7 +1926,6 @@ dependencies = [
  "log",
  "marzano-auth",
  "marzano-core",
- "marzano-graphql",
  "marzano-gritmodule",
  "marzano-language",
  "marzano-lsp",
@@ -1990,18 +1989,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "extism",
- "serde_json",
-]
-
-[[package]]
-name = "marzano-graphql"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "marzano-auth",
- "marzano-gritmodule",
- "reqwest",
- "serde",
  "serde_json",
 ]
 
