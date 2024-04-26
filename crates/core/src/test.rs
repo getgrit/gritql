@@ -1821,6 +1821,39 @@ fn jsx_attribute_rewrite() {
 }
 
 #[test]
+fn jsx_dotted_component() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |`PageContainer.Header` => `foobar`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"export const SearchHeader: React.FC<
+  React.ComponentProps<typeof PageContainer.Header> &
+    Omit<React.ComponentProps<typeof SearchActions>, 'variant'>
+> = ({ searchProps, buttonProps, ...rest }) => (
+  <PageContainer.Header sx={{ flexGrow: 1, gap: '20px' }} {...rest}>
+    <SearchActions searchProps={searchProps} buttonProps={buttonProps} variant='right' />
+  </PageContainer.Header>
+);"#
+            .to_owned(),
+            expected: r#"export const SearchHeader: React.FC<
+  React.ComponentProps<typeof PageContainer.Header> &
+    Omit<React.ComponentProps<typeof SearchActions>, 'variant'>
+> = ({ searchProps, buttonProps, ...rest }) => (
+  <foobar sx={{ flexGrow: 1, gap: '20px' }} {...rest}>
+    <SearchActions searchProps={searchProps} buttonProps={buttonProps} variant='right' />
+  </foobar>
+);"#
+            .to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn imports() {
     run_test_expected({
         TestArgExpected {
@@ -13726,7 +13759,7 @@ fn php_class() {
         pattern: r#"
                 |language php(only)
                 |
-                |`class ^name { 
+                |`class ^name {
                 |    function ^fname() {
                 |        if (^a) { ^_ } else { ^_ }
                 |    }
