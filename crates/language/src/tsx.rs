@@ -1,10 +1,11 @@
 use crate::{
     js_like::{
-        js_like_get_statement_sorts, js_like_is_comment, js_like_optional_empty_field_compilation,
+        js_like_disregarded_field_values, js_like_get_statement_sorts, js_like_is_comment,
         js_like_skip_snippet_compilation_sorts, jslike_check_replacements, MarzanoJsLikeParser,
     },
     language::{
-        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, MarzanoLanguage, NodeTypes,
+        check_disregarded_field_map, fields_for_nodes, kind_and_field_id_for_field_map,
+        kind_and_field_id_for_names, Field, FieldExpectation, FieldId, MarzanoLanguage, NodeTypes,
         SortId, TSLanguage, Tree,
     },
 };
@@ -17,7 +18,7 @@ static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static SKIP_SNIPPET_COMPILATION_SORTS: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
 static STATEMENT_SORTS: OnceLock<Vec<SortId>> = OnceLock::new();
-static OPTIONAL_EMPTY_FIELD_COMPILATION: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
+static DISREGARDED_SNIPPET_FIELDS: OnceLock<Vec<FieldExpectation>> = OnceLock::new();
 
 #[cfg(not(feature = "builtin-parser"))]
 fn language() -> TSLanguage {
@@ -39,7 +40,7 @@ pub struct Tsx {
     statement_sorts: &'static [SortId],
     language: &'static TSLanguage,
     skip_snippet_compilation_sorts: &'static Vec<(SortId, FieldId)>,
-    optional_empty_field_compilation: &'static Vec<(SortId, FieldId)>,
+    disregarded_snippet_fields: &'static Vec<FieldExpectation>,
 }
 
 impl Tsx {
@@ -53,8 +54,8 @@ impl Tsx {
             kind_and_field_id_for_names(language, js_like_skip_snippet_compilation_sorts())
         });
 
-        let optional_empty_field_compilation = OPTIONAL_EMPTY_FIELD_COMPILATION.get_or_init(|| {
-            kind_and_field_id_for_names(language, js_like_optional_empty_field_compilation())
+        let disregarded_snippet_fields = DISREGARDED_SNIPPET_FIELDS.get_or_init(|| {
+            kind_and_field_id_for_field_map(language, js_like_disregarded_field_values())
         });
 
         let statement_sorts = STATEMENT_SORTS.get_or_init(|| js_like_get_statement_sorts(language));
@@ -67,7 +68,7 @@ impl Tsx {
             statement_sorts,
             language,
             skip_snippet_compilation_sorts,
-            optional_empty_field_compilation,
+            disregarded_snippet_fields,
         }
     }
     pub(crate) fn is_initialized() -> bool {
@@ -155,14 +156,18 @@ impl<'a> MarzanoLanguage<'a> for Tsx {
         Box::new(MarzanoJsLikeParser::new(self))
     }
 
-    fn optional_empty_field_compilation(
+    fn is_disregarded_snippet_field(
         &self,
         sort_id: SortId,
         field_id: crate::language::FieldId,
+        field_node: &Option<NodeWithSource<'_>>,
     ) -> bool {
-        self.optional_empty_field_compilation
-            .iter()
-            .any(|(s, f)| *s == sort_id && *f == field_id)
+        check_disregarded_field_map(
+            self.disregarded_snippet_fields,
+            sort_id,
+            field_id,
+            field_node,
+        )
     }
 
     fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
@@ -298,6 +303,16 @@ mod tests {
         let snippets = lang.parse_snippet_contexts(snippet);
         let nodes = nodes_from_indices(&snippets);
         assert!(!nodes.is_empty());
+    }
+
+    #[test]
+    fn member_expression() {
+        let snippet = "PageContainer.Header";
+        let lang = Tsx::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        assert!(!nodes.is_empty());
+        println!("{:#?}", nodes);
     }
 
     #[test]

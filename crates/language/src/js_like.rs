@@ -67,28 +67,31 @@ pub(crate) fn js_like_skip_snippet_compilation_sorts() -> Vec<(&'static str, &'s
     res
 }
 
-pub(crate) fn js_optional_empty_field_compilation() -> Vec<(&'static str, &'static str)> {
+pub(crate) fn js_disregarded_field_values(
+) -> Vec<(&'static str, &'static str, Option<Vec<&'static str>>)> {
     vec![
-        ("function", "async"),
-        ("arrow_function", "async"),
-        ("generator_function", "async"),
-        ("generator_function_declaration", "async"),
-        ("method_definition", "async"),
-        ("function_declaration", "async"),
-        ("import_statement", "import"),
+        ("function", "async", Some(vec![""])),
+        ("arrow_function", "async", Some(vec![""])),
+        ("generator_function", "async", Some(vec![""])),
+        ("generator_function_declaration", "async", Some(vec![""])),
+        ("method_definition", "async", Some(vec![""])),
+        ("function_declaration", "async", Some(vec![""])),
+        ("import_statement", "import", Some(vec![""])),
     ]
 }
 
-pub(crate) fn js_like_optional_empty_field_compilation() -> Vec<(&'static str, &'static str)> {
+pub(crate) fn js_like_disregarded_field_values(
+) -> Vec<(&'static str, &'static str, Option<Vec<&'static str>>)> {
     let mut res = vec![
-        ("call_expression", "type_arguments"),
-        ("new_expression", "type_arguments"),
-        ("function", "return_type"),
-        ("arrow_function", "return_type"),
-        ("import_statement", "type"),
-        ("public_field_definition", "static"),
+        ("call_expression", "type_arguments", Some(vec![""])),
+        ("new_expression", "type_arguments", Some(vec![""])),
+        ("function", "return_type", Some(vec![""])),
+        ("arrow_function", "return_type", Some(vec![""])),
+        ("import_statement", "type", Some(vec![""])),
+        ("public_field_definition", "static", Some(vec![""])),
+        ("member_expression", "chain", Some(vec!["", "."])),
     ];
-    res.extend(js_optional_empty_field_compilation());
+    res.extend(js_disregarded_field_values());
     res
 }
 

@@ -794,7 +794,7 @@ fn chaining_rewrite() {
             }"#
             .to_owned(),
             expected: r#"
-            if (!repos?.length) {
+            if (repos.length === 0) {
                 return true;
             }
             if (repos.length === 0) {
@@ -1815,6 +1815,33 @@ fn jsx_attribute_rewrite() {
             .unwrap(),
             source: r#"<Header as='h1'>First Header</Header>"#.to_owned(),
             expected: r#"<Header foo='h1'>First Header</Header>"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn jsx_dotted_component() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |`PageContainer.Header` => `foobar`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+console.log(PageContainer.Header);
+
+const foo = <PageContainer.Header sx={{ flexGrow: 1, gap: '20px' }} {...rest} />
+"#
+            .to_owned(),
+            expected: r#"
+console.log(foobar);
+
+const foo = <foobar sx={{ flexGrow: 1, gap: '20px' }} {...rest} />
+"#
+            .to_owned(),
         }
     })
     .unwrap();
@@ -13726,7 +13753,7 @@ fn php_class() {
         pattern: r#"
                 |language php(only)
                 |
-                |`class ^name { 
+                |`class ^name {
                 |    function ^fname() {
                 |        if (^a) { ^_ } else { ^_ }
                 |    }
