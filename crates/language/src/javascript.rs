@@ -5,7 +5,7 @@ use crate::{
     },
     language::{
         check_disregarded_field_map, fields_for_nodes, kind_and_field_id_for_field_map, Field,
-        FieldExpectation, FieldId, MarzanoLanguage, NodeTypes, SortId, TSLanguage, Tree,
+        FieldExpectation, MarzanoLanguage, NodeTypes, SortId, TSLanguage, Tree,
     },
 };
 use grit_util::{AstNode, Language, Parser, Range, Replacement};
