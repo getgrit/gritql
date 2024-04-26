@@ -124,13 +124,6 @@ impl PatternCompiler {
                 fields
                     .iter()
                     .filter(|field| {
-                        // Ordinarily, we want to match on all possible fields, including the absence of nodes within a field.
-                        // e.g., `func_call()` should not match `func_call(arg)`, however, sometimes we want to allow people to
-                        // save some boilerplate and by default match a node even if a field is present in the code but not
-                        // in the snippet. e.g.,
-                        // `func name(args) {}` will match `async name(args) {}` because async is an optional_empty_field for tsx.
-                        // To explicitly only match synchronous functions, you could write:
-                        // `$async func name(args)` where $async <: .
                         !((node.node.child_by_field_id(field.id()).is_none()
                             && context
                                 .compilation

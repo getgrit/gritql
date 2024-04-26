@@ -1837,7 +1837,7 @@ const foo = <PageContainer.Header sx={{ flexGrow: 1, gap: '20px' }} {...rest} />
 "#
             .to_owned(),
             expected: r#"
-console.log(foobar)
+console.log(foobar);
 
 const foo = <foobar sx={{ flexGrow: 1, gap: '20px' }} {...rest} />
 "#
