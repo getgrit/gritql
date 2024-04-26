@@ -16,7 +16,6 @@ static NODE_TYPES_STRING: &str =
     include_str!("../../../resources/node-types/javascript-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
-static SKIP_SNIPPET_COMPILATION_SORTS: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
 static STATEMENT_SORTS: OnceLock<Vec<SortId>> = OnceLock::new();
 static DISREGARDED_SNIPPET_FIELDS: OnceLock<Vec<FieldExpectation>> = OnceLock::new();
 
