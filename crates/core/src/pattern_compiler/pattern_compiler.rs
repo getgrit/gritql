@@ -131,26 +131,15 @@ impl PatternCompiler {
                         // `func name(args) {}` will match `async name(args) {}` because async is an optional_empty_field for tsx.
                         // To explicitly only match synchronous functions, you could write:
                         // `$async func name(args)` where $async <: .
-                        !((node.node.child_by_field_id(field.id()).is_none() && context.compilation.lang.optional_empty_field_compilation(sort, field.id()))
-                        // we wanted to be able to match on the presence of parentheses in an arrow function manually
-                        // using ast_node syntax, but we wanted snippets to match regardless of weather or not the
-                        // parenthesis are present, so we made the parenthesis a  named node within a field, but
-                        // added then to this list so that they wont be compiled. fields in this list are
-                        // destinguished by fields in the above list in that they will NEVER prevent a match
-                        // while fields in the above list wont prevent a match if they are absent in the snippet,
-                        // but they will prevent a match if present in the snippet, and not present in the target
-                        // file.
-                        // in react to hooks we manually match the parenthesis like so:
-                        // arrow_function(parameters=$props, $body, $parenthesis) where {
-                        //     $props <: contains or { `props`, `inputProps` },
-                        //     $body <: not contains `props`,
-                        //     if ($parenthesis <: .) {
-                        //         $props => `()`
-                        //     } else {
-                        //         $props => .
-                        //     }
-                        // }
-                        || context.compilation.lang.skip_snippet_compilation_of_field(sort, field.id()))
+                        !((node.node.child_by_field_id(field.id()).is_none()
+                            && context
+                                .compilation
+                                .lang
+                                .optional_empty_field_compilation(sort, field.id()))
+                            || context
+                                .compilation
+                                .lang
+                                .skip_snippet_compilation_of_field(sort, field.id()))
                     })
                     .map(|field| {
                         let field_id = field.id();

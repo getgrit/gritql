@@ -276,9 +276,19 @@ pub trait MarzanoLanguage<'a>: Language<Node<'a> = NodeWithSource<'a>> + NodeTyp
         false
     }
 
-    /// get a list fields which when not present in a snippet will not be matched against.
-    /// by default empty fields will be require the target field to also be empty to match, e.g.,
-    /// `function() { $body }` will only match functions with no arguments.
+    /// Ordinarily, we want to match on all possible fields, including the absence of nodes within a field.
+    /// e.g., `my_function()` should not match `my_function(arg)`.
+    ///
+    /// However, sometimes we want to allow a field to be empty in the snippet and still match if it is present in the code.
+    /// For example, in JavaScript, we want to match both `function name() {}` and `async function name() {}` with the same snippet.
+    ///
+    /// You can still match on the presence/absence of the field in the snippet by including a metavariable and checking its value.
+    /// For example, in JavaScript:
+    /// ```grit
+    /// `$async func name(args)` where $async <: .
+    /// ```
+    ///
+    /// This method allows you to specify that a field can be empty in the snippet and still match.
     fn optional_empty_field_compilation(&self, _sort_id: SortId, _field_id: FieldId) -> bool {
         false
     }
