@@ -124,14 +124,6 @@ impl PatternCompiler {
                 fields
                     .iter()
                     .filter(|field| {
-                        // First check if we should skip compilation of this field entirely
-                        if context
-                            .compilation
-                            .lang
-                            .skip_snippet_compilation_of_field(sort, field.id())
-                        {
-                            return false;
-                        }
                         let child_with_source = node
                             .node
                             .child_by_field_id(field.id())

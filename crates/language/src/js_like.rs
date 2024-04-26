@@ -70,6 +70,14 @@ pub(crate) fn js_like_skip_snippet_compilation_sorts() -> Vec<(&'static str, &'s
 pub(crate) fn js_disregarded_field_values(
 ) -> Vec<(&'static str, &'static str, Option<Vec<&'static str>>)> {
     vec![
+        // Always disregarded:
+        ("method_definition", "parenthesis", None),
+        ("function", "parenthesis", None),
+        ("function_declaration", "parenthesis", None),
+        ("generator_function", "parenthesis", None),
+        ("generator_function_declaration", "parenthesis", None),
+        ("arrow_function", "parenthesis", None),
+        // Disregarded if empty:
         ("function", "async", Some(vec![""])),
         ("arrow_function", "async", Some(vec![""])),
         ("generator_function", "async", Some(vec![""])),
@@ -83,6 +91,14 @@ pub(crate) fn js_disregarded_field_values(
 pub(crate) fn js_like_disregarded_field_values(
 ) -> Vec<(&'static str, &'static str, Option<Vec<&'static str>>)> {
     let mut res = vec![
+        // always disregarded:
+        ("constructor_type", "parenthesis", None),
+        ("construct_signature", "parenthesis", None),
+        ("function_type", "parenthesis", None),
+        ("method_signature", "parenthesis", None),
+        ("abstract_method_signature", "parenthesis", None),
+        ("function_signature", "parenthesis" None),
+        // disregarded if empty:
         ("call_expression", "type_arguments", Some(vec![""])),
         ("new_expression", "type_arguments", Some(vec![""])),
         ("function", "return_type", Some(vec![""])),
