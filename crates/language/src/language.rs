@@ -135,7 +135,7 @@ pub(crate) fn kind_and_field_id_for_names(
 pub(crate) fn kind_and_field_id_for_field_map(
     lang: &TSLanguage,
     names: Vec<(&str, &str, Option<Vec<&'static str>>)>,
-) -> Vec<(u16, u16, Option<Vec<&'static str>>)> {
+) -> Vec<FieldExpectation> {
     names
         .into_iter()
         .map(|(kind, field, val)| {
@@ -150,15 +150,16 @@ pub(crate) fn kind_and_field_id_for_field_map(
         .collect()
 }
 
-/// Helper utility for implementing `is_disregarded_snippet_field`.
-///
-/// Field map is a list of (sort_id, field_id, expected_values) tuples.
+/// Field expectation is a tuple of (sort_id, field_id, expected_values)
 ///
 /// If the expected_values is None, the field will be disregarded entirely no matter what the field node is.
 /// Otherwise, the field will be disregarded only if the field node's text matches one of the expected values.
 /// An empty field will have an empty string as its text.
+pub type FieldExpectation = (u16, u16, Option<Vec<&'static str>>);
+
+/// Helper utility for implementing `is_disregarded_snippet_field`.
 pub(crate) fn check_disregarded_field_map(
-    field_map: &[(u16, u16, Option<Vec<&'static str>>)],
+    field_map: &[FieldExpectation],
     sort_id: SortId,
     field_id: crate::language::FieldId,
     field_node: &Option<NodeWithSource>,

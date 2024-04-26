@@ -5,21 +5,20 @@ use crate::{
     },
     language::{
         check_disregarded_field_map, fields_for_nodes, kind_and_field_id_for_field_map,
-        kind_and_field_id_for_names, Field, FieldId, MarzanoLanguage, NodeTypes, SortId,
-        TSLanguage, Tree,
+        kind_and_field_id_for_names, Field, FieldExpectation, FieldId, MarzanoLanguage, NodeTypes,
+        SortId, TSLanguage, Tree,
     },
 };
 use grit_util::{AstNode, Language, Parser, Range, Replacement};
 use marzano_util::node_with_source::NodeWithSource;
-use std::{sync::OnceLock};
+use std::sync::OnceLock;
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/tsx-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static SKIP_SNIPPET_COMPILATION_SORTS: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
 static STATEMENT_SORTS: OnceLock<Vec<SortId>> = OnceLock::new();
-static DISREGARDED_SNIPPET_FIELDS: OnceLock<Vec<(SortId, FieldId, Option<Vec<&str>>)>> =
-    OnceLock::new();
+static DISREGARDED_SNIPPET_FIELDS: OnceLock<Vec<FieldExpectation>> = OnceLock::new();
 
 #[cfg(not(feature = "builtin-parser"))]
 fn language() -> TSLanguage {
@@ -41,7 +40,7 @@ pub struct Tsx {
     statement_sorts: &'static [SortId],
     language: &'static TSLanguage,
     skip_snippet_compilation_sorts: &'static Vec<(SortId, FieldId)>,
-    disregarded_snippet_fields: &'static Vec<(SortId, FieldId, Option<Vec<&'static str>>)>,
+    disregarded_snippet_fields: &'static Vec<FieldExpectation>,
 }
 
 impl Tsx {

@@ -1,6 +1,6 @@
 use crate::language::{
-    check_disregarded_field_map, fields_for_nodes, Field, FieldId, MarzanoLanguage, NodeTypes,
-    SortId, TSLanguage,
+    check_disregarded_field_map, fields_for_nodes, Field, FieldExpectation, FieldId,
+    MarzanoLanguage, NodeTypes, SortId, TSLanguage,
 };
 use grit_util::Language;
 use marzano_util::node_with_source::NodeWithSource;
@@ -10,8 +10,7 @@ static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/rus
 
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
-static DISREGARDED_SNIPPET_FIELDS: OnceLock<Vec<(SortId, FieldId, Option<Vec<&str>>)>> =
-    OnceLock::new();
+static DISREGARDED_SNIPPET_FIELDS: OnceLock<Vec<FieldExpectation>> = OnceLock::new();
 
 #[cfg(not(feature = "builtin-parser"))]
 fn language() -> TSLanguage {
@@ -30,7 +29,7 @@ pub struct Rust {
     metavariable_sort: SortId,
     comment_sorts: [SortId; 2],
     language: &'static TSLanguage,
-    disregarded_snippet_fields: &'static Vec<(SortId, FieldId, Option<Vec<&'static str>>)>,
+    disregarded_snippet_fields: &'static Vec<FieldExpectation>,
 }
 
 impl Rust {
