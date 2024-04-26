@@ -1,5 +1,5 @@
 use crate::language::{
-    check_disregarded_field_map, fields_for_nodes, Field, FieldExpectation, FieldId,
+    check_disregarded_field_map, fields_for_nodes, Field, FieldExpectation,
     MarzanoLanguage, NodeTypes, SortId, TSLanguage,
 };
 use grit_util::Language;
