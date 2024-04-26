@@ -484,42 +484,35 @@ impl Updater {
         }
 
         let target_path = self.get_app_bin(&app)?;
-        let output = AsyncCommand::new("mv")
-            .arg(format!("{}/{}", unpacked_dir.display(), app.get_bin_name()))
-            .arg(&target_path)
-            .output()
-            .await?;
-
-        if !output.status.success() {
-            let fallback_output = AsyncCommand::new("mv")
-                .arg(format!(
-                    "{}/{}",
-                    unpacked_dir.display(),
-                    app.get_fallback_bin_name()
-                ))
-                .arg(&target_path)
-                .output()
-                .await?;
-            if !fallback_output.status.success() {
-                bail!("Failed to move files: {:?}", output);
+        if async_fs::rename(unpacked_dir.join(app.get_bin_name()), &target_path)
+            .await
+            .is_err()
+        {
+            if let Err(e) =
+                async_fs::rename(unpacked_dir.join(app.get_fallback_bin_name()), &target_path).await
+            {
+                bail!("Failed to move files: {:?}", e);
             }
         }
 
         // Make the file executable
-        let output = AsyncCommand::new("chmod")
-            .arg("+x")
-            .arg(&target_path)
-            .output()
-            .await?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
 
-        if !output.status.success() {
-            bail!(
-                "Failed to make {} executable: {:?}",
-                target_path.display(),
-                output
-            );
+            let target_file = std::fs::File::open(&target_path)?;
+            let mut perms = target_file.metadata()?.permissions();
+            perms.set_mode(0o744);
+            if let Err(e) = target_file.set_permissions(perms) {
+                bail!(
+                    "Failed to make {} executable: {:?}",
+                    target_path.display(),
+                    e
+                );
+            }
+
+            info!("Successfully made {} executable", target_path.display());
         }
-        info!("Successfully made {} executable", target_path.display());
 
         async_fs::remove_dir_all(&unpacked_dir).await?;
 
