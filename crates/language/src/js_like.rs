@@ -43,30 +43,6 @@ pub(crate) fn js_like_get_statement_sorts(lang: &TSLanguage) -> Vec<SortId> {
         .collect()
 }
 
-pub(crate) fn js_skip_snippet_compilation_sorts() -> Vec<(&'static str, &'static str)> {
-    vec![
-        ("method_definition", "parenthesis"),
-        ("function", "parenthesis"),
-        ("function_declaration", "parenthesis"),
-        ("generator_function", "parenthesis"),
-        ("generator_function_declaration", "parenthesis"),
-        ("arrow_function", "parenthesis"),
-    ]
-}
-
-pub(crate) fn js_like_skip_snippet_compilation_sorts() -> Vec<(&'static str, &'static str)> {
-    let mut res = vec![
-        ("constructor_type", "parenthesis"),
-        ("construct_signature", "parenthesis"),
-        ("function_type", "parenthesis"),
-        ("method_signature", "parenthesis"),
-        ("abstract_method_signature", "parenthesis"),
-        ("function_signature", "parenthesis"),
-    ];
-    res.extend(js_skip_snippet_compilation_sorts());
-    res
-}
-
 pub(crate) fn js_disregarded_field_values(
 ) -> Vec<(&'static str, &'static str, Option<Vec<&'static str>>)> {
     vec![
@@ -97,7 +73,7 @@ pub(crate) fn js_like_disregarded_field_values(
         ("function_type", "parenthesis", None),
         ("method_signature", "parenthesis", None),
         ("abstract_method_signature", "parenthesis", None),
-        ("function_signature", "parenthesis" None),
+        ("function_signature", "parenthesis", None),
         // disregarded if empty:
         ("call_expression", "type_arguments", Some(vec![""])),
         ("new_expression", "type_arguments", Some(vec![""])),
