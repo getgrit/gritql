@@ -117,24 +117,9 @@ pub(crate) fn normalize_double_quote_string(s: &str) -> Option<&str> {
     s.strip_prefix('"')?.strip_suffix('"')
 }
 
-pub(crate) fn kind_and_field_id_for_names(
-    lang: &TSLanguage,
-    names: Vec<(&str, &str)>,
-) -> Vec<(u16, u16)> {
-    names
-        .iter()
-        .map(|(kind, field)| {
-            (
-                lang.id_for_node_kind(kind, true),
-                lang.field_id_for_name(field).unwrap(),
-            )
-        })
-        .collect()
-}
-
 pub(crate) fn kind_and_field_id_for_field_map(
     lang: &TSLanguage,
-    names: Vec<(&str, &str, Option<Vec<&'static str>>)>,
+    names: Vec<(&str, &str, FieldExpectationCondition)>,
 ) -> Vec<FieldExpectation> {
     names
         .into_iter()
@@ -150,12 +135,18 @@ pub(crate) fn kind_and_field_id_for_field_map(
         .collect()
 }
 
+#[derive(Debug, Clone)]
+pub(crate) enum FieldExpectationCondition {
+    Always,
+    OnlyIf(Vec<&'static str>),
+}
+
 /// Field expectation is a tuple of (sort_id, field_id, expected_values)
 ///
 /// If the expected_values is None, the field will be disregarded entirely no matter what the field node is.
 /// Otherwise, the field will be disregarded only if the field node's text matches one of the expected values.
 /// An empty field will have an empty string as its text.
-pub type FieldExpectation = (u16, u16, Option<Vec<&'static str>>);
+pub(crate) type FieldExpectation = (u16, u16, FieldExpectationCondition);
 
 /// Helper utility for implementing `is_disregarded_snippet_field`.
 pub(crate) fn check_disregarded_field_map(
@@ -169,7 +160,7 @@ pub(crate) fn check_disregarded_field_map(
             return false;
         }
         match expected_values {
-            Some(expected_values) => {
+            FieldExpectationCondition::OnlyIf(expected_values) => {
                 let text = field_node
                     .as_ref()
                     .map(|f| f.text().unwrap_or(Cow::Borrowed("")))
@@ -178,7 +169,7 @@ pub(crate) fn check_disregarded_field_map(
                 expected_values.iter().any(|n| n == &text_ref)
             }
             // Always match
-            None => true,
+            FieldExpectationCondition::Always => true,
         }
     })
 }
@@ -299,17 +290,23 @@ pub trait MarzanoLanguage<'a>: Language<Node<'a> = NodeWithSource<'a>> + NodeTyp
             .collect()
     }
 
-    /// Certain fields are trivial, and should not be compiled into the snippet because attempting
-    /// to match on them makes snippets too brittle.
+    /// Ordinarily, we want to match on all possible fields, including the absence of nodes within a field.
+    /// e.g., `my_function()` should not match `my_function(arg)`.
     ///
-    /// For example, in JavaScript, we want arrow functions to match regardless of whether the snippet
-    /// included the parentheses or not.
+    /// However, some fields are trivial or not expected to be part of the snippet, and should be disregarded.
+    /// For example, in JavaScript, we want to match both `function name() {}` and `async function name() {}` with the same snippet.
     ///
-    /// Fields in this list are skipped during *snippet* compilation and will therefore never prevent a match.
-    /// Note this is distinct from `optional_empty_field_compilation` which only applies to fields that are empty.
+    /// You can still match on the presence/absence of the field in the snippet by including a metavariable and checking its value.
+    /// For example, in JavaScript:
+    /// ```grit
+    /// `$async func name(args)` where $async <: .
+    /// ```
     ///
-    /// Note you can always drop down to ast_node syntax to match on these fields. For example, in react_to_hooks
-    /// we match on `arrow_function` and capture `$parenthesis` for inspection.
+    /// This method allows you to specify fields that should be (conditionally) disregarded in snippets.
+    /// The actual value of the field from the snippet, if any, is passed in as the third argument.
+    ///
+    /// Note that if a field is always disregarded, you can still switch to ast_node syntax to match on these fields.
+    /// For example, in react_to_hooks we match on `arrow_function` and capture `$parenthesis` for inspection.
     ///
     /// ```grit
     /// arrow_function(parameters=$props, $body, $parenthesis) where {
@@ -322,25 +319,6 @@ pub trait MarzanoLanguage<'a>: Language<Node<'a> = NodeWithSource<'a>> + NodeTyp
     ///     }
     /// }
     /// ```
-    ///
-    fn skip_snippet_compilation_of_field(&self, _sort_id: SortId, _field_id: FieldId) -> bool {
-        false
-    }
-
-    /// Ordinarily, we want to match on all possible fields, including the absence of nodes within a field.
-    /// e.g., `my_function()` should not match `my_function(arg)`.
-    ///
-    /// However, sometimes we want to allow a field to be empty in the snippet and still match if it is present in the code.
-    /// For example, in JavaScript, we want to match both `function name() {}` and `async function name() {}` with the same snippet.
-    ///
-    /// You can still match on the presence/absence of the field in the snippet by including a metavariable and checking its value.
-    /// For example, in JavaScript:
-    /// ```grit
-    /// `$async func name(args)` where $async <: .
-    /// ```
-    ///
-    /// This method allows you to specify that a field can be empty in the snippet and still match.
-    /// You can also specify values that should count as "effectively empty" for the purposes of matching.
     fn is_disregarded_snippet_field(
         &self,
         _sort_id: SortId,

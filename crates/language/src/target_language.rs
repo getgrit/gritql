@@ -554,12 +554,6 @@ macro_rules! generate_target_language {
                 }
             }
 
-            fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
-                match self {
-                    $(Self::$language(lang) => MarzanoLanguage::skip_snippet_compilation_of_field(lang, sort_id, field_id)),+
-                }
-            }
-
             fn is_disregarded_snippet_field(&self, sort_id: SortId, field_id: FieldId, field_value: &Option<NodeWithSource<'_>>) -> bool {
                 match self {
                     $(Self::$language(lang) => MarzanoLanguage::is_disregarded_snippet_field(lang, sort_id, field_id, field_value)),+

@@ -1,6 +1,6 @@
 use crate::language::{
     check_disregarded_field_map, fields_for_nodes, Field, FieldExpectation,
-    MarzanoLanguage, NodeTypes, SortId, TSLanguage,
+    FieldExpectationCondition, MarzanoLanguage, NodeTypes, SortId, TSLanguage,
 };
 use grit_util::Language;
 use marzano_util::node_with_source::NodeWithSource;
@@ -46,42 +46,42 @@ impl Rust {
                 (
                     language.id_for_node_kind("struct_item", true),
                     language.field_id_for_name("visibility").unwrap(),
-                    Some(vec![""]),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
                 (
                     language.id_for_node_kind("union_item", true),
                     language.field_id_for_name("visibility").unwrap(),
-                    Some(vec![""]),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
                 (
                     language.id_for_node_kind("enum_item", true),
                     language.field_id_for_name("visibility").unwrap(),
-                    Some(vec![""]),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
                 (
                     language.id_for_node_kind("function_item", true),
                     language.field_id_for_name("visibility").unwrap(),
-                    Some(vec![""]),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
                 (
                     language.id_for_node_kind("function_signature_item", true),
                     language.field_id_for_name("visibility").unwrap(),
-                    Some(vec![""]),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
                 (
                     language.id_for_node_kind("visibility", true),
                     language.field_id_for_name("visibility").unwrap(),
-                    Some(vec![""]),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
                 (
                     language.id_for_node_kind("function_item", true),
                     language.field_id_for_name("type_parameters").unwrap(),
-                    Some(vec![""]),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
                 (
                     language.id_for_node_kind("function_signature_item", true),
                     language.field_id_for_name("type_parameters").unwrap(),
-                    Some(vec![""]),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
             ]
         });
