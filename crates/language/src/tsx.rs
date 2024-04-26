@@ -301,6 +301,16 @@ mod tests {
     }
 
     #[test]
+    fn member_expression() {
+        let snippet = "PageContainer.Header";
+        let lang = Tsx::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        assert!(!nodes.is_empty());
+        println!("{:#?}", nodes);
+    }
+
+    #[test]
     fn double_property() {
         let snippet = "this.state.$name";
         let lang = Tsx::new(None);

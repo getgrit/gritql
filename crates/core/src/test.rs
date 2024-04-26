@@ -1830,23 +1830,17 @@ fn jsx_dotted_component() {
                 |"#
             .trim_margin()
             .unwrap(),
-            source: r#"export const SearchHeader: React.FC<
-  React.ComponentProps<typeof PageContainer.Header> &
-    Omit<React.ComponentProps<typeof SearchActions>, 'variant'>
-> = ({ searchProps, buttonProps, ...rest }) => (
-  <PageContainer.Header sx={{ flexGrow: 1, gap: '20px' }} {...rest}>
-    <SearchActions searchProps={searchProps} buttonProps={buttonProps} variant='right' />
-  </PageContainer.Header>
-);"#
+            source: r#"
+console.log(PageContainer.Header);
+
+const foo = <PageContainer.Header sx={{ flexGrow: 1, gap: '20px' }} {...rest} />
+"#
             .to_owned(),
-            expected: r#"export const SearchHeader: React.FC<
-  React.ComponentProps<typeof PageContainer.Header> &
-    Omit<React.ComponentProps<typeof SearchActions>, 'variant'>
-> = ({ searchProps, buttonProps, ...rest }) => (
-  <foobar sx={{ flexGrow: 1, gap: '20px' }} {...rest}>
-    <SearchActions searchProps={searchProps} buttonProps={buttonProps} variant='right' />
-  </foobar>
-);"#
+            expected: r#"
+console.log(foobar)
+
+const foo = <foobar sx={{ flexGrow: 1, gap: '20px' }} {...rest} />
+"#
             .to_owned(),
         }
     })

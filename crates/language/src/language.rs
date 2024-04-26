@@ -248,6 +248,30 @@ pub trait MarzanoLanguage<'a>: Language<Node<'a> = NodeWithSource<'a>> + NodeTyp
             .collect()
     }
 
+    /// Certain fields are trivial, and should not be compiled into the snippet because attempting
+    /// to match on them makes snippets too brittle.
+    ///
+    /// For example, in JavaScript, we want arrow functions to match regardless of whether the snippet
+    /// included the parentheses or not.
+    ///
+    /// Fields in this list are skipped during *snippet* compilation and will therefore never prevent a match.
+    /// Note this is distinct from `optional_empty_field_compilation` which only applies to fields that are empty.
+    ///
+    /// Note you can always drop down to ast_node syntax to match on these fields. For example, in react_to_hooks
+    /// we match on `arrow_function` and capture `$parenthesis` for inspection.
+    ///
+    /// ```grit
+    /// arrow_function(parameters=$props, $body, $parenthesis) where {
+    ///     $props <: contains or { `props`, `inputProps` },
+    ///     $body <: not contains `props`,
+    ///    if ($parenthesis <: .) {
+    ///         $props => `()`
+    ///     } else {
+    ///         $props => .
+    ///     }
+    /// }
+    /// ```
+    ///
     fn skip_snippet_compilation_of_field(&self, _sort_id: SortId, _field_id: FieldId) -> bool {
         false
     }
