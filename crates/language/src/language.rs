@@ -117,21 +117,6 @@ pub(crate) fn normalize_double_quote_string(s: &str) -> Option<&str> {
     s.strip_prefix('"')?.strip_suffix('"')
 }
 
-pub(crate) fn kind_and_field_id_for_names(
-    lang: &TSLanguage,
-    names: Vec<(&str, &str)>,
-) -> Vec<(u16, u16)> {
-    names
-        .iter()
-        .map(|(kind, field)| {
-            (
-                lang.id_for_node_kind(kind, true),
-                lang.field_id_for_name(field).unwrap(),
-            )
-        })
-        .collect()
-}
-
 pub(crate) fn kind_and_field_id_for_field_map(
     lang: &TSLanguage,
     names: Vec<(&str, &str, Option<Vec<&'static str>>)>,
