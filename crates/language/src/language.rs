@@ -149,8 +149,11 @@ pub(crate) fn kind_and_field_id_for_field_map(
 }
 
 /// Helper utility for implementing `is_disregarded_snippet_field`.
+///
+/// Field map is a list of (sort_id, field_id, expected_values) tuples.
+/// If the expected_values is None, the field only matches if the field is missing in the snippet.
 pub(crate) fn check_disregarded_field_map(
-    field_map: &Vec<(u16, u16, Option<Vec<&'static str>>)>,
+    field_map: &[(u16, u16, Option<Vec<&'static str>>)],
     sort_id: SortId,
     field_id: crate::language::FieldId,
     field_node: &Option<NodeWithSource>,
