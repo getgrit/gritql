@@ -151,7 +151,10 @@ pub(crate) fn kind_and_field_id_for_field_map(
 /// Helper utility for implementing `is_disregarded_snippet_field`.
 ///
 /// Field map is a list of (sort_id, field_id, expected_values) tuples.
-/// If the expected_values is None, the field only matches if the field is missing in the snippet.
+///
+/// If the expected_values is None, the field will be disregarded entirely no matter what the field node is.
+/// Otherwise, the field will be disregarded only if the field node's text matches one of the expected values.
+/// An empty field will have an empty string as its text.
 pub(crate) fn check_disregarded_field_map(
     field_map: &[(u16, u16, Option<Vec<&'static str>>)],
     sort_id: SortId,
@@ -162,16 +165,17 @@ pub(crate) fn check_disregarded_field_map(
         if *s != sort_id || *f != field_id {
             return false;
         }
-        match field_node {
-            Some(field_value) => match expected_values {
-                Some(expected_values) => {
-                    let text = field_value.text().unwrap_or(Cow::Borrowed(""));
-                    let text_ref = text.as_ref();
-                    expected_values.iter().any(|n| n == &text_ref)
-                }
-                None => false,
-            },
-            None => expected_values.is_none(),
+        match expected_values {
+            Some(expected_values) => {
+                let text = field_node
+                    .as_ref()
+                    .map(|f| f.text().unwrap_or(Cow::Borrowed("")))
+                    .unwrap_or(Cow::Borrowed(""));
+                let text_ref = text.as_ref();
+                expected_values.iter().any(|n| n == &text_ref)
+            }
+            // Always match
+            None => true,
         }
     })
 }
