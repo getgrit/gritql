@@ -794,7 +794,7 @@ fn chaining_rewrite() {
             }"#
             .to_owned(),
             expected: r#"
-            if (!repos?.length) {
+            if (repos.length === 0) {
                 return true;
             }
             if (repos.length === 0) {

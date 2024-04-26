@@ -1,7 +1,8 @@
 use crate::{
     js_like::{
-        js_like_disregarded_field_values, js_like_get_statement_sorts, js_like_is_comment,
-        js_skip_snippet_compilation_sorts, jslike_check_replacements, MarzanoJsLikeParser,
+        js_disregarded_field_values, js_like_disregarded_field_values, js_like_get_statement_sorts,
+        js_like_is_comment, js_skip_snippet_compilation_sorts, jslike_check_replacements,
+        MarzanoJsLikeParser,
     },
     language::{
         check_disregarded_field_map, fields_for_nodes, kind_and_field_id_for_field_map,
@@ -60,7 +61,7 @@ impl JavaScript {
         });
 
         let disregarded_snippet_fields = DISREGARDED_SNIPPET_FIELDS.get_or_init(|| {
-            kind_and_field_id_for_field_map(language, js_like_disregarded_field_values())
+            kind_and_field_id_for_field_map(language, js_disregarded_field_values())
         });
 
         Self {

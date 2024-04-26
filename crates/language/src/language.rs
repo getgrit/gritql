@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use enum_dispatch::enum_dispatch;
 use grit_util::{
     traverse, AnalysisLogBuilder, AnalysisLogs, Ast, AstNode, Language, Order, Parser, SnippetTree,
@@ -141,7 +141,9 @@ pub(crate) fn kind_and_field_id_for_field_map(
         .map(|(kind, field, val)| {
             (
                 lang.id_for_node_kind(kind, true),
-                lang.field_id_for_name(field).unwrap(),
+                lang.field_id_for_name(field)
+                    .context(format!("Field {} not found", field))
+                    .unwrap(),
                 val,
             )
         })
