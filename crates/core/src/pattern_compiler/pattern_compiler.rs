@@ -124,15 +124,25 @@ impl PatternCompiler {
                 fields
                     .iter()
                     .filter(|field| {
-                        !((node.node.child_by_field_id(field.id()).is_none()
+                        // First check if we should skip compilation of this field
+                        if context
+                            .compilation
+                            .lang
+                            .skip_snippet_compilation_of_field(sort, field.id())
+                        {
+                            return false;
+                        }
+                        // Then check if it's an empty, optional field
+                        if node.node.child_by_field_id(field.id()).is_none()
                             && context
                                 .compilation
                                 .lang
-                                .optional_empty_field_compilation(sort, field.id()))
-                            || context
-                                .compilation
-                                .lang
-                                .skip_snippet_compilation_of_field(sort, field.id()))
+                                .optional_empty_field_compilation(sort, field.id())
+                        {
+                            return false;
+                        }
+                        // Otherwise compile it
+                        true
                     })
                     .map(|field| {
                         let field_id = field.id();
