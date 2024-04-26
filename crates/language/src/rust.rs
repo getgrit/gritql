@@ -126,15 +126,15 @@ impl<'a> MarzanoLanguage<'a> for Rust {
         self.language
     }
 
-    fn optional_empty_field_compilation(
-        &self,
-        sort_id: SortId,
-        field_id: crate::language::FieldId,
-    ) -> bool {
-        self.optional_empty_field_compilation
-            .iter()
-            .any(|(s, f)| *s == sort_id && *f == field_id)
-    }
+    // fn optional_empty_field_compilation(
+    //     &self,
+    //     sort_id: SortId,
+    //     field_id: crate::language::FieldId,
+    // ) -> bool {
+    //     self.optional_empty_field_compilation
+    //         .iter()
+    //         .any(|(s, f)| *s == sort_id && *f == field_id)
+    // }
 
     fn is_comment_sort(&self, id: SortId) -> bool {
         self.comment_sorts.contains(&id)

@@ -155,14 +155,16 @@ impl<'a> MarzanoLanguage<'a> for Tsx {
         Box::new(MarzanoJsLikeParser::new(self))
     }
 
-    fn optional_empty_field_compilation(
+    fn is_disregarded_snippet_field(
         &self,
         sort_id: SortId,
         field_id: crate::language::FieldId,
+        field_value: &Option<NodeWithSource<'_>>,
     ) -> bool {
-        self.optional_empty_field_compilation
-            .iter()
-            .any(|(s, f)| *s == sort_id && *f == field_id)
+        return true;
+        // self.optional_empty_field_compilation
+        //     .iter()
+        //     .any(|(s, f)| *s == sort_id && *f == field_id)
     }
 
     fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {

@@ -156,15 +156,15 @@ impl<'a> MarzanoLanguage<'a> for JavaScript {
         Box::new(MarzanoJsLikeParser::new(self))
     }
 
-    fn optional_empty_field_compilation(
-        &self,
-        sort_id: SortId,
-        field_id: crate::language::FieldId,
-    ) -> bool {
-        self.optional_empty_field_compilation
-            .iter()
-            .any(|(s, f)| *s == sort_id && *f == field_id)
-    }
+    // fn optional_empty_field_compilation(
+    //     &self,
+    //     sort_id: SortId,
+    //     field_id: crate::language::FieldId,
+    // ) -> bool {
+    //     self.optional_empty_field_compilation
+    //         .iter()
+    //         .any(|(s, f)| *s == sort_id && *f == field_id)
+    // }
 
     fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
         self.skip_snippet_compilation_sorts

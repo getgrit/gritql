@@ -152,10 +152,11 @@ impl<'a> MarzanoLanguage<'a> for TypeScript {
         Box::new(MarzanoJsLikeParser::new(self))
     }
 
-    fn optional_empty_field_compilation(
+    fn is_disregarded_snippet_field(
         &self,
         sort_id: SortId,
         field_id: crate::language::FieldId,
+        field_value: &Option<NodeWithSource<'_>>,
     ) -> bool {
         self.optional_empty_field_compilation
             .iter()

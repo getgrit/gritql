@@ -289,7 +289,13 @@ pub trait MarzanoLanguage<'a>: Language<Node<'a> = NodeWithSource<'a>> + NodeTyp
     /// ```
     ///
     /// This method allows you to specify that a field can be empty in the snippet and still match.
-    fn optional_empty_field_compilation(&self, _sort_id: SortId, _field_id: FieldId) -> bool {
+    /// You can also specify values that should count as "effectively empty" for the purposes of matching.
+    fn is_disregarded_snippet_field(
+        &self,
+        _sort_id: SortId,
+        _field_id: FieldId,
+        _node: &Option<NodeWithSource<'_>>,
+    ) -> bool {
         false
     }
 

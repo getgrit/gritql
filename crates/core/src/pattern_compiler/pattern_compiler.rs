@@ -124,7 +124,7 @@ impl PatternCompiler {
                 fields
                     .iter()
                     .filter(|field| {
-                        // First check if we should skip compilation of this field
+                        // First check if we should skip compilation of this field entirely
                         if context
                             .compilation
                             .lang
@@ -132,13 +132,16 @@ impl PatternCompiler {
                         {
                             return false;
                         }
+                        let child_with_source = node
+                            .node
+                            .child_by_field_id(field.id())
+                            .map(|n| NodeWithSource::new(n, node.source));
                         // Then check if it's an empty, optional field
-                        if node.node.child_by_field_id(field.id()).is_none()
-                            && context
-                                .compilation
-                                .lang
-                                .optional_empty_field_compilation(sort, field.id())
-                        {
+                        if context.compilation.lang.is_disregarded_snippet_field(
+                            sort,
+                            field.id(),
+                            &child_with_source,
+                        ) {
                             return false;
                         }
                         // Otherwise compile it
