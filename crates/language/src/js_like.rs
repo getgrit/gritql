@@ -1,5 +1,7 @@
 use crate::{
-    language::{MarzanoLanguage, MarzanoParser, SortId, TSLanguage, Tree},
+    language::{
+        FieldExpectationCondition, MarzanoLanguage, MarzanoParser, SortId, TSLanguage, Tree,
+    },
     vue::get_vue_ranges,
 };
 use grit_util::{AnalysisLogs, AstNode, Parser, Replacement, SnippetTree};
@@ -44,44 +46,144 @@ pub(crate) fn js_like_get_statement_sorts(lang: &TSLanguage) -> Vec<SortId> {
 }
 
 pub(crate) fn js_disregarded_field_values(
-) -> Vec<(&'static str, &'static str, Option<Vec<&'static str>>)> {
+) -> Vec<(&'static str, &'static str, FieldExpectationCondition)> {
     vec![
         // Always disregarded:
-        ("method_definition", "parenthesis", None),
-        ("function", "parenthesis", None),
-        ("function_declaration", "parenthesis", None),
-        ("generator_function", "parenthesis", None),
-        ("generator_function_declaration", "parenthesis", None),
-        ("arrow_function", "parenthesis", None),
+        (
+            "method_definition",
+            "parenthesis",
+            FieldExpectationCondition::Always,
+        ),
+        ("function", "parenthesis", FieldExpectationCondition::Always),
+        (
+            "function_declaration",
+            "parenthesis",
+            FieldExpectationCondition::Always,
+        ),
+        (
+            "generator_function",
+            "parenthesis",
+            FieldExpectationCondition::Always,
+        ),
+        (
+            "generator_function_declaration",
+            "parenthesis",
+            FieldExpectationCondition::Always,
+        ),
+        (
+            "arrow_function",
+            "parenthesis",
+            FieldExpectationCondition::Always,
+        ),
         // Disregarded if empty:
-        ("function", "async", Some(vec![""])),
-        ("arrow_function", "async", Some(vec![""])),
-        ("generator_function", "async", Some(vec![""])),
-        ("generator_function_declaration", "async", Some(vec![""])),
-        ("method_definition", "async", Some(vec![""])),
-        ("function_declaration", "async", Some(vec![""])),
-        ("import_statement", "import", Some(vec![""])),
+        (
+            "function",
+            "async",
+            FieldExpectationCondition::OnlyIf(vec![""]),
+        ),
+        (
+            "arrow_function",
+            "async",
+            FieldExpectationCondition::OnlyIf(vec![""]),
+        ),
+        (
+            "generator_function",
+            "async",
+            FieldExpectationCondition::OnlyIf(vec![""]),
+        ),
+        (
+            "generator_function_declaration",
+            "async",
+            FieldExpectationCondition::OnlyIf(vec![""]),
+        ),
+        (
+            "method_definition",
+            "async",
+            FieldExpectationCondition::OnlyIf(vec![""]),
+        ),
+        (
+            "function_declaration",
+            "async",
+            FieldExpectationCondition::OnlyIf(vec![""]),
+        ),
+        (
+            "import_statement",
+            "import",
+            FieldExpectationCondition::OnlyIf(vec![""]),
+        ),
     ]
 }
 
 pub(crate) fn js_like_disregarded_field_values(
-) -> Vec<(&'static str, &'static str, Option<Vec<&'static str>>)> {
+) -> Vec<(&'static str, &'static str, FieldExpectationCondition)> {
     let mut res = vec![
         // always disregarded:
-        ("constructor_type", "parenthesis", None),
-        ("construct_signature", "parenthesis", None),
-        ("function_type", "parenthesis", None),
-        ("method_signature", "parenthesis", None),
-        ("abstract_method_signature", "parenthesis", None),
-        ("function_signature", "parenthesis", None),
+        (
+            "constructor_type",
+            "parenthesis",
+            FieldExpectationCondition::Always,
+        ),
+        (
+            "construct_signature",
+            "parenthesis",
+            FieldExpectationCondition::Always,
+        ),
+        (
+            "function_type",
+            "parenthesis",
+            FieldExpectationCondition::Always,
+        ),
+        (
+            "method_signature",
+            "parenthesis",
+            FieldExpectationCondition::Always,
+        ),
+        (
+            "abstract_method_signature",
+            "parenthesis",
+            FieldExpectationCondition::Always,
+        ),
+        (
+            "function_signature",
+            "parenthesis",
+            FieldExpectationCondition::Always,
+        ),
         // disregarded if empty:
-        ("call_expression", "type_arguments", Some(vec![""])),
-        ("new_expression", "type_arguments", Some(vec![""])),
-        ("function", "return_type", Some(vec![""])),
-        ("arrow_function", "return_type", Some(vec![""])),
-        ("import_statement", "type", Some(vec![""])),
-        ("public_field_definition", "static", Some(vec![""])),
-        ("member_expression", "chain", Some(vec!["", "."])),
+        (
+            "call_expression",
+            "type_arguments",
+            FieldExpectationCondition::OnlyIf(vec![""]),
+        ),
+        (
+            "new_expression",
+            "type_arguments",
+            FieldExpectationCondition::OnlyIf(vec![""]),
+        ),
+        (
+            "function",
+            "return_type",
+            FieldExpectationCondition::OnlyIf(vec![""]),
+        ),
+        (
+            "arrow_function",
+            "return_type",
+            FieldExpectationCondition::OnlyIf(vec![""]),
+        ),
+        (
+            "import_statement",
+            "type",
+            FieldExpectationCondition::OnlyIf(vec![""]),
+        ),
+        (
+            "public_field_definition",
+            "static",
+            FieldExpectationCondition::OnlyIf(vec![""]),
+        ),
+        (
+            "member_expression",
+            "chain",
+            FieldExpectationCondition::OnlyIf(vec!["", "."]),
+        ),
     ];
     res.extend(js_disregarded_field_values());
     res

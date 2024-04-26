@@ -119,7 +119,7 @@ pub(crate) fn normalize_double_quote_string(s: &str) -> Option<&str> {
 
 pub(crate) fn kind_and_field_id_for_field_map(
     lang: &TSLanguage,
-    names: Vec<(&str, &str, Option<Vec<&'static str>>)>,
+    names: Vec<(&str, &str, FieldExpectationCondition)>,
 ) -> Vec<FieldExpectation> {
     names
         .into_iter()
@@ -135,12 +135,18 @@ pub(crate) fn kind_and_field_id_for_field_map(
         .collect()
 }
 
+#[derive(Debug, Clone)]
+pub(crate) enum FieldExpectationCondition {
+    Always,
+    OnlyIf(Vec<&'static str>),
+}
+
 /// Field expectation is a tuple of (sort_id, field_id, expected_values)
 ///
 /// If the expected_values is None, the field will be disregarded entirely no matter what the field node is.
 /// Otherwise, the field will be disregarded only if the field node's text matches one of the expected values.
 /// An empty field will have an empty string as its text.
-pub type FieldExpectation = (u16, u16, Option<Vec<&'static str>>);
+pub(crate) type FieldExpectation = (u16, u16, FieldExpectationCondition);
 
 /// Helper utility for implementing `is_disregarded_snippet_field`.
 pub(crate) fn check_disregarded_field_map(
@@ -154,7 +160,7 @@ pub(crate) fn check_disregarded_field_map(
             return false;
         }
         match expected_values {
-            Some(expected_values) => {
+            FieldExpectationCondition::OnlyIf(expected_values) => {
                 let text = field_node
                     .as_ref()
                     .map(|f| f.text().unwrap_or(Cow::Borrowed("")))
@@ -163,7 +169,7 @@ pub(crate) fn check_disregarded_field_map(
                 expected_values.iter().any(|n| n == &text_ref)
             }
             // Always match
-            None => true,
+            FieldExpectationCondition::Always => true,
         }
     })
 }
