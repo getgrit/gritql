@@ -305,8 +305,8 @@ pub trait MarzanoLanguage<'a>: Language<Node<'a> = NodeWithSource<'a>> + NodeTyp
     /// This method allows you to specify fields that should be (conditionally) disregarded in snippets.
     /// The actual value of the field from the snippet, if any, is passed in as the third argument.
     ///
-    /// Note that if a field is always disregarded, you can still down to ast_node syntax to match on these fields.
-    /// For example, in react_to_hookswe match on `arrow_function` and capture `$parenthesis` for inspection.
+    /// Note that if a field is always disregarded, you can still switch to ast_node syntax to match on these fields.
+    /// For example, in react_to_hooks we match on `arrow_function` and capture `$parenthesis` for inspection.
     ///
     /// ```grit
     /// arrow_function(parameters=$props, $body, $parenthesis) where {
