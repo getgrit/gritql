@@ -1,7 +1,7 @@
 use crate::{
     js_like::{
-        js_like_get_statement_sorts, js_like_is_comment, js_optional_empty_field_compilation,
-        js_skip_snippet_compilation_sorts, jslike_check_replacements, MarzanoJsLikeParser,
+        js_like_get_statement_sorts, js_like_is_comment, js_skip_snippet_compilation_sorts,
+        jslike_check_replacements, MarzanoJsLikeParser,
     },
     language::{
         fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, MarzanoLanguage, NodeTypes,
@@ -58,7 +58,8 @@ impl JavaScript {
         });
 
         let optional_empty_field_compilation = OPTIONAL_EMPTY_FIELD_COMPILATION.get_or_init(|| {
-            kind_and_field_id_for_names(language, js_optional_empty_field_compilation())
+            Vec::new()
+            // kind_and_field_id_for_names(language, js_optional_empty_field_compilation())
         });
 
         Self {

@@ -1,6 +1,6 @@
 use crate::js_like::{
-    js_like_get_statement_sorts, js_like_optional_empty_field_compilation,
-    js_like_skip_snippet_compilation_sorts, jslike_check_replacements, MarzanoJsLikeParser,
+    js_like_get_statement_sorts, js_like_skip_snippet_compilation_sorts, jslike_check_replacements,
+    MarzanoJsLikeParser,
 };
 use crate::language::{
     fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, MarzanoLanguage, NodeTypes,
@@ -52,7 +52,8 @@ impl TypeScript {
         });
 
         let optional_empty_field_compilation = OPTIONAL_EMPTY_FIELD_COMPILATION.get_or_init(|| {
-            kind_and_field_id_for_names(language, js_like_optional_empty_field_compilation())
+            // kind_and_field_id_for_names(language, js_like_optional_empty_field_compilation())
+            Vec::new()
         });
 
         let statement_sorts = STATEMENT_SORTS.get_or_init(|| js_like_get_statement_sorts(language));
@@ -152,16 +153,16 @@ impl<'a> MarzanoLanguage<'a> for TypeScript {
         Box::new(MarzanoJsLikeParser::new(self))
     }
 
-    fn is_disregarded_snippet_field(
-        &self,
-        sort_id: SortId,
-        field_id: crate::language::FieldId,
-        field_value: &Option<NodeWithSource<'_>>,
-    ) -> bool {
-        self.optional_empty_field_compilation
-            .iter()
-            .any(|(s, f)| *s == sort_id && *f == field_id)
-    }
+    // fn is_disregarded_snippet_field(
+    //     &self,
+    //     sort_id: SortId,
+    //     field_id: crate::language::FieldId,
+    //     field_value: &Option<NodeWithSource<'_>>,
+    // ) -> bool {
+    //     // self.optional_empty_field_compilation
+    //     //     .iter()
+    //     //     .any(|(s, f)| *s == sort_id && *f == field_id)
+    // }
 
     fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
         self.skip_snippet_compilation_sorts

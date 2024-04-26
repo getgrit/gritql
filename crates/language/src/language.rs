@@ -6,7 +6,7 @@ use grit_util::{
 use itertools::Itertools;
 use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
 use serde_json::Value;
-use std::{cmp::max, collections::HashMap, path::Path};
+use std::{borrow::Cow, cmp::max, collections::HashMap, path::Path};
 pub(crate) use tree_sitter::{Language as TSLanguage, Parser as TSParser, Tree as TSTree};
 
 pub type SortId = u16;
@@ -130,6 +130,47 @@ pub(crate) fn kind_and_field_id_for_names(
             )
         })
         .collect()
+}
+
+pub(crate) fn kind_and_field_id_for_field_map(
+    lang: &TSLanguage,
+    names: Vec<(&str, &str, Option<Vec<&'static str>>)>,
+) -> Vec<(u16, u16, Option<Vec<&'static str>>)> {
+    names
+        .into_iter()
+        .map(|(kind, field, val)| {
+            (
+                lang.id_for_node_kind(kind, true),
+                lang.field_id_for_name(field).unwrap(),
+                val,
+            )
+        })
+        .collect()
+}
+
+/// Helper utility for implementing `is_disregarded_snippet_field`.
+pub(crate) fn check_disregarded_field_map(
+    field_map: &Vec<(u16, u16, Option<Vec<&'static str>>)>,
+    sort_id: SortId,
+    field_id: crate::language::FieldId,
+    field_node: &Option<NodeWithSource>,
+) -> bool {
+    field_map.iter().any(|(s, f, expected_values)| {
+        if *s != sort_id || *f != field_id {
+            return false;
+        }
+        match field_node {
+            Some(field_value) => match expected_values {
+                Some(expected_values) => {
+                    let text = field_value.text().unwrap_or(Cow::Borrowed(""));
+                    let text_ref = text.as_ref();
+                    expected_values.iter().any(|n| n == &text_ref)
+                }
+                None => false,
+            },
+            None => expected_values.is_none(),
+        }
+    })
 }
 
 pub trait NodeTypes {
