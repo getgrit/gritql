@@ -1,6 +1,6 @@
 use crate::{
     js_like::{
-        js_disregarded_field_values, js_like_disregarded_field_values, js_like_get_statement_sorts,
+        js_disregarded_field_values, js_like_get_statement_sorts,
         js_like_is_comment, js_skip_snippet_compilation_sorts, jslike_check_replacements,
         MarzanoJsLikeParser,
     },

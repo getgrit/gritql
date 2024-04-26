@@ -11,7 +11,7 @@ use crate::{
 };
 use grit_util::{AstNode, Language, Parser, Range, Replacement};
 use marzano_util::node_with_source::NodeWithSource;
-use std::{borrow::Cow, sync::OnceLock};
+use std::{sync::OnceLock};
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/tsx-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
