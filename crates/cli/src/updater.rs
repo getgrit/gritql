@@ -444,17 +444,14 @@ impl Updater {
     async fn download_artifact(&self, app: SupportedApp, artifact_url: String) -> Result<PathBuf> {
         let target_path = self.bin_path.join(format!("{}-temp", app.get_bin_name()));
 
-        // Download via curl
-        let cmd = AsyncCommand::new("curl")
-            .arg("-L")
-            .arg("-o")
-            .arg(&target_path)
-            .arg(&artifact_url)
-            .output()
-            .await?;
-
-        if !cmd.status.success() {
-            bail!("Failed to download artifact: {:?}", cmd);
+        match reqwest::get(&artifact_url).await {
+            Ok(response) => {
+                let contents = response.bytes().await?.to_vec();
+                async_fs::write(&target_path, contents).await?;
+            }
+            Err(e) => {
+                bail!("Failed to download artifact: {:?}", e);
+            }
         }
 
         Ok(target_path)
