@@ -59,7 +59,10 @@ impl Language for Ruby {
     }
 
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[("", "")]
+        &[
+            ("", ""),
+            ("case GRIT_VARIABLE\n", "\nend")
+        ]
     }
 
     fn comment_prefix(&self) -> &'static str {
@@ -68,13 +71,6 @@ impl Language for Ruby {
 
     fn is_comment(&self, node: &NodeWithSource) -> bool {
         MarzanoLanguage::is_comment_node(self, node)
-    }
-
-    fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[
-            ("", ""),
-            ("case GRIT_VARIABLE\n", "\nend")
-        ]
     }
 
     fn is_metavariable(&self, node: &NodeWithSource) -> bool {
