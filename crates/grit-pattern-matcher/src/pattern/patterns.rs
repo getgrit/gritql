@@ -91,6 +91,7 @@ pub enum Pattern<Q: QueryContext> {
     Files(Box<Files<Q>>),
     Bubble(Box<Bubble<Q>>),
     Limit(Box<Limit<Q>>),
+    Callback(Box<Callback>),
     CallBuiltIn(Box<CallBuiltIn<Q>>),
     CallFunction(Box<CallFunction<Q>>),
     CallForeignFunction(Box<CallForeignFunction<Q>>),
@@ -178,6 +179,7 @@ impl<Q: QueryContext> PatternName for Pattern<Q> {
             Pattern::Files(_) => "MULTIFILE",
             Pattern::Bubble(pattern_call) => pattern_call.name(),
             Pattern::Limit(limit) => limit.name(),
+            Pattern::Callback(callback) => callback.name(),
             Pattern::CallBuiltIn(built_in) => built_in.name(),
             Pattern::CallFunction(call_function) => call_function.name(),
             Pattern::CallForeignFunction(call_function) => call_function.name(),
@@ -253,6 +255,7 @@ impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
             Pattern::File(file_pattern) => file_pattern.execute(binding, state, context, logs),
             Pattern::Bubble(pattern_call) => pattern_call.execute(binding, state, context, logs),
             Pattern::Limit(limit) => limit.execute(binding, state, context, logs),
+            Pattern::Callback(callback) => callback.execute(binding, state, context, logs),
             Pattern::CallBuiltIn(_) => bail!("CallBuiltIn cannot be executed at the moment"),
             Pattern::CallFunction(_) => {
                 bail!("CallFunction cannot be executed at the moment")

@@ -7,5 +7,6 @@ pub const GLOBAL_VARS_SCOPE_INDEX: usize = 0;
 
 pub const MATCH_VAR: &str = "$match";
 pub const GRIT_RANGE_VAR: &str = "$grit_range";
+pub const CALLBACK_VAR: &str = "$callback";
 
 pub const DEFAULT_FILE_NAME: &str = "PlaygroundPattern";

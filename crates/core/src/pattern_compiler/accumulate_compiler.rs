@@ -44,6 +44,7 @@ impl NodeCompiler for AccumulateCompiler {
             | Pattern::Files(_)
             | Pattern::Bubble(_)
             | Pattern::Limit(_)
+            | Pattern::Callback(_)
             | Pattern::CallBuiltIn(_)
             | Pattern::CallFunction(_)
             | Pattern::CallForeignFunction(_)

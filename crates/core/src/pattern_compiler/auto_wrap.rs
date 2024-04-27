@@ -67,10 +67,10 @@ pub(super) fn auto_wrap_pattern<Q: QueryContext>(
     } else {
         pattern
     };
-    if should_wrap_in_sequential {
-        Ok(Pattern::Sequential(vec![Step { pattern }].into()))
-    } else {
+    if is_sequential {
         Ok(pattern)
+    } else {
+        Ok(Pattern::Sequential(vec![Step { pattern }].into()))
     }
 }
 
@@ -134,6 +134,7 @@ fn is_sequential<Q: QueryContext>(
         | Pattern::Divide(_)
         | Pattern::Modulo(_)
         | Pattern::Like(_)
+        | Pattern::Callback(_)
         | Pattern::Dots => false,
     }
 }
@@ -162,6 +163,7 @@ pub(crate) fn should_autowrap<Q: QueryContext>(
         | Pattern::Accessor(_)
         | Pattern::Regex(_)
         | Pattern::Files(_)
+        | Pattern::Callback(_)
         | Pattern::CallBuiltIn(_)
         | Pattern::CallFunction(_)
         | Pattern::CallForeignFunction(_)
@@ -256,6 +258,7 @@ fn extract_limit_pattern<Q: QueryContext>(
         | Pattern::Accessor(_)
         | Pattern::Regex(_)
         | Pattern::Files(_)
+        | Pattern::Callback(_)
         | Pattern::CallBuiltIn(_)
         | Pattern::CallFunction(_)
         | Pattern::CallForeignFunction(_)
@@ -320,6 +323,7 @@ fn should_wrap_in_file<Q: QueryContext>(
         | Pattern::Map(_)
         | Pattern::Accessor(_)
         | Pattern::Regex(_)
+        | Pattern::Callback(_)
         | Pattern::CallBuiltIn(_)
         | Pattern::CallFunction(_)
         | Pattern::CallForeignFunction(_)

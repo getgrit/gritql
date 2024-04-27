@@ -108,6 +108,7 @@ fn execute<'a, Q: QueryContext>(
         | Pattern::Modulo(_)
         | Pattern::Dots
         | Pattern::Sequential(_)
+        | Pattern::Callback(_)
         | Pattern::Like(_) => {
             let resolved = Q::ResolvedPattern::from_pattern(pattern, state, context, logs)
                 .context("includes can only be used with patterns that can be resolved")?;

@@ -538,6 +538,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             | Pattern::Files(_)
             | Pattern::Bubble(_)
             | Pattern::Limit(_)
+            | Pattern::Callback(_)
             | Pattern::Assignment(_)
             | Pattern::Accumulate(_)
             | Pattern::And(_)
