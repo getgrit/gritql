@@ -52,11 +52,6 @@ use std::{
     vec,
 };
 
-// resolved_pattern: &Q::ResolvedPattern<'a>,
-// init_state: &mut State<'a, Q>,
-// context: &'a Q::ExecContext<'a>,
-// logs: &mut AnalysisLogs,
-
 pub type CallbackMatchFn = dyn for<'a> Fn(
         &<problem::MarzanoQueryContext as grit_pattern_matcher::context::QueryContext>::ResolvedPattern<'a>,
         &'a MarzanoContext<'a>,
@@ -301,7 +296,7 @@ impl PatternBuilder {
             logs: &mut self.compilation_warnings,
         };
 
-        // // We reuse the match name here, not sure that's right.
+        // We reuse the match name here, not sure that's right.
         let match_var = variable_from_name(MATCH_VAR, &mut node_context).unwrap();
         let predicate_match = Predicate::Match(Box::new(Match::new(
             Container::FunctionCall(Box::new(CallBuiltIn::new(
@@ -313,8 +308,6 @@ impl PatternBuilder {
             Some(Pattern::BooleanConstant(BooleanConstant::new(true))),
         )));
 
-        // let pattern = Pattern::Callback(Box::new(Callback::new(index)));
-        // self.pattern = Pattern::And(Box::new(And::new(vec![self.pattern, pattern])));
         self.wrap_with_condition(predicate_match)
     }
 
