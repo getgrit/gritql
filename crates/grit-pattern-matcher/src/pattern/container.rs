@@ -16,7 +16,7 @@ pub enum Container<Q: QueryContext> {
     Variable(Variable),
     Accessor(Box<Accessor<Q>>),
     ListIndex(Box<ListIndex<Q>>),
-    FunctionCall(CallBuiltIn<Q>),
+    FunctionCall(Box<CallBuiltIn<Q>>),
 }
 
 #[derive(Debug)]
