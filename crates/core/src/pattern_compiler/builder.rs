@@ -18,7 +18,7 @@ use crate::{
     foreign_function_definition::ForeignFunctionDefinition,
     marzano_context::MarzanoContext,
     marzano_resolved_pattern::MarzanoResolvedPattern,
-    problem::{MarzanoQueryContext, Problem},
+    problem::{self, MarzanoQueryContext, Problem},
     variables::variable_from_name,
 };
 use crate::{built_in_functions::CallableFn, pattern_compiler::compiler::DefinitionOutput};
@@ -27,13 +27,13 @@ use grit_pattern_matcher::pattern::State;
 use grit_pattern_matcher::{
     constant::Constant,
     constants::{
-        ABSOLUTE_PATH_INDEX, CALLBACK_VAR, DEFAULT_FILE_NAME, FILENAME_INDEX, MATCH_VAR,
-        NEW_FILES_INDEX, PROGRAM_INDEX,
+        ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, MATCH_VAR, NEW_FILES_INDEX,
+        PROGRAM_INDEX,
     },
     context::QueryContext,
     pattern::{
-        And, BooleanConstant, CallBuiltIn, Callback, Container, GritFunctionDefinition, Match,
-        Pattern, PatternDefinition, PrAnd, Predicate, PredicateDefinition, ResolvedPattern,
+        And, BooleanConstant, CallBuiltIn, Container, GritFunctionDefinition, Match, Pattern,
+        PatternDefinition, PrAnd, Predicate, PredicateDefinition, ResolvedPattern,
         VariableSourceLocations, Where,
     },
 };
@@ -57,8 +57,8 @@ use std::{
 // context: &'a Q::ExecContext<'a>,
 // logs: &mut AnalysisLogs,
 
-pub type CallbackMatchFn<Q: QueryContext> = dyn for<'a> Fn(
-        &Q::ResolvedPattern<'a>,
+pub type CallbackMatchFn = dyn for<'a> Fn(
+        &<problem::MarzanoQueryContext as grit_pattern_matcher::context::QueryContext>::ResolvedPattern<'a>,
         &'a MarzanoContext<'a>,
         &mut State<'a, MarzanoQueryContext>,
         &mut AnalysisLogs,
@@ -267,7 +267,7 @@ impl PatternBuilder {
     }
 
     /// Add a callback
-    pub fn matches_callback(mut self, cb: Box<CallbackMatchFn<MarzanoQueryContext>>) -> Self {
+    pub fn matches_callback(mut self, cb: Box<CallbackMatchFn>) -> Self {
         // This is a bit of a hack, but we can dynamically inject a new built-in and use that to call the callback
         let index = self
             .built_ins
