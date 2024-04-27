@@ -4,12 +4,7 @@ use super::{
         filter_libs, get_definition_info, get_definitions, CompilationContext, DefinitionInfo,
         DefinitionInfoKinds, NodeCompilationContext, VariableLocations,
     },
-    function_definition_compiler::{
-        ForeignFunctionDefinitionCompiler, GritFunctionDefinitionCompiler,
-    },
     pattern_compiler::PatternCompiler,
-    pattern_definition_compiler::PatternDefinitionCompiler,
-    predicate_definition_compiler::PredicateDefinitionCompiler,
     CompilationResult, NodeCompiler,
 };
 use crate::{
@@ -22,7 +17,7 @@ use crate::{
     variables::variable_from_name,
 };
 use crate::{built_in_functions::CallableFn, pattern_compiler::compiler::DefinitionOutput};
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use grit_pattern_matcher::pattern::State;
 use grit_pattern_matcher::{
     constant::Constant,
@@ -30,25 +25,21 @@ use grit_pattern_matcher::{
         ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, MATCH_VAR, NEW_FILES_INDEX,
         PROGRAM_INDEX,
     },
-    context::QueryContext,
     pattern::{
         And, BooleanConstant, CallBuiltIn, Container, GritFunctionDefinition, Match, Pattern,
-        PatternDefinition, PrAnd, Predicate, PredicateDefinition, ResolvedPattern,
+        PatternDefinition, Predicate, PredicateDefinition, ResolvedPattern,
         VariableSourceLocations, Where,
     },
 };
-use grit_util::{traverse, AnalysisLogs, Ast, AstNode, FileRange, Order, Range, VariableMatch};
-use itertools::Itertools;
+use grit_util::{AnalysisLogs, Ast, FileRange};
+
 use marzano_language::{
     self, grit_parser::MarzanoGritParser, language::Tree, target_language::TargetLanguage,
 };
-use marzano_util::node_with_source::NodeWithSource;
+
 use std::{
-    collections::{BTreeMap, BTreeSet},
-    ffi::OsStr,
-    mem,
+    collections::{BTreeMap},
     path::Path,
-    str::Utf8Error,
     vec,
 };
 
@@ -142,7 +133,7 @@ impl PatternBuilder {
 
         let DefinitionOutput {
             mut vars_array,
-            mut pattern_definitions,
+            pattern_definitions,
             predicate_definitions,
             function_definitions,
             foreign_function_definitions,

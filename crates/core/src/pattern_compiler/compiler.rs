@@ -1,5 +1,4 @@
 use super::{
-    auto_wrap::auto_wrap_pattern,
     builder::PatternBuilder,
     function_definition_compiler::{
         ForeignFunctionDefinitionCompiler, GritFunctionDefinitionCompiler,
@@ -10,7 +9,6 @@ use super::{
     NodeCompiler,
 };
 use crate::{
-    analysis::{has_limit, is_multifile},
     built_in_functions::BuiltIns,
     foreign_function_definition::ForeignFunctionDefinition,
     problem::{MarzanoQueryContext, Problem},
@@ -18,10 +16,10 @@ use crate::{
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
     constants::{
-        ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
+        DEFAULT_FILE_NAME,
     },
     pattern::{
-        GritFunctionDefinition, Pattern, PatternDefinition, PredicateDefinition,
+        GritFunctionDefinition, PatternDefinition, PredicateDefinition,
         VariableSourceLocations,
     },
 };

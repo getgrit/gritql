@@ -20,6 +20,7 @@ use std::{
 };
 use tree_sitter::{Language as TSLanguage, Parser as TSParser};
 use wasm_bindgen::prelude::*;
+use marzano_core::pattern_compiler::PatternBuilder;
 
 static GRIT_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static JAVASCRIPT_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
