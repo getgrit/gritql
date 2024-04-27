@@ -231,13 +231,11 @@ async fn match_pattern_internal(
         &libs,
         lang,
         None,
-        None,
         parser,
-        injected_builtins,
-        None)?;
+        injected_builtins)?;
     let CompilationResult {
         problem: pattern, ..
-    } = builder.compile()?;
+    } = builder.compile(None, None)?;
     let files: Vec<RichFile> = paths
         .into_iter()
         .zip(contents)
