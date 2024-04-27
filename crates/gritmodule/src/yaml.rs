@@ -1,7 +1,7 @@
-use std::{collections::HashSet, path::Path};
-
 use anyhow::{bail, Result};
-use marzano_util::{position::Position, rich_path::RichFile};
+use grit_util::Position;
+use marzano_util::rich_path::RichFile;
+use std::{collections::HashSet, path::Path};
 use tokio::fs;
 
 use crate::{
@@ -17,7 +17,11 @@ pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
     let serialized: SerializedGritConfig = match serde_yaml::from_str(source) {
         Ok(config) => config,
         Err(err) => {
-            bail!("Invalid grit.yml: {}", err.to_string())
+            bail!(
+                "Invalid configuration file '{}': {}",
+                source_path,
+                err.to_string()
+            )
         }
     };
 
@@ -43,11 +47,7 @@ pub fn get_patterns_from_yaml(
     for pattern in config.patterns.iter_mut() {
         pattern.kind = Some(DefinitionKind::Pattern);
         let offset = file.content.find(&pattern.name).unwrap_or(0);
-        pattern.position = Some(Position::from_byte_index(
-            &file.content,
-            None,
-            offset as u32,
-        ));
+        pattern.position = Some(Position::from_byte_index(&file.content, offset));
     }
 
     config
@@ -130,7 +130,7 @@ patterns:
         let grit_yaml = "invalid config";
         let gritmodules = extract_grit_modules(grit_yaml, ".grit/grit.yaml");
         if let Err(e) = gritmodules {
-            assert!(e.to_string().contains("Invalid grit.yml"));
+            assert!(e.to_string().contains("Invalid configuration file"));
         } else {
             panic!("Expected error");
         }

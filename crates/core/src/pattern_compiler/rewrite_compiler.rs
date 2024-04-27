@@ -2,16 +2,11 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::{
-    pattern::{
-        code_snippet::CodeSnippet, dynamic_snippet::DynamicPattern, patterns::Pattern,
-        rewrite::Rewrite,
-    },
-    problem::MarzanoQueryContext,
-};
+use crate::{marzano_code_snippet::MarzanoCodeSnippet, problem::MarzanoQueryContext};
 use anyhow::{anyhow, Result};
-use grit_util::AstNode;
-use marzano_util::{analysis_logs::AnalysisLogBuilder, node_with_source::NodeWithSource};
+use grit_pattern_matcher::pattern::{DynamicPattern, Pattern, Rewrite};
+use grit_util::{AnalysisLogBuilder, AstNode};
+use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct RewriteCompiler;
 
@@ -36,21 +31,22 @@ impl NodeCompiler for RewriteCompiler {
 
         match (&left, &right) {
             (
-                Pattern::CodeSnippet(CodeSnippet {
+                Pattern::CodeSnippet(MarzanoCodeSnippet {
                     source: left_source,
                     ..
                 }),
-                Pattern::CodeSnippet(CodeSnippet {
+                Pattern::CodeSnippet(MarzanoCodeSnippet {
                     source: right_source,
                     ..
                 }),
             ) if left_source == right_source => {
+                let range = node.range();
                 let log = AnalysisLogBuilder::default()
                 .level(441_u16)
                 .file(context.compilation.file)
                 .source(node.source)
-                .position(node.node.start_position())
-                .range(node.range())
+                .position(range.start)
+                .range(range)
                 .message(
                     format!("Warning: This is rewriting `{}` into the identical string `{}`, will have no effect.", left_source, right_source)
                 )
@@ -61,7 +57,7 @@ impl NodeCompiler for RewriteCompiler {
         }
         let right = match right {
             Pattern::Dynamic(r) => r,
-            Pattern::CodeSnippet(CodeSnippet {
+            Pattern::CodeSnippet(MarzanoCodeSnippet {
                 dynamic_snippet: Some(r),
                 ..
             }) => r,

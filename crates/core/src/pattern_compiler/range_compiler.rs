@@ -1,6 +1,6 @@
 use super::{compiler::NodeCompilationContext, node_compiler::NodeCompiler};
-use crate::pattern::range::{Point, Range};
 use anyhow::Result;
+use grit_pattern_matcher::pattern::{Point, Range};
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 

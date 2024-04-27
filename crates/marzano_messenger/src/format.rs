@@ -1,8 +1,7 @@
-use std::process::Command;
-
 use anyhow::Result;
+use grit_util::Position;
 use marzano_core::api::{ByteRange, MatchResult};
-use marzano_util::position::{get_one_indexed_position_offset, Position};
+use std::process::Command;
 
 const JAVASCRIPT_EXTENSIONS: [&str; 6] = ["js", "jsx", "ts", "tsx", "cjs", "mjs"];
 
@@ -39,24 +38,20 @@ fn get_extended_byte_range(content: &str, range: &ByteRange) -> ByteRange {
         end_line_to_check = end_line_to_check.saturating_add(1);
     }
 
-    let start_offset = get_one_indexed_position_offset(
-        &Position {
-            line: start_line_to_check as u32 + 1,
-            column: 1,
-        },
-        content,
-    );
+    let start_offset = Position {
+        line: start_line_to_check as u32 + 1,
+        column: 1,
+    }
+    .byte_index(content);
 
     let end_offset = if end_line_to_check >= total_lines - 1 {
         content.len()
     } else {
-        get_one_indexed_position_offset(
-            &Position {
-                line: end_line_to_check as u32 + 2,
-                column: 1,
-            },
-            content,
-        )
+        Position {
+            line: end_line_to_check as u32 + 2,
+            column: 1,
+        }
+        .byte_index(content)
     };
 
     ByteRange {

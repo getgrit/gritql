@@ -2,9 +2,9 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::pattern::includes::Includes;
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
+use grit_pattern_matcher::pattern::Includes;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct IncludesCompiler;

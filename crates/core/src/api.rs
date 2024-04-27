@@ -1,16 +1,15 @@
-use crate::problem::{FileOwner, InputRanges, Problem};
-use crate::{fs, tree_sitter_serde::tree_sitter_node_to_json};
+use crate::{fs, problem::Problem, tree_sitter_serde::tree_sitter_node_to_json};
 use anyhow::{bail, Result};
+use grit_pattern_matcher::file_owners::FileOwner;
+pub use grit_util::ByteRange;
+use grit_util::{AnalysisLog as GritAnalysisLog, Ast, InputRanges, Position, Range, VariableMatch};
 use im::Vector;
 use marzano_language::grit_ts_node::grit_node_types;
-use marzano_language::language::Language;
-use marzano_util::analysis_logs::AnalysisLog as MarzanoAnalysisLog;
-use marzano_util::position::{Position, Range, VariableMatch};
+use marzano_language::language::{MarzanoLanguage, Tree};
 use serde::{Deserialize, Serialize};
 use serde_json::to_string_pretty;
 use std::path::PathBuf;
-use std::{fmt, ops::Range as StdRange, str::FromStr, vec};
-use tree_sitter::Tree;
+use std::{fmt, str::FromStr, vec};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
@@ -92,9 +91,9 @@ impl MatchResult {
         }
     }
 
-    pub(crate) fn file_to_match_result(
-        file: &Vector<&FileOwner>,
-        language: &impl Language,
+    pub(crate) fn file_to_match_result<'a>(
+        file: &Vector<&FileOwner<Tree>>,
+        language: &impl MarzanoLanguage<'a>,
     ) -> Result<Option<MatchResult>> {
         if file.is_empty() {
             bail!("cannot have file with no versions")
@@ -103,7 +102,7 @@ impl MatchResult {
             if file.new {
                 return Ok(Some(MatchResult::CreateFile(CreateFile::file_to_create(
                     file.name.to_string_lossy().as_ref(),
-                    &file.source,
+                    &file.tree.source,
                 ))));
             } else if let Some(ranges) = &file.matches.borrow().input_matches {
                 if ranges.suppressed {
@@ -111,7 +110,6 @@ impl MatchResult {
                 }
                 return Ok(Some(MatchResult::Match(Match::file_to_match(
                     ranges,
-                    &file.source,
                     file.name.to_string_lossy().as_ref(),
                     &file.tree,
                     language,
@@ -164,9 +162,9 @@ impl MatchResult {
 
     /// Given a MatchResult, create a MatchResult::Rewrite that suppresses the match.
     /// Returns None if it has any issues.
-    pub fn get_rewrite_to_suppress(
+    pub fn get_rewrite_to_suppress<'a>(
         &self,
-        language: &impl Language,
+        language: &impl MarzanoLanguage<'a>,
         pattern_name: Option<&str>,
     ) -> Option<MatchResult> {
         let comment = make_suppress_comment(pattern_name, language);
@@ -189,7 +187,10 @@ impl MatchResult {
     }
 }
 
-pub fn make_suppress_comment(pattern_name: Option<&str>, language: &impl Language) -> String {
+pub fn make_suppress_comment<'a>(
+    pattern_name: Option<&str>,
+    language: &impl MarzanoLanguage<'a>,
+) -> String {
     match pattern_name {
         None => language.make_single_line_comment("grit-ignore"),
         Some(pattern_name) => {
@@ -249,7 +250,7 @@ impl PatternInfo {
         let node = compiled.tree.root_node();
         let grit_node_types = grit_node_types();
         let parsed_pattern = to_string_pretty(&tree_sitter_node_to_json(
-            &node,
+            &node.node,
             &source_file,
             &grit_node_types,
         ))
@@ -282,15 +283,18 @@ pub struct Match {
 }
 
 impl Match {
-    fn file_to_match(
+    fn file_to_match<'a>(
         match_ranges: &InputRanges,
-        file: &str,
         name: &str,
         tree: &Tree,
-        language: &impl Language,
+        language: &impl MarzanoLanguage<'a>,
     ) -> Self {
-        let input_file_debug_text =
-            to_string_pretty(&tree_sitter_node_to_json(&tree.root_node(), file, language)).unwrap();
+        let input_file_debug_text = to_string_pretty(&tree_sitter_node_to_json(
+            &tree.root_node().node,
+            &tree.source,
+            language,
+        ))
+        .unwrap();
         Self {
             debug: input_file_debug_text,
             source_file: name.to_owned(),
@@ -351,15 +355,14 @@ impl From<Rewrite> for MatchResult {
 }
 
 impl Rewrite {
-    fn file_to_rewrite(
-        initial: &FileOwner,
-        rewrite: &FileOwner,
-        language: &impl Language,
+    fn file_to_rewrite<'a>(
+        initial: &FileOwner<Tree>,
+        rewrite: &FileOwner<Tree>,
+        language: &impl MarzanoLanguage<'a>,
     ) -> Result<Self> {
         let original = if let Some(ranges) = &initial.matches.borrow().input_matches {
             Match::file_to_match(
                 ranges,
-                &initial.source,
                 initial.name.to_string_lossy().as_ref(),
                 &initial.tree,
                 language,
@@ -369,7 +372,7 @@ impl Rewrite {
         };
         let rewritten = EntireFile::file_to_entire_file(
             rewrite.name.to_string_lossy().as_ref(),
-            &rewrite.source,
+            &rewrite.tree.source,
             rewrite.matches.borrow().byte_ranges.as_ref(),
         );
         Ok(Rewrite::new(original, rewritten))
@@ -564,22 +567,6 @@ pub enum AllDoneReason {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
-pub struct ByteRange {
-    pub start: usize,
-    pub end: usize,
-}
-
-impl From<StdRange<usize>> for ByteRange {
-    fn from(range: StdRange<usize>) -> Self {
-        Self {
-            start: range.start,
-            end: range.end,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(rename_all = "camelCase")]
 pub struct AnalysisLog {
     pub level: u16,
     pub message: String,
@@ -606,13 +593,16 @@ impl AnalysisLog {
     }
 }
 
-impl From<MarzanoAnalysisLog> for AnalysisLog {
-    fn from(log: MarzanoAnalysisLog) -> Self {
+impl From<GritAnalysisLog> for AnalysisLog {
+    fn from(log: GritAnalysisLog) -> Self {
         Self {
             level: log.level.unwrap_or(280),
             message: log.message,
             position: log.position.unwrap_or_else(Position::first),
-            file: log.file.unwrap_or_default(),
+            file: log
+                .file
+                .map(|file| file.to_string_lossy().to_string())
+                .unwrap_or_default(),
             engine_id: log.engine_id.unwrap_or_else(|| "marzano".to_string()),
             range: log.range,
             syntax_tree: log.syntax_tree,

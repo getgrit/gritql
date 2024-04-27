@@ -40,6 +40,7 @@ pub(crate) mod contains_compiler;
 pub(crate) mod divide_compiler;
 pub(crate) mod equal_compiler;
 pub(crate) mod every_compiler;
+pub(crate) mod file_owner_compiler;
 pub(crate) mod foreign_language_compiler;
 pub(crate) mod function_definition_compiler;
 pub(crate) mod if_compiler;
@@ -75,6 +76,5 @@ pub(crate) mod variable_compiler;
 pub(crate) mod where_compiler;
 pub(crate) mod within_compiler;
 
-pub(crate) use compiler::parse_one;
 pub use compiler::{src_to_problem_libs, src_to_problem_libs_for_language, CompilationResult};
 pub(crate) use node_compiler::NodeCompiler;

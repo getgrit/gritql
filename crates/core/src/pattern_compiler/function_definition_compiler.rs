@@ -2,12 +2,12 @@ use super::{
     and_compiler::PrAndCompiler, compiler::NodeCompilationContext,
     foreign_language_compiler::ForeignLanguageCompiler, node_compiler::NodeCompiler,
 };
-use crate::pattern::{
-    function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
-    variable::get_variables,
+use crate::{
+    foreign_function_definition::ForeignFunctionDefinition, problem::MarzanoQueryContext,
+    variables::get_variables,
 };
-use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
+use grit_pattern_matcher::pattern::GritFunctionDefinition;
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 use std::collections::BTreeMap;

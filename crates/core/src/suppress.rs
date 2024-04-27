@@ -1,37 +1,13 @@
-use crate::binding::Binding;
-use grit_util::AstNode;
+use grit_util::{AstNode, Language};
 use itertools::{EitherOrBoth, Itertools};
-use marzano_language::language::Language;
 use marzano_util::node_with_source::NodeWithSource;
 use tree_sitter::Range;
 
-impl<'a> Binding<'a> {
-    pub(crate) fn is_suppressed(&self, lang: &impl Language, current_name: Option<&str>) -> bool {
-        let node = match self {
-            Self::Node(node) | Self::List(node, _) | Self::Empty(node, _) => node.clone(),
-            Self::String(_, _) | Self::FileName(_) | Self::ConstantRef(_) => return false,
-        };
-        let target_range = node.node.range();
-        for n in node.children().chain(node.ancestors()) {
-            for c in n.children() {
-                if !(lang.is_comment_node(&c)) {
-                    continue;
-                }
-                if is_suppress_comment(&c, &target_range, current_name, lang) {
-                    return true;
-                }
-            }
-        }
-
-        false
-    }
-}
-
-fn is_suppress_comment(
-    comment_node: &NodeWithSource,
+pub(crate) fn is_suppress_comment<'a>(
+    comment_node: &'a NodeWithSource,
     target_range: &Range,
     current_name: Option<&str>,
-    lang: &impl Language,
+    lang: &impl Language<Node<'a> = NodeWithSource<'a>>,
 ) -> bool {
     let child_range = comment_node.node.range();
     let text = match comment_node.text() {
@@ -75,16 +51,16 @@ fn is_suppress_comment(
         .contains(&current_name)
 }
 
-fn comment_applies_to_range(
-    comment_node: &NodeWithSource,
+fn comment_applies_to_range<'a>(
+    comment_node: &'a NodeWithSource,
     range: &Range,
-    lang: &impl Language,
+    lang: &impl Language<Node<'a> = NodeWithSource<'a>>,
 ) -> bool {
     let Some(mut applicable) = comment_node.next_named_node() else {
         return false;
     };
     while let Some(next) = applicable.next_named_node() {
-        if !lang.is_comment_node(&applicable)
+        if !lang.is_comment(&applicable)
             // Some languages have significant whitespace; continue until we find a non-whitespace non-comment node
             && applicable.text().is_ok_and(|t| !t.trim().is_empty())
         {

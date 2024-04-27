@@ -18,9 +18,9 @@ use crate::lister::list_applyables;
 use crate::resolver::{get_grit_files_from, resolve_from, Source};
 
 use super::super::analytics::AnalyticsArgs;
-use super::apply::SharedApplyArgs;
 use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
 use super::check::{run_check, CheckArg};
+use super::filters::SharedFilterArgs;
 use super::init::{init_config_from_cwd, init_global_grit_modules};
 use super::list::ListArgs;
 use super::parse::{run_parse, ParseInput};
@@ -148,7 +148,7 @@ pub(crate) async fn run_plumbing(
             };
             run_apply_pattern(
                 body,
-                SharedApplyArgs::default(),
+                SharedFilterArgs::default(),
                 input.paths,
                 apply_pattern_args,
                 multi,

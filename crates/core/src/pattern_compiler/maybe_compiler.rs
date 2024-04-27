@@ -2,9 +2,9 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler, predicate_compiler::PredicateCompiler,
 };
-use crate::pattern::maybe::{Maybe, PrMaybe};
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
+use grit_pattern_matcher::pattern::{Maybe, PrMaybe};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct MaybeCompiler;

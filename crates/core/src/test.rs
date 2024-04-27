@@ -1,12 +1,13 @@
 use crate::pattern_compiler::src_to_problem_libs;
 use anyhow::{anyhow, Context, Result};
 use api::MatchResult;
+use grit_util::{Range, VariableMatch};
 use insta::{assert_debug_snapshot, assert_snapshot, assert_yaml_snapshot};
 use lazy_static::lazy_static;
+use marzano_auth::env::ENV_VAR_GRIT_API_URL;
 use marzano_auth::testing::get_testing_auth_info;
-use marzano_language::language::Language;
+use marzano_language::language::MarzanoLanguage;
 use marzano_language::target_language::{PatternLanguage, TargetLanguage};
-use marzano_util::position::{Range, VariableMatch};
 use marzano_util::rich_path::RichFile;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
 use problem::Problem;
@@ -16,8 +17,6 @@ use std::{env, path::Path, path::PathBuf};
 use tree_sitter::Parser as TSParser;
 use trim_margin::MarginTrimmable;
 use walkdir::WalkDir;
-
-use marzano_auth::env::ENV_VAR_GRIT_API_URL;
 
 use super::*;
 
@@ -70,7 +69,7 @@ fn create_test_context() -> Result<ExecutionContext> {
     // Exchange client tokens for a test token
     let auth = get_testing_auth_info()?;
 
-    let api = env::var("GRIT_API_URL")
+    let api = env::var(ENV_VAR_GRIT_API_URL)
         .with_context(|| format!("{} env var not set", ENV_VAR_GRIT_API_URL))?;
 
     let api = LanguageModelAPI {
@@ -100,6 +99,7 @@ fn match_pattern_libs(
     let pattern =
         src_to_problem_libs(pattern, libs, default_language, None, None, None, None)?.problem;
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), src.to_owned()), context);
+    println!("RESULTS: {results:#?}");
     let mut execution_result = ExecutionResult {
         input_file_debug_text: "".to_string(),
         the_match: None,
@@ -794,7 +794,7 @@ fn chaining_rewrite() {
             }"#
             .to_owned(),
             expected: r#"
-            if (!repos?.length) {
+            if (repos.length === 0) {
                 return true;
             }
             if (repos.length === 0) {
@@ -1821,6 +1821,33 @@ fn jsx_attribute_rewrite() {
 }
 
 #[test]
+fn jsx_dotted_component() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |`PageContainer.Header` => `foobar`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+console.log(PageContainer.Header);
+
+const foo = <PageContainer.Header sx={{ flexGrow: 1, gap: '20px' }} {...rest} />
+"#
+            .to_owned(),
+            expected: r#"
+console.log(foobar);
+
+const foo = <foobar sx={{ flexGrow: 1, gap: '20px' }} {...rest} />
+"#
+            .to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn imports() {
     run_test_expected({
         TestArgExpected {
@@ -2051,6 +2078,38 @@ fn prefer_is_nan() {
             if (isNaN(foo)) {}
             if (!isNaN(foo)) {}"#
                 .to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn python_handle_multiline_strings() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |engine marzano(0.1)
+                |language python
+                |
+                |`$_ = $x` => `$x`"#
+                .trim_margin()
+                .unwrap(),
+            source: r#"
+                |def test_yaml_file():
+                |    """some test comment"""
+                |    variable = """
+                |title: "Title"
+                |        """"#
+                .trim_margin()
+                .unwrap(),
+            expected: r#"
+            |def test_yaml_file():
+            |    """some test comment"""
+            |    """
+            |title: "Title"
+            |        """"#
+                .trim_margin()
+                .unwrap(),
         }
     })
     .unwrap();
@@ -12833,7 +12892,7 @@ fn rust_match_fn_params() {
                 |impl Matcher for FilePattern {
                 |    fn execute<'a>(
                 |        &'a self,
-                |        resolved_pattern: &ResolvedPattern<'a>,
+                |        resolved_pattern: &Q::ResolvedPattern<'a>,
                 |        state: &mut State<'a>,
                 |        context: &Context<'a>,
                 |        logs: &mut AnalysisLogs,
@@ -12848,7 +12907,7 @@ fn rust_match_fn_params() {
                 |impl Matcher for FilePattern {
                 |    async fn execute<'a>(
                 |        &'a self,
-                |        resolved_pattern: &ResolvedPattern<'a>,
+                |        resolved_pattern: &Q::ResolvedPattern<'a>,
                 |        state: &mut State<'a>,
                 |        context: &Context<'a>,
                 |        logs: &mut AnalysisLogs,
@@ -13694,7 +13753,7 @@ fn php_class() {
         pattern: r#"
                 |language php(only)
                 |
-                |`class ^name { 
+                |`class ^name {
                 |    function ^fname() {
                 |        if (^a) { ^_ } else { ^_ }
                 |    }

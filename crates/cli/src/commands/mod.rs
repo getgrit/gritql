@@ -31,6 +31,7 @@ pub(crate) mod workflows_list;
 
 #[cfg(feature = "docgen")]
 pub(crate) mod docgen;
+mod filters;
 
 use crate::{
     analytics::{

@@ -1,11 +1,13 @@
-use crate::binding::linearize_binding;
-use crate::pattern::state::FileRegistry;
-use crate::problem::Effect;
+use crate::marzano_binding::linearize_binding;
 use anyhow::Result;
-use grit_util::CodeRange;
+use grit_pattern_matcher::{
+    binding::Binding,
+    context::{ExecContext, QueryContext},
+    effects::Effect,
+    pattern::{FileRegistry, ResolvedPattern},
+};
+use grit_util::{AnalysisLogs, AstNode, CodeRange, Language};
 use im::Vector;
-use marzano_language::language::Language;
-use marzano_util::analysis_logs::AnalysisLogs;
 use std::collections::HashMap;
 use std::ops::Range;
 use std::path::{Path, PathBuf};
@@ -17,22 +19,24 @@ use std::path::{Path, PathBuf};
  */
 
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn apply_effects<'a>(
-    code: &'a str,
-    effects: Vector<Effect<'a>>,
-    files: &FileRegistry<'a>,
+pub(crate) fn apply_effects<'a, Q: QueryContext>(
+    code: Q::Node<'a>,
+    effects: Vector<Effect<'a, Q>>,
+    files: &FileRegistry<'a, Q>,
     the_filename: &Path,
     new_filename: &mut PathBuf,
-    language: &impl Language,
-    current_name: Option<&str>,
+    context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
 ) -> Result<(String, Option<Vec<Range<usize>>>)> {
+    let language = context.language();
+    let current_name = context.name();
+
     let effects: Vec<_> = effects
         .into_iter()
         .filter(|effect| !effect.binding.is_suppressed(language, current_name))
         .collect();
     if effects.is_empty() {
-        return Ok((code.to_string(), None));
+        return Ok((code.full_source().to_owned(), None));
     }
     let mut memo: HashMap<CodeRange, Option<String>> = HashMap::new();
     let (from_inline, ranges) = linearize_binding(
@@ -40,8 +44,8 @@ pub(crate) fn apply_effects<'a>(
         &effects,
         files,
         &mut memo,
-        code,
-        CodeRange::new(0, code.len() as u32, code),
+        code.clone(),
+        CodeRange::new(0, code.full_source().len() as u32, code.full_source()),
         language.should_pad_snippet().then_some(0),
         logs,
     )?;

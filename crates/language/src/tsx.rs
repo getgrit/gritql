@@ -1,25 +1,22 @@
-use std::{borrow::Cow, sync::OnceLock};
-
 use crate::{
-    language::{
-        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, Language, NodeTypes,
-        Replacement, SortId, TSLanguage,
+    js_like::{
+        js_like_disregarded_field_values, js_like_get_statement_sorts, js_like_is_comment,
+        jslike_check_replacements, MarzanoJsLikeParser,
     },
-    xscript_util::{
-        self, js_like_is_comment, js_like_optional_empty_field_compilation,
-        js_like_skip_snippet_compilation_sorts,
+    language::{
+        check_disregarded_field_map, fields_for_nodes, kind_and_field_id_for_field_map, Field,
+        FieldExpectation, MarzanoLanguage, NodeTypes, SortId, TSLanguage, Tree,
     },
 };
-use marzano_util::{node_with_source::NodeWithSource, position::Range};
-use tree_sitter::Parser;
-use xscript_util::{js_like_get_statement_sorts, jslike_check_replacements};
+use grit_util::{AstNode, Language, Parser, Range, Replacement};
+use marzano_util::node_with_source::NodeWithSource;
+use std::sync::OnceLock;
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/tsx-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
-static SKIP_SNIPPET_COMPILATION_SORTS: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
 static STATEMENT_SORTS: OnceLock<Vec<SortId>> = OnceLock::new();
-static OPTIONAL_EMPTY_FIELD_COMPILATION: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
+static DISREGARDED_SNIPPET_FIELDS: OnceLock<Vec<FieldExpectation>> = OnceLock::new();
 
 #[cfg(not(feature = "builtin-parser"))]
 fn language() -> TSLanguage {
@@ -40,8 +37,7 @@ pub struct Tsx {
     jsx_sort: SortId,
     statement_sorts: &'static [SortId],
     language: &'static TSLanguage,
-    skip_snippet_compilation_sorts: &'static Vec<(SortId, FieldId)>,
-    optional_empty_field_compilation: &'static Vec<(SortId, FieldId)>,
+    disregarded_snippet_fields: &'static Vec<FieldExpectation>,
 }
 
 impl Tsx {
@@ -51,12 +47,9 @@ impl Tsx {
         let metavariable_sort = language.id_for_node_kind("grit_metavariable", true);
         let comment_sort = language.id_for_node_kind("comment", true);
         let jsx_sort = language.id_for_node_kind("jsx_expression", true);
-        let skip_snippet_compilation_sorts = SKIP_SNIPPET_COMPILATION_SORTS.get_or_init(|| {
-            kind_and_field_id_for_names(language, js_like_skip_snippet_compilation_sorts())
-        });
 
-        let optional_empty_field_compilation = OPTIONAL_EMPTY_FIELD_COMPILATION.get_or_init(|| {
-            kind_and_field_id_for_names(language, js_like_optional_empty_field_compilation())
+        let disregarded_snippet_fields = DISREGARDED_SNIPPET_FIELDS.get_or_init(|| {
+            kind_and_field_id_for_field_map(language, js_like_disregarded_field_values())
         });
 
         let statement_sorts = STATEMENT_SORTS.get_or_init(|| js_like_get_statement_sorts(language));
@@ -68,8 +61,7 @@ impl Tsx {
             jsx_sort,
             statement_sorts,
             language,
-            skip_snippet_compilation_sorts,
-            optional_empty_field_compilation,
+            disregarded_snippet_fields,
         }
     }
     pub(crate) fn is_initialized() -> bool {
@@ -84,32 +76,14 @@ impl NodeTypes for Tsx {
 }
 
 impl Language for Tsx {
-    fn get_ts_language(&self) -> &TSLanguage {
-        self.language
-    }
+    type Node<'a> = NodeWithSource<'a>;
 
-    fn optional_empty_field_compilation(
-        &self,
-        sort_id: SortId,
-        field_id: crate::language::FieldId,
-    ) -> bool {
-        self.optional_empty_field_compilation
-            .iter()
-            .any(|(s, f)| *s == sort_id && *f == field_id)
-    }
-
-    fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
-        self.skip_snippet_compilation_sorts
-            .iter()
-            .any(|(s, f)| *s == sort_id && *f == field_id)
+    fn language_name(&self) -> &'static str {
+        "TSX"
     }
 
     fn alternate_metavariable_kinds(&self) -> &[&'static str] {
         &["template_content", "template_literal_type_content"]
-    }
-
-    fn language_name(&self) -> &'static str {
-        "TSX"
     }
 
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
@@ -135,64 +109,71 @@ impl Language for Tsx {
         ]
     }
 
-    fn is_comment_sort(&self, id: SortId) -> bool {
-        id == self.comment_sort
+    fn is_comment(&self, node: &NodeWithSource) -> bool {
+        MarzanoLanguage::is_comment_node(self, node)
     }
 
-    fn is_comment_node(&self, node: &NodeWithSource) -> bool {
-        js_like_is_comment(node, self.comment_sort, self.jsx_sort)
+    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
+        MarzanoLanguage::is_metavariable_node(self, node)
     }
 
-    fn is_statement(&self, id: SortId) -> bool {
-        self.statement_sorts.contains(&id)
+    fn is_statement(&self, node: &NodeWithSource) -> bool {
+        self.statement_sorts.contains(&node.node.kind_id())
     }
 
     // assumes trim doesn't do anything otherwise range is off
-    fn comment_text<'a>(
-        &self,
-        node: &tree_sitter::Node,
-        text: &'a str,
-    ) -> Option<(Cow<'a, str>, Range)> {
-        let content_text = node.utf8_text(text.as_bytes()).unwrap();
+    fn comment_text_range(&self, node: &NodeWithSource) -> Option<Range> {
+        let content_text = node.text().ok()?;
         let content_text = content_text.trim();
-        let mut range: Range = node.range().into();
-        if content_text.strip_prefix("//").is_some() {
-            if !range.adjust_columns(2, 0) {
-                None
-            } else {
-                Some((std::borrow::Cow::Borrowed(text), range))
-            }
-        } else if content_text.strip_prefix("/*").is_some() {
-            if !range.adjust_columns(2, -2) {
-                None
-            } else {
-                content_text
-                    .strip_suffix("*/")
-                    .map(|_| (Cow::Borrowed(text), range))
-            }
+        let mut range = node.range();
+        if content_text.starts_with("//") {
+            range.adjust_columns(2, 0).then_some(range)
+        } else if content_text.starts_with("/*") && content_text.ends_with("*/") {
+            range.adjust_columns(2, -2).then_some(range)
         } else {
             None
         }
     }
 
-    fn metavariable_sort(&self) -> SortId {
-        self.metavariable_sort
-    }
-
     fn check_replacements(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Replacement>) {
         jslike_check_replacements(n, orphan_ranges)
     }
+}
 
-    fn parse_file(
+impl<'a> MarzanoLanguage<'a> for Tsx {
+    fn get_ts_language(&self) -> &TSLanguage {
+        self.language
+    }
+
+    fn get_parser(&self) -> Box<dyn Parser<Tree = Tree>> {
+        Box::new(MarzanoJsLikeParser::new(self))
+    }
+
+    fn is_disregarded_snippet_field(
         &self,
-        name: &str,
-        body: &str,
-        logs: &mut marzano_util::analysis_logs::AnalysisLogs,
-        new: bool,
-    ) -> anyhow::Result<Option<tree_sitter::Tree>> {
-        let mut parser = Parser::new().unwrap();
-        parser.set_language(self.get_ts_language())?;
-        xscript_util::parse_file(self, name, body, logs, new, &mut parser)
+        sort_id: SortId,
+        field_id: crate::language::FieldId,
+        field_node: &Option<NodeWithSource<'_>>,
+    ) -> bool {
+        check_disregarded_field_map(
+            self.disregarded_snippet_fields,
+            sort_id,
+            field_id,
+            field_node,
+        )
+    }
+
+    fn is_comment_sort(&self, id: SortId) -> bool {
+        id == self.comment_sort
+    }
+
+    fn is_comment_node(&self, node: &NodeWithSource) -> bool {
+        self.is_comment_sort(node.node.kind_id())
+            || js_like_is_comment(node, self.comment_sort, self.jsx_sort)
+    }
+
+    fn metavariable_sort(&self) -> SortId {
+        self.metavariable_sort
     }
 }
 
@@ -309,6 +290,16 @@ mod tests {
         let snippets = lang.parse_snippet_contexts(snippet);
         let nodes = nodes_from_indices(&snippets);
         assert!(!nodes.is_empty());
+    }
+
+    #[test]
+    fn member_expression() {
+        let snippet = "PageContainer.Header";
+        let lang = Tsx::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        assert!(!nodes.is_empty());
+        println!("{:#?}", nodes);
     }
 
     #[test]

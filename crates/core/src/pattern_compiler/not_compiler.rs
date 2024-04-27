@@ -2,15 +2,11 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler, predicate_compiler::PredicateCompiler,
 };
-use crate::pattern::{
-    iter_pattern::PatternOrPredicate,
-    not::{Not, PrNot},
-    patterns::Pattern,
-    predicates::Predicate,
-};
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
-use marzano_util::{analysis_logs::AnalysisLogBuilder, node_with_source::NodeWithSource};
+use grit_pattern_matcher::pattern::{Not, Pattern, PatternOrPredicate, PrNot, Predicate};
+use grit_util::{AnalysisLogBuilder, AstNode};
+use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct NotCompiler;
 

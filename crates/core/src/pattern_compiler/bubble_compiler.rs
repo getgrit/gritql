@@ -2,15 +2,13 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::pattern::{
-    bubble::Bubble,
-    pattern_definition::PatternDefinition,
-    patterns::Pattern,
-    variable::{get_variables, register_variable},
+use crate::{
+    problem::MarzanoQueryContext,
+    variables::{get_variables, register_variable},
 };
-use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, bail, Result};
-use grit_util::AstNode;
+use grit_pattern_matcher::pattern::{Bubble, Pattern, PatternDefinition};
+use grit_util::{AstNode, Range};
 use itertools::Itertools;
 use marzano_util::node_with_source::NodeWithSource;
 use std::{collections::BTreeMap, str::Utf8Error};
@@ -33,12 +31,7 @@ impl NodeCompiler for BubbleCompiler {
 
         let parameters: Vec<_> = node
             .named_children_by_field_name("variables")
-            .map(|n| {
-                Ok::<(std::string::String, marzano_util::position::Range), Utf8Error>((
-                    n.text()?.trim().to_string(),
-                    n.range(),
-                ))
-            })
+            .map(|n| Ok::<(String, Range), Utf8Error>((n.text()?.trim().to_string(), n.range())))
             .collect::<Result<Vec<_>, Utf8Error>>()?;
         if parameters.iter().unique_by(|n| &n.0).count() != parameters.len() {
             bail!("bubble parameters must be unique, but had a repeated name in its parameters.")

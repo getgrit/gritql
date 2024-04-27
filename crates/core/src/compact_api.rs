@@ -1,3 +1,4 @@
+use grit_util::Range;
 use serde::Serialize;
 
 use crate::api::{
@@ -52,12 +53,14 @@ pub enum CompactResult {
 #[serde(rename_all = "camelCase")]
 pub struct CompactMatch {
     pub source_file: String,
+    pub ranges: Vec<Range>,
 }
 
 impl From<Match> for CompactMatch {
     fn from(m: Match) -> Self {
         CompactMatch {
             source_file: m.source_file,
+            ranges: m.ranges,
         }
     }
 }

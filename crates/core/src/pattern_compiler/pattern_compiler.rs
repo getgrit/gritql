@@ -42,25 +42,22 @@ use super::{
     where_compiler::WhereCompiler,
     within_compiler::WithinCompiler,
 };
-use crate::pattern::{
-    dynamic_snippet::{DynamicPattern, DynamicSnippet, DynamicSnippetPart},
-    list::List,
-    patterns::Pattern,
-    regex::{RegexLike, RegexPattern},
-    string_constant::AstLeafNode,
-    variable::{is_reserved_metavariable, register_variable, Variable},
-};
 use crate::problem::MarzanoQueryContext;
-use crate::{ast_node::ASTNode, context::QueryContext};
-use anyhow::{anyhow, bail, Result};
-use grit_util::AstNode;
-use grit_util::{traverse, Order};
-use marzano_language::language::{Field, GritMetaValue, Language, NodeTypes, SnippetNode};
-use marzano_util::{
-    cursor_wrapper::CursorWrapper,
-    node_with_source::NodeWithSource,
-    position::{char_index_to_byte_index, Position, Range},
+use crate::{
+    ast_node::{ASTNode, AstLeafNode},
+    variables::register_variable,
 };
+use anyhow::{anyhow, bail, Result};
+use grit_pattern_matcher::{
+    context::QueryContext,
+    pattern::{
+        is_reserved_metavariable, DynamicPattern, DynamicSnippet, DynamicSnippetPart, List,
+        Pattern, RegexLike, RegexPattern, Variable,
+    },
+};
+use grit_util::{traverse, AstCursor, AstNode, GritMetaValue, Language, Order, Position, Range};
+use marzano_language::language::{Field, MarzanoLanguage, NodeTypes};
+use marzano_util::node_with_source::NodeWithSource;
 use regex::Match as RegexMatch;
 use std::collections::HashMap;
 
@@ -75,13 +72,12 @@ impl PatternCompiler {
     // cannot fix yet as other code relies on this bug
 
     pub(crate) fn from_snippet_node(
-        node: SnippetNode,
+        node: NodeWithSource,
         context_range: Range,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
     ) -> Result<Pattern<MarzanoQueryContext>> {
         let snippet_start = node.node.start_byte();
-        let node = NodeWithSource::new(node.node, &node.context);
         let ranges = metavariable_ranges(&node, context.compilation.lang);
         let range_map = metavariable_range_mapping(ranges, snippet_start);
 
@@ -128,33 +124,20 @@ impl PatternCompiler {
                 fields
                     .iter()
                     .filter(|field| {
-                        // Ordinarily, we want to match on all possible fields, including the absence of nodes within a field.
-                        // e.g., `func_call()` should not match `func_call(arg)`, however, sometimes we want to allow people to
-                        // save some boilerplate and by default match a node even if a field is present in the code but not
-                        // in the snippet. e.g.,
-                        // `func name(args) {}` will match `async name(args) {}` because async is an optional_empty_field for tsx.
-                        // To explicitly only match synchronous functions, you could write:
-                        // `$async func name(args)` where $async <: .
-                        !((node.node.child_by_field_id(field.id()).is_none() && context.compilation.lang.optional_empty_field_compilation(sort, field.id()))
-                        // we wanted to be able to match on the presence of parentheses in an arrow function manually
-                        // using ast_node syntax, but we wanted snippets to match regardless of weather or not the
-                        // parenthesis are present, so we made the parenthesis a  named node within a field, but
-                        // added then to this list so that they wont be compiled. fields in this list are
-                        // destinguished by fields in the above list in that they will NEVER prevent a match
-                        // while fields in the above list wont prevent a match if they are absent in the snippet,
-                        // but they will prevent a match if present in the snippet, and not present in the target
-                        // file.
-                        // in react to hooks we manually match the parenthesis like so:
-                        // arrow_function(parameters=$props, $body, $parenthesis) where {
-                        //     $props <: contains or { `props`, `inputProps` },
-                        //     $body <: not contains `props`,
-                        //     if ($parenthesis <: .) {
-                        //         $props => `()`
-                        //     } else {
-                        //         $props => .
-                        //     }
-                        // }
-                        || context.compilation.lang.skip_snippet_compilation_of_field(sort, field.id()))
+                        let child_with_source = node
+                            .node
+                            .child_by_field_id(field.id())
+                            .map(|n| NodeWithSource::new(n, node.source));
+                        // Then check if it's an empty, optional field
+                        if context.compilation.lang.is_disregarded_snippet_field(
+                            sort,
+                            field.id(),
+                            &child_with_source,
+                        ) {
+                            return false;
+                        }
+                        // Otherwise compile it
+                        true
                     })
                     .map(|field| {
                         let field_id = field.id();
@@ -393,20 +376,9 @@ fn implicit_metavariable_regex<Q: QueryContext>(
     Ok(Some(RegexPattern::new(regex, variables)))
 }
 
-fn is_metavariable(node: &NodeWithSource, lang: &impl Language) -> bool {
-    node.node.is_named()
-        && (node.node.kind_id() == lang.metavariable_sort()
-            || (lang
-                .alternate_metavariable_kinds()
-                .contains(&node.node.kind().as_ref())
-                && node
-                    .text()
-                    .is_ok_and(|t| lang.exact_replaced_variable_regex().is_match(&t))))
-}
-
 fn make_regex_match_range(text: &str, m: RegexMatch) -> Range {
-    let start = Position::from_byte_index(text, None, m.start() as u32);
-    let end = Position::from_byte_index(text, None, m.end() as u32);
+    let start = Position::from_byte_index(text, m.start());
+    let end = Position::from_byte_index(text, m.end());
     Range::new(start, end, m.start() as u32, m.end() as u32)
 }
 
@@ -417,10 +389,10 @@ fn metavariable_descendent<Q: QueryContext>(
     context: &mut NodeCompilationContext,
     is_rhs: bool,
 ) -> Result<Option<Pattern<Q>>> {
-    let mut cursor = node.node.walk();
+    let mut cursor = node.walk();
     loop {
-        let node = NodeWithSource::new(cursor.node(), node.source);
-        if is_metavariable(&node, context.compilation.lang) {
+        let node = cursor.node();
+        if context.compilation.lang.is_metavariable(&node) {
             let name = node.text()?;
             if is_reserved_metavariable(name.trim(), Some(context.compilation.lang)) && !is_rhs {
                 bail!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", name.trim_start_matches(context.compilation.lang.metavariable_prefix_substitute()));
@@ -437,13 +409,15 @@ fn metavariable_descendent<Q: QueryContext>(
     }
 }
 
-fn metavariable_ranges(node: &NodeWithSource, lang: &impl Language) -> Vec<Range> {
-    let cursor = node.node.walk();
-    traverse(CursorWrapper::new(cursor, node.source), Order::Pre)
-        .flat_map(|n| {
-            let child = NodeWithSource::new(n.node.clone(), node.source);
-            if is_metavariable(&child, lang) {
-                vec![n.range()]
+fn metavariable_ranges<'a, Lang: Language<Node<'a> = NodeWithSource<'a>>>(
+    node: &NodeWithSource<'a>,
+    lang: &Lang,
+) -> Vec<Range> {
+    let cursor = node.walk();
+    traverse(cursor, Order::Pre)
+        .flat_map(|child| {
+            if lang.is_metavariable(&child) {
+                vec![child.range()]
             } else {
                 node_sub_variables(child, lang)
             }
@@ -565,4 +539,11 @@ fn text_to_var(
             Ok(SnippetValues::Variable(var))
         }
     }
+}
+
+fn char_index_to_byte_index(index: u32, text: &str) -> u32 {
+    text.chars()
+        .take(index as usize)
+        .map(|c| c.len_utf8() as u32)
+        .sum()
 }

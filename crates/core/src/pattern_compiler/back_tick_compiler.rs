@@ -2,9 +2,9 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     snippet_compiler::parse_snippet_content,
 };
-use crate::pattern::patterns::Pattern;
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, bail, Result};
+use grit_pattern_matcher::pattern::Pattern;
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 

@@ -47,6 +47,7 @@ trim-margin = "0.1.0"
 [features]
 default = ["builtin-parser"]
 builtin-parser = [
+    "grit-parser",
     "tree-sitter-gritql",
     "tree-sitter-css",
     "tree-sitter-json",
@@ -68,4 +69,5 @@ builtin-parser = [
     "tree-sitter-toml",
     "tree-sitter-php",
 ]
+grit-parser = []
 finder = ["ignore"]

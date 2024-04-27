@@ -9,6 +9,7 @@ use tracing::span;
 #[cfg(feature = "grit_tracing")]
 use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 
+use grit_util::Position;
 use indicatif::MultiProgress;
 use log::debug;
 use marzano_core::api::{AllDone, AllDoneReason, AnalysisLog, MatchResult};
@@ -18,20 +19,18 @@ use marzano_gritmodule::markdown::get_body_from_md_content;
 use marzano_gritmodule::searcher::find_grit_modules_dir;
 use marzano_gritmodule::utils::is_pattern_name;
 use marzano_language::target_language::{expand_paths, PatternLanguage};
-
-use marzano_util::position::Position;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::env;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicI32;
 use std::sync::atomic::Ordering;
-
-use std::collections::BTreeMap;
 use tokio::fs;
 
-use crate::diff::extract_target_ranges;
+use crate::commands::filters::extract_filter_ranges;
+
 use crate::{
-    analyze::par_apply_pattern, community::parse_eslint_output, error::GoodError,
+    analyze::par_apply_pattern, error::GoodError,
     flags::OutputFormat, messenger_variant::create_emitter, result_formatting::get_human_error,
     updater::Updater,
 };
@@ -44,7 +43,7 @@ use marzano_messenger::{
 use crate::resolver::{get_grit_files_from_cwd, GritModuleResolver};
 use crate::utils::has_uncommitted_changes;
 
-use super::apply::SharedApplyArgs;
+use super::filters::SharedFilterArgs;
 use super::init::init_config_from_cwd;
 
 #[derive(Deserialize)]
@@ -154,7 +153,7 @@ macro_rules! flushable_unwrap {
 #[allow(clippy::too_many_arguments, unused_mut)]
 pub(crate) async fn run_apply_pattern(
     mut pattern: String,
-    shared: SharedApplyArgs,
+    shared: SharedFilterArgs,
     paths: Vec<PathBuf>,
     arg: ApplyPatternArgs,
     multi: MultiProgress,
@@ -206,12 +205,7 @@ pub(crate) async fn run_apply_pattern(
     )
     .await?;
 
-    let filter_range = if let Some(json_path) = &shared.only_in_json {
-        let json_ranges = flushable_unwrap!(emitter, parse_eslint_output(json_path));
-        Some(json_ranges)
-    } else {
-        flushable_unwrap!(emitter, extract_target_ranges(&shared.only_in_diff))
-    };
+    let filter_range = flushable_unwrap!(emitter, extract_filter_ranges(&shared));
 
     let (my_input, lang) = if let Some(pattern_libs) = pattern_libs {
         (
@@ -239,12 +233,17 @@ pub(crate) async fn run_apply_pattern(
         let warn_uncommitted =
             !arg.dry_run && !arg.force && has_uncommitted_changes(cwd.clone()).await;
         if warn_uncommitted {
+            let term = console::Term::stderr();
+            if !term.is_term() {
+                bail!("Error: Untracked changes detected. Grit will not proceed with rewriting files in non-TTY environments unless '--force' is used. Please commit all changes or use '--force' to override this safety check.");
+            }
+
             let proceed = flushable_unwrap!(emitter, Confirm::new()
                 .with_prompt("Your working tree currently has untracked changes and Grit will rewrite files in place. Do you want to proceed?")
                 .default(false)
-                .interact());
+                .interact_opt());
 
-            if !proceed {
+            if proceed != Some(true) {
                 return Ok(());
             }
         }
@@ -367,7 +366,7 @@ pub(crate) async fn run_apply_pattern(
     } = match pattern.compile(&my_input.pattern_libs, lang, filter_range, arg.limit) {
         Ok(c) => c,
         Err(e) => {
-            let log = match e.downcast::<marzano_util::analysis_logs::AnalysisLog>() {
+            let log = match e.downcast::<grit_util::AnalysisLog>() {
                 Ok(al) => AnalysisLog::from(al),
                 Err(er) => AnalysisLog {
                     level: 200,

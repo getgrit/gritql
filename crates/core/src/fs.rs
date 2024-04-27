@@ -1,7 +1,6 @@
-use anyhow::Result;
-use marzano_util::position::Range;
-
 use crate::api::MatchResult;
+use anyhow::Result;
+use grit_util::Range;
 
 pub fn apply_rewrite(result: &MatchResult) -> Result<()> {
     match result {

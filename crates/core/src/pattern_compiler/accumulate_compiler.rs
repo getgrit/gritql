@@ -2,12 +2,10 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler,
 };
-use crate::pattern::{
-    accumulate::Accumulate, code_snippet::CodeSnippet, dynamic_snippet::DynamicPattern,
-    patterns::Pattern,
-};
+use crate::marzano_code_snippet::MarzanoCodeSnippet;
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
+use grit_pattern_matcher::pattern::{Accumulate, DynamicPattern, Pattern};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct AccumulateCompiler;
@@ -30,7 +28,7 @@ impl NodeCompiler for AccumulateCompiler {
         let right = PatternCompiler::from_node_with_rhs(&right_node, context, true)?;
         let dynamic_right = match right.clone() {
             Pattern::Dynamic(r) => Some(r),
-            Pattern::CodeSnippet(CodeSnippet {
+            Pattern::CodeSnippet(MarzanoCodeSnippet {
                 dynamic_snippet: Some(r),
                 ..
             }) => Some(r),

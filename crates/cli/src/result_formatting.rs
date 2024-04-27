@@ -7,7 +7,7 @@ use marzano_core::api::{
     AllDone, AnalysisLog, CreateFile, DoneFile, FileMatchResult, InputFile, Match, MatchResult,
     PatternInfo, RemoveFile, Rewrite,
 };
-use marzano_core::pattern::constants::DEFAULT_FILE_NAME;
+use marzano_core::constants::DEFAULT_FILE_NAME;
 use marzano_messenger::output_mode::OutputMode;
 use std::fmt::Display;
 use std::fs::read_to_string;
@@ -76,7 +76,7 @@ fn print_all_done(item: &AllDone, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 }
 
 fn print_error_log(log: &AnalysisLog, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    let file_prefix = if log.file == DEFAULT_FILE_NAME {
+    let file_prefix = if log.file.is_empty() || log.file == DEFAULT_FILE_NAME {
         "".to_owned()
     } else {
         format!("{}: ", log.file)
@@ -120,7 +120,7 @@ fn print_error_log(log: &AnalysisLog, f: &mut fmt::Formatter<'_>) -> fmt::Result
 /// Implement some log overrides to make CLI usage more friendly
 fn humanize_log(log: &mut AnalysisLog, input_pattern: &str) {
     if log.level == 299
-        && log.file == DEFAULT_FILE_NAME
+        && (log.file.is_empty() || log.file == DEFAULT_FILE_NAME)
         && (input_pattern.ends_with(".yaml") || input_pattern.ends_with(".yml"))
     {
         log.message = format!(

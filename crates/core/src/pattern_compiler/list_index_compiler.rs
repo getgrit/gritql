@@ -2,9 +2,9 @@ use super::{
     compiler::NodeCompilationContext, container_compiler::ContainerCompiler,
     list_compiler::ListCompiler, node_compiler::NodeCompiler,
 };
-use crate::pattern::list_index::{ContainerOrIndex, ListIndex, ListOrContainer};
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
+use grit_pattern_matcher::pattern::{ContainerOrIndex, ListIndex, ListOrContainer};
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 

@@ -1306,8 +1306,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "grit-pattern-matcher"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "elsa",
+ "getrandom",
+ "grit-util",
+ "im",
+ "itertools 0.10.5",
+ "rand",
+ "regex",
+]
+
+[[package]]
 name = "grit-util"
 version = "0.1.0"
+dependencies = [
+ "derive_builder",
+ "once_cell",
+ "regex",
+ "serde",
+]
 
 [[package]]
 name = "grit_cache"
@@ -1911,11 +1931,11 @@ dependencies = [
  "env_logger",
  "flate2",
  "git2",
+ "grit-util",
  "grit_cache",
  "ignore",
  "indicatif",
  "indicatif-log-bridge",
- "insta",
  "lazy_static",
  "log",
  "marzano-auth",
@@ -1949,9 +1969,9 @@ name = "marzano-core"
 version = "0.2.0"
 dependencies = [
  "anyhow",
- "elsa",
  "embeddings",
  "getrandom",
+ "grit-pattern-matcher",
  "grit-util",
  "im",
  "insta",
@@ -1973,7 +1993,6 @@ dependencies = [
  "tracing",
  "tracing-opentelemetry",
  "tree-sitter-facade-sg",
- "tree-sitter-gritql",
  "trim-margin",
  "walkdir",
 ]
@@ -2059,6 +2078,7 @@ dependencies = [
  "ai_builtins",
  "anyhow",
  "dashmap",
+ "grit-util",
  "grit_cache",
  "marzano-core",
  "marzano-gritmodule",
@@ -2092,7 +2112,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64",
- "derive_builder",
  "futures",
  "grit-util",
  "http",
@@ -2114,6 +2133,7 @@ dependencies = [
  "ai_builtins",
  "anyhow",
  "console_error_panic_hook",
+ "grit-util",
  "marzano-core",
  "marzano-language",
  "marzano-util",
@@ -2134,11 +2154,11 @@ dependencies = [
  "clap",
  "colored",
  "dialoguer",
+ "grit-util",
  "indicatif",
  "log",
  "marzano-core",
  "marzano-language",
- "marzano-util",
  "serde",
  "serde_json",
 ]

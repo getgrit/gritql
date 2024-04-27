@@ -1,17 +1,3 @@
-use grit_util::{traverse, Order};
-use marzano_core::analysis::defines_itself;
-use marzano_core::parse::make_grit_parser;
-use marzano_language::language::Language as _;
-use marzano_util::cursor_wrapper::CursorWrapper;
-use marzano_util::node_with_source::NodeWithSource;
-use marzano_util::position::Position;
-use marzano_util::rich_path::RichFile;
-use std::fs::OpenOptions;
-use std::io::{Read, Seek, Write};
-use std::path::Path;
-use tokio::io::SeekFrom;
-use tree_sitter::Parser;
-
 use crate::config::{DefinitionKind, GritPatternMetadata, RawGritDefinition};
 use crate::{
     config::{GritDefinitionConfig, GritPatternSample, ModuleGritPattern},
@@ -19,9 +5,20 @@ use crate::{
     parser::extract_relative_file_path,
     utils::is_pattern_name,
 };
-
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{bail, Context, Result};
+use grit_util::{traverse, Ast, AstNode, Order, Position};
+use marzano_core::analysis::defines_itself;
 use marzano_core::api::EnforcementLevel;
+use marzano_language::grit_parser::MarzanoGritParser;
+use marzano_language::language::MarzanoLanguage as _;
+use marzano_util::cursor_wrapper::CursorWrapper;
+use marzano_util::node_with_source::NodeWithSource;
+use marzano_util::rich_path::RichFile;
+use std::fs::OpenOptions;
+use std::io::{Read, Seek, Write};
+use std::path::Path;
+use tokio::io::SeekFrom;
+use tree_sitter::Parser;
 
 fn parse_metadata(yaml_content: &str) -> Result<GritPatternMetadata> {
     let result = serde_yaml::from_str::<GritPatternMetadata>(yaml_content)?;
@@ -102,7 +99,7 @@ pub fn get_patterns_from_md(
             if current_code_block_language == Some(std::borrow::Cow::Borrowed("grit")) {
                 let definition = MarkdownBody {
                     body: content.to_string(),
-                    position: n.node.range().start_point().into(),
+                    position: n.range().start,
                     section_heading: current_heading.1.clone(),
                     section_level: current_heading.0,
                     samples: Vec::new(),
@@ -113,7 +110,7 @@ pub fn get_patterns_from_md(
                 // Check if we have an open sample
                 if let Some(mut open_sample) = last_config.open_sample.take() {
                     open_sample.output = Some(content.to_string());
-                    open_sample.output_range = Some(n.node.range().into());
+                    open_sample.output_range = Some(n.range());
                     last_config.samples.push(open_sample);
                 } else {
                     // Start a new sample
@@ -125,7 +122,7 @@ pub fn get_patterns_from_md(
                         },
                         input: content.to_string(),
                         output: None,
-                        input_range: Some(n.node.range().into()),
+                        input_range: Some(n.range()),
                         output_range: None,
                     };
                     last_config.open_sample = Some(sample);
@@ -195,7 +192,7 @@ js"hello world"
         meta.level = Some(EnforcementLevel::Info);
     }
 
-    let mut grit_parser = make_grit_parser()?;
+    let mut grit_parser = MarzanoGritParser::new()?;
 
     let patterns = patterns
         .into_iter()
@@ -214,9 +211,8 @@ js"hello world"
                 p.samples.push(last_sample);
             }
             let src_tree = grit_parser
-                .parse(&p.body, None)?
-                .ok_or_else(|| anyhow!("parse error"))?;
-            if defines_itself(&NodeWithSource::new(src_tree.root_node(), &p.body), name)? {
+                .parse(&p.body)?;
+            if defines_itself(&src_tree.root_node(), name)? {
                 bail!("Pattern {} attempts to define itself - this is not allowed. Tip: Markdown patterns use the file name as their pattern name.", name);
             };
             Ok(ModuleGritPattern {

@@ -1,11 +1,9 @@
 use super::{
     and_compiler::PrAndCompiler, compiler::NodeCompilationContext, node_compiler::NodeCompiler,
 };
-use crate::{
-    pattern::{predicate_definition::PredicateDefinition, variable::get_variables},
-    problem::MarzanoQueryContext,
-};
+use crate::{problem::MarzanoQueryContext, variables::get_variables};
 use anyhow::{anyhow, Result};
+use grit_pattern_matcher::pattern::PredicateDefinition;
 use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 use std::collections::BTreeMap;

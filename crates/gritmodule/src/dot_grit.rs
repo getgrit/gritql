@@ -7,14 +7,9 @@ use crate::{
     parser::extract_relative_file_path,
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::AstNode;
-use marzano_core::parse::make_grit_parser;
-use marzano_language::target_language::PatternLanguage;
-use marzano_util::{
-    node_with_source::NodeWithSource,
-    position::{map_zero_indexed_position_to_one_indexed, Position},
-    rich_path::RichFile,
-};
+use grit_util::{Ast, AstNode, Position};
+use marzano_language::{grit_parser::MarzanoGritParser, target_language::PatternLanguage};
+use marzano_util::rich_path::RichFile;
 use std::collections::HashMap;
 
 pub fn get_patterns_from_grit(
@@ -22,14 +17,10 @@ pub fn get_patterns_from_grit(
     source_module: &Option<ModuleRepo>,
     root: &Option<String>,
 ) -> Result<Vec<ModuleGritPattern>> {
-    let mut parser = make_grit_parser()?;
-    let source = &file.content;
-    let tree = match parser.parse(source, None)? {
-        Some(tree) => tree,
-        None => bail!("parse error"),
-    };
-    let root_node = NodeWithSource::new(tree.root_node(), source);
-    let language = PatternLanguage::from_tree(&tree, source);
+    let mut parser = MarzanoGritParser::new()?;
+    let tree = parser.parse(&file.content)?;
+    let root_node = tree.root_node();
+    let language = PatternLanguage::from_tree(&tree);
     let mut pattern_definitions: HashMap<String, ModuleGritPattern> = HashMap::new();
 
     for definition in root_node.named_children_by_field_name("definitions") {
@@ -68,10 +59,10 @@ pub fn get_patterns_from_grit(
                 }
                 None => plain_body.to_string(),
             };
-            let position = map_zero_indexed_position_to_one_indexed(&Position::new(
-                name_node.node.start_position().row(),
-                name_node.node.start_position().column(),
-            ));
+            let position = Position::new(
+                name_node.node.start_position().row() + 1,
+                name_node.node.start_position().column() + 1,
+            );
 
             let module_grit_pattern = ModuleGritPattern {
                 config: GritDefinitionConfig {

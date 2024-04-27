@@ -1308,7 +1308,7 @@ fn embedding_like() -> Result<()> {
 }
 
 #[test]
-fn filtered_apply() -> Result<()> {
+fn filtered_apply_custom() -> Result<()> {
     let (_temp_dir, dir) = get_fixture("filtered_apply", true)?;
 
     let mut apply_cmd = get_test_cmd()?;
@@ -1317,7 +1317,40 @@ fn filtered_apply() -> Result<()> {
         .arg("apply")
         .arg("fix.grit")
         .arg("--only-in-json")
-        .arg("eslint.json");
+        .arg(r#"[{"filePath":"file.js", "messages": [{ "line": 4, "column": 1, "endLine": 4, "endColumn": 50}]}]"#);
+
+    let output = apply_cmd.output()?;
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully"
+    );
+
+    let stdout = String::from_utf8(output.stdout)?;
+    println!("stdout: {:?}", stdout);
+    assert!(stdout.contains("1 matches"));
+
+    let content = std::fs::read_to_string(dir.join("file.js"))?;
+    assert_snapshot!(content);
+
+    let content2 = std::fs::read_to_string(dir.join("file2.js"))?;
+    assert_snapshot!(content2);
+
+    Ok(())
+}
+
+#[test]
+fn filtered_apply() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("filtered_apply", true)?;
+
+    let eslint_content = std::fs::read_to_string(dir.join("eslint.json"))?;
+
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.clone());
+    apply_cmd
+        .arg("apply")
+        .arg("fix.grit")
+        .arg("--only-in-json")
+        .arg(eslint_content);
 
     let output = apply_cmd.output()?;
     assert!(
@@ -2311,10 +2344,12 @@ fn apply_only_in_diff() -> Result<()> {
 
     let mut cmd = get_test_cmd()?;
 
+    let diff_content = std::fs::read_to_string(dir.join("test.diff"))?;
+
     cmd.arg("apply")
         .arg("no_console_log")
         .arg("--only-in-diff")
-        .arg("test.diff")
+        .arg(diff_content)
         .current_dir(dir.clone());
 
     let output = cmd.output()?;
@@ -2368,6 +2403,61 @@ fn markdown_pattern_with_invalid_name() -> Result<()> {
     assert!(!output.status.success(), "Command should have failed");
 
     assert_snapshot!(String::from_utf8(output.stderr)?);
+
+    Ok(())
+}
+
+/// If we don't have interactive inputs available, apply should hard fail if there are git diffs.
+#[test]
+fn tty_behavior() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("yaml_padding", true)?;
+
+    // Init an empty git repo
+    let mut git_init_cmd = Command::new("git");
+    git_init_cmd.arg("init").current_dir(dir.clone());
+    let output = git_init_cmd.output()?;
+    assert!(output.status.success(), "Git init failed");
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.clone());
+    apply_cmd.arg("apply").arg("pattern.grit").arg("file.yaml");
+
+    let output = apply_cmd.output()?;
+    let stdout = String::from_utf8(output.stdout)?;
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stdout: {:?}", stdout);
+    println!("stderr: {:?}", stderr);
+
+    // Expect it to fail
+    assert!(!output.status.success(), "Command should have failed");
+
+    // Confirm the explanation is good
+    assert!(!stderr.contains("Not a terminal"));
+    assert!(stderr.contains("Untracked changes detected."));
+    assert!(stderr.contains("--force"));
+
+    // Confirm file is not modified
+    let content = std::fs::read_to_string(dir.join("file.yaml"))?;
+    assert_snapshot!(content);
+
+    // Run again with force
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.clone());
+    apply_cmd
+        .arg("apply")
+        .arg("pattern.grit")
+        .arg("file.yaml")
+        .arg("--force");
+
+    let output = apply_cmd.output()?;
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully"
+    );
+
+    let content = std::fs::read_to_string(dir.join("file.yaml"))?;
+    assert_snapshot!(content);
 
     Ok(())
 }

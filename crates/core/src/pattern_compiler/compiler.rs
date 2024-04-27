@@ -10,32 +10,25 @@ use super::{
 };
 use crate::{
     analysis::{has_limit, is_multifile},
-    parse::make_grit_parser,
-    pattern::{
-        built_in_functions::BuiltIns,
-        constants::{
-            ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
-        },
-        function_definition::{ForeignFunctionDefinition, GritFunctionDefinition},
-        pattern_definition::PatternDefinition,
-        predicate_definition::PredicateDefinition,
-        variable::VariableSourceLocations,
-        VariableLocations,
-    },
+    built_in_functions::BuiltIns,
+    foreign_function_definition::ForeignFunctionDefinition,
     problem::{MarzanoQueryContext, Problem},
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::AstNode;
-use grit_util::{traverse, Order};
-use itertools::Itertools;
-use marzano_language::{self, target_language::TargetLanguage};
-use marzano_util::{
-    analysis_logs::{AnalysisLogBuilder, AnalysisLogs},
-    cursor_wrapper::CursorWrapper,
-    node_with_source::NodeWithSource,
-    position::{FileRange, Position, Range},
+use grit_pattern_matcher::{
+    constants::{
+        ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
+    },
+    pattern::{
+        GritFunctionDefinition, PatternDefinition, PredicateDefinition, VariableSourceLocations,
+    },
 };
-use regex::Regex;
+use grit_util::{traverse, AnalysisLogs, Ast, AstNode, FileRange, Order, Range, VariableMatch};
+use itertools::Itertools;
+use marzano_language::{
+    self, grit_parser::MarzanoGritParser, language::Tree, target_language::TargetLanguage,
+};
+use marzano_util::node_with_source::NodeWithSource;
 use std::{
     collections::{BTreeMap, BTreeSet},
     ffi::OsStr,
@@ -43,7 +36,6 @@ use std::{
     str::Utf8Error,
     vec,
 };
-use tree_sitter::{Node, Parser, Tree};
 
 #[cfg(feature = "grit_tracing")]
 use tracing::instrument;
@@ -84,56 +76,6 @@ pub(crate) struct NodeCompilationContext<'a> {
     pub logs: &'a mut AnalysisLogs,
 }
 
-fn grit_parsing_errors(tree: &Tree, src: &str, file_name: &str) -> Result<AnalysisLogs> {
-    let mut errors = vec![];
-    let cursor = tree.walk();
-    let mut log_builder = AnalysisLogBuilder::default();
-    let level: u16 = if file_name == DEFAULT_FILE_NAME {
-        299
-    } else {
-        300
-    };
-    log_builder
-        .level(level)
-        .engine_id("marzano(0.1)".to_owned())
-        .file(file_name.to_owned());
-
-    for n in traverse(CursorWrapper::new(cursor, src), Order::Pre) {
-        if n.node.is_error() || n.node.is_missing() {
-            let position: Position = n.node.range().start_point().into();
-
-            let error_node = n.node.utf8_text(src.as_bytes())?;
-            let identifier_regex = Regex::new(r"^([A-Za-z0-9_]*)\(\)$")?;
-            let message = if let Some(found) = identifier_regex.find(&error_node) {
-                format!(
-                    "{} is a reserved keyword in Grit. Try renaming your pattern.",
-                    found.as_str().trim_end_matches("()")
-                )
-            } else {
-                let file_locations_str = if file_name == DEFAULT_FILE_NAME {
-                    String::new()
-                } else {
-                    format!(" in {}", file_name)
-                };
-                format!(
-                        "Pattern syntax error at {}:{}{}. If you hit this error while running grit apply on a pattern from the Grit standard library, try running grit init. If you are running a custom pattern, check out the docs at https://docs.grit.io/ for help with writing patterns.",
-                        n.node.range().start_point().row() + 1,
-                        n.node.range().start_point().column() + 1,
-                        file_locations_str
-                    )
-            };
-
-            let log = log_builder
-                .clone()
-                .message(message)
-                .position(position)
-                .build()?;
-            errors.push(log);
-        }
-    }
-    Ok(errors.into())
-}
-
 // this code looks wrong. Todo test to see if we correctly find duplicate
 // parameter names, if not fix.
 fn get_duplicates(list: &[(String, Range)]) -> Vec<&String> {
@@ -160,12 +102,7 @@ fn insert_definition_index(
     let name = name.trim();
     let parameters: Vec<_> = definition
         .named_children_by_field_name("args")
-        .map(|n| {
-            Ok::<(std::string::String, marzano_util::position::Range), Utf8Error>((
-                n.text()?.trim().to_string(),
-                n.range(),
-            ))
-        })
+        .map(|n| Ok::<(String, Range), Utf8Error>((n.text()?.trim().to_string(), n.range())))
         .collect::<Result<Vec<_>, Utf8Error>>()?;
     let duplicates = get_duplicates(&parameters);
     if !duplicates.is_empty() {
@@ -236,7 +173,7 @@ struct DefinitionInfoKinds {
 fn get_definition_info(
     libs: &[(String, String)],
     root: &NodeWithSource,
-    parser: &mut Parser,
+    parser: &mut MarzanoGritParser,
 ) -> Result<DefinitionInfoKinds> {
     let mut pattern_indices: BTreeMap<String, DefinitionInfo> = BTreeMap::new();
     let mut pattern_index = 0;
@@ -247,8 +184,8 @@ fn get_definition_info(
     let mut foreign_function_indices: BTreeMap<String, DefinitionInfo> = BTreeMap::new();
     let mut foreign_function_index = 0;
     for (file, pattern) in libs.iter() {
-        let tree = parse_one(parser, pattern, file)?;
-        let root = NodeWithSource::new(tree.root_node(), pattern);
+        let tree = parser.parse_file(pattern, Some(Path::new(file)))?;
+        let root = tree.root_node();
         node_to_definition_info(
             &root,
             &mut pattern_indices,
@@ -299,7 +236,7 @@ fn get_definition_info(
 }
 
 fn node_to_definitions(
-    node: NodeWithSource,
+    node: &NodeWithSource,
     context: &mut NodeCompilationContext,
     pattern_definitions: &mut Vec<PatternDefinition<MarzanoQueryContext>>,
     predicate_definitions: &mut Vec<PredicateDefinition<MarzanoQueryContext>>,
@@ -347,7 +284,7 @@ struct DefinitionOutput {
 fn get_definitions(
     libs: &[(String, String)],
     source_file: &NodeWithSource,
-    parser: &mut Parser,
+    parser: &mut MarzanoGritParser,
     context: &CompilationContext,
     global_vars: &mut BTreeMap<String, usize>,
     logs: &mut AnalysisLogs,
@@ -381,10 +318,10 @@ fn get_definitions(
             logs,
         };
 
-        let tree = parse_one(parser, pattern, file)?;
-        let source_file = tree.root_node();
+        let tree = parser.parse_file(pattern, Some(Path::new(file)))?;
+        let root = tree.root_node();
         node_to_definitions(
-            NodeWithSource::new(source_file.clone(), pattern),
+            &root,
             &mut node_context,
             &mut pattern_definitions,
             &mut predicate_definitions,
@@ -392,7 +329,7 @@ fn get_definitions(
             &mut foreign_function_definitions,
         )?;
 
-        if let Some(bare_pattern) = source_file.child_by_field_name("pattern") {
+        if let Some(bare_pattern) = root.child_by_field_name("pattern") {
             let mut local_vars = BTreeMap::new();
             let (scope_index, mut local_context) = create_scope!(node_context, local_vars);
             let path = Path::new(file);
@@ -400,10 +337,7 @@ fn get_definitions(
                 bail!("failed to get pattern name from definition in file {file}");
             };
 
-            let body = PatternCompiler::from_node(
-                &NodeWithSource::new(bare_pattern, pattern),
-                &mut local_context,
-            )?;
+            let body = PatternCompiler::from_node(&bare_pattern, &mut local_context)?;
             let pattern_def = PatternDefinition::new(
                 name.to_owned(),
                 scope_index,
@@ -415,7 +349,7 @@ fn get_definitions(
         }
     }
     node_to_definitions(
-        source_file.clone(),
+        source_file,
         &mut NodeCompilationContext {
             compilation: context,
             // We're not in a local scope yet, so this map is kinda useless.
@@ -448,27 +382,22 @@ struct DefsToFilenames {
 
 fn defs_to_filenames(
     libs: &BTreeMap<String, String>,
-    parser: &mut Parser,
-    root: Node,
-    src: &str,
+    parser: &mut MarzanoGritParser,
+    root: NodeWithSource,
 ) -> Result<DefsToFilenames> {
     let mut patterns = BTreeMap::new();
     let mut predicates = BTreeMap::new();
     let mut functions = BTreeMap::new();
     let mut foreign_functions = BTreeMap::new();
     for (file, pattern) in libs.iter() {
-        let tree = parse_one(parser, pattern, file)?;
+        let tree = parser.parse_file(pattern, Some(Path::new(file)))?;
         let node = tree.root_node();
-        let mut cursor = node.walk();
-        for definition in node
-            .children_by_field_name("definitions", &mut cursor)
-            .filter(|n| n.is_named())
-        {
+        for definition in node.named_children_by_field_name("definitions") {
             if let Some(pattern_definition) = definition.child_by_field_name("pattern") {
                 let name = pattern_definition
                     .child_by_field_name("name")
                     .ok_or_else(|| anyhow!("missing name of pattern definition"))?;
-                let name = name.utf8_text(pattern.as_bytes())?;
+                let name = name.text()?;
                 let name = name.trim();
                 // todo check for duplicates?
                 patterns.insert(name.to_owned(), file.to_owned());
@@ -476,7 +405,7 @@ fn defs_to_filenames(
                 let name = predicate_definition
                     .child_by_field_name("name")
                     .ok_or_else(|| anyhow!("missing name of pattern definition"))?;
-                let name = name.utf8_text(pattern.as_bytes())?;
+                let name = name.text()?;
                 let name = name.trim();
                 // todo check for duplicates?
                 predicates.insert(name.to_owned(), file.to_owned());
@@ -484,14 +413,14 @@ fn defs_to_filenames(
                 let name = function_definition
                     .child_by_field_name("name")
                     .ok_or_else(|| anyhow!("missing name of function definition"))?;
-                let name = name.utf8_text(pattern.as_bytes())?;
+                let name = name.text()?;
                 let name = name.trim();
                 functions.insert(name.to_owned(), file.to_owned());
             } else if let Some(foreign_definition) = definition.child_by_field_name("foreign") {
                 let name = foreign_definition
                     .child_by_field_name("name")
                     .ok_or_else(|| anyhow!("missing name of function definition"))?;
-                let name = name.utf8_text(pattern.as_bytes())?;
+                let name = name.text()?;
                 let name = name.trim();
                 foreign_functions.insert(name.to_owned(), file.to_owned());
             } else {
@@ -505,16 +434,13 @@ fn defs_to_filenames(
             patterns.insert(name.to_owned(), file.to_owned());
         }
     }
-    let mut cursor = root.walk();
-    for definition in root
-        .children_by_field_name("definitions", &mut cursor)
-        .filter(|n| n.is_named())
-    {
+
+    for definition in root.named_children_by_field_name("definitions") {
         if let Some(pattern_definition) = definition.child_by_field_name("pattern") {
             let name = pattern_definition
                 .child_by_field_name("name")
                 .ok_or_else(|| anyhow!("missing name of pattern definition"))?;
-            let name = name.utf8_text(src.as_bytes())?;
+            let name = name.text()?;
             let name = name.trim();
             // todo check for duplicates?
             patterns.remove(name);
@@ -522,7 +448,7 @@ fn defs_to_filenames(
             let name = predicate_definition
                 .child_by_field_name("name")
                 .ok_or_else(|| anyhow!("missing name of pattern definition"))?;
-            let name = name.utf8_text(src.as_bytes())?;
+            let name = name.text()?;
             let name = name.trim();
             // todo check for duplicates?
             predicates.remove(name);
@@ -530,14 +456,14 @@ fn defs_to_filenames(
             let name = function_definition
                 .child_by_field_name("name")
                 .ok_or_else(|| anyhow!("missing name of function definition"))?;
-            let name = name.utf8_text(src.as_bytes())?;
+            let name = name.text()?;
             let name = name.trim();
             functions.remove(name);
         } else if let Some(foreign_definition) = definition.child_by_field_name("foreign") {
             let name = foreign_definition
                 .child_by_field_name("name")
                 .ok_or_else(|| anyhow!("missing name of function definition"))?;
-            let name = name.utf8_text(src.as_bytes())?;
+            let name = name.text()?;
             let name = name.trim();
             foreign_functions.remove(name);
         } else {
@@ -557,67 +483,65 @@ fn defs_to_filenames(
 fn filter_libs(
     libs: &BTreeMap<String, String>,
     src: &str,
-    parser: &mut Parser,
+    parser: &mut MarzanoGritParser,
     will_autowrap: bool,
 ) -> Result<Vec<(String, String)>> {
     let node_like = "nodeLike";
     let predicate_call = "predicateCall";
-    let tree = parse_one(parser, src, DEFAULT_FILE_NAME)?;
+    let tree = parser.parse_file(src, Some(Path::new(DEFAULT_FILE_NAME)))?;
     let DefsToFilenames {
         patterns: pattern_file,
         predicates: predicate_file,
         functions: function_file,
         foreign_functions: foreign_file,
-    } = defs_to_filenames(libs, parser, tree.root_node(), src)?;
+    } = defs_to_filenames(libs, parser, tree.root_node())?;
     let mut filtered: BTreeMap<String, String> = BTreeMap::new();
     // gross but necessary due to running these patterns befor and after each file
 
-    let mut stack: Vec<(Tree, &str)> = if will_autowrap {
+    let mut stack: Vec<Tree> = if will_autowrap {
         let before_each_file = "before_each_file()";
-        let before_tree = parse_one(parser, before_each_file, DEFAULT_FILE_NAME)?;
+        let before_tree =
+            parser.parse_file(before_each_file, Some(Path::new(DEFAULT_FILE_NAME)))?;
         let after_each_file = "after_each_file()";
-        let after_tree = parse_one(parser, after_each_file, DEFAULT_FILE_NAME)?;
+        let after_tree = parser.parse_file(after_each_file, Some(Path::new(DEFAULT_FILE_NAME)))?;
 
-        vec![
-            (tree, src),
-            (before_tree, before_each_file),
-            (after_tree, after_each_file),
-        ]
+        vec![tree, before_tree, after_tree]
     } else {
-        vec![(tree, src)]
+        vec![tree]
     };
-    while let Some((tree, source)) = stack.pop() {
-        let cursor = tree.walk();
-        for n in traverse(CursorWrapper::new(cursor, source), Order::Pre)
-            .map(|n| n.node)
-            .filter(|n| n.is_named() && (n.kind() == node_like || n.kind() == predicate_call))
-        {
+
+    while let Some(tree) = stack.pop() {
+        let root = tree.root_node();
+        let cursor = root.walk();
+        for n in traverse(cursor, Order::Pre).filter(|n| {
+            n.node.is_named() && (n.node.kind() == node_like || n.node.kind() == predicate_call)
+        }) {
             let name = n
                 .child_by_field_name("name")
                 .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
-            let name = name.utf8_text(source.as_bytes())?;
+            let name = name.text()?;
             let name = name.trim();
-            if n.kind() == node_like {
-                if let Some((tree, file_body)) =
+            if n.node.kind() == node_like {
+                if let Some(tree) =
                     find_definition_if_exists(&pattern_file, parser, libs, &mut filtered, name)?
                 {
-                    stack.push((tree, file_body));
+                    stack.push(tree);
                 }
-                if let Some((tree, file_body)) =
+                if let Some(tree) =
                     find_definition_if_exists(&function_file, parser, libs, &mut filtered, name)?
                 {
-                    stack.push((tree, file_body));
+                    stack.push(tree);
                 }
-                if let Some((tree, file_body)) =
+                if let Some(tree) =
                     find_definition_if_exists(&foreign_file, parser, libs, &mut filtered, name)?
                 {
-                    stack.push((tree, file_body));
+                    stack.push(tree);
                 }
-            } else if n.kind() == predicate_call {
-                if let Some((tree, file_body)) =
+            } else if n.node.kind() == predicate_call {
+                if let Some(tree) =
                     find_definition_if_exists(&predicate_file, parser, libs, &mut filtered, name)?
                 {
-                    stack.push((tree, file_body));
+                    stack.push(tree);
                 }
             }
         }
@@ -625,19 +549,19 @@ fn filter_libs(
     Ok(filtered.into_iter().collect_vec())
 }
 
-fn find_definition_if_exists<'a>(
+fn find_definition_if_exists(
     files: &BTreeMap<String, String>,
-    parser: &mut Parser,
-    libs: &'a BTreeMap<String, String>,
+    parser: &mut MarzanoGritParser,
+    libs: &BTreeMap<String, String>,
     filtered: &mut BTreeMap<String, String>,
     name: &str,
-) -> Result<Option<(Tree, &'a String)>> {
+) -> Result<Option<Tree>> {
     if let Some(file_name) = files.get(name) {
         if !filtered.contains_key(file_name) {
             if let Some(file_body) = libs.get(file_name) {
                 filtered.insert(file_name.to_owned(), file_body.to_owned());
-                let tree = parse_one(parser, file_body, file_name)?;
-                return Ok(Some((tree, file_body)));
+                let tree = parser.parse_file(file_body, Some(Path::new(file_name)))?;
+                return Ok(Some(tree));
             }
         }
     };
@@ -662,9 +586,9 @@ pub fn src_to_problem_libs(
     custom_built_ins: Option<BuiltIns>,
     injected_limit: Option<usize>,
 ) -> Result<CompilationResult> {
-    let mut parser = make_grit_parser()?;
-    let src_tree = parse_one(&mut parser, &src, DEFAULT_FILE_NAME)?;
-    let lang = TargetLanguage::from_tree(&src_tree, &src).unwrap_or(default_lang);
+    let mut parser = MarzanoGritParser::new()?;
+    let src_tree = parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
+    let lang = TargetLanguage::from_tree(&src_tree).unwrap_or(default_lang);
     src_to_problem_libs_for_language(
         src,
         libs,
@@ -684,7 +608,7 @@ pub fn src_to_problem_libs_for_language(
     lang: TargetLanguage,
     name: Option<String>,
     file_ranges: Option<Vec<FileRange>>,
-    grit_parser: &mut Parser,
+    grit_parser: &mut MarzanoGritParser,
     custom_built_ins: Option<BuiltIns>,
     injected_limit: Option<usize>,
 ) -> Result<CompilationResult> {
@@ -692,9 +616,9 @@ pub fn src_to_problem_libs_for_language(
         let error = ". never matches and should not be used as a pattern. Did you mean to run 'grit apply <pattern> .'?";
         bail!(error);
     }
-    let src_tree = parse_one(grit_parser, &src, DEFAULT_FILE_NAME)?;
+    let src_tree = grit_parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
 
-    let root = NodeWithSource::new(src_tree.root_node(), &src);
+    let root = src_tree.root_node();
     let mut built_ins = BuiltIns::get_built_in_functions();
     if let Some(custom_built_ins) = custom_built_ins {
         built_ins.extend_builtins(custom_built_ins)?;
@@ -773,7 +697,6 @@ pub fn src_to_problem_libs_for_language(
     )?;
 
     let problem = Problem::new(
-        src,
         src_tree,
         pattern,
         lang,
@@ -794,23 +717,38 @@ pub fn src_to_problem_libs_for_language(
     Ok(result)
 }
 
-pub fn parse_one(parser: &mut Parser, src: &str, file_name: &str) -> Result<Tree> {
-    let tree = parser
-        .parse(src, None)?
-        .ok_or_else(|| anyhow!("parse error"))?;
-    let parse_errors = grit_parsing_errors(&tree, src, file_name)?;
-    if !parse_errors.is_empty() {
-        let error = parse_errors[0].clone();
-        bail!(error);
+#[derive(Debug, Default)]
+pub struct VariableLocations {
+    pub(crate) locations: Vec<Vec<VariableSourceLocations>>,
+}
+
+impl VariableLocations {
+    pub(crate) fn new(locations: Vec<Vec<VariableSourceLocations>>) -> Self {
+        Self { locations }
     }
-    Ok(tree)
+
+    pub(crate) fn compiled_vars(&self) -> Vec<VariableMatch> {
+        let mut variables = vec![];
+        for (i, scope) in self.locations.iter().enumerate() {
+            for (j, var) in scope.iter().enumerate() {
+                if var.file == DEFAULT_FILE_NAME {
+                    variables.push(VariableMatch {
+                        name: var.name.clone(),
+                        scoped_name: format!("{}_{}_{}", i, j, var.name),
+                        ranges: var.locations.iter().cloned().collect(),
+                    });
+                }
+            }
+        }
+        variables
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use marzano_language::{language::Language, target_language::PatternLanguage};
-
     use super::*;
+    use grit_util::Language;
+    use marzano_language::target_language::PatternLanguage;
 
     #[test]
     fn test_typescript_flavor() {

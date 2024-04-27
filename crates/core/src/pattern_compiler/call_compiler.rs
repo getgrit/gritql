@@ -2,19 +2,15 @@ use super::{
     ast_node_compiler::AstNodeCompiler, compiler::NodeCompilationContext,
     node_compiler::NodeCompiler, pattern_compiler::PatternCompiler,
 };
-use crate::pattern::{
-    built_in_functions::CallBuiltIn,
-    call::{Call, PrCall},
-    file_pattern::FilePattern,
-    functions::{CallForeignFunction, CallFunction},
-    patterns::Pattern,
-};
-use crate::problem::MarzanoQueryContext;
+use crate::{built_in_functions::BuiltIns, problem::MarzanoQueryContext};
 use anyhow::{anyhow, bail, Result};
-use grit_util::AstNode;
+use grit_pattern_matcher::pattern::{
+    Call, CallForeignFunction, CallFunction, FilePattern, Pattern, PrCall,
+};
+use grit_util::{AstNode, Language, Range};
 use itertools::Itertools;
-use marzano_language::language::Language;
-use marzano_util::{node_with_source::NodeWithSource, position::Range};
+use marzano_language::language::MarzanoLanguage;
+use marzano_util::node_with_source::NodeWithSource;
 use std::collections::BTreeMap;
 
 pub(crate) struct CallCompiler;
@@ -99,7 +95,7 @@ impl NodeCompiler for CallCompiler {
                     kind
                 )));
             }
-            Ok(Pattern::CallBuiltIn(Box::new(CallBuiltIn::from_args(
+            Ok(Pattern::CallBuiltIn(Box::new(BuiltIns::call_from_args(
                 args,
                 context.compilation.built_ins,
                 index,

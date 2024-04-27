@@ -2,13 +2,9 @@ use super::{
     compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     pattern_compiler::PatternCompiler, predicate_compiler::PredicateCompiler,
 };
-use crate::pattern::{
-    any::{Any, PrAny},
-    patterns::Pattern,
-    predicates::Predicate,
-};
 use crate::problem::MarzanoQueryContext;
 use anyhow::Result;
+use grit_pattern_matcher::pattern::{Any, Pattern, PrAny, Predicate};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct AnyCompiler;

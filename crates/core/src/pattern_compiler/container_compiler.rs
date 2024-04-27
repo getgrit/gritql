@@ -3,9 +3,9 @@ use super::{
     list_index_compiler::ListIndexCompiler, node_compiler::NodeCompiler,
     variable_compiler::VariableCompiler,
 };
-use crate::pattern::container::Container;
 use crate::problem::MarzanoQueryContext;
 use anyhow::{bail, Result};
+use grit_pattern_matcher::pattern::Container;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct ContainerCompiler;

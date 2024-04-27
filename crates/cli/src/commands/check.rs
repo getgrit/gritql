@@ -31,7 +31,6 @@ use marzano_messenger::emit::{Messager, VisibilityLevels};
 use cli_server::check::CheckMessenger;
 
 use crate::{
-    diff::extract_target_ranges,
     error::GoodError,
     flags::{GlobalFormatFlags, OutputFormat},
     github::{log_check_annotations, write_check_summary},
@@ -44,6 +43,8 @@ use crate::{
     updater::Updater,
     ux::{get_check_summary, log_file, print_config, CheckResult},
 };
+
+use super::filters::{extract_filter_ranges, SharedFilterArgs};
 
 #[derive(Args, Serialize, Debug)]
 pub struct CheckArg {
@@ -68,12 +69,8 @@ pub struct CheckArg {
     /// Output annotations for a GitHub actions workflow
     #[clap(long = "github-actions")]
     pub github_actions: bool,
-    #[clap(
-        long = "only-in-diff",
-        help = "Only check ranges that are inside the unified diff if a path to the diff is provided, or the results of git diff HEAD if no path is provided.",
-        hide = true
-    )]
-    pub only_in_diff: Option<Option<PathBuf>>,
+    #[clap(flatten)]
+    pub shared_filters: SharedFilterArgs,
 }
 
 pub(crate) async fn run_check(
@@ -122,7 +119,7 @@ pub(crate) async fn run_check(
         std::env::current_dir()?
     };
 
-    let filter_range = extract_target_ranges(&arg.only_in_diff)?;
+    let filter_range = extract_filter_ranges(&arg.shared_filters)?;
 
     // Construct a resolver
     let resolver = GritModuleResolver::new(current_dir.to_str().unwrap());
@@ -204,7 +201,7 @@ pub(crate) async fn run_check(
                 cache.put_no_matches(hash, pattern.hash).unwrap();
             }
         }
-        let mut entry = results.entry(pattern.src.clone()).or_default();
+        let mut entry = results.entry(pattern.tree.source.clone()).or_default();
         entry.extend(result.into_iter().filter(is_match));
         pg.inc(1);
     });

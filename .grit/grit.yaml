@@ -10,6 +10,28 @@ patterns:
         "language-submodules",
         "language-metavariables"
       }
+  - name: no_treesitter_in_grit_crates
+    description: |
+      The `grit-pattern-matcher` and `grit-util` crates should remain free of
+      TreeSitter dependencies. This also implies they cannot have dependencies on any
+      of the `marzano-*` crates, since those *can* have TreeSitter dependencies.
+    level: error
+    body: |
+      language toml
+
+      `[dependencies]
+      $deps` where {
+        $filename <: or { includes "Cargo.toml", includes "cargo.toml" },
+        $absolute_filename <: or {
+          includes "crates/grit-pattern-matcher",
+          includes "crates/grit-util"
+        },
+        $deps <: some bubble `$name = $specifier` where $name <: or {
+          includes "tree_sitter",
+          includes "tree-sitter",
+          includes "marzano"
+        }
+      }
   - name: no_println_in_lsp
     description: Don't use println!() in LSP code, it breaks the LSP stdio protocol.
     level: error
@@ -31,15 +53,15 @@ patterns:
       `println!($args)` as $print where {
         $outcome = .,
         or {
+            $absolute_filename <: includes "crates/core",
             $absolute_filename <: includes "crates/gritmodule",
+            $absolute_filename <: includes "crates/util",
             and { $absolute_filename <: includes "crates/cli/", $outcome = `log::info!($args)` }
         },
         // Allow tests and build utils
         $absolute_filename <: not includes or {
           "tests/",
-          "build.rs",
-          // Workaround for https://github.com/getgrit/gritql/issues/232
-          "lister.rs"
+          "build.rs"
         },
         $print <: not within `mod tests { $_ }`
       } => $outcome

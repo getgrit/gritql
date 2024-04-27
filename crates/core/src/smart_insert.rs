@@ -1,51 +1,7 @@
-use crate::binding::Binding;
-use grit_util::AstNode;
-use marzano_language::language::Language;
+use grit_util::Language;
 use marzano_util::node_with_source::NodeWithSource;
 
-impl<'a> Binding<'a> {
-    /// Returns the padding to use for inserting the given text.
-    pub(crate) fn get_insertion_padding(
-        &self,
-        text: &str,
-        is_first: bool,
-        language: &impl Language,
-    ) -> Option<String> {
-        match self {
-            Self::List(node, field_id) => {
-                let children: Vec<_> = node.children_by_field_id(*field_id).collect();
-                if children.is_empty() {
-                    return None;
-                }
-                calculate_padding(&children, text, is_first, language).or_else(|| {
-                    if children.len() == 1 {
-                        let child = children.first().unwrap();
-                        if child.node.end_position().row() > child.node.start_position().row()
-                            && !child.text().is_ok_and(|t| t.ends_with('\n'))
-                            && !text.starts_with('\n')
-                        {
-                            return Some("\n".to_string());
-                        }
-                    }
-                    None
-                })
-            }
-            Self::Node(node) => {
-                if language.is_statement(node.node.kind_id())
-                    && !node.text().is_ok_and(|t| t.ends_with('\n'))
-                    && !text.starts_with('\n')
-                {
-                    Some("\n".to_string())
-                } else {
-                    None
-                }
-            }
-            Self::String(..) | Self::FileName(_) | Self::Empty(..) | Self::ConstantRef(_) => None,
-        }
-    }
-}
-
-fn calculate_padding(
+pub(crate) fn calculate_padding(
     children: &[NodeWithSource],
     insert: &str,
     is_first: bool,

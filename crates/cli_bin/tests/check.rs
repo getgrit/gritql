@@ -190,9 +190,11 @@ fn check_only_in_diff() -> Result<()> {
 
     let mut cmd = get_test_cmd()?;
 
+    let diff_content = std::fs::read_to_string(dir.join("test.diff"))?;
+
     cmd.arg("check")
         .arg("--only-in-diff")
-        .arg("test.diff")
+        .arg(diff_content)
         .current_dir(dir.clone());
 
     let output = cmd.output()?;

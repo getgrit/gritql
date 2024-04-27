@@ -1,8 +1,8 @@
 #![allow(warnings)]
-use crate::intervals::{
+use anyhow::{bail, Result};
+use grit_pattern_matcher::intervals::{
     earliest_deadline_sort, get_top_level_intervals, pop_out_of_range_intervals, Interval,
 };
-use anyhow::{bail, Result};
 use std::{
     collections::{HashMap, HashSet},
     vec,
@@ -260,13 +260,11 @@ fn linearize_graph(
 #[cfg(test)]
 mod tests {
 
-    use std::collections::{HashMap, HashSet};
-
-    use crate::intervals::{earliest_deadline_sort, Interval};
-
     use super::{
         get_effects_order, linearize_graph, EffectInterval, FileInterval, ToEffectInterval,
     };
+    use grit_pattern_matcher::intervals::{earliest_deadline_sort, Interval};
+    use std::collections::{HashMap, HashSet};
 
     type NestedVec = Vec<((u32, u32), Vec<(u32, u32)>)>;
     type NestedArray = [((u32, u32), Vec<(u32, u32)>)];

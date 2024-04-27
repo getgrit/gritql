@@ -1,9 +1,9 @@
+use crate::marzano_binding;
+use crate::marzano_binding::EffectRange;
 use anyhow::{anyhow, bail, Result};
+use grit_util::Language;
 use itertools::Itertools;
-use marzano_language::language::Language;
 use std::{cell::RefCell, collections::HashSet, ops::Range, rc::Rc};
-
-use crate::binding::EffectRange;
 
 fn filter_out_nested(replacements: &mut Vec<(EffectRange, String)>) {
     let max_insert_index = match replacements.first() {
@@ -103,7 +103,7 @@ fn pad_snippet(
         .peekable();
     let mut padding = Vec::new();
     while let Some(c) = chars.next() {
-        if let Some(padding_value) = language.take_padding(c, chars.peek()) {
+        if let Some(padding_value) = language.take_padding(c, chars.peek().copied()) {
             padding.push(padding_value);
         } else {
             break;
@@ -111,14 +111,7 @@ fn pad_snippet(
     }
 
     let padding = padding.into_iter().collect::<String>();
-
-    // Write first snippet line as is, without extra padding
-    let mut lines = snippet.split('\n');
-    let mut result = lines.next().unwrap_or_default().to_string();
-
-    // Add the rest of lines in the snippet with padding
-    lines.for_each(|line| result.push_str(&format!("\n{}{}", &padding, line)));
-    Ok(result)
+    marzano_binding::pad_snippet(&padding, snippet, language)
 }
 
 // checks on this one are likely redundant as
