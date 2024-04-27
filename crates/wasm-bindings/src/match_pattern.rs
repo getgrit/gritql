@@ -226,7 +226,8 @@ async fn match_pattern_internal(
     let injected_builtins: Option<BuiltIns> = None;
     #[cfg(feature = "ai_builtins")]
     let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
-    let builder = PatternBuilder::start(        pattern,
+    let builder = PatternBuilder::start(
+        pattern,
         &libs,
         lang,
         None,
