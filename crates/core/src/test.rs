@@ -14370,3 +14370,47 @@ fn ruby_lambda() {
     })
     .unwrap();
 }
+
+#[test]
+fn ruby_case() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`when $a
+                |  print('It is a string')` => `when Integer
+                |  print('It is an integer')`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |obj = 'hello'
+                |case obj.class
+                |when String
+                |  print('It is a string')
+                |when Fixnum
+                |  print('It is a number')
+                |else
+                |  print('It is not a string or number')
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |obj = 'hello'
+                |case obj.class
+                |when Integer
+                |  print('It is an integer')
+                |when Fixnum
+                |  print('It is a number')
+                |else
+                |  print('It is not a string or number')
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}

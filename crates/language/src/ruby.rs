@@ -63,7 +63,10 @@ impl Language for Ruby {
         "Ruby"
     }
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[("", "")]
+        &[
+            ("", ""),
+            ("case GRIT_VARIABLE\n", "\nend")
+        ]
     }
 
     fn metavariable_sort(&self) -> SortId {
