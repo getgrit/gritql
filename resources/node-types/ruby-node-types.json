@@ -748,16 +748,22 @@
             "named": true
           }
         ]
+      },
+      "expression": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_expression",
+            "named": true
+          }
+        ]
       }
     },
     "children": {
       "multiple": true,
       "required": false,
       "types": [
-        {
-          "type": "_expression",
-          "named": true
-        },
         {
           "type": "block_argument",
           "named": true
@@ -815,6 +821,16 @@
           },
           {
             "type": "splat_argument",
+            "named": true
+          }
+        ]
+      },
+      "expression": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_expression",
             "named": true
           }
         ]
@@ -2051,6 +2067,16 @@
     "type": "element_reference",
     "named": true,
     "fields": {
+      "expression": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_expression",
+            "named": true
+          }
+        ]
+      },
       "object": {
         "multiple": false,
         "required": true,
@@ -2066,10 +2092,6 @@
       "multiple": true,
       "required": false,
       "types": [
-        {
-          "type": "_expression",
-          "named": true
-        },
         {
           "type": "block_argument",
           "named": true

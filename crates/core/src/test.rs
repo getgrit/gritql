@@ -14280,10 +14280,10 @@ fn rust_each() {
                 |language ruby
                 |
                 |`[a, b, c].each do |$a|
-                |   puts $b
+                |   puts abc::$b
                 |end` where {
                 |   $a => `x`,
-                |   $b => `x`,
+                |   $b => `A`,
                 |}
                 |"#
             .trim_margin()
@@ -14298,6 +14298,38 @@ fn rust_each() {
             expected: r#"
                 |[a, b, c].each do |x|
                 |   puts x
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn rust_scope() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`puts abc::$a` where {
+                |   $a => `X`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |[a, b, c].each do |n|
+                |   puts abc::ABC
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |[a, b, c].each do |n|
+                |   puts abc::X
                 |end
                 |"#
             .trim_margin()

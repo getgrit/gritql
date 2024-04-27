@@ -826,7 +826,7 @@ const PREC = {
       )),
   
       _argument: $ => prec.left(choice(
-        $._expression,
+        field('expression', $._expression),
         $.splat_argument,
         $.hash_splat_argument,
         $.forward_argument,
