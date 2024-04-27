@@ -99,7 +99,6 @@ fn match_pattern_libs(
     let pattern =
         src_to_problem_libs(pattern, libs, default_language, None, None, None, None)?.problem;
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), src.to_owned()), context);
-    println!("RESULTS: {results:#?}");
     let mut execution_result = ExecutionResult {
         input_file_debug_text: "".to_string(),
         the_match: None,
