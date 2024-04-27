@@ -14273,7 +14273,7 @@ fn ruby_class_2() {
 }
 
 #[test]
-fn rust_each() {
+fn ruby_each() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
@@ -14308,7 +14308,7 @@ fn rust_each() {
 }
 
 #[test]
-fn rust_scope() {
+fn ruby_scope() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
@@ -14331,6 +14331,38 @@ fn rust_scope() {
                 |[a, b, c].each do |n|
                 |   puts abc::X
                 |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn ruby_lambda() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`lambda {|$a| $a**$b }` where {
+                |   $b => `3`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |square = lambda {|val| val**2 }
+                |three_squared = square.call(3)
+                |puts "Three squared is #{three_squared}"
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |square = lambda {|val| val**3 }
+                |three_squared = square.call(3)
+                |puts "Three squared is #{three_squared}"
                 |"#
             .trim_margin()
             .unwrap(),

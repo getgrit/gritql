@@ -119,12 +119,12 @@ const PREC = {
       _statements: $ => choice(
         seq(
           repeat1(choice(
-            seq($._statement, $._terminator),
+            seq(field('statement', $._statement), $._terminator),
             $.empty_statement,
           )),
-          optional($._statement),
+          optional(field('statement', $._statement)),
         ),
-        $._statement,
+        field('statement', $._statement),
       ),
   
       begin_block: $ => seq('BEGIN', '{', optional($._statements), '}'),

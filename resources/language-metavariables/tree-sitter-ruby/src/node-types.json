@@ -985,6 +985,16 @@
     "type": "begin",
     "named": true,
     "fields": {
+      "statement": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_statement",
+            "named": true
+          }
+        ]
+      },
       "statements": {
         "multiple": true,
         "required": false,
@@ -1026,15 +1036,22 @@
   {
     "type": "begin_block",
     "named": true,
-    "fields": {},
+    "fields": {
+      "statement": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_statement",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
       "required": false,
       "types": [
-        {
-          "type": "_statement",
-          "named": true
-        },
         {
           "type": "empty_statement",
           "named": true
@@ -1236,15 +1253,22 @@
   {
     "type": "block_body",
     "named": true,
-    "fields": {},
+    "fields": {
+      "statement": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_statement",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
-      "required": true,
+      "required": false,
       "types": [
-        {
-          "type": "_statement",
-          "named": true
-        },
         {
           "type": "empty_statement",
           "named": true
@@ -1334,6 +1358,16 @@
     "type": "body_statement",
     "named": true,
     "fields": {
+      "statement": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_statement",
+            "named": true
+          }
+        ]
+      },
       "statements": {
         "multiple": true,
         "required": false,
@@ -2021,15 +2055,22 @@
   {
     "type": "do",
     "named": true,
-    "fields": {},
+    "fields": {
+      "statement": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_statement",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
       "required": false,
       "types": [
-        {
-          "type": "_statement",
-          "named": true
-        },
         {
           "type": "empty_statement",
           "named": true
@@ -2118,15 +2159,22 @@
   {
     "type": "else",
     "named": true,
-    "fields": {},
+    "fields": {
+      "statement": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_statement",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
       "required": false,
       "types": [
-        {
-          "type": "_statement",
-          "named": true
-        },
         {
           "type": "empty_statement",
           "named": true
@@ -2182,15 +2230,22 @@
   {
     "type": "end_block",
     "named": true,
-    "fields": {},
+    "fields": {
+      "statement": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_statement",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
       "required": false,
       "types": [
-        {
-          "type": "_statement",
-          "named": true
-        },
         {
           "type": "empty_statement",
           "named": true
@@ -2201,15 +2256,22 @@
   {
     "type": "ensure",
     "named": true,
-    "fields": {},
+    "fields": {
+      "statement": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_statement",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
       "required": false,
       "types": [
-        {
-          "type": "_statement",
-          "named": true
-        },
         {
           "type": "empty_statement",
           "named": true
@@ -2654,6 +2716,16 @@
     "type": "interpolation",
     "named": true,
     "fields": {
+      "statement": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_statement",
+            "named": true
+          }
+        ]
+      },
       "statements": {
         "multiple": true,
         "required": false,
@@ -3280,15 +3352,22 @@
   {
     "type": "parenthesized_statements",
     "named": true,
-    "fields": {},
+    "fields": {
+      "statement": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_statement",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
       "required": false,
       "types": [
-        {
-          "type": "_statement",
-          "named": true
-        },
         {
           "type": "empty_statement",
           "named": true
@@ -3323,15 +3402,22 @@
   {
     "type": "program",
     "named": true,
-    "fields": {},
+    "fields": {
+      "statement": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_statement",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
       "required": false,
       "types": [
-        {
-          "type": "_statement",
-          "named": true
-        },
         {
           "type": "empty_statement",
           "named": true
@@ -3924,6 +4010,16 @@
     "type": "then",
     "named": true,
     "fields": {
+      "statement": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "_statement",
+            "named": true
+          }
+        ]
+      },
       "statements": {
         "multiple": true,
         "required": false,
