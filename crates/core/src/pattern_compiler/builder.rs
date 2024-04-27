@@ -37,11 +37,7 @@ use marzano_language::{
     self, grit_parser::MarzanoGritParser, language::Tree, target_language::TargetLanguage,
 };
 
-use std::{
-    collections::{BTreeMap},
-    path::Path,
-    vec,
-};
+use std::{collections::BTreeMap, path::Path, vec};
 
 pub type CallbackMatchFn = dyn for<'a> Fn(
         &<problem::MarzanoQueryContext as grit_pattern_matcher::context::QueryContext>::ResolvedPattern<'a>,
@@ -199,6 +195,7 @@ impl PatternBuilder {
     }
 
     /// Wrap the pattern so it is independently processable
+    /// compile() calls this, so you should *not* call this directly.
     ///
     /// See https://docs.grit.io/language/bubble#pattern-auto-wrap
     fn auto_wrap(
