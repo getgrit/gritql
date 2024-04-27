@@ -5,6 +5,7 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
+use crate::pattern::functions::GritCall;
 use crate::{
     context::{ExecContext, QueryContext},
     errors::debug,
@@ -110,6 +111,17 @@ impl<Q: QueryContext> Evaluator<Q> for Match<Q> {
                 };
                 Ok(FuncEvaluation {
                     predicator,
+                    ret_val: None,
+                })
+            }
+            Container::FunctionCall(f) => {
+                let resolved_accessor = f.call(state, context, logs)?;
+                Ok(FuncEvaluation {
+                    predicator: if let Some(pattern) = &self.pattern {
+                        pattern.execute(&resolved_accessor, state, context, logs)?
+                    } else {
+                        resolved_accessor.matches_undefined()
+                    },
                     ret_val: None,
                 })
             }

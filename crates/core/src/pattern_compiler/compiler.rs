@@ -1,5 +1,5 @@
 use super::{
-    auto_wrap::auto_wrap_pattern,
+    builder::PatternBuilder,
     function_definition_compiler::{
         ForeignFunctionDefinitionCompiler, GritFunctionDefinitionCompiler,
     },
@@ -9,7 +9,6 @@ use super::{
     NodeCompiler,
 };
 use crate::{
-    analysis::{has_limit, is_multifile},
     built_in_functions::BuiltIns,
     foreign_function_definition::ForeignFunctionDefinition,
     problem::{MarzanoQueryContext, Problem},
@@ -17,10 +16,11 @@ use crate::{
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
     constants::{
-        ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
+        DEFAULT_FILE_NAME,
     },
     pattern::{
-        GritFunctionDefinition, PatternDefinition, PredicateDefinition, VariableSourceLocations,
+        GritFunctionDefinition, PatternDefinition, PredicateDefinition,
+        VariableSourceLocations,
     },
 };
 use grit_util::{traverse, AnalysisLogs, Ast, AstNode, FileRange, Order, Range, VariableMatch};
@@ -163,14 +163,14 @@ pub(crate) struct DefinitionInfo {
     pub(crate) parameters: Vec<(String, Range)>,
 }
 
-struct DefinitionInfoKinds {
-    pattern_indices: BTreeMap<String, DefinitionInfo>,
-    predicate_indices: BTreeMap<String, DefinitionInfo>,
-    function_indices: BTreeMap<String, DefinitionInfo>,
-    foreign_function_indices: BTreeMap<String, DefinitionInfo>,
+pub(crate) struct DefinitionInfoKinds {
+    pub(crate) pattern_indices: BTreeMap<String, DefinitionInfo>,
+    pub(crate) predicate_indices: BTreeMap<String, DefinitionInfo>,
+    pub(crate) function_indices: BTreeMap<String, DefinitionInfo>,
+    pub(crate) foreign_function_indices: BTreeMap<String, DefinitionInfo>,
 }
 
-fn get_definition_info(
+pub(crate) fn get_definition_info(
     libs: &[(String, String)],
     root: &NodeWithSource,
     parser: &mut MarzanoGritParser,
@@ -273,15 +273,15 @@ fn node_to_definitions(
     Ok(())
 }
 
-struct DefinitionOutput {
-    vars_array: Vec<Vec<VariableSourceLocations>>,
-    pattern_definitions: Vec<PatternDefinition<MarzanoQueryContext>>,
-    predicate_definitions: Vec<PredicateDefinition<MarzanoQueryContext>>,
-    function_definitions: Vec<GritFunctionDefinition<MarzanoQueryContext>>,
-    foreign_function_definitions: Vec<ForeignFunctionDefinition>,
+pub(crate) struct DefinitionOutput {
+    pub(crate) vars_array: Vec<Vec<VariableSourceLocations>>,
+    pub(crate) pattern_definitions: Vec<PatternDefinition<MarzanoQueryContext>>,
+    pub(crate) predicate_definitions: Vec<PredicateDefinition<MarzanoQueryContext>>,
+    pub(crate) function_definitions: Vec<GritFunctionDefinition<MarzanoQueryContext>>,
+    pub(crate) foreign_function_definitions: Vec<ForeignFunctionDefinition>,
 }
 
-fn get_definitions(
+pub(crate) fn get_definitions(
     libs: &[(String, String)],
     source_file: &NodeWithSource,
     parser: &mut MarzanoGritParser,
@@ -480,7 +480,7 @@ fn defs_to_filenames(
     })
 }
 
-fn filter_libs(
+pub(crate) fn filter_libs(
     libs: &BTreeMap<String, String>,
     src: &str,
     parser: &mut MarzanoGritParser,
@@ -575,7 +575,10 @@ pub struct CompilationResult {
 
 #[cfg_attr(
     feature = "grit_tracing",
-    instrument(name = "compile_pattern", skip(libs, default_lang, name, file_ranges))
+    instrument(
+        name = "src_to_problem_libs",
+        skip(libs, default_lang, name, file_ranges)
+    )
 )]
 pub fn src_to_problem_libs(
     src: String,
@@ -589,132 +592,8 @@ pub fn src_to_problem_libs(
     let mut parser = MarzanoGritParser::new()?;
     let src_tree = parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
     let lang = TargetLanguage::from_tree(&src_tree).unwrap_or(default_lang);
-    src_to_problem_libs_for_language(
-        src,
-        libs,
-        lang,
-        name,
-        file_ranges,
-        &mut parser,
-        custom_built_ins,
-        injected_limit,
-    )
-}
-
-#[allow(clippy::too_many_arguments)]
-pub fn src_to_problem_libs_for_language(
-    src: String,
-    libs: &BTreeMap<String, String>,
-    lang: TargetLanguage,
-    name: Option<String>,
-    file_ranges: Option<Vec<FileRange>>,
-    grit_parser: &mut MarzanoGritParser,
-    custom_built_ins: Option<BuiltIns>,
-    injected_limit: Option<usize>,
-) -> Result<CompilationResult> {
-    if src == "." {
-        let error = ". never matches and should not be used as a pattern. Did you mean to run 'grit apply <pattern> .'?";
-        bail!(error);
-    }
-    let src_tree = grit_parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
-
-    let root = src_tree.root_node();
-    let mut built_ins = BuiltIns::get_built_in_functions();
-    if let Some(custom_built_ins) = custom_built_ins {
-        built_ins.extend_builtins(custom_built_ins)?;
-    }
-    let mut logs: AnalysisLogs = vec![].into();
-    let mut global_vars = BTreeMap::from([
-        ("$new_files".to_owned(), NEW_FILES_INDEX),
-        ("$filename".to_owned(), FILENAME_INDEX),
-        ("$program".to_owned(), PROGRAM_INDEX),
-        ("$absolute_filename".to_owned(), ABSOLUTE_PATH_INDEX),
-    ]);
-    let is_multifile = is_multifile(&root, libs, grit_parser)?;
-    let has_limit = has_limit(&root, libs, grit_parser)?;
-    let libs = filter_libs(libs, &src, grit_parser, !is_multifile)?;
-    let DefinitionInfoKinds {
-        pattern_indices: pattern_definition_indices,
-        predicate_indices: predicate_definition_indices,
-        function_indices: function_definition_indices,
-        foreign_function_indices,
-    } = get_definition_info(&libs, &root, grit_parser)?;
-
-    let context = CompilationContext {
-        file: DEFAULT_FILE_NAME,
-        built_ins: &built_ins,
-        lang: &lang,
-        pattern_definition_info: &pattern_definition_indices,
-        predicate_definition_info: &predicate_definition_indices,
-        function_definition_info: &function_definition_indices,
-        foreign_function_definition_info: &foreign_function_indices,
-    };
-
-    let DefinitionOutput {
-        mut vars_array,
-        mut pattern_definitions,
-        predicate_definitions,
-        function_definitions,
-        foreign_function_definitions,
-    } = get_definitions(
-        &libs,
-        &root,
-        grit_parser,
-        &context,
-        &mut global_vars,
-        &mut logs,
-    )?;
-    let scope_index = vars_array.len();
-    vars_array.push(vec![]);
-    let mut vars = BTreeMap::new();
-
-    let mut node_context = NodeCompilationContext {
-        compilation: &context,
-        vars: &mut vars,
-        vars_array: &mut vars_array,
-        scope_index,
-        global_vars: &mut global_vars,
-        logs: &mut logs,
-    };
-
-    let pattern = if let Some(node) = root.child_by_field_name("pattern") {
-        PatternCompiler::from_node(&node, &mut node_context)?
-    } else {
-        let long_message = "No pattern found.
-        If you have written a pattern definition in the form `pattern myPattern() {{ }}`,
-        try calling it by adding `myPattern()` to the end of your file.
-        Check out the docs at https://docs.grit.io for help with writing patterns.";
-        bail!("{}", long_message);
-    };
-
-    let pattern = auto_wrap_pattern(
-        pattern,
-        &mut pattern_definitions,
-        !is_multifile,
-        file_ranges,
-        &mut node_context,
-        injected_limit,
-    )?;
-
-    let problem = Problem::new(
-        src_tree,
-        pattern,
-        lang,
-        built_ins,
-        is_multifile,
-        has_limit,
-        name,
-        VariableLocations::new(vars_array),
-        pattern_definitions,
-        predicate_definitions,
-        function_definitions,
-        foreign_function_definitions,
-    );
-    let result = CompilationResult {
-        compilation_warnings: logs,
-        problem,
-    };
-    Ok(result)
+    let builder = PatternBuilder::start(src, libs, lang, name, &mut parser, custom_built_ins)?;
+    builder.compile(file_ranges, injected_limit)
 }
 
 #[derive(Debug, Default)]

@@ -3,7 +3,7 @@ use grit_util::{Ast, Position};
 use marzano_core::{
     api::{AnalysisLog, InputFile, MatchResult, PatternInfo},
     built_in_functions::BuiltIns,
-    pattern_compiler::{src_to_problem_libs_for_language, CompilationResult},
+    pattern_compiler::{CompilationResult},
     tree_sitter_serde::tree_sitter_node_to_json,
 };
 use marzano_language::{
@@ -20,6 +20,7 @@ use std::{
 };
 use tree_sitter::{Language as TSLanguage, Parser as TSParser};
 use wasm_bindgen::prelude::*;
+use marzano_core::pattern_compiler::PatternBuilder;
 
 static GRIT_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static JAVASCRIPT_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
@@ -97,16 +98,15 @@ pub async fn parse_input_files_internal(
     let injected_builtins: Option<BuiltIns> = None;
     #[cfg(feature = "ai_builtins")]
     let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
-    match src_to_problem_libs_for_language(
+    let builder = PatternBuilder::start(
         pattern.clone(),
         &libs,
         lang,
         None,
-        None,
         parser,
         injected_builtins,
-        None,
-    ) {
+    )?;
+    match builder.compile(None, None) {
         Ok(c) => {
             let warning_logs = c
                 .compilation_warnings
@@ -226,18 +226,16 @@ async fn match_pattern_internal(
     let injected_builtins: Option<BuiltIns> = None;
     #[cfg(feature = "ai_builtins")]
     let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
-    let CompilationResult {
-        problem: pattern, ..
-    } = src_to_problem_libs_for_language(
+    let builder = PatternBuilder::start(
         pattern,
         &libs,
         lang,
         None,
-        None,
         parser,
-        injected_builtins,
-        None,
-    )?;
+        injected_builtins)?;
+    let CompilationResult {
+        problem: pattern, ..
+    } = builder.compile(None, None)?;
     let files: Vec<RichFile> = paths
         .into_iter()
         .zip(contents)
