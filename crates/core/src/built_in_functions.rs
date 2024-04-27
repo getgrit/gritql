@@ -26,7 +26,7 @@ use std::collections::BTreeMap;
 // eg. capitalize returns an owned string_constant pattern, but unique would return a borrowed
 // value.
 
-type F = dyn for<'a> Fn(
+pub type CallableFn = dyn for<'a> Fn(
         &'a [Option<Pattern<MarzanoQueryContext>>],
         &'a MarzanoContext<'a>,
         &mut State<'a, MarzanoQueryContext>,
@@ -38,7 +38,7 @@ type F = dyn for<'a> Fn(
 pub struct BuiltInFunction {
     pub name: &'static str,
     pub params: Vec<&'static str>,
-    pub(crate) func: Box<F>,
+    pub(crate) func: Box<CallableFn>,
 }
 
 impl BuiltInFunction {
@@ -52,7 +52,7 @@ impl BuiltInFunction {
         (self.func)(args, context, state, logs)
     }
 
-    pub fn new(name: &'static str, params: Vec<&'static str>, func: Box<F>) -> Self {
+    pub fn new(name: &'static str, params: Vec<&'static str>, func: Box<CallableFn>) -> Self {
         Self { name, params, func }
     }
 }
@@ -95,6 +95,21 @@ impl BuiltIns {
             }
         }
         Ok(CallBuiltIn::new(index, pattern_params))
+    }
+
+    /// Add an anonymous built-in, used for callbacks
+    /// Returns the index of the added function
+    pub fn add_callback(&mut self, func: Box<CallableFn>) -> usize {
+        self.0.push(BuiltInFunction::new(
+            "anon_hidden_callback",
+            vec!["match"],
+            func,
+        ));
+        self.0.len() - 1
+    }
+
+    pub fn add_built_in(&mut self, built_in: BuiltInFunction) {
+        self.0.push(built_in);
     }
 
     pub fn extend_builtins(&mut self, other: BuiltIns) -> Result<()> {

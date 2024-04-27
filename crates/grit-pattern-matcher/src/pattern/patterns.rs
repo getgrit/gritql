@@ -45,7 +45,7 @@ use super::{
     undefined::Undefined,
     variable::Variable,
     within::Within,
-    State,
+    Callback, State,
 };
 use crate::{
     constants::{ABSOLUTE_PATH_INDEX, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX, PROGRAM_INDEX},
