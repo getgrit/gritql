@@ -3,7 +3,7 @@ use grit_util::{Ast, Position};
 use marzano_core::{
     api::{AnalysisLog, InputFile, MatchResult, PatternInfo},
     built_in_functions::BuiltIns,
-    pattern_compiler::{src_to_problem_libs_for_language, CompilationResult},
+    pattern_compiler::{CompilationResult},
     tree_sitter_serde::tree_sitter_node_to_json,
 };
 use marzano_language::{
@@ -103,10 +103,8 @@ pub async fn parse_input_files_internal(
         &libs,
         lang,
         None,
-        None,
         parser,
         injected_builtins,
-        None,
     )?;
     match builder.compile(None, None) {
         Ok(c) => {
