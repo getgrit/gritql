@@ -41,23 +41,6 @@ dependencies = [
 [[package]]
 name = "ai_builtins"
 version = "0.1.0"
-dependencies = [
- "anyhow",
- "grit-pattern-matcher",
- "grit-util",
- "http",
- "im",
- "lazy_static",
- "marzano-core",
- "marzano-util",
- "serde",
- "serde_json",
- "tiktoken-rs",
-]
-
-[[package]]
-name = "ai_builtins"
-version = "0.1.0"
 source = "git+https://github.com/getgrit/ai_builtins.git#bbb891964076781591b2a8f0c99afa2ec98ce453"
 
 [[package]]
