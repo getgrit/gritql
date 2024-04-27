@@ -59,7 +59,10 @@ impl Language for Ruby {
     }
 
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[("", "")]
+        &[
+            ("", ""),
+            ("case GRIT_VARIABLE\n", "\nend")
+        ]
     }
 
     fn comment_prefix(&self) -> &'static str {
