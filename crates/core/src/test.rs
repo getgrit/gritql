@@ -14177,21 +14177,70 @@ fn ruby_class() {
             pattern: r#"
                 |language ruby
                 |
-                |`class $x
-                |   def $name(w,h)
-                |      @width, @height = $y, h
+                |`class $x < $superclass
+                |   def $name($y,h)
+                |      $yinstance, @height = $y, h
                 |   end
                 |   $_
                 |end` where {
                 |   $x => `Foo`,
+                |   $superclass => `Bar`,
                 |   $name => `init`,
                 |   $y => `w`,
+                |   $yinstance => `@w`,
                 |}
                 |"#
             .trim_margin()
             .unwrap(),
             source: r#"
-                |class Box
+                |class Box < Foo
+                |   # constructor method
+                |   def initialize(h,h)
+                |      @width, @height = h, h
+                |   end
+                |   # instance method
+                |   def getArea
+                |      @width * @height
+                |   end
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |class Foo < Bar
+                |   # constructor method
+                |   def init(w,h)
+                |      @w, @height = w, h
+                |   end
+                |   # instance method
+                |   def getArea
+                |      @width * @height
+                |   end
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn ruby_class_2() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`$yinstance, @height = $y, h` where {
+                |   $y => `w`,
+                |   $yinstance => `@w`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |class Box < Foo
                 |   # constructor method
                 |   def initialize(w,h)
                 |      @width, @height = h, h
@@ -14205,15 +14254,50 @@ fn ruby_class() {
             .trim_margin()
             .unwrap(),
             expected: r#"
-                |class Foo
+                |class Box < Foo
                 |   # constructor method
-                |   def init(w,h)
-                |      @width, @height = w, h
+                |   def initialize(w,h)
+                |      @w, @height = w, h
                 |   end
                 |   # instance method
                 |   def getArea
                 |      @width * @height
                 |   end
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn rust_each() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`[a, b, c].each do |$a|
+                |   puts $b
+                |end` where {
+                |   $a => `x`,
+                |   $b => `x`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |[a, b, c].each do |a1|
+                |   puts abc::ABC
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |[a, b, c].each do |x|
+                |   puts x
                 |end
                 |"#
             .trim_margin()
