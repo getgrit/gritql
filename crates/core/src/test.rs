@@ -14472,3 +14472,50 @@ fn ruby_case() {
     })
     .unwrap();
 }
+
+#[test]
+fn ruby_nested_module() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`module Foo
+                |   module $foo_child
+                |   end
+                |end` where {
+                |   $foo_child => `Child`    
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |module Foo
+                |   module Bar
+                |   end
+                |end
+                |
+                |module Foo
+                |  module Baz
+                |  end
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |module Foo
+                |   module Child
+                |   end
+                |end
+                |
+                |module Foo
+                |  module Child
+                |  end
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
