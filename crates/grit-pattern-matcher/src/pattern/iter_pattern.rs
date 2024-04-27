@@ -221,7 +221,6 @@ impl<Q: QueryContext> Pattern<Q> {
                 children
             }
             Pattern::Limit(l) => l.pattern.children(),
-            Pattern::Callback(_) => vec![],
             Pattern::CallBuiltIn(c) => args_children(&c.args),
             Pattern::CallFunction(c) => args_children(&c.args),
             Pattern::CallForeignFunction(c) => args_children(&c.args),
