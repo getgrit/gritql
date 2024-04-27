@@ -14280,10 +14280,10 @@ fn rust_each() {
                 |language ruby
                 |
                 |`[a, b, c].each do |$a|
-                |   puts abc::$b
+                |   puts $b
                 |end` where {
                 |   $a => `x`,
-                |   $b => `A`,
+                |   $b => `x`,
                 |}
                 |"#
             .trim_margin()
