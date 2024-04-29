@@ -19,7 +19,7 @@ exclude = ["resources", "vendor/web-tree-sitter", "vendor/tree-sitter-facade"]
 
 [workspace.package]
 version = "0.1.0"
-authors = ["Iuvo AI, Inc."]
+authors = ["Iuvo AI, Inc.", "Grit Contributors"]
 description = "GritQL is a query language for searching, linting, and modifying code."
 homepage = "https://docs.grit.io/language/overview"
 documentation = "https://docs.grit.io/tutorials/gritql"
