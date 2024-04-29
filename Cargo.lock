@@ -1340,7 +1340,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "gritql-wasm-bindings"
+name = "grit-wasm-bindings"
 version = "0.0.0"
 dependencies = [
  "ai_builtins",

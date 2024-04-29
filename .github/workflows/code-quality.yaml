@@ -21,4 +21,4 @@ jobs:
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --workspace --features test_ci --exclude gritql-wasm-bindings -- -D warnings
+          args: --workspace --features test_ci --exclude grit-wasm-bindings -- -D warnings

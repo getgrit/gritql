@@ -1,5 +1,5 @@
 [package]
-name = "gritql-wasm-bindings"
+name = "grit-wasm-bindings"
 description = "WASM bindings for GritQL"
 edition = "2021"
 publish = false
