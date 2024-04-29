@@ -716,35 +716,11 @@
     "named": true,
     "fields": {
       "arguments": {
-        "multiple": true,
+        "multiple": false,
         "required": false,
         "types": [
           {
-            "type": ",",
-            "named": false
-          },
-          {
-            "type": "_expression",
-            "named": true
-          },
-          {
-            "type": "block_argument",
-            "named": true
-          },
-          {
-            "type": "forward_argument",
-            "named": true
-          },
-          {
-            "type": "hash_splat_argument",
-            "named": true
-          },
-          {
-            "type": "pair",
-            "named": true
-          },
-          {
-            "type": "splat_argument",
+            "type": "argument_list_with_trailing_comma",
             "named": true
           }
         ]
@@ -788,17 +764,13 @@
     }
   },
   {
-    "type": "array",
+    "type": "argument_list_with_trailing_comma",
     "named": true,
     "fields": {
-      "arguments": {
+      "argument": {
         "multiple": true,
-        "required": false,
+        "required": true,
         "types": [
-          {
-            "type": ",",
-            "named": false
-          },
           {
             "type": "_expression",
             "named": true
@@ -831,6 +803,22 @@
         "types": [
           {
             "type": "_expression",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "array",
+    "named": true,
+    "fields": {
+      "arguments": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "argument_list_with_trailing_comma",
             "named": true
           }
         ]
@@ -2130,27 +2118,11 @@
       }
     },
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": false,
       "types": [
         {
-          "type": "block_argument",
-          "named": true
-        },
-        {
-          "type": "forward_argument",
-          "named": true
-        },
-        {
-          "type": "hash_splat_argument",
-          "named": true
-        },
-        {
-          "type": "pair",
-          "named": true
-        },
-        {
-          "type": "splat_argument",
+          "type": "argument_list_with_trailing_comma",
           "named": true
         }
       ]
@@ -2432,20 +2404,21 @@
   {
     "type": "hash",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "hash_splat_argument",
-          "named": true
-        },
-        {
-          "type": "pair",
-          "named": true
-        }
-      ]
+    "fields": {
+      "hash_arg": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "hash_splat_argument",
+            "named": true
+          },
+          {
+            "type": "pair",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {

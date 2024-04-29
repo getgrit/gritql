@@ -4172,7 +4172,7 @@
             "members": [
               {
                 "type": "SYMBOL",
-                "name": "_argument_list_with_trailing_comma"
+                "name": "argument_list_with_trailing_comma"
               },
               {
                 "type": "BLANK"
@@ -5002,7 +5002,7 @@
               "members": [
                 {
                   "type": "SYMBOL",
-                  "name": "_argument_list_with_trailing_comma"
+                  "name": "argument_list_with_trailing_comma"
                 },
                 {
                   "type": "BLANK"
@@ -5017,7 +5017,7 @@
         ]
       }
     },
-    "_argument_list_with_trailing_comma": {
+    "argument_list_with_trailing_comma": {
       "type": "PREC_RIGHT",
       "value": 0,
       "content": {
@@ -5027,8 +5027,12 @@
             "type": "SEQ",
             "members": [
               {
-                "type": "SYMBOL",
-                "name": "_argument"
+                "type": "FIELD",
+                "name": "argument",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_argument"
+                }
               },
               {
                 "type": "REPEAT",
@@ -5040,8 +5044,12 @@
                       "value": ","
                     },
                     {
-                      "type": "SYMBOL",
-                      "name": "_argument"
+                      "type": "FIELD",
+                      "name": "argument",
+                      "content": {
+                        "type": "SYMBOL",
+                        "name": "_argument"
+                      }
                     }
                   ]
                 }
@@ -8196,7 +8204,7 @@
             "members": [
               {
                 "type": "SYMBOL",
-                "name": "_argument_list_with_trailing_comma"
+                "name": "argument_list_with_trailing_comma"
               },
               {
                 "type": "BLANK"
@@ -8227,17 +8235,21 @@
                   "type": "SEQ",
                   "members": [
                     {
-                      "type": "CHOICE",
-                      "members": [
-                        {
-                          "type": "SYMBOL",
-                          "name": "pair"
-                        },
-                        {
-                          "type": "SYMBOL",
-                          "name": "hash_splat_argument"
-                        }
-                      ]
+                      "type": "FIELD",
+                      "name": "hash_arg",
+                      "content": {
+                        "type": "CHOICE",
+                        "members": [
+                          {
+                            "type": "SYMBOL",
+                            "name": "pair"
+                          },
+                          {
+                            "type": "SYMBOL",
+                            "name": "hash_splat_argument"
+                          }
+                        ]
+                      }
                     },
                     {
                       "type": "REPEAT",
@@ -8249,17 +8261,21 @@
                             "value": ","
                           },
                           {
-                            "type": "CHOICE",
-                            "members": [
-                              {
-                                "type": "SYMBOL",
-                                "name": "pair"
-                              },
-                              {
-                                "type": "SYMBOL",
-                                "name": "hash_splat_argument"
-                              }
-                            ]
+                            "type": "FIELD",
+                            "name": "hash_arg",
+                            "content": {
+                              "type": "CHOICE",
+                              "members": [
+                                {
+                                  "type": "SYMBOL",
+                                  "name": "pair"
+                                },
+                                {
+                                  "type": "SYMBOL",
+                                  "name": "hash_splat_argument"
+                                }
+                              ]
+                            }
                           }
                         ]
                       }

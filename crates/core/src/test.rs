@@ -14331,6 +14331,40 @@ fn ruby_class_2() {
 }
 
 #[test]
+fn ruby_class_method() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`class Box
+                |   $methods
+                |end` => `$methods`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |class Box
+                |   def init(w,h)
+                |      @width, @height = w, h
+                |   end
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |def init(w,h)
+                |      @width, @height = w, h
+                |   end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn ruby_each() {
     run_test_expected({
         TestArgExpected {
@@ -14512,6 +14546,58 @@ fn ruby_nested_module() {
                 |  module Child
                 |  end
                 |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn ruby_hash() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`$prop: $key` => `$key: $prop`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |person = {name: "Alice", age: 25, city: "New York"}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |person = {"Alice": name, 25: age, "New York": city}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn ruby_array() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`$a, 2, 3` => `$a`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |person = [1, 2, 3]
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |person = [1]
                 |"#
             .trim_margin()
             .unwrap(),
