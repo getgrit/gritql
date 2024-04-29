@@ -1,10 +1,10 @@
 [package]
 name = "gritql-wasm-bindings"
 description = "WASM bindings for GritQL"
-version = "0.1.0"
 edition = "2021"
 publish = false
 license = "MIT"
+version.workspace = true
 
 [lints]
 rust.unused_crate_dependencies = "warn"
