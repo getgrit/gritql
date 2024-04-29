@@ -4,6 +4,10 @@ description = "WASM bindings for GritQL"
 edition = "2021"
 publish = false
 license = "MIT"
+version.workspace = true
+authors.workspace = true
+documentation.workspace = true
+homepage.workspace = true
 
 [lints]
 rust.unused_crate_dependencies = "warn"

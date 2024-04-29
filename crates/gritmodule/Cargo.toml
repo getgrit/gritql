@@ -1,6 +1,12 @@
 [package]
 name = "marzano-gritmodule"
 edition = "2021"
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+license = "MIT"
 
 [lints]
 rust.unused_crate_dependencies = "warn"
