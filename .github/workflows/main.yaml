@@ -56,7 +56,7 @@ jobs:
         run: |
           cargo test --workspace \
             --features test_ci \
-            --exclude marzano-wasm-bindings \
+            --exclude grit-wasm-bindings \
             --exclude rustfsm \
             --exclude temporal-sdk-core-test-utils \
             --exclude temporal-client \

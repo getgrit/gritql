@@ -1340,6 +1340,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "grit-wasm-bindings"
+version = "0.0.0"
+dependencies = [
+ "ai_builtins",
+ "anyhow",
+ "console_error_panic_hook",
+ "grit-util",
+ "marzano-core",
+ "marzano-language",
+ "marzano-util",
+ "serde-wasm-bindgen",
+ "serde_json",
+ "tree-sitter-facade-sg",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-bindgen-test",
+ "web-tree-sitter-sg",
+]
+
+[[package]]
 name = "h2"
 version = "0.3.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2008,7 +2028,7 @@ dependencies = [
 
 [[package]]
 name = "marzano-gritmodule"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "anyhow",
  "git2",
@@ -2124,26 +2144,6 @@ dependencies = [
  "sha2",
  "tokio",
  "tree-sitter-facade-sg",
-]
-
-[[package]]
-name = "marzano-wasm-bindings"
-version = "0.1.0"
-dependencies = [
- "ai_builtins",
- "anyhow",
- "console_error_panic_hook",
- "grit-util",
- "marzano-core",
- "marzano-language",
- "marzano-util",
- "serde-wasm-bindgen",
- "serde_json",
- "tree-sitter-facade-sg",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "wasm-bindgen-test",
- "web-tree-sitter-sg",
 ]
 
 [[package]]

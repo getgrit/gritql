@@ -3,6 +3,11 @@ name = "marzano-cli"
 version = "0.1.1"
 edition = "2021"
 authors = ["Grit Developers <support@grit.io>"]
+description.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+license = "MIT"
+publish = false
 
 [lints]
 rust.unused_crate_dependencies = "warn"

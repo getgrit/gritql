@@ -6,6 +6,10 @@ description = "GritQL is a query language for searching, linting, and modifying 
 homepage = "https://docs.grit.io/"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors.workspace = true
+documentation.workspace = true
+license = "MIT"
+publish = false
 
 [dependencies]
 anyhow = { version = "1.0.70" }

@@ -1,7 +1,15 @@
 [package]
 name = "grit-util"
-version = "0.1.0"
+description = "Utility functions for GritQL and associated tools"
 edition = "2021"
+keywords = ["gritql", "grit", "util"]
+repository = "https://github.com/getgrit/gritql/tree/main/crates/grit-util"
+version.workspace = true
+authors.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+license = "MIT"
+publish = true
 
 [lints]
 rust.unused_crate_dependencies = "warn"
