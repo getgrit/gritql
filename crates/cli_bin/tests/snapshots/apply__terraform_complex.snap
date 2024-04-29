@@ -1,8 +1,8 @@
 ---
-source: apps/marzano/cli/tests/apply.rs
+source: crates/cli_bin/tests/apply.rs
 expression: "String::from_utf8(output.stdout)?"
 ---
-Log in PlaygroundPattern: Warning: sequential matches at the top of the file. If a pattern matched outside of a sequential, but no longer matches, it is likely because naked patterns are automatically wrapped with `contains bubble <pattern>`
+Warning: sequential matches at the top of the file. If a pattern matched outside of a sequential, but no longer matches, it is likely because naked patterns are automatically wrapped with `contains bubble <pattern>`
   - Range: 47:5 - 47:20
   - Source:
   engine marzano(0.1)
@@ -91,4 +91,3 @@ Log in PlaygroundPattern: Warning: sequential matches at the top of the file. If
     
 
 Processed 4 files and found 4 matches
-

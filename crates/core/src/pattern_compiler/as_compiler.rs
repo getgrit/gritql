@@ -7,6 +7,7 @@ use anyhow::{anyhow, Result};
 use grit_pattern_matcher::pattern::{Container, Match, Pattern, Predicate, Where};
 use grit_util::{traverse, AnalysisLogBuilder, AstNode, Language, Order};
 use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
+use std::path::Path;
 
 pub(crate) struct AsCompiler;
 
@@ -37,7 +38,7 @@ impl NodeCompiler for AsCompiler {
             let range = node.range();
             let log = AnalysisLogBuilder::default()
                 .level(441_u16)
-                .file(context.compilation.file)
+                .file(context.compilation.file.map(Path::to_owned))
                 .source(node.source)
                 .position(range.start)
                 .range(range)

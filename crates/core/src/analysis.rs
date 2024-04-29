@@ -150,10 +150,7 @@ mod tests {
         "#
         .to_string();
         let mut libs = BTreeMap::new();
-        libs.insert(
-            "async_foo.grit".to_string(),
-            "llm_chat(messages=[])".to_string(),
-        );
+        libs.insert("async_foo.grit".into(), "llm_chat(messages=[])".to_string());
         let mut parser = MarzanoGritParser::new().unwrap();
         let parsed = parser
             .parse_file(&src_code, Some(Path::new("test.grit")))

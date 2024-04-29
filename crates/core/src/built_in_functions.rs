@@ -17,7 +17,10 @@ use im::Vector;
 use itertools::Itertools;
 use rand::prelude::SliceRandom;
 use rand::Rng;
-use std::collections::BTreeMap;
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+};
 
 // todo we can probably use a macro to generate a function that takes a vec and
 // and calls the input function with the vec args unpacked.
@@ -163,9 +166,14 @@ fn resolve_path_fn<'a>(
         None => return Err(anyhow!("No path argument provided for resolve function")),
     };
 
-    let resolved_path = resolve(target_path, current_file.into())?;
+    let resolved_path = match &current_file {
+        Some(current_file) => resolve(Path::new(target_path.as_ref()), current_file)?,
+        None => PathBuf::from(target_path.as_ref()),
+    };
 
-    Ok(ResolvedPattern::from_string(resolved_path))
+    Ok(ResolvedPattern::from_string(
+        resolved_path.to_string_lossy().to_string(),
+    ))
 }
 
 fn capitalize(s: &str) -> String {

@@ -32,7 +32,7 @@ impl NodeCompiler for NotCompiler {
         }) {
             let log = AnalysisLogBuilder::default()
                 .level(441_u16)
-                .file(context.compilation.file)
+                .file(context.compilation.file.map(Into::into))
                 .source(node.source)
                 .position(range.start)
                 .range(range)
@@ -68,7 +68,7 @@ impl NodeCompiler for PrNotCompiler {
         }) {
             let log = AnalysisLogBuilder::default()
                 .level(441_u16)
-                .file(context.compilation.file)
+                .file(context.compilation.file.map(Into::into))
                 .source(node.source)
                 .position(range.start)
                 .range(range)

@@ -16,9 +16,7 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
-    constants::{
-        ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
-    },
+    constants::{ABSOLUTE_PATH_INDEX, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX},
     pattern::{
         GritFunctionDefinition, PatternDefinition, PredicateDefinition, VariableSourceLocations,
     },
@@ -41,7 +39,7 @@ use std::{
 use tracing::instrument;
 
 pub(crate) struct CompilationContext<'a> {
-    pub file: &'a str,
+    pub file: Option<&'a Path>,
     pub built_ins: &'a BuiltIns,
     pub lang: &'a TargetLanguage,
     pub pattern_definition_info: &'a BTreeMap<String, DefinitionInfo>,
@@ -300,7 +298,7 @@ fn get_definitions(
             .sorted_by(|x, y| Ord::cmp(x.1, y.1))
             .map(|x| VariableSourceLocations {
                 name: x.0.clone(),
-                file: context.file.to_owned(),
+                file: context.file.map(Path::to_owned),
                 locations: BTreeSet::new(),
             })
             .collect(),
@@ -308,7 +306,10 @@ fn get_definitions(
 
     for (file, pattern) in libs.iter() {
         let mut node_context = NodeCompilationContext {
-            compilation: &CompilationContext { file, ..*context },
+            compilation: &CompilationContext {
+                file: Some(Path::new(file)),
+                ..*context
+            },
             // We're not in a local scope yet, so this map is kinda useless.
             // It's just there because all node compilers expect one.
             vars: &mut BTreeMap::new(),
@@ -488,7 +489,7 @@ fn filter_libs(
 ) -> Result<Vec<(String, String)>> {
     let node_like = "nodeLike";
     let predicate_call = "predicateCall";
-    let tree = parser.parse_file(src, Some(Path::new(DEFAULT_FILE_NAME)))?;
+    let tree = parser.parse_file(src, None)?;
     let DefsToFilenames {
         patterns: pattern_file,
         predicates: predicate_file,
@@ -500,10 +501,9 @@ fn filter_libs(
 
     let mut stack: Vec<Tree> = if will_autowrap {
         let before_each_file = "before_each_file()";
-        let before_tree =
-            parser.parse_file(before_each_file, Some(Path::new(DEFAULT_FILE_NAME)))?;
+        let before_tree = parser.parse_file(before_each_file, None)?;
         let after_each_file = "after_each_file()";
-        let after_tree = parser.parse_file(after_each_file, Some(Path::new(DEFAULT_FILE_NAME)))?;
+        let after_tree = parser.parse_file(after_each_file, None)?;
 
         vec![tree, before_tree, after_tree]
     } else {
@@ -559,7 +559,7 @@ fn find_definition_if_exists(
     if let Some(file_name) = files.get(name) {
         if !filtered.contains_key(file_name) {
             if let Some(file_body) = libs.get(file_name) {
-                filtered.insert(file_name.to_owned(), file_body.to_owned());
+                filtered.insert(file_name.clone(), file_body.clone());
                 let tree = parser.parse_file(file_body, Some(Path::new(file_name)))?;
                 return Ok(Some(tree));
             }
@@ -587,7 +587,7 @@ pub fn src_to_problem_libs(
     injected_limit: Option<usize>,
 ) -> Result<CompilationResult> {
     let mut parser = MarzanoGritParser::new()?;
-    let src_tree = parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
+    let src_tree = parser.parse_file(&src, None)?;
     let lang = TargetLanguage::from_tree(&src_tree).unwrap_or(default_lang);
     src_to_problem_libs_for_language(
         src,
@@ -616,7 +616,7 @@ pub fn src_to_problem_libs_for_language(
         let error = ". never matches and should not be used as a pattern. Did you mean to run 'grit apply <pattern> .'?";
         bail!(error);
     }
-    let src_tree = grit_parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
+    let src_tree = grit_parser.parse_file(&src, None)?;
 
     let root = src_tree.root_node();
     let mut built_ins = BuiltIns::get_built_in_functions();
@@ -641,7 +641,7 @@ pub fn src_to_problem_libs_for_language(
     } = get_definition_info(&libs, &root, grit_parser)?;
 
     let context = CompilationContext {
-        file: DEFAULT_FILE_NAME,
+        file: None,
         built_ins: &built_ins,
         lang: &lang,
         pattern_definition_info: &pattern_definition_indices,
@@ -731,7 +731,7 @@ impl VariableLocations {
         let mut variables = vec![];
         for (i, scope) in self.locations.iter().enumerate() {
             for (j, var) in scope.iter().enumerate() {
-                if var.file == DEFAULT_FILE_NAME {
+                if var.file.is_none() {
                     variables.push(VariableMatch {
                         name: var.name.clone(),
                         scoped_name: format!("{}_{}_{}", i, j, var.name),

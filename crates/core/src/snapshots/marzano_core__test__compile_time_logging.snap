@@ -1,10 +1,9 @@
 ---
-source: apps/marzano/core/src/test.rs
+source: crates/core/src/test.rs
 expression: res
 ---
 engine_id: None
-file_name: Some("PlaygroundPattern")
+file_name: None
 level: Some(441)
 message: "Warning: it is usually incorrect to redefine a variable $foo using as"
 position: Some(Position { line: 2, column: 5 })
-
