@@ -21,4 +21,5 @@ exclude = ["resources", "vendor/web-tree-sitter", "vendor/tree-sitter-facade"]
 version = "0.1.0"
 authors = ["Iuvo AI, Inc."]
 description = "GritQL is a query language for searching, linting, and modifying code."
-documentation = "https://docs.grit.io"
+homepage = "https://docs.grit.io/language/overview"
+documentation = "https://docs.grit.io/tutorials/gritql"

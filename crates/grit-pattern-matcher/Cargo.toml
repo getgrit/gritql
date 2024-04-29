@@ -1,13 +1,13 @@
 [package]
 name = "grit-pattern-matcher"
-description = "Grit pattern definitions and matching logic"
-version = "0.1.0"
+description = "Grit pattern definitions and matching logic for GritQL"
 edition = "2021"
+version.workspace = true
 authors.workspace = true
 documentation.workspace = true
 homepage.workspace = true
 license = "MIT"
-publish = false
+publish = true
 
 [lints]
 rust.unused_crate_dependencies = "warn"
