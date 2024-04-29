@@ -9,6 +9,7 @@ homepage = "https://docs.grit.io/"
 authors.workspace = true
 documentation.workspace = true
 license = "MIT"
+publish = false
 
 [dependencies]
 anyhow = { version = "1.0.70" }

@@ -14,6 +14,7 @@ $props` where {
     and { $props <: not contains `documentation`, $props += `documentation.workspace = true` },
     and { $props <: not contains `homepage`, $props += `homepage.workspace = true` },
     and { $props <: not contains `license`, $props += `license = "MIT"` },
+    and { $props <: not contains `publish`, $props += `publish = false` },
   }
 }
 ```
