@@ -1,6 +1,6 @@
 [package]
 name = "grit-pattern-matcher"
-description = "Grit pattern definitions and matching logic for GritQL"
+description = "Pattern definitions and core matching logic for GritQL"
 edition = "2021"
 keywords = ["gritql", "ast", "query", "language", "pl"]
 repository = "https://github.com/getgrit/gritql/tree/main/crates/grit-pattern-matcher"
