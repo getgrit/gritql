@@ -729,7 +729,7 @@ const PREC = {
       element_reference: $ => prec.left(1, seq(
         field('object', $._primary),
         alias($._element_reference_bracket, '['),
-        optional($._argument_list_with_trailing_comma),
+        optional($.argument_list_with_trailing_comma),
         ']',
       )),
   
@@ -816,12 +816,12 @@ const PREC = {
   
       argument_list: $ => prec.right(seq(
         token.immediate('('),
-        field('arguments', optional($._argument_list_with_trailing_comma)),
+        field('arguments', optional($.argument_list_with_trailing_comma)),
         ')',
       )),
   
-      _argument_list_with_trailing_comma: $ => prec.right(seq(
-        commaSep1($._argument),
+      argument_list_with_trailing_comma: $ => prec.right(seq(
+        commaSep1(field('argument', $._argument)),
         optional(','),
       )),
   
@@ -1208,14 +1208,14 @@ const PREC = {
   
       array: $ => seq(
         '[',
-        field('arguments', optional($._argument_list_with_trailing_comma)),
+        field('arguments', optional($.argument_list_with_trailing_comma)),
         ']',
       ),
   
       hash: $ => seq(
         '{',
         optional(seq(
-          commaSep1(choice($.pair, $.hash_splat_argument)),
+          commaSep1(field('hash_arg', choice($.pair, $.hash_splat_argument))),
           optional(','),
         )),
         '}',
