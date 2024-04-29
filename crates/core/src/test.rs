@@ -99,7 +99,6 @@ fn match_pattern_libs(
     let pattern =
         src_to_problem_libs(pattern, libs, default_language, None, None, None, None)?.problem;
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), src.to_owned()), context);
-    println!("RESULTS: {results:#?}");
     let mut execution_result = ExecutionResult {
         input_file_debug_text: "".to_string(),
         the_match: None,
@@ -794,7 +793,7 @@ fn chaining_rewrite() {
             }"#
             .to_owned(),
             expected: r#"
-            if (!repos?.length) {
+            if (repos.length === 0) {
                 return true;
             }
             if (repos.length === 0) {
@@ -1815,6 +1814,33 @@ fn jsx_attribute_rewrite() {
             .unwrap(),
             source: r#"<Header as='h1'>First Header</Header>"#.to_owned(),
             expected: r#"<Header foo='h1'>First Header</Header>"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn jsx_dotted_component() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |`PageContainer.Header` => `foobar`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+console.log(PageContainer.Header);
+
+const foo = <PageContainer.Header sx={{ flexGrow: 1, gap: '20px' }} {...rest} />
+"#
+            .to_owned(),
+            expected: r#"
+console.log(foobar);
+
+const foo = <foobar sx={{ flexGrow: 1, gap: '20px' }} {...rest} />
+"#
+            .to_owned(),
         }
     })
     .unwrap();
@@ -13726,7 +13752,7 @@ fn php_class() {
         pattern: r#"
                 |language php(only)
                 |
-                |`class ^name { 
+                |`class ^name {
                 |    function ^fname() {
                 |        if (^a) { ^_ } else { ^_ }
                 |    }
@@ -14193,6 +14219,298 @@ fn ruby_if() {
             expected: r#"
                 |if y > 2
                 |   puts "y is greater than 2"
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn ruby_class() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`class $x < $superclass
+                |   def $name($y,h)
+                |      $yinstance, @height = $y, h
+                |   end
+                |   $_
+                |end` where {
+                |   $x => `Foo`,
+                |   $superclass => `Bar`,
+                |   $name => `init`,
+                |   $y => `w`,
+                |   $yinstance => `@w`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |class Box < Foo
+                |   # constructor method
+                |   def initialize(h,h)
+                |      @width, @height = h, h
+                |   end
+                |   # instance method
+                |   def getArea
+                |      @width * @height
+                |   end
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |class Foo < Bar
+                |   # constructor method
+                |   def init(w,h)
+                |      @w, @height = w, h
+                |   end
+                |   # instance method
+                |   def getArea
+                |      @width * @height
+                |   end
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn ruby_class_2() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`$yinstance, @height = $y, h` where {
+                |   $y => `w`,
+                |   $yinstance => `@w`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |class Box < Foo
+                |   # constructor method
+                |   def initialize(w,h)
+                |      @width, @height = h, h
+                |   end
+                |   # instance method
+                |   def getArea
+                |      @width * @height
+                |   end
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |class Box < Foo
+                |   # constructor method
+                |   def initialize(w,h)
+                |      @w, @height = w, h
+                |   end
+                |   # instance method
+                |   def getArea
+                |      @width * @height
+                |   end
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn ruby_each() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`[a, b, c].each do |$a|
+                |   puts $b
+                |end` where {
+                |   $a => `x`,
+                |   $b => `x`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |[a, b, c].each do |a1|
+                |   puts abc::ABC
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |[a, b, c].each do |x|
+                |   puts x
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn ruby_scope() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`puts abc::$a` where {
+                |   $a => `X`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |[a, b, c].each do |n|
+                |   puts abc::ABC
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |[a, b, c].each do |n|
+                |   puts abc::X
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn ruby_lambda() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`lambda {|$a| $a**$b }` where {
+                |   $b => `3`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |square = lambda {|val| val**2 }
+                |three_squared = square.call(3)
+                |puts "Three squared is #{three_squared}"
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |square = lambda {|val| val**3 }
+                |three_squared = square.call(3)
+                |puts "Three squared is #{three_squared}"
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn ruby_case() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`when $a
+                |  print('It is a string')` => `when Integer
+                |  print('It is an integer')`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |obj = 'hello'
+                |case obj.class
+                |when String
+                |  print('It is a string')
+                |when Fixnum
+                |  print('It is a number')
+                |else
+                |  print('It is not a string or number')
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |obj = 'hello'
+                |case obj.class
+                |when Integer
+                |  print('It is an integer')
+                |when Fixnum
+                |  print('It is a number')
+                |else
+                |  print('It is not a string or number')
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn ruby_nested_module() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`module Foo
+                |   module $foo_child
+                |   end
+                |end` where {
+                |   $foo_child => `Child`    
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |module Foo
+                |   module Bar
+                |   end
+                |end
+                |
+                |module Foo
+                |  module Baz
+                |  end
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |module Foo
+                |   module Child
+                |   end
+                |end
+                |
+                |module Foo
+                |  module Child
+                |  end
                 |end
                 |"#
             .trim_margin()

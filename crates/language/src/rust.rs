@@ -1,5 +1,6 @@
 use crate::language::{
-    fields_for_nodes, Field, FieldId, MarzanoLanguage, NodeTypes, SortId, TSLanguage,
+    check_disregarded_field_map, fields_for_nodes, Field, FieldExpectation,
+    FieldExpectationCondition, MarzanoLanguage, NodeTypes, SortId, TSLanguage,
 };
 use grit_util::Language;
 use marzano_util::node_with_source::NodeWithSource;
@@ -9,7 +10,7 @@ static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/rus
 
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
-static OPTIONAL_EMPTY_FIELD_COMPILATION: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
+static DISREGARDED_SNIPPET_FIELDS: OnceLock<Vec<FieldExpectation>> = OnceLock::new();
 
 #[cfg(not(feature = "builtin-parser"))]
 fn language() -> TSLanguage {
@@ -28,7 +29,7 @@ pub struct Rust {
     metavariable_sort: SortId,
     comment_sorts: [SortId; 2],
     language: &'static TSLanguage,
-    optional_empty_field_compilation: &'static Vec<(SortId, FieldId)>,
+    disregarded_snippet_fields: &'static Vec<FieldExpectation>,
 }
 
 impl Rust {
@@ -40,39 +41,47 @@ impl Rust {
             language.id_for_node_kind("line_comment", true),
             language.id_for_node_kind("block_comment", true),
         ];
-        let optional_empty_field_compilation = OPTIONAL_EMPTY_FIELD_COMPILATION.get_or_init(|| {
+        let disregarded_snippet_fields = DISREGARDED_SNIPPET_FIELDS.get_or_init(|| {
             vec![
                 (
                     language.id_for_node_kind("struct_item", true),
                     language.field_id_for_name("visibility").unwrap(),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
                 (
                     language.id_for_node_kind("union_item", true),
                     language.field_id_for_name("visibility").unwrap(),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
                 (
                     language.id_for_node_kind("enum_item", true),
                     language.field_id_for_name("visibility").unwrap(),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
                 (
                     language.id_for_node_kind("function_item", true),
                     language.field_id_for_name("visibility").unwrap(),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
                 (
                     language.id_for_node_kind("function_signature_item", true),
                     language.field_id_for_name("visibility").unwrap(),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
                 (
                     language.id_for_node_kind("visibility", true),
                     language.field_id_for_name("visibility").unwrap(),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
                 (
                     language.id_for_node_kind("function_item", true),
                     language.field_id_for_name("type_parameters").unwrap(),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
                 (
                     language.id_for_node_kind("function_signature_item", true),
                     language.field_id_for_name("type_parameters").unwrap(),
+                    FieldExpectationCondition::OnlyIf(vec![""]),
                 ),
             ]
         });
@@ -81,7 +90,7 @@ impl Rust {
             metavariable_sort,
             comment_sorts,
             language,
-            optional_empty_field_compilation,
+            disregarded_snippet_fields,
         }
     }
     pub(crate) fn is_initialized() -> bool {
@@ -126,14 +135,18 @@ impl<'a> MarzanoLanguage<'a> for Rust {
         self.language
     }
 
-    fn optional_empty_field_compilation(
+    fn is_disregarded_snippet_field(
         &self,
         sort_id: SortId,
         field_id: crate::language::FieldId,
+        field_node: &Option<NodeWithSource<'_>>,
     ) -> bool {
-        self.optional_empty_field_compilation
-            .iter()
-            .any(|(s, f)| *s == sort_id && *f == field_id)
+        check_disregarded_field_map(
+            self.disregarded_snippet_fields,
+            sort_id,
+            field_id,
+            field_node,
+        )
     }
 
     fn is_comment_sort(&self, id: SortId) -> bool {

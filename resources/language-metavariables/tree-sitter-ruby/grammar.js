@@ -6,6 +6,8 @@ const PREC = {
     AND: -2,
     OR: -2,
     NOT: 5,
+    CLASS: 2,
+    MODULE: 2,
     DEFINED: 10,
     ALIAS: 11,
     ASSIGN: 15,
@@ -117,12 +119,12 @@ const PREC = {
       _statements: $ => choice(
         seq(
           repeat1(choice(
-            seq($._statement, $._terminator),
+            seq(field('statement', $._statement), $._terminator),
             $.empty_statement,
           )),
-          optional($._statement),
+          optional(field('statement', $._statement)),
         ),
-        $._statement,
+        field('statement', $._statement),
       ),
   
       begin_block: $ => seq('BEGIN', '{', optional($._statements), '}'),
@@ -150,7 +152,7 @@ const PREC = {
             field('object', $._variable),
             seq('(', field('object', $._arg), ')'),
           ),
-          choice('.', '::'),
+          choice($.dot, $.scope_operator),
         ),
         $._method_rest,
       ),
@@ -207,18 +209,18 @@ const PREC = {
   
       parameters: $ => seq(
         '(',
-        commaSep($._formal_parameter),
+        commaSep(field('parameter', $._formal_parameter)),
         ')',
       ),
   
       bare_parameters: $ => seq(
         $._simple_formal_parameter,
-        repeat(seq(',', $._formal_parameter)),
+        repeat(seq(',', field('parameter', $._formal_parameter))),
       ),
   
       block_parameters: $ => seq(
         '|',
-        seq(commaSep($._formal_parameter), optional(',')),
+        seq(field('parameters', commaSep($._formal_parameter)), optional(',')),
         optional(seq(';', sep1(field('locals', $.identifier), ','))), // Block shadow args e.g. {|; a, b| ...}
         '|',
       ),
@@ -265,18 +267,20 @@ const PREC = {
         field('value', $._arg),
       )),
   
-      class: $ => seq(
-        'class',
-        field('name', choice($.constant, $.scope_resolution)),
-        choice(
-          seq(field('superclass', $.superclass), $._terminator),
-          optional($._terminator),
-        ),
-        optional(field('body', $.body_statement)),
-        'end',
+      class: $ => prec(PREC.CLASS, 
+        seq(
+          'class',
+          field('name', choice($.constant, $.scope_resolution, $.grit_metavariable)),
+          choice(
+            seq(field('superclass', $.superclass), $._terminator),
+            optional($._terminator),
+          ),
+          optional(field('body', $.body_statement)),
+          'end',
+        )
       ),
   
-      superclass: $ => seq('<', $._expression),
+      superclass: $ => seq('<', field('superclass_expression', $._expression)),
   
       singleton_class: $ => seq(
         'class',
@@ -287,12 +291,14 @@ const PREC = {
         'end',
       ),
   
-      module: $ => seq(
-        'module',
-        field('name', choice($.constant, $.scope_resolution)),
-        optional($._terminator),
-        optional(field('body', $.body_statement)),
-        'end',
+      module: $ => prec(PREC.MODULE, 
+        seq(
+          'module',
+          field('name', choice($.constant, $.scope_resolution, $.grit_metavariable)),
+          optional($._terminator),
+          optional(field('body', $.body_statement)),
+          'end',
+        )
       ),
   
       return_command: $ => prec.left(seq('return', alias($.command_argument_list, $.argument_list))),
@@ -556,7 +562,7 @@ const PREC = {
   
       _pattern_constant_resolution: $ => seq(
         optional(field('scope', $._pattern_constant)),
-        '::',
+        $.scope_operator,
         field('name', $.constant),
       ),
   
@@ -622,8 +628,8 @@ const PREC = {
       body_statement: $ => $._body_statement,
   
       _body_statement: $ => choice(
-        seq($._statements, repeat(choice($.rescue, $.else, $.ensure))),
-        seq(optional($._statements), repeat1(choice($.rescue, $.else, $.ensure))),
+        seq(field('statements', $._statements), repeat(choice($.rescue, $.else, $.ensure))),
+        seq(optional(field('statements', $._statements)), repeat1(choice($.rescue, $.else, $.ensure))),
       ),
   
       // Method calls without parentheses (aka "command calls") are only allowed
@@ -646,9 +652,12 @@ const PREC = {
         alias($.command_unary, $.unary),
         alias($.command_assignment, $.assignment),
         alias($.command_operator_assignment, $.operator_assignment),
-        alias($.command_call, $.call),
-        alias($.command_call_with_block, $.call),
-        prec.left(alias($._chained_command_call, $.call)),
+        // alias($.command_call, $.call),
+        // alias($.command_call_with_block, $.call),
+        // prec.left(alias($._chained_command_call, $.call)),
+        alias($.command_call, $.command_call),
+        alias($.command_call_with_block, $.command_call_with_block),
+        prec.left(alias($._chained_command_call, $._chained_command_call)),
         alias($.return_command, $.return),
         alias($.yield_command, $.yield),
         alias($.break_command, $.break),
@@ -726,27 +735,27 @@ const PREC = {
   
       scope_resolution: $ => prec.left(PREC.CALL + 1, seq(
         choice(
-          '::',
-          seq(field('scope', $._primary), token.immediate('::')),
+          $.scope_operator,
+          seq(field('scope', choice($._primary, $.grit_metavariable)), alias(token.immediate('::'), $.scope_operator)),
         ),
-        field('name', $.constant),
+        field('name', choice($.constant, $.grit_metavariable)),
       )),
   
-      _call_operator: $ => choice('.', '&.', token.immediate('::')),
+      _call_operator: $ => choice($.dot, $.anddot, alias(token.immediate('::'), $.scope_operator)),
       _call: $ => prec.left(PREC.CALL, seq(
-        field('receiver', $._primary),
-        field('operator', $._call_operator),
-        field('method', choice($.identifier, $.operator, $.constant, $._function_identifier)),
+        field('_call_receiver', $._primary),
+        field('_call_operator', $._call_operator),
+        field('_call_method', choice($.identifier, $.operator, $.constant, $._function_identifier)),
       )),
   
       command_call: $ => seq(
         choice(
           $._call,
           $._chained_command_call,
-          field('method', choice(
-            $._variable,
-            $._function_identifier,
-          )),
+          choice(
+            field('method_variable', $._variable),
+            field('method_function', $._function_identifier),
+          ),
         ),
         field('arguments', alias($.command_argument_list, $.argument_list)),
       ),
@@ -773,9 +782,9 @@ const PREC = {
   
       call: $ => {
         const receiver = choice(
-          $._call,
+          field('_call', $._call),
           field('method', choice(
-            $._variable, $._function_identifier,
+            field('call_variable', $._variable), field('call_function_identifier', $._function_identifier),
           )),
         );
   
@@ -807,7 +816,7 @@ const PREC = {
   
       argument_list: $ => prec.right(seq(
         token.immediate('('),
-        optional($._argument_list_with_trailing_comma),
+        field('arguments', optional($._argument_list_with_trailing_comma)),
         ')',
       )),
   
@@ -817,7 +826,7 @@ const PREC = {
       )),
   
       _argument: $ => prec.left(choice(
-        $._expression,
+        field('expression', $._expression),
         $.splat_argument,
         $.hash_splat_argument,
         $.forward_argument,
@@ -926,6 +935,9 @@ const PREC = {
       spaceship: _ => '<=>',
       regex_match: _ => '=~',
       regex_no_match: _ => '!~',
+      dot: _ => '.',
+      anddot: _ => '&.',
+      scope_operator: _ => '::',
 
       binary: $ => {
         const operators = [
@@ -1017,9 +1029,9 @@ const PREC = {
           $.rational,
         ),
   
-      right_assignment_list: $ => prec(-1, commaSep1(choice($._arg, $.splat_argument))),
+      right_assignment_list: $ => prec(-1, commaSep1(field('argument', choice($._arg, $.splat_argument)))),
   
-      left_assignment_list: $ => $._mlhs,
+      left_assignment_list: $ => field('list', $._mlhs),
       _mlhs: $ => prec.left(-1, seq(
         commaSep1(choice($._lhs, $.rest_assignment, $.destructured_left_assignment)),
         optional(','),
@@ -1122,26 +1134,26 @@ const PREC = {
       character: $ => /\?(\\\S(\{[0-9A-Fa-f]*\}|[0-9A-Fa-f]*|-\S([MC]-\S)?)?|\S)/,
   
       interpolation: $ => choice(
-        seq('#{', optional($._statements), '}'),
+        seq('#{', optional(field('statements', $._statements)), '}'),
         seq($._short_interpolation, $._nonlocal_variable),
       ),
   
       string: $ => seq(
         alias($._string_start, '"'),
-        optional($._literal_contents),
+        field('content', optional($._literal_contents)),
         alias($._string_end, '"'),
       ),
   
       subshell: $ => seq(
         alias($._subshell_start, '`'),
-        optional($._literal_contents),
+        field('content', optional($._literal_contents)),
         alias($._string_end, '`'),
       ),
   
       string_array: $ => seq(
         alias($._string_array_start, '%w('),
         optional(/\s+/),
-        sep(alias($._literal_contents, $.bare_string), /\s+/),
+        sep(field('content', alias($._literal_contents, $.bare_string)), /\s+/),
         optional(/\s+/),
         alias($._string_end, ')'),
       ),
@@ -1149,20 +1161,20 @@ const PREC = {
       symbol_array: $ => seq(
         alias($._symbol_array_start, '%i('),
         optional(/\s+/),
-        sep(alias($._literal_contents, $.bare_symbol), /\s+/),
+        sep(field('content', alias($._literal_contents, $.bare_symbol)), /\s+/),
         optional(/\s+/),
         alias($._string_end, ')'),
       ),
   
       delimited_symbol: $ => seq(
         alias($._symbol_start, ':"'),
-        optional($._literal_contents),
+        field('content', optional($._literal_contents)),
         alias($._string_end, '"'),
       ),
   
       regex: $ => seq(
         alias($._regex_start, '/'),
-        optional($._literal_contents),
+        field('content', optional($._literal_contents)),
         alias($._string_end, '/'),
       ),
   
@@ -1196,7 +1208,7 @@ const PREC = {
   
       array: $ => seq(
         '[',
-        optional($._argument_list_with_trailing_comma),
+        field('arguments', optional($._argument_list_with_trailing_comma)),
         ']',
       ),
   

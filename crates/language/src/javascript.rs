@@ -1,11 +1,11 @@
 use crate::{
     js_like::{
-        js_like_get_statement_sorts, js_like_is_comment, js_optional_empty_field_compilation,
-        js_skip_snippet_compilation_sorts, jslike_check_replacements, MarzanoJsLikeParser,
+        js_disregarded_field_values, js_like_get_statement_sorts, js_like_is_comment,
+        jslike_check_replacements, MarzanoJsLikeParser,
     },
     language::{
-        fields_for_nodes, kind_and_field_id_for_names, Field, FieldId, MarzanoLanguage, NodeTypes,
-        SortId, TSLanguage, Tree,
+        check_disregarded_field_map, fields_for_nodes, kind_and_field_id_for_field_map, Field,
+        FieldExpectation, MarzanoLanguage, NodeTypes, SortId, TSLanguage, Tree,
     },
 };
 use grit_util::{AstNode, Language, Parser, Range, Replacement};
@@ -16,9 +16,8 @@ static NODE_TYPES_STRING: &str =
     include_str!("../../../resources/node-types/javascript-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
-static SKIP_SNIPPET_COMPILATION_SORTS: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
 static STATEMENT_SORTS: OnceLock<Vec<SortId>> = OnceLock::new();
-static OPTIONAL_EMPTY_FIELD_COMPILATION: OnceLock<Vec<(SortId, FieldId)>> = OnceLock::new();
+static DISREGARDED_SNIPPET_FIELDS: OnceLock<Vec<FieldExpectation>> = OnceLock::new();
 
 #[cfg(not(feature = "builtin-parser"))]
 fn language() -> TSLanguage {
@@ -39,8 +38,7 @@ pub struct JavaScript {
     jsx_sort: SortId,
     statement_sorts: &'static [SortId],
     language: &'static TSLanguage,
-    skip_snippet_compilation_sorts: &'static Vec<(SortId, FieldId)>,
-    optional_empty_field_compilation: &'static Vec<(SortId, FieldId)>,
+    disregarded_snippet_fields: &'static Vec<FieldExpectation>,
 }
 
 impl JavaScript {
@@ -53,12 +51,8 @@ impl JavaScript {
 
         let statement_sorts = STATEMENT_SORTS.get_or_init(|| js_like_get_statement_sorts(language));
 
-        let skip_snippet_compilation_sorts = SKIP_SNIPPET_COMPILATION_SORTS.get_or_init(|| {
-            kind_and_field_id_for_names(language, js_skip_snippet_compilation_sorts())
-        });
-
-        let optional_empty_field_compilation = OPTIONAL_EMPTY_FIELD_COMPILATION.get_or_init(|| {
-            kind_and_field_id_for_names(language, js_optional_empty_field_compilation())
+        let disregarded_snippet_fields = DISREGARDED_SNIPPET_FIELDS.get_or_init(|| {
+            kind_and_field_id_for_field_map(language, js_disregarded_field_values())
         });
 
         Self {
@@ -68,8 +62,7 @@ impl JavaScript {
             jsx_sort,
             statement_sorts,
             language,
-            skip_snippet_compilation_sorts,
-            optional_empty_field_compilation,
+            disregarded_snippet_fields,
         }
     }
     pub(crate) fn is_initialized() -> bool {
@@ -156,20 +149,18 @@ impl<'a> MarzanoLanguage<'a> for JavaScript {
         Box::new(MarzanoJsLikeParser::new(self))
     }
 
-    fn optional_empty_field_compilation(
+    fn is_disregarded_snippet_field(
         &self,
         sort_id: SortId,
         field_id: crate::language::FieldId,
+        field_node: &Option<NodeWithSource<'_>>,
     ) -> bool {
-        self.optional_empty_field_compilation
-            .iter()
-            .any(|(s, f)| *s == sort_id && *f == field_id)
-    }
-
-    fn skip_snippet_compilation_of_field(&self, sort_id: SortId, field_id: FieldId) -> bool {
-        self.skip_snippet_compilation_sorts
-            .iter()
-            .any(|(s, f)| *s == sort_id && *f == field_id)
+        check_disregarded_field_map(
+            self.disregarded_snippet_fields,
+            sort_id,
+            field_id,
+            field_node,
+        )
     }
 
     fn is_comment_sort(&self, id: SortId) -> bool {

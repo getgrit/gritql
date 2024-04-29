@@ -32,6 +32,7 @@ mod auto_wrap;
 pub(crate) mod back_tick_compiler;
 pub(crate) mod before_compiler;
 pub(crate) mod bubble_compiler;
+mod builder;
 pub(crate) mod call_compiler;
 pub mod compiler;
 pub(crate) mod constant_compiler;
@@ -76,5 +77,6 @@ pub(crate) mod variable_compiler;
 pub(crate) mod where_compiler;
 pub(crate) mod within_compiler;
 
-pub use compiler::{src_to_problem_libs, src_to_problem_libs_for_language, CompilationResult};
+pub use builder::PatternBuilder;
+pub use compiler::{src_to_problem_libs, CompilationResult};
 pub(crate) use node_compiler::NodeCompiler;

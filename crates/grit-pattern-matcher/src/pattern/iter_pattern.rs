@@ -111,6 +111,7 @@ impl<Q: QueryContext> Container<Q> {
             Container::Variable(_) => vec![],
             Container::Accessor(a) => a.children(),
             Container::ListIndex(l) => l.children(),
+            Container::FunctionCall(f) => args_children(&f.args),
         }
     }
 }
@@ -214,7 +215,11 @@ impl<Q: QueryContext> Pattern<Q> {
                 v
             }
             Pattern::Files(f) => f.pattern.children(),
-            Pattern::Bubble(b) => args_children(&b.args),
+            Pattern::Bubble(b) => {
+                let mut children = args_children(&b.args);
+                children.extend(b.pattern_def.pattern.children());
+                children
+            }
             Pattern::Limit(l) => l.pattern.children(),
             Pattern::CallBuiltIn(c) => args_children(&c.args),
             Pattern::CallFunction(c) => args_children(&c.args),

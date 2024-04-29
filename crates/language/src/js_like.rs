@@ -1,5 +1,9 @@
 use crate::{
-    language::{MarzanoLanguage, MarzanoParser, SortId, TSLanguage, Tree},
+    language::{
+        FieldExpectationCondition, FieldExpectationCondition::Always,
+        FieldExpectationCondition::OnlyIf, MarzanoLanguage, MarzanoParser, SortId, TSLanguage,
+        Tree,
+    },
     vue::get_vue_ranges,
 };
 use grit_util::{AnalysisLogs, AstNode, Parser, Replacement, SnippetTree};
@@ -43,52 +47,47 @@ pub(crate) fn js_like_get_statement_sorts(lang: &TSLanguage) -> Vec<SortId> {
         .collect()
 }
 
-pub(crate) fn js_skip_snippet_compilation_sorts() -> Vec<(&'static str, &'static str)> {
+pub(crate) fn js_disregarded_field_values(
+) -> Vec<(&'static str, &'static str, FieldExpectationCondition)> {
     vec![
-        ("method_definition", "parenthesis"),
-        ("function", "parenthesis"),
-        ("function_declaration", "parenthesis"),
-        ("generator_function", "parenthesis"),
-        ("generator_function_declaration", "parenthesis"),
-        ("arrow_function", "parenthesis"),
+        // Always disregarded:
+        ("method_definition", "parenthesis", Always),
+        ("function", "parenthesis", Always),
+        ("function_declaration", "parenthesis", Always),
+        ("generator_function", "parenthesis", Always),
+        ("generator_function_declaration", "parenthesis", Always),
+        ("arrow_function", "parenthesis", Always),
+        // Disregarded if empty:
+        ("function", "async", OnlyIf(vec![""])),
+        ("arrow_function", "async", OnlyIf(vec![""])),
+        ("generator_function", "async", OnlyIf(vec![""])),
+        ("generator_function_declaration", "async", OnlyIf(vec![""])),
+        ("method_definition", "async", OnlyIf(vec![""])),
+        ("function_declaration", "async", OnlyIf(vec![""])),
+        ("import_statement", "import", OnlyIf(vec![""])),
     ]
 }
 
-pub(crate) fn js_like_skip_snippet_compilation_sorts() -> Vec<(&'static str, &'static str)> {
+pub(crate) fn js_like_disregarded_field_values(
+) -> Vec<(&'static str, &'static str, FieldExpectationCondition)> {
     let mut res = vec![
-        ("constructor_type", "parenthesis"),
-        ("construct_signature", "parenthesis"),
-        ("function_type", "parenthesis"),
-        ("method_signature", "parenthesis"),
-        ("abstract_method_signature", "parenthesis"),
-        ("function_signature", "parenthesis"),
+        // always disregarded:
+        ("constructor_type", "parenthesis", Always),
+        ("construct_signature", "parenthesis", Always),
+        ("function_type", "parenthesis", Always),
+        ("method_signature", "parenthesis", Always),
+        ("abstract_method_signature", "parenthesis", Always),
+        ("function_signature", "parenthesis", Always),
+        // disregarded if empty:
+        ("call_expression", "type_arguments", OnlyIf(vec![""])),
+        ("new_expression", "type_arguments", OnlyIf(vec![""])),
+        ("function", "return_type", OnlyIf(vec![""])),
+        ("arrow_function", "return_type", OnlyIf(vec![""])),
+        ("import_statement", "type", OnlyIf(vec![""])),
+        ("public_field_definition", "static", OnlyIf(vec![""])),
+        ("member_expression", "chain", OnlyIf(vec!["", "."])),
     ];
-    res.extend(js_skip_snippet_compilation_sorts());
-    res
-}
-
-pub(crate) fn js_optional_empty_field_compilation() -> Vec<(&'static str, &'static str)> {
-    vec![
-        ("function", "async"),
-        ("arrow_function", "async"),
-        ("generator_function", "async"),
-        ("generator_function_declaration", "async"),
-        ("method_definition", "async"),
-        ("function_declaration", "async"),
-        ("import_statement", "import"),
-    ]
-}
-
-pub(crate) fn js_like_optional_empty_field_compilation() -> Vec<(&'static str, &'static str)> {
-    let mut res = vec![
-        ("call_expression", "type_arguments"),
-        ("new_expression", "type_arguments"),
-        ("function", "return_type"),
-        ("arrow_function", "return_type"),
-        ("import_statement", "type"),
-        ("public_field_definition", "static"),
-    ];
-    res.extend(js_optional_empty_field_compilation());
+    res.extend(js_disregarded_field_values());
     res
 }
 
