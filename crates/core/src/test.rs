@@ -14365,6 +14365,44 @@ fn ruby_class_method() {
 }
 
 #[test]
+fn ruby_class_method_2() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`def $name($_)
+                |    $body
+                |end` where {
+                |   $name => `foo`
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |class Box
+                |   def init(w,h)
+                |      @width, @height = w, h
+                |   end
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |class Box
+                |   def foo(w,h)
+                |      @width, @height = w, h
+                |   end
+                |end
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn ruby_each() {
     run_test_expected({
         TestArgExpected {
