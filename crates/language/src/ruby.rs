@@ -1,6 +1,8 @@
 use crate::language::{fields_for_nodes, Field, MarzanoLanguage, NodeTypes, SortId, TSLanguage};
 use grit_util::Language;
 use marzano_util::node_with_source::NodeWithSource;
+use regex::Regex;
+use lazy_static::lazy_static;
 use std::sync::OnceLock;
 
 static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/ruby-node-types.json");
@@ -51,6 +53,15 @@ impl NodeTypes for Ruby {
     }
 }
 
+lazy_static! {
+    static ref EXACT_VARIABLE_REGEX: Regex = Regex::new(r"^\^([A-Za-z_][A-Za-z0-9_]*)$")
+        .expect("Failed to compile EXACT_VARIABLE_REGEX");
+    static ref VARIABLE_REGEX: Regex = Regex::new(r"\^(\.\.\.|[A-Za-z_][A-Za-z0-9_]*)")
+        .expect("Failed to compile VARIABLE_REGEX");
+    static ref BRACKET_VAR_REGEX: Regex = Regex::new(r"\^\[([A-Za-z_][A-Za-z0-9_]*)\]")
+        .expect("Failed to compile BRACKET_VAR_REGEX");
+}
+
 impl Language for Ruby {
     type Node<'a> = NodeWithSource<'a>;
 
@@ -77,6 +88,22 @@ impl Language for Ruby {
 
     fn is_metavariable(&self, node: &NodeWithSource) -> bool {
         MarzanoLanguage::is_metavariable_node(self, node)
+    }
+
+    fn metavariable_prefix(&self) -> &'static str {
+        "^"
+    }
+
+    fn metavariable_regex(&self) -> &'static Regex {
+        &VARIABLE_REGEX
+    }
+
+    fn metavariable_bracket_regex(&self) -> &'static Regex {
+        &BRACKET_VAR_REGEX
+    }
+
+    fn exact_variable_regex(&self) -> &'static Regex {
+        &EXACT_VARIABLE_REGEX
     }
 
     fn make_single_line_comment(&self, text: &str) -> String {
