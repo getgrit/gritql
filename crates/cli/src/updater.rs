@@ -359,7 +359,10 @@ impl Updater {
         let (downloaded, manifest) = tokio::try_join!(downloader, manifest_fetcher)?;
 
         // Unzip the artifact
-        self.unpack_artifact(app, downloaded).await?;
+        self.unpack_artifact(app, downloaded.to_owned()).await?;
+
+        // Clean up the temp artifact
+        async_fs::remove_file(&downloaded).await?;
 
         self.set_app_version(app, manifest.version.unwrap(), manifest.release.unwrap())?;
         self.dump().await?;
