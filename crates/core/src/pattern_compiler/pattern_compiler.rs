@@ -55,7 +55,7 @@ use grit_pattern_matcher::{
         Pattern, RegexLike, RegexPattern, Variable,
     },
 };
-use grit_util::{traverse, AstCursor, AstNode, GritMetaValue, Language, Order, Position, Range};
+use grit_util::{traverse, AstCursor, AstNode, ByteRange, GritMetaValue, Language, Order};
 use marzano_language::language::{Field, MarzanoLanguage, NodeTypes};
 use marzano_util::node_with_source::NodeWithSource;
 use regex::Match as RegexMatch;
@@ -73,18 +73,18 @@ impl PatternCompiler {
 
     pub(crate) fn from_snippet_node(
         node: NodeWithSource,
-        context_range: Range,
+        context_range: ByteRange,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
     ) -> Result<Pattern<MarzanoQueryContext>> {
-        let snippet_start = node.node.start_byte();
+        let snippet_start = node.node.start_byte() as usize;
         let ranges = metavariable_ranges(&node, context.compilation.lang);
         let range_map = metavariable_range_mapping(ranges, snippet_start);
 
         fn node_to_astnode(
             node: NodeWithSource,
-            context_range: Range,
-            range_map: &HashMap<Range, Range>,
+            context_range: ByteRange,
+            range_map: &HashMap<ByteRange, ByteRange>,
             context: &mut NodeCompilationContext,
             is_rhs: bool,
         ) -> Result<Pattern<MarzanoQueryContext>> {
@@ -316,20 +316,20 @@ impl NodeCompiler for PatternCompiler {
 
 // Transform a regex match range into a range in the original text
 #[cfg(not(target_arch = "wasm32"))]
-fn derive_range(text: &str, m: RegexMatch) -> Range {
-    make_regex_match_range(text, m)
+fn derive_range(_text: &str, m: RegexMatch) -> ByteRange {
+    ByteRange::new(m.start(), m.end())
 }
 
 #[cfg(target_arch = "wasm32")]
-fn derive_range(text: &str, m: RegexMatch) -> Range {
-    let byte_range = make_regex_match_range(text, m);
+fn derive_range(text: &str, m: RegexMatch) -> ByteRange {
+    let byte_range = ByteRange::new(m.start(), m.end());
     byte_range.byte_range_to_char_range(text)
 }
 
 fn implicit_metavariable_regex<Q: QueryContext>(
     node: &NodeWithSource,
-    context_range: Range,
-    range_map: &HashMap<Range, Range>,
+    context_range: ByteRange,
+    range_map: &HashMap<ByteRange, ByteRange>,
     context: &mut NodeCompilationContext,
 ) -> Result<Option<RegexPattern<Q>>> {
     let range = node.range();
@@ -351,9 +351,9 @@ fn implicit_metavariable_regex<Q: QueryContext>(
         regex_string.push_str(&regex::escape(&node.source[last as usize..m.start()]));
         let range = derive_range(node.source, m);
         last = if cfg!(target_arch = "wasm32") {
-            char_index_to_byte_index(range.end_byte, node.source)
+            char_index_to_byte_index(range.end as u32, node.source)
         } else {
-            range.end_byte
+            range.end as u32
         };
         let name = m.as_str();
         let variable = text_to_var(name, range, context_range, range_map, context)?;
@@ -376,16 +376,10 @@ fn implicit_metavariable_regex<Q: QueryContext>(
     Ok(Some(RegexPattern::new(regex, variables)))
 }
 
-fn make_regex_match_range(text: &str, m: RegexMatch) -> Range {
-    let start = Position::from_byte_index(text, m.start());
-    let end = Position::from_byte_index(text, m.end());
-    Range::new(start, end, m.start() as u32, m.end() as u32)
-}
-
 fn metavariable_descendent<Q: QueryContext>(
     node: &NodeWithSource,
-    context_range: Range,
-    range_map: &HashMap<Range, Range>,
+    context_range: ByteRange,
+    range_map: &HashMap<ByteRange, ByteRange>,
     context: &mut NodeCompilationContext,
     is_rhs: bool,
 ) -> Result<Option<Pattern<Q>>> {
@@ -397,7 +391,7 @@ fn metavariable_descendent<Q: QueryContext>(
             if is_reserved_metavariable(name.trim(), Some(context.compilation.lang)) && !is_rhs {
                 bail!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", name.trim_start_matches(context.compilation.lang.metavariable_prefix_substitute()));
             }
-            let range = node.range();
+            let range = node.byte_range();
             return text_to_var(&name, range, context_range, range_map, context)
                 .map(|s| Some(s.into()));
         }
@@ -412,12 +406,12 @@ fn metavariable_descendent<Q: QueryContext>(
 fn metavariable_ranges<'a, Lang: Language<Node<'a> = NodeWithSource<'a>>>(
     node: &NodeWithSource<'a>,
     lang: &Lang,
-) -> Vec<Range> {
+) -> Vec<ByteRange> {
     let cursor = node.walk();
     traverse(cursor, Order::Pre)
         .flat_map(|child| {
             if lang.is_metavariable(&child) {
-                vec![child.range()]
+                vec![child.byte_range()]
             } else {
                 node_sub_variables(child, lang)
             }
@@ -428,36 +422,26 @@ fn metavariable_ranges<'a, Lang: Language<Node<'a> = NodeWithSource<'a>>>(
 // assumes that metavariable substitute is 1 byte larger than the original. eg.
 // len(µ) = 2 bytes, len($) = 1 byte
 fn metavariable_range_mapping(
-    mut ranges: Vec<Range>,
-    snippet_offset: u32,
-) -> HashMap<Range, Range> {
+    mut ranges: Vec<ByteRange>,
+    snippet_offset: usize,
+) -> HashMap<ByteRange, ByteRange> {
     // assumes metavariable ranges do not enclose one another
-    ranges.sort_by_key(|r| r.start_byte);
+    ranges.sort_by_key(|r| r.start);
     let mut byte_offset = snippet_offset;
-    let mut column_offset = 0;
-    let mut last_row = 0;
     let mut map = HashMap::new();
     for range in ranges.into_iter() {
-        let new_row = range.start.line;
-        if new_row != last_row {
-            column_offset = if new_row == 1 { snippet_offset } else { 0 };
-            last_row = new_row;
-        }
-        let start = Position::new(new_row, range.start.column - column_offset);
-        let start_byte = range.start_byte - byte_offset;
+        let start_byte = range.start - byte_offset;
         if !cfg!(target_arch = "wasm32") {
             byte_offset += 1;
-            column_offset += 1;
         }
-        let end = Position::new(new_row, range.end.column - column_offset);
-        let end_byte = range.end_byte - byte_offset;
-        let new_range = Range::new(start, end, start_byte, end_byte);
+        let end_byte = range.end - byte_offset;
+        let new_range = ByteRange::new(start_byte, end_byte);
         map.insert(range, new_range);
     }
     map
 }
 
-fn node_sub_variables(node: NodeWithSource, lang: &impl Language) -> Vec<Range> {
+fn node_sub_variables(node: NodeWithSource, lang: &impl Language) -> Vec<ByteRange> {
     let mut ranges = vec![];
     if node.node.named_child_count() > 0 {
         return ranges;
@@ -465,9 +449,9 @@ fn node_sub_variables(node: NodeWithSource, lang: &impl Language) -> Vec<Range> 
     let variable_regex = lang.replaced_metavariable_regex();
     for m in variable_regex.find_iter(node.source) {
         let var_range = derive_range(node.source, m);
-        let start_byte = node.node.start_byte();
-        let end_byte = node.node.end_byte();
-        if var_range.start_byte >= start_byte && var_range.end_byte <= end_byte {
+        let start_byte = node.node.start_byte() as usize;
+        let end_byte = node.node.end_byte() as usize;
+        if var_range.start >= start_byte && var_range.end <= end_byte {
             ranges.push(var_range);
         }
     }
@@ -492,9 +476,9 @@ impl<Q: QueryContext> From<SnippetValues> for Pattern<Q> {
 
 fn text_to_var(
     name: &str,
-    range: Range,
-    context_range: Range,
-    range_map: &HashMap<Range, Range>,
+    range: ByteRange,
+    context_range: ByteRange,
+    range_map: &HashMap<ByteRange, ByteRange>,
     context: &mut NodeCompilationContext,
 ) -> Result<SnippetValues> {
     let name = context
@@ -506,7 +490,7 @@ fn text_to_var(
         GritMetaValue::Dots => Ok(SnippetValues::Dots),
         GritMetaValue::Underscore => Ok(SnippetValues::Underscore),
         GritMetaValue::Variable(name) => {
-            let range = range_map.get(&range).ok_or_else(|| {
+            let range = *range_map.get(&range).ok_or_else(|| {
                 anyhow!(
                     "{} not found in map {:?}",
                     range.abbreviated_debug(),
@@ -516,26 +500,7 @@ fn text_to_var(
                         .collect::<Vec<_>>()
                 )
             })?;
-            let column_offset = if range.start.line == 1 {
-                context_range.start.column
-            } else {
-                0
-            };
-            let start = Position {
-                line: range.start.line + context_range.start.line - 1,
-                column: range.start.column + column_offset - 1,
-            };
-            let end = Position {
-                line: range.end.line + context_range.start.line - 1,
-                column: range.end.column + column_offset - 1,
-            };
-            let range = Range::new(
-                start,
-                end,
-                range.start_byte + context_range.start_byte,
-                range.end_byte + context_range.start_byte,
-            );
-            let var = register_variable(&name, range, context)?;
+            let var = register_variable(&name, range + context_range.start, context)?;
             Ok(SnippetValues::Variable(var))
         }
     }

@@ -4,7 +4,7 @@ use grit_pattern_matcher::{
     constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
     pattern::{Variable, VariableSourceLocations},
 };
-use grit_util::Range;
+use grit_util::ByteRange;
 use std::collections::BTreeSet;
 
 pub(crate) fn variable_from_name(
@@ -15,7 +15,7 @@ pub(crate) fn variable_from_name(
 }
 
 pub(crate) fn get_variables(
-    params: &[(String, Range)],
+    params: &[(String, ByteRange)],
     context: &mut NodeCompilationContext,
 ) -> Result<Vec<(String, Variable)>> {
     params
@@ -29,7 +29,7 @@ pub(crate) fn get_variables(
 
 pub(crate) fn register_variable(
     name: &str,
-    range: Range,
+    range: ByteRange,
     context: &mut NodeCompilationContext,
 ) -> Result<Variable> {
     register_variable_optional_range(
@@ -44,7 +44,7 @@ pub(crate) fn register_variable(
 
 struct FileLocation<'a> {
     file_name: &'a str,
-    range: Range,
+    range: ByteRange,
 }
 
 fn register_variable_optional_range(

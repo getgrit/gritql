@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/core/src/test.rs
+source: crates/core/src/test.rs
 expression: results
 ---
 - __typename: Rewrite
@@ -24,14 +24,8 @@ expression: results
       - name: $match
         scopedName: 1_1_$match
         ranges:
-          - start:
-              line: 2
-              column: 13
-            end:
-              line: 2
-              column: 23
-            startByte: 13
-            endByte: 23
+          - start: 13
+            end: 23
     sourceFile: test-file.tsx
     ranges:
       - start:
@@ -72,4 +66,3 @@ expression: results
     endByte: 23
   syntaxTree: ~
   source: "\n            new Date()"
-

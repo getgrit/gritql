@@ -93,16 +93,13 @@ impl<Q: QueryContext> RegexPattern<Q> {
                     continue;
                 }
             } else {
-                let res = if let Some((Some(mut position), Some(source))) = binding
+                let res = if let Some((Some(mut byte_range), Some(source))) = binding
                     .get_last_binding()
-                    .map(|binding| (binding.position(context.language()), binding.source()))
+                    .map(|binding| (binding.range(context.language()), binding.source()))
                 {
-                    // this moves the byte-range out of sync with
-                    // the row-col range, maybe we should just
-                    // have a Range<usize> for String bindings?
-                    position.end_byte = position.start_byte + range.end as u32;
-                    position.start_byte += range.start as u32;
-                    Q::ResolvedPattern::from_range_binding(position, source)
+                    byte_range.end = byte_range.start + range.end;
+                    byte_range.start += range.start;
+                    Q::ResolvedPattern::from_range_binding(byte_range, source)
                 } else {
                     Q::ResolvedPattern::from_string(value.to_string())
                 };

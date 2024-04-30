@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/core/src/test.rs
+source: crates/core/src/test.rs
 expression: results
 ---
 - __typename: Rewrite
@@ -21,14 +21,8 @@ expression: results
       - name: $match
         scopedName: 1_0_$match
         ranges:
-          - start:
-              line: 1
-              column: 1
-            end:
-              line: 1
-              column: 9
-            startByte: 0
-            endByte: 8
+          - start: 0
+            end: 8
     sourceFile: test-file.tsx
     ranges:
       - start:
@@ -52,4 +46,3 @@ expression: results
   reason: ~
 - __typename: DoneFile
   relativeFilePath: test-file.tsx
-

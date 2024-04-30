@@ -35,16 +35,27 @@ impl Position {
 
     /// Creates a position for the given `byte_index` in the given `source`.
     pub fn from_byte_index(source: &str, byte_index: usize) -> Self {
-        let mut pos = Self::first();
-        for c in source[..byte_index].chars() {
+        Self::from_relative_byte_index(Self::first(), 0, source, byte_index)
+    }
+
+    /// Create a position for the given `byte_index` in the given `source`,
+    /// counting from the given other position. This avoids double work in case
+    /// one position lies after another.
+    pub fn from_relative_byte_index(
+        mut prev: Self,
+        prev_byte_index: usize,
+        source: &str,
+        byte_index: usize,
+    ) -> Self {
+        for c in source[prev_byte_index..byte_index].chars() {
             if c == '\n' {
-                pos.line += 1;
-                pos.column = 1;
+                prev.line += 1;
+                prev.column = 1;
             } else {
-                pos.column += c.len_utf8() as u32;
+                prev.column += c.len_utf8() as u32;
             }
         }
-        pos
+        prev
     }
 
     /// Returns the byte index for this `Position` within the given `source`.

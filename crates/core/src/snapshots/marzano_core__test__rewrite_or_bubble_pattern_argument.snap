@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/core/src/test.rs
+source: crates/core/src/test.rs
 expression: results
 ---
 - __typename: Rewrite
@@ -21,63 +21,27 @@ expression: results
       - name: $body
         scopedName: 1_0_$body
         ranges:
-          - start:
-              line: 2
-              column: 32
-            end:
-              line: 6
-              column: 14
-            startByte: 32
-            endByte: 116
+          - start: 32
+            end: 116
       - name: $m
         scopedName: 1_1_$m
         ranges:
-          - start:
-              line: 2
-              column: 13
-            end:
-              line: 6
-              column: 15
-            startByte: 13
-            endByte: 117
+          - start: 13
+            end: 117
       - name: $to_rewrite
         scopedName: 1_2_$to_rewrite
         ranges:
-          - start:
-              line: 3
-              column: 15
-            end:
-              line: 3
-              column: 18
-            startByte: 60
-            endByte: 63
-          - start:
-              line: 4
-              column: 15
-            end:
-              line: 4
-              column: 18
-            startByte: 79
-            endByte: 82
-          - start:
-              line: 5
-              column: 15
-            end:
-              line: 5
-              column: 18
-            startByte: 98
-            endByte: 101
+          - start: 60
+            end: 63
+          - start: 79
+            end: 82
+          - start: 98
+            end: 101
       - name: $match
         scopedName: 1_3_$match
         ranges:
-          - start:
-              line: 2
-              column: 13
-            end:
-              line: 6
-              column: 15
-            startByte: 13
-            endByte: 117
+          - start: 13
+            end: 117
       - name: $to_rewrite
         scopedName: 2_0_$to_rewrite
         ranges: []
@@ -108,4 +72,3 @@ expression: results
   reason: ~
 - __typename: DoneFile
   relativeFilePath: test-file.tsx
-

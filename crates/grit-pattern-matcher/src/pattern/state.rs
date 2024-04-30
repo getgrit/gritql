@@ -9,7 +9,7 @@ use crate::{
     pattern::resolved_pattern::ResolvedPattern,
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::{AnalysisLogs, CodeRange, Range, VariableMatch};
+use grit_util::{AnalysisLogs, ByteRange, CodeRange, VariableMatch};
 use im::{vector, Vector};
 use rand::SeedableRng;
 use std::collections::HashMap;
@@ -98,11 +98,11 @@ fn get_top_level_effect_ranges<'a, Q: QueryContext>(
         })
         .map(|effect| {
             let binding = &effect.binding;
-            let ts_range = binding
-                .position(language)
-                .ok_or_else(|| anyhow!("binding has no position"))?;
-            let end_byte = ts_range.end_byte;
-            let start_byte = ts_range.start_byte;
+            let byte_range = binding
+                .range(language)
+                .ok_or_else(|| anyhow!("binding has no range"))?;
+            let end_byte = byte_range.end as u32;
+            let start_byte = byte_range.start as u32;
             Ok(EffectRange {
                 range: start_byte..end_byte,
                 effect: effect.clone(),
@@ -179,11 +179,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
             .enumerate()
             .map(|(index, content)| {
                 let mut content = content.clone();
-                let pattern = if index < args.len() {
-                    args[index].as_ref()
-                } else {
-                    None
-                };
+                let pattern = args.get(index).and_then(Option::as_ref);
                 if let Some(Pattern::Variable(v)) = pattern {
                     content.mirrors.push(v)
                 };
@@ -224,7 +220,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         &self,
         language: &Q::Language<'a>,
         current_name: Option<&str>,
-    ) -> (Vec<VariableMatch>, Vec<Range>, bool) {
+    ) -> (Vec<VariableMatch>, Vec<ByteRange>, bool) {
         let mut matches = vec![];
         let mut top_level_matches = vec![];
         let mut suppressed = false;
@@ -242,7 +238,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
                                 suppressed_count += 1;
                                 continue;
                             }
-                            if let Some(match_position) = binding.position(language) {
+                            if let Some(match_position) = binding.range(language) {
                                 // TODO, this check only needs to be done at the global scope right?
                                 if name == MATCH_VAR {
                                     // apply_match = true;
@@ -267,4 +263,4 @@ impl<'a, Q: QueryContext> State<'a, Q> {
     }
 }
 
-type VarRegistry<'a, P> = Vector<Vector<Vector<Box<VariableContent<'a, P>>>>>;
+pub type VarRegistry<'a, P> = Vector<Vector<Vector<Box<VariableContent<'a, P>>>>>;

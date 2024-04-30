@@ -70,8 +70,8 @@ impl<Q: QueryContext> Log<Q> {
             let node = value.and_then(|v| v.get_last_binding());
             // todo add support for other types of bindings
             if let Some(node) = node {
-                if let Some(range) = node.position(context.language()) {
-                    log_builder.range(range);
+                if let Some(position) = node.position(context.language()) {
+                    log_builder.range(position);
                 }
                 if let Some(syntax_tree) = node.get_sexp() {
                     log_builder.syntax_tree(syntax_tree);

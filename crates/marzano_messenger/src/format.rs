@@ -54,10 +54,7 @@ fn get_extended_byte_range(content: &str, range: &ByteRange) -> ByteRange {
         .byte_index(content)
     };
 
-    ByteRange {
-        start: start_offset,
-        end: end_offset,
-    }
+    ByteRange::new(start_offset, end_offset)
 }
 
 fn character_offset_to_range(content: &str, offset: usize) -> Position {

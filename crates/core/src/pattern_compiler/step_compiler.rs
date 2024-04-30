@@ -5,7 +5,7 @@ use super::NodeCompiler;
 use crate::problem::MarzanoQueryContext;
 use anyhow::Result;
 use grit_pattern_matcher::pattern::{Pattern, Step};
-use grit_util::{AnalysisLogBuilder, AstNode};
+use grit_util::AnalysisLogBuilder;
 use marzano_util::node_with_source::NodeWithSource;
 
 const SEQUENTIAL_WARNING: &str = "Warning: sequential matches at the top of the file. If a pattern matched outside of a sequential, but no longer matches, it is likely because naked patterns are automatically wrapped with `contains bubble <pattern>`";

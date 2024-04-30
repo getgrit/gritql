@@ -1,7 +1,6 @@
-use std::path::PathBuf;
-
 use crate::Position;
 use serde::{Deserialize, Serialize};
+use std::{ops::Add, path::PathBuf};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(rename_all = "camelCase")]
@@ -13,19 +12,24 @@ pub struct Range {
 }
 
 impl Range {
-    pub fn abbreviated_debug(&self) -> String {
-        format!(
-            "[{}-{}]/[{}-{}]",
-            self.start, self.end, self.start_byte, self.end_byte
-        )
-    }
-
     pub fn new(start: Position, end: Position, start_byte: u32, end_byte: u32) -> Self {
         Self {
             start,
             end,
             start_byte,
             end_byte,
+        }
+    }
+
+    pub fn from_byte_range(source: &str, byte_range: ByteRange) -> Self {
+        let start = Position::from_byte_index(source, byte_range.start);
+        let end =
+            Position::from_relative_byte_index(start, byte_range.start, source, byte_range.end);
+        Self {
+            start,
+            end,
+            start_byte: byte_range.start as u32,
+            end_byte: byte_range.end as u32,
         }
     }
 
@@ -189,11 +193,30 @@ impl From<RangeWithoutByte> for UtilRange {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Hash, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct ByteRange {
     pub start: usize,
     pub end: usize,
+}
+
+impl ByteRange {
+    pub fn new(start: usize, end: usize) -> Self {
+        Self { start, end }
+    }
+
+    pub fn abbreviated_debug(&self) -> String {
+        format!("[{}-{}]", self.start, self.end)
+    }
+}
+
+impl From<Range> for ByteRange {
+    fn from(value: Range) -> Self {
+        Self {
+            start: value.start_byte as usize,
+            end: value.end_byte as usize,
+        }
+    }
 }
 
 impl From<std::ops::Range<usize>> for ByteRange {
@@ -201,6 +224,17 @@ impl From<std::ops::Range<usize>> for ByteRange {
         Self {
             start: range.start,
             end: range.end,
+        }
+    }
+}
+
+impl Add<usize> for ByteRange {
+    type Output = Self;
+
+    fn add(self, rhs: usize) -> Self::Output {
+        Self {
+            start: self.start + rhs,
+            end: self.end + rhs,
         }
     }
 }
@@ -220,7 +254,7 @@ fn byte_index_to_char_offset(index: u32, text: &str) -> u32 {
 
 #[derive(Debug, Clone)]
 pub struct InputRanges {
-    pub ranges: Vec<Range>,
+    pub ranges: Vec<ByteRange>,
     pub variables: Vec<VariableMatch>,
     pub suppressed: bool,
 }
@@ -245,11 +279,11 @@ impl MatchRanges {
 pub struct VariableMatch {
     pub name: String,
     pub scoped_name: String,
-    pub ranges: Vec<Range>,
+    pub ranges: Vec<ByteRange>,
 }
 
 impl VariableMatch {
-    pub fn new(name: String, scoped_name: String, ranges: Vec<Range>) -> Self {
+    pub fn new(name: String, scoped_name: String, ranges: Vec<ByteRange>) -> Self {
         Self {
             name,
             scoped_name,

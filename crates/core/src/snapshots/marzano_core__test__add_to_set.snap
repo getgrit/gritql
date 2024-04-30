@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/core/src/test.rs
+source: crates/core/src/test.rs
 expression: results
 ---
 - __typename: Rewrite
@@ -27,14 +27,8 @@ expression: results
       - name: $end
         scopedName: 2_0_$end
         ranges:
-          - start:
-              line: 5
-              column: 1
-            end:
-              line: 5
-              column: 4
-            startByte: 48
-            endByte: 51
+          - start: 48
+            end: 51
       - name: $big_set
         scopedName: 2_1_$big_set
         ranges: []
@@ -44,87 +38,33 @@ expression: results
       - name: $match
         scopedName: 2_3_$match
         ranges:
-          - start:
-              line: 5
-              column: 1
-            end:
-              line: 5
-              column: 4
-            startByte: 48
-            endByte: 51
+          - start: 48
+            end: 51
       - name: $big_set
         scopedName: 3_0_$big_set
         ranges: []
       - name: $x
         scopedName: 3_1_$x
         ranges:
-          - start:
-              line: 1
-              column: 5
-            end:
-              line: 1
-              column: 6
-            startByte: 4
-            endByte: 5
-          - start:
-              line: 2
-              column: 5
-            end:
-              line: 2
-              column: 6
-            startByte: 16
-            endByte: 17
-          - start:
-              line: 3
-              column: 5
-            end:
-              line: 3
-              column: 6
-            startByte: 28
-            endByte: 29
-          - start:
-              line: 4
-              column: 5
-            end:
-              line: 4
-              column: 6
-            startByte: 40
-            endByte: 41
+          - start: 4
+            end: 5
+          - start: 16
+            end: 17
+          - start: 28
+            end: 29
+          - start: 40
+            end: 41
       - name: $y
         scopedName: 3_2_$y
         ranges:
-          - start:
-              line: 1
-              column: 8
-            end:
-              line: 1
-              column: 10
-            startByte: 7
-            endByte: 9
-          - start:
-              line: 2
-              column: 8
-            end:
-              line: 2
-              column: 10
-            startByte: 19
-            endByte: 21
-          - start:
-              line: 3
-              column: 8
-            end:
-              line: 3
-              column: 10
-            startByte: 31
-            endByte: 33
-          - start:
-              line: 4
-              column: 8
-            end:
-              line: 4
-              column: 10
-            startByte: 43
-            endByte: 45
+          - start: 7
+            end: 9
+          - start: 19
+            end: 21
+          - start: 31
+            end: 33
+          - start: 43
+            end: 45
     sourceFile: test-file.tsx
     ranges:
       - start:
@@ -170,4 +110,3 @@ expression: results
   range: ~
   syntaxTree: ~
   source: ~
-

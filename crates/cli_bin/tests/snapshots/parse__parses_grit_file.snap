@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/cli/tests/parse.rs
+source: crates/cli_bin/tests/parse.rs
 expression: v
 ---
 __typename: PatternInfo
@@ -20,18 +20,11 @@ variables:
   - name: $msg
     scopedName: 11_0_$msg
     ranges:
-      - start:
-          line: 3
-          column: 14
-        end:
-          line: 3
-          column: 18
-        startByte: 26
-        endByte: 30
+      - start: 26
+        end: 30
   - name: $match
     scopedName: 11_1_$match
     ranges: []
 sourceFile: "language js\n\n`console.log($msg)`\n"
 parsedPattern: "[..]"
 valid: true
-

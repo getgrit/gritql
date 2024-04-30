@@ -298,7 +298,11 @@ impl Match {
         Self {
             debug: input_file_debug_text,
             source_file: name.to_owned(),
-            ranges: match_ranges.ranges.to_owned(),
+            ranges: match_ranges
+                .ranges
+                .iter()
+                .map(|byte_range| Range::from_byte_range(&tree.source, *byte_range))
+                .collect(),
             variables: match_ranges.variables.to_owned(),
             messages: vec![],
         }

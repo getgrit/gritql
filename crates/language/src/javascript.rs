@@ -8,7 +8,7 @@ use crate::{
         FieldExpectation, MarzanoLanguage, NodeTypes, SortId, TSLanguage, Tree,
     },
 };
-use grit_util::{AstNode, Language, Parser, Range, Replacement};
+use grit_util::{AstNode, ByteRange, Language, Parser, Replacement};
 use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
 
@@ -122,14 +122,14 @@ impl Language for JavaScript {
     }
 
     // assumes trim doesn't do anything otherwise range is off
-    fn comment_text_range(&self, node: &NodeWithSource) -> Option<Range> {
+    fn comment_text_range(&self, node: &NodeWithSource) -> Option<ByteRange> {
         let content_text = node.text().ok()?;
         let content_text = content_text.trim();
         let mut range = node.range();
         if content_text.starts_with("//") {
-            range.adjust_columns(2, 0).then_some(range)
+            range.adjust_columns(2, 0).then(|| range.into())
         } else if content_text.starts_with("/*") && content_text.ends_with("*/") {
-            range.adjust_columns(2, -2).then_some(range)
+            range.adjust_columns(2, -2).then(|| range.into())
         } else {
             None
         }

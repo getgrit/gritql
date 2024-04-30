@@ -7,7 +7,7 @@ use super::{
 };
 use crate::{binding::Binding, constant::Constant, context::QueryContext, effects::Effect};
 use anyhow::Result;
-use grit_util::{AnalysisLogs, CodeRange, Range};
+use grit_util::{AnalysisLogs, ByteRange, CodeRange, Range};
 use im::Vector;
 use itertools::Itertools;
 use std::{
@@ -40,7 +40,7 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
         Self::from_binding(Binding::from_path(path))
     }
 
-    fn from_range_binding(range: Range, src: &'a str) -> Self {
+    fn from_range_binding(range: ByteRange, src: &'a str) -> Self {
         Self::from_binding(Binding::from_range(range, src))
     }
 

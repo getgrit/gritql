@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/core/src/test.rs
+source: crates/core/src/test.rs
 expression: results
 ---
 - __typename: Match
@@ -20,39 +20,21 @@ expression: results
     - name: $x
       scopedName: 1_0_$x
       ranges:
-        - start:
-            line: 1
-            column: 5
-          end:
-            line: 1
-            column: 6
-          startByte: 4
-          endByte: 5
+        - start: 4
+          end: 5
     - name: $x
       scopedName: 2_0_$x
       ranges:
-        - start:
-            line: 1
-            column: 5
-          end:
-            line: 1
-            column: 6
-          startByte: 4
-          endByte: 5
+        - start: 4
+          end: 5
     - name: $name
       scopedName: 2_1_$name
       ranges: []
     - name: $body
       scopedName: 2_2_$body
       ranges:
-        - start:
-            line: 1
-            column: 1
-          end:
-            line: 1
-            column: 7
-          startByte: 0
-          endByte: 6
+        - start: 0
+          end: 6
     - name: $x
       scopedName: 3_0_$x
       ranges: []
@@ -84,39 +66,21 @@ expression: results
       - name: $x
         scopedName: 1_0_$x
         ranges:
-          - start:
-              line: 1
-              column: 5
-            end:
-              line: 1
-              column: 6
-            startByte: 4
-            endByte: 5
+          - start: 4
+            end: 5
       - name: $x
         scopedName: 2_0_$x
         ranges:
-          - start:
-              line: 1
-              column: 5
-            end:
-              line: 1
-              column: 6
-            startByte: 4
-            endByte: 5
+          - start: 4
+            end: 5
       - name: $name
         scopedName: 2_1_$name
         ranges: []
       - name: $body
         scopedName: 2_2_$body
         ranges:
-          - start:
-              line: 1
-              column: 1
-            end:
-              line: 1
-              column: 7
-            startByte: 0
-            endByte: 6
+          - start: 0
+            end: 6
       - name: $x
         scopedName: 3_0_$x
         ranges: []
@@ -143,4 +107,3 @@ expression: results
   relativeFilePath: file1.tsx
 - __typename: DoneFile
   relativeFilePath: file2.tsx
-

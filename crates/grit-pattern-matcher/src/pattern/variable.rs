@@ -11,7 +11,7 @@ use crate::{
 };
 use anyhow::{bail, Result};
 use core::fmt::Debug;
-use grit_util::{constants::GRIT_METAVARIABLE_PREFIX, AnalysisLogs, Language, Range};
+use grit_util::{constants::GRIT_METAVARIABLE_PREFIX, AnalysisLogs, ByteRange, Language};
 use std::{borrow::Cow, collections::BTreeSet};
 
 #[derive(Clone, Debug, Copy)]
@@ -24,7 +24,7 @@ pub struct Variable {
 pub struct VariableSourceLocations {
     pub name: String,
     pub file: String,
-    pub locations: BTreeSet<Range>,
+    pub locations: BTreeSet<ByteRange>,
 }
 
 struct VariableMirror<'a, Q: QueryContext> {

@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/core/src/test.rs
+source: crates/core/src/test.rs
 expression: results
 ---
 - __typename: Rewrite
@@ -21,36 +21,18 @@ expression: results
       - name: $body
         scopedName: 1_0_$body
         ranges:
-          - start:
-              line: 2
-              column: 5
-            end:
-              line: 2
-              column: 18
-            startByte: 35
-            endByte: 48
+          - start: 35
+            end: 48
       - name: $args
         scopedName: 1_1_$args
         ranges:
-          - start:
-              line: 1
-              column: 27
-            end:
-              line: 1
-              column: 28
-            startByte: 26
-            endByte: 27
+          - start: 26
+            end: 27
       - name: $match
         scopedName: 1_2_$match
         ranges:
-          - start:
-              line: 1
-              column: 17
-            end:
-              line: 3
-              column: 2
-            startByte: 16
-            endByte: 50
+          - start: 16
+            end: 50
     sourceFile: test-file.tsx
     ranges:
       - start:
@@ -93,4 +75,3 @@ expression: results
     endByte: 48
   syntaxTree: "(return_statement expressions: (binary_expression left: (identifier) operator: (plus) right: (number)))"
   source: return i + 1;
-
