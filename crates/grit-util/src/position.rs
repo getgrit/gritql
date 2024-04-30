@@ -67,30 +67,6 @@ impl Position {
             .sum();
         line_start_index + (self.column as usize) - 1
     }
-
-    /// Converts a position expressed in byte indices to a position expressed in
-    /// character offsets.
-    pub(crate) fn byte_position_to_char_position(self, context: &str) -> Self {
-        let mut char_pos = Position { line: 1, column: 1 };
-        let mut bytes_processed = 0;
-
-        for c in context.chars() {
-            bytes_processed += c.len_utf8();
-
-            if self.line == char_pos.line && bytes_processed >= self.column as usize {
-                break;
-            }
-
-            if c == '\n' {
-                char_pos.line += 1;
-                char_pos.column = 1;
-            } else {
-                char_pos.column += 1;
-            }
-        }
-
-        char_pos
-    }
 }
 
 impl Display for Position {

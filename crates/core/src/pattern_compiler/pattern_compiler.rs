@@ -323,7 +323,7 @@ fn derive_range(_text: &str, m: RegexMatch) -> ByteRange {
 #[cfg(target_arch = "wasm32")]
 fn derive_range(text: &str, m: RegexMatch) -> ByteRange {
     let byte_range = ByteRange::new(m.start(), m.end());
-    byte_range.byte_range_to_char_range(text)
+    byte_range.to_char_range(text)
 }
 
 fn implicit_metavariable_regex<Q: QueryContext>(

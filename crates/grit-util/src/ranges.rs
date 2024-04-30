@@ -129,21 +129,6 @@ impl Range {
         };
         Some((start as usize, end as usize))
     }
-
-    /// Converts a range expressed in byte indices to a range expressed in
-    /// character offets.
-    pub fn byte_range_to_char_range(self, context: &str) -> Self {
-        let start = self.start.byte_position_to_char_position(context);
-        let end = self.end.byte_position_to_char_position(context);
-        let start_byte = byte_index_to_char_offset(self.start_byte, context);
-        let end_byte = byte_index_to_char_offset(self.end_byte, context);
-        Self {
-            start,
-            end,
-            start_byte,
-            end_byte,
-        }
-    }
 }
 
 // A simple range, without byte information
@@ -208,6 +193,14 @@ impl ByteRange {
     pub fn abbreviated_debug(&self) -> String {
         format!("[{}-{}]", self.start, self.end)
     }
+
+    /// Converts a range expressed in byte indices to a range expressed in
+    /// character offets.
+    pub fn to_char_range(self, context: &str) -> Self {
+        let start = byte_index_to_char_offset(self.start, context);
+        let end = byte_index_to_char_offset(self.end, context);
+        Self { start, end }
+    }
 }
 
 impl From<Range> for ByteRange {
@@ -246,10 +239,8 @@ pub struct FileRange {
     pub range: UtilRange,
 }
 
-fn byte_index_to_char_offset(index: u32, text: &str) -> u32 {
-    text.char_indices()
-        .take_while(|(i, _)| *i < index as usize)
-        .count() as u32
+fn byte_index_to_char_offset(index: usize, text: &str) -> usize {
+    text.char_indices().take_while(|(i, _)| *i < index).count()
 }
 
 #[derive(Debug, Clone)]
@@ -325,17 +316,11 @@ mod tests {
 
     #[test]
     fn byte_range_to_char_range() {
-        let range = Range::new(Position::new(1, 8), Position::new(1, 10), 7, 9);
-        let new_range = range.byte_range_to_char_range("const [µb, fµa]");
-        assert_eq!(
-            new_range,
-            Range::new(Position::new(1, 8), Position::new(1, 9), 7, 8)
-        );
-        let range = Range::new(Position::new(1, 16), Position::new(1, 18), 15, 17);
-        let new_range = range.byte_range_to_char_range("const [µb, fµa]");
-        assert_eq!(
-            new_range,
-            Range::new(Position::new(1, 14), Position::new(1, 16), 13, 15)
-        );
+        let range = ByteRange::new(7, 9);
+        let new_range = range.to_char_range("const [µb, fµa]");
+        assert_eq!(new_range, ByteRange::new(7, 8));
+        let range = ByteRange::new(15, 17);
+        let new_range = range.to_char_range("const [µb, fµa]");
+        assert_eq!(new_range, ByteRange::new(13, 15));
     }
 }
