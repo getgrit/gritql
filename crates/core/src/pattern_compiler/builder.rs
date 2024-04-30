@@ -21,10 +21,7 @@ use anyhow::{bail, Result};
 use grit_pattern_matcher::pattern::State;
 use grit_pattern_matcher::{
     constant::Constant,
-    constants::{
-        ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, MATCH_VAR, NEW_FILES_INDEX,
-        PROGRAM_INDEX,
-    },
+    constants::{ABSOLUTE_PATH_INDEX, FILENAME_INDEX, MATCH_VAR, NEW_FILES_INDEX, PROGRAM_INDEX},
     pattern::{
         And, BooleanConstant, CallBuiltIn, Container, GritFunctionDefinition, Match, Pattern,
         PatternDefinition, Predicate, PredicateDefinition, ResolvedPattern,
@@ -37,7 +34,7 @@ use marzano_language::{
     self, grit_parser::MarzanoGritParser, language::Tree, target_language::TargetLanguage,
 };
 
-use std::{collections::BTreeMap, path::Path, vec};
+use std::{collections::BTreeMap, vec};
 
 pub type CallbackMatchFn = dyn for<'a> Fn(
         &<problem::MarzanoQueryContext as grit_pattern_matcher::context::QueryContext>::ResolvedPattern<'a>,
@@ -93,7 +90,7 @@ impl PatternBuilder {
             let error = ". never matches and should not be used as a pattern. Did you mean to run 'grit apply <pattern> .'?";
             bail!(error);
         }
-        let src_tree = grit_parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
+        let src_tree = grit_parser.parse_file(&src, None)?;
 
         let root = src_tree.root_node();
         let mut built_ins = BuiltIns::get_built_in_functions();
@@ -118,7 +115,7 @@ impl PatternBuilder {
         } = get_definition_info(&libs, &root, grit_parser)?;
 
         let context = CompilationContext {
-            file: DEFAULT_FILE_NAME,
+            file: None,
             built_ins: &built_ins,
             lang: &lang,
             pattern_definition_info: &pattern_definition_indices,
@@ -204,7 +201,7 @@ impl PatternBuilder {
         injected_limit: Option<usize>,
     ) -> Result<Self> {
         let compilation = CompilationContext {
-            file: DEFAULT_FILE_NAME,
+            file: None,
             built_ins: &self.built_ins,
             lang: &self.language,
             pattern_definition_info: &self.pattern_definition_indices,
@@ -266,7 +263,7 @@ impl PatternBuilder {
             }));
 
         let compilation = CompilationContext {
-            file: DEFAULT_FILE_NAME,
+            file: None,
             built_ins: &self.built_ins,
             lang: &self.language,
             pattern_definition_info: &self.pattern_definition_indices,

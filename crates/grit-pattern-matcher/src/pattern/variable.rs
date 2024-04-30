@@ -12,7 +12,7 @@ use crate::{
 use anyhow::{bail, Result};
 use core::fmt::Debug;
 use grit_util::{constants::GRIT_METAVARIABLE_PREFIX, AnalysisLogs, Language, Range};
-use std::{borrow::Cow, collections::BTreeSet};
+use std::{borrow::Cow, collections::BTreeSet, path::PathBuf};
 
 #[derive(Clone, Debug, Copy)]
 pub struct Variable {
@@ -23,7 +23,7 @@ pub struct Variable {
 #[derive(Debug, Clone)]
 pub struct VariableSourceLocations {
     pub name: String,
-    pub file: String,
+    pub file: Option<PathBuf>,
     pub locations: BTreeSet<Range>,
 }
 
@@ -202,27 +202,31 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
 pub fn get_absolute_file_name<'a, Q: QueryContext>(
     state: &State<'a, Q>,
     lang: &Q::Language<'a>,
-) -> Result<String, anyhow::Error> {
-    let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[ABSOLUTE_PATH_INDEX]
+) -> Result<Option<PathBuf>, anyhow::Error> {
+    let Some(file) = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[ABSOLUTE_PATH_INDEX]
         .value
-        .as_ref();
-    let file = file
-        .map(|f| f.text(&state.files, lang).map(|s| s.to_string()))
-        .unwrap_or(Ok("No File Found".to_string()))?;
-    Ok(file)
+        .as_ref()
+    else {
+        return Ok(None);
+    };
+
+    let file = file.text(&state.files, lang)?;
+    Ok(Some(PathBuf::from(file.as_ref())))
 }
 
 pub fn get_file_name<'a, Q: QueryContext>(
     state: &State<'a, Q>,
     lang: &Q::Language<'a>,
-) -> Result<String, anyhow::Error> {
-    let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[FILENAME_INDEX]
+) -> Result<Option<PathBuf>, anyhow::Error> {
+    let Some(file) = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[FILENAME_INDEX]
         .value
-        .as_ref();
-    let file = file
-        .map(|f| f.text(&state.files, lang).map(|s| s.to_string()))
-        .unwrap_or(Ok("No File Found".to_string()))?;
-    Ok(file)
+        .as_ref()
+    else {
+        return Ok(None);
+    };
+
+    let file = file.text(&state.files, lang)?;
+    Ok(Some(PathBuf::from(file.as_ref())))
 }
 
 pub fn is_reserved_metavariable(var: &str, lang: Option<&impl Language>) -> bool {

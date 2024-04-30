@@ -13,11 +13,8 @@ pub fn debug<'a, Q: QueryContext>(
 ) -> Result<()> {
     let mut builder = AnalysisLogBuilder::default();
     builder.level(501_u16);
+    builder.file(get_file_name(state, lang)?);
     builder.message(message);
-
-    if let Ok(file) = get_file_name(state, lang) {
-        builder.file(file);
-    }
 
     let log = builder.build();
     match log {

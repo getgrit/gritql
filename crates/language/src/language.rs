@@ -374,7 +374,7 @@ fn file_parsing_error(
     log_builder
         .level(level)
         .engine_id("marzano(0.1)".to_owned())
-        .file(file_name.to_owned());
+        .file(Some(file_name.to_owned()));
 
     for n in traverse(CursorWrapper::new(cursor, body), Order::Pre) {
         if n.node.is_error() || n.node.is_missing() {

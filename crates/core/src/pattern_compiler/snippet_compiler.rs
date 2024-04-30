@@ -10,7 +10,7 @@ use crate::{
 use crate::{pattern_compiler::compiler::NodeCompilationContext, split_snippet::split_snippet};
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
-    constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
+    constants::GLOBAL_VARS_SCOPE_INDEX,
     pattern::{DynamicPattern, DynamicSnippet, DynamicSnippetPart, Pattern, Variable},
 };
 use grit_util::{AstNode, Language, Position, Range};
@@ -118,7 +118,7 @@ pub(crate) fn dynamic_snippet_from_source(
                 *var,
             )));
         } else if let Some(var) = context.global_vars.get(var.as_ref()) {
-            if context.compilation.file == DEFAULT_FILE_NAME {
+            if context.compilation.file.is_none() {
                 context.vars_array[GLOBAL_VARS_SCOPE_INDEX][*var]
                     .locations
                     .insert(range);

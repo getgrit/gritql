@@ -11,7 +11,7 @@ use std::path::PathBuf;
 pub struct AnalysisLog {
     #[builder(setter(into, strip_option), default)]
     pub engine_id: Option<String>,
-    #[builder(setter(into, strip_option), default)]
+    #[builder(default)]
     pub file: Option<PathBuf>,
     #[builder(setter(into, strip_option), default)]
     pub level: Option<u16>,

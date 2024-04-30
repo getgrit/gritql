@@ -61,10 +61,8 @@ fn grit_parsing_errors(tree: &Tree, path: Option<&Path>) -> Result<AnalysisLogs>
     };
     log_builder
         .level(level)
-        .engine_id("marzano(0.1)".to_owned());
-    if let Some(path) = path {
-        log_builder.file(path.to_owned());
-    }
+        .engine_id("marzano(0.1)".to_owned())
+        .file(path.map(Into::into));
 
     let root = tree.root_node();
     let cursor = root.walk();
