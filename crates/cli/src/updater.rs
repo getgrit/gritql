@@ -2,6 +2,7 @@ use anyhow::bail;
 use anyhow::{Context, Result};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::Colorize;
+use futures_util::StreamExt;
 use log::info;
 use marzano_auth::info::AuthInfo;
 use marzano_gritmodule::config::REPO_CONFIG_DIR_NAME;
@@ -449,8 +450,11 @@ impl Updater {
 
         match reqwest::get(&artifact_url).await {
             Ok(response) => {
-                let contents = response.bytes().await?.to_vec();
-                async_fs::write(&target_path, contents).await?;
+                let mut file = async_fs::File::create(&target_path).await?;
+                let mut bytes_stream = response.bytes_stream();
+                while let Some(chunk) = bytes_stream.next().await {
+                    tokio::io::copy(&mut chunk?.as_ref(), &mut file).await?;
+                }
             }
             Err(e) => {
                 bail!("Failed to download artifact: {:?}", e);
