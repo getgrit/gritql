@@ -21,18 +21,36 @@ expression: results
       - name: $body
         scopedName: 1_0_$body
         ranges:
-          - start: 35
-            end: 48
+          - start:
+              line: 2
+              column: 5
+            end:
+              line: 2
+              column: 18
+            startByte: 35
+            endByte: 48
       - name: $args
         scopedName: 1_1_$args
         ranges:
-          - start: 26
-            end: 27
+          - start:
+              line: 1
+              column: 27
+            end:
+              line: 1
+              column: 28
+            startByte: 26
+            endByte: 27
       - name: $match
         scopedName: 1_2_$match
         ranges:
-          - start: 16
-            end: 50
+          - start:
+              line: 1
+              column: 17
+            end:
+              line: 3
+              column: 2
+            startByte: 16
+            endByte: 50
     sourceFile: test-file.tsx
     ranges:
       - start:

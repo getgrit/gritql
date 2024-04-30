@@ -20,8 +20,14 @@ variables:
   - name: $msg
     scopedName: 11_0_$msg
     ranges:
-      - start: 26
-        end: 30
+      - start:
+          line: 3
+          column: 14
+        end:
+          line: 3
+          column: 18
+        startByte: 26
+        endByte: 30
   - name: $match
     scopedName: 11_1_$match
     ranges: []

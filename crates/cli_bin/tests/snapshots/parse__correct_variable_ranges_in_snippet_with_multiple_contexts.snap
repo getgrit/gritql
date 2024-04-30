@@ -20,8 +20,14 @@ variables:
   - name: $body
     scopedName: 11_0_$body
     ranges:
-      - start: 15
-        end: 20
+      - start:
+          line: 1
+          column: 16
+        end:
+          line: 1
+          column: 21
+        startByte: 15
+        endByte: 20
   - name: $match
     scopedName: 11_1_$match
     ranges: []

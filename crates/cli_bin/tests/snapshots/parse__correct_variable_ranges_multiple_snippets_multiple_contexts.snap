@@ -23,23 +23,47 @@ variables:
   - name: $body
     scopedName: 12_0_$body
     ranges:
-      - start: 32
-        end: 37
+      - start:
+          line: 1
+          column: 33
+        end:
+          line: 1
+          column: 38
+        startByte: 32
+        endByte: 37
   - name: $args
     scopedName: 12_1_$args
     ranges:
-      - start: 23
-        end: 28
+      - start:
+          line: 1
+          column: 24
+        end:
+          line: 1
+          column: 29
+        startByte: 23
+        endByte: 28
   - name: $body
     scopedName: 13_0_$body
     ranges:
-      - start: 63
-        end: 68
+      - start:
+          line: 1
+          column: 64
+        end:
+          line: 1
+          column: 69
+        startByte: 63
+        endByte: 68
   - name: $args
     scopedName: 13_1_$args
     ranges:
-      - start: 51
-        end: 56
+      - start:
+          line: 1
+          column: 52
+        end:
+          line: 1
+          column: 57
+        startByte: 51
+        endByte: 56
 sourceFile: "or { bubble `function ($args) { $body }`, bubble `($args) => { $body }` }"
 parsedPattern: "[..]"
 valid: true

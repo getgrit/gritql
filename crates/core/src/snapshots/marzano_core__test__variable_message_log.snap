@@ -20,16 +20,28 @@ expression: results
     - name: $x
       scopedName: 1_0_$x
       ranges:
-        - start: 0
-          end: 13
+        - start:
+            line: 1
+            column: 1
+          end:
+            line: 2
+            column: 1
+          startByte: 0
+          endByte: 13
     - name: $message
       scopedName: 1_1_$message
       ranges: []
     - name: $match
       scopedName: 1_2_$match
       ranges:
-        - start: 0
-          end: 13
+        - start:
+            line: 1
+            column: 1
+          end:
+            line: 2
+            column: 1
+          startByte: 0
+          endByte: 13
   sourceFile: test-file.tsx
   ranges:
     - start:

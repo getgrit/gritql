@@ -298,8 +298,8 @@ fn no_extraneous_ranges_for_multiple_metavariables_in_snippet() -> Result<()> {
     let ranges = bar.get("ranges").unwrap().as_array().unwrap();
     assert_eq!(ranges.len(), 1);
     let range = &ranges[0];
-    let start_byte = range.get("start").unwrap().as_u64().unwrap();
-    let end_byte = range.get("end").unwrap().as_u64().unwrap();
+    let start_byte = range.get("startByte").unwrap().as_u64().unwrap();
+    let end_byte = range.get("endByte").unwrap().as_u64().unwrap();
     assert_eq!(start_byte, 19);
     assert_eq!(end_byte, 23);
 
@@ -310,8 +310,8 @@ fn no_extraneous_ranges_for_multiple_metavariables_in_snippet() -> Result<()> {
     let ranges = baz_var.get("ranges").unwrap().as_array().unwrap();
     assert_eq!(ranges.len(), 1);
     let range = &ranges[0];
-    let start_byte = range.get("start").unwrap().as_u64().unwrap();
-    let end_byte = range.get("end").unwrap().as_u64().unwrap();
+    let start_byte = range.get("startByte").unwrap().as_u64().unwrap();
+    let end_byte = range.get("endByte").unwrap().as_u64().unwrap();
     assert_eq!(start_byte, 25);
     assert_eq!(end_byte, 29);
 
@@ -353,15 +353,27 @@ fn no_extraneous_ranges_for_multiple_metavariables_in_snippet_with_rewrite() -> 
     let ranges = description.get("ranges").unwrap().as_array().unwrap();
     assert_eq!(ranges.len(), 2);
     let lhs = &ranges[0];
-    let lhs_start = lhs.get("start").unwrap().as_u64().unwrap();
-    let lhs_end = lhs.get("end").unwrap().as_u64().unwrap();
-    assert_eq!(lhs_start, 25);
-    assert_eq!(lhs_end, 37);
+    let lhs_start = lhs.get("start").unwrap();
+    let lhs_start_line = lhs_start.get("line").unwrap().as_u64().unwrap();
+    let lhs_start_column = lhs_start.get("column").unwrap().as_u64().unwrap();
+    let lhs_end = lhs.get("end").unwrap();
+    let lhs_end_line = lhs_end.get("line").unwrap().as_u64().unwrap();
+    let lhs_end_column = lhs_end.get("column").unwrap().as_u64().unwrap();
+    assert_eq!(lhs_start_line, 1);
+    assert_eq!(lhs_start_column, 26);
+    assert_eq!(lhs_end_line, 1);
+    assert_eq!(lhs_end_column, 38);
     let rhs = &ranges[1];
-    let rhs_start = rhs.get("start").unwrap().as_u64().unwrap();
-    let rhs_end = rhs.get("end").unwrap().as_u64().unwrap();
-    assert_eq!(rhs_start, 63);
-    assert_eq!(rhs_end, 75);
+    let rhs_start = rhs.get("start").unwrap();
+    let rhs_start_line = rhs_start.get("line").unwrap().as_u64().unwrap();
+    let rhs_start_column = rhs_start.get("column").unwrap().as_u64().unwrap();
+    let rhs_end = rhs.get("end").unwrap();
+    let rhs_end_line = rhs_end.get("line").unwrap().as_u64().unwrap();
+    let rhs_end_column = rhs_end.get("column").unwrap().as_u64().unwrap();
+    assert_eq!(rhs_start_line, 1);
+    assert_eq!(rhs_start_column, 64);
+    assert_eq!(rhs_end_line, 1);
+    assert_eq!(rhs_end_column, 76);
 
     Ok(())
 }

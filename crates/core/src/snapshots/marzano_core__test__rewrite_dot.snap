@@ -24,8 +24,14 @@ expression: results
       - name: $match
         scopedName: 1_1_$match
         ranges:
-          - start: 13
-            end: 23
+          - start:
+              line: 2
+              column: 13
+            end:
+              line: 2
+              column: 23
+            startByte: 13
+            endByte: 23
     sourceFile: test-file.tsx
     ranges:
       - start:

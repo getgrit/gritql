@@ -27,17 +27,41 @@ expression: results
       - name: $imports
         scopedName: 2_0_$imports
         ranges:
-          - start: 9
-            end: 17
-          - start: 40
-            end: 45
+          - start:
+              line: 1
+              column: 10
+            end:
+              line: 1
+              column: 18
+            startByte: 9
+            endByte: 17
+          - start:
+              line: 2
+              column: 10
+            end:
+              line: 2
+              column: 15
+            startByte: 40
+            endByte: 45
       - name: $source
         scopedName: 2_1_$source
         ranges:
-          - start: 25
-            end: 30
-          - start: 53
-            end: 65
+          - start:
+              line: 1
+              column: 26
+            end:
+              line: 1
+              column: 31
+            startByte: 25
+            endByte: 30
+          - start:
+              line: 2
+              column: 23
+            end:
+              line: 2
+              column: 35
+            startByte: 53
+            endByte: 65
       - name: $from
         scopedName: 3_0_$from
         ranges: []
@@ -65,18 +89,54 @@ expression: results
       - name: $p
         scopedName: 6_0_$p
         ranges:
-          - start: 0
-            end: 66
-          - start: 0
-            end: 66
-          - start: 0
-            end: 66
-          - start: 0
-            end: 66
-          - start: 0
-            end: 66
-          - start: 0
-            end: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
       - name: $all_imports
         scopedName: 6_1_$all_imports
         ranges: []
@@ -92,19 +152,49 @@ expression: results
       - name: $imports
         scopedName: 6_5_$imports
         ranges:
-          - start: 9
-            end: 17
-          - start: 40
-            end: 45
+          - start:
+              line: 1
+              column: 10
+            end:
+              line: 1
+              column: 18
+            startByte: 9
+            endByte: 17
+          - start:
+              line: 2
+              column: 10
+            end:
+              line: 2
+              column: 15
+            startByte: 40
+            endByte: 45
       - name: $p
         scopedName: 7_0_$p
         ranges:
-          - start: 0
-            end: 66
-          - start: 0
-            end: 66
-          - start: 0
-            end: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
       - name: $source
         scopedName: 7_1_$source
         ranges: []
@@ -120,28 +210,76 @@ expression: results
       - name: $p
         scopedName: 8_0_$p
         ranges:
-          - start: 0
-            end: 66
-          - start: 0
-            end: 66
-          - start: 0
-            end: 66
-          - start: 0
-            end: 66
-          - start: 0
-            end: 66
-          - start: 0
-            end: 66
-          - start: 0
-            end: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
       - name: $all_imports
         scopedName: 8_1_$all_imports
         ranges: []
       - name: $p
         scopedName: 9_0_$p
         ranges:
-          - start: 0
-            end: 66
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 3
+              column: 1
+            startByte: 0
+            endByte: 66
       - name: $from
         scopedName: 10_0_$from
         ranges: []
@@ -172,8 +310,14 @@ expression: results
       - name: $f
         scopedName: 12_0_$f
         ranges:
-          - start: 9
-            end: 12
+          - start:
+              line: 1
+              column: 10
+            end:
+              line: 1
+              column: 13
+            startByte: 9
+            endByte: 12
       - name: $name
         scopedName: 12_1_$name
         ranges: []
@@ -195,8 +339,14 @@ expression: results
       - name: $match
         scopedName: 12_7_$match
         ranges:
-          - start: 9
-            end: 12
+          - start:
+              line: 1
+              column: 10
+            end:
+              line: 1
+              column: 13
+            startByte: 9
+            endByte: 12
     sourceFile: test-file.tsx
     ranges:
       - start:

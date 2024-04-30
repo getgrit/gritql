@@ -12,8 +12,14 @@ expression: results
       - name: $program
         scopedName: 0_1_$program
         ranges:
-          - start: 0
-            end: 34
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 4
+              column: 1
+            startByte: 0
+            endByte: 34
       - name: $filename
         scopedName: 0_2_$filename
         ranges: []

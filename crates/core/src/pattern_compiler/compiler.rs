@@ -20,7 +20,9 @@ use grit_pattern_matcher::{
         GritFunctionDefinition, PatternDefinition, PredicateDefinition, VariableSourceLocations,
     },
 };
-use grit_util::{traverse, AnalysisLogs, Ast, AstNode, ByteRange, FileRange, Order, VariableMatch};
+use grit_util::{
+    traverse, AnalysisLogs, Ast, AstNode, ByteRange, FileRange, Order, Range, VariableMatch,
+};
 use itertools::Itertools;
 use marzano_language::{
     self, grit_parser::MarzanoGritParser, language::Tree, target_language::TargetLanguage,
@@ -603,7 +605,7 @@ impl VariableLocations {
         Self { locations }
     }
 
-    pub(crate) fn compiled_vars(&self) -> Vec<VariableMatch> {
+    pub(crate) fn compiled_vars(&self, source: &str) -> Vec<VariableMatch> {
         let mut variables = vec![];
         for (i, scope) in self.locations.iter().enumerate() {
             for (j, var) in scope.iter().enumerate() {
@@ -611,7 +613,11 @@ impl VariableLocations {
                     variables.push(VariableMatch {
                         name: var.name.clone(),
                         scoped_name: format!("{}_{}_{}", i, j, var.name),
-                        ranges: var.locations.iter().cloned().collect(),
+                        ranges: var
+                            .locations
+                            .iter()
+                            .map(|range| Range::from_byte_range(source, *range))
+                            .collect(),
                     });
                 }
             }

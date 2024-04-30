@@ -60,7 +60,7 @@ pub struct Problem {
 
 impl Problem {
     pub fn compiled_vars(&self) -> Vec<VariableMatch> {
-        self.variables.compiled_vars()
+        self.variables.compiled_vars(&self.tree.source)
     }
 }
 

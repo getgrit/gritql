@@ -21,8 +21,14 @@ expression: results
       - name: $match
         scopedName: 1_0_$match
         ranges:
-          - start: 0
-            end: 12
+          - start:
+              line: 1
+              column: 1
+            end:
+              line: 1
+              column: 13
+            startByte: 0
+            endByte: 12
     sourceFile: foo.md
     ranges:
       - start:

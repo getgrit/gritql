@@ -9,7 +9,7 @@ use crate::{
     pattern::resolved_pattern::ResolvedPattern,
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::{AnalysisLogs, ByteRange, CodeRange, VariableMatch};
+use grit_util::{AnalysisLogs, ByteRange, CodeRange, VariableBinding};
 use im::{vector, Vector};
 use rand::SeedableRng;
 use std::collections::HashMap;
@@ -220,7 +220,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         &self,
         language: &Q::Language<'a>,
         current_name: Option<&str>,
-    ) -> (Vec<VariableMatch>, Vec<ByteRange>, bool) {
+    ) -> (Vec<VariableBinding>, Vec<ByteRange>, bool) {
         let mut matches = vec![];
         let mut top_level_matches = vec![];
         let mut suppressed = false;
@@ -254,7 +254,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
                     continue;
                 }
                 let scoped_name = format!("{}_{}_{}", i, j, name);
-                let var_match = VariableMatch::new(name, scoped_name, var_ranges);
+                let var_match = VariableBinding::new(name, scoped_name, var_ranges);
                 matches.push(var_match);
             }
         }
