@@ -14172,7 +14172,7 @@ fn ruby_hello_world() {
             pattern: r#"
                 |language ruby
                 |
-                |`puts $string` => `puts $string + " modified"`
+                |`puts ^string` => `puts ^string + " modified"`
                 |"#
             .trim_margin()
             .unwrap(),
@@ -14200,11 +14200,11 @@ fn ruby_if() {
             pattern: r#"
                 |language ruby
                 |
-                |`if $x
-                |   puts $success
+                |`if ^x
+                |   puts ^success
                 |end` where {
-                |   $x => `y > 2`,
-                |   $success => `"y is greater than 2"`,
+                |   ^x => `y > 2`,
+                |   ^success => `"y is greater than 2"`,
                 |}
                 |"#
             .trim_margin()
@@ -14235,17 +14235,17 @@ fn ruby_class() {
             pattern: r#"
                 |language ruby
                 |
-                |`class $x < $superclass
-                |   def $name($y,h)
-                |      $yinstance, @height = $y, h
+                |`class ^x < ^superclass
+                |   def ^name(^y,h)
+                |      ^yinstance, @height = ^y, h
                 |   end
-                |   $_
+                |   ^_
                 |end` where {
-                |   $x => `Foo`,
-                |   $superclass => `Bar`,
-                |   $name => `init`,
-                |   $y => `w`,
-                |   $yinstance => `@w`,
+                |   ^x => `Foo`,
+                |   ^superclass => `Bar`,
+                |   ^name => `init`,
+                |   ^y => `w`,
+                |   ^yinstance => `@w`,
                 |}
                 |"#
             .trim_margin()
@@ -14290,9 +14290,9 @@ fn ruby_class_2() {
             pattern: r#"
                 |language ruby
                 |
-                |`$yinstance, @height = $y, h` where {
-                |   $y => `w`,
-                |   $yinstance => `@w`,
+                |`^yinstance, @height = ^y, h` where {
+                |   ^y => `w`,
+                |   ^yinstance => `@w`,
                 |}
                 |"#
             .trim_margin()
@@ -14338,8 +14338,8 @@ fn ruby_class_method() {
                 |language ruby
                 |
                 |`class Box
-                |   $methods
-                |end` => `$methods`
+                |   ^methods
+                |end` => `^methods`
                 |"#
             .trim_margin()
             .unwrap(),
@@ -14371,10 +14371,10 @@ fn ruby_class_method_2() {
             pattern: r#"
                 |language ruby
                 |
-                |`def $name($_)
-                |    $body
+                |`def ^name(^_)
+                |    ^body
                 |end` where {
-                |   $name => `foo`
+                |   ^name => `foo`
                 |}
                 |"#
             .trim_margin()
@@ -14409,11 +14409,11 @@ fn ruby_each() {
             pattern: r#"
                 |language ruby
                 |
-                |`[a, b, c].each do |$a|
-                |   puts $b
+                |`[a, b, c].each do |^a|
+                |   puts ^b
                 |end` where {
-                |   $a => `x`,
-                |   $b => `x`,
+                |   ^a => `x`,
+                |   ^b => `x`,
                 |}
                 |"#
             .trim_margin()
@@ -14444,8 +14444,8 @@ fn ruby_scope() {
             pattern: r#"
                 |language ruby
                 |
-                |`puts abc::$a` where {
-                |   $a => `X`,
+                |`puts abc::^a` where {
+                |   ^a => `X`,
                 |}
                 |"#
             .trim_margin()
@@ -14476,8 +14476,8 @@ fn ruby_lambda() {
             pattern: r#"
                 |language ruby
                 |
-                |`lambda {|$a| $a**$b }` where {
-                |   $b => `3`,
+                |`lambda {|^a| ^a**^b }` where {
+                |   ^b => `3`,
                 |}
                 |"#
             .trim_margin()
@@ -14508,7 +14508,7 @@ fn ruby_case() {
             pattern: r#"
                 |language ruby
                 |
-                |`when $a
+                |`when ^a
                 |  print('It is a string')` => `when Integer
                 |  print('It is an integer')`
                 |"#
@@ -14553,10 +14553,10 @@ fn ruby_nested_module() {
                 |language ruby
                 |
                 |`module Foo
-                |   module $foo_child
+                |   module ^foo_child
                 |   end
                 |end` where {
-                |   $foo_child => `Child`    
+                |   ^foo_child => `Child`    
                 |}
                 |"#
             .trim_margin()
@@ -14636,6 +14636,58 @@ fn ruby_array() {
             .unwrap(),
             expected: r#"
                 |person = [1]
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn ruby_hash() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`^prop: ^key` => `^key: ^prop`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |person = {name: "Alice", age: 25, city: "New York"}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |person = {"Alice": name, 25: age, "New York": city}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn ruby_array_global() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language ruby
+                |
+                |`$a, ^b, ^c` => `"replaced", ^b, ^c, ^b, ^c`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |person = [$a, 2, 3]
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |person = ["replaced", 2, 3, 2, 3]
                 |"#
             .trim_margin()
             .unwrap(),
