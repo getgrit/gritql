@@ -14599,58 +14599,6 @@ fn ruby_hash() {
             pattern: r#"
                 |language ruby
                 |
-                |`$prop: $key` => `$key: $prop`
-                |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"
-                |person = {name: "Alice", age: 25, city: "New York"}
-                |"#
-            .trim_margin()
-            .unwrap(),
-            expected: r#"
-                |person = {"Alice": name, 25: age, "New York": city}
-                |"#
-            .trim_margin()
-            .unwrap(),
-        }
-    })
-    .unwrap();
-}
-
-#[test]
-fn ruby_array() {
-    run_test_expected({
-        TestArgExpected {
-            pattern: r#"
-                |language ruby
-                |
-                |`$a, 2, 3` => `$a`
-                |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"
-                |person = [1, 2, 3]
-                |"#
-            .trim_margin()
-            .unwrap(),
-            expected: r#"
-                |person = [1]
-                |"#
-            .trim_margin()
-            .unwrap(),
-        }
-    })
-    .unwrap();
-}
-
-#[test]
-fn ruby_hash() {
-    run_test_expected({
-        TestArgExpected {
-            pattern: r#"
-                |language ruby
-                |
                 |`^prop: ^key` => `^key: ^prop`
                 |"#
             .trim_margin()
