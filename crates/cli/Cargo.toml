@@ -58,6 +58,9 @@ clap-markdown = { git = "https://github.com/getgrit/clap-markdown", rev = "4568d
 flate2 = { version = "1.0.17", features = [
   "rust_backend",
 ], default-features = false }
+axoupdater = { version = "0.6.4", default-features = false, features = [
+  "github_releases"
+] }
 
 opentelemetry-otlp = { version = "0.14.0", optional = true, features = [
   "http-proto",

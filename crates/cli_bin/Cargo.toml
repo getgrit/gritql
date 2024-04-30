@@ -63,7 +63,7 @@ dist = true
 default-features = false
 features = ["marzano-cli/grit_beta"]
 # the npm package should have this name
-npm-package = "launcher"
+npm-package = "cli"
 # the homebrew package should have this name
 formula = "grit"
 
