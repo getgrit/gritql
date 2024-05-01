@@ -9,12 +9,15 @@ use crate::{
     info::AuthInfo,
 };
 
-/// Attempts to read a variable, first from Doppler, then from the environment.
+/// Attempts to read a variable, first from the environment, then from Doppler.
 ///
 /// If neither source has the variable, an error is returned.
 fn get_config_var(var_name: &str) -> Result<String> {
-    use std::process::Command;
+    if let Ok(value) = env::var(var_name) {
+        return Ok(value);
+    }
 
+    use std::process::Command;
     let output = Command::new("doppler")
         .args(["secrets", "get", var_name, "--plain"])
         .output();
@@ -22,13 +25,12 @@ fn get_config_var(var_name: &str) -> Result<String> {
     match output {
         Ok(output) if output.status.success() => {
             let value = String::from_utf8_lossy(&output.stdout).trim().to_string();
-
             Ok(value)
         }
-        _ => {
-            let value = env::var(var_name)?;
-            Ok(value)
-        }
+        _ => Err(anyhow::anyhow!(
+            "Variable {} not found in environment or Doppler",
+            var_name
+        )),
     }
 }
 
