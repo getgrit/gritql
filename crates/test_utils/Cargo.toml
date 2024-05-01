@@ -16,7 +16,7 @@ rust.unused_crate_dependencies = "warn"
 
 [dependencies]
 anyhow = { version = "1.0.70" }
-marzano-auth = { path = "../auth" }
+marzano-auth = { path = "../auth", features = ["test-utils"] }
 assert_cmd = { version = "2.0.12" }
 tempfile = { version = "3.1" }
 fs_extra = { version = "1.3" }

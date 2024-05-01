@@ -2,6 +2,7 @@ use anyhow::bail;
 use anyhow::{Context, Result};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::Colorize;
+use futures_util::StreamExt;
 use log::info;
 use marzano_auth::info::AuthInfo;
 use marzano_gritmodule::config::REPO_CONFIG_DIR_NAME;
@@ -359,7 +360,10 @@ impl Updater {
         let (downloaded, manifest) = tokio::try_join!(downloader, manifest_fetcher)?;
 
         // Unzip the artifact
-        self.unpack_artifact(app, downloaded).await?;
+        self.unpack_artifact(app, downloaded.to_owned()).await?;
+
+        // Clean up the temp artifact
+        async_fs::remove_file(&downloaded).await?;
 
         self.set_app_version(app, manifest.version.unwrap(), manifest.release.unwrap())?;
         self.dump().await?;
@@ -444,17 +448,17 @@ impl Updater {
     async fn download_artifact(&self, app: SupportedApp, artifact_url: String) -> Result<PathBuf> {
         let target_path = self.bin_path.join(format!("{}-temp", app.get_bin_name()));
 
-        // Download via curl
-        let cmd = AsyncCommand::new("curl")
-            .arg("-L")
-            .arg("-o")
-            .arg(&target_path)
-            .arg(&artifact_url)
-            .output()
-            .await?;
-
-        if !cmd.status.success() {
-            bail!("Failed to download artifact: {:?}", cmd);
+        match reqwest::get(&artifact_url).await {
+            Ok(response) => {
+                let mut file = async_fs::File::create(&target_path).await?;
+                let mut bytes_stream = response.bytes_stream();
+                while let Some(chunk) = bytes_stream.next().await {
+                    tokio::io::copy(&mut chunk?.as_ref(), &mut file).await?;
+                }
+            }
+            Err(e) => {
+                bail!("Failed to download artifact: {:?}", e);
+            }
         }
 
         Ok(target_path)
@@ -484,42 +488,35 @@ impl Updater {
         }
 
         let target_path = self.get_app_bin(&app)?;
-        let output = AsyncCommand::new("mv")
-            .arg(format!("{}/{}", unpacked_dir.display(), app.get_bin_name()))
-            .arg(&target_path)
-            .output()
-            .await?;
-
-        if !output.status.success() {
-            let fallback_output = AsyncCommand::new("mv")
-                .arg(format!(
-                    "{}/{}",
-                    unpacked_dir.display(),
-                    app.get_fallback_bin_name()
-                ))
-                .arg(&target_path)
-                .output()
-                .await?;
-            if !fallback_output.status.success() {
-                bail!("Failed to move files: {:?}", output);
+        if async_fs::rename(unpacked_dir.join(app.get_bin_name()), &target_path)
+            .await
+            .is_err()
+        {
+            if let Err(e) =
+                async_fs::rename(unpacked_dir.join(app.get_fallback_bin_name()), &target_path).await
+            {
+                bail!("Failed to move files: {:?}", e);
             }
         }
 
         // Make the file executable
-        let output = AsyncCommand::new("chmod")
-            .arg("+x")
-            .arg(&target_path)
-            .output()
-            .await?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
 
-        if !output.status.success() {
-            bail!(
-                "Failed to make {} executable: {:?}",
-                target_path.display(),
-                output
-            );
+            let target_file = std::fs::File::open(&target_path)?;
+            let mut perms = target_file.metadata()?.permissions();
+            perms.set_mode(0o744);
+            if let Err(e) = target_file.set_permissions(perms) {
+                bail!(
+                    "Failed to make {} executable: {:?}",
+                    target_path.display(),
+                    e
+                );
+            }
+
+            info!("Successfully made {} executable", target_path.display());
         }
-        info!("Successfully made {} executable", target_path.display());
 
         async_fs::remove_dir_all(&unpacked_dir).await?;
 
