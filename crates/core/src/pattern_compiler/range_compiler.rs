@@ -28,5 +28,5 @@ impl NodeCompiler for RangeCompiler {
 fn node_to_int(node: &NodeWithSource, field: &str) -> Result<Option<u32>> {
     node.child_by_field_name(field)
         .map(|n| Ok(n.text()?.parse::<u32>()?))
-        .map_or(Ok(None), |v| v.map(Some))
+        .transpose()
 }
