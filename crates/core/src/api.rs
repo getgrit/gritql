@@ -298,24 +298,8 @@ impl Match {
         Self {
             debug: input_file_debug_text,
             source_file: name.to_owned(),
-            ranges: match_ranges
-                .ranges
-                .iter()
-                .map(|byte_range| Range::from_byte_range(&tree.source, *byte_range))
-                .collect(),
-            variables: match_ranges
-                .variables
-                .iter()
-                .map(|var| VariableMatch {
-                    name: var.name.clone(),
-                    scoped_name: var.scoped_name.clone(),
-                    ranges: var
-                        .ranges
-                        .iter()
-                        .map(|range| Range::from_byte_range(&tree.source, *range))
-                        .collect(),
-                })
-                .collect(),
+            ranges: match_ranges.ranges.clone(),
+            variables: match_ranges.variables.clone(),
             messages: vec![],
         }
     }

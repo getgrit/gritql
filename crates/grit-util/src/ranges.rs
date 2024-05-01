@@ -245,8 +245,8 @@ fn byte_index_to_char_offset(index: usize, text: &str) -> usize {
 
 #[derive(Debug, Clone)]
 pub struct InputRanges {
-    pub ranges: Vec<ByteRange>,
-    pub variables: Vec<VariableBinding>,
+    pub ranges: Vec<Range>,
+    pub variables: Vec<VariableMatch>,
     pub suppressed: bool,
 }
 
@@ -289,6 +289,16 @@ pub struct VariableMatch {
     pub name: String,
     pub scoped_name: String,
     pub ranges: Vec<Range>,
+}
+
+impl VariableMatch {
+    pub fn new(name: String, scoped_name: String, ranges: Vec<Range>) -> Self {
+        Self {
+            name,
+            scoped_name,
+            ranges,
+        }
+    }
 }
 
 #[cfg(test)]
