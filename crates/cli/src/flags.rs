@@ -1,4 +1,4 @@
-#[derive(Debug, Default, clap::Args)]
+#[derive(Debug, Default, clap::Args, Clone)]
 pub struct GlobalFormatFlags {
     /// Enable JSON output, only supported on some commands
     #[arg(long, global = true, conflicts_with = "jsonl")]

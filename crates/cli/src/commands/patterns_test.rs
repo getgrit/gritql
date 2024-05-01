@@ -27,11 +27,15 @@ use marzano_messenger::emit::{get_visibility, VisibilityLevels};
 use super::patterns::PatternsTestArgs;
 
 use anyhow::{anyhow, bail, Context as _, Result};
+use std::{path::Path, time::Duration};
+
+use notify::{self, RecursiveMode};
+use notify_debouncer_mini::{new_debouncer_opt, Config};
 
 pub async fn get_marzano_pattern_test_results(
     patterns: Vec<GritPatternTestInfo>,
     libs: &PatternsDirectory,
-    args: PatternsTestArgs,
+    args: &PatternsTestArgs,
     output: OutputFormat,
 ) -> Result<()> {
     let cwd = std::env::current_dir()?;
@@ -241,7 +245,6 @@ pub async fn get_marzano_pattern_test_results(
             bail!("Output format not supported for this command");
         }
     }
-
     Ok(())
 }
 
@@ -276,7 +279,55 @@ pub(crate) async fn run_patterns_test(
         bail!("No testable patterns found. To test a pattern, make sure it is defined in .grit/grit.yaml or a .md file in your .grit/patterns directory.");
     }
     info!("Found {} testable patterns.", testable_patterns.len(),);
-    get_marzano_pattern_test_results(testable_patterns, &libs, arg, flags.into()).await
+    get_marzano_pattern_test_results(testable_patterns, &libs, &arg, flags.clone().into()).await?;
+
+    if arg.watch {
+        enable_watch_mode(arg, flags);
+    }
+    Ok(())
+}
+
+fn enable_watch_mode(cmd_arg: PatternsTestArgs, cmd_flags: GlobalFormatFlags) -> () {
+    let path = Path::new(".grit");
+    // setup debouncer
+    let (tx, rx) = std::sync::mpsc::channel();
+    // notify backend configuration
+    let backend_config = notify::Config::default().with_poll_interval(Duration::from_millis(10));
+    // debouncer configuration
+    let debouncer_config = Config::default()
+        .with_timeout(Duration::from_millis(10))
+        .with_notify_config(backend_config);
+    // select backend via fish operator, here PollWatcher backend
+    let mut debouncer = new_debouncer_opt::<_, notify::PollWatcher>(debouncer_config, tx).unwrap();
+
+    debouncer
+        .watcher()
+        .watch(path, RecursiveMode::Recursive)
+        .unwrap();
+    log::info!("\nWatch mode enabled on path: {}", path.display());
+
+    // event pocessing
+    for result in rx {
+        match result {
+            Ok(event) => {
+                log::info!(
+                    "\nFile modified: {:?}\nRe-running patterns test...\n",
+                    event
+                );
+
+                let mut arg = cmd_arg.clone();
+                let flags = cmd_flags.clone();
+                arg.watch = false; //avoid creating infinite watchers
+
+                tokio::spawn(async move {
+                    let _ = run_patterns_test(arg, flags).await;
+                });
+            }
+            Err(error) => {
+                log::error!("Error {error:?}")
+            }
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]
