@@ -1330,18 +1330,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "grit_cache"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "marzano-gritmodule",
- "marzano-util",
- "tokio",
-]
-
-[[package]]
 name = "grit-wasm-bindings"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "ai_builtins",
  "anyhow",
@@ -1357,6 +1347,16 @@ dependencies = [
  "wasm-bindgen-futures",
  "wasm-bindgen-test",
  "web-tree-sitter-sg",
+]
+
+[[package]]
+name = "grit_cache"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "marzano-gritmodule",
+ "marzano-util",
+ "tokio",
 ]
 
 [[package]]
@@ -2029,7 +2029,7 @@ dependencies = [
 
 [[package]]
 name = "marzano-gritmodule"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "git2",
