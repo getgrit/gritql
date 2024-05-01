@@ -22,12 +22,10 @@ fn get_config_var(var_name: &str) -> Result<String> {
     match output {
         Ok(output) if output.status.success() => {
             let value = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            println!("Got Doppler secret for {}: {}", var_name, value);
             Ok(value)
         }
         _ => {
             let value = env::var(var_name)?;
-            println!("Got env var for {}: {}", var_name, value);
             Ok(value)
         }
     }
