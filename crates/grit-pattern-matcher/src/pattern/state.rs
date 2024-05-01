@@ -98,11 +98,11 @@ fn get_top_level_effect_ranges<'a, Q: QueryContext>(
         })
         .map(|effect| {
             let binding = &effect.binding;
-            let ts_range = binding
-                .position(language)
-                .ok_or_else(|| anyhow!("binding has no position"))?;
-            let end_byte = ts_range.end_byte;
-            let start_byte = ts_range.start_byte;
+            let byte_range = binding
+                .range(language)
+                .ok_or_else(|| anyhow!("binding has no range"))?;
+            let end_byte = byte_range.end as u32;
+            let start_byte = byte_range.start as u32;
             Ok(EffectRange {
                 range: start_byte..end_byte,
                 effect: effect.clone(),
@@ -179,11 +179,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
             .enumerate()
             .map(|(index, content)| {
                 let mut content = content.clone();
-                let pattern = if index < args.len() {
-                    args[index].as_ref()
-                } else {
-                    None
-                };
+                let pattern = args.get(index).and_then(Option::as_ref);
                 if let Some(Pattern::Variable(v)) = pattern {
                     content.mirrors.push(v)
                 };
@@ -267,4 +263,4 @@ impl<'a, Q: QueryContext> State<'a, Q> {
     }
 }
 
-type VarRegistry<'a, P> = Vector<Vector<Vector<Box<VariableContent<'a, P>>>>>;
+pub type VarRegistry<'a, P> = Vector<Vector<Vector<Box<VariableContent<'a, P>>>>>;

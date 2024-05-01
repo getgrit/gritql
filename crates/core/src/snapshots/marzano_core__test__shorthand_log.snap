@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/core/src/test.rs
+source: crates/core/src/test.rs
 expression: results
 ---
 - __typename: Match
@@ -77,4 +77,3 @@ expression: results
     endByte: 11
   syntaxTree: (identifier)
   source: baz
-

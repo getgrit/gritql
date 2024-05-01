@@ -29,9 +29,9 @@ impl NodeCompiler for LogCompiler {
             .map(|n| {
                 let name = n.text()?;
                 let variable = VariableCompiler::from_node(&n, context)?;
-                Ok(VariableInfo::new(name.to_string(), variable))
+                Ok::<_, anyhow::Error>(VariableInfo::new(name.to_string(), variable))
             })
-            .map_or(Ok(None), |v: Result<VariableInfo>| v.map(Some))?;
+            .transpose()?;
 
         Ok(Log::new(variable, message))
     }

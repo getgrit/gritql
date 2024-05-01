@@ -23,8 +23,8 @@ impl NodeCompiler for ContainsCompiler {
         let contains = PatternCompiler::from_node(&contains, context)?;
         let until = node
             .child_by_field_name("until")
-            .map(|n| PatternCompiler::from_node(&n, context));
-        let until = until.map_or(Ok(None), |v| v.map(Some))?;
+            .map(|n| PatternCompiler::from_node(&n, context))
+            .transpose()?;
         Ok(Contains::new(contains, until))
     }
 }

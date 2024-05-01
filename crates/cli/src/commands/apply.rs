@@ -52,6 +52,10 @@ pub(crate) async fn run_apply(
 ) -> Result<()> {
     #[cfg(feature = "workflows_v2")]
     {
+        if args.apply_migration_args.remote {
+            println!("Apply {} remotely", args.pattern_or_workflow);
+            anyhow::bail!("Remote workflows are not yet supported");
+        }
         let current_dir = current_dir()?;
         let custom_workflow = find_workflow_file_from(current_dir, &args.pattern_or_workflow).await;
         if let Some(custom_workflow) = custom_workflow {

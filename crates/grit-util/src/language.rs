@@ -1,4 +1,4 @@
-use crate::{constants::*, traverse, AstNode, CodeRange, Order, Range};
+use crate::{constants::*, traverse, AstNode, ByteRange, CodeRange, Order, Range};
 use regex::Regex;
 
 pub enum GritMetaValue {
@@ -60,8 +60,8 @@ pub trait Language: Sized {
     }
 
     // assumes trim doesn't do anything otherwise range is off
-    fn comment_text_range(&self, node: &Self::Node<'_>) -> Option<Range> {
-        Some(node.range())
+    fn comment_text_range(&self, node: &Self::Node<'_>) -> Option<ByteRange> {
+        Some(node.byte_range())
     }
 
     // in languages we pad such as python or yaml there are

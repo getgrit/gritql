@@ -28,7 +28,7 @@ impl NodeCompiler for IfCompiler {
         let else_ = node
             .child_by_field_name("else")
             .map(|e| PatternCompiler::from_node(&e, context))
-            .map_or(Ok(None), |v| v.map(Some))?;
+            .transpose()?;
         Ok(If::new(if_, then, else_))
     }
 }
@@ -54,7 +54,7 @@ impl NodeCompiler for PrIfCompiler {
         let else_ = node
             .child_by_field_name("else")
             .map(|e| PredicateCompiler::from_node(&e, context))
-            .map_or(Ok(None), |v| v.map(Some))?;
+            .transpose()?;
         Ok(PrIf::new(if_, then, else_))
     }
 }

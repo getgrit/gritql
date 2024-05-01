@@ -17,5 +17,5 @@ pub use parser::{Ast, Parser, SnippetTree};
 pub use position::Position;
 pub use ranges::{
     ByteRange, FileRange, InputRanges, MatchRanges, Range, RangeWithoutByte, UtilRange,
-    VariableMatch,
+    VariableBinding, VariableMatch,
 };

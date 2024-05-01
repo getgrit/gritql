@@ -1,7 +1,6 @@
-use std::path::PathBuf;
-
 use crate::Position;
 use serde::{Deserialize, Serialize};
+use std::{ops::Add, path::PathBuf};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(rename_all = "camelCase")]
@@ -13,19 +12,24 @@ pub struct Range {
 }
 
 impl Range {
-    pub fn abbreviated_debug(&self) -> String {
-        format!(
-            "[{}-{}]/[{}-{}]",
-            self.start, self.end, self.start_byte, self.end_byte
-        )
-    }
-
     pub fn new(start: Position, end: Position, start_byte: u32, end_byte: u32) -> Self {
         Self {
             start,
             end,
             start_byte,
             end_byte,
+        }
+    }
+
+    pub fn from_byte_range(source: &str, byte_range: ByteRange) -> Self {
+        let start = Position::from_byte_index(source, byte_range.start);
+        let end =
+            Position::from_relative_byte_index(start, byte_range.start, source, byte_range.end);
+        Self {
+            start,
+            end,
+            start_byte: byte_range.start as u32,
+            end_byte: byte_range.end as u32,
         }
     }
 
@@ -125,21 +129,6 @@ impl Range {
         };
         Some((start as usize, end as usize))
     }
-
-    /// Converts a range expressed in byte indices to a range expressed in
-    /// character offets.
-    pub fn byte_range_to_char_range(self, context: &str) -> Self {
-        let start = self.start.byte_position_to_char_position(context);
-        let end = self.end.byte_position_to_char_position(context);
-        let start_byte = byte_index_to_char_offset(self.start_byte, context);
-        let end_byte = byte_index_to_char_offset(self.end_byte, context);
-        Self {
-            start,
-            end,
-            start_byte,
-            end_byte,
-        }
-    }
 }
 
 // A simple range, without byte information
@@ -189,11 +178,38 @@ impl From<RangeWithoutByte> for UtilRange {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Hash, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct ByteRange {
     pub start: usize,
     pub end: usize,
+}
+
+impl ByteRange {
+    pub fn new(start: usize, end: usize) -> Self {
+        Self { start, end }
+    }
+
+    pub fn abbreviated_debug(&self) -> String {
+        format!("[{}-{}]", self.start, self.end)
+    }
+
+    /// Converts a range expressed in byte indices to a range expressed in
+    /// character offsets.
+    pub fn to_char_range(self, context: &str) -> Self {
+        let start = byte_index_to_char_offset(self.start, context);
+        let end = byte_index_to_char_offset(self.end, context);
+        Self { start, end }
+    }
+}
+
+impl From<Range> for ByteRange {
+    fn from(value: Range) -> Self {
+        Self {
+            start: value.start_byte as usize,
+            end: value.end_byte as usize,
+        }
+    }
 }
 
 impl From<std::ops::Range<usize>> for ByteRange {
@@ -205,6 +221,17 @@ impl From<std::ops::Range<usize>> for ByteRange {
     }
 }
 
+impl Add<usize> for ByteRange {
+    type Output = Self;
+
+    fn add(self, rhs: usize) -> Self::Output {
+        Self {
+            start: self.start + rhs,
+            end: self.end + rhs,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FileRange {
@@ -212,10 +239,8 @@ pub struct FileRange {
     pub range: UtilRange,
 }
 
-fn byte_index_to_char_offset(index: u32, text: &str) -> u32 {
-    text.char_indices()
-        .take_while(|(i, _)| *i < index as usize)
-        .count() as u32
+fn byte_index_to_char_offset(index: usize, text: &str) -> usize {
+    text.char_indices().take_while(|(i, _)| *i < index).count()
 }
 
 #[derive(Debug, Clone)]
@@ -236,6 +261,24 @@ impl MatchRanges {
         Self {
             input_matches: None,
             byte_ranges: Some(byte_ranges),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "camelCase")]
+pub struct VariableBinding {
+    pub name: String,
+    pub scoped_name: String,
+    pub ranges: Vec<ByteRange>,
+}
+
+impl VariableBinding {
+    pub fn new(name: String, scoped_name: String, ranges: Vec<ByteRange>) -> Self {
+        Self {
+            name,
+            scoped_name,
+            ranges,
         }
     }
 }
@@ -291,17 +334,11 @@ mod tests {
 
     #[test]
     fn byte_range_to_char_range() {
-        let range = Range::new(Position::new(1, 8), Position::new(1, 10), 7, 9);
-        let new_range = range.byte_range_to_char_range("const [µb, fµa]");
-        assert_eq!(
-            new_range,
-            Range::new(Position::new(1, 8), Position::new(1, 9), 7, 8)
-        );
-        let range = Range::new(Position::new(1, 16), Position::new(1, 18), 15, 17);
-        let new_range = range.byte_range_to_char_range("const [µb, fµa]");
-        assert_eq!(
-            new_range,
-            Range::new(Position::new(1, 14), Position::new(1, 16), 13, 15)
-        );
+        let range = ByteRange::new(7, 9);
+        let new_range = range.to_char_range("const [µb, fµa]");
+        assert_eq!(new_range, ByteRange::new(7, 8));
+        let range = ByteRange::new(15, 17);
+        let new_range = range.to_char_range("const [µb, fµa]");
+        assert_eq!(new_range, ByteRange::new(13, 15));
     }
 }

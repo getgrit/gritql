@@ -28,7 +28,7 @@ use crate::{
 };
 use anyhow::Result;
 use clap::ValueEnum;
-use grit_util::{Ast, AstNode, CodeRange, Language, Parser, SnippetTree};
+use grit_util::{Ast, AstNode, ByteRange, CodeRange, Language, Parser, SnippetTree};
 use marzano_util::node_with_source::NodeWithSource;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -472,7 +472,7 @@ macro_rules! generate_target_language {
                 }
             }
 
-            fn comment_text_range(&self, node: &Self::Node<'_>) -> Option<grit_util::Range> {
+            fn comment_text_range(&self, node: &Self::Node<'_>) -> Option<ByteRange> {
                 match self {
                     $(Self::$language(lang) => Language::comment_text_range(lang, node)),+
                 }

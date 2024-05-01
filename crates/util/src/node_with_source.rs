@@ -1,5 +1,5 @@
 use super::cursor_wrapper::CursorWrapper;
-use grit_util::{AstCursor, AstNode, CodeRange, Position, Range};
+use grit_util::{AstCursor, AstNode, ByteRange, CodeRange, Position, Range};
 use std::{borrow::Cow, ptr, str::Utf8Error};
 use tree_sitter::Node;
 
@@ -56,6 +56,18 @@ impl<'a> NodeWithSource<'a> {
             .field_id_for_name(field_name)
             .unwrap_or_default();
         self.named_children_by_field_id(field_id)
+    }
+
+    pub fn range(&self) -> Range {
+        let ts_range = self.node.range();
+        let start = ts_range.start_point();
+        let end = ts_range.end_point();
+        Range {
+            start: Position::new(start.row() + 1, start.column() + 1),
+            end: Position::new(end.row() + 1, end.column() + 1),
+            start_byte: ts_range.start_byte(),
+            end_byte: ts_range.end_byte(),
+        }
     }
 }
 
@@ -119,16 +131,11 @@ impl<'a> AstNode for NodeWithSource<'a> {
         self.node.utf8_text(self.source.as_bytes())
     }
 
-    fn range(&self) -> Range {
-        let ts_range = self.node.range();
-        let start = ts_range.start_point();
-        let end = ts_range.end_point();
-        Range {
-            start: Position::new(start.row() + 1, start.column() + 1),
-            end: Position::new(end.row() + 1, end.column() + 1),
-            start_byte: ts_range.start_byte(),
-            end_byte: ts_range.end_byte(),
-        }
+    fn byte_range(&self) -> ByteRange {
+        ByteRange::new(
+            self.node.start_byte() as usize,
+            self.node.end_byte() as usize,
+        )
     }
 
     fn code_range(&self) -> CodeRange {

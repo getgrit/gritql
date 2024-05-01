@@ -35,16 +35,27 @@ impl Position {
 
     /// Creates a position for the given `byte_index` in the given `source`.
     pub fn from_byte_index(source: &str, byte_index: usize) -> Self {
-        let mut pos = Self::first();
-        for c in source[..byte_index].chars() {
+        Self::from_relative_byte_index(Self::first(), 0, source, byte_index)
+    }
+
+    /// Create a position for the given `byte_index` in the given `source`,
+    /// counting from the given other position. This avoids double work in case
+    /// one position lies after another.
+    pub fn from_relative_byte_index(
+        mut prev: Self,
+        prev_byte_index: usize,
+        source: &str,
+        byte_index: usize,
+    ) -> Self {
+        for c in source[prev_byte_index..byte_index].chars() {
             if c == '\n' {
-                pos.line += 1;
-                pos.column = 1;
+                prev.line += 1;
+                prev.column = 1;
             } else {
-                pos.column += c.len_utf8() as u32;
+                prev.column += c.len_utf8() as u32;
             }
         }
-        pos
+        prev
     }
 
     /// Returns the byte index for this `Position` within the given `source`.
@@ -55,30 +66,6 @@ impl Position {
             .map(|line| line.len() + 1)
             .sum();
         line_start_index + (self.column as usize) - 1
-    }
-
-    /// Converts a position expressed in byte indices to a position expressed in
-    /// character offsets.
-    pub(crate) fn byte_position_to_char_position(self, context: &str) -> Self {
-        let mut char_pos = Position { line: 1, column: 1 };
-        let mut bytes_processed = 0;
-
-        for c in context.chars() {
-            bytes_processed += c.len_utf8();
-
-            if self.line == char_pos.line && bytes_processed >= self.column as usize {
-                break;
-            }
-
-            if c == '\n' {
-                char_pos.line += 1;
-                char_pos.column = 1;
-            } else {
-                char_pos.column += 1;
-            }
-        }
-
-        char_pos
     }
 }
 

@@ -8,7 +8,7 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::pattern::{Bubble, Pattern, PatternDefinition};
-use grit_util::{AstNode, Range};
+use grit_util::{AstNode, ByteRange};
 use itertools::Itertools;
 use marzano_util::node_with_source::NodeWithSource;
 use std::{collections::BTreeMap, str::Utf8Error};
@@ -31,8 +31,8 @@ impl NodeCompiler for BubbleCompiler {
 
         let parameters: Vec<_> = node
             .named_children_by_field_name("variables")
-            .map(|n| Ok::<(String, Range), Utf8Error>((n.text()?.trim().to_string(), n.range())))
-            .collect::<Result<Vec<_>, Utf8Error>>()?;
+            .map(|n| Ok((n.text()?.trim().to_string(), n.byte_range())))
+            .collect::<Result<Vec<(String, ByteRange)>, Utf8Error>>()?;
         if parameters.iter().unique_by(|n| &n.0).count() != parameters.len() {
             bail!("bubble parameters must be unique, but had a repeated name in its parameters.")
         }

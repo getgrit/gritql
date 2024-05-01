@@ -11,7 +11,9 @@ use grit_pattern_matcher::{
     effects::{Effect, EffectKind},
     pattern::{get_top_level_effects, FileRegistry, ResolvedPattern},
 };
-use grit_util::{AnalysisLogBuilder, AnalysisLogs, AstNode, CodeRange, Language, Position, Range};
+use grit_util::{
+    AnalysisLogBuilder, AnalysisLogs, AstNode, ByteRange, CodeRange, Language, Position, Range,
+};
 use itertools::{EitherOrBoth, Itertools};
 use marzano_language::language::{FieldId, MarzanoLanguage};
 use marzano_language::target_language::TargetLanguage;
@@ -25,7 +27,7 @@ use std::{borrow::Cow, collections::HashMap};
 pub enum MarzanoBinding<'a> {
     // used by slices that don't correspond to a node
     // currently only comment content.
-    String(&'a str, Range),
+    String(&'a str, ByteRange),
     FileName(&'a Path),
     Node(NodeWithSource<'a>),
     // tree-sitter lists ("multiple" fields of nodes) do not have a unique identity
@@ -41,8 +43,7 @@ impl PartialEq for MarzanoBinding<'_> {
             (Self::Empty(_, _), Self::Empty(_, _)) => true,
             (Self::Node(n1), Self::Node(n2)) => n1.text() == n2.text(),
             (Self::String(src1, r1), Self::String(src2, r2)) => {
-                src1[r1.start_byte as usize..r1.end_byte as usize]
-                    == src2[r2.start_byte as usize..r2.end_byte as usize]
+                src1[r1.start..r1.end] == src2[r2.start..r2.end]
             }
             (Self::List(n1, f1), Self::List(n2, f2)) => n1 == n2 && f1 == f2,
             (Self::ConstantRef(c1), Self::ConstantRef(c2)) => c1 == c2,
@@ -249,21 +250,15 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
         .iter()
         .map(|(b, s, k)| {
             let range = b
-                .position(language)
+                .range(language)
                 .ok_or_else(|| anyhow!("binding has no position"))?;
             match k {
                 EffectKind::Insert => Ok((
-                    EffectRange::new(
-                        EffectKind::Insert,
-                        range.start_byte as usize..range.end_byte as usize,
-                    ),
+                    EffectRange::new(EffectKind::Insert, range.start..range.end),
                     s.to_string(),
                 )),
                 EffectKind::Rewrite => Ok((
-                    EffectRange::new(
-                        EffectKind::Rewrite,
-                        range.start_byte as usize..range.end_byte as usize,
-                    ),
+                    EffectRange::new(EffectKind::Rewrite, range.start..range.end),
                     s.to_string(),
                 )),
             }
@@ -305,7 +300,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         Self::FileName(path)
     }
 
-    fn from_range(range: Range, source: &'a str) -> Self {
+    fn from_range(range: ByteRange, source: &'a str) -> Self {
         Self::String(source, range)
     }
 
@@ -350,7 +345,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         match self {
             Self::Empty(_, _) => None,
             Self::Node(node) => Some(node.range()),
-            Self::String(_, range) => Some(range.to_owned()),
+            Self::String(source, range) => Some(Range::from_byte_range(source, *range)),
             Self::List(parent_node, field_id) => {
                 get_range_nodes_for_list(parent_node, field_id, language).map(
                     |(leading_node, trailing_node)| Range {
@@ -372,12 +367,34 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         }
     }
 
+    fn range(&self, language: &TargetLanguage) -> Option<ByteRange> {
+        match self {
+            Self::Empty(_, _) => None,
+            Self::Node(node) => Some(node.byte_range()),
+            Self::String(_, range) => Some(range.to_owned()),
+            Self::List(parent_node, field_id) => {
+                get_range_nodes_for_list(parent_node, field_id, language).map(
+                    |(leading_node, trailing_node)| {
+                        ByteRange::new(
+                            leading_node.node.start_byte() as usize,
+                            trailing_node.node.end_byte() as usize,
+                        )
+                    },
+                )
+            }
+            Self::FileName(_) => None,
+            Self::ConstantRef(_) => None,
+        }
+    }
+
     // todo implement for empty and empty list
     fn code_range(&self, language: &TargetLanguage) -> Option<CodeRange> {
         match self {
             Self::Empty(_, _) => None,
             Self::Node(node) => Some(node.code_range()),
-            Self::String(src, range) => Some(CodeRange::new(range.start_byte, range.end_byte, src)),
+            Self::String(src, range) => {
+                Some(CodeRange::new(range.start as u32, range.end as u32, src))
+            }
             Self::List(parent_node, field_id) => {
                 get_range_nodes_for_list(parent_node, field_id, language).map(
                     |(leading_node, trailing_node)| {
@@ -406,7 +423,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
                 Self::Node(node2) => are_equivalent(node1, node2),
                 Self::String(str, range) => self
                     .text(language)
-                    .is_ok_and(|t| t == str[range.start_byte as usize..range.end_byte as usize]),
+                    .is_ok_and(|t| t == str[range.start..range.end]),
                 Self::FileName(_) | Self::List(..) | Self::Empty(..) | Self::ConstantRef(_) => {
                     false
                 }
@@ -439,7 +456,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
             Self::ConstantRef(c1) => other.as_constant().map_or(false, |c2| *c1 == c2),
             Self::String(s1, range) => other
                 .text(language)
-                .is_ok_and(|t| t == s1[range.start_byte as usize..range.end_byte as usize]),
+                .is_ok_and(|t| t == s1[range.start..range.end]),
             Self::FileName(s1) => other.as_filename().map_or(false, |s2| *s1 == s2),
         }
     }
@@ -527,13 +544,12 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
             .map(|r| r.0),
             // can't linearize until we update source to point to the entire file
             // otherwise file file pointers won't match
-            Self::String(s, r) => Ok(Cow::Owned(
-                s[r.start_byte as usize..r.end_byte as usize].into(),
-            )),
+            Self::String(s, r) => Ok(Cow::Owned(s[r.start..r.end].into())),
             Self::FileName(s) => Ok(Cow::Owned(s.to_string_lossy().into())),
             Self::List(parent_node, _field_id) => {
-                if let Some(pos) = self.position(language) {
-                    let range = CodeRange::new(pos.start_byte, pos.end_byte, parent_node.source);
+                if let Some(range) = self.range(language) {
+                    let range =
+                        CodeRange::new(range.start as u32, range.end as u32, parent_node.source);
                     linearize_binding(
                         language,
                         effects,
@@ -560,10 +576,10 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         match self {
             Self::Empty(_, _) => Ok("".into()),
             Self::Node(node) => Ok(node.text()?),
-            Self::String(s, r) => Ok(s[r.start_byte as usize..r.end_byte as usize].into()),
+            Self::String(s, r) => Ok(s[r.start..r.end].into()),
             Self::FileName(s) => Ok(s.to_string_lossy()),
-            Self::List(node, _) => Ok(if let Some(pos) = self.position(language) {
-                node.source[pos.start_byte as usize..pos.end_byte as usize].into()
+            Self::List(node, _) => Ok(if let Some(pos) = self.range(language) {
+                node.source[pos.start..pos.end].into()
             } else {
                 "".into()
             }),

@@ -7,7 +7,7 @@ use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::pattern::{
     Call, CallForeignFunction, CallFunction, FilePattern, Pattern, PrCall,
 };
-use grit_util::{AstNode, Language, Range};
+use grit_util::{AstNode, ByteRange, Language};
 use itertools::Itertools;
 use marzano_language::language::MarzanoLanguage;
 use marzano_util::node_with_source::NodeWithSource;
@@ -173,8 +173,8 @@ impl NodeCompiler for PrCallCompiler {
     }
 }
 
-fn collect_params(parameters: &[(String, Range)]) -> Vec<String> {
-    parameters.iter().map(|p| p.0.clone()).collect::<Vec<_>>()
+fn collect_params(parameters: &[(String, ByteRange)]) -> Vec<String> {
+    parameters.iter().map(|p| p.0.clone()).collect()
 }
 
 fn match_args_to_params(
