@@ -877,7 +877,7 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
             Self::Ptr(ptr) => {
                 let file = &files.get_file(*ptr);
                 let root = file.tree.root_node();
-                let range = root.range();
+                let range = root.byte_range();
                 ResolvedPattern::from_range_binding(range, &file.tree.source)
             }
         }

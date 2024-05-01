@@ -6,7 +6,7 @@ use crate::{
     utils::is_pattern_name,
 };
 use anyhow::{bail, Context, Result};
-use grit_util::{traverse, Ast, AstNode, Order, Position};
+use grit_util::{traverse, Ast, Order, Position};
 use marzano_core::analysis::defines_itself;
 use marzano_core::api::EnforcementLevel;
 use marzano_language::grit_parser::MarzanoGritParser;

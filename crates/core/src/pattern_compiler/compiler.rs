@@ -15,15 +15,14 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
-    constants::{
-        DEFAULT_FILE_NAME,
-    },
+    constants::DEFAULT_FILE_NAME,
     pattern::{
-        GritFunctionDefinition, PatternDefinition, PredicateDefinition,
-        VariableSourceLocations,
+        GritFunctionDefinition, PatternDefinition, PredicateDefinition, VariableSourceLocations,
     },
 };
-use grit_util::{traverse, AnalysisLogs, Ast, AstNode, FileRange, Order, Range, VariableMatch};
+use grit_util::{
+    traverse, AnalysisLogs, Ast, AstNode, ByteRange, FileRange, Order, Range, VariableMatch,
+};
 use itertools::Itertools;
 use marzano_language::{
     self, grit_parser::MarzanoGritParser, language::Tree, target_language::TargetLanguage,
@@ -78,7 +77,7 @@ pub(crate) struct NodeCompilationContext<'a> {
 
 // this code looks wrong. Todo test to see if we correctly find duplicate
 // parameter names, if not fix.
-fn get_duplicates(list: &[(String, Range)]) -> Vec<&String> {
+fn get_duplicates(list: &[(String, ByteRange)]) -> Vec<&String> {
     let mut dups = BTreeSet::new();
     let unique: BTreeSet<String> = list.iter().map(|s| s.0.to_owned()).collect();
     for s in list {
@@ -102,8 +101,8 @@ fn insert_definition_index(
     let name = name.trim();
     let parameters: Vec<_> = definition
         .named_children_by_field_name("args")
-        .map(|n| Ok::<(String, Range), Utf8Error>((n.text()?.trim().to_string(), n.range())))
-        .collect::<Result<Vec<_>, Utf8Error>>()?;
+        .map(|n| Ok((n.text()?.trim().to_string(), n.byte_range())))
+        .collect::<Result<Vec<(String, ByteRange)>, Utf8Error>>()?;
     let duplicates = get_duplicates(&parameters);
     if !duplicates.is_empty() {
         bail!(
@@ -160,7 +159,7 @@ fn node_to_definition_info(
 
 pub(crate) struct DefinitionInfo {
     pub(crate) index: usize,
-    pub(crate) parameters: Vec<(String, Range)>,
+    pub(crate) parameters: Vec<(String, ByteRange)>,
 }
 
 pub(crate) struct DefinitionInfoKinds {
@@ -606,7 +605,7 @@ impl VariableLocations {
         Self { locations }
     }
 
-    pub(crate) fn compiled_vars(&self) -> Vec<VariableMatch> {
+    pub(crate) fn compiled_vars(&self, source: &str) -> Vec<VariableMatch> {
         let mut variables = vec![];
         for (i, scope) in self.locations.iter().enumerate() {
             for (j, var) in scope.iter().enumerate() {
@@ -614,7 +613,11 @@ impl VariableLocations {
                     variables.push(VariableMatch {
                         name: var.name.clone(),
                         scoped_name: format!("{}_{}_{}", i, j, var.name),
-                        ranges: var.locations.iter().cloned().collect(),
+                        ranges: var
+                            .locations
+                            .iter()
+                            .map(|range| Range::from_byte_range(source, *range))
+                            .collect(),
                     });
                 }
             }

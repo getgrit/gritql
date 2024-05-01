@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/cli/tests/parse.rs
+source: crates/cli_bin/tests/parse.rs
 expression: v
 ---
 __typename: PatternInfo
@@ -34,4 +34,3 @@ variables:
 sourceFile: "language js\n\n`console.log($msg)`\n"
 parsedPattern: "[..]"
 valid: true
-

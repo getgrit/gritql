@@ -26,7 +26,7 @@ impl NodeCompiler for BackTickCompiler {
             .ok_or_else(|| anyhow!("Unable to extract content from snippet: {source}"))?
             .strip_suffix('`')
             .ok_or_else(|| anyhow!("Unable to extract content from snippet: {source}"))?;
-        parse_snippet_content(content, range, context, is_rhs)
+        parse_snippet_content(content, range.into(), context, is_rhs)
     }
 }
 
@@ -52,6 +52,6 @@ impl NodeCompiler for RawBackTickCompiler {
             .ok_or_else(|| anyhow!("Unable to extract content from raw snippet: {}", source))?
             .strip_suffix('`')
             .ok_or_else(|| anyhow!("Unable to extract content from raw snippet: {}", source))?;
-        parse_snippet_content(content, range, context, is_rhs)
+        parse_snippet_content(content, range.into(), context, is_rhs)
     }
 }

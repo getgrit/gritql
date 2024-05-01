@@ -5,7 +5,7 @@ use crate::{
     pattern::{FileRegistry, Pattern, ResolvedPattern, State},
 };
 use anyhow::{bail, Result};
-use grit_util::{AnalysisLogs, CodeRange, Range};
+use grit_util::{AnalysisLogs, ByteRange, CodeRange, Range};
 use std::path::Path;
 use std::{borrow::Cow, collections::HashMap};
 
@@ -30,13 +30,15 @@ pub trait Binding<'a, Q: QueryContext>: Clone + std::fmt::Debug + PartialEq + Si
         }
     }
 
-    fn from_range(range: Range, source: &'a str) -> Self;
+    fn from_range(range: ByteRange, source: &'a str) -> Self;
 
     fn singleton(&self) -> Option<Q::Node<'a>>;
 
     fn get_sexp(&self) -> Option<String>;
 
     fn position(&self, language: &Q::Language<'a>) -> Option<Range>;
+
+    fn range(&self, language: &Q::Language<'a>) -> Option<ByteRange>;
 
     fn code_range(&self, language: &Q::Language<'a>) -> Option<CodeRange>;
 

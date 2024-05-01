@@ -13,7 +13,7 @@ use grit_pattern_matcher::{
     constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
     pattern::{DynamicPattern, DynamicSnippet, DynamicSnippetPart, Pattern, Variable},
 };
-use grit_util::{AstNode, Language, Position, Range};
+use grit_util::{AstNode, ByteRange, Language};
 use marzano_language::{
     language::{nodes_from_indices, MarzanoLanguage, SortId},
     target_language::TargetLanguage,
@@ -74,13 +74,13 @@ impl NodeCompiler for LanguageSpecificSnippetCompiler {
             .strip_suffix('"')
             .ok_or_else(|| anyhow!("Unable to extract content from raw snippet: {source}"))?;
 
-        parse_snippet_content(content, range, context, is_rhs)
+        parse_snippet_content(content, range.into(), context, is_rhs)
     }
 }
 
 pub(crate) fn dynamic_snippet_from_source(
     raw_source: &str,
-    source_range: Range,
+    source_range: ByteRange,
     context: &mut NodeCompilationContext,
 ) -> Result<DynamicSnippet> {
     let source_string = raw_source
@@ -94,20 +94,14 @@ pub(crate) fn dynamic_snippet_from_source(
     let metavariables = split_snippet(source, context.compilation.lang);
     let mut parts = Vec::with_capacity(2 * metavariables.len() + 1);
     let mut last = 0;
-    let mut last_pos = source_range.start;
     // Reverse the iterator so we go over the variables in ascending order.
     for (byte_range, var) in metavariables.into_iter().rev() {
         parts.push(DynamicSnippetPart::String(
-            source[last as usize..byte_range.start as usize].to_string(),
+            source[last..byte_range.start].to_string(),
         ));
-        let start_pos = position_from_previous(last_pos, source, last, byte_range.start);
-        // todo: does this handle utf8 correctly?
-        last_pos = Position::new(start_pos.line, start_pos.column + var.len() as u32);
-        let range = Range::new(
-            start_pos,
-            last_pos,
-            source_range.start_byte + byte_range.start,
-            source_range.start_byte + byte_range.start + var.len() as u32,
+        let range = ByteRange::new(
+            source_range.start + byte_range.start,
+            source_range.start + byte_range.start + var.len(),
         );
         if let Some(var) = context.vars.get(var.as_ref()) {
             context.vars_array[context.scope_index][*var]
@@ -135,15 +129,13 @@ pub(crate) fn dynamic_snippet_from_source(
         }
         last = byte_range.end;
     }
-    parts.push(DynamicSnippetPart::String(
-        source[last as usize..].to_string(),
-    ));
+    parts.push(DynamicSnippetPart::String(source[last..].to_string()));
     Ok(DynamicSnippet { parts })
 }
 
 pub(crate) fn parse_snippet_content(
     source: &str,
-    range: Range,
+    range: ByteRange,
     context: &mut NodeCompilationContext,
     is_rhs: bool,
 ) -> Result<Pattern<MarzanoQueryContext>> {
@@ -213,18 +205,4 @@ pub(crate) fn parse_snippet_content(
             source,
         )))
     }
-}
-
-fn position_from_previous(
-    prev_position: Position,
-    source: &str,
-    start_index: u32,
-    end_index: u32,
-) -> Position {
-    let mut pos = Position::from_byte_index(
-        &source[start_index as usize..],
-        (end_index - start_index) as usize,
-    );
-    pos.add(prev_position);
-    pos
 }

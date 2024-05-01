@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/cli/tests/parse.rs
+source: crates/cli_bin/tests/parse.rs
 expression: "parsed_lines[0]"
 ---
 __typename: PatternInfo
@@ -34,4 +34,3 @@ variables:
 sourceFile: "`function () { $body }`"
 parsedPattern: "[..]"
 valid: true
-

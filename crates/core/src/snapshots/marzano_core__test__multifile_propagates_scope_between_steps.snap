@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/core/src/test.rs
+source: crates/core/src/test.rs
 expression: results
 ---
 - __typename: Match
@@ -143,4 +143,3 @@ expression: results
   relativeFilePath: file1.tsx
 - __typename: DoneFile
   relativeFilePath: file2.tsx
-

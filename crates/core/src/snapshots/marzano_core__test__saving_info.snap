@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/core/src/test.rs
+source: crates/core/src/test.rs
 expression: results
 ---
 - __typename: Rewrite
@@ -285,4 +285,3 @@ expression: results
   range: ~
   syntaxTree: ~
   source: ~
-

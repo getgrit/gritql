@@ -5,7 +5,7 @@ use super::{
 use crate::problem::MarzanoQueryContext;
 use anyhow::{anyhow, Result};
 use grit_pattern_matcher::pattern::{Not, Pattern, PatternOrPredicate, PrNot, Predicate};
-use grit_util::{AnalysisLogBuilder, AstNode};
+use grit_util::AnalysisLogBuilder;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct NotCompiler;
