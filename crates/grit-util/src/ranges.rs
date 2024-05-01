@@ -195,7 +195,7 @@ impl ByteRange {
     }
 
     /// Converts a range expressed in byte indices to a range expressed in
-    /// character offets.
+    /// character offsets.
     pub fn to_char_range(self, context: &str) -> Self {
         let start = byte_index_to_char_offset(self.start, context);
         let end = byte_index_to_char_offset(self.end, context);
