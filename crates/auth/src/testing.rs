@@ -16,12 +16,13 @@ fn get_config_var(var_name: &str) -> Result<String> {
     use std::process::Command;
 
     let output = Command::new("doppler")
-        .args(&["secrets", "get", var_name, "--plain"])
+        .args(["secrets", "get", var_name, "--plain"])
         .output();
 
     match output {
         Ok(output) if output.status.success() => {
             let value = String::from_utf8_lossy(&output.stdout).trim().to_string();
+
             Ok(value)
         }
         _ => {
