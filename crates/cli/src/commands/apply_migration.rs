@@ -21,6 +21,12 @@ pub struct ApplyMigrationArgs {
         help = "JSON input parameter to pass to the workflow"
     )]
     input: Option<String>,
+    #[clap(
+        long,
+        help_heading = "Workflow options",
+        help = "Run the workflow remotely on Grit Cloud"
+    )]
+    pub(crate) remote: bool,
     /// Print verbose output
     #[clap(long)]
     verbose: bool,

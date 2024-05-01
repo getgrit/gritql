@@ -9,8 +9,33 @@ use crate::{
     info::AuthInfo,
 };
 
+/// Attempts to read a variable, first from the environment, then from Doppler.
+///
+/// If neither source has the variable, an error is returned.
+fn get_config_var(var_name: &str) -> Result<String> {
+    if let Ok(value) = env::var(var_name) {
+        return Ok(value);
+    }
+
+    use std::process::Command;
+    let output = Command::new("doppler")
+        .args(["secrets", "get", var_name, "--plain"])
+        .output();
+
+    match output {
+        Ok(output) if output.status.success() => {
+            let value = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            Ok(value)
+        }
+        _ => Err(anyhow::anyhow!(
+            "Variable {} not found in environment or Doppler",
+            var_name
+        )),
+    }
+}
+
 fn get_existing_token() -> Result<AuthInfo> {
-    let existing_token = env::var("API_TESTING_TOKEN")?;
+    let existing_token = get_config_var("API_TESTING_TOKEN")?;
     let info = AuthInfo {
         access_token: existing_token,
     };
@@ -24,8 +49,8 @@ fn get_existing_token() -> Result<AuthInfo> {
 
 fn get_new_tokens() -> Result<AuthInfo> {
     // Exchange client tokens for a test token
-    let client_id = env::var("API_TESTING_CLIENT_ID")?;
-    let client_secret = env::var("API_TESTING_CLIENT_SECRET")?;
+    let client_id = get_config_var("API_TESTING_CLIENT_ID")?;
+    let client_secret = get_config_var("API_TESTING_CLIENT_SECRET")?;
 
     let client = reqwest::blocking::Client::new();
 
@@ -68,7 +93,6 @@ mod tests {
     #[ignore = "eats up auth tokens, only enable when explicitly testing"]
     fn test_token_refresh() -> Result<()> {
         let auth_info = get_testing_auth_info().unwrap();
-        println!("auth_info: {}", auth_info);
         assert!(!auth_info.is_expired()?);
         Ok(())
     }
