@@ -46,7 +46,7 @@ similar = "2.2.1"
 lazy_static = "1.4.0"
 insta = { version = "1.30.0", features = ["yaml", "redactions"] }
 trim-margin = "0.1.0"
-marzano-auth = { path = "../auth" }
+marzano-auth = { path = "../auth", features = ["test-utils"] }
 walkdir = "2.3.3"
 
 [features]
