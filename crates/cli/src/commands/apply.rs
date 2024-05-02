@@ -8,7 +8,7 @@ use serde::Serialize;
 use std::env::current_dir;
 use std::path::PathBuf;
 
-use crate::{flags::GlobalFormatFlags, workflows::run_remote_workflow};
+use crate::{flags::GlobalFormatFlags;
 
 #[cfg(feature = "workflows_v2")]
 use super::apply_migration::{run_apply_migration, ApplyMigrationArgs};
@@ -54,7 +54,7 @@ pub(crate) async fn run_apply(
     {
         #[cfg(feature = "remote_workflows")]
         if args.apply_migration_args.remote {
-            return run_remote_workflow(args.pattern_or_workflow).await;
+            return crate::workflows::run_remote_workflow(args.pattern_or_workflow).await;
         }
         let current_dir = current_dir()?;
 

@@ -1360,6 +1360,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "grit_cloud_client"
+version = "0.1.0"
+source = "git+https://github.com/getgrit/grit_cloud_client.git#7221ad63b697fd2c14e14a1872de602a7b3c135a"
+
+[[package]]
 name = "h2"
 version = "0.3.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1954,6 +1959,7 @@ dependencies = [
  "git2",
  "grit-util",
  "grit_cache",
+ "grit_cloud_client",
  "ignore",
  "indicatif",
  "indicatif-log-bridge",
