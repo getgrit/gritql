@@ -2,13 +2,13 @@ use anyhow::Result;
 use clap::Args;
 use indicatif::MultiProgress;
 
-use marzano_gritmodule::{fetcher::ModuleRepo, searcher::find_workflow_file_from};
+use marzano_gritmodule::{searcher::find_workflow_file_from};
 use marzano_messenger::emit::ApplyDetails;
 use serde::Serialize;
 use std::env::current_dir;
 use std::path::PathBuf;
 
-use crate::{flags::GlobalFormatFlags;
+use crate::flags::GlobalFormatFlags;
 
 #[cfg(feature = "workflows_v2")]
 use super::apply_migration::{run_apply_migration, ApplyMigrationArgs};
