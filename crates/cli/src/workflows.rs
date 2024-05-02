@@ -125,3 +125,33 @@ where
         ))
     }
 }
+
+pub fn display_workflow_outcome(outcome: PackagedWorkflowOutcome) -> Result<()> {
+    match outcome.success {
+        true => {
+            log::info!(
+                "{}",
+                outcome
+                    .message
+                    .unwrap_or("Workflow completed successfully".to_string())
+            );
+            Ok(())
+        }
+        false => anyhow::bail!(outcome.message.unwrap_or("Workflow failed".to_string())),
+    }
+}
+
+#[cfg(feature = "remote_workflows")]
+pub async fn run_remote_workflow(workflow_name: String) -> Result<()> {
+    use marzano_gritmodule::fetcher::ModuleRepo;
+    let mut updater = Updater::from_current_bin().await?;
+    let cwd = std::env::current_dir()?;
+
+    let auth = updater.get_valid_auth()?;
+
+    let repo = ModuleRepo::from_dir(&cwd).await;
+    let settings = grit_cloud_client::RemoteWorkflowSettings::new(workflow_name, &repo);
+    let outcome = grit_cloud_client::run_remote_workflow(settings, &auth).await?;
+    display_workflow_outcome(outcome)?;
+    return Ok(());
+}

@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Args;
 use indicatif::MultiProgress;
 
-use marzano_gritmodule::searcher::find_workflow_file_from;
+use marzano_gritmodule::{searcher::find_workflow_file_from};
 use marzano_messenger::emit::ApplyDetails;
 use serde::Serialize;
 use std::env::current_dir;
@@ -52,11 +52,12 @@ pub(crate) async fn run_apply(
 ) -> Result<()> {
     #[cfg(feature = "workflows_v2")]
     {
+        #[cfg(feature = "remote_workflows")]
         if args.apply_migration_args.remote {
-            println!("Apply {} remotely", args.pattern_or_workflow);
-            anyhow::bail!("Remote workflows are not yet supported");
+            return crate::workflows::run_remote_workflow(args.pattern_or_workflow).await;
         }
         let current_dir = current_dir()?;
+
         let custom_workflow = find_workflow_file_from(current_dir, &args.pattern_or_workflow).await;
         if let Some(custom_workflow) = custom_workflow {
             return run_apply_migration(

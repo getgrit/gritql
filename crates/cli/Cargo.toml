@@ -46,6 +46,7 @@ marzano-util = { path = "../util", features = ["finder"] }
 marzano-auth = { path = "../auth" }
 marzano_messenger = { path = "../marzano_messenger" }
 cli_server = { git = "https://github.com/getgrit/cli_server.git", optional = true }
+grit_cloud_client = { git = "https://github.com/getgrit/grit_cloud_client.git", optional = true }
 ai_builtins = { git = "https://github.com/getgrit/ai_builtins.git", optional = true }
 grit_cache = { path = "../gritcache" }
 tempfile = { version = "3.1" }
@@ -86,6 +87,7 @@ default = [
   "external_functions",
   "updater",
   "workflows_v2",
+  # "remote_workflows",
   # "server",
   # "remote_redis",
   # "embeddings",
@@ -96,6 +98,9 @@ workflows_v2 = []
 bundled_workflows = []
 remote_redis = []
 remote_pubsub = []
+remote_workflows = [
+  "dep:grit_cloud_client",
+]
 server = [
   "workflows_v2",
   "external_functions",
