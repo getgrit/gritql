@@ -7,6 +7,7 @@ use anyhow::Result;
 use clap::Args;
 use marzano_gritmodule::searcher::WorkflowInfo;
 use marzano_messenger::emit::Messager;
+use marzano_messenger::workflows::PackagedWorkflowOutcome;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -51,6 +52,8 @@ pub(crate) async fn run_apply_migration(
     arg: ApplyMigrationArgs,
     flags: &GlobalFormatFlags,
 ) -> Result<()> {
+    use crate::workflows::display_workflow_outcome;
+
     let input = match &arg.input {
         Some(i) => serde_json::from_str::<serde_json::Value>(i)?,
         None => serde_json::json!({}),
@@ -83,16 +86,5 @@ pub(crate) async fn run_apply_migration(
     emitter.finish_workflow(&outcome)?;
     emitter.flush().await?;
 
-    match outcome.success {
-        true => {
-            log::info!(
-                "{}",
-                outcome
-                    .message
-                    .unwrap_or("Workflow completed successfully".to_string())
-            );
-            Ok(())
-        }
-        false => anyhow::bail!(outcome.message.unwrap_or("Workflow failed".to_string())),
-    }
+    display_workflow_outcome(outcome)
 }
