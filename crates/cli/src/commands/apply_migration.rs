@@ -55,8 +55,8 @@ pub(crate) async fn run_apply_migration(
     use crate::workflows::display_workflow_outcome;
 
     let input = match &arg.input {
-        Some(i) => serde_json::from_str::<serde_json::Value>(i)?,
-        None => serde_json::json!({}),
+        Some(i) => serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(i)?,
+        None => serde_json::Map::new(),
     };
 
     let format = OutputFormat::from(flags);
@@ -78,7 +78,7 @@ pub(crate) async fn run_apply_migration(
             verbose: arg.verbose,
             workflow_entrypoint: workflow.entrypoint().into(),
             paths,
-            payload: vec![serde_json::to_value(input)?],
+            input,
         },
     )
     .await?;

@@ -22,7 +22,7 @@ use tokio::sync::Mutex;
 use uuid::Uuid;
 
 use crate::utils::{get_client_arch, get_client_os};
-use marzano_auth::env::{get_grit_api_url, ENV_VAR_GRIT_AUTH_TOKEN};
+use marzano_auth::env::{get_env_auth, get_grit_api_url};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -424,9 +424,9 @@ impl Updater {
 
     /// Retrieve auth info from the manifest, if available
     pub fn get_auth(&self) -> Option<AuthInfo> {
-        let env_token = std::env::var(ENV_VAR_GRIT_AUTH_TOKEN).ok();
-        if let Some(token) = env_token {
-            return Some(AuthInfo::new(token.to_string()));
+        let auth = get_env_auth(false);
+        if let Some(auth) = auth {
+            return Some(auth);
         }
         if let Some(token) = &self.access_token {
             return Some(AuthInfo::new(token.to_string()));

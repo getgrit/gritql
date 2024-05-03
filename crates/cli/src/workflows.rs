@@ -2,7 +2,10 @@ use anyhow::{bail, Result};
 use console::style;
 use log::debug;
 use marzano_auth::env::ENV_VAR_GRIT_AUTH_TOKEN;
-use marzano_gritmodule::searcher::find_grit_dir_from;
+use marzano_gritmodule::{
+    fetcher::{LocalRepo},
+    searcher::find_grit_dir_from,
+};
 use marzano_messenger::{emit::Messager, workflows::PackagedWorkflowOutcome};
 use serde::Serialize;
 use serde_json::to_string;
@@ -14,6 +17,9 @@ use tokio::process::Command;
 use uuid::Uuid;
 
 use crate::updater::{SupportedApp, Updater};
+
+pub static GRIT_REPO_URL_NAME: &str = "grit_repo_url";
+pub static GRIT_REPO_BRANCH_NAME: &str = "grit_repo_branch";
 
 // Sync with cli/src/worker.ts
 #[derive(Serialize, Debug)]
@@ -35,15 +41,15 @@ pub struct WorkflowInputs {
     pub workflow_entrypoint: String,
     // Input paths, might include unresolved globs
     pub paths: Vec<PathBuf>,
-    // Payload
-    pub payload: Vec<serde_json::Value>,
+    // Input
+    pub input: serde_json::Map<String, serde_json::Value>,
     // Verbose
     pub verbose: bool,
 }
 
 pub async fn run_bin_workflow<M>(
     emitter: M,
-    arg: WorkflowInputs,
+    mut arg: WorkflowInputs,
 ) -> Result<(M, PackagedWorkflowOutcome)>
 where
     M: Messager,
@@ -55,6 +61,21 @@ where
     let marzano_bin = std::env::current_exe()?;
 
     let mut updater = Updater::from_current_bin().await?;
+    let repo = LocalRepo::from_dir(&cwd).await;
+
+    if let Some(repo) = &repo {
+        if !arg.input.contains_key(GRIT_REPO_URL_NAME) {
+            if let Some(url) = repo.remote() {
+                arg.input.insert(GRIT_REPO_URL_NAME.to_string(), url.into());
+            }
+        }
+        if !arg.input.contains_key(GRIT_REPO_BRANCH_NAME) {
+            if let Some(branch) = repo.branch() {
+                arg.input
+                    .insert(GRIT_REPO_BRANCH_NAME.to_string(), branch.into());
+            }
+        }
+    }
 
     let runner_path = updater
         .get_app_bin_and_install(SupportedApp::WorkflowRunner)
@@ -68,7 +89,7 @@ where
         grit_dir,
         verbose: arg.verbose,
         workflow_entrypoint: Some(arg.workflow_entrypoint),
-        payload: arg.payload,
+        payload: vec![serde_json::Value::Object(arg.input)],
     };
 
     let tempfile = NamedTempFile::new()?;
