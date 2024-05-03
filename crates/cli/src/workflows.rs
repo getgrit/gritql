@@ -3,7 +3,7 @@ use console::style;
 use log::debug;
 use marzano_auth::env::ENV_VAR_GRIT_AUTH_TOKEN;
 use marzano_gritmodule::{
-    fetcher::{LocalRepo, ModuleRepo},
+    fetcher::{LocalRepo},
     searcher::find_grit_dir_from,
 };
 use marzano_messenger::{emit::Messager, workflows::PackagedWorkflowOutcome};

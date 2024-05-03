@@ -3,10 +3,10 @@ use anyhow::Result;
 use clap::Args;
 use lazy_static::lazy_static;
 use marzano_gritmodule::fetcher::LocalRepo;
-use marzano_gritmodule::{fetcher::ModuleRepo, searcher::find_git_dir_from};
+use marzano_gritmodule::{fetcher::ModuleRepo};
 use marzano_messenger::emit::ApplyDetails;
 use serde::{Deserialize, Serialize};
-use std::{env, fmt, path::PathBuf, time::Duration};
+use std::{env, fmt, time::Duration};
 use uuid::Uuid;
 
 use crate::commands::Commands;
