@@ -1,5 +1,4 @@
 use std::{
-    fmt::Formatter,
     path::{Path, PathBuf},
 };
 
@@ -370,7 +369,7 @@ impl GritModuleFetcher for KeepFetcher {
 
 #[cfg(test)]
 mod tests {
-    use std::{env::current_exe, process::Command, str::FromStr};
+    use std::{env::current_exe, process::Command};
 
     use super::*;
     use tempfile::tempdir;
