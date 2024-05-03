@@ -27,3 +27,4 @@ marzano-util = { path = "../util" }
 
 [features]
 test-utils = []
+default = ["test-utils"]

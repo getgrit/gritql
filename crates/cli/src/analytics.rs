@@ -2,6 +2,7 @@ use anyhow::Context;
 use anyhow::Result;
 use clap::Args;
 use lazy_static::lazy_static;
+use marzano_gritmodule::fetcher::LocalRepo;
 use marzano_gritmodule::{fetcher::ModuleRepo, searcher::find_git_dir_from};
 use marzano_messenger::emit::ApplyDetails;
 use serde::{Deserialize, Serialize};
@@ -175,11 +176,13 @@ pub async fn track_event(
     let command_parts: Vec<&str> = command_str.split_whitespace().collect();
     let last_command_part = command_parts.last().unwrap().to_string();
 
-    let git_dir = match env::current_dir() {
-        Ok(dir) => find_git_dir_from(dir).await,
-        Err(_) => None,
+    let repo = match env::current_dir() {
+        Ok(dir) => LocalRepo::from_dir(&dir).await,
+        Err(e) => {
+            log::error!("Failed to get current directory: {:#}", e);
+            None
+        }
     };
-    let repository = git_dir.map(|dir| ModuleRepo::from_git_dir(&PathBuf::from(dir)));
 
     let properties = AnalyticsProperties {
         command: command_str,
@@ -188,7 +191,7 @@ pub async fn track_event(
         } else {
             args
         },
-        repository,
+        repository: repo.map(|repo| (&repo).into()),
         data: Some(analytics_event_data),
     };
 

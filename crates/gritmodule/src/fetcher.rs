@@ -1,4 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::{
+    fmt::Formatter,
+    path::{Path, PathBuf},
+};
 
 use anyhow::{anyhow, bail, Result};
 use git2::Repository;
@@ -67,7 +70,29 @@ pub fn inject_token(remote: &str, token: &str) -> Result<String> {
     Ok(remote)
 }
 
-#[derive(Debug, Eq, Serialize, Deserialize, Default, Clone)]
+/// Represents a local repository
+pub struct LocalRepo {
+    repo: Repository,
+}
+
+impl LocalRepo {
+    pub async fn from_dir(dir: &Path) -> Option<Self> {
+        let git_dir = match find_git_dir_from(dir.to_path_buf()).await {
+            Some(git_dir) => git_dir,
+            None => return None,
+        };
+        let git_repo = match Repository::open(git_dir) {
+            Ok(repo) => repo,
+            Err(_) => {
+                return Default::default();
+            }
+        };
+        Some(Self { repo: git_repo })
+    }
+}
+
+/// Represents a repository containing .grit patterns, used in our packaging system
+#[derive(Eq, Serialize, Deserialize, Default, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ModuleRepo {
     pub host: String,
@@ -121,22 +146,18 @@ impl ModuleRepo {
     }
 
     pub async fn from_dir(dir: &Path) -> Self {
-        let git_dir = match find_git_dir_from(dir.to_path_buf()).await {
-            Some(git_dir) => git_dir,
-            None => return Default::default(),
-        };
+        let local_repo = LocalRepo::from_dir(dir).await;
 
-        Self::from_git_dir(&PathBuf::from(git_dir))
+        match local_repo {
+            Some(local_repo) => (&local_repo).into(),
+            None => Default::default(),
+        }
     }
+}
 
-    pub fn from_git_dir(git_dir: &PathBuf) -> Self {
-        let git_repo = match Repository::open(git_dir) {
-            Ok(repo) => repo,
-            Err(_) => {
-                return Default::default();
-            }
-        };
-
+impl From<&LocalRepo> for ModuleRepo {
+    fn from(local_repo: &LocalRepo) -> Self {
+        let git_repo = &local_repo.repo;
         let remote = match git_repo.remotes() {
             Ok(remotes) => match remotes.get(0) {
                 Some(r) => {
