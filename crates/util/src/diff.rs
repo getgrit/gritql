@@ -4,12 +4,14 @@ use serde::Serialize;
 use std::str::FromStr;
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
+#[napi_derive::napi(object)]
 pub struct RangePair {
     pub before: RangeWithoutByte,
     pub after: RangeWithoutByte,
 }
 
 // Define a new struct to hold before and after ranges
+#[napi_derive::napi(object)]
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct FileDiff {
     pub old_path: Option<String>,

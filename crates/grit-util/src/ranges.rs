@@ -132,7 +132,7 @@ impl Range {
 }
 
 // A simple range, without byte information
-#[cfg_attr(napi, napi)]
+#[napi_derive::napi(object)]
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct RangeWithoutByte {
     pub start: Position,

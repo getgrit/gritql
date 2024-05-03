@@ -57,4 +57,4 @@ network_requests = [
 network_requests_external = ["network_requests_common"]
 
 external_functions_ffi = []
-napi = ["dep:napi", "dep:napi-derive"]
+napi = ["dep:napi", "dep:napi-derive", "grit-util/napi"]

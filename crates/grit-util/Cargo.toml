@@ -19,3 +19,12 @@ derive_builder = { version = "0.13.1" }
 once_cell = { version = "1.19.0" }
 regex = { version = "1.7.3" }
 serde = { version = "1.0.164", features = ["derive"] }
+napi = { version = "2.16.4", default-features = false, features = [
+  "napi8",
+  "async",
+], optional = true}
+napi-derive = { version = "2.12.2", optional = true }
+
+[features]
+default = []
+napi = ["dep:napi", "dep:napi-derive"]

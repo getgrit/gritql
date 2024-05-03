@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
+#[napi_derive::napi(object)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "camelCase")]
 
