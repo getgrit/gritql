@@ -1,6 +1,4 @@
-use std::{
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, bail, Result};
 use git2::Repository;
@@ -369,63 +367,24 @@ impl GritModuleFetcher for KeepFetcher {
 
 #[cfg(test)]
 mod tests {
-    use std::{env::current_exe, process::Command};
+    use std::env::current_exe;
 
     use super::*;
     use tempfile::tempdir;
 
     #[tokio::test]
     async fn local_repo_remote_and_branch() {
-        let temp_dir = tempdir().unwrap();
-        let repo_dir = temp_dir.path().join("test_repo");
-        fs::create_dir(&repo_dir).unwrap();
+        let dir = tempdir().unwrap().into_path();
+        let remote = "https://github.com/getgrit/stdlib.git";
+        Repository::clone(remote, dir.clone()).unwrap();
 
-        // Initialize a new git repository
-        Command::new("git")
-            .arg("init")
-            .current_dir(&repo_dir)
-            .output()
-            .expect("Failed to initialize git repository");
-
-        // Set remote origin
-        Command::new("git")
-            .args([
-                "remote",
-                "add",
-                "origin",
-                "https://github.com/getgrit/testrepo.git",
-            ])
-            .current_dir(&repo_dir)
-            .output()
-            .expect("Failed to add remote origin");
-
-        // Create a new branch and switch to it
-        Command::new("git")
-            .args(["checkout", "-b", "test-branch"])
-            .current_dir(&repo_dir)
-            .output()
-            .expect("Failed to checkout new branch");
-
-        // Make a commit
-        fs::write(repo_dir.join("test.txt"), "test").unwrap();
-        Command::new("git")
-            .args(["add", "."])
-            .current_dir(&repo_dir)
-            .output()
-            .expect("Failed to add files to commit");
-        Command::new("git")
-            .args(["commit", "-m", "Initial commit"])
-            .current_dir(&repo_dir)
-            .output()
-            .expect("Failed to commit changes");
-
-        let repo = LocalRepo::from_dir(&repo_dir).await.unwrap();
+        let repo = LocalRepo::from_dir(&dir).await.unwrap();
 
         assert_eq!(
             repo.remote().unwrap(),
-            "https://github.com/getgrit/testrepo.git"
+            "https://github.com/getgrit/stdlib.git"
         );
-        assert_eq!(repo.branch().unwrap(), "test-branch");
+        assert_eq!(repo.branch().unwrap(), "main");
     }
 
     #[test]
