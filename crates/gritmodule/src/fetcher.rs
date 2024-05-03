@@ -89,6 +89,58 @@ impl LocalRepo {
         };
         Some(Self { repo: git_repo })
     }
+
+    /// Return the current branch, if any
+    ///
+    /// NOTE: this will only work if the branch has at least one commit (unborn branches will not be detected)
+    pub fn branch(&self) -> Option<String> {
+        match self.repo.head() {
+            Ok(head) => {
+                if head.is_branch() {
+                    match head.shorthand() {
+                        Some(branch) => Some(branch.to_string()),
+                        None => {
+                            log::error!("Failed to get branch name");
+                            None
+                        }
+                    }
+                } else {
+                    log::error!("Head is not a branch");
+                    None
+                }
+            }
+            Err(e) => {
+                log::error!("Failed to get branch: {}", e);
+                None
+            }
+        }
+    }
+
+    /// Return the remote url for the repo, if any is set
+    pub fn remote(&self) -> Option<String> {
+        let remote = match self.repo.remotes() {
+            Ok(remotes) => match remotes.get(0) {
+                Some(r) => {
+                    let git_remote = Repository::find_remote(&self.repo, r);
+                    match git_remote {
+                        Ok(remote_obj) => {
+                            let url = remote_obj.url();
+                            if url.is_none() {
+                                return Default::default();
+                            }
+                            url.unwrap().to_string()
+                        }
+                        Err(_) => {
+                            return Default::default();
+                        }
+                    }
+                }
+                None => return Default::default(),
+            },
+            Err(_) => return Default::default(),
+        };
+        Some(remote)
+    }
 }
 
 /// Represents a repository containing .grit patterns, used in our packaging system
@@ -157,28 +209,7 @@ impl ModuleRepo {
 
 impl From<&LocalRepo> for ModuleRepo {
     fn from(local_repo: &LocalRepo) -> Self {
-        let git_repo = &local_repo.repo;
-        let remote = match git_repo.remotes() {
-            Ok(remotes) => match remotes.get(0) {
-                Some(r) => {
-                    let git_remote = Repository::find_remote(&git_repo, r);
-                    match git_remote {
-                        Ok(remote_obj) => {
-                            let url = remote_obj.url();
-                            if url.is_none() {
-                                return Default::default();
-                            }
-                            url.unwrap().to_string()
-                        }
-                        Err(_) => {
-                            return Default::default();
-                        }
-                    }
-                }
-                None => return Default::default(),
-            },
-            Err(_) => return Default::default(),
-        };
+        let remote = local_repo.remote().unwrap_or_default();
 
         match ModuleRepo::from_remote(&remote) {
             Ok(module_repo) => module_repo,
@@ -339,10 +370,64 @@ impl GritModuleFetcher for KeepFetcher {
 
 #[cfg(test)]
 mod tests {
-    use std::env::current_exe;
+    use std::{env::current_exe, process::Command, str::FromStr};
 
     use super::*;
     use tempfile::tempdir;
+
+    #[tokio::test]
+    async fn local_repo_remote_and_branch() {
+        let temp_dir = tempdir().unwrap();
+        let repo_dir = temp_dir.path().join("test_repo");
+        fs::create_dir(&repo_dir).unwrap();
+
+        // Initialize a new git repository
+        Command::new("git")
+            .arg("init")
+            .current_dir(&repo_dir)
+            .output()
+            .expect("Failed to initialize git repository");
+
+        // Set remote origin
+        Command::new("git")
+            .args([
+                "remote",
+                "add",
+                "origin",
+                "https://github.com/getgrit/testrepo.git",
+            ])
+            .current_dir(&repo_dir)
+            .output()
+            .expect("Failed to add remote origin");
+
+        // Create a new branch and switch to it
+        Command::new("git")
+            .args(["checkout", "-b", "test-branch"])
+            .current_dir(&repo_dir)
+            .output()
+            .expect("Failed to checkout new branch");
+
+        // Make a commit
+        fs::write(repo_dir.join("test.txt"), "test").unwrap();
+        Command::new("git")
+            .args(["add", "."])
+            .current_dir(&repo_dir)
+            .output()
+            .expect("Failed to add files to commit");
+        Command::new("git")
+            .args(["commit", "-m", "Initial commit"])
+            .current_dir(&repo_dir)
+            .output()
+            .expect("Failed to commit changes");
+
+        let repo = LocalRepo::from_dir(&repo_dir).await.unwrap();
+
+        assert_eq!(
+            repo.remote().unwrap(),
+            "https://github.com/getgrit/testrepo.git"
+        );
+        assert_eq!(repo.branch().unwrap(), "test-branch");
+    }
 
     #[test]
     fn clone_a_grit_module() {

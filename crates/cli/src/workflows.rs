@@ -2,7 +2,10 @@ use anyhow::{bail, Result};
 use console::style;
 use log::debug;
 use marzano_auth::env::ENV_VAR_GRIT_AUTH_TOKEN;
-use marzano_gritmodule::{fetcher::ModuleRepo, searcher::find_grit_dir_from};
+use marzano_gritmodule::{
+    fetcher::{LocalRepo, ModuleRepo},
+    searcher::find_grit_dir_from,
+};
 use marzano_messenger::{emit::Messager, workflows::PackagedWorkflowOutcome};
 use serde::Serialize;
 use serde_json::to_string;
@@ -58,17 +61,20 @@ where
     let marzano_bin = std::env::current_exe()?;
 
     let mut updater = Updater::from_current_bin().await?;
-    let repo = ModuleRepo::from_dir(&cwd).await;
+    let repo = LocalRepo::from_dir(&cwd).await;
 
-    if !arg.input.contains_key(GRIT_REPO_URL_NAME) {
-        arg.input
-            .insert(GRIT_REPO_URL_NAME.to_string(), repo.remote.into());
-    }
-    if !arg.input.contains_key(GRIT_REPO_BRANCH_NAME) {
-        arg.input.insert(
-            GRIT_REPO_BRANCH_NAME.to_string(),
-            "repo.branch.into()".into(),
-        );
+    if let Some(repo) = &repo {
+        if !arg.input.contains_key(GRIT_REPO_URL_NAME) {
+            if let Some(url) = repo.remote() {
+                arg.input.insert(GRIT_REPO_URL_NAME.to_string(), url.into());
+            }
+        }
+        if !arg.input.contains_key(GRIT_REPO_BRANCH_NAME) {
+            if let Some(branch) = repo.branch() {
+                arg.input
+                    .insert(GRIT_REPO_BRANCH_NAME.to_string(), branch.into());
+            }
+        }
     }
 
     let runner_path = updater
