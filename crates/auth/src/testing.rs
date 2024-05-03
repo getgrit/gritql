@@ -40,8 +40,6 @@ fn get_existing_token() -> Result<AuthInfo> {
         access_token: existing_token,
     };
 
-    println!("existing token: {}", info);
-
     if info.is_expired()? {
         return Err(anyhow::anyhow!("existing token is expired"));
     }
