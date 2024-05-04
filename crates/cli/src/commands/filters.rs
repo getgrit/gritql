@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
 use clap::Args;
 
@@ -24,11 +26,14 @@ pub struct SharedFilterArgs {
     pub(crate) only_in_diff: Option<Option<String>>,
 }
 
-pub(crate) fn extract_filter_ranges(args: &SharedFilterArgs) -> Result<Option<Vec<FileRange>>> {
+pub(crate) fn extract_filter_ranges(
+    args: &SharedFilterArgs,
+    root: Option<&PathBuf>,
+) -> Result<Option<Vec<FileRange>>> {
     if let Some(json_content) = &args.only_in_json {
         let json_ranges = parse_eslint_output(json_content)?;
         Ok(Some(json_ranges))
     } else {
-        Ok(extract_target_ranges(&args.only_in_diff)?)
+        Ok(extract_target_ranges(&args.only_in_diff, root)?)
     }
 }

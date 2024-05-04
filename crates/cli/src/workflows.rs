@@ -1,11 +1,9 @@
 use anyhow::{bail, Result};
 use console::style;
+use grit_util::FileRange;
 use log::debug;
 use marzano_auth::env::ENV_VAR_GRIT_AUTH_TOKEN;
-use marzano_gritmodule::{
-    fetcher::{LocalRepo},
-    searcher::find_grit_dir_from,
-};
+use marzano_gritmodule::{fetcher::LocalRepo, searcher::find_grit_dir_from};
 use marzano_messenger::{emit::Messager, workflows::PackagedWorkflowOutcome};
 use serde::Serialize;
 use serde_json::to_string;
@@ -20,6 +18,8 @@ use crate::updater::{SupportedApp, Updater};
 
 pub static GRIT_REPO_URL_NAME: &str = "grit_repo_url";
 pub static GRIT_REPO_BRANCH_NAME: &str = "grit_repo_branch";
+pub static GRIT_TARGET_RANGES: &str = "grit_target_ranges";
+pub static ENV_GRIT_WORKSPACE_ROOT: &str = "GRIT_WORKSPACE_ROOT";
 
 // Sync with cli/src/worker.ts
 #[derive(Serialize, Debug)]
@@ -39,6 +39,8 @@ pub struct WorkflowSettings {
 pub struct WorkflowInputs {
     // If this is a custom workflow, this will be the path to the entrypoint
     pub workflow_entrypoint: String,
+    /// Ranges to target, if any
+    pub ranges: Option<Vec<FileRange>>,
     // Input paths, might include unresolved globs
     pub paths: Vec<PathBuf>,
     // Input
@@ -63,6 +65,13 @@ where
     let mut updater = Updater::from_current_bin().await?;
     let repo = LocalRepo::from_dir(&cwd).await;
 
+    let root = std::env::var(ENV_GRIT_WORKSPACE_ROOT).unwrap_or_else(|_| {
+        repo.as_ref().and_then(|r| r.root().ok()).map_or_else(
+            || cwd.to_string_lossy().into_owned(),
+            |r| r.to_string_lossy().into_owned(),
+        )
+    });
+
     if let Some(repo) = &repo {
         if !arg.input.contains_key(GRIT_REPO_URL_NAME) {
             if let Some(url) = repo.remote() {
@@ -75,6 +84,13 @@ where
                     .insert(GRIT_REPO_BRANCH_NAME.to_string(), branch.into());
             }
         }
+    }
+
+    if let Some(ranges) = arg.ranges {
+        arg.input.insert(
+            GRIT_TARGET_RANGES.to_string(),
+            serde_json::to_value(ranges)?,
+        );
     }
 
     let runner_path = updater
@@ -117,6 +133,7 @@ where
         .arg(tempfile_path.to_string_lossy().to_string())
         .env("GRIT_MARZANO_PATH", marzano_bin)
         .env(ENV_VAR_GRIT_AUTH_TOKEN, grit_token)
+        .env(ENV_GRIT_WORKSPACE_ROOT, root)
         .arg("--file")
         .arg(&tempfile_path)
         .kill_on_drop(true)

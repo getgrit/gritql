@@ -132,6 +132,7 @@ impl Range {
 }
 
 // A simple range, without byte information
+#[cfg_attr(feature = "napi", napi_derive::napi(object))]
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct RangeWithoutByte {
     pub start: Position,
@@ -161,6 +162,7 @@ impl RangeWithoutByte {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(untagged)]
 pub enum UtilRange {
     Range(Range),
     RangeWithoutByte(RangeWithoutByte),
