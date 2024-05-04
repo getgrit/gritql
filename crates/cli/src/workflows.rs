@@ -19,6 +19,7 @@ use crate::updater::{SupportedApp, Updater};
 pub static GRIT_REPO_URL_NAME: &str = "grit_repo_url";
 pub static GRIT_REPO_BRANCH_NAME: &str = "grit_repo_branch";
 pub static GRIT_TARGET_RANGES: &str = "grit_target_ranges";
+pub static ENV_GRIT_WORKSPACE_ROOT: &str = "GRIT_WORKSPACE_ROOT";
 
 // Sync with cli/src/worker.ts
 #[derive(Serialize, Debug)]
@@ -63,6 +64,13 @@ where
 
     let mut updater = Updater::from_current_bin().await?;
     let repo = LocalRepo::from_dir(&cwd).await;
+
+    let root = std::env::var(ENV_GRIT_WORKSPACE_ROOT).unwrap_or_else(|_| {
+        repo.as_ref().and_then(|r| r.root().ok()).map_or_else(
+            || cwd.to_string_lossy().into_owned(),
+            |r| r.to_string_lossy().into_owned(),
+        )
+    });
 
     if let Some(repo) = &repo {
         if !arg.input.contains_key(GRIT_REPO_URL_NAME) {
@@ -125,6 +133,7 @@ where
         .arg(tempfile_path.to_string_lossy().to_string())
         .env("GRIT_MARZANO_PATH", marzano_bin)
         .env(ENV_VAR_GRIT_AUTH_TOKEN, grit_token)
+        .env(ENV_GRIT_WORKSPACE_ROOT, root)
         .arg("--file")
         .arg(&tempfile_path)
         .kill_on_drop(true)
