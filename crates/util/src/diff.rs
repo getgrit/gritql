@@ -89,6 +89,8 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 .trim_start_matches("a/")
                 .to_string();
 
+            insert_range_if_found(&mut current_range_pair, &mut results, has_context)?;
+
             results.push(FileDiff {
                 old_path: if old_file_name == "/dev/null" {
                     None
@@ -98,6 +100,8 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 new_path: None,
                 ranges: Vec::new(),
             });
+            left_line_cursor = 0;
+            right_line_cursor = 0;
         } else if line.starts_with("+++ ") {
             let new_file_name = line
                 .split_whitespace()
@@ -718,6 +722,34 @@ index f6e1a2c..2c58ad2 100644
         let new_content = include_str!("../fixtures/file.newline.js");
         let new_range = Range::from_byteless(parsed[0].ranges[0].after.clone(), new_content);
         assert_eq!(new_content[new_range.range_index()].to_string(), "\n");
+
+        assert_yaml_snapshot!(parsed);
+    }
+
+    #[test]
+    fn process_confusing_case() {
+        let diff = include_str!("../fixtures/confusing.diff");
+        let parsed = parse_modified_ranges(diff).expect("Failed to parse no confusing diff");
+
+        // Make sure it does not have any excessive ranges
+        let target_file_path = "packages/api/src/types.ts".to_string();
+        let target_file_diff = parsed
+            .iter()
+            .find(|file_diff| file_diff.new_path == Some(target_file_path.clone()));
+
+        if let Some(file_diff) = target_file_diff {
+            for range in &file_diff.ranges {
+                println!("evaluating range: {:?}", range);
+                if range.after.start.line >= 100 {
+                    panic!(
+                        "Found a range that is too large in {:?}: {:?}",
+                        file_diff.new_path, range
+                    );
+                }
+            }
+        } else {
+            panic!("Target file {:?} not found in the diff.", target_file_path);
+        }
 
         assert_yaml_snapshot!(parsed);
     }
