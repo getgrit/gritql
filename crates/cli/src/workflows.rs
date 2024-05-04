@@ -1,11 +1,9 @@
 use anyhow::{bail, Result};
 use console::style;
+use grit_util::FileRange;
 use log::debug;
 use marzano_auth::env::ENV_VAR_GRIT_AUTH_TOKEN;
-use marzano_gritmodule::{
-    fetcher::{LocalRepo},
-    searcher::find_grit_dir_from,
-};
+use marzano_gritmodule::{fetcher::LocalRepo, searcher::find_grit_dir_from};
 use marzano_messenger::{emit::Messager, workflows::PackagedWorkflowOutcome};
 use serde::Serialize;
 use serde_json::to_string;
@@ -20,6 +18,7 @@ use crate::updater::{SupportedApp, Updater};
 
 pub static GRIT_REPO_URL_NAME: &str = "grit_repo_url";
 pub static GRIT_REPO_BRANCH_NAME: &str = "grit_repo_branch";
+pub static GRIT_TARGET_RANGES: &str = "grit_target_ranges";
 
 // Sync with cli/src/worker.ts
 #[derive(Serialize, Debug)]
@@ -39,6 +38,8 @@ pub struct WorkflowSettings {
 pub struct WorkflowInputs {
     // If this is a custom workflow, this will be the path to the entrypoint
     pub workflow_entrypoint: String,
+    /// Ranges to target, if any
+    pub ranges: Option<Vec<FileRange>>,
     // Input paths, might include unresolved globs
     pub paths: Vec<PathBuf>,
     // Input
@@ -75,6 +76,13 @@ where
                     .insert(GRIT_REPO_BRANCH_NAME.to_string(), branch.into());
             }
         }
+    }
+
+    if let Some(ranges) = arg.ranges {
+        arg.input.insert(
+            GRIT_TARGET_RANGES.to_string(),
+            serde_json::to_value(ranges)?,
+        );
     }
 
     let runner_path = updater

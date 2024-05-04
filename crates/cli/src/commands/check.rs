@@ -119,7 +119,7 @@ pub(crate) async fn run_check(
         std::env::current_dir()?
     };
 
-    let filter_range = extract_filter_ranges(&arg.shared_filters)?;
+    let filter_range = extract_filter_ranges(&arg.shared_filters, Some(&current_dir))?;
 
     // Construct a resolver
     let resolver = GritModuleResolver::new(current_dir.to_str().unwrap());

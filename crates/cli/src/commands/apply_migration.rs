@@ -49,6 +49,7 @@ pub(crate) async fn run_apply_migration(
 pub(crate) async fn run_apply_migration(
     workflow: WorkflowInfo,
     paths: Vec<PathBuf>,
+    ranges: Option<Vec<grit_util::FileRange>>,
     arg: ApplyMigrationArgs,
     flags: &GlobalFormatFlags,
 ) -> Result<()> {
@@ -79,6 +80,7 @@ pub(crate) async fn run_apply_migration(
             workflow_entrypoint: workflow.entrypoint().into(),
             paths,
             input,
+            ranges,
         },
     )
     .await?;

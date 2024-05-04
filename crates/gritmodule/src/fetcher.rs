@@ -87,6 +87,15 @@ impl LocalRepo {
         Some(Self { repo: git_repo })
     }
 
+    /// Return the repo root path, on the filesystem
+    pub fn root(&self) -> Result<PathBuf> {
+        self.repo
+            .path()
+            .parent()
+            .map(|p| p.to_path_buf())
+            .ok_or_else(|| anyhow!("Failed to get repo root"))
+    }
+
     /// Return the current branch, if any
     ///
     /// NOTE: this will only work if the branch has at least one commit (unborn branches will not be detected)

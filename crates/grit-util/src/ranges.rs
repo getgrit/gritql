@@ -162,6 +162,7 @@ impl RangeWithoutByte {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(untagged)]
 pub enum UtilRange {
     Range(Range),
     RangeWithoutByte(RangeWithoutByte),

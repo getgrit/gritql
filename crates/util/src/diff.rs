@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use grit_util::{Position, RangeWithoutByte};
 use serde::Serialize;
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr};
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[cfg_attr(feature = "napi", napi_derive::napi(object))]
@@ -225,6 +225,17 @@ fn insert_range_if_found(
         }
     }
     Ok(())
+}
+
+pub fn run_git_diff(path: &PathBuf) -> Result<String> {
+    let output = std::process::Command::new("git")
+        .arg("diff")
+        .arg("HEAD")
+        .arg("--relative")
+        .arg("--unified=0")
+        .current_dir(path)
+        .output()?;
+    Ok(String::from_utf8(output.stdout)?)
 }
 
 #[cfg(test)]

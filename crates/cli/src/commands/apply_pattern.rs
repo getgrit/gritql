@@ -30,9 +30,8 @@ use tokio::fs;
 use crate::commands::filters::extract_filter_ranges;
 
 use crate::{
-    analyze::par_apply_pattern, error::GoodError,
-    flags::OutputFormat, messenger_variant::create_emitter, result_formatting::get_human_error,
-    updater::Updater,
+    analyze::par_apply_pattern, error::GoodError, flags::OutputFormat,
+    messenger_variant::create_emitter, result_formatting::get_human_error, updater::Updater,
 };
 
 use marzano_messenger::{
@@ -194,6 +193,10 @@ pub(crate) async fn run_apply_pattern(
 
     // Construct a resolver
     let resolver = GritModuleResolver::new(cwd.to_str().unwrap());
+    let current_repo_root = marzano_gritmodule::fetcher::LocalRepo::from_dir(&cwd)
+        .await
+        .map(|repo| repo.root())
+        .transpose()?;
 
     let mut emitter = create_emitter(
         &format,
@@ -205,7 +208,10 @@ pub(crate) async fn run_apply_pattern(
     )
     .await?;
 
-    let filter_range = flushable_unwrap!(emitter, extract_filter_ranges(&shared));
+    let filter_range = flushable_unwrap!(
+        emitter,
+        extract_filter_ranges(&shared, current_repo_root.as_ref())
+    );
 
     let (my_input, lang) = if let Some(pattern_libs) = pattern_libs {
         (

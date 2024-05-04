@@ -2,13 +2,13 @@ use anyhow::Result;
 use clap::Args;
 use indicatif::MultiProgress;
 
-use marzano_gritmodule::{searcher::find_workflow_file_from};
+use marzano_gritmodule::searcher::find_workflow_file_from;
 use marzano_messenger::emit::ApplyDetails;
 use serde::Serialize;
 use std::env::current_dir;
 use std::path::PathBuf;
 
-use crate::flags::GlobalFormatFlags;
+use crate::{commands::filters::extract_filter_ranges, flags::GlobalFormatFlags};
 
 #[cfg(feature = "workflows_v2")]
 use super::apply_migration::{run_apply_migration, ApplyMigrationArgs};
@@ -52,17 +52,25 @@ pub(crate) async fn run_apply(
 ) -> Result<()> {
     #[cfg(feature = "workflows_v2")]
     {
+        let current_dir = current_dir()?;
+        let current_repo_root = marzano_gritmodule::fetcher::LocalRepo::from_dir(&current_dir)
+            .await
+            .map(|repo| repo.root())
+            .transpose()?;
+
+        let ranges = extract_filter_ranges(&args.shared_apply_args, current_repo_root.as_ref())?;
+
         #[cfg(feature = "remote_workflows")]
         if args.apply_migration_args.remote {
             return crate::workflows::run_remote_workflow(args.pattern_or_workflow).await;
         }
-        let current_dir = current_dir()?;
 
         let custom_workflow = find_workflow_file_from(current_dir, &args.pattern_or_workflow).await;
         if let Some(custom_workflow) = custom_workflow {
             return run_apply_migration(
                 custom_workflow,
                 args.paths,
+                ranges,
                 args.apply_migration_args,
                 flags,
             )
