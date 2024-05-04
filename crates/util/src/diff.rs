@@ -135,6 +135,9 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
             left_line_cursor += 1;
             right_line_cursor += 1;
         } else if line.starts_with('-') || line.starts_with('+') {
+            if line[1..].starts_with("Subproject commit") {
+                continue;
+            }
             if line.starts_with('-') {
                 // Removed sections always come before added sections
                 if let Some(ref mut pair) = current_range_pair {
@@ -207,6 +210,9 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
 
     // If we have a current hunk, add it to the current file diff
     insert_range_if_found(&mut current_range_pair, &mut results, has_context)?;
+
+    // Remove any files with no ranges (likely submodules
+    results.retain(|file_diff| !file_diff.ranges.is_empty());
 
     Ok(results)
 }
@@ -749,6 +755,19 @@ index f6e1a2c..2c58ad2 100644
             }
         } else {
             panic!("Target file {:?} not found in the diff.", target_file_path);
+        }
+
+        let submodule_diff = parsed.iter().find(|file_diff| {
+            file_diff
+                .new_path
+                .as_ref()
+                .map_or(false, |path| path.contains("vendor/gritql"))
+        });
+        if let Some(file) = submodule_diff {
+            panic!(
+                "Found a submodule in diff, which should be ignored: {:?}",
+                file
+            );
         }
 
         assert_yaml_snapshot!(parsed);
