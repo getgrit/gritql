@@ -3,7 +3,6 @@ use crate::{
     ast_node::{ASTNode, AstLeafNode},
     built_in_functions::BuiltIns,
     constants::MAX_FILE_SIZE,
-    files::MarzanoFileManager,
     foreign_function_definition::ForeignFunctionDefinition,
     marzano_binding::MarzanoBinding,
     marzano_code_snippet::MarzanoCodeSnippet,
@@ -162,7 +161,7 @@ impl Problem {
         if !self.is_multifile && files.len() != 1 {
             bail!("Cannot build resolved pattern for single file pattern with more than one file")
         }
-        for file in files {
+        for file in &files {
             let path = file.name();
             // let file: Cow<RichFile> = match file.try_into_cow() {
             //     Result::Ok(file) => file,
@@ -320,16 +319,16 @@ impl Problem {
             Result::Err(err) => {
                 // might be sending too many donefile here?
                 let mut error_files = vec![];
-                for file in files {
-                    error_files.push(MatchResult::AnalysisLog(AnalysisLog::new_error(
-                        err.to_string(),
-                        &file.name(),
-                    )));
-                    error_files.push(MatchResult::DoneFile(DoneFile {
-                        relative_file_path: file.name().to_string(),
-                        ..Default::default()
-                    }))
-                }
+                // for file in files {
+                //     error_files.push(MatchResult::AnalysisLog(AnalysisLog::new_error(
+                //         err.to_string(),
+                //         &file.name(),
+                //     )));
+                //     error_files.push(MatchResult::DoneFile(DoneFile {
+                //         relative_file_path: file.name().to_string(),
+                //         ..Default::default()
+                //     }))
+                // }
                 send(tx, error_files);
             }
         }
