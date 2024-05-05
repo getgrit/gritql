@@ -170,6 +170,8 @@ pub(crate) fn jslike_check_replacements(
         && n.text()
             .is_ok_and(|t| ["var", "let", "const"].contains(&t.as_ref()))
         || n.node.kind() == "empty_statement"
+            && n.parent()
+                .is_some_and(|p| ["program", "statement_block"].contains(&p.node.kind().as_ref()))
     {
         replacement_ranges.push(Replacement::new(n.range(), ""));
     } else if n.node.kind() == "import_statement" {
