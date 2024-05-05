@@ -183,7 +183,7 @@ pub fn test_pattern_sample(
         .iter()
         .map(|input| RichFile::new(input.path.to_owned(), input.content.to_owned()))
         .collect::<Vec<_>>();
-    let res = compiled.execute_files(&rich_files, &runtime);
+    let res = compiled.execute_files(rich_files, &runtime);
 
     for result in res.into_iter() {
         if is_match(&result) {

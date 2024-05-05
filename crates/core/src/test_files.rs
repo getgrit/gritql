@@ -55,7 +55,7 @@ fn run_on_test_files(problem: &Problem, test_files: &[SyntheticFile]) -> Vec<Mat
     let mut results = vec![];
     let context = ExecutionContext::default();
     let (tx, rx) = mpsc::channel::<Vec<MatchResult>>();
-    problem.execute_shared(&test_files, &context, tx, &NullCache::new());
+    problem.execute_shared(test_files.to_vec(), &context, tx, &NullCache::new());
     for r in rx.iter() {
         results.extend(r)
     }

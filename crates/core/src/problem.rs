@@ -32,6 +32,7 @@ use marzano_util::{
     rich_path::{FileName, LoadableFile, MarzanoFileTrait, RichFile, RichPath, TryIntoInputFile},
     runtime::ExecutionContext,
 };
+use rayon::iter::IntoParallelIterator;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use sha2::{Digest, Sha256};
 use std::{
@@ -150,7 +151,7 @@ impl Problem {
     fn build_and_execute_resolved_pattern_internal(
         &self,
         tx: &Sender<Vec<MatchResult>>,
-        files: &[impl MarzanoFileTrait],
+        files: Vec<impl LoadableFile>,
         context: &ExecutionContext,
         cache: &impl GritCache,
     ) -> Result<()> {
@@ -248,7 +249,7 @@ impl Problem {
         // error_files: Vec<MatchResult>,
 
         // Clone each file
-        let files = files.iter().map(|f| f.clone()).collect::<Vec<_>>();
+        // let files = files.iter().map(|f| f.clone()).collect::<Vec<_>>();
 
         send(tx, results);
         self.execute_and_send(tx, files, binding, &owned_files, context, done_files);
@@ -310,7 +311,7 @@ impl Problem {
     fn build_and_execute_resolved_pattern(
         &self,
         tx: &Sender<Vec<MatchResult>>,
-        files: &[impl MarzanoFileTrait],
+        files: Vec<impl LoadableFile>,
         context: &ExecutionContext,
         cache: &impl GritCache,
     ) {
@@ -336,7 +337,7 @@ impl Problem {
 
     pub fn execute_files(
         &self,
-        files: &[RichFile],
+        files: Vec<RichFile>,
         context: &ExecutionContext,
     ) -> Vec<MatchResult> {
         let mut results = vec![];
@@ -352,7 +353,7 @@ impl Problem {
 
     pub fn execute_paths<'a>(
         &self,
-        files: &[&'a RichPath],
+        files: Vec<&'a RichPath>,
         context: &ExecutionContext,
     ) -> (Vec<MatchResult>, Vec<&'a RichPath>) {
         let mut results = vec![];
@@ -387,7 +388,8 @@ impl Problem {
     pub fn execute_file(&self, file: &RichFile, context: &ExecutionContext) -> Vec<MatchResult> {
         let mut results = vec![];
         let (tx, rx) = mpsc::channel::<Vec<MatchResult>>();
-        self.execute_shared(std::array::from_ref(file), context, tx, &NullCache::new());
+        let files = vec![file];
+        self.execute_shared(files, context, tx, &NullCache::new());
         for r in rx.iter() {
             results.extend(r)
         }
@@ -395,18 +397,9 @@ impl Problem {
         results
     }
 
-    pub fn execute_files_streaming(
-        &self,
-        files: &[RichFile],
-        context: &ExecutionContext,
-        tx: Sender<Vec<MatchResult>>,
-    ) {
-        self.execute_shared(files, context, tx, &NullCache::new())
-    }
-
     pub fn execute_paths_streaming(
         &self,
-        files: &[PathBuf],
+        files: Vec<PathBuf>,
         context: &ExecutionContext,
         tx: Sender<Vec<MatchResult>>,
         cache: &impl GritCache,
@@ -417,7 +410,7 @@ impl Problem {
     #[cfg_attr(feature = "grit_tracing", instrument(skip_all))]
     pub(crate) fn execute_shared(
         &self,
-        files: &[impl MarzanoFileTrait],
+        files: Vec<impl LoadableFile + Send + Sync>,
         context: &ExecutionContext,
         tx: Sender<Vec<MatchResult>>,
         cache: &impl GritCache,
@@ -442,13 +435,9 @@ impl Problem {
 
                     event!(Level::INFO, "spawn execute_shared_body");
 
-                    files.par_iter().for_each_with(tx, |sender, f| {
-                        self.build_and_execute_resolved_pattern(
-                            sender,
-                            std::array::from_ref(f),
-                            context,
-                            cache,
-                        );
+                    files.into_par_iter().for_each_with(tx, |sender, f| {
+                        let vec = vec![f];
+                        self.build_and_execute_resolved_pattern(sender, vec, context, cache);
                     });
                 })
             })

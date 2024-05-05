@@ -51,6 +51,12 @@ impl FileName for RichFile {
     }
 }
 
+impl FileName for &RichFile {
+    fn name(&self) -> String {
+        self.path.to_owned()
+    }
+}
+
 // there must be a better way right?
 impl FileName for &(RichFile, [u8; 32]) {
     fn name(&self) -> String {
@@ -82,6 +88,12 @@ pub trait TryIntoInputFile {
 impl TryIntoInputFile for &(RichFile, [u8; 32]) {
     fn try_into_cow(&self) -> Result<Cow<RichFile>> {
         Ok(Cow::Borrowed(&self.0))
+    }
+}
+
+impl TryIntoInputFile for &RichFile {
+    fn try_into_cow(&self) -> Result<Cow<RichFile>> {
+        Ok(Cow::Borrowed(self))
     }
 }
 

@@ -241,7 +241,7 @@ async fn match_pattern_internal(
         .zip(contents)
         .map(|(p, c)| RichFile::new(p, c))
         .collect();
-    let results = pattern.execute_files(&files, &context);
+    let results = pattern.execute_files(files, &context);
     Ok(results)
 }
 

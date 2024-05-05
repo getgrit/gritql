@@ -4775,7 +4775,7 @@ multifile {
         .unwrap();
     let context = ExecutionContext::default();
     let results = pattern.execute_files(
-        &[
+        vec![
             RichFile::new(
                 "~/dev/rewriter/packages/sdk/src/stdlib/index.ts".to_string(),
                 content1,
@@ -8289,7 +8289,7 @@ multifile {
     let context = ExecutionContext::default();
     let pattern = src_to_problem(pattern.to_owned(), js_lang).unwrap();
     let results = pattern.execute_files(
-        &[
+        vec![
             RichFile::new(
                 "file1.tsx".to_string(),
                 "foo(1)\nbar(1)\nbar(2)\nbaz(1)".to_string(),
@@ -8319,7 +8319,7 @@ multifile {
     let context = ExecutionContext::default();
     let pattern = src_to_problem(pattern.to_owned(), js_lang).unwrap();
     let results = pattern.execute_files(
-        &[
+        vec![
             RichFile::new("file1.tsx".to_string(), "foo(1)".to_string()),
             RichFile::new("file2.tsx".to_string(), "bar(1)\nbar(3)".to_string()),
         ],
