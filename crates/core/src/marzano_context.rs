@@ -160,7 +160,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
             suppressed,
         };
         for file_ptr in files {
-            let file = state.files.get_file(file_ptr);
+            let file = state.files.get_file_owner(file_ptr);
             let mut match_log = file.matches.borrow_mut();
 
             let filename_path = &file.name;
@@ -237,7 +237,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
         };
 
         for f in new_files {
-            let Some(file) = f.get_file() else {
+            let Some(file) = f.get_file_owner() else {
                 bail!("Expected a list of files")
             };
 

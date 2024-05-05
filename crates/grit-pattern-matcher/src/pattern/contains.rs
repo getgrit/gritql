@@ -143,7 +143,7 @@ impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
             }
             *init_state = cur_state;
             Ok(true)
-        } else if let Some(file) = resolved_pattern.get_file() {
+        } else if let Some(file) = resolved_pattern.get_file_owner() {
             let mut cur_state = init_state.clone();
             let mut did_match = false;
             let prev_state = cur_state.clone();

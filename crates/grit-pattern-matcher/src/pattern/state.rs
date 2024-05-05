@@ -12,8 +12,8 @@ use anyhow::{anyhow, bail, Result};
 use grit_util::{AnalysisLogs, CodeRange, Range, VariableMatch};
 use im::{vector, Vector};
 use rand::SeedableRng;
-use std::collections::HashMap;
 use std::ops::Range as StdRange;
+use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Debug, Clone)]
 pub struct EffectRange<'a, Q: QueryContext> {
@@ -36,8 +36,12 @@ pub struct FileRegistry<'a, Q: QueryContext> {
 }
 
 impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
-    pub fn get_file(&self, pointer: FilePtr) -> &'a FileOwner<Q::Tree> {
+    pub fn get_file_owner(&self, pointer: FilePtr) -> &'a FileOwner<Q::Tree> {
         self.owners[pointer.file as usize][pointer.version as usize]
+    }
+
+    pub fn get_file_name(&self, pointer: FilePtr) -> &PathBuf {
+        &self.get_file_owner(pointer).name
     }
 
     pub fn new(files: Vec<&'a FileOwner<Q::Tree>>) -> Self {

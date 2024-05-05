@@ -65,7 +65,9 @@ fn run_on_test_files(problem: &Problem, test_files: &[SyntheticFile]) -> Vec<Mat
 #[test]
 fn test_lazy_file_parsing() {
     let pattern_src = r#"
-        file(name=includes "target.js", body=contains `console.log`)
+        file(name=includes "target.js", body=contains bubble `$x` where {
+            $x <: contains `console.log($_)`
+        })
         "#;
     let libs = BTreeMap::new();
 
