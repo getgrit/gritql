@@ -848,9 +848,7 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
     fn name(&self, files: &FileRegistry<'a, MarzanoQueryContext>) -> MarzanoResolvedPattern<'a> {
         match self {
             Self::Resolved(resolved) => resolved.name.clone(),
-            Self::Ptr(ptr) => {
-                MarzanoResolvedPattern::from_path_binding(&files.get_file_owner(*ptr).name)
-            }
+            Self::Ptr(ptr) => MarzanoResolvedPattern::from_path_binding(files.get_file_name(*ptr)),
         }
     }
 

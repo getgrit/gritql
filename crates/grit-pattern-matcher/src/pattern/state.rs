@@ -30,7 +30,9 @@ impl<Q: QueryContext> Interval for EffectRange<'_, Q> {
 #[derive(Clone, Debug)]
 pub struct FileRegistry<'a, Q: QueryContext> {
     /// The number of versions for each file
-    version_count: Vector<u16>,
+    version_count: Vec<u16>,
+    /// Versioned file paths
+    file_paths: Vec<&'a PathBuf>,
     /// The actual FileOwner, which has the full file available
     owners: Vector<Vector<&'a FileOwner<Q::Tree>>>,
 }
@@ -40,13 +42,14 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
         self.owners[pointer.file as usize][pointer.version as usize]
     }
 
-    pub fn get_file_name(&self, pointer: FilePtr) -> &PathBuf {
-        &self.get_file_owner(pointer).name
+    pub fn get_file_name(&self, pointer: FilePtr) -> &'a PathBuf {
+        self.file_paths[pointer.file as usize]
     }
 
     pub fn new(files: Vec<&'a FileOwner<Q::Tree>>) -> Self {
         Self {
             version_count: files.iter().map(|_| 1).collect(),
+            file_paths: files.iter().map(|f| &f.name).collect(),
             owners: files.into_iter().map(|f| vector![f]).collect(),
         }
     }
@@ -69,11 +72,13 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
 
     pub fn push_revision(&mut self, pointer: &FilePtr, file: &'a FileOwner<Q::Tree>) {
         self.version_count[pointer.file as usize] += 1;
+        self.file_paths.push(&file.name);
         self.owners[pointer.file as usize].push_back(file)
     }
 
     pub fn push_new_file(&mut self, file: &'a FileOwner<Q::Tree>) -> FilePtr {
-        self.version_count.push_back(1);
+        self.version_count.push(1);
+        self.file_paths.push(&file.name);
         self.owners.push_back(vector![file]);
         FilePtr {
             file: (self.owners.len() - 1) as u16,
