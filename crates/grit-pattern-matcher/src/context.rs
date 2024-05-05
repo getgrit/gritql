@@ -48,7 +48,7 @@ pub trait ExecContext<'a, Q: QueryContext> {
         file: &Q::File<'a>,
         state: &mut State<'a, Q>,
         logs: &mut AnalysisLogs,
-    ) -> Result<()>;
+    ) -> Result<bool>;
 
     // FIXME: Don't depend on Grit's file handling in Context.
     fn files(&self) -> &FileOwners<Q::Tree>;

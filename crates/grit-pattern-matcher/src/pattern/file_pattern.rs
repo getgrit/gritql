@@ -41,7 +41,10 @@ impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
         }
 
         // If the file isn't loaded yet, we must load it now
-        context.load_file(file, state, logs)?;
+        if !context.load_file(file, state, logs)? {
+            // The file wasn't loaded, so we can't match the body
+            return Ok(false);
+        }
 
         if !self
             .body

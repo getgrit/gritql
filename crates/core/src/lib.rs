@@ -25,6 +25,7 @@ mod suppress;
 mod text_unparser;
 pub mod tree_sitter_serde;
 mod variables;
+mod limits;
 
 // getrandom is a deeply nested dependency used by many things eg. uuid
 // to get wasm working we needed to enable a feature for this crate, so

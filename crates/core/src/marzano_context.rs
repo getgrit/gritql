@@ -2,6 +2,7 @@ use crate::{
     built_in_functions::BuiltIns,
     clean::{get_replacement_ranges, replace_cleaned_ranges},
     foreign_function_definition::ForeignFunctionDefinition,
+    limits::is_file_too_big,
     marzano_resolved_pattern::{MarzanoFile, MarzanoResolvedPattern},
     pattern_compiler::file_owner_compiler::FileOwnerCompiler,
     problem::MarzanoQueryContext,
@@ -123,22 +124,27 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
         file: &MarzanoFile<'a>,
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<bool> {
         match file {
             MarzanoFile::Resolved(_) => {
                 // Assume the file is already loaded
             }
             MarzanoFile::Ptr(ptr) => {
                 if state.files.is_loaded(ptr) {
-                    return Ok(());
+                    return Ok(true);
                 }
                 let index = ptr.file;
 
                 println!("Lazy files: {:?}", self.lazy_files.len());
 
                 let cow: Cow<RichFile> = self.lazy_files[index as usize].try_into_cow()?;
+
+                if let Some(log) = is_file_too_big(&cow) {
+                    logs.push(log);
+                    return Ok(false);
+                }
+
                 let owned = cow.into_owned();
-                // println!("Loading file: {:?} {} {}", index, owned.content.len());
 
                 let file = FileOwnerCompiler::from_matches(
                     owned.path,
@@ -155,7 +161,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 }
             }
         }
-        Ok(())
+        Ok(true)
     }
 
     // FIXME: Don't depend on Grit's file handling in context.

@@ -2,7 +2,6 @@ use crate::{
     api::{is_match, AnalysisLog, DoneFile, MatchResult},
     ast_node::{ASTNode, AstLeafNode},
     built_in_functions::BuiltIns,
-    constants::MAX_FILE_SIZE,
     foreign_function_definition::ForeignFunctionDefinition,
     marzano_binding::MarzanoBinding,
     marzano_code_snippet::MarzanoCodeSnippet,
@@ -163,16 +162,7 @@ impl Problem {
         }
         for file in &files {
             let path = file.name();
-            // let file: Cow<RichFile> = match file.try_into_cow() {
-            //     Result::Ok(file) => file,
-            //     Result::Err(err) => {
-            //         results.push(MatchResult::AnalysisLog(AnalysisLog::new_error(
-            //             err.to_string(),
-            //             &file.name(),
-            //         )));
-            //         continue;
-            //     }
-            // };
+
             // if let Some(log) = is_file_too_big(&file) {
             //     results.push(MatchResult::AnalysisLog(log));
             //     results.push(MatchResult::DoneFile(DoneFile {
@@ -191,25 +181,13 @@ impl Problem {
             //         }));
             //     } else {
             let mut logs: AnalysisLogs = vec![].into();
-            // let owned_file = FileOwnerCompiler::from_matches(
-            //     file.path.to_owned(),
-            //     file.content.to_owned(),
-            //     None,
-            //     false,
-            //     &self.language,
-            //     &mut logs,
-            // );
+
             results.extend(
                 logs.logs()
                     .into_iter()
                     .map(|l| MatchResult::AnalysisLog(l.into())),
             );
-            // match owned_file {
-            //     Result::Ok(owned_file) => {
-            // if let Some(owned_file) = owned_file {
             file_pointers.push(FilePtr::new(file_pointers.len() as u16, 0));
-            // owned_files.push(owned_file);
-            // }
             //         done_files.push(MatchResult::DoneFile(DoneFile {
             //             relative_file_path: path.to_string(),
             //             has_results: None,
@@ -241,14 +219,6 @@ impl Problem {
         } else {
             file_pointers[0].into()
         };
-
-        //         file_pattern: Option<FilePattern>,
-        // file_owners: FileOwners<Tree>,
-        // done_files: Vec<MatchResult>,
-        // error_files: Vec<MatchResult>,
-
-        // Clone each file
-        // let files = files.iter().map(|f| f.clone()).collect::<Vec<_>>();
 
         send(tx, results);
         self.execute_and_send(tx, files, binding, &owned_files, context, done_files);
@@ -507,24 +477,6 @@ impl Problem {
             .collect();
         user_logs.extend(results);
         Ok(user_logs)
-    }
-}
-
-fn is_file_too_big(file: &RichFile) -> Option<AnalysisLog> {
-    if file.path.len() > MAX_FILE_SIZE || file.content.len() > MAX_FILE_SIZE {
-        Some(AnalysisLog {
-            // TODO: standardize levels
-            level: 310,
-            message: format!("Skipped {}, it is too big.", file.path),
-            file: file.path.to_owned(),
-            engine_id: "marzano".to_owned(),
-            position: Position::first(),
-            syntax_tree: None,
-            range: None,
-            source: None,
-        })
-    } else {
-        None
     }
 }
 
