@@ -47,12 +47,15 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
         }
     }
 
-    // assumes at least one revision exists
+    /// Returns the latest revision of a given filepointer
+    /// If none exists, returns the file pointer itself
     pub fn latest_revision(&self, pointer: &FilePtr) -> FilePtr {
-        let latest = self.version_count[pointer.file as usize] - 1;
-        FilePtr {
-            file: pointer.file,
-            version: latest,
+        match self.version_count.get(pointer.file as usize) {
+            Some(&version_count) => FilePtr {
+                file: pointer.file,
+                version: version_count - 1,
+            },
+            None => *pointer,
         }
     }
 
