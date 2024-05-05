@@ -37,13 +37,13 @@ impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
         {
             return Ok(false);
         }
-        // if !self
-        //     .body
-        //     .execute(&file.binding(&state.files), state, context, logs)?
-        // {
-        //     return Ok(false);
-        // }
+        if !self
+            .body
+            .execute(&file.binding(&state.files), state, context, logs)?
+        {
+            return Ok(false);
+        }
 
-        Ok(false)
+        Ok(true)
     }
 }

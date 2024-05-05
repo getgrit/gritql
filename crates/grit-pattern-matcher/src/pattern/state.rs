@@ -46,11 +46,22 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
         self.file_paths[pointer.file as usize]
     }
 
+    /// If you already have all the files loaded, immediately create a FileRegistry
     pub fn new(files: Vec<&'a FileOwner<Q::Tree>>) -> Self {
         Self {
             version_count: files.iter().map(|_| 1).collect(),
             file_paths: files.iter().map(|f| &f.name).collect(),
             owners: files.into_iter().map(|f| vector![f]).collect(),
+        }
+    }
+
+    /// If only the paths are available, create a FileRegistry with empty owners
+    /// This is *unsafe* if you do not later insert the appropriate owners before get_file_owner is called
+    pub fn new_from_paths(file_paths: Vec<&'a PathBuf>) -> Self {
+        Self {
+            version_count: file_paths.iter().map(|_| 1).collect(),
+            owners: file_paths.iter().map(|_| vector![]).collect(),
+            file_paths,
         }
     }
 
@@ -173,12 +184,12 @@ impl FilePtr {
 }
 
 impl<'a, Q: QueryContext> State<'a, Q> {
-    pub fn new(bindings: VarRegistry<'a, Q>, files: Vec<&'a FileOwner<Q::Tree>>) -> Self {
+    pub fn new(bindings: VarRegistry<'a, Q>, registry: FileRegistry<'a, Q>) -> Self {
         Self {
             rng: rand::rngs::StdRng::seed_from_u64(32),
             bindings,
             effects: vector![],
-            files: FileRegistry::new(files),
+            files: registry,
         }
     }
 

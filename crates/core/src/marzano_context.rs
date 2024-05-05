@@ -32,7 +32,6 @@ pub struct MarzanoContext<'a> {
     pub predicate_definitions: &'a Vec<PredicateDefinition<MarzanoQueryContext>>,
     pub function_definitions: &'a Vec<GritFunctionDefinition<MarzanoQueryContext>>,
     pub foreign_function_definitions: &'a Vec<ForeignFunctionDefinition>,
-    // pub file_refs: &'a Vec<Box<[TryIntoInputFile]>
     pub files: &'a FileOwners<Tree>,
     pub built_ins: &'a BuiltIns,
     pub language: &'a TargetLanguage,

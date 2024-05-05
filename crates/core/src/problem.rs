@@ -16,8 +16,8 @@ use grit_pattern_matcher::{
     context::QueryContext,
     file_owners::{FileOwner, FileOwners},
     pattern::{
-        FilePtr, GritFunctionDefinition, Matcher, Pattern, PatternDefinition, PredicateDefinition,
-        ResolvedPattern, State, VariableContent,
+        FilePtr, FileRegistry, GritFunctionDefinition, Matcher, Pattern, PatternDefinition,
+        PredicateDefinition, ResolvedPattern, State, VariableContent,
     },
 };
 use grit_util::{AnalysisLogs, Position, VariableMatch};
@@ -33,12 +33,12 @@ use marzano_util::{
 };
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use sha2::{Digest, Sha256};
-use std::fmt::Debug;
 use std::{
     borrow::Cow,
     path::PathBuf,
     sync::mpsc::{self, Sender},
 };
+use std::{fmt::Debug, str::FromStr};
 use tracing::{event, Level};
 
 #[derive(Debug)]
@@ -268,7 +268,13 @@ impl Problem {
         context: &ExecutionContext,
         mut done_files: Vec<MatchResult>,
     ) {
-        let mut outputs = match self.execute(binding, files, owned_files, context) {
+        let file_names: Vec<PathBuf> = files
+            .iter()
+            .map(|f| PathBuf::from_str(&f.name()).unwrap())
+            .collect();
+        let borrowed_names: Vec<&PathBuf> = file_names.iter().collect();
+
+        let mut outputs = match self.execute(binding, files, borrowed_names, owned_files, context) {
             Result::Err(err) => files
                 .iter()
                 .map(|file| {
@@ -445,6 +451,7 @@ impl Problem {
         &self,
         binding: FilePattern,
         files: &[impl TryIntoInputFile + FileName + Send + Sync],
+        file_names: Vec<&PathBuf>,
         owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
     ) -> Result<Vec<MatchResult>> {
@@ -474,8 +481,8 @@ impl Problem {
             })
             .collect();
 
-        let file_refs: Vec<&FileOwner<Tree>> = context.files.iter().collect();
-        let mut state = State::new(bindings, file_refs);
+        let file_registry = FileRegistry::new_from_paths(file_names);
+        let mut state = State::new(bindings, file_registry);
 
         let the_new_files =
             state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[NEW_FILES_INDEX].as_mut();
