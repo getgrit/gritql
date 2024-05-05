@@ -153,11 +153,13 @@ impl Problem {
         }
     }
 
-    fn build_resolved_pattern(
+    fn build_and_execute_resolved_pattern_internal(
         &self,
+        tx: &Sender<Vec<MatchResult>>,
         files: &[impl TryIntoInputFile + FileName],
+        context: &ExecutionContext,
         cache: &impl GritCache,
-    ) -> Result<FilePatternOutput> {
+    ) -> Result<()> {
         let owned_files = FileOwners::new();
         let mut results = vec![];
         let mut file_pointers = vec![];
@@ -236,25 +238,25 @@ impl Problem {
             //         }
             //     }
         }
-        let binding = if self.is_multifile {
+        let binding: FilePattern = if self.is_multifile {
             file_pointers.into()
         } else if file_pointers.is_empty() {
+            send(tx, results);
             // single file pattern had file that was too big
-            return Ok(FilePatternOutput {
-                file_pattern: None,
-                file_owners: owned_files,
-                done_files,
-                error_files: results,
-            });
+            return Ok(());
         } else {
             file_pointers[0].into()
         };
-        Ok(FilePatternOutput {
-            file_pattern: Some(binding),
-            file_owners: owned_files,
-            done_files,
-            error_files: results,
-        })
+
+        //         file_pattern: Option<FilePattern>,
+        // file_owners: FileOwners<Tree>,
+        // done_files: Vec<MatchResult>,
+        // error_files: Vec<MatchResult>,
+
+        send(tx, results);
+        self.execute_and_send(tx, files, binding, &owned_files, context, done_files);
+
+        Ok(())
     }
 
     fn execute_and_send(
@@ -298,25 +300,8 @@ impl Problem {
         context: &ExecutionContext,
         cache: &impl GritCache,
     ) {
-        match self.build_resolved_pattern(files, cache) {
-            Result::Ok(FilePatternOutput {
-                file_pattern,
-                file_owners,
-                done_files,
-                error_files,
-            }) => {
-                send(tx, error_files);
-                if let Some(file_pattern) = file_pattern {
-                    self.execute_and_send(
-                        tx,
-                        files,
-                        file_pattern,
-                        &file_owners,
-                        context,
-                        done_files,
-                    );
-                }
-            }
+        match self.build_and_execute_resolved_pattern_internal(tx, files, context, cache) {
+            Result::Ok(_) => {}
             Result::Err(err) => {
                 // might be sending too many donefile here?
                 let mut error_files = vec![];
