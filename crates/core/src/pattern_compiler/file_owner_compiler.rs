@@ -24,12 +24,12 @@ impl FileOwnerCompiler {
             return Ok(None);
         };
         let absolute_path = absolutize(&name)?;
-        Ok(Some(FileOwner {
+        Ok(Some(FileOwner::new(
             name,
             absolute_path,
             tree,
-            matches: matches.unwrap_or_default().into(),
+            matches.unwrap_or_default().into(),
             new,
-        }))
+        )))
     }
 }

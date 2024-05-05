@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::to_string_pretty;
 use std::path::PathBuf;
 use std::{fmt, str::FromStr, vec};
+use tree_sitter::Node;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
@@ -102,7 +103,7 @@ impl MatchResult {
             if file.new {
                 return Ok(Some(MatchResult::CreateFile(CreateFile::file_to_create(
                     file.name.to_string_lossy().as_ref(),
-                    &file.tree.source,
+                    &file.tree().source,
                 ))));
             } else if let Some(ranges) = &file.matches.borrow().input_matches {
                 if ranges.suppressed {
@@ -111,7 +112,8 @@ impl MatchResult {
                 return Ok(Some(MatchResult::Match(Match::file_to_match(
                     ranges,
                     file.name.to_string_lossy().as_ref(),
-                    &file.tree,
+                    &file.tree().root_node().node,
+                    file.tree().source.as_str(),
                     language,
                 ))));
             } else {
@@ -286,15 +288,12 @@ impl Match {
     fn file_to_match<'a>(
         match_ranges: &InputRanges,
         name: &str,
-        tree: &Tree,
+        root_node: &Node,
+        source: &str,
         language: &impl MarzanoLanguage<'a>,
     ) -> Self {
-        let input_file_debug_text = to_string_pretty(&tree_sitter_node_to_json(
-            &tree.root_node().node,
-            &tree.source,
-            language,
-        ))
-        .unwrap();
+        let input_file_debug_text =
+            to_string_pretty(&tree_sitter_node_to_json(&root_node, &source, language)).unwrap();
         Self {
             debug: input_file_debug_text,
             source_file: name.to_owned(),
@@ -364,7 +363,8 @@ impl Rewrite {
             Match::file_to_match(
                 ranges,
                 initial.name.to_string_lossy().as_ref(),
-                &initial.tree,
+                &initial.tree().root_node().node,
+                &initial.tree().source,
                 language,
             )
         } else {
@@ -372,7 +372,7 @@ impl Rewrite {
         };
         let rewritten = EntireFile::file_to_entire_file(
             rewrite.name.to_string_lossy().as_ref(),
-            &rewrite.tree.source,
+            &rewrite.tree().source,
             rewrite.matches.borrow().byte_ranges.as_ref(),
         );
         Ok(Rewrite::new(original, rewritten))
