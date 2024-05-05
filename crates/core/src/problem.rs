@@ -156,7 +156,7 @@ impl Problem {
     fn build_and_execute_resolved_pattern_internal(
         &self,
         tx: &Sender<Vec<MatchResult>>,
-        files: &[impl TryIntoInputFile + FileName],
+        files: &[impl TryIntoInputFile + FileName + Send + Sync],
         context: &ExecutionContext,
         cache: &impl GritCache,
     ) -> Result<()> {
@@ -262,13 +262,13 @@ impl Problem {
     fn execute_and_send(
         &self,
         tx: &Sender<Vec<MatchResult>>,
-        files: &[impl TryIntoInputFile + FileName],
+        files: &[impl TryIntoInputFile + FileName + Send + Sync],
         binding: FilePattern,
         owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
         mut done_files: Vec<MatchResult>,
     ) {
-        let mut outputs = match self.execute(binding, owned_files, context) {
+        let mut outputs = match self.execute(binding, files, owned_files, context) {
             Result::Err(err) => files
                 .iter()
                 .map(|file| {
@@ -296,7 +296,7 @@ impl Problem {
     fn build_and_execute_resolved_pattern(
         &self,
         tx: &Sender<Vec<MatchResult>>,
-        files: &[impl TryIntoInputFile + FileName],
+        files: &[impl TryIntoInputFile + FileName + Send + Sync],
         context: &ExecutionContext,
         cache: &impl GritCache,
     ) {
@@ -444,6 +444,7 @@ impl Problem {
     fn execute(
         &self,
         binding: FilePattern,
+        files: &[impl TryIntoInputFile + FileName + Send + Sync],
         owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
     ) -> Result<Vec<MatchResult>> {
