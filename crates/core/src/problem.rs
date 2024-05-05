@@ -3,6 +3,7 @@ use crate::{
     ast_node::{ASTNode, AstLeafNode},
     built_in_functions::BuiltIns,
     constants::MAX_FILE_SIZE,
+    files::MarzanoFileManager,
     foreign_function_definition::ForeignFunctionDefinition,
     marzano_binding::MarzanoBinding,
     marzano_code_snippet::MarzanoCodeSnippet,
@@ -246,6 +247,9 @@ impl Problem {
         // done_files: Vec<MatchResult>,
         // error_files: Vec<MatchResult>,
 
+        // Clone each file
+        let files = files.iter().map(|f| f.clone()).collect::<Vec<_>>();
+
         send(tx, results);
         self.execute_and_send(tx, files, binding, &owned_files, context, done_files);
 
@@ -255,7 +259,7 @@ impl Problem {
     fn execute_and_send(
         &self,
         tx: &Sender<Vec<MatchResult>>,
-        files: &[impl MarzanoFileTrait],
+        files: Vec<impl LoadableFile>,
         binding: FilePattern,
         owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
@@ -266,16 +270,27 @@ impl Problem {
             .map(|f| PathBuf::from_str(&f.name()).unwrap())
             .collect();
         let borrowed_names: Vec<&PathBuf> = file_names.iter().collect();
+        let lazy_files: Vec<Box<dyn LoadableFile>> = files
+            .into_iter()
+            .map(|file| Box::new(file) as Box<dyn LoadableFile>)
+            .collect();
 
-        let mut outputs = match self.execute(binding, files, borrowed_names, owned_files, context) {
-            Result::Err(err) => files
-                .iter()
-                .map(|file| {
-                    MatchResult::AnalysisLog(AnalysisLog::new_error(err.to_string(), &file.name()))
-                })
-                .collect(),
-            Result::Ok(messages) => messages,
-        };
+        let mut outputs =
+            match self.execute(binding, lazy_files, borrowed_names, owned_files, context) {
+                Result::Err(err) => {
+                    // files
+                    // .iter()
+                    // .map(|file| {
+                    //     MatchResult::AnalysisLog(AnalysisLog::new_error(
+                    //         err.to_string(),
+                    //         &file.name(),
+                    //     ))
+                    // })
+                    // .collect(),
+                    vec![]
+                }
+                Result::Ok(messages) => messages,
+            };
         if done_files.len() == 1 {
             if let MatchResult::DoneFile(ref mut done_file) = done_files[0] {
                 let has_results = outputs
@@ -443,29 +458,21 @@ impl Problem {
     fn execute<'a>(
         &self,
         binding: FilePattern,
-        files: &[impl MarzanoFileTrait + 'a],
+        files: Vec<Box<dyn LoadableFile + 'a>>,
         file_names: Vec<&PathBuf>,
         owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
     ) -> Result<Vec<MatchResult>> {
         let mut user_logs = vec![].into();
 
-        let lazy_files: Vec<Box<dyn LoadableFile + 'static>> = files
-            .iter()
-            .map(|f| unsafe {
-                std::mem::transmute::<
-                    Box<dyn LoadableFile + Send + Sync + 'a>,
-                    Box<dyn LoadableFile + 'static>,
-                >(Box::new(f.clone()))
-            })
-            .collect();
+        let lazy_files = files;
 
         let context = MarzanoContext::new(
             &self.pattern_definitions,
             &self.predicate_definitions,
             &self.function_definitions,
             &self.foreign_function_definitions,
-            &lazy_files,
+            lazy_files,
             owned_files,
             &self.built_ins,
             &self.language,

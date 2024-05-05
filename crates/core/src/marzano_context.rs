@@ -35,7 +35,7 @@ pub struct MarzanoContext<'a> {
     pub predicate_definitions: &'a Vec<PredicateDefinition<MarzanoQueryContext>>,
     pub function_definitions: &'a Vec<GritFunctionDefinition<MarzanoQueryContext>>,
     pub foreign_function_definitions: &'a Vec<ForeignFunctionDefinition>,
-    lazy_files: &'a Vec<Box<dyn LoadableFile>>,
+    lazy_files: Vec<Box<dyn LoadableFile + 'a>>,
     pub files: &'a FileOwners<Tree>,
     pub built_ins: &'a BuiltIns,
     pub language: &'a TargetLanguage,
@@ -50,7 +50,7 @@ impl<'a> MarzanoContext<'a> {
         predicate_definitions: &'a Vec<PredicateDefinition<MarzanoQueryContext>>,
         function_definitions: &'a Vec<GritFunctionDefinition<MarzanoQueryContext>>,
         foreign_function_definitions: &'a Vec<ForeignFunctionDefinition>,
-        lazy_files: &'a Vec<Box<dyn LoadableFile>>,
+        lazy_files: Vec<Box<dyn LoadableFile + 'a>>,
         files: &'a FileOwners<Tree>,
         built_ins: &'a BuiltIns,
         language: &'a TargetLanguage,
@@ -133,6 +133,8 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     return Ok(());
                 }
                 let index = ptr.file;
+
+                println!("Lazy files: {:?}", self.lazy_files.len());
 
                 let cow: Cow<RichFile> = self.lazy_files[index as usize].try_into_cow()?;
                 let owned = cow.into_owned();
