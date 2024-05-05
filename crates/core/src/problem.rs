@@ -414,7 +414,7 @@ impl Problem {
     }
 
     #[cfg_attr(feature = "grit_tracing", instrument(skip_all))]
-    fn execute_shared(
+    pub(crate) fn execute_shared(
         &self,
         files: &[impl TryIntoInputFile + FileName + Send + Sync],
         context: &ExecutionContext,
