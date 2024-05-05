@@ -887,6 +887,7 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
         match self {
             Self::Resolved(resolved) => resolved.body.clone(),
             Self::Ptr(ptr) => {
+                println!("We get the binding for file {:?}", ptr);
                 let file = &files.get_file(*ptr);
                 ResolvedPattern::from_node_binding(file.tree.root_node())
             }

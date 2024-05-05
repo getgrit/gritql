@@ -230,14 +230,15 @@ impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        if let Some(file) = binding.get_file() {
-            state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[FILENAME_INDEX].value =
-                Some(file.name(&state.files));
-            state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[ABSOLUTE_PATH_INDEX]
-                .value = Some(file.absolute_path(&state.files, context.language())?);
-            state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[PROGRAM_INDEX].value =
-                Some(file.binding(&state.files));
-        }
+        println!("Root execute happens now");
+        // if let Some(file) = binding.get_file() {
+        //     state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[FILENAME_INDEX].value =
+        //         Some(file.name(&state.files));
+        //     state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[ABSOLUTE_PATH_INDEX]
+        //         .value = Some(file.absolute_path(&state.files, context.language())?);
+        //     state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[PROGRAM_INDEX].value =
+        //         Some(file.binding(&state.files));
+        // }
 
         match self {
             Pattern::AstNode(ast_node) => ast_node.execute(binding, state, context, logs),

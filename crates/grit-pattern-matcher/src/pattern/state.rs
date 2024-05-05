@@ -28,38 +28,48 @@ impl<Q: QueryContext> Interval for EffectRange<'_, Q> {
 }
 
 #[derive(Clone, Debug)]
-pub struct FileRegistry<'a, Q: QueryContext>(Vector<Vector<&'a FileOwner<Q::Tree>>>);
+pub struct FileRegistry<'a, Q: QueryContext> {
+    /// The number of versions for each file
+    version_count: Vector<u16>,
+    /// The actual FileOwner, which has the full file available
+    owners: Vector<Vector<&'a FileOwner<Q::Tree>>>,
+}
 
 impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
     pub fn get_file(&self, pointer: FilePtr) -> &'a FileOwner<Q::Tree> {
-        self.0[pointer.file as usize][pointer.version as usize]
+        self.owners[pointer.file as usize][pointer.version as usize]
     }
 
-    pub fn new(files: Vector<Vector<&'a FileOwner<Q::Tree>>>) -> Self {
-        Self(files)
+    pub fn new(files: Vec<&'a FileOwner<Q::Tree>>) -> Self {
+        Self {
+            version_count: files.iter().map(|_| 1).collect(),
+            owners: files.into_iter().map(|f| vector![f]).collect(),
+        }
     }
 
     // assumes at least one revision exists
     pub fn latest_revision(&self, pointer: &FilePtr) -> FilePtr {
-        let latest = self.0[pointer.file as usize].len() - 1;
+        let latest = self.version_count[pointer.file as usize] - 1;
         FilePtr {
             file: pointer.file,
-            version: latest as u16,
+            version: latest,
         }
     }
 
     pub fn files(&self) -> &Vector<Vector<&'a FileOwner<Q::Tree>>> {
-        &self.0
+        &self.owners
     }
 
     pub fn push_revision(&mut self, pointer: &FilePtr, file: &'a FileOwner<Q::Tree>) {
-        self.0[pointer.file as usize].push_back(file)
+        self.version_count[pointer.file as usize] += 1;
+        self.owners[pointer.file as usize].push_back(file)
     }
 
     pub fn push_new_file(&mut self, file: &'a FileOwner<Q::Tree>) -> FilePtr {
-        self.0.push_back(vector![file]);
+        self.version_count.push_back(1);
+        self.owners.push_back(vector![file]);
         FilePtr {
-            file: (self.0.len() - 1) as u16,
+            file: (self.owners.len() - 1) as u16,
             version: 0,
         }
     }
@@ -156,7 +166,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
             rng: rand::rngs::StdRng::seed_from_u64(32),
             bindings,
             effects: vector![],
-            files: FileRegistry::new(files.into_iter().map(|f| vector![f]).collect()),
+            files: FileRegistry::new(files),
         }
     }
 

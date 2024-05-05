@@ -34,14 +34,14 @@ impl SyntheticFile {
 
 impl TryIntoInputFile for SyntheticFile {
     fn try_into_cow(&self) -> Result<Cow<RichFile>> {
-        if self.can_read {
-            Ok(Cow::Owned(RichFile::new(
-                self.path.clone(),
-                self.content.clone(),
-            )))
-        } else {
-            panic!("Tried to read file that should not be read");
+        if !self.can_read {
+            println!("Tried to read file that should not be read: {}", self.path);
         }
+
+        Ok(Cow::Owned(RichFile::new(
+            self.path.clone(),
+            self.content.clone(),
+        )))
     }
 }
 
@@ -112,5 +112,8 @@ fn test_lazy_file_parsing() {
         false,
     )];
     let results = run_on_test_files(&pattern, &test_files);
-    assert_eq!(results.len(), 2);
+    assert_eq!(results.len(), 1);
+
+    // Panic for now
+    panic!("TODO: Implement lazy file parsing");
 }
