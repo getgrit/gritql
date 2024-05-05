@@ -107,6 +107,10 @@ impl TryIntoInputFile for &RichPath {
     }
 }
 
+/// Core Marzano file trait
+pub trait LoadableFile: TryIntoInputFile + FileName {}
+impl<T> LoadableFile for T where T: TryIntoInputFile + FileName {}
+
 /// All the required traits for processing a file in the Marzano engine
 pub trait MarzanoFileTrait: TryIntoInputFile + FileName + Send + Sync + Clone {}
 

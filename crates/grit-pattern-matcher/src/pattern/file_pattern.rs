@@ -1,8 +1,11 @@
+use std::error::Error;
+
 use super::{
     patterns::{Matcher, Pattern},
     resolved_pattern::ResolvedPattern,
     state::State,
 };
+use crate::context::ExecContext;
 use crate::{context::QueryContext, pattern::resolved_pattern::File};
 use anyhow::Result;
 use grit_util::AnalysisLogs;
@@ -31,12 +34,15 @@ impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
             return Ok(false);
         };
 
-        if !self
-            .name
-            .execute(&file.name(&state.files), state, context, logs)?
-        {
+        let name = file.name(&state.files);
+
+        if !self.name.execute(&name, state, context, logs)? {
             return Ok(false);
         }
+
+        // If the file isn't loaded yet, we must load it now
+        context.load_file(file, state, logs)?;
+
         if !self
             .body
             .execute(&file.binding(&state.files), state, context, logs)?

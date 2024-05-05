@@ -2,7 +2,7 @@ use crate::{
     built_in_functions::BuiltIns,
     clean::{get_replacement_ranges, replace_cleaned_ranges},
     foreign_function_definition::ForeignFunctionDefinition,
-    marzano_resolved_pattern::MarzanoResolvedPattern,
+    marzano_resolved_pattern::{MarzanoFile, MarzanoResolvedPattern},
     pattern_compiler::file_owner_compiler::FileOwnerCompiler,
     problem::MarzanoQueryContext,
     text_unparser::apply_effects,
@@ -12,7 +12,7 @@ use grit_pattern_matcher::{
     binding::Binding,
     constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
     context::ExecContext,
-    file_owners::FileOwners,
+    file_owners::{FileOwner, FileOwners},
     pattern::{
         CallBuiltIn, File, FilePtr, GritFunctionDefinition, Matcher, Pattern, PatternDefinition,
         PredicateDefinition, ResolvedPattern, State,
@@ -24,15 +24,18 @@ use marzano_language::{
     language::{MarzanoLanguage, Tree},
     target_language::TargetLanguage,
 };
-use marzano_util::{rich_path::TryIntoInputFile, runtime::ExecutionContext};
-use std::path::PathBuf;
+use marzano_util::{
+    rich_path::{FileName, LoadableFile, MarzanoFileTrait, RichFile, TryIntoInputFile},
+    runtime::ExecutionContext,
+};
+use std::{borrow::Cow, path::PathBuf};
 
 pub struct MarzanoContext<'a> {
     pub pattern_definitions: &'a Vec<PatternDefinition<MarzanoQueryContext>>,
     pub predicate_definitions: &'a Vec<PredicateDefinition<MarzanoQueryContext>>,
     pub function_definitions: &'a Vec<GritFunctionDefinition<MarzanoQueryContext>>,
     pub foreign_function_definitions: &'a Vec<ForeignFunctionDefinition>,
-    lazy_files: &'a Vec<Box<dyn TryIntoInputFile>>,
+    lazy_files: &'a Vec<Box<dyn LoadableFile>>,
     pub files: &'a FileOwners<Tree>,
     pub built_ins: &'a BuiltIns,
     pub language: &'a TargetLanguage,
@@ -47,7 +50,7 @@ impl<'a> MarzanoContext<'a> {
         predicate_definitions: &'a Vec<PredicateDefinition<MarzanoQueryContext>>,
         function_definitions: &'a Vec<GritFunctionDefinition<MarzanoQueryContext>>,
         foreign_function_definitions: &'a Vec<ForeignFunctionDefinition>,
-        lazy_files: &'a Vec<Box<dyn TryIntoInputFile>>,
+        lazy_files: &'a Vec<Box<dyn LoadableFile>>,
         files: &'a FileOwners<Tree>,
         built_ins: &'a BuiltIns,
         language: &'a TargetLanguage,
@@ -113,6 +116,42 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
         logs: &mut AnalysisLogs,
     ) -> Result<MarzanoResolvedPattern<'a>> {
         self.built_ins.call(call, context, state, logs)
+    }
+
+    fn load_file(
+        &self,
+        file: &MarzanoFile<'a>,
+        state: &mut State<'a, MarzanoQueryContext>,
+        logs: &mut AnalysisLogs,
+    ) -> anyhow::Result<Option<FileOwner>> {
+        match file {
+            MarzanoFile::Resolved(_) => {
+                // Assume the file is already loaded
+            }
+            MarzanoFile::Ptr(ptr) => {
+                if state.files.is_loaded(ptr) {
+                    return Ok(());
+                }
+                let index = ptr.file;
+
+                let cow: Cow<RichFile> = self.lazy_files[index as usize].try_into_cow()?;
+                let owned = cow.into_owned();
+                // println!("Loading file: {:?} {} {}", index, owned.content.len());
+
+                let file = FileOwnerCompiler::from_matches(
+                    owned.path,
+                    owned.content,
+                    None,
+                    false,
+                    self.language,
+                    logs,
+                )?;
+                if let Some(file) = file {
+                    state.files.load_file(ptr, file);
+                }
+            }
+        }
+        Ok(())
     }
 
     // FIXME: Don't depend on Grit's file handling in context.

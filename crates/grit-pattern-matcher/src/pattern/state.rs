@@ -12,6 +12,7 @@ use anyhow::{anyhow, bail, Result};
 use grit_util::{AnalysisLogs, CodeRange, Range, VariableMatch};
 use im::{vector, Vector};
 use rand::SeedableRng;
+use std::convert::AsRef;
 use std::ops::Range as StdRange;
 use std::{collections::HashMap, path::PathBuf};
 
@@ -31,18 +32,26 @@ impl<Q: QueryContext> Interval for EffectRange<'_, Q> {
 pub struct FileRegistry<'a, Q: QueryContext> {
     /// The number of versions for each file
     version_count: Vec<u16>,
-    /// Versioned file paths
+    /// Original file paths, for lazy loading
     file_paths: Vec<&'a PathBuf>,
     /// The actual FileOwner, which has the full file available
     owners: Vector<Vector<&'a FileOwner<Q::Tree>>>,
+    /// Lazily loaded files need to be stored here directly
+    lazy_files: Vec<FileOwner<Q::Tree>>,
 }
 
 impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
     pub fn get_file_owner(&self, pointer: FilePtr) -> &'a FileOwner<Q::Tree> {
-        self.owners[pointer.file as usize][pointer.version as usize]
+        if let Some(versions) = self.owners.get(pointer.file as usize) {
+            if let Some(file) = versions.get(pointer.version as usize) {
+                return *file;
+            }
+        }
+        &self.lazy_files[pointer.file as usize]
     }
 
     pub fn get_file_name(&self, pointer: FilePtr) -> &'a PathBuf {
+        // TODO: look in get_file_owner first, so revisions are captured
         self.file_paths[pointer.file as usize]
     }
 
@@ -52,6 +61,7 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
             version_count: files.iter().map(|_| 1).collect(),
             file_paths: files.iter().map(|f| &f.name).collect(),
             owners: files.into_iter().map(|f| vector![f]).collect(),
+            lazy_files: vec![],
         }
     }
 
@@ -59,20 +69,40 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
     /// This is *unsafe* if you do not later insert the appropriate owners before get_file_owner is called
     pub fn new_from_paths(file_paths: Vec<&'a PathBuf>) -> Self {
         Self {
-            version_count: file_paths.iter().map(|_| 1).collect(),
+            version_count: file_paths.iter().map(|_| 0).collect(),
             owners: file_paths.iter().map(|_| vector![]).collect(),
             file_paths,
+            lazy_files: vec![],
         }
+    }
+
+    /// Confirms a file is already fully loaded
+    pub fn is_loaded(&self, pointer: &FilePtr) -> bool {
+        self.version_count
+            .get(pointer.file as usize)
+            .map_or(false, |&v| v > 0)
+    }
+
+    /// Load a file in
+    pub fn load_file(&mut self, pointer: &FilePtr, file: FileOwner<Q::Tree>) {
+        self.version_count[pointer.file as usize] += 1;
+        self.lazy_files.push(file);
     }
 
     /// Returns the latest revision of a given filepointer
     /// If none exists, returns the file pointer itself
     pub fn latest_revision(&self, pointer: &FilePtr) -> FilePtr {
         match self.version_count.get(pointer.file as usize) {
-            Some(&version_count) => FilePtr {
-                file: pointer.file,
-                version: version_count - 1,
-            },
+            Some(&version_count) => {
+                if version_count == 0 {
+                    *pointer
+                } else {
+                    FilePtr {
+                        file: pointer.file,
+                        version: version_count - 1,
+                    }
+                }
+            }
             None => *pointer,
         }
     }
@@ -83,7 +113,6 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
 
     pub fn push_revision(&mut self, pointer: &FilePtr, file: &'a FileOwner<Q::Tree>) {
         self.version_count[pointer.file as usize] += 1;
-        self.file_paths.push(&file.name);
         self.owners[pointer.file as usize].push_back(file)
     }
 

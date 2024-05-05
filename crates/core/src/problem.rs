@@ -28,7 +28,7 @@ use marzano_util::{
     cache::{GritCache, NullCache},
     hasher::hash,
     node_with_source::NodeWithSource,
-    rich_path::{FileName, MarzanoFileTrait, RichFile, RichPath, TryIntoInputFile},
+    rich_path::{FileName, LoadableFile, MarzanoFileTrait, RichFile, RichPath, TryIntoInputFile},
     runtime::ExecutionContext,
 };
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
@@ -90,13 +90,6 @@ impl From<FilePattern> for MarzanoResolvedPattern<'_> {
             )),
         }
     }
-}
-
-struct FilePatternOutput {
-    file_pattern: Option<FilePattern>,
-    file_owners: FileOwners<Tree>,
-    done_files: Vec<MatchResult>,
-    error_files: Vec<MatchResult>,
 }
 
 fn send(tx: &Sender<Vec<MatchResult>>, value: Vec<MatchResult>) {
@@ -457,12 +450,12 @@ impl Problem {
     ) -> Result<Vec<MatchResult>> {
         let mut user_logs = vec![].into();
 
-        let lazy_files: Vec<Box<dyn TryIntoInputFile + 'static>> = files
+        let lazy_files: Vec<Box<dyn LoadableFile + 'static>> = files
             .iter()
             .map(|f| unsafe {
                 std::mem::transmute::<
-                    Box<dyn TryIntoInputFile + Send + Sync + 'a>,
-                    Box<dyn TryIntoInputFile + 'static>,
+                    Box<dyn LoadableFile + Send + Sync + 'a>,
+                    Box<dyn LoadableFile + 'static>,
                 >(Box::new(f.clone()))
             })
             .collect();
