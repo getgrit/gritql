@@ -36,18 +36,11 @@ pub struct FileRegistry<'a, Q: QueryContext> {
     file_paths: Vec<&'a PathBuf>,
     /// The actual FileOwner, which has the full file available
     owners: Vector<Vector<&'a FileOwner<Q::Tree>>>,
-    /// Lazily loaded files need to be stored here directly
-    lazy_files: Vec<FileOwner<Q::Tree>>,
 }
 
 impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
     pub fn get_file_owner(&self, pointer: FilePtr) -> &'a FileOwner<Q::Tree> {
-        if let Some(versions) = self.owners.get(pointer.file as usize) {
-            if let Some(file) = versions.get(pointer.version as usize) {
-                return *file;
-            }
-        }
-        &self.lazy_files[pointer.file as usize]
+        self.owners[pointer.file as usize][pointer.version as usize]
     }
 
     pub fn get_file_name(&self, pointer: FilePtr) -> &'a PathBuf {
@@ -61,7 +54,7 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
             version_count: files.iter().map(|_| 1).collect(),
             file_paths: files.iter().map(|f| &f.name).collect(),
             owners: files.into_iter().map(|f| vector![f]).collect(),
-            lazy_files: vec![],
+            // lazy_files: vec![],
         }
     }
 
@@ -72,7 +65,7 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
             version_count: file_paths.iter().map(|_| 0).collect(),
             owners: file_paths.iter().map(|_| vector![]).collect(),
             file_paths,
-            lazy_files: vec![],
+            // lazy_files: vec![],
         }
     }
 
@@ -84,9 +77,8 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
     }
 
     /// Load a file in
-    pub fn load_file(&mut self, pointer: &FilePtr, file: FileOwner<Q::Tree>) {
-        self.version_count[pointer.file as usize] += 1;
-        self.lazy_files.push(file);
+    pub fn load_file(&mut self, pointer: &FilePtr, file: &'a FileOwner<Q::Tree>) {
+        self.push_revision(pointer, file)
     }
 
     /// Returns the latest revision of a given filepointer

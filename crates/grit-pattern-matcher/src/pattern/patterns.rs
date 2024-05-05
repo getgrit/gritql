@@ -230,7 +230,6 @@ impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        println!("Root execute happens now");
         // if let Some(file) = binding.get_file() {
         //     state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[FILENAME_INDEX].value =
         //         Some(file.name(&state.files));

@@ -35,6 +35,12 @@ pub enum MatchResult {
     AnalysisLog(AnalysisLog),
 }
 
+impl MatchResult {
+    pub fn is_match(&self) -> bool {
+        is_match(self)
+    }
+}
+
 /// Make a path look the way provolone expects it to
 /// Removes leading "./", or the root path if it's provided
 fn normalize_path_in_project<'a>(path: &'a str, root_path: Option<&'a PathBuf>) -> &'a str {

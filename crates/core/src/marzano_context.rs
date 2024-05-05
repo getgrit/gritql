@@ -123,7 +123,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
         file: &MarzanoFile<'a>,
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
-    ) -> anyhow::Result<Option<FileOwner>> {
+    ) -> anyhow::Result<()> {
         match file {
             MarzanoFile::Resolved(_) => {
                 // Assume the file is already loaded
@@ -147,7 +147,9 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     logs,
                 )?;
                 if let Some(file) = file {
-                    state.files.load_file(ptr, file);
+                    self.files.push(file);
+                    let file_ref = self.files.last().unwrap();
+                    state.files.push_revision(ptr, self.files.last().unwrap());
                 }
             }
         }
