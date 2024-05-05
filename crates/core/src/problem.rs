@@ -28,7 +28,7 @@ use marzano_util::{
     cache::{GritCache, NullCache},
     hasher::hash,
     node_with_source::NodeWithSource,
-    rich_path::{FileName, RichFile, RichPath, TryIntoInputFile},
+    rich_path::{FileName, MarzanoFileTrait, RichFile, RichPath, TryIntoInputFile},
     runtime::ExecutionContext,
 };
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
@@ -156,7 +156,7 @@ impl Problem {
     fn build_and_execute_resolved_pattern_internal(
         &self,
         tx: &Sender<Vec<MatchResult>>,
-        files: &[impl TryIntoInputFile + FileName + Send + Sync],
+        files: &[impl MarzanoFileTrait],
         context: &ExecutionContext,
         cache: &impl GritCache,
     ) -> Result<()> {
@@ -262,7 +262,7 @@ impl Problem {
     fn execute_and_send(
         &self,
         tx: &Sender<Vec<MatchResult>>,
-        files: &[impl TryIntoInputFile + FileName + Send + Sync],
+        files: &[impl MarzanoFileTrait],
         binding: FilePattern,
         owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
@@ -302,7 +302,7 @@ impl Problem {
     fn build_and_execute_resolved_pattern(
         &self,
         tx: &Sender<Vec<MatchResult>>,
-        files: &[impl TryIntoInputFile + FileName + Send + Sync],
+        files: &[impl MarzanoFileTrait],
         context: &ExecutionContext,
         cache: &impl GritCache,
     ) {
@@ -409,7 +409,7 @@ impl Problem {
     #[cfg_attr(feature = "grit_tracing", instrument(skip_all))]
     pub(crate) fn execute_shared(
         &self,
-        files: &[impl TryIntoInputFile + FileName + Send + Sync],
+        files: &[impl MarzanoFileTrait],
         context: &ExecutionContext,
         tx: Sender<Vec<MatchResult>>,
         cache: &impl GritCache,
@@ -447,21 +447,32 @@ impl Problem {
         }
     }
 
-    fn execute(
+    fn execute<'a>(
         &self,
         binding: FilePattern,
-        files: &[impl TryIntoInputFile + FileName + Send + Sync],
+        files: &[impl MarzanoFileTrait + 'a],
         file_names: Vec<&PathBuf>,
         owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
     ) -> Result<Vec<MatchResult>> {
         let mut user_logs = vec![].into();
 
+        let lazy_files: Vec<Box<dyn TryIntoInputFile + 'static>> = files
+            .iter()
+            .map(|f| unsafe {
+                std::mem::transmute::<
+                    Box<dyn TryIntoInputFile + Send + Sync + 'a>,
+                    Box<dyn TryIntoInputFile + 'static>,
+                >(Box::new(f.clone()))
+            })
+            .collect();
+
         let context = MarzanoContext::new(
             &self.pattern_definitions,
             &self.predicate_definitions,
             &self.function_definitions,
             &self.foreign_function_definitions,
+            &lazy_files,
             owned_files,
             &self.built_ins,
             &self.language,

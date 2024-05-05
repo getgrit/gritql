@@ -106,3 +106,8 @@ impl TryIntoInputFile for &RichPath {
         Ok(Cow::Owned(RichFile::new(name, content)))
     }
 }
+
+/// All the required traits for processing a file in the Marzano engine
+pub trait MarzanoFileTrait: TryIntoInputFile + FileName + Send + Sync + Clone {}
+
+impl<T> MarzanoFileTrait for T where T: TryIntoInputFile + FileName + Send + Sync + Clone {}
