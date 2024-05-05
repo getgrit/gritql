@@ -597,6 +597,19 @@ impl AnalysisLog {
             source: None,
         }
     }
+
+    pub(crate) fn floating_error(message: String) -> Self {
+        Self {
+            level: 280,
+            message,
+            position: Position::first(),
+            file: "".to_string(),
+            engine_id: "marzano".to_string(),
+            range: None,
+            syntax_tree: None,
+            source: None,
+        }
+    }
 }
 
 impl From<GritAnalysisLog> for AnalysisLog {

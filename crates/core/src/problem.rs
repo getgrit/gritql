@@ -147,70 +147,48 @@ impl Problem {
         }
     }
 
-    fn build_and_execute_resolved_pattern_internal(
+    fn build_and_execute_resolved_pattern(
         &self,
         tx: &Sender<Vec<MatchResult>>,
         files: Vec<impl LoadableFile>,
         context: &ExecutionContext,
         cache: &impl GritCache,
-    ) -> Result<()> {
+    ) {
         let owned_files = FileOwners::new();
-        let mut results = vec![];
-        let mut file_pointers = vec![];
         if !self.is_multifile && files.len() != 1 {
-            bail!("Cannot build resolved pattern for single file pattern with more than one file")
+            let results = vec![MatchResult::AnalysisLog(AnalysisLog::floating_error(
+                "Cannot build resolved pattern for single file pattern with more than one file"
+                    .to_string(),
+            ))];
+            send(tx, results);
         }
-        for file in &files {
-            let path = file.name();
+        let file_pointers: Vec<FilePtr> = files
+            .iter()
+            .enumerate()
+            .map(|(index, _)| FilePtr::new(index as u16, 0))
+            .collect();
 
-            // } else {
-            //     let file_hash = hash(&file.path);
-            //     if cache.has_no_matches(file_hash, self.hash) {
-            //         results.push(MatchResult::DoneFile(DoneFile {
-            //             relative_file_path: file.path.to_string(),
-            //             has_results: Some(false),
-            //             file_hash: Some(file_hash),
-            //             from_cache: true,
-            //         }));
-            //     } else {
-            let mut logs: AnalysisLogs = vec![].into();
+        // } else {
+        //     let file_hash = hash(&file.path);
+        //     if cache.has_no_matches(file_hash, self.hash) {
+        //         results.push(MatchResult::DoneFile(DoneFile {
+        //             relative_file_path: file.path.to_string(),
+        //             has_results: Some(false),
+        //             file_hash: Some(file_hash),
+        //             from_cache: true,
+        //         }));
+        //     } else {
 
-            results.extend(
-                logs.logs()
-                    .into_iter()
-                    .map(|l| MatchResult::AnalysisLog(l.into())),
-            );
-            file_pointers.push(FilePtr::new(file_pointers.len() as u16, 0));
-
-            //     }
-            //     Result::Err(err) => {
-            //         results.push(MatchResult::AnalysisLog(AnalysisLog::new_error(
-            //             err.to_string(),
-            //             &path,
-            //         )));
-            //         results.push(MatchResult::DoneFile(DoneFile {
-            //             relative_file_path: path.to_string(),
-            //             ..Default::default()
-            //         }))
-            //     }
-            // }
-            //         }
-            //     }
-        }
         let binding: FilePattern = if self.is_multifile {
             file_pointers.into()
         } else if file_pointers.is_empty() {
-            send(tx, results);
-            // single file pattern had file that was too big
-            return Ok(());
+            // we somehow arrived here with no files, so we return Ok
+            return;
         } else {
             file_pointers[0].into()
         };
 
-        send(tx, results);
         self.execute_and_send(tx, files, binding, &owned_files, context);
-
-        Ok(())
     }
 
     fn execute_and_send(
@@ -281,33 +259,6 @@ impl Problem {
             outputs.sort();
         }
         send(tx, outputs);
-    }
-
-    fn build_and_execute_resolved_pattern(
-        &self,
-        tx: &Sender<Vec<MatchResult>>,
-        files: Vec<impl LoadableFile>,
-        context: &ExecutionContext,
-        cache: &impl GritCache,
-    ) {
-        match self.build_and_execute_resolved_pattern_internal(tx, files, context, cache) {
-            Result::Ok(_) => {}
-            Result::Err(err) => {
-                // might be sending too many donefile here?
-                let mut error_files = vec![];
-                // for file in files {
-                //     error_files.push(MatchResult::AnalysisLog(AnalysisLog::new_error(
-                //         err.to_string(),
-                //         &file.name(),
-                //     )));
-                //     error_files.push(MatchResult::DoneFile(DoneFile {
-                //         relative_file_path: file.name().to_string(),
-                //         ..Default::default()
-                //     }))
-                // }
-                send(tx, error_files);
-            }
-        }
     }
 
     pub fn execute_files(
