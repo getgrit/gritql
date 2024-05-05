@@ -876,9 +876,9 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
             Self::Resolved(resolved) => resolved.body.clone(),
             Self::Ptr(ptr) => {
                 let file = &files.get_file(*ptr);
-                let root = file.tree().root_node();
+                let root = file.tree.root_node();
                 let range = root.byte_range();
-                ResolvedPattern::from_range_binding(range, &files.get_file(*ptr).tree().source)
+                ResolvedPattern::from_range_binding(range, &file.tree.source)
             }
         }
     }
@@ -888,7 +888,7 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
             Self::Resolved(resolved) => resolved.body.clone(),
             Self::Ptr(ptr) => {
                 let file = &files.get_file(*ptr);
-                ResolvedPattern::from_node_binding(file.tree().root_node())
+                ResolvedPattern::from_node_binding(file.tree.root_node())
             }
         }
     }

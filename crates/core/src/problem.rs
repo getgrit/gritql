@@ -176,64 +176,63 @@ impl Problem {
                     continue;
                 }
             };
-            // if let Some(log) = is_file_too_big(&file) {
-            //     results.push(MatchResult::AnalysisLog(log));
-            //     results.push(MatchResult::DoneFile(DoneFile {
-            //         relative_file_path: file.path.to_string(),
-            //         // Don't know if there are results, so we can't cache
-            //         ..Default::default()
-            //     }))
-            // } else {
-            // let file_hash = hash(&file.path);
-            // if cache.has_no_matches(file_hash, self.hash) {
-            //     results.push(MatchResult::DoneFile(DoneFile {
-            //         relative_file_path: file.path.to_string(),
-            //         has_results: Some(false),
-            //         file_hash: Some(file_hash),
-            //         from_cache: true,
-            //     }));
-            // } else {
-            let mut logs = vec![].into();
-            let owned_file = FileOwnerCompiler::from_matches(
-                file.path.to_owned(),
-                file.content.to_owned(),
-                None,
-                false,
-                &self.language,
-                &mut logs,
-            );
-            results.extend(
-                logs.logs()
-                    .into_iter()
-                    .map(|l| MatchResult::AnalysisLog(l.into())),
-            );
-            match owned_file {
-                Result::Ok(owned_file) => {
-                    if let Some(owned_file) = owned_file {
-                        file_pointers.push(FilePtr::new(file_pointers.len() as u16, 0));
-                        owned_files.push(owned_file);
-                    }
-                    done_files.push(MatchResult::DoneFile(DoneFile {
-                        relative_file_path: file.path.to_string(),
-                        has_results: None,
-                        // file_hash: Some(file_hash),
-                        file_hash: None,
-                        from_cache: false,
-                    }))
-                }
-                Result::Err(err) => {
-                    results.push(MatchResult::AnalysisLog(AnalysisLog::new_error(
-                        err.to_string(),
-                        &file.path,
-                    )));
+            if let Some(log) = is_file_too_big(&file) {
+                results.push(MatchResult::AnalysisLog(log));
+                results.push(MatchResult::DoneFile(DoneFile {
+                    relative_file_path: file.path.to_string(),
+                    // Don't know if there are results, so we can't cache
+                    ..Default::default()
+                }))
+            } else {
+                let file_hash = hash(&file.path);
+                if cache.has_no_matches(file_hash, self.hash) {
                     results.push(MatchResult::DoneFile(DoneFile {
                         relative_file_path: file.path.to_string(),
-                        ..Default::default()
-                    }))
+                        has_results: Some(false),
+                        file_hash: Some(file_hash),
+                        from_cache: true,
+                    }));
+                } else {
+                    let mut logs = vec![].into();
+                    let owned_file = FileOwnerCompiler::from_matches(
+                        file.path.to_owned(),
+                        file.content.to_owned(),
+                        None,
+                        false,
+                        &self.language,
+                        &mut logs,
+                    );
+                    results.extend(
+                        logs.logs()
+                            .into_iter()
+                            .map(|l| MatchResult::AnalysisLog(l.into())),
+                    );
+                    match owned_file {
+                        Result::Ok(owned_file) => {
+                            if let Some(owned_file) = owned_file {
+                                file_pointers.push(FilePtr::new(file_pointers.len() as u16, 0));
+                                owned_files.push(owned_file);
+                            }
+                            done_files.push(MatchResult::DoneFile(DoneFile {
+                                relative_file_path: file.path.to_string(),
+                                has_results: None,
+                                file_hash: Some(file_hash),
+                                from_cache: false,
+                            }))
+                        }
+                        Result::Err(err) => {
+                            results.push(MatchResult::AnalysisLog(AnalysisLog::new_error(
+                                err.to_string(),
+                                &file.path,
+                            )));
+                            results.push(MatchResult::DoneFile(DoneFile {
+                                relative_file_path: file.path.to_string(),
+                                ..Default::default()
+                            }))
+                        }
+                    }
                 }
             }
-            // }
-            // }
         }
         let binding = if self.is_multifile {
             file_pointers.into()
