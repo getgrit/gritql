@@ -162,11 +162,11 @@ impl Problem {
             ))];
             send(tx, results);
         }
-        let file_pointers: Vec<FilePtr> = files
-            .iter()
-            .enumerate()
-            .map(|(index, _)| FilePtr::new(index as u16, 0))
-            .collect();
+        let mut file_pointers: Vec<FilePtr> = Vec::new();
+        for file in &files {
+            let latest_index = file_pointers.len();
+            file_pointers.push(FilePtr::new(latest_index - 1 as u16, 0));
+        }
 
         // } else {
         //     let file_hash = hash(&file.path);
