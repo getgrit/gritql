@@ -35,6 +35,7 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use sha2::{Digest, Sha256};
 use std::{
     borrow::Cow,
+    collections::HashMap,
     path::PathBuf,
     sync::mpsc::{self, Sender},
 };
@@ -156,20 +157,12 @@ impl Problem {
         let owned_files = FileOwners::new();
         let mut results = vec![];
         let mut file_pointers = vec![];
-        let mut done_files = vec![];
         if !self.is_multifile && files.len() != 1 {
             bail!("Cannot build resolved pattern for single file pattern with more than one file")
         }
         for file in &files {
             let path = file.name();
 
-            // if let Some(log) = is_file_too_big(&file) {
-            //     results.push(MatchResult::AnalysisLog(log));
-            //     results.push(MatchResult::DoneFile(DoneFile {
-            //         relative_file_path: file.path.to_string(),
-            //         // Don't know if there are results, so we can't cache
-            //         ..Default::default()
-            //     }))
             // } else {
             //     let file_hash = hash(&file.path);
             //     if cache.has_no_matches(file_hash, self.hash) {
@@ -188,13 +181,7 @@ impl Problem {
                     .map(|l| MatchResult::AnalysisLog(l.into())),
             );
             file_pointers.push(FilePtr::new(file_pointers.len() as u16, 0));
-            //         done_files.push(MatchResult::DoneFile(DoneFile {
-            //             relative_file_path: path.to_string(),
-            //             has_results: None,
-            //             // file_hash: Some(file_hash),
-            //             file_hash: None,
-            //             from_cache: false,
-            //         }))
+
             //     }
             //     Result::Err(err) => {
             //         results.push(MatchResult::AnalysisLog(AnalysisLog::new_error(
@@ -221,7 +208,7 @@ impl Problem {
         };
 
         send(tx, results);
-        self.execute_and_send(tx, files, binding, &owned_files, context, done_files);
+        self.execute_and_send(tx, files, binding, &owned_files, context);
 
         Ok(())
     }
@@ -233,7 +220,6 @@ impl Problem {
         binding: FilePattern,
         owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
-        mut done_files: Vec<MatchResult>,
     ) {
         let file_names: Vec<PathBuf> = files
             .iter()
@@ -245,31 +231,51 @@ impl Problem {
             .map(|file| Box::new(file) as Box<dyn LoadableFile>)
             .collect();
 
+        let mut done_files: HashMap<&PathBuf, DoneFile> = borrowed_names
+            .iter()
+            .map(|&path| {
+                (
+                    path,
+                    DoneFile {
+                        relative_file_path: path.to_string_lossy().to_string(),
+                        ..Default::default()
+                    },
+                )
+            })
+            .collect();
+
         let mut outputs =
             match self.execute(binding, lazy_files, borrowed_names, owned_files, context) {
-                Result::Err(err) => {
-                    // files
-                    // .iter()
-                    // .map(|file| {
-                    //     MatchResult::AnalysisLog(AnalysisLog::new_error(
-                    //         err.to_string(),
-                    //         &file.name(),
-                    //     ))
-                    // })
-                    // .collect(),
-                    vec![]
-                }
-                Result::Ok(messages) => messages,
-            };
-        if done_files.len() == 1 {
-            if let MatchResult::DoneFile(ref mut done_file) = done_files[0] {
-                let has_results = outputs
+                Result::Err(err) => file_names
                     .iter()
-                    .any(|m| is_match(m) || matches!(m, MatchResult::AnalysisLog(_)));
-                done_file.has_results = Some(has_results);
+                    .map(|file| {
+                        MatchResult::AnalysisLog(AnalysisLog::new_error(
+                            err.to_string(),
+                            &file.to_string_lossy(),
+                        ))
+                    })
+                    .collect(),
+                Result::Ok(messages) => {
+                    // For each message, mark the DoneFile as having results
+                    for message in &messages {
+                        if !is_match(message) {
+                            continue;
+                        }
+                        if let Some(name) = message.file_name() {
+                            if let Ok(path) = PathBuf::from_str(name) {
+                                if let Some(done_file) = done_files.get_mut(&path) {
+                                    done_file.has_results = Some(true);
+                                }
+                            }
+                        }
+                    }
+
+                    messages
+                }
             };
-        }
-        outputs.extend(done_files);
+
+        outputs.extend(done_files.into_values().map(MatchResult::DoneFile));
+
         if self.is_multifile {
             // to keep snapshot tests happy, not ideal;
             outputs.sort();

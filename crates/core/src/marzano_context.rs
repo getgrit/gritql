@@ -135,8 +135,6 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 }
                 let index = ptr.file;
 
-                println!("Lazy files: {:?}", self.lazy_files.len());
-
                 let cow: Cow<RichFile> = self.lazy_files[index as usize].try_into_cow()?;
 
                 if let Some(log) = is_file_too_big(&cow) {

@@ -87,8 +87,6 @@ fn test_lazy_file_parsing() {
     .unwrap()
     .problem;
 
-    let context = ExecutionContext::default();
-
     // Basic match works
     let test_files = vec![SyntheticFile::new(
         "target.js".to_owned(),
@@ -115,4 +113,16 @@ fn test_lazy_file_parsing() {
     )];
     let results = run_on_test_files(&pattern, &test_files);
     assert!(!results.iter().any(|r| r.is_match()));
+
+    // All together now
+    let test_files = vec![
+        SyntheticFile::new("wrong.js".to_owned(), matching_src.to_owned(), true),
+        SyntheticFile::new("target.js".to_owned(), matching_src.to_owned(), true),
+        SyntheticFile::new("other.js".to_owned(), matching_src.to_owned(), true),
+        SyntheticFile::new("do_not_read.js".to_owned(), String::new(), false),
+    ];
+    let results = run_on_test_files(&pattern, &test_files);
+    // Confirm we have 4 DoneFiles and 1 match
+    assert_eq!(results.len(), 5);
+    assert!(results.iter().any(|r| r.is_match()));
 }
