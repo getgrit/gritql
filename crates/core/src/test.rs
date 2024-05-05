@@ -63,7 +63,7 @@ fn match_pattern_one_file(
     match_pattern_libs(pattern, &libs, file, src, default_language)
 }
 
-fn create_test_context() -> Result<ExecutionContext> {
+pub(crate) fn create_test_context() -> Result<ExecutionContext> {
     let context = ExecutionContext::default();
 
     // Exchange client tokens for a test token
@@ -82,7 +82,7 @@ fn create_test_context() -> Result<ExecutionContext> {
 }
 
 lazy_static! {
-    static ref TEST_EXECUTION_CONTEXT: Result<ExecutionContext> = create_test_context();
+    pub(crate) static ref TEST_EXECUTION_CONTEXT: Result<ExecutionContext> = create_test_context();
 }
 
 #[allow(clippy::wildcard_enum_match_arm)]
@@ -14556,7 +14556,7 @@ fn ruby_nested_module() {
                 |   module ^foo_child
                 |   end
                 |end` where {
-                |   ^foo_child => `Child`    
+                |   ^foo_child => `Child`
                 |}
                 |"#
             .trim_margin()

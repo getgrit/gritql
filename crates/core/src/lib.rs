@@ -35,3 +35,5 @@ use getrandom as _;
 
 #[cfg(test)]
 mod test;
+#[cfg(test)]
+mod test_files;
