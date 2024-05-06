@@ -179,28 +179,25 @@ pub fn display_workflow_outcome(outcome: PackagedWorkflowOutcome) -> Result<()> 
 }
 
 #[cfg(feature = "remote_workflows")]
-pub async fn run_remote_workflow(
-    workflow_name: String,
-    multi: indicatif::MultiProgress,
-) -> Result<()> {
+pub async fn run_remote_workflow(workflow_name: String) -> Result<()> {
     use colored::Colorize;
-
     use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
     use marzano_gritmodule::fetcher::ModuleRepo;
+    use std::time::Duration;
+
     let updater = Updater::from_current_bin().await?;
     let cwd = std::env::current_dir()?;
 
-    let pb = ProgressBar::new_spinner();
+    let pb = ProgressBar::with_draw_target(Some(0), ProgressDrawTarget::stderr());
     pb.set_style(ProgressStyle::with_template(
         "{spinner}{prefix:.bold.dim} {wide_msg:.bold.dim}",
     )?);
     pb.set_message("Authenticating with Grit Cloud");
-
-    let pb = multi.add(pb);
+    pb.enable_steady_tick(Duration::from_millis(60));
 
     let auth = updater.get_valid_auth()?;
 
-    pb.set_message("Starting workflow on Grit Cloud");
+    pb.set_message("Launching workflow on Grit Cloud");
 
     let repo = ModuleRepo::from_dir(&cwd).await;
     let settings = grit_cloud_client::RemoteWorkflowSettings::new(workflow_name, &repo);
