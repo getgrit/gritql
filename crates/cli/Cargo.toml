@@ -87,7 +87,6 @@ default = [
   "external_functions",
   "updater",
   "workflows_v2",
-  "remote_workflows",
   # "server",
   # "remote_redis",
   # "embeddings",
@@ -134,6 +133,8 @@ grit_beta = [
   "external_functions",
   "updater",
   "ai_builtins",
+  "workflows_v2",
+  "remote_workflows"
   # "grit_timing",
 ]
 grit_timing = []

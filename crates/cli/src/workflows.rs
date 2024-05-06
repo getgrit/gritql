@@ -182,7 +182,7 @@ pub fn display_workflow_outcome(outcome: PackagedWorkflowOutcome) -> Result<()> 
 #[cfg(feature = "remote_workflows")]
 pub async fn run_remote_workflow(workflow_name: String) -> Result<()> {
     use marzano_gritmodule::fetcher::ModuleRepo;
-    let mut updater = Updater::from_current_bin().await?;
+    let updater = Updater::from_current_bin().await?;
     let cwd = std::env::current_dir()?;
 
     let auth = updater.get_valid_auth()?;
