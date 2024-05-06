@@ -39,6 +39,10 @@ impl MatchResult {
     pub fn is_match(&self) -> bool {
         is_match(self)
     }
+
+    pub fn is_error(&self) -> bool {
+        matches!(self, MatchResult::AnalysisLog(log) if log.level < 400)
+    }
 }
 
 /// Make a path look the way provolone expects it to

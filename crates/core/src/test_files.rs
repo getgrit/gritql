@@ -288,7 +288,7 @@ fn test_multifile_mania() {
         }
         multifile {
             contains main_thing(),
-            contains `log`
+            contains `log` where { $filename <: includes "target.js" }
         }
         "#;
     let libs = BTreeMap::new();
@@ -315,6 +315,7 @@ fn test_multifile_mania() {
         SyntheticFile::new("target.js".to_owned(), matching_src.to_owned(), true),
     ];
     let results = run_on_test_files(&pattern, &test_files);
-    assert_eq!(results.len(), 3);
     assert!(results.iter().any(|r| r.is_match()));
+    // Make sure no errors
+    assert!(!results.iter().any(|r| r.is_error()));
 }

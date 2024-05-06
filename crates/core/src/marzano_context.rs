@@ -180,7 +180,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
     ) -> Result<bool> {
         let mut parser = self.language().get_parser();
 
-        let files = if let Some(files) = binding.get_file_pointers() {
+        let mut files = if let Some(files) = binding.get_file_pointers() {
             files
                 .iter()
                 .map(|f| state.files.latest_revision(f))
@@ -192,6 +192,11 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
         let binding = if files.len() == 1 {
             ResolvedPattern::from_file_pointer(*files.last().unwrap())
         } else {
+            // Load all files into memory and collect successful file pointers
+            files.retain(|file_ptr| {
+                self.load_file(&MarzanoFile::Ptr(*file_ptr), state, logs)
+                    .unwrap_or(false)
+            });
             ResolvedPattern::from_files(ResolvedPattern::from_list_parts(
                 files.iter().map(|f| ResolvedPattern::from_file_pointer(*f)),
             ))
