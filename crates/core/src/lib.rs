@@ -11,6 +11,7 @@ mod equivalence;
 mod foreign_function_definition;
 pub mod fs;
 mod inline_snippets;
+mod limits;
 pub mod marzano_binding;
 pub mod marzano_code_snippet;
 pub mod marzano_context;
@@ -35,3 +36,5 @@ use getrandom as _;
 
 #[cfg(test)]
 mod test;
+#[cfg(test)]
+mod test_files;

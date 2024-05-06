@@ -848,7 +848,7 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
     fn name(&self, files: &FileRegistry<'a, MarzanoQueryContext>) -> MarzanoResolvedPattern<'a> {
         match self {
             Self::Resolved(resolved) => resolved.name.clone(),
-            Self::Ptr(ptr) => MarzanoResolvedPattern::from_path_binding(&files.get_file(*ptr).name),
+            Self::Ptr(ptr) => MarzanoResolvedPattern::from_path_binding(files.get_file_name(*ptr)),
         }
     }
 
@@ -866,7 +866,7 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
                 )))
             }
             Self::Ptr(ptr) => Ok(ResolvedPattern::from_path_binding(
-                &files.get_file(*ptr).absolute_path,
+                files.get_absolute_path(*ptr)?,
             )),
         }
     }
@@ -875,7 +875,7 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
         match self {
             Self::Resolved(resolved) => resolved.body.clone(),
             Self::Ptr(ptr) => {
-                let file = &files.get_file(*ptr);
+                let file = &files.get_file_owner(*ptr);
                 let root = file.tree.root_node();
                 let range = root.byte_range();
                 ResolvedPattern::from_range_binding(range, &file.tree.source)
@@ -887,7 +887,7 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
         match self {
             Self::Resolved(resolved) => resolved.body.clone(),
             Self::Ptr(ptr) => {
-                let file = &files.get_file(*ptr);
+                let file = &files.get_file_owner(*ptr);
                 ResolvedPattern::from_node_binding(file.tree.root_node())
             }
         }

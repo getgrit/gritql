@@ -2,25 +2,24 @@ use crate::{
     api::{is_match, AnalysisLog, DoneFile, MatchResult},
     ast_node::{ASTNode, AstLeafNode},
     built_in_functions::BuiltIns,
-    constants::MAX_FILE_SIZE,
     foreign_function_definition::ForeignFunctionDefinition,
     marzano_binding::MarzanoBinding,
     marzano_code_snippet::MarzanoCodeSnippet,
     marzano_context::MarzanoContext,
     marzano_resolved_pattern::{MarzanoFile, MarzanoResolvedPattern},
-    pattern_compiler::{compiler::VariableLocations, file_owner_compiler::FileOwnerCompiler},
+    pattern_compiler::compiler::VariableLocations,
 };
-use anyhow::{bail, Result};
+use anyhow::Result;
 use grit_pattern_matcher::{
     constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
     context::QueryContext,
-    file_owners::{FileOwner, FileOwners},
+    file_owners::FileOwners,
     pattern::{
-        FilePtr, GritFunctionDefinition, Matcher, Pattern, PatternDefinition, PredicateDefinition,
-        ResolvedPattern, State, VariableContent,
+        FilePtr, FileRegistry, GritFunctionDefinition, Matcher, Pattern, PatternDefinition,
+        PredicateDefinition, ResolvedPattern, State, VariableContent,
     },
 };
-use grit_util::{Position, VariableMatch};
+use grit_util::VariableMatch;
 use im::vector;
 use log::error;
 use marzano_language::{language::Tree, target_language::TargetLanguage};
@@ -28,17 +27,19 @@ use marzano_util::{
     cache::{GritCache, NullCache},
     hasher::hash,
     node_with_source::NodeWithSource,
-    rich_path::{FileName, RichFile, RichPath, TryIntoInputFile},
+    rich_path::{LoadableFile, RichFile, RichPath},
     runtime::ExecutionContext,
 };
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::IntoParallelIterator;
+use rayon::iter::ParallelIterator;
 use sha2::{Digest, Sha256};
-use std::fmt::Debug;
+
 use std::{
-    borrow::Cow,
+    collections::HashMap,
     path::PathBuf,
     sync::mpsc::{self, Sender},
 };
+use std::{fmt::Debug, str::FromStr};
 use tracing::{event, Level};
 
 #[derive(Debug)]
@@ -90,13 +91,6 @@ impl From<FilePattern> for MarzanoResolvedPattern<'_> {
             )),
         }
     }
-}
-
-struct FilePatternOutput {
-    file_pattern: Option<FilePattern>,
-    file_owners: FileOwners<Tree>,
-    done_files: Vec<MatchResult>,
-    error_files: Vec<MatchResult>,
 }
 
 fn send(tx: &Sender<Vec<MatchResult>>, value: Vec<MatchResult>) {
@@ -153,135 +147,116 @@ impl Problem {
         }
     }
 
-    fn build_resolved_pattern(
+    fn build_and_execute_resolved_pattern(
         &self,
-        files: &[impl TryIntoInputFile + FileName],
+        tx: &Sender<Vec<MatchResult>>,
+        files: Vec<impl LoadableFile>,
+        context: &ExecutionContext,
         cache: &impl GritCache,
-    ) -> Result<FilePatternOutput> {
+    ) {
         let owned_files = FileOwners::new();
-        let mut results = vec![];
-        let mut file_pointers = vec![];
-        let mut done_files = vec![];
         if !self.is_multifile && files.len() != 1 {
-            bail!("Cannot build resolved pattern for single file pattern with more than one file")
+            let results = vec![MatchResult::AnalysisLog(AnalysisLog::floating_error(
+                "Cannot build resolved pattern for single file pattern with more than one file"
+                    .to_string(),
+            ))];
+            send(tx, results);
         }
-        for file in files {
-            let file: Cow<RichFile> = match file.try_into_cow() {
-                Result::Ok(file) => file,
-                Result::Err(err) => {
-                    results.push(MatchResult::AnalysisLog(AnalysisLog::new_error(
-                        err.to_string(),
-                        &file.name(),
-                    )));
-                    continue;
-                }
-            };
-            if let Some(log) = is_file_too_big(&file) {
-                results.push(MatchResult::AnalysisLog(log));
-                results.push(MatchResult::DoneFile(DoneFile {
-                    relative_file_path: file.path.to_string(),
-                    // Don't know if there are results, so we can't cache
-                    ..Default::default()
-                }))
-            } else {
-                let file_hash = hash(&file.path);
-                if cache.has_no_matches(file_hash, self.hash) {
-                    results.push(MatchResult::DoneFile(DoneFile {
-                        relative_file_path: file.path.to_string(),
+        let mut file_pointers: Vec<FilePtr> = Vec::new();
+
+        let mut done_files: HashMap<String, DoneFile> = HashMap::new();
+
+        for (index, file) in files.iter().enumerate() {
+            let path = file.name();
+            let file_hash = hash(&path);
+            if cache.has_no_matches(file_hash, self.hash) {
+                done_files.insert(
+                    path.clone(),
+                    DoneFile {
+                        relative_file_path: path,
                         has_results: Some(false),
                         file_hash: Some(file_hash),
                         from_cache: true,
-                    }));
-                } else {
-                    let mut logs = vec![].into();
-                    let owned_file = FileOwnerCompiler::from_matches(
-                        file.path.to_owned(),
-                        file.content.to_owned(),
-                        None,
-                        false,
-                        &self.language,
-                        &mut logs,
-                    );
-                    results.extend(
-                        logs.logs()
-                            .into_iter()
-                            .map(|l| MatchResult::AnalysisLog(l.into())),
-                    );
-                    match owned_file {
-                        Result::Ok(owned_file) => {
-                            if let Some(owned_file) = owned_file {
-                                file_pointers.push(FilePtr::new(file_pointers.len() as u16, 0));
-                                owned_files.push(owned_file);
-                            }
-                            done_files.push(MatchResult::DoneFile(DoneFile {
-                                relative_file_path: file.path.to_string(),
-                                has_results: None,
-                                file_hash: Some(file_hash),
-                                from_cache: false,
-                            }))
-                        }
-                        Result::Err(err) => {
-                            results.push(MatchResult::AnalysisLog(AnalysisLog::new_error(
-                                err.to_string(),
-                                &file.path,
-                            )));
-                            results.push(MatchResult::DoneFile(DoneFile {
-                                relative_file_path: file.path.to_string(),
-                                ..Default::default()
-                            }))
-                        }
-                    }
-                }
+                    },
+                );
+            } else {
+                done_files.insert(
+                    path.clone(),
+                    DoneFile {
+                        relative_file_path: path,
+                        file_hash: Some(file_hash),
+                        ..Default::default()
+                    },
+                );
+                file_pointers.push(FilePtr::new(index as u16, 0));
             }
         }
-        let binding = if self.is_multifile {
+
+        let binding: FilePattern = if self.is_multifile {
             file_pointers.into()
         } else if file_pointers.is_empty() {
-            // single file pattern had file that was too big
-            return Ok(FilePatternOutput {
-                file_pattern: None,
-                file_owners: owned_files,
-                done_files,
-                error_files: results,
-            });
+            // we somehow arrived here with no files, so we return Ok
+            return;
         } else {
             file_pointers[0].into()
         };
-        Ok(FilePatternOutput {
-            file_pattern: Some(binding),
-            file_owners: owned_files,
-            done_files,
-            error_files: results,
-        })
+
+        self.execute_and_send(tx, files, binding, &owned_files, context, done_files);
     }
 
     fn execute_and_send(
         &self,
         tx: &Sender<Vec<MatchResult>>,
-        files: &[impl TryIntoInputFile + FileName],
+        files: Vec<impl LoadableFile>,
         binding: FilePattern,
         owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
-        mut done_files: Vec<MatchResult>,
+        mut done_files: HashMap<String, DoneFile>,
     ) {
-        let mut outputs = match self.execute(binding, owned_files, context) {
-            Result::Err(err) => files
-                .iter()
-                .map(|file| {
-                    MatchResult::AnalysisLog(AnalysisLog::new_error(err.to_string(), &file.name()))
-                })
-                .collect(),
-            Result::Ok(messages) => messages,
-        };
-        if done_files.len() == 1 {
-            if let MatchResult::DoneFile(ref mut done_file) = done_files[0] {
-                let has_results = outputs
+        let file_names: Vec<PathBuf> = files
+            .iter()
+            .map(|f| PathBuf::from_str(&f.name()).unwrap())
+            .collect();
+        let borrowed_names: Vec<&PathBuf> = file_names.iter().collect();
+        let lazy_files: Vec<Box<dyn LoadableFile>> = files
+            .into_iter()
+            .map(|file| Box::new(file) as Box<dyn LoadableFile>)
+            .collect();
+
+        let mut outputs =
+            match self.execute(binding, lazy_files, borrowed_names, owned_files, context) {
+                Result::Err(err) => file_names
                     .iter()
-                    .any(|m| is_match(m) || matches!(m, MatchResult::AnalysisLog(_)));
-                done_file.has_results = Some(has_results);
+                    .map(|file| {
+                        MatchResult::AnalysisLog(AnalysisLog::new_error(
+                            err.to_string(),
+                            &file.to_string_lossy(),
+                        ))
+                    })
+                    .collect(),
+                Result::Ok(messages) => {
+                    // For each message, mark the DoneFile as having results
+                    for message in &messages {
+                        if !is_match(message) {
+                            continue;
+                        }
+                        if let Some(name) = message.file_name() {
+                            if let Ok(path) = PathBuf::from_str(name) {
+                                if let Some(done_file) =
+                                    done_files.get_mut(path.to_string_lossy().as_ref())
+                                {
+                                    done_file.has_results = Some(true);
+                                }
+                            }
+                        }
+                    }
+
+                    messages
+                }
             };
-        }
-        outputs.extend(done_files);
+
+        outputs.extend(done_files.into_values().map(MatchResult::DoneFile));
+
         if self.is_multifile {
             // to keep snapshot tests happy, not ideal;
             outputs.sort();
@@ -289,53 +264,9 @@ impl Problem {
         send(tx, outputs);
     }
 
-    fn build_and_execute_resolved_pattern(
-        &self,
-        tx: &Sender<Vec<MatchResult>>,
-        files: &[impl TryIntoInputFile + FileName],
-        context: &ExecutionContext,
-        cache: &impl GritCache,
-    ) {
-        match self.build_resolved_pattern(files, cache) {
-            Result::Ok(FilePatternOutput {
-                file_pattern,
-                file_owners,
-                done_files,
-                error_files,
-            }) => {
-                send(tx, error_files);
-                if let Some(file_pattern) = file_pattern {
-                    self.execute_and_send(
-                        tx,
-                        files,
-                        file_pattern,
-                        &file_owners,
-                        context,
-                        done_files,
-                    );
-                }
-            }
-            Result::Err(err) => {
-                // might be sending too many donefile here?
-                let mut error_files = vec![];
-                for file in files {
-                    error_files.push(MatchResult::AnalysisLog(AnalysisLog::new_error(
-                        err.to_string(),
-                        &file.name(),
-                    )));
-                    error_files.push(MatchResult::DoneFile(DoneFile {
-                        relative_file_path: file.name().to_string(),
-                        ..Default::default()
-                    }))
-                }
-                send(tx, error_files);
-            }
-        }
-    }
-
     pub fn execute_files(
         &self,
-        files: &[RichFile],
+        files: Vec<RichFile>,
         context: &ExecutionContext,
     ) -> Vec<MatchResult> {
         let mut results = vec![];
@@ -351,7 +282,7 @@ impl Problem {
 
     pub fn execute_paths<'a>(
         &self,
-        files: &[&'a RichPath],
+        files: Vec<&'a RichPath>,
         context: &ExecutionContext,
     ) -> (Vec<MatchResult>, Vec<&'a RichPath>) {
         let mut results = vec![];
@@ -386,7 +317,8 @@ impl Problem {
     pub fn execute_file(&self, file: &RichFile, context: &ExecutionContext) -> Vec<MatchResult> {
         let mut results = vec![];
         let (tx, rx) = mpsc::channel::<Vec<MatchResult>>();
-        self.execute_shared(std::array::from_ref(file), context, tx, &NullCache::new());
+        let files = vec![file];
+        self.execute_shared(files, context, tx, &NullCache::new());
         for r in rx.iter() {
             results.extend(r)
         }
@@ -394,18 +326,9 @@ impl Problem {
         results
     }
 
-    pub fn execute_files_streaming(
-        &self,
-        files: &[RichFile],
-        context: &ExecutionContext,
-        tx: Sender<Vec<MatchResult>>,
-    ) {
-        self.execute_shared(files, context, tx, &NullCache::new())
-    }
-
     pub fn execute_paths_streaming(
         &self,
-        files: &[PathBuf],
+        files: Vec<PathBuf>,
         context: &ExecutionContext,
         tx: Sender<Vec<MatchResult>>,
         cache: &impl GritCache,
@@ -414,9 +337,9 @@ impl Problem {
     }
 
     #[cfg_attr(feature = "grit_tracing", instrument(skip_all))]
-    fn execute_shared(
+    pub(crate) fn execute_shared(
         &self,
-        files: &[impl TryIntoInputFile + FileName + Send + Sync],
+        files: Vec<impl LoadableFile + Send + Sync>,
         context: &ExecutionContext,
         tx: Sender<Vec<MatchResult>>,
         cache: &impl GritCache,
@@ -441,32 +364,33 @@ impl Problem {
 
                     event!(Level::INFO, "spawn execute_shared_body");
 
-                    files.par_iter().for_each_with(tx, |sender, f| {
-                        self.build_and_execute_resolved_pattern(
-                            sender,
-                            std::array::from_ref(f),
-                            context,
-                            cache,
-                        );
+                    files.into_par_iter().for_each_with(tx, |sender, f| {
+                        let vec = vec![f];
+                        self.build_and_execute_resolved_pattern(sender, vec, context, cache);
                     });
                 })
             })
         }
     }
 
-    fn execute(
+    fn execute<'a>(
         &self,
         binding: FilePattern,
+        files: Vec<Box<dyn LoadableFile + 'a>>,
+        file_names: Vec<&PathBuf>,
         owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
     ) -> Result<Vec<MatchResult>> {
         let mut user_logs = vec![].into();
+
+        let lazy_files = files;
 
         let context = MarzanoContext::new(
             &self.pattern_definitions,
             &self.predicate_definitions,
             &self.function_definitions,
             &self.foreign_function_definitions,
+            lazy_files,
             owned_files,
             &self.built_ins,
             &self.language,
@@ -486,8 +410,8 @@ impl Problem {
             })
             .collect();
 
-        let file_refs: Vec<&FileOwner<Tree>> = context.files.iter().collect();
-        let mut state = State::new(bindings, file_refs);
+        let file_registry = FileRegistry::new_from_paths(file_names);
+        let mut state = State::new(bindings, file_registry);
 
         let the_new_files =
             state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[NEW_FILES_INDEX].as_mut();
@@ -513,24 +437,6 @@ impl Problem {
             .collect();
         user_logs.extend(results);
         Ok(user_logs)
-    }
-}
-
-fn is_file_too_big(file: &RichFile) -> Option<AnalysisLog> {
-    if file.path.len() > MAX_FILE_SIZE || file.content.len() > MAX_FILE_SIZE {
-        Some(AnalysisLog {
-            // TODO: standardize levels
-            level: 310,
-            message: format!("Skipped {}, it is too big.", file.path),
-            file: file.path.to_owned(),
-            engine_id: "marzano".to_owned(),
-            position: Position::first(),
-            syntax_tree: None,
-            range: None,
-            source: None,
-        })
-    } else {
-        None
     }
 }
 

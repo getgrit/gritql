@@ -783,6 +783,8 @@ fn test_absolute_path() -> Result<()> {
     let file = dir.join("dir2/unique.js");
     let content = std::fs::read_to_string(file)?;
 
+    println!("content: {:?}", content);
+
     // Verify it contains dir2/unique.js
     assert!(content.contains("dir2/unique.js"));
 

@@ -11,6 +11,15 @@ expression: results
         ranges: []
       - name: $program
         scopedName: 0_1_$program
+        ranges: []
+      - name: $filename
+        scopedName: 0_2_$filename
+        ranges: []
+      - name: $absolute_filename
+        scopedName: 0_3_$absolute_filename
+        ranges: []
+      - name: $b
+        scopedName: 1_0_$b
         ranges:
           - start:
               line: 1
@@ -20,12 +29,6 @@ expression: results
               column: 1
             startByte: 0
             endByte: 10
-      - name: $filename
-        scopedName: 0_2_$filename
-        ranges: []
-      - name: $absolute_filename
-        scopedName: 0_3_$absolute_filename
-        ranges: []
     sourceFile: test-file.tsx
     ranges: []
     debug: "{\n  \"SORT\": \"program\",\n  \"RANGE\": {\n    \"start\": {\n      \"line\": 1,\n      \"column\": 1\n    },\n    \"end\": {\n      \"line\": 2,\n      \"column\": 1\n    }\n  },\n  \"statements\": [\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 1,\n          \"column\": 1\n        },\n        \"end\": {\n          \"line\": 1,\n          \"column\": 10\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"identifier\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 1,\n            \"column\": 1\n          },\n          \"end\": {\n            \"line\": 1,\n            \"column\": 9\n          }\n        },\n        \"TEXT\": \"whatever\"\n      },\n      \"CHILDREN\": [\n        {\n          \"SORT\": \";\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 1,\n              \"column\": 9\n            },\n            \"end\": {\n              \"line\": 1,\n              \"column\": 10\n            }\n          },\n          \"TEXT\": \";\"\n        }\n      ]\n    }\n  ]\n}"
@@ -33,8 +36,10 @@ expression: results
     messages: []
     variables: []
     sourceFile: the_new_name
-    content: "whatever;\n"
-    byteRanges: []
+    content: "test-file.tsx;\n"
+    byteRanges:
+      - start: 0
+        end: 13
   ansiSummary: ""
   reason: ~
 - __typename: DoneFile

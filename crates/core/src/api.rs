@@ -35,6 +35,16 @@ pub enum MatchResult {
     AnalysisLog(AnalysisLog),
 }
 
+impl MatchResult {
+    pub fn is_match(&self) -> bool {
+        is_match(self)
+    }
+
+    pub fn is_error(&self) -> bool {
+        matches!(self, MatchResult::AnalysisLog(log) if log.level < 400)
+    }
+}
+
 /// Make a path look the way provolone expects it to
 /// Removes leading "./", or the root path if it's provided
 fn normalize_path_in_project<'a>(path: &'a str, root_path: Option<&'a PathBuf>) -> &'a str {
@@ -585,6 +595,19 @@ impl AnalysisLog {
             message,
             position: Position::first(),
             file: file.to_owned(),
+            engine_id: "marzano".to_string(),
+            range: None,
+            syntax_tree: None,
+            source: None,
+        }
+    }
+
+    pub(crate) fn floating_error(message: String) -> Self {
+        Self {
+            level: 280,
+            message,
+            position: Position::first(),
+            file: "".to_string(),
             engine_id: "marzano".to_string(),
             range: None,
             syntax_tree: None,

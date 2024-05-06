@@ -41,6 +41,17 @@ pub trait ExecContext<'a, Q: QueryContext> {
         logs: &mut AnalysisLogs,
     ) -> Result<Q::ResolvedPattern<'a>>;
 
+    /// Call this when "entering" a file to lazily load it.
+    /// This MUST be implemented correctly, or the query engine will not work.
+    ///
+    // TODO: ideally this should be async, but that requires engine-wide async support.
+    fn load_file(
+        &self,
+        file: &Q::File<'a>,
+        state: &mut State<'a, Q>,
+        logs: &mut AnalysisLogs,
+    ) -> Result<bool>;
+
     // FIXME: Don't depend on Grit's file handling in Context.
     fn files(&self) -> &FileOwners<Q::Tree>;
 

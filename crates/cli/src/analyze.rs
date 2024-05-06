@@ -323,7 +323,7 @@ where
         #[cfg(feature = "grit_tracing")]
         task_span.set_parent(grouped_ctx);
         task_span.in_scope(|| {
-            compiled.execute_paths_streaming(&found_paths, context, tx, cache_ref);
+            compiled.execute_paths_streaming(found_paths, context, tx, cache_ref);
             loop {
                 if processed.load(Ordering::SeqCst) >= found_count.try_into().unwrap()
                     || !should_continue.load(Ordering::SeqCst)

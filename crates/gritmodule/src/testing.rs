@@ -183,7 +183,8 @@ pub fn test_pattern_sample(
         .iter()
         .map(|input| RichFile::new(input.path.to_owned(), input.content.to_owned()))
         .collect::<Vec<_>>();
-    let res = compiled.execute_files(&rich_files, &runtime);
+    let cloned_files = rich_files.clone();
+    let res = compiled.execute_files(rich_files, &runtime);
 
     for result in res.into_iter() {
         if is_match(&result) {
@@ -274,7 +275,7 @@ pub fn test_pattern_sample(
     if raw_actual_outputs.len() < raw_expected_outputs.len()
         && is_multifile_sample(&sample.input, &compiled.language)
     {
-        for file in rich_files.iter() {
+        for file in cloned_files.iter() {
             if raw_actual_outputs.iter().any(|f| f.path == file.path) {
                 continue;
             }

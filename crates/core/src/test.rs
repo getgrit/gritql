@@ -63,7 +63,7 @@ fn match_pattern_one_file(
     match_pattern_libs(pattern, &libs, file, src, default_language)
 }
 
-fn create_test_context() -> Result<ExecutionContext> {
+pub(crate) fn create_test_context() -> Result<ExecutionContext> {
     let context = ExecutionContext::default();
 
     // Exchange client tokens for a test token
@@ -82,7 +82,7 @@ fn create_test_context() -> Result<ExecutionContext> {
 }
 
 lazy_static! {
-    static ref TEST_EXECUTION_CONTEXT: Result<ExecutionContext> = create_test_context();
+    pub(crate) static ref TEST_EXECUTION_CONTEXT: Result<ExecutionContext> = create_test_context();
 }
 
 #[allow(clippy::wildcard_enum_match_arm)]
@@ -4807,7 +4807,7 @@ multifile {
         .unwrap();
     let context = ExecutionContext::default();
     let results = pattern.execute_files(
-        &[
+        vec![
             RichFile::new(
                 "~/dev/rewriter/packages/sdk/src/stdlib/index.ts".to_string(),
                 content1,
@@ -4829,10 +4829,13 @@ fn test_filename() {
         |language js
         |
         |pattern foo() {
-        |  $_ where $filename => `the_new_name`
+        |  $b where {
+        |    $b <: contains `whatever` => `$filename`,
+        |    $filename => `the_new_name`,
+        |  }
         |}
         |
-        |file(name = $filename, body = $program) where $program <: foo()
+        |file(body = foo())
         |"#
     .trim_margin()
     .unwrap();
@@ -8321,7 +8324,7 @@ multifile {
     let context = ExecutionContext::default();
     let pattern = src_to_problem(pattern.to_owned(), js_lang).unwrap();
     let results = pattern.execute_files(
-        &[
+        vec![
             RichFile::new(
                 "file1.tsx".to_string(),
                 "foo(1)\nbar(1)\nbar(2)\nbaz(1)".to_string(),
@@ -8351,7 +8354,7 @@ multifile {
     let context = ExecutionContext::default();
     let pattern = src_to_problem(pattern.to_owned(), js_lang).unwrap();
     let results = pattern.execute_files(
-        &[
+        vec![
             RichFile::new("file1.tsx".to_string(), "foo(1)".to_string()),
             RichFile::new("file2.tsx".to_string(), "bar(1)\nbar(3)".to_string()),
         ],
@@ -14588,7 +14591,7 @@ fn ruby_nested_module() {
                 |   module ^foo_child
                 |   end
                 |end` where {
-                |   ^foo_child => `Child`    
+                |   ^foo_child => `Child`
                 |}
                 |"#
             .trim_margin()

@@ -51,6 +51,12 @@ impl FileName for RichFile {
     }
 }
 
+impl FileName for &RichFile {
+    fn name(&self) -> String {
+        self.path.to_owned()
+    }
+}
+
 // there must be a better way right?
 impl FileName for &(RichFile, [u8; 32]) {
     fn name(&self) -> String {
@@ -85,6 +91,12 @@ impl TryIntoInputFile for &(RichFile, [u8; 32]) {
     }
 }
 
+impl TryIntoInputFile for &RichFile {
+    fn try_into_cow(&self) -> Result<Cow<RichFile>> {
+        Ok(Cow::Borrowed(self))
+    }
+}
+
 impl TryIntoInputFile for RichFile {
     fn try_into_cow(&self) -> Result<Cow<RichFile>> {
         Ok(Cow::Borrowed(self))
@@ -106,3 +118,12 @@ impl TryIntoInputFile for &RichPath {
         Ok(Cow::Owned(RichFile::new(name, content)))
     }
 }
+
+/// Core Marzano file trait
+pub trait LoadableFile: TryIntoInputFile + FileName {}
+impl<T> LoadableFile for T where T: TryIntoInputFile + FileName {}
+
+/// All the required traits for processing a file in the Marzano engine
+pub trait MarzanoFileTrait: TryIntoInputFile + FileName + Send + Sync + Clone {}
+
+impl<T> MarzanoFileTrait for T where T: TryIntoInputFile + FileName + Send + Sync + Clone {}

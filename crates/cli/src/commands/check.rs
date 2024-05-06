@@ -194,7 +194,7 @@ pub(crate) async fn run_check(
                 !cache.has_no_matches(hash, pattern.hash)
             })
             .collect();
-        let (result, no_match) = pattern.execute_paths(&un_cached_input_files, &context);
+        let (result, no_match) = pattern.execute_paths(un_cached_input_files, &context);
         if !no_match.is_empty() {
             for path in no_match.into_iter() {
                 let hash = path.hash.unwrap();
