@@ -48,7 +48,7 @@ use super::{
     State,
 };
 use crate::{
-    constants::{ABSOLUTE_PATH_INDEX, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX},
+    constants::{FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX},
     context::{ExecContext, QueryContext},
     pattern::resolved_pattern::File,
 };

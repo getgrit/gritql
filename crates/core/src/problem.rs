@@ -27,7 +27,7 @@ use marzano_util::{
     cache::{GritCache, NullCache},
     hasher::hash,
     node_with_source::NodeWithSource,
-    rich_path::{FileName, LoadableFile, RichFile, RichPath},
+    rich_path::{LoadableFile, RichFile, RichPath},
     runtime::ExecutionContext,
 };
 use rayon::iter::IntoParallelIterator;

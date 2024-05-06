@@ -26,7 +26,7 @@ use marzano_language::{
     target_language::TargetLanguage,
 };
 use marzano_util::{
-    rich_path::{FileName, LoadableFile, RichFile, TryIntoInputFile},
+    rich_path::{LoadableFile, RichFile},
     runtime::ExecutionContext,
 };
 use std::{borrow::Cow, path::PathBuf};

@@ -12,7 +12,6 @@ use anyhow::{anyhow, bail, Result};
 use grit_util::{AnalysisLogs, CodeRange, Range, VariableMatch};
 use im::{vector, Vector};
 use rand::SeedableRng;
-use std::convert::AsRef;
 use std::ops::Range as StdRange;
 use std::{collections::HashMap, path::PathBuf};
 
