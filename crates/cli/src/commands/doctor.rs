@@ -24,21 +24,35 @@ pub struct DoctorArgs {}
 pub(crate) async fn run_doctor(_arg: DoctorArgs) -> Result<()> {
     let target_os = std::env::consts::OS;
     let target_arch = std::env::consts::ARCH;
-    info!("Running on {}/{}", target_os, target_arch);
+    info!(
+        "{}",
+        format!(
+            "Running on {}/{}\n",
+            target_os.yellow(),
+            target_arch.yellow()
+        )
+        .bold()
+    );
 
     let mut updater = Updater::from_current_bin().await?;
 
     let manifest_path = &updater.manifest_path;
-    info!("Manifest file expected at {}", manifest_path.display());
+    info!(
+        "Manifest file expected at {}",
+        format!("{}", manifest_path.display()).underline().blue()
+    );
 
     let cwd = std::env::current_dir()?;
     let config = init_config_from_cwd::<KeepFetcherKind>(cwd.clone(), false).await?;
-    info!("Config: {}", config);
+    info!("Config: {}", format!("{}", config).underline().blue());
 
     let mod_dir = find_grit_modules_dir(cwd.clone()).await;
     match mod_dir {
         Ok(mod_dir) => {
-            info!("Existing Grit modules dir: {}", mod_dir.display());
+            info!(
+                "Existing Grit modules dir: {}",
+                format!("{}", mod_dir.display()).underline().blue()
+            );
         }
         Err(e) => {
             info!("Grit modules dir not found: {}", e);
@@ -47,22 +61,41 @@ pub(crate) async fn run_doctor(_arg: DoctorArgs) -> Result<()> {
         }
     }
 
+    info!("\n");
+
     let auth = updater.get_auth();
     match auth {
         Some(auth) => {
-            debug!("Auth token: {}", auth.access_token);
-            info!("Auth user id: {}", auth.get_user_id()?);
+            debug!(
+                "Auth token: {}",
+                auth.access_token.to_string().bold().blue()
+            );
+            info!(
+                "Auth user id: {}",
+                (auth.get_user_id()?).to_string().bold().blue()
+            );
 
             if auth.is_expired()? {
-                info!("Auth token expired: {}.", auth.get_expiry()?);
+                info!(
+                    "Auth token expired: {}.",
+                    format!("{}", auth.get_expiry()?).blue()
+                );
             } else {
-                info!("Auth token expiration: {}.", auth.get_expiry()?);
+                info!(
+                    "Auth token expiration: {}.",
+                    format!("{}", auth.get_expiry()?).blue()
+                );
             }
         }
         None => {
-            info!("You are not authenticated.");
+            info!(
+                "{}",
+                format!("{}", "You are not authenticated.").yellow().bold()
+            );
         }
     }
+
+    info!("\n");
 
     let configs = vec![
         (get_grit_api_url(), "Grit API URL", ENV_VAR_GRIT_API_URL),
@@ -77,10 +110,12 @@ pub(crate) async fn run_doctor(_arg: DoctorArgs) -> Result<()> {
         info!(
             "{}: {} (override by setting {})",
             name,
-            value.blue().underline(),
-            env_var.underline()
+            value.yellow().underline(),
+            env_var.blue()
         );
     }
+
+    info!("\nInstallation\n");
 
     let existing_manifests = updater.binaries.clone();
     for app in Updater::get_apps() {
