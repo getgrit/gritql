@@ -400,12 +400,6 @@ macro_rules! generate_target_language {
                 }
             }
 
-            fn alternate_metavariable_kinds(&self) -> &[&'static str] {
-                match self {
-                    $(Self::$language(lang) => Language::alternate_metavariable_kinds(lang)),+
-                }
-            }
-
             fn metavariable_prefix(&self) -> &'static str {
                 match self {
                     $(Self::$language(lang) => Language::metavariable_prefix(lang)),+

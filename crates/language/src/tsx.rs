@@ -1,7 +1,7 @@
 use crate::{
     js_like::{
         js_like_disregarded_field_values, js_like_get_statement_sorts, js_like_is_comment,
-        jslike_check_replacements, MarzanoJsLikeParser,
+        js_like_is_metavariable, jslike_check_replacements, MarzanoJsLikeParser,
     },
     language::{
         check_disregarded_field_map, fields_for_nodes, kind_and_field_id_for_field_map, Field,
@@ -82,10 +82,6 @@ impl Language for Tsx {
         "TSX"
     }
 
-    fn alternate_metavariable_kinds(&self) -> &[&'static str] {
-        &["template_content", "template_literal_type_content"]
-    }
-
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
         &[
             ("", ""),
@@ -114,7 +110,11 @@ impl Language for Tsx {
     }
 
     fn is_metavariable(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_metavariable_node(self, node)
+        js_like_is_metavariable(
+            node,
+            self,
+            &["template_content", "template_literal_type_content"],
+        )
     }
 
     fn is_statement(&self, node: &NodeWithSource) -> bool {
