@@ -3,6 +3,7 @@ use super::{
     resolved_pattern::{LazyBuiltIn, ResolvedPattern, ResolvedSnippet},
     State,
 };
+use crate::context::ExecContext;
 use crate::{binding::Binding, context::QueryContext, pattern::resolved_pattern::File};
 use anyhow::Result;
 use core::fmt::Debug;
@@ -144,9 +145,15 @@ impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
             *init_state = cur_state;
             Ok(true)
         } else if let Some(file) = resolved_pattern.get_file() {
+            // Load the file in, if it wasn't already
+            if !context.load_file(file, init_state, logs)? {
+                return Ok(false);
+            }
+
             let mut cur_state = init_state.clone();
             let mut did_match = false;
             let prev_state = cur_state.clone();
+
             if self
                 .contains
                 .execute(resolved_pattern, &mut cur_state, context, logs)?
@@ -155,6 +162,7 @@ impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
             } else {
                 cur_state = prev_state;
             }
+
             let prev_state = cur_state.clone();
             if self
                 .contains
@@ -164,6 +172,7 @@ impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
             } else {
                 cur_state = prev_state;
             }
+
             let prev_state = cur_state.clone();
             if self.execute(
                 &file.binding(&cur_state.files),
