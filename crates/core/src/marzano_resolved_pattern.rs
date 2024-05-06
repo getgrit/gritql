@@ -866,7 +866,7 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
                 )))
             }
             Self::Ptr(ptr) => Ok(ResolvedPattern::from_path_binding(
-                files.get_file_name(*ptr),
+                files.get_absolute_path(*ptr)?,
             )),
         }
     }

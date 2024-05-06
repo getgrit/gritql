@@ -56,13 +56,17 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
             .expect("File path should exist for given file index.")
     }
 
-    /// If you already have all the files loaded, immediately create a FileRegistry
-    pub fn new(files: Vec<&'a FileOwner<Q::Tree>>) -> Self {
-        Self {
-            version_count: files.iter().map(|_| 1).collect(),
-            file_paths: files.iter().map(|f| &f.name).collect(),
-            owners: files.into_iter().map(|f| vector![f]).collect(),
+    pub fn get_absolute_path(&self, pointer: FilePtr) -> Result<&'a PathBuf> {
+        let file_index = pointer.file as usize;
+        let version_index = pointer.version as usize;
+        if let Some(owners) = self.owners.get(file_index) {
+            if let Some(owner) = owners.get(version_index) {
+                return Ok(&owner.absolute_path);
+            }
         }
+        Err(anyhow!(
+            "Absolute file path accessed before file was loaded."
+        ))
     }
 
     /// If only the paths are available, create a FileRegistry with empty owners

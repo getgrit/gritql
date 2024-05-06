@@ -173,6 +173,7 @@ fn resolve_path_fn<'a>(
     let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
 
     let current_file = get_absolute_file_name(state, context.language())?;
+
     let target_path = match &args[0] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files, context.language())?,
         None => return Err(anyhow!("No path argument provided for resolve function")),

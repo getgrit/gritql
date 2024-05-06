@@ -6,7 +6,7 @@ use marzano_util::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::api::MatchResult;
+use crate::api::{MatchResult, Rewrite};
 
 use self::{pattern_compiler::src_to_problem_libs, problem::Problem};
 use anyhow::Result;
@@ -164,6 +164,51 @@ fn test_lazy_filename_variable() {
     // Confirm we have 4 DoneFiles and 1 match
     assert_eq!(results.len(), 5);
     assert!(results.iter().any(|r| r.is_match()));
+}
+
+#[test]
+fn test_absolute_path_resolution() {
+    let pattern_src = r#"
+        file(body=contains bubble `console.log($msg)` where {
+            $resolved = resolve($absolute_filename),
+            $msg => `Hello, from $resolved`
+        })
+        "#;
+    let libs = BTreeMap::new();
+
+    let matching_src = r#"
+        console.log("Hello, world!");
+        "#;
+
+    let pattern = src_to_problem_libs(
+        pattern_src.to_string(),
+        &libs,
+        TargetLanguage::default(),
+        None,
+        None,
+        None,
+        None,
+    )
+    .unwrap()
+    .problem;
+
+    // All together now
+    let test_files = vec![SyntheticFile::new(
+        "file/dir/target.js".to_owned(),
+        matching_src.to_owned(),
+        true,
+    )];
+    let results = run_on_test_files(&pattern, &test_files);
+    assert!(!results.iter().any(|r| r.is_error()));
+    let mut has_rewrite = false;
+    for r in results.iter() {
+        if let MatchResult::Rewrite(Rewrite { rewritten, .. }) = r {
+            let content = &rewritten.content;
+            assert!(content.contains("core/file/dir/target.js"));
+            has_rewrite = true;
+        }
+    }
+    assert!(has_rewrite);
 }
 
 #[test]

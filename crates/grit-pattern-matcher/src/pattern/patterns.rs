@@ -233,8 +233,6 @@ impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
         if let Some(file) = binding.get_file() {
             state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[FILENAME_INDEX].value =
                 Some(file.name(&state.files));
-            state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[ABSOLUTE_PATH_INDEX]
-                .value = Some(file.absolute_path(&state.files, context.language())?);
         }
 
         match self {

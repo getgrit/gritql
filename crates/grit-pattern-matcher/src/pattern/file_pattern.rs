@@ -4,7 +4,7 @@ use super::{
     state::State,
 };
 use crate::{
-    constants::{FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX, PROGRAM_INDEX},
+    constants::{ABSOLUTE_PATH_INDEX, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX, PROGRAM_INDEX},
     context::ExecContext,
 };
 use crate::{context::QueryContext, pattern::resolved_pattern::File};
@@ -56,6 +56,8 @@ impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
             Some(file.binding(&state.files));
         state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[FILENAME_INDEX].value =
             Some(file.name(&state.files));
+        state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[ABSOLUTE_PATH_INDEX].value =
+            Some(file.absolute_path(&state.files, context.language())?);
 
         if !self
             .body
