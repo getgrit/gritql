@@ -3,8 +3,11 @@ use super::{
     resolved_pattern::{LazyBuiltIn, ResolvedPattern, ResolvedSnippet},
     State,
 };
-use crate::context::ExecContext;
-use crate::{binding::Binding, context::QueryContext, pattern::resolved_pattern::File};
+use crate::{
+    binding::Binding, constants::PROGRAM_INDEX, context::QueryContext,
+    pattern::resolved_pattern::File,
+};
+use crate::{constants::GLOBAL_VARS_SCOPE_INDEX, context::ExecContext};
 use anyhow::Result;
 use core::fmt::Debug;
 use grit_util::AnalysisLogs;

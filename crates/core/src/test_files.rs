@@ -281,6 +281,48 @@ fn test_sequential_contains() {
 }
 
 #[test]
+fn test_sequential_contains_with_program() {
+    let pattern_src = r#"
+        pattern main_thing() {
+            `console.log` as $lg where {
+                $filename <: includes "target.js",
+                $lg => `$program`
+            }
+        }
+        sequential {
+            contains main_thing()
+        }
+        "#;
+    let libs = BTreeMap::new();
+
+    let matching_src = r#"
+        console.log("Hello, world!");
+        "#;
+
+    let pattern = src_to_problem_libs(
+        pattern_src.to_string(),
+        &libs,
+        TargetLanguage::default(),
+        None,
+        None,
+        None,
+        None,
+    )
+    .unwrap()
+    .problem;
+
+    // All together now
+    let test_files = vec![
+        SyntheticFile::new("wrong.js".to_owned(), matching_src.to_owned(), true),
+        SyntheticFile::new("target.js".to_owned(), matching_src.to_owned(), true),
+    ];
+    let results = run_on_test_files(&pattern, &test_files);
+    println!("{:?}", results);
+    assert_eq!(results.len(), 3);
+    assert!(results.iter().any(|r| r.is_match()));
+}
+
+#[test]
 fn test_multifile_mania() {
     let pattern_src = r#"
         pattern main_thing() {
