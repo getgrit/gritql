@@ -5,7 +5,10 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::context::ExecContext;
+use crate::{
+    constants::{GLOBAL_VARS_SCOPE_INDEX, PROGRAM_INDEX},
+    context::ExecContext,
+};
 use crate::{context::QueryContext, pattern::resolved_pattern::File};
 use anyhow::Result;
 use grit_util::AnalysisLogs;
@@ -45,6 +48,10 @@ impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
             // The file wasn't loaded, so we can't match the body
             return Ok(false);
         }
+
+        // Fill in the program variable now
+        state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[PROGRAM_INDEX].value =
+            Some(file.binding(&state.files));
 
         if !self
             .body

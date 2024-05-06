@@ -1,5 +1,6 @@
 use crate::{
     binding::Binding,
+    constants::{GLOBAL_VARS_SCOPE_INDEX, PROGRAM_INDEX},
     file_owners::FileOwners,
     pattern::{
         AstLeafNodePattern, AstNodePattern, CallBuiltIn, CodeSnippet, File, GritFunctionDefinition,
@@ -42,6 +43,9 @@ pub trait ExecContext<'a, Q: QueryContext> {
     ) -> Result<Q::ResolvedPattern<'a>>;
 
     /// Call this when "entering" a file to lazily load it.
+    /// This MUST be implemented correctly, or the query engine will not work.
+    /// Once the file is loaded,
+    ///
     /// TODO: ideally this should be async, but that requires engine-wide async support.
     fn load_file(
         &self,
