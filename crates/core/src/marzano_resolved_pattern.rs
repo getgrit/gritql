@@ -865,10 +865,9 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
                     absolute_path.to_string_lossy().to_string(),
                 )))
             }
-            Self::Ptr(ptr) => todo!(),
-            // Self::Ptr(ptr) => Ok(ResolvedPattern::from_path_binding(
-            //     &files.get_file(*ptr).absolute_path,
-            // )),
+            Self::Ptr(ptr) => Ok(ResolvedPattern::from_path_binding(
+                files.get_file_name(*ptr),
+            )),
         }
     }
 
