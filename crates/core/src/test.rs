@@ -4800,7 +4800,7 @@ fn test_filename() {
         |  $_ where $filename => `the_new_name`
         |}
         |
-        |file(name = $filename, body = $program) where $program <: foo()
+        |file(name = $filename, body = $file_body) where $file_body <: foo()
         |"#
     .trim_margin()
     .unwrap();

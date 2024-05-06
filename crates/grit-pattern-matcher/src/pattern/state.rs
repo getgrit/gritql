@@ -44,7 +44,16 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
     }
 
     pub fn get_file_name(&self, pointer: FilePtr) -> &'a PathBuf {
-        self.file_paths[pointer.file as usize]
+        let file_index = pointer.file as usize;
+        let version_index = pointer.version as usize;
+        if let Some(owners) = self.owners.get(file_index) {
+            if let Some(owner) = owners.get(version_index) {
+                return &owner.name;
+            }
+        }
+        self.file_paths
+            .get(file_index)
+            .expect("File path should exist for given file index.")
     }
 
     /// If you already have all the files loaded, immediately create a FileRegistry
