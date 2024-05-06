@@ -33,6 +33,17 @@ pub struct ApplyMigrationArgs {
     verbose: bool,
 }
 
+impl ApplyMigrationArgs {
+    /// Extracts the payload from the input if provided, otherwise returns None.
+    pub fn get_payload(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+        let map = match &self.input {
+            Some(i) => serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(i)?,
+            None => serde_json::Map::new(),
+        };
+        Ok(map)
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct WorkflowSettings {}
 
@@ -55,10 +66,7 @@ pub(crate) async fn run_apply_migration(
 ) -> Result<()> {
     use crate::workflows::display_workflow_outcome;
 
-    let input = match &arg.input {
-        Some(i) => serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(i)?,
-        None => serde_json::Map::new(),
-    };
+    let input = arg.get_payload()?;
 
     let format = OutputFormat::from(flags);
     let mut emitter = create_emitter(

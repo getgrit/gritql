@@ -179,7 +179,10 @@ pub fn display_workflow_outcome(outcome: PackagedWorkflowOutcome) -> Result<()> 
 }
 
 #[cfg(feature = "remote_workflows")]
-pub async fn run_remote_workflow(workflow_name: String) -> Result<()> {
+pub async fn run_remote_workflow(
+    workflow_name: String,
+    args: crate::commands::apply_migration::ApplyMigrationArgs,
+) -> Result<()> {
     use colored::Colorize;
     use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
     use marzano_gritmodule::fetcher::ModuleRepo;
@@ -200,7 +203,10 @@ pub async fn run_remote_workflow(workflow_name: String) -> Result<()> {
     pb.set_message("Launching workflow on Grit Cloud");
 
     let repo = ModuleRepo::from_dir(&cwd).await;
-    let settings = grit_cloud_client::RemoteWorkflowSettings::new(workflow_name, &repo);
+    let input = args.get_payload()?;
+
+    let settings =
+        grit_cloud_client::RemoteWorkflowSettings::new(workflow_name, &repo, Some(input.into()));
     let url = grit_cloud_client::run_remote_workflow(settings, &auth).await?;
 
     pb.finish_and_clear();
