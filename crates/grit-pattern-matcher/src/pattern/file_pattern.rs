@@ -49,6 +49,10 @@ impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
             return Ok(false);
         }
 
+        // Re-execute the name pattern to bind the name variable
+        self.name
+            .execute(&file.name(&state.files), state, context, logs)?;
+
         // Fill in the variables now - this is a bit of a hack
         state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[PROGRAM_INDEX].value =
             Some(file.binding(&state.files));
