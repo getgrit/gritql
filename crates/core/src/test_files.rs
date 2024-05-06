@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::api::MatchResult;
 
-use self::{pattern_compiler::src_to_problem_libs, problem::Problem, test::TEST_EXECUTION_CONTEXT};
+use self::{pattern_compiler::src_to_problem_libs, problem::Problem};
 use anyhow::Result;
 
 use super::*;

@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use super::{
     patterns::{Matcher, Pattern},
     resolved_pattern::ResolvedPattern,

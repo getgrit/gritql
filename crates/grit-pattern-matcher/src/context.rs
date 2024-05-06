@@ -1,6 +1,5 @@
 use crate::{
     binding::Binding,
-    constants::{GLOBAL_VARS_SCOPE_INDEX, PROGRAM_INDEX},
     file_owners::FileOwners,
     pattern::{
         AstLeafNodePattern, AstNodePattern, CallBuiltIn, CodeSnippet, File, GritFunctionDefinition,

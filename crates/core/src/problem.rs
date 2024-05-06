@@ -7,19 +7,19 @@ use crate::{
     marzano_code_snippet::MarzanoCodeSnippet,
     marzano_context::MarzanoContext,
     marzano_resolved_pattern::{MarzanoFile, MarzanoResolvedPattern},
-    pattern_compiler::{compiler::VariableLocations, file_owner_compiler::FileOwnerCompiler},
+    pattern_compiler::compiler::VariableLocations,
 };
-use anyhow::{bail, Result};
+use anyhow::Result;
 use grit_pattern_matcher::{
     constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
     context::QueryContext,
-    file_owners::{FileOwner, FileOwners},
+    file_owners::FileOwners,
     pattern::{
         FilePtr, FileRegistry, GritFunctionDefinition, Matcher, Pattern, PatternDefinition,
         PredicateDefinition, ResolvedPattern, State, VariableContent,
     },
 };
-use grit_util::{AnalysisLogs, Position, VariableMatch};
+use grit_util::VariableMatch;
 use im::vector;
 use log::error;
 use marzano_language::{language::Tree, target_language::TargetLanguage};
@@ -27,15 +27,14 @@ use marzano_util::{
     cache::{GritCache, NullCache},
     hasher::hash,
     node_with_source::NodeWithSource,
-    rich_path::{FileName, LoadableFile, MarzanoFileTrait, RichFile, RichPath, TryIntoInputFile},
+    rich_path::{FileName, LoadableFile, RichFile, RichPath},
     runtime::ExecutionContext,
 };
 use rayon::iter::IntoParallelIterator;
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::ParallelIterator;
 use sha2::{Digest, Sha256};
-use std::borrow::Borrow;
+
 use std::{
-    borrow::Cow,
     collections::HashMap,
     path::PathBuf,
     sync::mpsc::{self, Sender},

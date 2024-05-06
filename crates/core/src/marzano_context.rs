@@ -13,7 +13,7 @@ use grit_pattern_matcher::{
     binding::Binding,
     constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
     context::ExecContext,
-    file_owners::{FileOwner, FileOwners},
+    file_owners::FileOwners,
     pattern::{
         CallBuiltIn, File, FilePtr, GritFunctionDefinition, Matcher, Pattern, PatternDefinition,
         PredicateDefinition, ResolvedPattern, State,
@@ -26,7 +26,7 @@ use marzano_language::{
     target_language::TargetLanguage,
 };
 use marzano_util::{
-    rich_path::{FileName, LoadableFile, MarzanoFileTrait, RichFile, TryIntoInputFile},
+    rich_path::{FileName, LoadableFile, RichFile, TryIntoInputFile},
     runtime::ExecutionContext,
 };
 use std::{borrow::Cow, path::PathBuf};
