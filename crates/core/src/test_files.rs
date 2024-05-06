@@ -128,7 +128,7 @@ fn test_lazy_file_parsing() {
 }
 
 #[test]
-fn test_lazy_variables() {
+fn test_lazy_filename_variable() {
     let pattern_src = r#"
         file(name=includes "target.js", body=contains bubble `$x` where {
             $x <: contains `console.log($_)`,
@@ -161,7 +161,46 @@ fn test_lazy_variables() {
         SyntheticFile::new("do_not_read.js".to_owned(), String::new(), false),
     ];
     let results = run_on_test_files(&pattern, &test_files);
-    println!("results: {:?}", results);
+    // Confirm we have 4 DoneFiles and 1 match
+    assert_eq!(results.len(), 5);
+    assert!(results.iter().any(|r| r.is_match()));
+}
+
+#[test]
+fn test_lazy_program_variable() {
+    let pattern_src = r#"
+        file(name=includes "target.js", body=contains bubble `$x` where {
+            $x <: contains `console.log($_)`,
+            $filename <: includes "target.js",
+            $program <: includes `console`
+        })
+        "#;
+    let libs = BTreeMap::new();
+
+    let matching_src = r#"
+        console.log("Hello, world!");
+        "#;
+
+    let pattern = src_to_problem_libs(
+        pattern_src.to_string(),
+        &libs,
+        TargetLanguage::default(),
+        None,
+        None,
+        None,
+        None,
+    )
+    .unwrap()
+    .problem;
+
+    // All together now
+    let test_files = vec![
+        SyntheticFile::new("wrong.js".to_owned(), matching_src.to_owned(), true),
+        SyntheticFile::new("target.js".to_owned(), matching_src.to_owned(), true),
+        SyntheticFile::new("other.js".to_owned(), matching_src.to_owned(), true),
+        SyntheticFile::new("do_not_read.js".to_owned(), String::new(), false),
+    ];
+    let results = run_on_test_files(&pattern, &test_files);
     // Confirm we have 4 DoneFiles and 1 match
     assert_eq!(results.len(), 5);
     assert!(results.iter().any(|r| r.is_match()));
