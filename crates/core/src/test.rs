@@ -3884,6 +3884,38 @@ fn js_paren_params() {
 }
 
 #[test]
+fn js_preserve_significant_empty_statements() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"`$body` => `$body`"#.to_owned(),
+            source: r#"
+            for(;;);
+            if(true);
+            while(true);"#
+                .to_owned(),
+            expected: r#"
+            for(;;);
+            if(true);
+            while(true);"#
+                .to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn js_remove_redundant_empty_statements() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"`$body` => `$body`"#.to_owned(),
+            source: r#";;{;;};;"#.to_owned(),
+            expected: r#"{}"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn array_destrcutring_snippet() {
     run_test_match({
         TestArg {
