@@ -28,7 +28,7 @@ impl<Q: QueryContext> Matcher<Q> for Files<Q> {
     ) -> Result<bool> {
         if let Some(files) = resolved_pattern.get_files() {
             self.pattern.execute(files, state, context, logs)
-        } else if resolved_pattern.get_file_owner().is_some() {
+        } else if resolved_pattern.get_file().is_some() {
             let files = ResolvedPattern::from_list_parts([resolved_pattern.to_owned()].into_iter());
             self.pattern.execute(&files, state, context, logs)
         } else {

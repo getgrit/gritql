@@ -30,7 +30,7 @@ impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let Some(file) = resolved_pattern.get_file_owner() else {
+        let Some(file) = resolved_pattern.get_file() else {
             return Ok(false);
         };
 

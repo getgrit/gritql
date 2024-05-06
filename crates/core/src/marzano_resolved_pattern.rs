@@ -225,7 +225,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         }
     }
 
-    fn get_file_owner(&self) -> Option<&MarzanoFile<'a>> {
+    fn get_file(&self) -> Option<&MarzanoFile<'a>> {
         if let Self::File(file) = self {
             Some(file)
         } else {

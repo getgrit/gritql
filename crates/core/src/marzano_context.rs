@@ -287,7 +287,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
         };
 
         for f in new_files {
-            let Some(file) = f.get_file_owner() else {
+            let Some(file) = f.get_file() else {
                 bail!("Expected a list of files")
             };
 

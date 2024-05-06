@@ -113,7 +113,7 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
 
     fn get_bindings(&self) -> Option<impl Iterator<Item = Q::Binding<'a>>>;
 
-    fn get_file_owner(&self) -> Option<&Q::File<'a>>;
+    fn get_file(&self) -> Option<&Q::File<'a>>;
 
     fn get_file_pointers(&self) -> Option<Vec<FilePtr>>;
 
