@@ -3,6 +3,12 @@ use clap::Args;
 use colored::Colorize;
 use log::debug;
 use log::info;
+use marzano_auth::env::get_app_url;
+use marzano_auth::env::get_graphql_api_url;
+use marzano_auth::env::get_grit_api_url;
+use marzano_auth::env::ENV_VAR_GRAPHQL_API_URL;
+use marzano_auth::env::ENV_VAR_GRIT_API_URL;
+use marzano_auth::env::ENV_VAR_GRIT_APP_URL;
 use marzano_gritmodule::fetcher::KeepFetcherKind;
 use marzano_gritmodule::searcher::find_grit_modules_dir;
 use serde::Serialize;
@@ -18,52 +24,102 @@ pub struct DoctorArgs {}
 pub(crate) async fn run_doctor(_arg: DoctorArgs) -> Result<()> {
     let target_os = std::env::consts::OS;
     let target_arch = std::env::consts::ARCH;
-    info!("Running on {}/{}", target_os, target_arch);
+    info!("{}", "Client environment".bold());
+    info!("  OS: {}", target_os.yellow());
+    info!("  Architecture: {}", target_arch.yellow());
 
     let mut updater = Updater::from_current_bin().await?;
 
+    info!("{}", "Configuration".bold());
+
     let manifest_path = &updater.manifest_path;
-    info!("Manifest file expected at {}", manifest_path.display());
+    info!(
+        "  Expected location: {}",
+        format!("{}", manifest_path.display()).underline().yellow()
+    );
 
     let cwd = std::env::current_dir()?;
     let config = init_config_from_cwd::<KeepFetcherKind>(cwd.clone(), false).await?;
-    info!("Config: {}", config);
+    info!("  Config: {}", format!("{}", config).underline().yellow());
 
     let mod_dir = find_grit_modules_dir(cwd.clone()).await;
     match mod_dir {
         Ok(mod_dir) => {
-            info!("Existing Grit modules dir: {}", mod_dir.display());
+            info!(
+                "  Existing Grit modules dir: {}",
+                format!("{}", mod_dir.display()).underline().yellow()
+            );
         }
         Err(e) => {
-            info!("Grit modules dir not found: {}", e);
+            info!("  Grit modules dir not found: {}", e);
             let initialized = init_config_from_cwd::<KeepFetcherKind>(cwd.clone(), false).await?;
-            info!("Initialized config: {}", initialized);
+            info!("  Initialized config: {}", initialized);
         }
     }
+
+    let configs = vec![
+        (get_grit_api_url(), "Grit API URL", ENV_VAR_GRIT_API_URL),
+        (
+            get_graphql_api_url(),
+            "Grit GraphQL API URL",
+            ENV_VAR_GRAPHQL_API_URL,
+        ),
+        (get_app_url(), "Grit App URL", ENV_VAR_GRIT_APP_URL),
+    ];
+    for (value, name, env_var) in configs {
+        info!(
+            "  {}: {} (override by setting {})",
+            name,
+            value.yellow().underline(),
+            env_var.blue()
+        );
+    }
+
+    info!("{}", "Authentication".bold());
 
     let auth = updater.get_auth();
     match auth {
         Some(auth) => {
-            debug!("Auth token: {}", auth.access_token);
-            info!("Auth user id: {}", auth.get_user_id()?);
+            debug!("  Auth token: {}", auth.access_token.to_string().yellow());
+            info!(
+                "  Auth user id: {}",
+                (auth.get_user_id()?).to_string().yellow()
+            );
 
             if auth.is_expired()? {
-                info!("Auth token expired: {}.", auth.get_expiry()?);
+                info!(
+                    "  Auth token expired: {}.",
+                    format!("{}", auth.get_expiry()?).yellow()
+                );
             } else {
-                info!("Auth token expiration: {}.", auth.get_expiry()?);
+                info!(
+                    "  Auth token expiration: {}.",
+                    format!("{}", auth.get_expiry()?).green()
+                );
             }
         }
         None => {
-            info!("You are not authenticated.");
+            info!(
+                "  {}",
+                "You are not authenticated."
+                    .to_string()
+                    .bright_blue()
+                    .bold()
+            );
         }
     }
+
+    info!("{}", "Installed binaries".bold());
 
     let existing_manifests = updater.binaries.clone();
     for app in Updater::get_apps() {
         let name = SupportedApp::get_base_name(&app);
         if !existing_manifests.contains_key(&name) {
-            let prompt = "Run grit install to install missing binaries.".blue();
-            info!("{}: not installed. {}", app, prompt);
+            info!(
+                "  {}: not installed. Run {} to install missing binaries",
+                format!("{}", app).bold(),
+                "grit install".bold().blue()
+            );
             continue;
         }
         let manifest = existing_manifests.get(&name).unwrap();
@@ -76,16 +132,20 @@ pub(crate) async fn run_doctor(_arg: DoctorArgs) -> Result<()> {
 
     for app_manifest in updater.binaries.values() {
         info!(
-            "{}: {} (release {})",
-            app_manifest.name,
-            app_manifest
-                .version
-                .as_ref()
-                .unwrap_or(&"unknown".to_string()),
+            "  {}: {} (release {})",
+            format!("{}", app_manifest.name).bold(),
             app_manifest
                 .version
                 .as_ref()
                 .unwrap_or(&"unknown".to_string())
+                .to_string()
+                .green(),
+            app_manifest
+                .version
+                .as_ref()
+                .unwrap_or(&"unknown".to_string())
+                .to_string()
+                .green()
         );
     }
 
