@@ -4797,10 +4797,13 @@ fn test_filename() {
         |language js
         |
         |pattern foo() {
-        |  $_ where $filename => `the_new_name`
+        |  $b where {
+        |    $b <: contains `whatever` => `$filename`,
+        |    $filename => `the_new_name`,
+        |  }
         |}
         |
-        |file(name = $filename, body = $file_body) where $file_body <: foo()
+        |file(body = foo())
         |"#
     .trim_margin()
     .unwrap();

@@ -154,8 +154,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 )?;
                 if let Some(file) = file {
                     self.files.push(file);
-                    let file_ref = self.files.last().unwrap();
-                    state.files.push_revision(ptr, self.files.last().unwrap());
+                    state.files.load_file(ptr, self.files.last().unwrap());
                 }
             }
         }

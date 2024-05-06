@@ -6,7 +6,7 @@ use super::{
     state::State,
 };
 use crate::{
-    constants::{GLOBAL_VARS_SCOPE_INDEX, PROGRAM_INDEX},
+    constants::{FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX, PROGRAM_INDEX},
     context::ExecContext,
 };
 use crate::{context::QueryContext, pattern::resolved_pattern::File};
@@ -49,9 +49,11 @@ impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
             return Ok(false);
         }
 
-        // Fill in the program variable now
+        // Fill in the variables now - this is a bit of a hack
         state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[PROGRAM_INDEX].value =
             Some(file.binding(&state.files));
+        state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[FILENAME_INDEX].value =
+            Some(file.name(&state.files));
 
         if !self
             .body
