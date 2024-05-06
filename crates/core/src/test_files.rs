@@ -286,7 +286,7 @@ fn test_sequential_contains_with_program() {
         pattern main_thing() {
             `console.log` as $lg where {
                 $filename <: includes "target.js",
-                $lg => `$program`
+                $program <: contains `log`
             }
         }
         sequential {
@@ -317,7 +317,6 @@ fn test_sequential_contains_with_program() {
         SyntheticFile::new("target.js".to_owned(), matching_src.to_owned(), true),
     ];
     let results = run_on_test_files(&pattern, &test_files);
-    println!("{:?}", results);
     assert_eq!(results.len(), 3);
     assert!(results.iter().any(|r| r.is_match()));
 }
