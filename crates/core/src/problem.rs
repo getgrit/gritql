@@ -33,6 +33,7 @@ use marzano_util::{
 use rayon::iter::IntoParallelIterator;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use sha2::{Digest, Sha256};
+use std::borrow::Borrow;
 use std::{
     borrow::Cow,
     collections::HashMap,
@@ -163,21 +164,34 @@ impl Problem {
             send(tx, results);
         }
         let mut file_pointers: Vec<FilePtr> = Vec::new();
-        for file in &files {
-            let latest_index = file_pointers.len();
-            file_pointers.push(FilePtr::new(latest_index - 1 as u16, 0));
-        }
 
-        // } else {
-        //     let file_hash = hash(&file.path);
-        //     if cache.has_no_matches(file_hash, self.hash) {
-        //         results.push(MatchResult::DoneFile(DoneFile {
-        //             relative_file_path: file.path.to_string(),
-        //             has_results: Some(false),
-        //             file_hash: Some(file_hash),
-        //             from_cache: true,
-        //         }));
-        //     } else {
+        let mut done_files: HashMap<String, DoneFile> = HashMap::new();
+
+        for (index, file) in files.iter().enumerate() {
+            let path = file.name();
+            let file_hash = hash(&path);
+            if cache.has_no_matches(file_hash, self.hash) {
+                done_files.insert(
+                    path.clone(),
+                    DoneFile {
+                        relative_file_path: path,
+                        has_results: Some(false),
+                        file_hash: Some(file_hash),
+                        from_cache: true,
+                    },
+                );
+            } else {
+                done_files.insert(
+                    path.clone(),
+                    DoneFile {
+                        relative_file_path: path,
+                        file_hash: Some(file_hash),
+                        ..Default::default()
+                    },
+                );
+                file_pointers.push(FilePtr::new(index as u16, 0));
+            }
+        }
 
         let binding: FilePattern = if self.is_multifile {
             file_pointers.into()
@@ -188,7 +202,7 @@ impl Problem {
             file_pointers[0].into()
         };
 
-        self.execute_and_send(tx, files, binding, &owned_files, context);
+        self.execute_and_send(tx, files, binding, &owned_files, context, done_files);
     }
 
     fn execute_and_send(
@@ -198,6 +212,7 @@ impl Problem {
         binding: FilePattern,
         owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
+        mut done_files: HashMap<String, DoneFile>,
     ) {
         let file_names: Vec<PathBuf> = files
             .iter()
@@ -207,19 +222,6 @@ impl Problem {
         let lazy_files: Vec<Box<dyn LoadableFile>> = files
             .into_iter()
             .map(|file| Box::new(file) as Box<dyn LoadableFile>)
-            .collect();
-
-        let mut done_files: HashMap<&PathBuf, DoneFile> = borrowed_names
-            .iter()
-            .map(|&path| {
-                (
-                    path,
-                    DoneFile {
-                        relative_file_path: path.to_string_lossy().to_string(),
-                        ..Default::default()
-                    },
-                )
-            })
             .collect();
 
         let mut outputs =
@@ -241,7 +243,9 @@ impl Problem {
                         }
                         if let Some(name) = message.file_name() {
                             if let Ok(path) = PathBuf::from_str(name) {
-                                if let Some(done_file) = done_files.get_mut(&path) {
+                                if let Some(done_file) =
+                                    done_files.get_mut(path.to_string_lossy().as_ref())
+                                {
                                     done_file.has_results = Some(true);
                                 }
                             }
