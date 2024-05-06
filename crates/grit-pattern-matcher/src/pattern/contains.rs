@@ -153,6 +153,11 @@ impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
                 return Ok(false);
             }
 
+            init_state.bindings[GLOBAL_VARS_SCOPE_INDEX]
+                .back_mut()
+                .unwrap()[PROGRAM_INDEX]
+                .value = Some(file.binding(&init_state.files));
+
             let mut cur_state = init_state.clone();
             let mut did_match = false;
             let prev_state = cur_state.clone();
