@@ -3,6 +3,12 @@ use clap::Args;
 use colored::Colorize;
 use log::debug;
 use log::info;
+use marzano_auth::env::get_app_url;
+use marzano_auth::env::get_graphql_api_url;
+use marzano_auth::env::get_grit_api_url;
+use marzano_auth::env::ENV_VAR_GRAPHQL_API_URL;
+use marzano_auth::env::ENV_VAR_GRIT_API_URL;
+use marzano_auth::env::ENV_VAR_GRIT_APP_URL;
 use marzano_gritmodule::fetcher::KeepFetcherKind;
 use marzano_gritmodule::searcher::find_grit_modules_dir;
 use serde::Serialize;
@@ -56,6 +62,24 @@ pub(crate) async fn run_doctor(_arg: DoctorArgs) -> Result<()> {
         None => {
             info!("You are not authenticated.");
         }
+    }
+
+    let configs = vec![
+        (get_grit_api_url(), "Grit API URL", ENV_VAR_GRIT_API_URL),
+        (
+            get_graphql_api_url(),
+            "Grit GraphQL API URL",
+            ENV_VAR_GRAPHQL_API_URL,
+        ),
+        (get_app_url(), "Grit App URL", ENV_VAR_GRIT_APP_URL),
+    ];
+    for (value, name, env_var) in configs {
+        info!(
+            "{}: {} (override by setting {})",
+            name,
+            value.blue().underline(),
+            env_var.underline()
+        );
     }
 
     let existing_manifests = updater.binaries.clone();
