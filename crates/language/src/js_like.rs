@@ -91,6 +91,19 @@ pub(crate) fn js_like_disregarded_field_values(
     res
 }
 
+pub(crate) fn js_like_is_metavariable<'a>(
+    node: &NodeWithSource,
+    lang: &impl MarzanoLanguage<'a>,
+    alternate_metavariable_kinds: &[&str],
+) -> bool {
+    node.node.is_named()
+        && (node.node.kind_id() == lang.metavariable_sort()
+            || (alternate_metavariable_kinds.contains(&node.node.kind().as_ref())
+                && node
+                    .text()
+                    .is_ok_and(|t| lang.exact_replaced_variable_regex().is_match(&t))))
+}
+
 pub(crate) struct MarzanoJsLikeParser(MarzanoParser);
 
 impl MarzanoJsLikeParser {
