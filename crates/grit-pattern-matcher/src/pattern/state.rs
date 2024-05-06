@@ -44,7 +44,6 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
     }
 
     pub fn get_file_name(&self, pointer: FilePtr) -> &'a PathBuf {
-        // TODO: look in get_file_owner first, so revisions are captured
         self.file_paths[pointer.file as usize]
     }
 
@@ -54,7 +53,6 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
             version_count: files.iter().map(|_| 1).collect(),
             file_paths: files.iter().map(|f| &f.name).collect(),
             owners: files.into_iter().map(|f| vector![f]).collect(),
-            // lazy_files: vec![],
         }
     }
 
@@ -65,7 +63,6 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
             version_count: file_paths.iter().map(|_| 0).collect(),
             owners: file_paths.iter().map(|_| vector![]).collect(),
             file_paths,
-            // lazy_files: vec![],
         }
     }
 

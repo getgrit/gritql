@@ -70,6 +70,7 @@ pub async fn get_marzano_pattern_test_results(
                     if let Some(samples) = &pattern.config.samples {
                         let mut results = Vec::with_capacity(samples.len());
                         for sample in samples {
+                            println!("Start testing {:?}", &pattern.local_name);
                             let result = test_pattern_sample(&compiled, sample, runtime.clone());
                             let mut actual_sample = sample.clone();
                             debug!("Sample: {:?}, result {:?}", sample, result);
