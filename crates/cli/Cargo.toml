@@ -87,7 +87,7 @@ default = [
   "external_functions",
   "updater",
   "workflows_v2",
-  # "remote_workflows",
+  "remote_workflows",
   # "server",
   # "remote_redis",
   # "embeddings",

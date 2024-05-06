@@ -1,4 +1,5 @@
 use anyhow::{bail, Result};
+use colored::Colorize;
 use console::style;
 use grit_util::FileRange;
 use log::debug;
@@ -9,7 +10,6 @@ use serde::Serialize;
 use serde_json::to_string;
 use std::path::PathBuf;
 use tempfile::NamedTempFile;
-
 use tokio::fs;
 use tokio::process::Command;
 use uuid::Uuid;
@@ -189,7 +189,8 @@ pub async fn run_remote_workflow(workflow_name: String) -> Result<()> {
 
     let repo = ModuleRepo::from_dir(&cwd).await;
     let settings = grit_cloud_client::RemoteWorkflowSettings::new(workflow_name, &repo);
-    let outcome = grit_cloud_client::run_remote_workflow(settings, &auth).await?;
-    display_workflow_outcome(outcome)?;
-    return Ok(());
+    let url = grit_cloud_client::run_remote_workflow(settings, &auth).await?;
+    log::info!("Workflow started at: {}", url.bright_blue().underline());
+
+    Ok(())
 }
