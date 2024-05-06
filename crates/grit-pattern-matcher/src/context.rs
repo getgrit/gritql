@@ -44,9 +44,8 @@ pub trait ExecContext<'a, Q: QueryContext> {
 
     /// Call this when "entering" a file to lazily load it.
     /// This MUST be implemented correctly, or the query engine will not work.
-    /// Once the file is loaded,
     ///
-    /// TODO: ideally this should be async, but that requires engine-wide async support.
+    // TODO: ideally this should be async, but that requires engine-wide async support.
     fn load_file(
         &self,
         file: &Q::File<'a>,
