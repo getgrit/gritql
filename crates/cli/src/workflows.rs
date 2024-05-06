@@ -206,7 +206,7 @@ pub async fn run_remote_workflow(
     let input = args.get_payload()?;
 
     let settings =
-        grit_cloud_client::RemoteWorkflowSettings::new(workflow_name, &repo, Some(input.into()));
+        grit_cloud_client::RemoteWorkflowSettings::new(workflow_name, &repo, input.into());
     let url = grit_cloud_client::run_remote_workflow(settings, &auth).await?;
 
     pb.finish_and_clear();
