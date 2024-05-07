@@ -34,7 +34,7 @@ pub struct ApplyMigrationArgs {
 }
 
 impl ApplyMigrationArgs {
-    /// Extracts the payload from the input if provided, otherwise returns None.
+    /// Extracts the payload from the input if provided, otherwise returns an empty map
     pub fn get_payload(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
         let map = match &self.input {
             Some(i) => serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(i)?,
