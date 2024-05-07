@@ -9,7 +9,6 @@ use serde::Serialize;
 use serde_json::to_string;
 use std::path::PathBuf;
 use tempfile::NamedTempFile;
-
 use tokio::fs;
 use tokio::process::Command;
 use uuid::Uuid;
@@ -180,16 +179,39 @@ pub fn display_workflow_outcome(outcome: PackagedWorkflowOutcome) -> Result<()> 
 }
 
 #[cfg(feature = "remote_workflows")]
-pub async fn run_remote_workflow(workflow_name: String) -> Result<()> {
+pub async fn run_remote_workflow(
+    workflow_name: String,
+    args: crate::commands::apply_migration::ApplyMigrationArgs,
+) -> Result<()> {
+    use colored::Colorize;
+    use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
     use marzano_gritmodule::fetcher::ModuleRepo;
-    let mut updater = Updater::from_current_bin().await?;
+    use std::time::Duration;
+
+    let updater = Updater::from_current_bin().await?;
     let cwd = std::env::current_dir()?;
+
+    let pb = ProgressBar::with_draw_target(Some(0), ProgressDrawTarget::stderr());
+    pb.set_style(ProgressStyle::with_template(
+        "{spinner}{prefix:.bold.dim} {wide_msg:.bold.dim}",
+    )?);
+    pb.set_message("Authenticating with Grit Cloud");
+    pb.enable_steady_tick(Duration::from_millis(60));
 
     let auth = updater.get_valid_auth()?;
 
+    pb.set_message("Launching workflow on Grit Cloud");
+
     let repo = ModuleRepo::from_dir(&cwd).await;
-    let settings = grit_cloud_client::RemoteWorkflowSettings::new(workflow_name, &repo);
-    let outcome = grit_cloud_client::run_remote_workflow(settings, &auth).await?;
-    display_workflow_outcome(outcome)?;
-    return Ok(());
+    let input = args.get_payload()?;
+
+    let settings =
+        grit_cloud_client::RemoteWorkflowSettings::new(workflow_name, &repo, input.into());
+    let url = grit_cloud_client::run_remote_workflow(settings, &auth).await?;
+
+    pb.finish_and_clear();
+
+    log::info!("Workflow started at: {}", url.bright_blue().underline());
+
+    Ok(())
 }
