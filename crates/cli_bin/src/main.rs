@@ -57,10 +57,11 @@ fn get_otel_setup() -> Result<Tracer> {
     let grafana_key = get_otel_key("GRAFANA_OTEL_KEY");
     let honeycomb_key = get_otel_key("HONEYCOMB_OTEL_KEY");
     let baselime_key = get_otel_key("BASELIME_OTEL_KEY");
+    let hyperdx_key = get_otel_key("HYPERDX_OTEL_KEY");
 
-    match (grafana_key, honeycomb_key, baselime_key) {
-        (None, None, None) => bail!("no OTLP key found"),
-        (Some(grafana_key), None, None) => {
+    match (grafana_key, honeycomb_key, baselime_key, hyperdx_key) {
+        (None, None, None, None) => bail!("no OTLP key found"),
+        (Some(grafana_key), None, None, None) => {
             let instance_id = "665534";
             let encoded =
                 base64::encode_from_string(format!("{}:{}", instance_id, grafana_key).as_str())?;
@@ -71,18 +72,23 @@ fn get_otel_setup() -> Result<Tracer> {
                     format!("Basic {}", encoded),
                 )]));
         }
-        (None, Some(honeycomb_key), None) => {
+        (None, Some(honeycomb_key), None, None) => {
             exporter = exporter
                 .with_endpoint("https://api.honeycomb.io")
                 .with_headers(HashMap::from([("x-honeycomb-team".into(), honeycomb_key)]));
         }
-        (None, None, Some(baselime_key)) => {
+        (None, None, Some(baselime_key), None) => {
             exporter = exporter
                 .with_endpoint("https://otel.baselime.io/v1/")
                 .with_headers(HashMap::from([
                     ("x-api-key".into(), baselime_key),
                     ("x-baselime-dataset".into(), "otel".into()),
                 ]));
+        }
+        (None, None, None, Some(hyperdx_key)) => {
+            exporter = exporter
+                .with_endpoint("https://in-otel.hyperdx.io")
+                .with_headers(HashMap::from([("authorization".into(), hyperdx_key)]));
         }
         _ => bail!("multiple OTLP keys found"),
     }
