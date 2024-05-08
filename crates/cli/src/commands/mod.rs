@@ -437,8 +437,6 @@ fn get_otel_key(env_name: &str) -> Option<String> {
 
 #[cfg(feature = "grit_tracing")]
 fn get_otel_setup() -> Result<Option<Tracer>> {
-    use anyhow::bail;
-
     let mut exporter = opentelemetry_otlp::new_exporter()
         .http()
         .with_http_client(reqwest::Client::default())
@@ -553,5 +551,5 @@ pub async fn run_command_with_tracing() -> Result<()> {
             std::process::exit(1);
         }
     }
-    return res;
+    res
 }
