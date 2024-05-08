@@ -219,7 +219,7 @@ pub(crate) async fn run_apply_pattern(
     );
 
     #[cfg(feature = "grit_tracing")]
-    let span_libs = span!(tracing::Level::INFO, "build_libs",).entered();
+    let span_libs = span!(tracing::Level::INFO, "prep_libs",).entered();
 
     let (my_input, lang) = if let Some(pattern_libs) = pattern_libs {
         (
@@ -232,7 +232,7 @@ pub(crate) async fn run_apply_pattern(
         )
     } else {
         #[cfg(feature = "grit_tracing")]
-        let stdlib_download_span = span!(tracing::Level::INFO, "download_modules",).entered();
+        let stdlib_download_span = span!(tracing::Level::INFO, "stdlib_download",).entered();
 
         let mod_dir = find_grit_modules_dir(cwd.clone()).await;
         if !env::var("GRIT_DOWNLOADS_DISABLED")
@@ -268,7 +268,11 @@ pub(crate) async fn run_apply_pattern(
             }
         }
 
+        #[cfg(feature = "grit_tracing")]
+        let grit_file_discovery = span!(tracing::Level::INFO, "grit_file_discovery",).entered();
+
         let pattern_libs = flushable_unwrap!(emitter, get_grit_files_from_cwd().await);
+
         let (mut lang, pattern_body) = if pattern.ends_with(".grit") || pattern.ends_with(".md") {
             match fs::read_to_string(pattern.clone()).await {
                 Ok(pb) => {
@@ -344,6 +348,8 @@ pub(crate) async fn run_apply_pattern(
             emitter,
             pattern_libs.get_language_directory_or_default(lang)
         );
+        #[cfg(feature = "grit_tracing")]
+        grit_file_discovery.exit();
         (
             ApplyInput {
                 pattern_body,
@@ -366,6 +372,8 @@ pub(crate) async fn run_apply_pattern(
         return Ok(());
     }
 
+    #[cfg(feature = "grit_tracing")]
+    let collect_name = span!(tracing::Level::INFO, "collect_name",).entered();
     let current_name = if is_pattern_name(&pattern) {
         Some(pattern.trim_end_matches("()").to_string())
     } else {
@@ -375,10 +383,14 @@ pub(crate) async fn run_apply_pattern(
             .find(|(_, body)| body.trim() == pattern.trim())
             .map(|(name, _)| name.clone())
     };
+    #[cfg(feature = "grit_tracing")]
+    collect_name.exit();
+
     let pattern: crate::resolver::RichPattern<'_> = flushable_unwrap!(
         emitter,
         resolver.make_pattern(&my_input.pattern_body, current_name)
     );
+
     #[cfg(feature = "grit_tracing")]
     span_libs.exit();
 
