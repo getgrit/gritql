@@ -27,7 +27,7 @@ use super::parse::{run_parse, ParseInput};
 use super::patterns::PatternsTestArgs;
 use super::patterns_test::get_marzano_pattern_test_results;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct PlumbingApplyInput {
     pub pattern_body: String,
     pub paths: Vec<PathBuf>,
@@ -123,6 +123,7 @@ pub(crate) async fn run_plumbing(
             apply_pattern_args,
             shared_args,
         } => {
+            eprintln!("Running apply");
             let buffer = read_input(&shared_args)?;
             let input: PlumbingApplyInput = serde_json::from_str::<PlumbingApplyInput>(&buffer).map_err(|e| {
                 anyhow!(
@@ -131,6 +132,7 @@ pub(crate) async fn run_plumbing(
                     e
                 )
             })?;
+            eprint!("Input: {:?}", input);
             let grit_files = if input.paths.is_empty() {
                 PatternsDirectory::new()
             } else {
@@ -146,6 +148,7 @@ pub(crate) async fn run_plumbing(
             } else {
                 input.pattern_body
             };
+            println!("Running apply with pattern: {}", body);
             run_apply_pattern(
                 body,
                 SharedFilterArgs::default(),
