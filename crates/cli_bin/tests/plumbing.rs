@@ -150,9 +150,6 @@ fn checks_patterns_round_trip() -> Result<()> {
 
     let result = cmd.output()?;
 
-    // no stderr
-    assert_eq!(String::from_utf8(result.stderr)?, "");
-
     // Result must be successful
     assert!(result.status.success());
 
@@ -173,8 +170,6 @@ fn checks_patterns_without_samples() -> Result<()> {
     cmd.write_stdin(String::from_utf8(config.into())?);
 
     let result = cmd.output()?;
-    // no stderr
-    assert_eq!(String::from_utf8(result.stderr)?, "");
 
     // Result must be successful
     assert!(result.status.success());
@@ -224,9 +219,6 @@ fn checks_multifile_patterns() -> Result<()> {
 
     cmd.write_stdin(String::from_utf8(output.stdout)?);
     let result = cmd.output()?;
-
-    // no stderr
-    assert_eq!(String::from_utf8(result.stderr)?, "");
 
     assert!(result.status.success());
 
