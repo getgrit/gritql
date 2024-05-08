@@ -449,7 +449,7 @@ fn get_otel_setup() -> Result<Option<Tracer>> {
 
     match (grafana_key, honeycomb_key, baselime_key, hyperdx_key) {
         (None, None, None, None) => {
-            // NOTE: we don't include tracing in released builds, so this won't appear
+            #[cfg(feature = "server")]
             eprintln!("No OTLP key found, tracing will be disabled");
             return Ok(None);
         }
@@ -522,7 +522,7 @@ pub async fn run_command_with_tracing() -> Result<()> {
 
             let root_span = span!(Level::INFO, "grit_marzano.cli_command",);
 
-            let _res = async move {
+            let res = async move {
                 event!(Level::INFO, "starting the CLI!");
 
                 let res = run_command().await;
@@ -536,7 +536,7 @@ pub async fn run_command_with_tracing() -> Result<()> {
 
             opentelemetry::global::shutdown_tracer_provider();
 
-            return Ok(());
+            return res;
         }
     }
     let subscriber = tracing::subscriber::NoSubscriber::new();
