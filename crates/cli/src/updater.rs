@@ -184,8 +184,8 @@ pub struct Updater {
     access_token: Option<String>,
 }
 
-#[allow(dead_code)]
 impl Updater {
+    #[tracing::instrument]
     pub async fn from_current_bin() -> Result<Self> {
         let current_bin = std::env::current_exe()?;
         let install_path = current_bin
@@ -253,16 +253,6 @@ impl Updater {
                 manifest_path.display()
             ),
         }
-    }
-
-    pub fn get_log_file(&self, app: SupportedApp) -> Result<std::fs::File> {
-        let log_path = self
-            .bin_path
-            .parent()
-            .unwrap()
-            .join(format!("{}.log", app.get_bin_name()));
-        let log_file = std::fs::File::create(log_path).unwrap();
-        Ok(log_file)
     }
 
     pub async fn check_for_update(&mut self) -> Result<bool> {

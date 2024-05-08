@@ -191,12 +191,17 @@ pub(crate) async fn run_apply_pattern(
     // Get the current directory
     let cwd = std::env::current_dir().unwrap();
 
+    #[cfg(feature = "grit_tracing")]
+    let module_resolution = span!(tracing::Level::INFO, "module_resolution",).entered();
+
     // Construct a resolver
     let resolver = GritModuleResolver::new(cwd.to_str().unwrap());
     let current_repo_root = marzano_gritmodule::fetcher::LocalRepo::from_dir(&cwd)
         .await
         .map(|repo| repo.root())
         .transpose()?;
+    #[cfg(feature = "grit_tracing")]
+    module_resolution.exit();
 
     let mut emitter = create_emitter(
         &format,
@@ -213,6 +218,9 @@ pub(crate) async fn run_apply_pattern(
         extract_filter_ranges(&shared, current_repo_root.as_ref())
     );
 
+    #[cfg(feature = "grit_tracing")]
+    let span_libs = span!(tracing::Level::INFO, "build_libs",).entered();
+
     let (my_input, lang) = if let Some(pattern_libs) = pattern_libs {
         (
             ApplyInput {
@@ -223,6 +231,9 @@ pub(crate) async fn run_apply_pattern(
             lang,
         )
     } else {
+        #[cfg(feature = "grit_tracing")]
+        let stdlib_download_span = span!(tracing::Level::INFO, "download_modules",).entered();
+
         let mod_dir = find_grit_modules_dir(cwd.clone()).await;
         if !env::var("GRIT_DOWNLOADS_DISABLED")
             .unwrap_or_else(|_| "false".to_owned())
@@ -235,6 +246,9 @@ pub(crate) async fn run_apply_pattern(
                 init_config_from_cwd::<KeepFetcherKind>(cwd.clone(), false).await
             );
         }
+
+        #[cfg(feature = "grit_tracing")]
+        stdlib_download_span.exit();
 
         let warn_uncommitted =
             !arg.dry_run && !arg.force && has_uncommitted_changes(cwd.clone()).await;
@@ -365,6 +379,8 @@ pub(crate) async fn run_apply_pattern(
         emitter,
         resolver.make_pattern(&my_input.pattern_body, current_name)
     );
+    #[cfg(feature = "grit_tracing")]
+    span_libs.exit();
 
     let CompilationResult {
         problem: compiled,

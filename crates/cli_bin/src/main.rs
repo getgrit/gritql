@@ -46,7 +46,7 @@ fn get_otel_key(env_name: &str) -> Option<String> {
 }
 
 #[cfg(feature = "grit_tracing")]
-fn get_otel_setup() -> Result<Tracer> {
+fn get_otel_setup() -> Result<Option<Tracer>> {
     use anyhow::bail;
 
     let mut exporter = opentelemetry_otlp::new_exporter()
@@ -60,7 +60,11 @@ fn get_otel_setup() -> Result<Tracer> {
     let hyperdx_key = get_otel_key("HYPERDX_OTEL_KEY");
 
     match (grafana_key, honeycomb_key, baselime_key, hyperdx_key) {
-        (None, None, None, None) => bail!("no OTLP key found"),
+        (None, None, None, None) => {
+            // NOTE: we don't include tracing in released builds, so this won't appear
+            eprintln!("No OTLP key found, tracing will be disabled");
+            return Ok(None);
+        }
         (Some(grafana_key), None, None, None) => {
             let instance_id = "665534";
             let encoded =
@@ -104,7 +108,7 @@ fn get_otel_setup() -> Result<Tracer> {
         )
         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
-    Ok(tracer)
+    Ok(Some(tracer))
 }
 
 #[tokio::main]
@@ -113,51 +117,49 @@ async fn main() -> Result<()> {
     {
         let tracer = get_otel_setup()?;
 
-        let env_filter = EnvFilter::try_from_default_env()
-            .unwrap_or(EnvFilter::new("TRACE"))
-            // We don't want to trace the tracing library itself
-            .add_directive("hyper::proto=off".parse().unwrap());
+        if let Some(tracer) = tracer {
+            let env_filter = EnvFilter::try_from_default_env()
+                .unwrap_or(EnvFilter::new("TRACE"))
+                // We don't want to trace the tracing library itself
+                .add_directive("hyper::proto=off".parse().unwrap());
 
-        let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
-        let subscriber = Registry::default().with(env_filter).with(telemetry);
+            let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
+            let subscriber = Registry::default().with(env_filter).with(telemetry);
 
-        global::set_text_map_propagator(TraceContextPropagator::new());
-        tracing::subscriber::set_global_default(subscriber)
-            .expect("setting tracing default failed");
+            global::set_text_map_propagator(TraceContextPropagator::new());
+            tracing::subscriber::set_global_default(subscriber)
+                .expect("setting tracing default failed");
 
-        let root_span = span!(Level::INFO, "grit_marzano.cli_command",);
+            let root_span = span!(Level::INFO, "grit_marzano.cli_command",);
 
-        let res = async move {
-            event!(Level::INFO, "starting the CLI!");
+            let res = async move {
+                event!(Level::INFO, "starting the CLI!");
 
-            let res = run_command().await;
+                let res = run_command().await;
 
-            event!(Level::INFO, "ending the CLI!");
+                event!(Level::INFO, "ending the CLI!");
 
-            res
-        }
-        .instrument(root_span)
-        .await;
-
-        opentelemetry::global::shutdown_tracer_provider();
-
-        return Ok(());
-    }
-    #[cfg(not(feature = "grit_tracing"))]
-    {
-        let subscriber = tracing::subscriber::NoSubscriber::new();
-        tracing::subscriber::set_global_default(subscriber)
-            .expect("setting tracing default failed");
-
-        let res = run_command().await;
-        if let Err(ref e) = res {
-            if let Some(good) = e.downcast_ref::<GoodError>() {
-                if let Some(msg) = &good.message {
-                    println!("{}", msg);
-                }
-                std::process::exit(1);
+                res
             }
+            .instrument(root_span)
+            .await;
+
+            opentelemetry::global::shutdown_tracer_provider();
+
+            return Ok(());
         }
-        return res;
     }
+    let subscriber = tracing::subscriber::NoSubscriber::new();
+    tracing::subscriber::set_global_default(subscriber).expect("setting tracing default failed");
+
+    let res = run_command().await;
+    if let Err(ref e) = res {
+        if let Some(good) = e.downcast_ref::<GoodError>() {
+            if let Some(msg) = &good.message {
+                println!("{}", msg);
+            }
+            std::process::exit(1);
+        }
+    }
+    return res;
 }
