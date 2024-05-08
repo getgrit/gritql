@@ -488,13 +488,15 @@ fn get_otel_setup() -> Result<Option<Tracer>> {
         }
     }
 
+    let env = get_otel_key("GRIT_DEPLOYMENT_ENV").unwrap_or_else(|| "prod".to_string());
+
     let tracer = opentelemetry_otlp::new_pipeline()
         .tracing()
         .with_exporter(exporter)
         .with_trace_config(
             trace::config().with_resource(Resource::new(vec![KeyValue::new(
                 "service.name",
-                "grit_marzano",
+                format!("{}_grit_marzano", env),
             )])),
         )
         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
