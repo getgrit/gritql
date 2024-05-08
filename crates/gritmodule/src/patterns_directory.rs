@@ -147,6 +147,7 @@ impl PatternsDirectory {
         }
     }
 
+    #[tracing::instrument]
     fn get_language_and_universal_directory(
         &self,
         language: PatternLanguage,

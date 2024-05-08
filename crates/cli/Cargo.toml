@@ -71,6 +71,7 @@ opentelemetry_sdk = { version = "0.21.1", optional = true, features = [
 tracing-opentelemetry = { version = "0.22.0", optional = true, default-features = false }
 
 tracing = { version = "0.1.40", default-features = false, features = [] }
+tracing-subscriber = { version = "0.3", default-features = false, optional = true }
 
 [target.'cfg(not(windows))'.dependencies]
 openssl = { version = "0.10", features = ["vendored"] }
@@ -87,6 +88,7 @@ default = [
   "external_functions",
   "updater",
   "workflows_v2",
+  "grit_tracing",
   # "remote_workflows",
   # "server",
   # "remote_redis",
@@ -109,6 +111,7 @@ server = [
   "remote_pubsub",
   "ai_builtins",
   "dep:cli_server",
+  "grit_tracing"
 ]
 updater = []
 grit_tracing = [
@@ -116,6 +119,7 @@ grit_tracing = [
   "dep:opentelemetry",
   "dep:opentelemetry_sdk",
   "dep:tracing-opentelemetry",
+  "dep:tracing-subscriber",
   "marzano-core/grit_tracing",
 ]
 external_functions = ["marzano-core/external_functions"]

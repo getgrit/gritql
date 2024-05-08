@@ -29,6 +29,32 @@ pub(crate) mod workflows;
 #[cfg(feature = "workflows_v2")]
 pub(crate) mod workflows_list;
 
+use crate::error::GoodError;
+
+#[cfg(feature = "grit_tracing")]
+use marzano_util::base64;
+#[cfg(feature = "grit_tracing")]
+use opentelemetry::{global, KeyValue};
+#[cfg(feature = "grit_tracing")]
+use opentelemetry_otlp::WithExportConfig;
+#[cfg(feature = "grit_tracing")]
+use opentelemetry_sdk::propagation::TraceContextPropagator;
+#[cfg(feature = "grit_tracing")]
+use opentelemetry_sdk::trace::Tracer;
+#[cfg(feature = "grit_tracing")]
+use opentelemetry_sdk::{trace, Resource};
+#[cfg(feature = "grit_tracing")]
+use std::collections::HashMap;
+#[cfg(feature = "grit_tracing")]
+use tracing::Instrument;
+#[cfg(feature = "grit_tracing")]
+use tracing::{event, span, Level};
+#[cfg(feature = "grit_tracing")]
+#[allow(unused_imports)]
+use tracing_subscriber::prelude::*;
+#[cfg(feature = "grit_tracing")]
+use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
+
 #[cfg(feature = "docgen")]
 pub(crate) mod docgen;
 mod filters;
@@ -266,7 +292,7 @@ fn write_analytics_event(
 }
 
 #[instrument]
-pub async fn run_command() -> Result<()> {
+async fn run_command() -> Result<()> {
     let app = App::parse();
     // Use this *only* for analytics, not for any other purpose.
     let analytics_args = std::env::args().collect::<Vec<_>>();
@@ -392,5 +418,140 @@ pub async fn run_command() -> Result<()> {
         }
     }
 
+    res
+}
+
+#[cfg(feature = "grit_tracing")]
+fn get_otel_key(env_name: &str) -> Option<String> {
+    match std::env::var(env_name) {
+        Ok(key) => {
+            if key.is_empty() {
+                None
+            } else {
+                Some(key)
+            }
+        }
+        Err(_) => None,
+    }
+}
+
+#[cfg(feature = "grit_tracing")]
+fn get_otel_setup() -> Result<Option<Tracer>> {
+    let mut exporter = opentelemetry_otlp::new_exporter()
+        .http()
+        .with_http_client(reqwest::Client::default())
+        .with_timeout(std::time::Duration::from_millis(500));
+
+    let grafana_key = get_otel_key("GRAFANA_OTEL_KEY");
+    let honeycomb_key = get_otel_key("HONEYCOMB_OTEL_KEY");
+    let baselime_key = get_otel_key("BASELIME_OTEL_KEY");
+    let hyperdx_key = get_otel_key("HYPERDX_OTEL_KEY");
+
+    match (grafana_key, honeycomb_key, baselime_key, hyperdx_key) {
+        (None, None, None, None) => {
+            #[cfg(feature = "server")]
+            eprintln!("No OTLP key found, tracing will be disabled");
+            return Ok(None);
+        }
+        (Some(grafana_key), _, _, _) => {
+            let instance_id = "665534";
+            let encoded =
+                base64::encode_from_string(format!("{}:{}", instance_id, grafana_key).as_str())?;
+            exporter = exporter
+                .with_endpoint("https://otlp-gateway-prod-us-central-0.grafana.net/otlp")
+                .with_headers(HashMap::from([(
+                    "Authorization".into(),
+                    format!("Basic {}", encoded),
+                )]));
+            eprintln!("Using Grafana OTLP key");
+        }
+        (_, Some(honeycomb_key), _, _) => {
+            exporter = exporter
+                .with_endpoint("https://api.honeycomb.io")
+                .with_headers(HashMap::from([("x-honeycomb-team".into(), honeycomb_key)]));
+            eprintln!("Using Honeycomb OTLP key");
+        }
+        (_, _, Some(baselime_key), _) => {
+            exporter = exporter
+                .with_endpoint("https://otel.baselime.io/v1/")
+                .with_headers(HashMap::from([
+                    ("x-api-key".into(), baselime_key),
+                    ("x-baselime-dataset".into(), "otel".into()),
+                ]));
+            eprintln!("Using Baselime OTLP key");
+        }
+        (_, _, _, Some(hyperdx_key)) => {
+            exporter = exporter
+                .with_endpoint("https://in-otel.hyperdx.io")
+                .with_headers(HashMap::from([("authorization".into(), hyperdx_key)]));
+            eprintln!("Using HyperDX OTLP key");
+        }
+    }
+
+    let env = get_otel_key("GRIT_DEPLOYMENT_ENV").unwrap_or_else(|| "prod".to_string());
+
+    let tracer = opentelemetry_otlp::new_pipeline()
+        .tracing()
+        .with_exporter(exporter)
+        .with_trace_config(
+            trace::config().with_resource(Resource::new(vec![KeyValue::new(
+                "service.name",
+                format!("{}_grit_marzano", env),
+            )])),
+        )
+        .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+
+    Ok(Some(tracer))
+}
+
+pub async fn run_command_with_tracing() -> Result<()> {
+    #[cfg(feature = "grit_tracing")]
+    {
+        let tracer = get_otel_setup()?;
+
+        if let Some(tracer) = tracer {
+            let env_filter = EnvFilter::try_from_default_env()
+                .unwrap_or(EnvFilter::new("TRACE"))
+                // We don't want to trace the tracing library itself
+                .add_directive("hyper::proto=off".parse().unwrap());
+
+            let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
+            let subscriber = Registry::default().with(env_filter).with(telemetry);
+
+            global::set_text_map_propagator(TraceContextPropagator::new());
+            tracing::subscriber::set_global_default(subscriber)
+                .expect("setting tracing default failed");
+
+            let root_span = span!(Level::INFO, "grit_marzano.cli_command",);
+
+            let res = async move {
+                event!(Level::INFO, "starting the CLI!");
+
+                let res = run_command().await;
+
+                event!(Level::INFO, "ending the CLI!");
+
+                res
+            }
+            .instrument(root_span)
+            .await;
+
+            opentelemetry::global::shutdown_tracer_provider();
+
+            return res;
+        }
+    }
+    let subscriber = tracing::subscriber::NoSubscriber::new();
+    tracing::subscriber::set_global_default(subscriber).expect("setting tracing default failed");
+
+    let res = run_command().await;
+    if let Err(ref e) = res {
+        if let Some(good) = e.downcast_ref::<GoodError>() {
+            if let Some(msg) = &good.message {
+                println!("{}", msg);
+            }
+            std::process::exit(1);
+        }
+    }
     res
 }

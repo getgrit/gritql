@@ -41,6 +41,8 @@ use std::{
 };
 use std::{fmt::Debug, str::FromStr};
 use tracing::{event, Level};
+#[cfg(feature = "grit_tracing")]
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 #[derive(Debug)]
 pub struct Problem {
@@ -336,7 +338,7 @@ impl Problem {
         self.execute_shared(files, context, tx, cache)
     }
 
-    #[cfg_attr(feature = "grit_tracing", instrument(skip_all))]
+    #[cfg_attr(feature = "grit_tracing", tracing::instrument(skip_all))]
     pub(crate) fn execute_shared(
         &self,
         files: Vec<impl LoadableFile + Send + Sync>,
@@ -345,7 +347,7 @@ impl Problem {
         cache: &impl GritCache,
     ) {
         #[cfg(feature = "grit_tracing")]
-        let parent_span = span!(Level::INFO, "execute_shared_body",).entered();
+        let parent_span = tracing::span!(Level::INFO, "execute_shared_body",).entered();
         #[cfg(feature = "grit_tracing")]
         let parent_cx = parent_span.context();
 

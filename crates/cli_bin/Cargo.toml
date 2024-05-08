@@ -14,8 +14,22 @@ publish = false
 [dependencies]
 anyhow = { version = "1.0.70" }
 marzano-cli = { path = "../cli", default-features = false }
+marzano-util = { path = "../util", default-features = false }
 tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.11", features = ["json", "stream"] }
+
 tracing = { version = "0.1.40", default-features = false }
+opentelemetry-otlp = { version = "0.14.0", optional = true, features = [
+  "http-proto",
+  "reqwest-client",
+] }
+opentelemetry = { version = "0.21.0", optional = true }
+opentelemetry_sdk = { version = "0.21.1", optional = true, features = [
+  "rt-tokio",
+] }
+tracing-opentelemetry = { version = "0.22.0", optional = true, default-features = false }
+tracing-subscriber = { version = "0.3", default-features = false, optional = true }
+
 
 [dev-dependencies]
 serde_json = "1.0.96"
@@ -30,9 +44,14 @@ assert_cmd = "2.0.12"
 marzano-gritmodule = { path = "../gritmodule" }
 
 [features]
-default = ["marzano-cli/default"]
+default = ["marzano-cli/default", "grit_tracing"]
 grit_tracing = [
   "marzano-cli/grit_tracing",
+  "opentelemetry",
+  "opentelemetry-otlp",
+  "opentelemetry_sdk",
+  "tracing-opentelemetry",
+  "tracing-subscriber",
 ]
 docgen = ["marzano-cli/docgen"]
 

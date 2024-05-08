@@ -7,6 +7,7 @@ use tracing::instrument;
 #[cfg(feature = "grit_tracing")]
 use tracing::span;
 #[cfg(feature = "grit_tracing")]
+#[allow(unused_imports)]
 use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 
 use grit_util::Position;
@@ -191,12 +192,17 @@ pub(crate) async fn run_apply_pattern(
     // Get the current directory
     let cwd = std::env::current_dir().unwrap();
 
+    #[cfg(feature = "grit_tracing")]
+    let module_resolution = span!(tracing::Level::INFO, "module_resolution",).entered();
+
     // Construct a resolver
     let resolver = GritModuleResolver::new(cwd.to_str().unwrap());
     let current_repo_root = marzano_gritmodule::fetcher::LocalRepo::from_dir(&cwd)
         .await
         .map(|repo| repo.root())
         .transpose()?;
+    #[cfg(feature = "grit_tracing")]
+    module_resolution.exit();
 
     let mut emitter = create_emitter(
         &format,
@@ -213,6 +219,9 @@ pub(crate) async fn run_apply_pattern(
         extract_filter_ranges(&shared, current_repo_root.as_ref())
     );
 
+    #[cfg(feature = "grit_tracing")]
+    let span_libs = span!(tracing::Level::INFO, "prep_libs",).entered();
+
     let (my_input, lang) = if let Some(pattern_libs) = pattern_libs {
         (
             ApplyInput {
@@ -223,6 +232,9 @@ pub(crate) async fn run_apply_pattern(
             lang,
         )
     } else {
+        #[cfg(feature = "grit_tracing")]
+        let stdlib_download_span = span!(tracing::Level::INFO, "stdlib_download",).entered();
+
         let mod_dir = find_grit_modules_dir(cwd.clone()).await;
         if !env::var("GRIT_DOWNLOADS_DISABLED")
             .unwrap_or_else(|_| "false".to_owned())
@@ -235,6 +247,9 @@ pub(crate) async fn run_apply_pattern(
                 init_config_from_cwd::<KeepFetcherKind>(cwd.clone(), false).await
             );
         }
+
+        #[cfg(feature = "grit_tracing")]
+        stdlib_download_span.exit();
 
         let warn_uncommitted =
             !arg.dry_run && !arg.force && has_uncommitted_changes(cwd.clone()).await;
@@ -254,7 +269,11 @@ pub(crate) async fn run_apply_pattern(
             }
         }
 
+        #[cfg(feature = "grit_tracing")]
+        let grit_file_discovery = span!(tracing::Level::INFO, "grit_file_discovery",).entered();
+
         let pattern_libs = flushable_unwrap!(emitter, get_grit_files_from_cwd().await);
+
         let (mut lang, pattern_body) = if pattern.ends_with(".grit") || pattern.ends_with(".md") {
             match fs::read_to_string(pattern.clone()).await {
                 Ok(pb) => {
@@ -330,6 +349,8 @@ pub(crate) async fn run_apply_pattern(
             emitter,
             pattern_libs.get_language_directory_or_default(lang)
         );
+        #[cfg(feature = "grit_tracing")]
+        grit_file_discovery.exit();
         (
             ApplyInput {
                 pattern_body,
@@ -352,6 +373,8 @@ pub(crate) async fn run_apply_pattern(
         return Ok(());
     }
 
+    #[cfg(feature = "grit_tracing")]
+    let collect_name = span!(tracing::Level::INFO, "collect_name",).entered();
     let current_name = if is_pattern_name(&pattern) {
         Some(pattern.trim_end_matches("()").to_string())
     } else {
@@ -361,10 +384,16 @@ pub(crate) async fn run_apply_pattern(
             .find(|(_, body)| body.trim() == pattern.trim())
             .map(|(name, _)| name.clone())
     };
+    #[cfg(feature = "grit_tracing")]
+    collect_name.exit();
+
     let pattern: crate::resolver::RichPattern<'_> = flushable_unwrap!(
         emitter,
         resolver.make_pattern(&my_input.pattern_body, current_name)
     );
+
+    #[cfg(feature = "grit_tracing")]
+    span_libs.exit();
 
     let CompilationResult {
         problem: compiled,

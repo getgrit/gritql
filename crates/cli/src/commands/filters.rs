@@ -26,6 +26,7 @@ pub struct SharedFilterArgs {
     pub(crate) only_in_diff: Option<Option<String>>,
 }
 
+#[tracing::instrument]
 pub(crate) fn extract_filter_ranges(
     args: &SharedFilterArgs,
     root: Option<&PathBuf>,
