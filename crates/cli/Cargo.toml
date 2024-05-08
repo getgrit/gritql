@@ -111,6 +111,7 @@ server = [
   "remote_pubsub",
   "ai_builtins",
   "dep:cli_server",
+  "grit_tracing"
 ]
 updater = []
 grit_tracing = [
