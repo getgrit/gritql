@@ -132,7 +132,7 @@ async fn main() -> Result<()> {
 
             let root_span = span!(Level::INFO, "grit_marzano.cli_command",);
 
-            let res = async move {
+            let _res = async move {
                 event!(Level::INFO, "starting the CLI!");
 
                 let res = run_command().await;

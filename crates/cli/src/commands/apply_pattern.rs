@@ -7,6 +7,7 @@ use tracing::instrument;
 #[cfg(feature = "grit_tracing")]
 use tracing::span;
 #[cfg(feature = "grit_tracing")]
+#[allow(unused_imports)]
 use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 
 use grit_util::Position;

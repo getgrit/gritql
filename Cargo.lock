@@ -1944,14 +1944,21 @@ dependencies = [
  "insta",
  "marzano-cli",
  "marzano-gritmodule",
+ "marzano-util",
  "ntest",
+ "opentelemetry",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
  "predicates",
  "rayon",
  "regex",
+ "reqwest",
  "serde_json",
  "tempfile",
  "tokio",
  "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -2018,6 +2025,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-opentelemetry",
+ "tracing-subscriber",
  "trim-margin",
  "uuid",
 ]
@@ -2086,6 +2094,7 @@ dependencies = [
  "serde_yaml",
  "tempfile",
  "tokio",
+ "tracing",
  "tree-sitter-facade-sg",
 ]
 
