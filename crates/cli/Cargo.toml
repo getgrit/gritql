@@ -88,6 +88,7 @@ default = [
   "external_functions",
   "updater",
   "workflows_v2",
+  "grit_tracing",
   # "remote_workflows",
   # "server",
   # "remote_redis",
