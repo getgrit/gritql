@@ -32,20 +32,28 @@ pub(crate) mod workflows_list;
 use crate::error::GoodError;
 
 #[cfg(feature = "grit_tracing")]
-{
-    use marzano_util::base64;
-    use opentelemetry::{global, KeyValue};
-    use opentelemetry_otlp::WithExportConfig;
-    use opentelemetry_sdk::propagation::TraceContextPropagator;
-    use opentelemetry_sdk::trace::Tracer;
-    use opentelemetry_sdk::{trace, Resource};
-    use std::collections::HashMap;
-    use tracing::Instrument;
-    use tracing::{event, span, Level};
-    #[allow(unused_imports)]
-    use tracing_subscriber::prelude::*;
-    use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
-}
+use marzano_util::base64;
+#[cfg(feature = "grit_tracing")]
+use opentelemetry::{global, KeyValue};
+#[cfg(feature = "grit_tracing")]
+use opentelemetry_otlp::WithExportConfig;
+#[cfg(feature = "grit_tracing")]
+use opentelemetry_sdk::propagation::TraceContextPropagator;
+#[cfg(feature = "grit_tracing")]
+use opentelemetry_sdk::trace::Tracer;
+#[cfg(feature = "grit_tracing")]
+use opentelemetry_sdk::{trace, Resource};
+#[cfg(feature = "grit_tracing")]
+use std::collections::HashMap;
+#[cfg(feature = "grit_tracing")]
+use tracing::Instrument;
+#[cfg(feature = "grit_tracing")]
+use tracing::{event, span, Level};
+#[cfg(feature = "grit_tracing")]
+#[allow(unused_imports)]
+use tracing_subscriber::prelude::*;
+#[cfg(feature = "grit_tracing")]
+use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 
 #[cfg(feature = "docgen")]
 pub(crate) mod docgen;
