@@ -144,7 +144,7 @@ macro_rules! emit_error {
 pub async fn par_apply_pattern<M>(
     multi: MultiProgress,
     compiled: Problem,
-    my_input: &ApplyInput,
+    my_input: ApplyInput,
     mut owned_emitter: M,
     processed: &AtomicI32,
     details: &mut ApplyDetails,
@@ -192,7 +192,7 @@ where
     let min_level = &arg.visibility;
 
     let (found_count, disk_paths) = match my_input {
-        ApplyInput::Disk(my_input) => {
+        ApplyInput::Disk(ref my_input) => {
             let (file_paths_tx, file_paths_rx) = channel();
 
             let file_walker = emit_error!(
@@ -259,7 +259,7 @@ where
             let found_paths = file_paths_rx.iter().collect::<Vec<_>>();
             (found_paths.len(), Some(found_paths))
         }
-        ApplyInput::Virtual(virtual_info) => (virtual_info.files.len(), None),
+        ApplyInput::Virtual(ref virtual_info) => (virtual_info.files.len(), None),
     };
 
     if let Some(pg) = pg {
@@ -341,7 +341,11 @@ where
                     compiled.execute_paths_streaming(found_paths, context, tx, cache_ref);
                 }
                 None => {
-                    todo!("Virtual files not supported for streaming");
+                    if let ApplyInput::Virtual(my_input) = my_input {
+                        compiled.execute_files_streaming(my_input.files, context, tx, cache_ref);
+                    } else {
+                        unreachable!();
+                    }
                 }
             }
 
