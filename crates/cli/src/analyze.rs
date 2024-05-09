@@ -12,6 +12,8 @@ use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 use grit_cache::paths::cache_for_cwd;
 use grit_util::{FileRange, Position};
 use ignore::Walk;
+use marzano_language::target_language::expand_paths;
+
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 #[allow(unused_imports)]
 use marzano_core::built_in_functions::BuiltIns;
@@ -140,7 +142,6 @@ macro_rules! emit_error {
 
 #[allow(clippy::too_many_arguments)]
 pub async fn par_apply_pattern<M>(
-    file_walker: Walk,
     multi: MultiProgress,
     compiled: Problem,
     my_input: &ApplyInput,
@@ -190,65 +191,77 @@ where
     let mut interactive = arg.interactive;
     let min_level = &arg.visibility;
 
-    let (file_paths_tx, file_paths_rx) = channel();
+    let (found_count, disk_paths) = match my_input {
+        ApplyInput::Disk(my_input) => {
+            let (file_paths_tx, file_paths_rx) = channel();
 
-    for file in file_walker {
-        let file = emit_error!(owned_emitter, &arg.visibility, file);
-        if file.file_type().unwrap().is_dir() {
-            continue;
-        }
-        if !&compiled.language.match_extension(
-            file.path()
-                .extension()
-                .unwrap_or_default()
-                .to_str()
-                .unwrap_or_default(),
-        ) {
-            processed.fetch_add(1, Ordering::SeqCst);
-            let path_string = file.path().to_string_lossy().to_string();
-            if my_input.paths.contains(&file.path().to_path_buf()) {
-                let log = MatchResult::AnalysisLog(AnalysisLog {
-                    level: 410,
-                    message: format!(
-                        "Skipped {} since it is not a {} file",
-                        path_string,
-                        &compiled.language.to_string()
-                    ),
-                    position: Position::first(),
-                    file: path_string.to_string(),
-                    engine_id: "marzano".to_string(),
-                    range: None,
-                    syntax_tree: None,
-                    source: None,
-                });
-                let done_file = MatchResult::DoneFile(DoneFile {
-                    relative_file_path: path_string,
-                    has_results: Some(false),
-                    file_hash: None,
-                    from_cache: false,
-                });
-                emitter.handle_results(
-                    vec![log, done_file],
-                    details,
-                    arg.dry_run,
-                    min_level,
-                    arg.format,
-                    &mut interactive,
-                    None,
-                    Some(processed),
-                    None,
-                    &compiled.language,
-                );
+            let file_walker = emit_error!(
+                owned_emitter,
+                &arg.visibility,
+                expand_paths(&my_input.paths, Some(&[(&compiled.language).into()]))
+            );
+
+            for file in file_walker {
+                let file = emit_error!(owned_emitter, &arg.visibility, file);
+                if file.file_type().unwrap().is_dir() {
+                    continue;
+                }
+                if !&compiled.language.match_extension(
+                    file.path()
+                        .extension()
+                        .unwrap_or_default()
+                        .to_str()
+                        .unwrap_or_default(),
+                ) {
+                    processed.fetch_add(1, Ordering::SeqCst);
+                    let path_string = file.path().to_string_lossy().to_string();
+                    if my_input.paths.contains(&file.path().to_path_buf()) {
+                        let log = MatchResult::AnalysisLog(AnalysisLog {
+                            level: 410,
+                            message: format!(
+                                "Skipped {} since it is not a {} file",
+                                path_string,
+                                &compiled.language.to_string()
+                            ),
+                            position: Position::first(),
+                            file: path_string.to_string(),
+                            engine_id: "marzano".to_string(),
+                            range: None,
+                            syntax_tree: None,
+                            source: None,
+                        });
+                        let done_file = MatchResult::DoneFile(DoneFile {
+                            relative_file_path: path_string,
+                            has_results: Some(false),
+                            file_hash: None,
+                            from_cache: false,
+                        });
+                        emitter.handle_results(
+                            vec![log, done_file],
+                            details,
+                            arg.dry_run,
+                            min_level,
+                            arg.format,
+                            &mut interactive,
+                            None,
+                            Some(processed),
+                            None,
+                            &compiled.language,
+                        );
+                    }
+                    continue;
+                }
+                file_paths_tx.send(file.path().to_path_buf()).unwrap();
             }
-            continue;
+
+            drop(file_paths_tx);
+
+            let found_paths = file_paths_rx.iter().collect::<Vec<_>>();
+            (found_paths.len(), Some(found_paths))
         }
-        file_paths_tx.send(file.path().to_path_buf()).unwrap();
-    }
+        ApplyInput::Virtual(virtual_info) => (virtual_info.files.len(), None),
+    };
 
-    drop(file_paths_tx);
-
-    let found_paths = file_paths_rx.iter().collect::<Vec<_>>();
-    let found_count = found_paths.len();
     if let Some(pg) = pg {
         pg.set_length(found_count.try_into().unwrap());
     }
@@ -257,7 +270,7 @@ where
     #[cfg(feature = "grit_timing")]
     debug!(
         "Walked {} files in {}ms",
-        found_paths.len(),
+        found_count,
         current_timer.elapsed().as_millis()
     );
 
@@ -323,7 +336,15 @@ where
         #[cfg(feature = "grit_tracing")]
         task_span.set_parent(grouped_ctx);
         task_span.in_scope(|| {
-            compiled.execute_paths_streaming(found_paths, context, tx, cache_ref);
+            match disk_paths {
+                Some(found_paths) => {
+                    compiled.execute_paths_streaming(found_paths, context, tx, cache_ref);
+                }
+                None => {
+                    todo!("Virtual files not supported for streaming");
+                }
+            }
+
             loop {
                 if processed.load(Ordering::SeqCst) >= found_count.try_into().unwrap()
                     || !should_continue.load(Ordering::SeqCst)

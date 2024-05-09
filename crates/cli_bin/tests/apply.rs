@@ -2479,7 +2479,7 @@ fn apply_stdin() -> Result<()> {
 
     let mut cmd = get_test_cmd()?;
     cmd.arg("apply")
-        .arg("`console.error($x) where $x => `foobar`")
+        .arg("`console.error($x)` where $x => `foobar`")
         .arg("--stdin")
         .arg("sample.js")
         .current_dir(&fixture_dir);
@@ -2518,7 +2518,7 @@ fn apply_stdin_autocode() -> Result<()> {
     cmd.arg("apply")
         .arg("`console.error($x) where $x => `foobar`")
         .arg("--stdin-file-path")
-        .arg("sample.js")
+        .arg("fake_file.js")
         .current_dir(&fixture_dir);
 
     cmd.write_stdin(String::from_utf8(input_file.into())?);

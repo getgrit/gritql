@@ -3,6 +3,7 @@ use clap::Args;
 
 use dialoguer::Confirm;
 
+use marzano_util::rich_path::RichFile;
 use tracing::instrument;
 #[cfg(feature = "grit_tracing")]
 use tracing::span;
@@ -19,7 +20,7 @@ use marzano_gritmodule::fetcher::KeepFetcherKind;
 use marzano_gritmodule::markdown::get_body_from_md_content;
 use marzano_gritmodule::searcher::find_grit_modules_dir;
 use marzano_gritmodule::utils::is_pattern_name;
-use marzano_language::target_language::{expand_paths, PatternLanguage};
+use marzano_language::target_language::PatternLanguage;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::env;
@@ -46,11 +47,48 @@ use crate::utils::has_uncommitted_changes;
 use super::filters::SharedFilterArgs;
 use super::init::init_config_from_cwd;
 
+/// Apply a pattern to a set of paths on disk which will be rewritten in place
 #[derive(Deserialize)]
-pub struct ApplyInput {
+pub struct ApplyInputDisk {
     pub pattern_body: String,
     pub pattern_libs: BTreeMap<String, String>,
     pub paths: Vec<PathBuf>,
+}
+
+#[derive(Deserialize)]
+pub struct ApplyInputVirtual {
+    pub pattern_body: String,
+    pub pattern_libs: BTreeMap<String, String>,
+    pub files: Vec<RichFile>,
+}
+
+#[derive(Deserialize)]
+pub enum ApplyInput {
+    Disk(ApplyInputDisk),
+    Virtual(ApplyInputVirtual),
+}
+
+impl ApplyInput {
+    pub fn pattern_body(&self) -> &str {
+        match self {
+            ApplyInput::Disk(d) => &d.pattern_body,
+            ApplyInput::Virtual(v) => &v.pattern_body,
+        }
+    }
+
+    pub fn pattern_libs(&self) -> &BTreeMap<String, String> {
+        match self {
+            ApplyInput::Disk(d) => &d.pattern_libs,
+            ApplyInput::Virtual(v) => &v.pattern_libs,
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        match self {
+            ApplyInput::Disk(d) => d.paths.is_empty(),
+            ApplyInput::Virtual(v) => v.files.is_empty(),
+        }
+    }
 }
 
 #[derive(Args, Clone, Debug, Serialize)]
@@ -109,7 +147,7 @@ pub struct ApplyPatternArgs {
     ///
     /// Example: `echo 'console.log("Hello, world!")' | grit apply file.js --stdin
     #[clap(long = "stdin", conflicts_with = "paths")]
-    pub stdin: Option<String>,
+    pub stdin: bool,
     /// Use cache
     #[clap(long = "cache", conflicts_with = "refresh_cache")]
     pub cache: bool,
@@ -232,7 +270,7 @@ pub(crate) async fn run_apply_pattern(
 
     let (my_input, lang) = if let Some(pattern_libs) = pattern_libs {
         (
-            ApplyInput {
+            ApplyInputDisk {
                 pattern_body: pattern.clone(),
                 paths,
                 pattern_libs,
@@ -359,8 +397,9 @@ pub(crate) async fn run_apply_pattern(
         );
         #[cfg(feature = "grit_tracing")]
         grit_file_discovery.exit();
+
         (
-            ApplyInput {
+            ApplyInputDisk {
                 pattern_body,
                 pattern_libs,
                 paths: paths.to_owned(),
@@ -369,7 +408,34 @@ pub(crate) async fn run_apply_pattern(
         )
     };
 
-    if my_input.paths.is_empty() {
+    let final_input = if arg.stdin {
+        let mut content = String::new();
+        use std::io::Read;
+        std::io::stdin().read_to_string(&mut content)?;
+
+        let ApplyInputDisk {
+            pattern_body,
+            pattern_libs,
+            paths,
+        } = my_input;
+
+        let first_path = paths.first().ok_or(anyhow::anyhow!(
+            "A path must be provided as the virtual file name for stdin"
+        ))?;
+
+        ApplyInput::Virtual(ApplyInputVirtual {
+            pattern_body,
+            pattern_libs,
+            files: vec![RichFile {
+                path: first_path.to_string_lossy().into(),
+                content,
+            }],
+        })
+    } else {
+        ApplyInput::Disk(my_input)
+    };
+
+    if final_input.is_empty() {
         let all_done = MatchResult::AllDone(AllDone {
             processed: 0,
             found: 0,
@@ -386,8 +452,8 @@ pub(crate) async fn run_apply_pattern(
     let current_name = if is_pattern_name(&pattern) {
         Some(pattern.trim_end_matches("()").to_string())
     } else {
-        my_input
-            .pattern_libs
+        final_input
+            .pattern_libs()
             .iter()
             .find(|(_, body)| body.trim() == pattern.trim())
             .map(|(name, _)| name.clone())
@@ -397,7 +463,7 @@ pub(crate) async fn run_apply_pattern(
 
     let pattern: crate::resolver::RichPattern<'_> = flushable_unwrap!(
         emitter,
-        resolver.make_pattern(&my_input.pattern_body, current_name)
+        resolver.make_pattern(final_input.pattern_body(), current_name)
     );
 
     #[cfg(feature = "grit_tracing")]
@@ -406,7 +472,7 @@ pub(crate) async fn run_apply_pattern(
     let CompilationResult {
         problem: compiled,
         compilation_warnings,
-    } = match pattern.compile(&my_input.pattern_libs, lang, filter_range, arg.limit) {
+    } = match pattern.compile(final_input.pattern_libs(), lang, filter_range, arg.limit) {
         Ok(c) => c,
         Err(e) => {
             let log = match e.downcast::<grit_util::AnalysisLog>() {
@@ -431,7 +497,7 @@ pub(crate) async fn run_apply_pattern(
                 (false, false) => bail!(GoodError::new()),
                 (false, true) => bail!(GoodError::new_with_message(get_human_error(
                     log,
-                    &my_input.pattern_body
+                    final_input.pattern_body(),
                 ))),
             }
         }
@@ -442,23 +508,12 @@ pub(crate) async fn run_apply_pattern(
             .unwrap();
     }
 
-    debug!(
-        "Applying pattern: {:?}, {:?}",
-        my_input.paths, compiled.language
-    );
-
-    let file_walker = flushable_unwrap!(
-        emitter,
-        expand_paths(&my_input.paths, Some(&[(&compiled.language).into()]))
-    );
-
     let processed = AtomicI32::new(0);
 
     let mut emitter = par_apply_pattern(
-        file_walker,
         multi,
         compiled,
-        &my_input,
+        &final_input,
         emitter,
         &processed,
         details,
