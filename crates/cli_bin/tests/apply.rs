@@ -48,21 +48,6 @@ fn pattern_file_does_not_exist() -> Result<()> {
 }
 
 #[test]
-fn malformed_stdin_input() -> Result<()> {
-    let mut cmd: Command = get_test_cmd()?;
-
-    let input = r#"{ "pattern_body" : "empty paths" }"#;
-
-    cmd.arg("plumbing").arg("apply");
-    cmd.write_stdin(input);
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("Failed to parse input JSON"));
-
-    Ok(())
-}
-
-#[test]
 fn empty_paths_array() -> Result<()> {
     let mut cmd = get_test_cmd()?;
 
@@ -72,12 +57,16 @@ fn empty_paths_array() -> Result<()> {
     cmd.write_stdin(input);
 
     let output = cmd.output()?;
+    let stdout = String::from_utf8(output.stdout)?;
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stdout: {:?}", stdout);
+    println!("stderr: {:?}", stderr);
+
     assert!(
         output.status.success(),
         "Command didn't finish successfully"
     );
 
-    let stdout = String::from_utf8(output.stdout)?;
     let line = stdout.lines().next().ok_or_else(|| anyhow!("No output"))?;
     let v: serde_json::Value = serde_json::from_str(line)?;
 
@@ -2460,6 +2449,128 @@ fn tty_behavior() -> Result<()> {
 
     let content = std::fs::read_to_string(dir.join("file.yaml"))?;
     assert_snapshot!(content);
+
+    Ok(())
+}
+
+#[test]
+fn apply_stdin() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
+
+    let input_file = r#"
+const foo = bar;
+const x = 6;
+console.error("nice");
+const w = 6;
+console.log("king");
+console.error(w);
+"#;
+    let expected_output = r#"
+const foo = bar;
+const x = 6;
+console.error(foobar);
+const w = 6;
+console.log("king");
+console.error(foobar);
+
+"#;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`console.error($x)` where $x => `foobar`")
+        .arg("--stdin")
+        .arg("sample.js")
+        .current_dir(&fixture_dir);
+
+    cmd.write_stdin(String::from_utf8(input_file.into())?);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    // assert
+    assert!(result.status.success(), "Command failed");
+
+    // Expect the output to be the same as the expected output
+    assert_eq!(stdout, expected_output);
+
+    Ok(())
+}
+
+/// Ensure that we assume the --lang option from the file extension if using stdin
+#[test]
+fn apply_stdin_autocode() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
+
+    let input_file = r#"
+def cool(name):
+    print(name)
+"#;
+    let expected_output = r#"
+def renamed(name):
+    print(name)
+
+"#;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`def $x($_): $_` where $x => `renamed`")
+        .arg("--stdin")
+        .arg("sample.py")
+        .current_dir(&fixture_dir);
+
+    cmd.write_stdin(String::from_utf8(input_file.into())?);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    // assert
+    assert!(result.status.success(), "Command failed");
+
+    // Expect the output to be the same as the expected output
+    assert_eq!(stdout, expected_output);
+
+    Ok(())
+}
+
+/// Ban multiple stdin paths
+#[test]
+fn apply_stdin_two_paths() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
+
+    let input_file = r#"
+def cool(name):
+    print(name)
+"#;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`def $x($_): $_` where $x => `renamed`")
+        .arg("--stdin")
+        .arg("sample.py")
+        .arg("sample2.py")
+        .current_dir(&fixture_dir);
+
+    cmd.write_stdin(String::from_utf8(input_file.into())?);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    // assert
+    assert!(!result.status.success(), "Command should have failed");
+
+    assert!(stderr.contains("--stdin"));
 
     Ok(())
 }

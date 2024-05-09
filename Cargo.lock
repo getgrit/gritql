@@ -1998,7 +1998,6 @@ dependencies = [
  "grit-util",
  "grit_cache",
  "grit_cloud_client",
- "ignore",
  "indicatif",
  "indicatif-log-bridge",
  "lazy_static",

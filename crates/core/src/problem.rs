@@ -282,6 +282,16 @@ impl Problem {
         results
     }
 
+    pub fn execute_files_streaming(
+        &self,
+        files: Vec<RichFile>,
+        context: &ExecutionContext,
+        tx: Sender<Vec<MatchResult>>,
+        cache: &impl GritCache,
+    ) {
+        self.execute_shared(files, context, tx, cache)
+    }
+
     pub fn execute_paths<'a>(
         &self,
         files: Vec<&'a RichPath>,
