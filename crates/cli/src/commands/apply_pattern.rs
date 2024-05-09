@@ -145,7 +145,8 @@ pub struct ApplyPatternArgs {
     ///
     /// If you use this option, you *must* specify a file path, to allow Grit to determine the language of the code.
     ///
-    /// Example: `echo 'console.log("Hello, world!")' | grit apply '`console.log` => .' file.js --stdin
+    /// Example: `echo 'console.log(hello)' | grit apply '`hello` => `goodbye`' file.js --stdin
+    /// This will print `console.log(goodbye)` to stdout
     #[clap(long = "stdin")]
     pub stdin: bool,
     /// Use cache
