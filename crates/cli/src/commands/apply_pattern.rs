@@ -219,9 +219,9 @@ pub(crate) async fn run_apply_pattern(
     let format = OutputFormat::from_flags(
         format,
         if arg.stdin {
-            OutputFormat::Standard
-        } else {
             OutputFormat::Transformed
+        } else {
+            OutputFormat::Standard
         },
     );
 

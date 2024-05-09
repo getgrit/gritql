@@ -259,6 +259,7 @@ pub(crate) async fn run_check(
 
         match emitter {
             crate::messenger_variant::MessengerVariant::Formatted(_)
+            | crate::messenger_variant::MessengerVariant::Transformed(_)
             | crate::messenger_variant::MessengerVariant::JsonLine(_) => {
                 info!("Local only, skipping check registration.");
             }
