@@ -103,6 +103,13 @@ pub struct ApplyPatternArgs {
         help = "Path to a file to write the results to, defaults to stdout"
     )]
     output_file: Option<PathBuf>,
+    /// Use this option when you want to transform code piped from `stdin`, and print the output to `stdout`.
+    ///
+    /// If you use this option, you *must* specify a file path, to allow Grit to determine the language of the code.
+    ///
+    /// Example: `echo 'console.log("Hello, world!")' | grit apply file.js --stdin
+    #[clap(long = "stdin", conflicts_with = "paths")]
+    pub stdin: Option<String>,
     /// Use cache
     #[clap(long = "cache", conflicts_with = "refresh_cache")]
     pub cache: bool,
@@ -133,6 +140,7 @@ impl Default for ApplyPatternArgs {
             refresh_cache: Default::default(),
             ai: Default::default(),
             language: Default::default(),
+            stdin: Default::default(),
         }
     }
 }

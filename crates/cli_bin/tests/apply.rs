@@ -2463,3 +2463,76 @@ fn tty_behavior() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn apply_stdin() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
+
+    let input_file = r#"{
+        const foo = bar;
+        const x = 6;
+        console.error("nice");
+        const w = 6;
+        console.log("king");
+        console.error(w);
+    }"#;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`console.error($x) where $x => `foobar`")
+        .arg("--stdin")
+        .arg("sample.js")
+        .current_dir(&fixture_dir);
+
+    cmd.write_stdin(String::from_utf8(input_file.into())?);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    // assert
+    assert!(result.status.success(), "Command failed");
+    // assser!(stderr.contains("Processed 1 files and found 2 matches"));
+
+    Ok(())
+}
+
+/// Ensure that we assume the --lang option from the file extension if using stdin
+#[test]
+fn apply_stdin_autocode() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
+
+    let input_file = r#"{
+        const foo = bar;
+        const x = 6;
+        console.error("nice");
+        const w = 6;
+        console.log("king");
+        console.error(w);
+    }"#;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`console.error($x) where $x => `foobar`")
+        .arg("--stdin-file-path")
+        .arg("sample.js")
+        .current_dir(&fixture_dir);
+
+    cmd.write_stdin(String::from_utf8(input_file.into())?);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    // assert
+    assert!(result.status.success(), "Command failed");
+    // assser!(stderr.contains("Processed 1 files and found 2 matches"));
+
+    Ok(())
+}
