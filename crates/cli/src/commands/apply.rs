@@ -91,7 +91,7 @@ pub(crate) async fn run_apply(
         details,
         None,
         None,
-        flags.into(),
+        flags,
         None,
     )
     .await

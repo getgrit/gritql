@@ -155,7 +155,7 @@ pub(crate) async fn run_plumbing(
                 details,
                 Some(pattern_libs.library()),
                 Some(pattern_libs.language()),
-                parent.into(),
+                &parent,
                 input.root_path.map(|p| ensure_trailing_slash(&p)),
             )
             .await

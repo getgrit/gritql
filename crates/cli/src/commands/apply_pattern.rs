@@ -31,6 +31,7 @@ use tokio::fs;
 
 use crate::commands::filters::extract_filter_ranges;
 
+use crate::flags::GlobalFormatFlags;
 use crate::{
     analyze::par_apply_pattern, error::GoodError, flags::OutputFormat,
     messenger_variant::create_emitter, result_formatting::get_human_error, updater::Updater,
@@ -206,7 +207,7 @@ pub(crate) async fn run_apply_pattern(
     details: &mut ApplyDetails,
     pattern_libs: Option<BTreeMap<String, String>>,
     lang: Option<PatternLanguage>,
-    format: OutputFormat,
+    format: &GlobalFormatFlags,
     root_path: Option<PathBuf>,
 ) -> Result<()> {
     let mut context = Updater::from_current_bin()
@@ -214,6 +215,15 @@ pub(crate) async fn run_apply_pattern(
         .unwrap()
         .get_context()
         .unwrap();
+
+    let format = OutputFormat::from_flags(
+        format,
+        if arg.stdin {
+            OutputFormat::Standard
+        } else {
+            OutputFormat::Transformed
+        },
+    );
 
     if arg.ignore_limit {
         context.ignore_limit_pattern = true;

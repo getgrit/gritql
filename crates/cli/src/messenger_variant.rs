@@ -170,6 +170,9 @@ pub async fn create_emitter<'a>(
         OutputFormat::Json => {
             bail!("JSON output is not supported for apply_pattern");
         }
+        OutputFormat::Transformed => {
+            bail!("Transformed output is not supported for apply_pattern");
+        }
         OutputFormat::Jsonl => {
             let jsonl =
                 JSONLineMessenger::new(writer.unwrap_or_else(|| Box::new(io::stdout())), mode);

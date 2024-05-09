@@ -323,6 +323,7 @@ async fn run_command() -> Result<()> {
         .filter_level(log_level)
         .target(match format {
             OutputFormat::Standard => env_logger::Target::Stdout,
+            OutputFormat::Transformed => env_logger::Target::Stderr,
             OutputFormat::Json | OutputFormat::Jsonl => env_logger::Target::Stderr,
             #[cfg(feature = "remote_redis")]
             OutputFormat::Redis => env_logger::Target::Stderr,
