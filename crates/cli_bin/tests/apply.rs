@@ -2468,14 +2468,23 @@ fn tty_behavior() -> Result<()> {
 fn apply_stdin() -> Result<()> {
     let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
 
-    let input_file = r#"{
-        const foo = bar;
-        const x = 6;
-        console.error("nice");
-        const w = 6;
-        console.log("king");
-        console.error(w);
-    }"#;
+    let input_file = r#"
+const foo = bar;
+const x = 6;
+console.error("nice");
+const w = 6;
+console.log("king");
+console.error(w);
+"#;
+    let expected_output = r#"
+const foo = bar;
+const x = 6;
+console.error(foobar);
+const w = 6;
+console.log("king");
+console.error(foobar);
+
+"#;
 
     let mut cmd = get_test_cmd()?;
     cmd.arg("apply")
@@ -2495,7 +2504,9 @@ fn apply_stdin() -> Result<()> {
 
     // assert
     assert!(result.status.success(), "Command failed");
-    // assser!(stderr.contains("Processed 1 files and found 2 matches"));
+
+    // Expect the output to be the same as the expected output
+    assert_eq!(stdout, expected_output);
 
     Ok(())
 }
