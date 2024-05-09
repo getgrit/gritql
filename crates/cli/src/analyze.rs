@@ -11,7 +11,6 @@ use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 
 use grit_cache::paths::cache_for_cwd;
 use grit_util::{FileRange, Position};
-use ignore::Walk;
 use marzano_language::target_language::expand_paths;
 
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};

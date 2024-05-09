@@ -13,7 +13,6 @@ use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 
 use grit_util::Position;
 use indicatif::MultiProgress;
-use log::debug;
 use marzano_core::api::{AllDone, AllDoneReason, AnalysisLog, MatchResult};
 use marzano_core::pattern_compiler::CompilationResult;
 use marzano_gritmodule::fetcher::KeepFetcherKind;
@@ -147,7 +146,7 @@ pub struct ApplyPatternArgs {
     /// If you use this option, you *must* specify a file path, to allow Grit to determine the language of the code.
     ///
     /// Example: `echo 'console.log("Hello, world!")' | grit apply '`console.log` => .' file.js --stdin
-    #[clap(long = "stdin", requires = "paths")]
+    #[clap(long = "stdin")]
     pub stdin: bool,
     /// Use cache
     #[clap(long = "cache", conflicts_with = "refresh_cache")]

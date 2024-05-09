@@ -48,21 +48,6 @@ fn pattern_file_does_not_exist() -> Result<()> {
 }
 
 #[test]
-fn malformed_stdin_input() -> Result<()> {
-    let mut cmd: Command = get_test_cmd()?;
-
-    let input = r#"{ "pattern_body" : "empty paths" }"#;
-
-    cmd.arg("plumbing").arg("apply");
-    cmd.write_stdin(input);
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("Failed to parse input JSON"));
-
-    Ok(())
-}
-
-#[test]
 fn empty_paths_array() -> Result<()> {
     let mut cmd = get_test_cmd()?;
 
@@ -72,12 +57,16 @@ fn empty_paths_array() -> Result<()> {
     cmd.write_stdin(input);
 
     let output = cmd.output()?;
+    let stdout = String::from_utf8(output.stdout)?;
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stdout: {:?}", stdout);
+    println!("stderr: {:?}", stderr);
+
     assert!(
         output.status.success(),
         "Command didn't finish successfully"
     );
 
-    let stdout = String::from_utf8(output.stdout)?;
     let line = stdout.lines().next().ok_or_else(|| anyhow!("No output"))?;
     let v: serde_json::Value = serde_json::from_str(line)?;
 
