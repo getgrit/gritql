@@ -146,7 +146,7 @@ pub struct ApplyPatternArgs {
     ///
     /// If you use this option, you *must* specify a file path, to allow Grit to determine the language of the code.
     ///
-    /// Example: `echo 'console.log("Hello, world!")' | grit apply file.js --stdin
+    /// Example: `echo 'console.log("Hello, world!")' | grit apply '`console.log` => .' file.js --stdin
     #[clap(long = "stdin", requires = "paths")]
     pub stdin: bool,
     /// Use cache
@@ -224,6 +224,8 @@ pub(crate) async fn run_apply_pattern(
             OutputFormat::Standard
         },
     );
+
+    let default_lang = default_lang.or(arg.language);
 
     let default_lang = if !arg.stdin {
         default_lang
