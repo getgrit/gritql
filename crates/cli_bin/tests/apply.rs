@@ -2528,7 +2528,7 @@ def renamed(name):
 
     let mut cmd = get_test_cmd()?;
     cmd.arg("apply")
-        .arg("`def $x($_): $_` where $x => `foobar`")
+        .arg("`def $x($_): $_` where $x => `renamed`")
         .arg("--stdin")
         .arg("sample.py")
         .current_dir(&fixture_dir);
@@ -2547,6 +2547,41 @@ def renamed(name):
 
     // Expect the output to be the same as the expected output
     assert_eq!(stdout, expected_output);
+
+    Ok(())
+}
+
+/// Ban multiple stdin paths
+#[test]
+fn apply_stdin_two_paths() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
+
+    let input_file = r#"
+def cool(name):
+    print(name)
+"#;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`def $x($_): $_` where $x => `renamed`")
+        .arg("--stdin")
+        .arg("sample.py")
+        .arg("sample2.py")
+        .current_dir(&fixture_dir);
+
+    cmd.write_stdin(String::from_utf8(input_file.into())?);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    // assert
+    assert!(!result.status.success(), "Command should have failed");
+
+    assert!(stderr.contains("--stdin"));
 
     Ok(())
 }

@@ -206,7 +206,7 @@ pub(crate) async fn run_apply_pattern(
     multi: MultiProgress,
     details: &mut ApplyDetails,
     pattern_libs: Option<BTreeMap<String, String>>,
-    lang: Option<PatternLanguage>,
+    default_lang: Option<PatternLanguage>,
     format: &GlobalFormatFlags,
     root_path: Option<PathBuf>,
 ) -> Result<()> {
@@ -225,9 +225,9 @@ pub(crate) async fn run_apply_pattern(
         },
     );
 
-    let lang = if !arg.stdin {
-        lang
-    } else if lang.is_none() {
+    let default_lang = if !arg.stdin {
+        default_lang
+    } else if default_lang.is_none() {
         // Look at the first path and get the language from the extension
         let first_path = paths.first().ok_or(anyhow::anyhow!(
             "A path must be provided as the virtual file name for stdin"
@@ -238,10 +238,10 @@ pub(crate) async fn run_apply_pattern(
         if let Some(ext) = ext.to_str() {
             PatternLanguage::from_extension(ext)
         } else {
-            lang
+            default_lang
         }
     } else {
-        lang
+        default_lang
     };
 
     if arg.ignore_limit {
@@ -304,7 +304,7 @@ pub(crate) async fn run_apply_pattern(
                 paths,
                 pattern_libs,
             },
-            lang,
+            default_lang,
         )
     } else {
         #[cfg(feature = "grit_tracing")]
@@ -408,7 +408,7 @@ pub(crate) async fn run_apply_pattern(
                 }
             }
         };
-        if let Some(lang_option) = &arg.language {
+        if let Some(lang_option) = &default_lang {
             if let Some(lang) = lang {
                 if lang != *lang_option {
                     return Err(anyhow::anyhow!(
@@ -447,6 +447,10 @@ pub(crate) async fn run_apply_pattern(
             pattern_libs,
             paths,
         } = my_input;
+
+        if paths.len() != 1 {
+            bail!("Only one path can be provided as the virtual file name for --stdin");
+        }
 
         let first_path = paths.first().ok_or(anyhow::anyhow!(
             "A path must be provided as the virtual file name for stdin"
