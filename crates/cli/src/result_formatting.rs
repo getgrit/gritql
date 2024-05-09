@@ -346,20 +346,15 @@ impl Messager for FormattedMessager<'_> {
 /// Prints the transformed files themselves, with no metadata
 pub struct TransformedMessenger<'a> {
     writer: Option<Arc<Mutex<Box<dyn Write + Send + 'a>>>>,
-    interactive: bool,
     total_accepted: usize,
     total_rejected: usize,
     total_supressed: usize,
 }
 
 impl<'a> TransformedMessenger<'_> {
-    pub fn new(
-        writer: Option<Box<dyn Write + Send + 'a>>,
-        interactive: bool,
-    ) -> TransformedMessenger<'a> {
+    pub fn new(writer: Option<Box<dyn Write + Send + 'a>>) -> TransformedMessenger<'a> {
         TransformedMessenger {
             writer: writer.map(|w| Arc::new(Mutex::new(w))),
-            interactive,
             total_accepted: 0,
             total_rejected: 0,
             total_supressed: 0,

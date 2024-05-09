@@ -2516,20 +2516,21 @@ console.error(foobar);
 fn apply_stdin_autocode() -> Result<()> {
     let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
 
-    let input_file = r#"{
-        const foo = bar;
-        const x = 6;
-        console.error("nice");
-        const w = 6;
-        console.log("king");
-        console.error(w);
-    }"#;
+    let input_file = r#"
+def cool(name):
+    print(name)
+"#;
+    let expected_output = r#"
+def renamed(name):
+    print(name)
+
+"#;
 
     let mut cmd = get_test_cmd()?;
     cmd.arg("apply")
-        .arg("`console.error($x) where $x => `foobar`")
-        .arg("--stdin-file-path")
-        .arg("fake_file.js")
+        .arg("`def $x($_): $_` where $x => `foobar`")
+        .arg("--stdin")
+        .arg("sample.py")
         .current_dir(&fixture_dir);
 
     cmd.write_stdin(String::from_utf8(input_file.into())?);
@@ -2543,7 +2544,9 @@ fn apply_stdin_autocode() -> Result<()> {
 
     // assert
     assert!(result.status.success(), "Command failed");
-    // assser!(stderr.contains("Processed 1 files and found 2 matches"));
+
+    // Expect the output to be the same as the expected output
+    assert_eq!(stdout, expected_output);
 
     Ok(())
 }

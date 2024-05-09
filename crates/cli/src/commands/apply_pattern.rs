@@ -225,12 +225,41 @@ pub(crate) async fn run_apply_pattern(
         },
     );
 
+    let lang = if !arg.stdin {
+        lang
+    } else if lang.is_none() {
+        // Look at the first path and get the language from the extension
+        let first_path = paths.first().ok_or(anyhow::anyhow!(
+            "A path must be provided as the virtual file name for stdin"
+        ))?;
+        let ext = first_path.extension().ok_or(anyhow::anyhow!(
+            "A path must have an extension to determine the language for stdin"
+        ))?;
+        if let Some(ext) = ext.to_str() {
+            PatternLanguage::from_extension(ext)
+        } else {
+            lang
+        }
+    } else {
+        lang
+    };
+
     if arg.ignore_limit {
         context.ignore_limit_pattern = true;
     }
 
     let interactive = arg.interactive;
     let min_level = &arg.visibility;
+
+    let mut emitter = create_emitter(
+        &format,
+        arg.output.clone(),
+        arg.output_file.as_ref(),
+        interactive,
+        Some(&pattern),
+        root_path.as_ref(),
+    )
+    .await?;
 
     #[cfg(feature = "ai_querygen")]
     if arg.ai {
@@ -259,16 +288,6 @@ pub(crate) async fn run_apply_pattern(
         .transpose()?;
     #[cfg(feature = "grit_tracing")]
     module_resolution.exit();
-
-    let mut emitter = create_emitter(
-        &format,
-        arg.output.clone(),
-        arg.output_file.as_ref(),
-        interactive,
-        Some(&pattern),
-        root_path.as_ref(),
-    )
-    .await?;
 
     let filter_range = flushable_unwrap!(
         emitter,
