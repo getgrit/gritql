@@ -32,6 +32,18 @@ pub struct AnalysisLog {
 pub struct AnalysisLogs(Vec<AnalysisLog>);
 
 impl AnalysisLogs {
+    pub fn new() -> Self {
+        Self(Vec::new())
+    }
+}
+
+impl Default for AnalysisLogs {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl AnalysisLogs {
     pub fn logs(self) -> Vec<AnalysisLog> {
         self.0
     }

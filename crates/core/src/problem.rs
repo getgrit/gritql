@@ -19,7 +19,7 @@ use grit_pattern_matcher::{
         PredicateDefinition, ResolvedPattern, State, VariableContent,
     },
 };
-use grit_util::VariableMatch;
+use grit_util::{AnalysisLogs, VariableMatch};
 use im::vector;
 use log::error;
 use marzano_language::{language::Tree, target_language::TargetLanguage};

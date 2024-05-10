@@ -595,6 +595,12 @@ pub fn src_to_problem_libs(
     builder.compile(file_ranges, injected_limit)
 }
 
+/// Only use this for testing
+pub fn src_to_problem(src: String, default_lang: TargetLanguage) -> Result<Problem> {
+    let libs = BTreeMap::new();
+    src_to_problem_libs(src, &libs, default_lang, None, None, None, None).map(|cr| cr.problem)
+}
+
 #[derive(Debug, Default)]
 pub struct VariableLocations {
     pub(crate) locations: Vec<Vec<VariableSourceLocations>>,
