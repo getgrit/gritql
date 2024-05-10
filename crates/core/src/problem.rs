@@ -19,7 +19,7 @@ use grit_pattern_matcher::{
         PredicateDefinition, ResolvedPattern, State, VariableContent,
     },
 };
-use grit_util::{AnalysisLogs, VariableMatch};
+use grit_util::{VariableMatch};
 use im::vector;
 use log::error;
 use marzano_language::{language::Tree, target_language::TargetLanguage};
@@ -404,7 +404,7 @@ impl Problem {
                     .collect()]
             })
             .collect();
-        let mut state = State::new(bindings, file_registry);
+        let state = State::new(bindings, file_registry);
 
         (
             state,
