@@ -592,13 +592,18 @@ pub fn src_to_problem_libs(
     let src_tree = parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
     let lang = TargetLanguage::from_tree(&src_tree).unwrap_or(default_lang);
     let builder = PatternBuilder::start(src, libs, lang, name, &mut parser, custom_built_ins)?;
-    builder.compile(file_ranges, injected_limit)
+    builder.compile(file_ranges, injected_limit, true)
 }
 
 /// Only use this for testing
 pub fn src_to_problem(src: String, default_lang: TargetLanguage) -> Result<Problem> {
+    let mut parser = MarzanoGritParser::new()?;
+    let src_tree = parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
+    let lang = TargetLanguage::from_tree(&src_tree).unwrap_or(default_lang);
     let libs = BTreeMap::new();
-    src_to_problem_libs(src, &libs, default_lang, None, None, None, None).map(|cr| cr.problem)
+    let builder = PatternBuilder::start(src, &libs, lang, None, &mut parser, None)?;
+    let CompilationResult { problem, .. } = builder.compile(None, None, false)?;
+    Ok(problem)
 }
 
 #[derive(Debug, Default)]

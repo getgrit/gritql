@@ -315,8 +315,13 @@ impl PatternBuilder {
         self,
         file_ranges: Option<Vec<FileRange>>,
         injected_limit: Option<usize>,
+        auto_wrap: bool,
     ) -> Result<CompilationResult> {
-        let target_builder = self.auto_wrap(file_ranges, injected_limit)?;
+        let target_builder = if auto_wrap {
+            self.auto_wrap(file_ranges, injected_limit)?
+        } else {
+            self
+        };
         let problem = Problem::new(
             target_builder.tree,
             target_builder.pattern,

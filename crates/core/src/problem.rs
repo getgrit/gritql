@@ -385,6 +385,44 @@ impl Problem {
         }
     }
 
+    /// Construct a context, only for testing
+    pub fn get_context<'a>(
+        &'a self,
+        context: &'a ExecutionContext,
+        owned_files: &'a FileOwners<Tree>,
+    ) -> (State<MarzanoQueryContext>, MarzanoContext<'a>) {
+        let file_registry: FileRegistry<MarzanoQueryContext> = FileRegistry::new_from_paths(vec![]);
+
+        let bindings = self
+            .variables
+            .locations
+            .iter()
+            .map(|scope| {
+                vector![scope
+                    .iter()
+                    .map(|s| Box::new(VariableContent::new(s.name.clone())))
+                    .collect()]
+            })
+            .collect();
+        let mut state = State::new(bindings, file_registry);
+
+        (
+            state,
+            MarzanoContext::new(
+                &self.pattern_definitions,
+                &self.predicate_definitions,
+                &self.function_definitions,
+                &self.foreign_function_definitions,
+                vec![],
+                owned_files,
+                &self.built_ins,
+                &self.language,
+                context,
+                self.name.clone(),
+            ),
+        )
+    }
+
     fn execute<'a>(
         &self,
         binding: FilePattern,
