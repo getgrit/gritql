@@ -106,7 +106,7 @@ pub async fn parse_input_files_internal(
         parser,
         injected_builtins,
     )?;
-    match builder.compile(None, None) {
+    match builder.compile(None, None, true) {
         Ok(c) => {
             let warning_logs = c
                 .compilation_warnings
