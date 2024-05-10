@@ -224,7 +224,7 @@ async fn match_pattern_internal(
     let builder = PatternBuilder::start(pattern, &libs, lang, None, parser, injected_builtins)?;
     let CompilationResult {
         problem: pattern, ..
-    } = builder.compile(None, None)?;
+    } = builder.compile(None, None, true)?;
     let files: Vec<RichFile> = paths
         .into_iter()
         .zip(contents)
