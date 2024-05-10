@@ -8,6 +8,7 @@ homepage = "https://docs.grit.io/"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 authors.workspace = true
 documentation.workspace = true
+repository.workspace = true
 license = "MIT"
 publish = false
 
@@ -56,5 +57,16 @@ grit_tracing = [
 docgen = ["marzano-cli/docgen"]
 
 [package.metadata.dist]
+# this should be published by cargo-dist (needed because publish = false)
+dist = true
+# build flags for published builds
 default-features = false
 features = ["marzano-cli/grit_beta"]
+# the npm package should have this name
+npm-package = "launcher"
+# the homebrew package should have this name
+formula = "grit"
+
+[package.metadata.dist.bin-aliases]
+# all installers should ensure marzano can also be run as "grit"
+marzano = ["grit"]
