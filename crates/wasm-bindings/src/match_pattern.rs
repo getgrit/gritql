@@ -106,7 +106,7 @@ pub async fn parse_input_files_internal(
         parser,
         injected_builtins,
     )?;
-    match builder.compile(None, None) {
+    match builder.compile(None, None, true) {
         Ok(c) => {
             let warning_logs = c
                 .compilation_warnings
@@ -224,7 +224,7 @@ async fn match_pattern_internal(
     let builder = PatternBuilder::start(pattern, &libs, lang, None, parser, injected_builtins)?;
     let CompilationResult {
         problem: pattern, ..
-    } = builder.compile(None, None)?;
+    } = builder.compile(None, None, true)?;
     let files: Vec<RichFile> = paths
         .into_iter()
         .zip(contents)
