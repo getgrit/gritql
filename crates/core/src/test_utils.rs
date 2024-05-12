@@ -49,7 +49,6 @@ impl FileName for SyntheticFile {
 }
 
 enum TestCaseExpectation {
-    None,
     Match,
 }
 
@@ -88,11 +87,7 @@ pub(crate) fn run_on_test_files(
 }
 
 pub fn run_test(case: TestCase) -> Vec<MatchResult> {
-    let pattern_src = r#"
-        file(name=includes "target.js", body=contains bubble `$x` where {
-            $x <: contains `console.log($_)`
-        })
-        "#;
+    let pattern_src = case.pattern;
     let libs = BTreeMap::new();
 
     let pattern = src_to_problem_libs(
