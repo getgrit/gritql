@@ -1,5 +1,6 @@
 use std::{borrow::Cow, collections::BTreeMap, sync::mpsc};
 
+use anyhow::Result;
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::{
     cache::NullCache,
@@ -7,7 +8,6 @@ use marzano_util::{
     runtime::ExecutionContext,
 };
 use serde::{Deserialize, Serialize};
-use anyhow::Result;
 
 use crate::{api::MatchResult, pattern_compiler::src_to_problem_libs, problem::Problem};
 
@@ -48,13 +48,19 @@ impl FileName for SyntheticFile {
     }
 }
 
+enum TestCaseExpectation {
+    None,
+    Match,
+}
+
 pub struct TestCase {
     files: Vec<SyntheticFile>,
     pattern: String,
+    expectation: TestCaseExpectation,
 }
 
 impl TestCase {
-    pub fn new(file_contents: &str, pattern: &str) -> Self {
+    pub fn new_match(file_contents: &str, pattern: &str) -> Self {
         Self {
             files: vec![SyntheticFile::new(
                 "target.js".to_string(),
@@ -62,6 +68,7 @@ impl TestCase {
                 true,
             )],
             pattern: pattern.to_string(),
+            expectation: TestCaseExpectation::Match,
         }
     }
 }
@@ -101,5 +108,14 @@ pub fn run_test(case: TestCase) -> Vec<MatchResult> {
     .problem;
 
     let results = run_on_test_files(&pattern, &case.files);
+
+    match case.expectation {
+        TestCaseExpectation::None => {}
+        TestCaseExpectation::Match => {
+            let match_case = results.iter().any(|r| r.is_match());
+            assert!(match_case, "Expected a match, but got none");
+        }
+    }
+
     results
 }

@@ -1,21 +1,14 @@
 use marzano_language::target_language::TargetLanguage;
-use marzano_util::{
-    cache::NullCache,
-    rich_path::{FileName, RichFile, TryIntoInputFile},
-    runtime::ExecutionContext,
-};
-use serde::{Deserialize, Serialize};
 
 use crate::{
     api::{MatchResult, Rewrite},
     test_utils::{run_on_test_files, SyntheticFile},
 };
 
-use self::{pattern_compiler::src_to_problem_libs, problem::Problem};
-use anyhow::Result;
+use self::pattern_compiler::src_to_problem_libs;
 
 use super::*;
-use std::{borrow::Cow, collections::BTreeMap, sync::mpsc};
+use std::collections::BTreeMap;
 
 #[test]
 fn test_lazy_file_parsing() {
