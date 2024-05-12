@@ -8,8 +8,8 @@ use crate::context::QueryContext;
 pub trait AstNodePattern<Q: QueryContext>:
     Clone + std::fmt::Debug + Matcher<Q> + PatternName + Sized
 {
-    // Does this AST include trivia?
-    // Trivia is useful for being able to re-print an AST, but not all parsers support collecting it.
+    /// Does this AST include trivia?
+    /// Trivia is useful for being able to re-print an AST, but not all parsers support collecting it.
     const INCLUDES_TRIVIA: bool;
 
     fn children(&self) -> Vec<PatternOrPredicate<Q>>;
