@@ -38,3 +38,5 @@ use getrandom as _;
 mod test;
 #[cfg(test)]
 mod test_files;
+#[cfg(feature = "test_utils")]
+pub mod test_utils;

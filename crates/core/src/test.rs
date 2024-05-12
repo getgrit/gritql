@@ -143,9 +143,9 @@ fn match_pattern_libs(
     Ok(execution_result)
 }
 
-struct TestArg {
-    pattern: String,
-    source: String,
+pub struct TestArg {
+    pub pattern: String,
+    pub source: String,
 }
 
 struct TestArgExpected {
@@ -392,7 +392,7 @@ fn run_test_expected_with_new_file(arg: TestArgExpectedWithNewFile) -> Result<()
     Ok(())
 }
 
-fn run_test_match(arg: TestArg) -> Result<()> {
+pub fn run_test_match(arg: TestArg) -> Result<()> {
     let pattern = arg.pattern;
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let source = arg.source;
