@@ -27,6 +27,8 @@ impl ASTNode {
 }
 
 impl AstNodePattern<MarzanoQueryContext> for ASTNode {
+    const INCLUDES_TRIVIA: bool = false;
+
     fn children(&self) -> Vec<PatternOrPredicate<MarzanoQueryContext>> {
         self.args
             .iter()
