@@ -8,6 +8,10 @@ use crate::context::QueryContext;
 pub trait AstNodePattern<Q: QueryContext>:
     Clone + std::fmt::Debug + Matcher<Q> + PatternName + Sized
 {
+    /// Does this AST include trivia?
+    /// Trivia is useful for being able to re-print an AST, but not all parsers support collecting it.
+    const INCLUDES_TRIVIA: bool;
+
     fn children(&self) -> Vec<PatternOrPredicate<Q>>;
 
     fn matches_kind_of(&self, node: &Q::Node<'_>) -> bool;
@@ -17,4 +21,9 @@ pub trait AstNodePattern<Q: QueryContext>:
 pub trait AstLeafNodePattern<Q: QueryContext>:
     Clone + std::fmt::Debug + Matcher<Q> + PatternName + Sized
 {
+    /// Provides a *possible* text value for the leaf node.
+    /// This is not mandatory, but enables some advanced functionality.
+    fn text(&self) -> Option<&str> {
+        None
+    }
 }

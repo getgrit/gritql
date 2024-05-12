@@ -308,6 +308,7 @@ impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
 }
 
 pub trait CodeSnippet<Q: QueryContext + 'static>: Clone + Debug + Matcher<Q> + PatternName {
+    /// Return the different patterns which could *all* possibly match the code snippet.
     fn patterns(&self) -> impl Iterator<Item = &Pattern<Q>>;
 
     fn dynamic_snippet(&self) -> Option<&DynamicPattern<Q>>;
