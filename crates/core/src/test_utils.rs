@@ -1,6 +1,15 @@
-use marzano_language::target_language::TargetLanguage;
+use std::{borrow::Cow, collections::BTreeMap, sync::mpsc};
 
-use crate::pattern_compiler::src_to_problem_libs;
+use marzano_language::target_language::TargetLanguage;
+use marzano_util::{
+    cache::NullCache,
+    rich_path::{FileName, RichFile, TryIntoInputFile},
+    runtime::ExecutionContext,
+};
+use serde::{Deserialize, Serialize};
+use anyhow::Result;
+
+use crate::{api::MatchResult, pattern_compiler::src_to_problem_libs, problem::Problem};
 
 /// SyntheticFile is used for ensuring we don't read files until their file names match
 #[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
@@ -91,6 +100,6 @@ pub fn run_test(case: TestCase) -> Vec<MatchResult> {
     .unwrap()
     .problem;
 
-    let results = run_on_test_files(&pattern, &test_files);
+    let results = run_on_test_files(&pattern, &case.files);
     results
 }
