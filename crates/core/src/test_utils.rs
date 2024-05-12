@@ -105,7 +105,6 @@ pub fn run_test(case: TestCase) -> Vec<MatchResult> {
     let results = run_on_test_files(&pattern, &case.files);
 
     match case.expectation {
-        TestCaseExpectation::None => {}
         TestCaseExpectation::Match => {
             let match_case = results.iter().any(|r| r.is_match());
             assert!(match_case, "Expected a match, but got none");
