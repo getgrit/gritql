@@ -17,4 +17,6 @@ pub trait AstNodePattern<Q: QueryContext>:
 pub trait AstLeafNodePattern<Q: QueryContext>:
     Clone + std::fmt::Debug + Matcher<Q> + PatternName + Sized
 {
+    /// Provides a *possible* text value for the leaf node.
+    fn text(&self) -> Option<&str>;
 }

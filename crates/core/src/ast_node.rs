@@ -144,7 +144,11 @@ impl AstLeafNode {
     }
 }
 
-impl AstLeafNodePattern<MarzanoQueryContext> for AstLeafNode {}
+impl AstLeafNodePattern<MarzanoQueryContext> for AstLeafNode {
+    fn text(&self) -> Option<&str> {
+        Some(&self.text)
+    }
+}
 
 impl PatternName for AstLeafNode {
     fn name(&self) -> &'static str {
