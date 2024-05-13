@@ -10,7 +10,7 @@ use dialoguer::Input;
 use indicatif::ProgressBar;
 use log::info;
 use marzano_core::{
-    api::{derive_log_level, is_match, AnalysisLogLevel, MatchResult},
+    api::{derive_log_level, is_match, AnalysisLog, AnalysisLogLevel, MatchResult},
     fs::apply_rewrite,
 };
 use marzano_language::target_language::TargetLanguage;
@@ -30,6 +30,25 @@ pub trait Messager: Send + Sync {
     fn emit(&mut self, message: &MatchResult, min_level: &VisibilityLevels) -> anyhow::Result<()> {
         if get_visibility(message) >= *min_level {
             self.raw_emit(message)
+        } else {
+            Ok(())
+        }
+    }
+
+    fn apply_rewrite(
+        &mut self,
+        result: &MatchResult,
+        min_level: &VisibilityLevels,
+    ) -> anyhow::Result<()> {
+        if let Err(e) = apply_rewrite(result) {
+            let err_string = format!("Failed to apply rewrite: {}", e);
+            let err_log = if let Some(file_name) = result.file_name() {
+                AnalysisLog::new_error(err_string, file_name)
+            } else {
+                AnalysisLog::floating_error(err_string)
+            };
+
+            self.emit(&MatchResult::AnalysisLog(err_log), min_level)
         } else {
             Ok(())
         }
@@ -156,7 +175,7 @@ pub trait Messager: Send + Sync {
                                         details.named_pattern.as_deref(),
                                     )
                                     .unwrap();
-                                apply_rewrite(&suppress_rewrite).unwrap();
+                                self.apply_rewrite(&suppress_rewrite, min_level).unwrap();
                                 continue;
                             }
                             "a" => {
@@ -174,7 +193,7 @@ pub trait Messager: Send + Sync {
                         self.track_accept(&r).unwrap();
                     }
                 }
-                apply_rewrite(&r).unwrap();
+                self.apply_rewrite(&r, min_level).unwrap();
                 if should_format {
                     format_result(r).unwrap();
                 }

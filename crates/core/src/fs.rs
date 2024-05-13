@@ -5,26 +5,32 @@ use grit_util::Range;
 pub fn apply_rewrite(result: &MatchResult) -> Result<()> {
     match result {
         MatchResult::CreateFile(f) => {
-            // Write the file
-            std::fs::write(
-                f.rewritten.source_file.clone(),
-                f.rewritten.content.as_bytes(),
-            )?;
-        }
-        MatchResult::RemoveFile(f) => {
-            // Delete the file
-            std::fs::remove_file(f.original.source_file.clone())?;
-        }
-        MatchResult::Rewrite(r) => {
-            // If the old file name is different, delete it
-            if r.rewritten.source_file != r.original.source_file {
-                std::fs::remove_file(r.original.source_file.clone())?;
+            let path = Path::new(&f.rewritten.source_file);
+            if let Some(parent) = path.parent() {
+                std::fs::create_dir_all(parent)?;
             }
             // Write the file
-            std::fs::write(
-                r.rewritten.source_file.clone(),
-                r.rewritten.content.as_bytes(),
-            )?;
+            std::fs::write(path, f.rewritten.content.as_bytes())?;
+        }
+        MatchResult::RemoveFile(f) => {
+            let path = Path::new(&f.original.source_file);
+            if path.exists() {
+                std::fs::remove_file(path)?;
+            }
+        }
+        MatchResult::Rewrite(r) => {
+            let new_path = Path::new(&r.rewritten.source_file);
+            if let Some(parent) = new_path.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            if r.rewritten.source_file != r.original.source_file {
+                let old_path = Path::new(&r.original.source_file);
+                if old_path.exists() {
+                    std::fs::remove_file(old_path)?;
+                }
+            }
+            // Write the file
+            std::fs::write(new_path, r.rewritten.content.as_bytes())?;
         }
 
         MatchResult::AnalysisLog(_) => {}
@@ -37,6 +43,7 @@ pub fn apply_rewrite(result: &MatchResult) -> Result<()> {
     }
     Ok(())
 }
+
 pub fn extract_ranges(result: &MatchResult) -> Option<&Vec<Range>> {
     match result {
         MatchResult::AnalysisLog(_) => None,
