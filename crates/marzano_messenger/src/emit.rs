@@ -68,8 +68,8 @@ pub trait Messager: Send + Sync {
         processed: Option<&AtomicI32>,
         mut parse_errors: Option<&mut HashMap<String, usize>>,
         language: &TargetLanguage,
-    ) -> anyhow::Result<bool> {
-        self.handle_results_inner(
+    ) -> bool {
+        match self.handle_results_inner(
             execution_result,
             details,
             dry_run,
@@ -80,7 +80,15 @@ pub trait Messager: Send + Sync {
             processed,
             parse_errors,
             language,
-        )
+        ) {
+            Ok(val) => val,
+            Err(err) => {
+                let err_log = AnalysisLog::new_error(err.to_string(), "unknown");
+                self.emit(&MatchResult::AnalysisLog(err_log), min_level)
+                    .expect("Failed to emit error log");
+                false
+            }
+        }
     }
 
     fn handle_results_inner(
