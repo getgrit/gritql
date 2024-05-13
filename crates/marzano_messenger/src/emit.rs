@@ -68,8 +68,35 @@ pub trait Messager: Send + Sync {
         processed: Option<&AtomicI32>,
         mut parse_errors: Option<&mut HashMap<String, usize>>,
         language: &TargetLanguage,
-    ) -> bool {
-        for r in execution_result.into_iter() {
+    ) -> anyhow::Result<bool> {
+        self.handle_results_inner(
+            execution_result,
+            details,
+            dry_run,
+            min_level,
+            should_format,
+            interactive,
+            pg,
+            processed,
+            parse_errors,
+            language,
+        )
+    }
+
+    fn handle_results_inner(
+        &mut self,
+        execution_result: Vec<MatchResult>,
+        details: &mut ApplyDetails,
+        dry_run: bool,
+        min_level: &VisibilityLevels,
+        should_format: bool,
+        interactive: &mut bool,
+        pg: Option<&ProgressBar>,
+        processed: Option<&AtomicI32>,
+        mut parse_errors: Option<&mut HashMap<String, usize>>,
+        language: &TargetLanguage,
+    ) -> anyhow::Result<bool> {
+        for r in execution_result {
             if is_match(&r) {
                 details.matched += 1;
             }
@@ -108,11 +135,13 @@ pub trait Messager: Send + Sync {
                 }
             }
 
-            self.emit(&r, min_level).unwrap();
+            self.emit(&r, min_level)?;
 
             if !dry_run {
                 if is_match(&r) {
-                    let file_name = r.file_name().unwrap();
+                    let file_name = r
+                        .file_name()
+                        .ok_or_else(|| anyhow::Error::msg("File name is missing"))?;
                     if *interactive {
                         let (prefix, question, valid_chars, actions) =
                             if let MatchResult::Match(_) = r {
@@ -154,52 +183,49 @@ pub trait Messager: Send + Sync {
                                     Err(format!("Not a valid choice in {actions:}"))
                                 }
                             })
-                            .interact_text()
-                            .unwrap();
+                            .interact_text()?;
                         if let Some(pg) = pg {
                             pg.set_prefix("Analyzing")
                         }
                         match selection.trim().to_lowercase().as_str() {
                             "y" => {
-                                self.track_accept(&r).unwrap();
+                                self.track_accept(&r)?;
                             }
                             "n" => {
-                                self.track_reject(&r).unwrap();
+                                self.track_reject(&r)?;
                                 continue;
                             }
                             "s" => {
-                                self.track_supress(&r).unwrap();
-                                let suppress_rewrite = r
-                                    .get_rewrite_to_suppress(
-                                        language,
-                                        details.named_pattern.as_deref(),
-                                    )
-                                    .unwrap();
-                                self.apply_rewrite(&suppress_rewrite, min_level).unwrap();
+                                self.track_supress(&r)?;
+                                let suppress_rewrite = r.get_rewrite_to_suppress(
+                                    language,
+                                    details.named_pattern.as_deref(),
+                                )?;
+                                self.apply_rewrite(&suppress_rewrite, min_level)?;
                                 continue;
                             }
                             "a" => {
-                                self.track_accept(&r).unwrap();
+                                self.track_accept(&r)?;
                                 *interactive = false;
                             }
                             "q" => {
-                                self.track_reject(&r).unwrap();
+                                self.track_reject(&r)?;
                                 *interactive = false;
-                                return false;
+                                return Ok(false);
                             }
                             _ => unreachable!(),
                         }
                     } else {
-                        self.track_accept(&r).unwrap();
+                        self.track_accept(&r)?;
                     }
                 }
-                self.apply_rewrite(&r, min_level).unwrap();
+                self.apply_rewrite(&r, min_level)?;
                 if should_format {
-                    format_result(r).unwrap();
+                    format_result(r)?;
                 }
             }
         }
-        true
+        Ok(true)
     }
 
     // Write a message to the output
