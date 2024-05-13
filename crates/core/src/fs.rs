@@ -1,9 +1,12 @@
+use std::path::Path;
+
 use crate::api::MatchResult;
 use anyhow::Result;
 use grit_util::Range;
 
 pub fn apply_rewrite(result: &MatchResult) -> Result<()> {
     match result {
+        // TODO: consider making this more DRY
         MatchResult::CreateFile(f) => {
             let path = Path::new(&f.rewritten.source_file);
             if let Some(parent) = path.parent() {
@@ -12,12 +15,7 @@ pub fn apply_rewrite(result: &MatchResult) -> Result<()> {
             // Write the file
             std::fs::write(path, f.rewritten.content.as_bytes())?;
         }
-        MatchResult::RemoveFile(f) => {
-            let path = Path::new(&f.original.source_file);
-            if path.exists() {
-                std::fs::remove_file(path)?;
-            }
-        }
+
         MatchResult::Rewrite(r) => {
             let new_path = Path::new(&r.rewritten.source_file);
             if let Some(parent) = new_path.parent() {
@@ -31,6 +29,13 @@ pub fn apply_rewrite(result: &MatchResult) -> Result<()> {
             }
             // Write the file
             std::fs::write(new_path, r.rewritten.content.as_bytes())?;
+        }
+
+        MatchResult::RemoveFile(f) => {
+            let path = Path::new(&f.original.source_file);
+            if path.exists() {
+                std::fs::remove_file(path)?;
+            }
         }
 
         MatchResult::AnalysisLog(_) => {}
