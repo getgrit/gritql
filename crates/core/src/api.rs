@@ -285,10 +285,14 @@ pub struct InputFile {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct Match {
+    #[serde(default)]
     pub messages: Vec<Message>,
+    #[serde(default)]
     pub variables: Vec<VariableMatch>,
     pub source_file: String,
+    #[serde(default)]
     pub ranges: Vec<Range>,
+    #[serde(default)]
     pub debug: String,
 }
 
@@ -356,6 +360,8 @@ impl EntireFile {
 pub struct Rewrite {
     pub original: Match,
     pub rewritten: EntireFile,
+    /// Deprecated
+    #[serde(default)]
     pub ansi_summary: String,
     pub reason: Option<RewriteReason>,
 }
