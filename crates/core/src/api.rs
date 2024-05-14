@@ -330,7 +330,9 @@ impl FileMatchResult for Match {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct EntireFile {
+    #[serde(default)]
     pub messages: Vec<Message>,
+    #[serde(default)]
     pub variables: Vec<VariableMatch>,
     pub source_file: String,
     pub content: String,

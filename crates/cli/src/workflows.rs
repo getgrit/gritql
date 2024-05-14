@@ -3,7 +3,9 @@ use console::style;
 use grit_cloud_client::spawn_server_tasks;
 use grit_util::FileRange;
 use log::debug;
-use marzano_auth::env::{get_grit_api_url, ENV_VAR_GRIT_API_URL, ENV_VAR_GRIT_AUTH_TOKEN};
+use marzano_auth::env::{
+    get_grit_api_url, ENV_VAR_GRIT_API_URL, ENV_VAR_GRIT_AUTH_TOKEN, ENV_VAR_GRIT_LOCAL_SERVER,
+};
 use marzano_gritmodule::{fetcher::LocalRepo, searcher::find_grit_dir_from};
 use marzano_messenger::{emit::Messager, workflows::PackagedWorkflowOutcome};
 use serde::Serialize;
@@ -67,8 +69,8 @@ where
     let repo = LocalRepo::from_dir(&cwd).await;
 
     let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
-    let socket = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let server_addr = socket.local_addr().unwrap();
+    let socket = TcpListener::bind("127.0.0.1:0").await?;
+    let server_addr = format!("http://{}", socket.local_addr()?);
     let handle = spawn_server_tasks(emitter, shutdown_rx, socket);
 
     let root = std::env::var(ENV_GRIT_WORKSPACE_ROOT).unwrap_or_else(|_| {
@@ -135,9 +137,12 @@ where
         }
     };
 
+    println!("Server listening on: {}", server_addr.to_string());
+
     let mut child = Command::new(runner_path)
         .arg(tempfile_path.to_string_lossy().to_string())
         .env("GRIT_MARZANO_PATH", marzano_bin)
+        .env(ENV_VAR_GRIT_LOCAL_SERVER, server_addr.to_string())
         .env(ENV_VAR_GRIT_API_URL, get_grit_api_url())
         .env(ENV_VAR_GRIT_AUTH_TOKEN, grit_token)
         .env(ENV_GRIT_WORKSPACE_ROOT, root)
