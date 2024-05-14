@@ -54,7 +54,10 @@ pub trait Messager: Send + Sync {
         }
     }
 
-    // Handle a group of execution results
+    /// This is the main entrypoint for handling a group of results
+    /// In interactive mode, it is responsible for asking the user what to do with each result
+    ///
+    /// Returns true if the process should continue, false if it should stop
     #[allow(clippy::too_many_arguments)]
     fn handle_results(
         &mut self,
@@ -66,7 +69,7 @@ pub trait Messager: Send + Sync {
         interactive: &mut bool,
         pg: Option<&ProgressBar>,
         processed: Option<&AtomicI32>,
-        mut parse_errors: Option<&mut HashMap<String, usize>>,
+        parse_errors: Option<&mut HashMap<String, usize>>,
         language: &TargetLanguage,
     ) -> bool {
         match self.handle_results_inner(
@@ -86,11 +89,12 @@ pub trait Messager: Send + Sync {
                 let err_log = AnalysisLog::new_error(err.to_string(), "unknown");
                 self.emit(&MatchResult::AnalysisLog(err_log), min_level)
                     .expect("Failed to emit error log");
-                false
+                true
             }
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn handle_results_inner(
         &mut self,
         execution_result: Vec<MatchResult>,
@@ -205,10 +209,12 @@ pub trait Messager: Send + Sync {
                             }
                             "s" => {
                                 self.track_supress(&r)?;
-                                let suppress_rewrite = r.get_rewrite_to_suppress(
-                                    language,
-                                    details.named_pattern.as_deref(),
-                                )?;
+                                let suppress_rewrite = r
+                                    .get_rewrite_to_suppress(
+                                        language,
+                                        details.named_pattern.as_deref(),
+                                    )
+                                    .ok_or(anyhow::anyhow!("Failed to suppress rewrite"))?;
                                 self.apply_rewrite(&suppress_rewrite, min_level)?;
                                 continue;
                             }
