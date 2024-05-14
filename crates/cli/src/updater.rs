@@ -1,5 +1,6 @@
 use anyhow::bail;
 use anyhow::{Context, Result};
+use axoupdater::{AxoUpdater, ReleaseSource, ReleaseSourceType, Version};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::Colorize;
 use futures_util::StreamExt;
@@ -300,18 +301,15 @@ impl Updater {
             let app_string = app.get_base_name();
             let current_binary = self.binaries.get(&app_string).cloned();
             tasks.push(tokio::spawn(async move {
-                let (_, info_url) = match get_release_url(app, None, None).await {
-                    Ok(urls) => urls,
-                    Err(_) => return,
-                };
-                let manifest = match fetch_manifest(&info_url, app).await {
-                    Ok(manifest) => manifest,
-                    Err(_) => return,
-                };
-                if let Some(current_manifest) = current_binary {
-                    if manifest.release != current_manifest.release && manifest.release.is_some() {
+                {
+                    let version = match check_release(app, &current_binary).await {
+                        Ok(v) => v,
+                        Err(_) => return,
+                    };
+
+                    if let Some(version) = version {
                         let mut found = found_updates.lock().await;
-                        found.push((app, manifest.version.unwrap()));
+                        found.push((app, version));
                     }
                 }
             }));
@@ -334,7 +332,53 @@ impl Updater {
         Ok(!found_updates.is_empty())
     }
 
-    pub async fn install_latest(
+    pub async fn install_latest_axo(&mut self, app: SupportedApp) -> Result<()> {
+        let mut updater = AxoUpdater::new_for(&app.get_base_name());
+        // Disable axo installers' verbose output with info on
+        // where the tool is installed
+        updater.disable_installer_output();
+
+        // Set "always update" to match install_latest_internal,
+        // and because this is preceded by an "is this outdated" check.
+        updater.always_update(true);
+
+        // This can be autodetected if grit was itself installed via an axo
+        // installer in the past, but specifying this source manually is
+        // necessary if no cargo-dist-style install receipt exists.
+        updater.set_release_source(ReleaseSource {
+            release_type: ReleaseSourceType::GitHub,
+            owner: "getgrit".to_owned(),
+            name: "gritql".to_owned(),
+            app_name: app.get_base_name(),
+        });
+        updater.configure_version_specifier(axoupdater::UpdateRequest::LatestMaybePrerelease);
+        // add bin/ since axoupdater wants to know where bins go
+        updater.set_install_dir(&self.install_path.join("bin").to_string_lossy());
+        match updater.run().await {
+            Ok(result) => {
+                if let Some(outcome) = result {
+                    self.set_app_version(
+                        app,
+                        outcome.new_version.to_string(),
+                        outcome.new_version_tag,
+                    )?;
+                    self.dump().await?;
+                // This path is primarily hit if no releases exist, or
+                // if `always_update(false)` is set and there isn't a newer
+                // version available.
+                } else {
+                    info!("New version of {app} not installed");
+                }
+            }
+            Err(e) => {
+                return Err(e.into());
+            }
+        }
+
+        Ok(())
+    }
+
+    pub async fn install_latest_internal(
         &mut self,
         app: SupportedApp,
         os: Option<&str>,
@@ -359,6 +403,18 @@ impl Updater {
         self.dump().await?;
 
         Ok(())
+    }
+
+    pub async fn install_latest(
+        &mut self,
+        app: SupportedApp,
+        os: Option<&str>,
+        arch: Option<&str>,
+    ) -> Result<()> {
+        match app {
+            SupportedApp::Marzano | SupportedApp::Gouda => self.install_latest_axo(app).await,
+            _ => self.install_latest_internal(app, os, arch).await,
+        }
     }
 
     pub fn get_context(&self) -> Result<ExecutionContext> {
@@ -547,6 +603,8 @@ impl Updater {
         }
         let bin_name = app_name.get_base_name();
         let bin_path = self.bin_path.join(bin_name);
+        #[cfg(windows)]
+        let bin_path = bin_path.with_extension("exe");
         Ok(bin_path)
     }
 
@@ -678,6 +736,66 @@ async fn get_release_url(
         latest_release_download_url.to_string(),
         latest_release_info_url.to_string(),
     ))
+}
+
+pub async fn check_release(
+    app: SupportedApp,
+    current_binary: &Option<AppManifest>,
+) -> Result<Option<String>> {
+    match app {
+        SupportedApp::Marzano | SupportedApp::Gouda => check_release_axo(app, current_binary).await,
+        _ => check_release_internal(app, current_binary).await,
+    }
+}
+
+pub async fn check_release_internal(
+    app: SupportedApp,
+    current_binary: &Option<AppManifest>,
+) -> Result<Option<String>> {
+    let (_, info_url) = match get_release_url(app, None, None).await {
+        Ok(urls) => urls,
+        Err(_) => return Ok(None),
+    };
+    let manifest = match fetch_manifest(&info_url, app).await {
+        Ok(manifest) => manifest,
+        Err(_) => return Ok(None),
+    };
+    if let Some(current_manifest) = current_binary {
+        if manifest.release != current_manifest.release && manifest.release.is_some() {
+            Ok(manifest.version)
+        } else {
+            Ok(None)
+        }
+    } else {
+        Ok(None)
+    }
+}
+
+pub async fn check_release_axo(
+    app: SupportedApp,
+    current_binary: &Option<AppManifest>,
+) -> Result<Option<String>> {
+    let mut updater = AxoUpdater::new_for(&app.get_base_name());
+    // Avoids a look up to cargo-dist's install receipt, which may not exist yet;
+    // we want to fetch this data from the current manifest if at all possible
+    if let Some(current_manifest) = current_binary {
+        if let Some(current) = &current_manifest.version {
+            updater.set_current_version(Version::parse(current)?)?;
+        }
+    }
+    updater.set_release_source(ReleaseSource {
+        release_type: ReleaseSourceType::GitHub,
+        owner: "getgrit".to_owned(),
+        name: "gritql".to_owned(),
+        app_name: app.get_base_name(),
+    });
+    updater.configure_version_specifier(axoupdater::UpdateRequest::LatestMaybePrerelease);
+    let update_needed = updater.is_update_needed().await?;
+    if !update_needed {
+        return Ok(None);
+    }
+    let new_version = updater.query_new_version().await?.map(|v| v.to_string());
+    Ok(new_version)
 }
 
 async fn fetch_manifest(relative_url: &str, app: SupportedApp) -> Result<AppManifest> {
