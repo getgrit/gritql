@@ -20,8 +20,14 @@ impl TestingMessenger {
     }
 }
 
+impl Default for TestingMessenger {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Messager for TestingMessenger {
-    fn raw_emit(&mut self, message: &MatchResult) -> anyhow::Result<()> {
+    fn raw_emit(&mut self, _message: &MatchResult) -> Result<()> {
         self.message_count += 1;
         Ok(())
     }
