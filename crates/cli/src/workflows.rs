@@ -2,7 +2,7 @@ use anyhow::{bail, Result};
 use console::style;
 use grit_util::FileRange;
 use log::debug;
-use marzano_auth::env::ENV_VAR_GRIT_AUTH_TOKEN;
+use marzano_auth::env::{get_grit_api_url, ENV_VAR_GRIT_API_URL, ENV_VAR_GRIT_AUTH_TOKEN};
 use marzano_gritmodule::{fetcher::LocalRepo, searcher::find_grit_dir_from};
 use marzano_messenger::{emit::Messager, workflows::PackagedWorkflowOutcome};
 use serde::Serialize;
@@ -131,6 +131,7 @@ where
     let mut child = Command::new(runner_path)
         .arg(tempfile_path.to_string_lossy().to_string())
         .env("GRIT_MARZANO_PATH", marzano_bin)
+        .env(ENV_VAR_GRIT_API_URL, get_grit_api_url())
         .env(ENV_VAR_GRIT_AUTH_TOKEN, grit_token)
         .env(ENV_GRIT_WORKSPACE_ROOT, root)
         .arg("--file")
