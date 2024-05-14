@@ -149,6 +149,10 @@ where
 
     let status = child.wait().await?;
 
+    // Stop the embedded server
+    shutdown_tx.send(()).unwrap();
+    let emitter = handle.await?;
+
     // TODO: pass along outcome message
     if status.success() {
         Ok((
