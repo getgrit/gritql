@@ -546,8 +546,19 @@ pub struct DoneFile {
     pub has_results: Option<bool>,
     #[serde(skip_serializing)]
     pub file_hash: Option<[u8; 32]>,
-    #[serde(skip_serializing)]
+    #[serde(skip_serializing, skip_deserializing)]
     pub from_cache: bool,
+}
+
+impl DoneFile {
+    pub fn new(relative_file_path: String) -> Self {
+        Self {
+            relative_file_path,
+            has_results: None,
+            file_hash: None,
+            from_cache: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
