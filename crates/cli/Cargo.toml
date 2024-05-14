@@ -89,7 +89,7 @@ default = [
   "workflows_v2",
   "grit_tracing",
   # Grit cloud feature for relaying workflow results
-  "workflow_server",
+  # "workflow_server",
   # "remote_workflows",
   # "server",
   # "remote_redis",
@@ -144,7 +144,7 @@ grit_beta = [
   "ai_builtins",
   "workflows_v2",
   "remote_workflows",
-  # "workflow_server"
+  "workflow_server"
   # "grit_timing",
 ]
 grit_timing = []

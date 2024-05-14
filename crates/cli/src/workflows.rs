@@ -66,7 +66,7 @@ where
 
     #[cfg(feature = "workflow_server")]
     let (server_addr, handle, shutdown_tx) = {
-        let (shutdown_tx, shutdown_rx) = tokio::sync::overshot::channel::<()>();
+        let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
         let socket = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
         let server_addr = format!("http://{}", socket.local_addr()?);
         let handle = grit_cloud_client::spawn_server_tasks(emitter, shutdown_rx, socket);
@@ -143,7 +143,7 @@ where
         .env("GRIT_MARZANO_PATH", marzano_bin);
 
     #[cfg(feature = "workflow_server")]
-    child.env(ENV_VAR_GRIT_LOCAL_SERVER, server_addr.to_string());
+    child.env(marzano_auth::env::ENV_VAR_GRIT_LOCAL_SERVER, &server_addr);
 
     let mut final_child = child
         .env(ENV_VAR_GRIT_API_URL, get_grit_api_url())
