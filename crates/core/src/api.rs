@@ -589,7 +589,7 @@ pub struct AnalysisLog {
 }
 
 impl AnalysisLog {
-    pub(crate) fn new_error(message: String, file: &str) -> Self {
+    pub fn new_error(message: String, file: &str) -> Self {
         Self {
             level: 280,
             message,
@@ -602,7 +602,7 @@ impl AnalysisLog {
         }
     }
 
-    pub(crate) fn floating_error(message: String) -> Self {
+    pub fn floating_error(message: String) -> Self {
         Self {
             level: 280,
             message,
