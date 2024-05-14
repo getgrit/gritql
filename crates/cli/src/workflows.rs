@@ -1,5 +1,6 @@
 use anyhow::{bail, Result};
 use console::style;
+use grit_cloud_client::spawn_server_tasks;
 use grit_util::FileRange;
 use log::debug;
 use marzano_auth::env::{get_grit_api_url, ENV_VAR_GRIT_API_URL, ENV_VAR_GRIT_AUTH_TOKEN};
@@ -9,8 +10,9 @@ use serde::Serialize;
 use serde_json::to_string;
 use std::path::PathBuf;
 use tempfile::NamedTempFile;
-use tokio::fs;
 use tokio::process::Command;
+use tokio::sync::oneshot;
+use tokio::{fs, net::TcpListener};
 use uuid::Uuid;
 
 use crate::updater::{SupportedApp, Updater};
@@ -53,7 +55,7 @@ pub async fn run_bin_workflow<M>(
     mut arg: WorkflowInputs,
 ) -> Result<(M, PackagedWorkflowOutcome)>
 where
-    M: Messager,
+    M: Messager + Send + 'static,
 {
     let cwd = std::env::current_dir()?;
 
@@ -63,6 +65,11 @@ where
 
     let mut updater = Updater::from_current_bin().await?;
     let repo = LocalRepo::from_dir(&cwd).await;
+
+    let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+    let socket = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let server_addr = socket.local_addr().unwrap();
+    let handle = spawn_server_tasks(emitter, shutdown_rx, socket);
 
     let root = std::env::var(ENV_GRIT_WORKSPACE_ROOT).unwrap_or_else(|_| {
         repo.as_ref().and_then(|r| r.root().ok()).map_or_else(

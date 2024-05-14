@@ -88,6 +88,8 @@ default = [
   "updater",
   "workflows_v2",
   "grit_tracing",
+  # Grit cloud feature for relaying workflow results
+  "embedded_server",
   # "remote_workflows",
   # "server",
   # "remote_redis",
@@ -100,6 +102,9 @@ bundled_workflows = []
 remote_redis = []
 remote_pubsub = []
 remote_workflows = [
+  "dep:grit_cloud_client",
+]
+embedded_server = [
   "dep:grit_cloud_client",
 ]
 server = [
