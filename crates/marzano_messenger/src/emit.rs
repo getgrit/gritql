@@ -279,12 +279,13 @@ pub trait Messager: Send + Sync {
 }
 
 /// Visibility levels dictate *which* objects we show (ex. just rewrites, or also every file analyzed)
-#[derive(Debug, PartialEq, PartialOrd, Clone, Copy, ValueEnum, Serialize)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy, ValueEnum, Serialize, Default)]
 pub enum VisibilityLevels {
-    Primary = 3,      // Always show this to users
+    Primary = 3, // Always show this to users
+    #[default]
     Supplemental = 2, // Show to users as secondary information
-    Debug = 1,        // Only show to users if they ask for it
-    Hidden = 0,       // Never show to users
+    Debug = 1,   // Only show to users if they ask for it
+    Hidden = 0,  // Never show to users
 }
 
 impl std::fmt::Display for VisibilityLevels {

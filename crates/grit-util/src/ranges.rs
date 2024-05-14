@@ -7,7 +7,10 @@ use std::{ops::Add, path::PathBuf};
 pub struct Range {
     pub start: Position,
     pub end: Position,
+    // TODO: automatically derive these from the start and end positions during deserialization
+    #[serde(skip_deserializing)]
     pub start_byte: u32,
+    #[serde(skip_deserializing)]
     pub end_byte: u32,
 }
 

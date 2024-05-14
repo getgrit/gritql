@@ -2,6 +2,7 @@ use std::env;
 
 use crate::{info::AuthInfo, testing::get_testing_auth_info};
 
+pub static ENV_VAR_GRIT_LOCAL_SERVER: &str = "GRIT_LOCAL_SERVER";
 pub static ENV_VAR_GRIT_AUTH_TOKEN: &str = "GRIT_AUTH_TOKEN";
 pub static ENV_VAR_GRIT_API_URL: &str = "GRIT_API_URL";
 pub static DEFAULT_GRIT_API_URL: &str = "https://api-gateway-prod-6et7uue.uc.gateway.dev";
