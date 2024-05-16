@@ -32,7 +32,7 @@ def _debug(message: str) -> None:
     sys.stdout.write(f"[DEBUG]: {message}\n")
 
 
-def install() -> Path:
+def find_install() -> Path:
     """Installs the Grit CLI and returns the location of the binary"""
     if sys.platform == "win32":
         raise CLIError("Windows is not supported yet in the migration CLI")
