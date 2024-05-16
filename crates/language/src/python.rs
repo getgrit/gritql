@@ -86,6 +86,23 @@ impl Language for Python {
         if n.node.is_error() && n.text().is_ok_and(|t| t == "->") {
             replacements.push(Replacement::new(n.range(), ""));
         }
+        if n.node.kind() == "import_from_statement" {
+            if let Ok(t) = n.text() {
+                let mut end_range = n.range();
+                end_range.start_byte = end_range.end_byte;
+
+                let chars = t.chars().rev();
+                for ch in chars {
+                    end_range.start_byte -= 1;
+                    if ch == ',' {
+                        replacements.push(Replacement::new(end_range, ""));
+                        break;
+                    } else if !ch.is_whitespace() {
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     fn should_pad_snippet(&self) -> bool {

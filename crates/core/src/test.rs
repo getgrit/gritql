@@ -11953,6 +11953,68 @@ fn trailing_comma_import() {
 }
 
 #[test]
+fn trailing_comma_import_from_python() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language python
+                |
+                |`foo` => .
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |from somewhere import this, foo
+                |from start import foo, fine
+                |from middle import this, foo, more
+                |"#
+            .trim_margin()
+            .unwrap(),
+            // Don't worry about formatting, just check that the trailing comma is removed
+            expected: r#"
+                |from somewhere import this
+                |from start import  fine
+                |from middle import this,  more
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn trailing_comma_import_from_python_with_alias() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language python
+                |
+                |aliased_import(name=contains `foo`) => .
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |from somewhere import this as Sam, foo as Bob
+                |from start import foo as Bob, fine
+                |from middle import this, foo as Bob, more
+                |"#
+            .trim_margin()
+            .unwrap(),
+            // Don't worry about formatting, just check that the trailing comma is removed
+            expected: r#"
+                |from somewhere import this as Sam
+                |from start import  fine
+                |from middle import this,  more
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn yaml_string() {
     run_test_match({
         TestArg {
