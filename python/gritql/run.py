@@ -9,7 +9,5 @@ def run_cli(args: Any):
     cli_path = find_install()
     subprocess.check_call([cli_path, *args])
 
-
-
 if __name__ == "__main__":
     run_cli(sys.argv[1:])
