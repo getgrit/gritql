@@ -88,11 +88,10 @@ impl Language for Python {
         }
         if n.node.kind() == "import_from_statement" {
             if let Ok(t) = n.text() {
-                let mut end_range = n.range().clone();
+                let mut end_range = n.range();
                 end_range.start_byte = end_range.end_byte;
-                end_range.start = end_range.end.clone();
 
-                let mut chars = t.chars().rev();
+                let chars = t.chars().rev();
                 for ch in chars {
                     end_range.start_byte -= 1;
                     if ch == ',' {
