@@ -16,7 +16,7 @@ use uuid::Uuid;
 use crate::updater::{SupportedApp, Updater};
 
 pub static GRIT_REPO_URL_NAME: &str = "grit_repo_url";
-pub static GRIT_REPO_BRANCH_NAME: &str = "grit_repo_branch";
+pub static GRIT_REPO_BRANCH_NAME: &str = "grit_branch";
 pub static GRIT_TARGET_RANGES: &str = "grit_target_ranges";
 pub static ENV_GRIT_WORKSPACE_ROOT: &str = "GRIT_WORKSPACE_ROOT";
 
