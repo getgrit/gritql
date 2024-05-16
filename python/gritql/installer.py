@@ -37,6 +37,11 @@ def find_install() -> Path:
     if sys.platform == "win32":
         raise CLIError("Windows is not supported yet in the migration CLI")
 
+    grit_path = shutil.which("grit")
+    if grit_path:
+        _debug(f"'grit' found in PATH at {grit_path}")
+        return Path(grit_path)
+
     platform = "macos" if sys.platform == "darwin" else "linux"
 
     dir_name = _cache_dir() / "openai-python"
