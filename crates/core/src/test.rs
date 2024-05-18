@@ -12015,6 +12015,97 @@ fn trailing_comma_import_from_python_with_alias() {
 }
 
 #[test]
+fn python_orphaned_from_imports() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language python
+                |
+                |pattern import_from($source, $names) {
+                |    import_from_statement(name=$names, module_name=dotted_name(name=$source)),
+                |}
+                |pattern find_replace_imports($list) {
+                |or {
+                |    import_from($source, $names) as $anchor where {
+                |    $list <: some bubble($source, $names, $anchor) [$from_package, $from_name, $to_package, $to_name] where {
+                |        $source <: includes $from_package,
+                |        // We might need to preserve an alias here
+                |        $replacement_name = $to_name,
+                |        // Did we find at least one true case where the name matched?
+                |        $has_target = false,
+                |        $has_other = false,
+                |
+                |        // Look at each name in a loop
+                |        $names <: some bubble($from_name, $has_other, $has_target, $replacement_name, $to_name) $this_name where {
+                |        or {
+                |            $this_name <: aliased_import(name=contains $from_name, $alias) => . where {
+                |            $replacement_name = `$to_name as $alias`,
+                |            $has_target = true
+                |            },
+                |            $this_name <: contains `$from_name` => . where $has_target = true,
+                |            $has_other = true,
+                |        }
+                |        },
+                |        $has_target <: true,
+                |        if ($has_other <: true) {
+                |        $anchor += `\nfrom $to_package import $replacement_name`
+                |        } else {
+                |        $anchor => `from $to_package import $replacement_name`
+                |        }
+                |    }      
+                |    },
+                |    `import $name` as $anchor where {
+                |    // Split the name into its constituent parts
+                |    $name <: dotted_name(name=$name_parts),
+                |    $target = $name_parts,
+                |    $list <: some bubble($target, $anchor) [$from_package, $from_name, $to_package, $to_name] where {
+                |        $prefix = split($from_package, "."),
+                |        $prefix += $from_name,
+                |        // TODO: extract into a universal function
+                |        $index = 0,
+                |        $prefix <: every bubble($target, $prefix, $index) $current where {
+                |        if ($prefix[$index] <: not undefined) {
+                |            $target[$index] <: $prefix[$index]
+                |        },
+                |        $index += 1
+                |        },
+                |        /// Ok, we found an overlap
+                |        $anchor => `import $to_package.$to_name`
+                |    }
+                |    }
+                |}
+                |}
+                |find_replace_imports([
+                |  [`somewhere`, `foo`, `other`, `food`],
+                |  [`somewhere`, `bar`, `other`, `ice`],
+                |])
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |from somewhere import (
+                |  foo,
+                |  bar
+                |)
+                |from nice import ice
+                |"#
+            .trim_margin()
+            .unwrap(),
+            // Don't worry about formatting, just check that the trailing comma is removed
+            expected: r#"
+                |from other import food
+                |
+                |from other import ice
+                |from nice import ice
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn yaml_string() {
     run_test_match({
         TestArg {

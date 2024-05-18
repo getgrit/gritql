@@ -90,11 +90,17 @@ impl Language for Python {
             if let Ok(t) = n.text() {
                 let mut end_range = n.range();
                 end_range.start_byte = end_range.end_byte;
+                let mut finding_paren_only = false;
 
                 let chars = t.chars().rev();
                 for ch in chars {
                     end_range.start_byte -= 1;
-                    if ch == ',' {
+                    if ch == ')' {
+                        finding_paren_only = true
+                    } else if finding_paren_only && ch == '(' {
+                        replacements.push(Replacement::new(n.range(), ""));
+                        break;
+                    } else if ch == ',' {
                         replacements.push(Replacement::new(end_range, ""));
                         break;
                     } else if !ch.is_whitespace() {
