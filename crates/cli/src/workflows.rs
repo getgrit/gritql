@@ -1,6 +1,5 @@
 use anyhow::{bail, Result};
 use console::style;
-use grit_util::FileRange;
 use log::debug;
 use marzano_auth::env::{get_grit_api_url, ENV_VAR_GRIT_API_URL, ENV_VAR_GRIT_AUTH_TOKEN};
 use marzano_gritmodule::{fetcher::LocalRepo, searcher::find_grit_dir_from};

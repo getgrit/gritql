@@ -8,7 +8,7 @@ use serde::Serialize;
 use std::env::current_dir;
 use std::path::PathBuf;
 
-use crate::{commands::filters::extract_filter_ranges, flags::GlobalFormatFlags};
+use crate::flags::GlobalFormatFlags;
 
 #[cfg(feature = "workflows_v2")]
 use super::apply_migration::{run_apply_migration, ApplyMigrationArgs};
