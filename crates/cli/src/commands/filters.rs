@@ -38,7 +38,6 @@ pub(crate) fn extract_filter_ranges(
     } else {
         let raw_diff = extract_target_diffs(&args.only_in_diff, root)?;
         let Some(raw_diff) = raw_diff else {
-            log::info!("No diff found, skipping range extraction");
             return Ok(None);
         };
         Ok(Some(
