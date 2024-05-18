@@ -2,8 +2,8 @@
 source: crates/util/src/diff.rs
 expression: parsed
 ---
-- old_path: crates/util/fixtures/file.baseline.js
-  new_path: crates/util/fixtures/file.baseline.js
+- oldPath: crates/util/fixtures/file.baseline.js
+  newPath: crates/util/fixtures/file.baseline.js
   ranges:
     - before:
         start:

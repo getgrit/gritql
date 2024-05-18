@@ -2,8 +2,8 @@
 source: crates/util/src/diff.rs
 expression: parsed
 ---
-- old_path: ".grit/workflows/autoreview/local.ts"
-  new_path: ".grit/workflows/autoreview/local.ts"
+- oldPath: ".grit/workflows/autoreview/local.ts"
+  newPath: ".grit/workflows/autoreview/local.ts"
   ranges:
     - before:
         start:
@@ -131,8 +131,8 @@ expression: parsed
         end:
           line: 137
           column: 1
-- old_path: apps/minas/src/sdk/internal.ts
-  new_path: apps/minas/src/sdk/internal.ts
+- oldPath: apps/minas/src/sdk/internal.ts
+  newPath: apps/minas/src/sdk/internal.ts
   ranges:
     - before:
         start:
@@ -162,8 +162,8 @@ expression: parsed
         end:
           line: 103
           column: 1
-- old_path: packages/api/src/types.ts
-  new_path: packages/api/src/types.ts
+- oldPath: packages/api/src/types.ts
+  newPath: packages/api/src/types.ts
   ranges:
     - before:
         start:
