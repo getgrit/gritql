@@ -52,7 +52,6 @@ pub(crate) fn extract_filter_ranges(
                         mapped.collect::<Vec<_>>()
                     }
                     None => {
-                        log::info!("Skipping diff with no new path: {:?}", diff);
                         vec![]
                     }
                 })
