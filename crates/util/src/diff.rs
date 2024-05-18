@@ -5,6 +5,7 @@ use std::{path::PathBuf, str::FromStr};
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[cfg_attr(feature = "napi", napi_derive::napi(object))]
+#[serde(rename_all = "camelCase")]
 pub struct RangePair {
     pub before: RangeWithoutByte,
     pub after: RangeWithoutByte,
@@ -13,6 +14,7 @@ pub struct RangePair {
 // Define a new struct to hold before and after ranges
 #[cfg_attr(feature = "napi", napi_derive::napi(object))]
 #[derive(Debug, Clone, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct FileDiff {
     pub old_path: Option<String>,
     pub new_path: Option<String>,

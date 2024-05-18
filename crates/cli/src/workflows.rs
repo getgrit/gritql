@@ -1,10 +1,10 @@
 use anyhow::{bail, Result};
 use console::style;
-use grit_util::FileRange;
 use log::debug;
 use marzano_auth::env::{get_grit_api_url, ENV_VAR_GRIT_API_URL, ENV_VAR_GRIT_AUTH_TOKEN};
 use marzano_gritmodule::{fetcher::LocalRepo, searcher::find_grit_dir_from};
 use marzano_messenger::{emit::Messager, workflows::PackagedWorkflowOutcome};
+use marzano_util::diff::FileDiff;
 use serde::Serialize;
 use serde_json::to_string;
 use std::path::PathBuf;
@@ -39,7 +39,7 @@ pub struct WorkflowInputs {
     // If this is a custom workflow, this will be the path to the entrypoint
     pub workflow_entrypoint: String,
     /// Ranges to target, if any
-    pub ranges: Option<Vec<FileRange>>,
+    pub ranges: Option<Vec<FileDiff>>,
     // Input paths, might include unresolved globs
     pub paths: Vec<PathBuf>,
     // Input

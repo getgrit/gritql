@@ -8,7 +8,7 @@ use serde::Serialize;
 use std::env::current_dir;
 use std::path::PathBuf;
 
-use crate::{commands::filters::extract_filter_ranges, flags::GlobalFormatFlags};
+use crate::flags::GlobalFormatFlags;
 
 #[cfg(feature = "workflows_v2")]
 use super::apply_migration::{run_apply_migration, ApplyMigrationArgs};
@@ -58,7 +58,10 @@ pub(crate) async fn run_apply(
             .map(|repo| repo.root())
             .transpose()?;
 
-        let ranges = extract_filter_ranges(&args.shared_apply_args, current_repo_root.as_ref())?;
+        let ranges = crate::commands::filters::extract_filter_diff(
+            &args.shared_apply_args,
+            current_repo_root.as_ref(),
+        )?;
 
         #[cfg(feature = "remote_workflows")]
         if args.apply_migration_args.remote {

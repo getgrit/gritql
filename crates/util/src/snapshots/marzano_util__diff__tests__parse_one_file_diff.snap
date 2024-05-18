@@ -2,8 +2,8 @@
 source: crates/util/src/diff.rs
 expression: parsed
 ---
-- old_path: crates/cli_bin/fixtures/es6/empty_export_object.js
-  new_path: crates/cli_bin/fixtures/es6/empty_export_object.js
+- oldPath: crates/cli_bin/fixtures/es6/empty_export_object.js
+  newPath: crates/cli_bin/fixtures/es6/empty_export_object.js
   ranges:
     - before:
         start:

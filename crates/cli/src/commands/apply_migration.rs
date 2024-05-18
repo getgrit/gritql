@@ -60,7 +60,7 @@ pub(crate) async fn run_apply_migration(
 pub(crate) async fn run_apply_migration(
     workflow: WorkflowInfo,
     paths: Vec<PathBuf>,
-    ranges: Option<Vec<grit_util::FileRange>>,
+    ranges: Option<Vec<marzano_util::diff::FileDiff>>,
     arg: ApplyMigrationArgs,
     flags: &GlobalFormatFlags,
 ) -> Result<()> {

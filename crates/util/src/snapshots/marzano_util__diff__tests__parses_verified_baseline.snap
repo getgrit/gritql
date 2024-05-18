@@ -2,8 +2,8 @@
 source: crates/util/src/diff.rs
 expression: parsed
 ---
-- old_path: crates/cli/src/analyze.rs
-  new_path: crates/cli/src/analyze.rs
+- oldPath: crates/cli/src/analyze.rs
+  newPath: crates/cli/src/analyze.rs
   ranges:
     - before:
         start:

@@ -1,12 +1,11 @@
 use anyhow::Result;
-use grit_util::{FileRange, UtilRange};
-use marzano_util::diff::{parse_modified_ranges, run_git_diff};
+use marzano_util::diff::{parse_modified_ranges, run_git_diff, FileDiff};
 use std::path::PathBuf;
 
-pub(crate) fn extract_target_ranges(
+pub(crate) fn extract_target_diffs(
     diff_arg: &Option<Option<String>>,
     root: Option<&PathBuf>,
-) -> Result<Option<Vec<FileRange>>> {
+) -> Result<Option<Vec<FileDiff>>> {
     let raw_diff = if let Some(Some(diff_content)) = &diff_arg {
         parse_modified_ranges(diff_content)?
     } else if let Some(None) = &diff_arg {
@@ -15,22 +14,5 @@ pub(crate) fn extract_target_ranges(
     } else {
         return Ok(None);
     };
-    Ok(Some(
-        raw_diff
-            .into_iter()
-            .flat_map(|diff| match diff.new_path {
-                Some(new_path) => {
-                    let mapped = diff.ranges.into_iter().map(|range| FileRange {
-                        range: UtilRange::RangeWithoutByte(range.after),
-                        file_path: PathBuf::from(&new_path),
-                    });
-                    mapped.collect::<Vec<_>>()
-                }
-                None => {
-                    log::info!("Skipping diff with no new path: {:?}", diff);
-                    vec![]
-                }
-            })
-            .collect(),
-    ))
+    Ok(Some(raw_diff))
 }
