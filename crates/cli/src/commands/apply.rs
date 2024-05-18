@@ -58,7 +58,10 @@ pub(crate) async fn run_apply(
             .map(|repo| repo.root())
             .transpose()?;
 
-        let ranges = extract_filter_ranges(&args.shared_apply_args, current_repo_root.as_ref())?;
+        let ranges = crate::commands::filters::extract_filter_diff(
+            &args.shared_apply_args,
+            current_repo_root.as_ref(),
+        )?;
 
         #[cfg(feature = "remote_workflows")]
         if args.apply_migration_args.remote {

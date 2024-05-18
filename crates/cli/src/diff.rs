@@ -1,18 +1,30 @@
 use anyhow::Result;
 use grit_util::{FileRange, UtilRange};
-use marzano_util::diff::{parse_modified_ranges, run_git_diff};
+use marzano_util::diff::{parse_modified_ranges, run_git_diff, FileDiff};
 use std::path::PathBuf;
 
-pub(crate) fn extract_target_ranges(
+pub(crate) fn extract_target_diffs(
     diff_arg: &Option<Option<String>>,
     root: Option<&PathBuf>,
-) -> Result<Option<Vec<FileRange>>> {
+) -> Result<Option<Vec<FileDiff>>> {
     let raw_diff = if let Some(Some(diff_content)) = &diff_arg {
         parse_modified_ranges(diff_content)?
     } else if let Some(None) = &diff_arg {
         let diff = run_git_diff(root.unwrap_or(&std::env::current_dir()?))?;
         parse_modified_ranges(&diff)?
     } else {
+        return Ok(None);
+    };
+    Ok(Some(raw_diff))
+}
+
+pub(crate) fn extract_target_ranges(
+    diff_arg: &Option<Option<String>>,
+    root: Option<&PathBuf>,
+) -> Result<Option<Vec<FileRange>>> {
+    let raw_diff = extract_target_diffs(diff_arg, root)?;
+    let Some(raw_diff) = raw_diff else {
+        log::info!("No diff found, skipping range extraction");
         return Ok(None);
     };
     Ok(Some(

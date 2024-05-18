@@ -4,9 +4,13 @@ use anyhow::Result;
 use clap::Args;
 
 use grit_util::FileRange;
+use marzano_util::diff::FileDiff;
 use serde::Serialize;
 
-use crate::{community::parse_eslint_output, diff::extract_target_ranges};
+use crate::{
+    community::parse_eslint_output,
+    diff::{extract_target_diffs, extract_target_ranges},
+};
 
 #[derive(Args, Debug, Serialize, Default)]
 /// Shared arguments for apply and check commands.
@@ -37,4 +41,12 @@ pub(crate) fn extract_filter_ranges(
     } else {
         Ok(extract_target_ranges(&args.only_in_diff, root)?)
     }
+}
+
+#[tracing::instrument]
+pub(crate) fn extract_filter_diff(
+    args: &SharedFilterArgs,
+    root: Option<&PathBuf>,
+) -> Result<Option<Vec<FileDiff>>> {
+    extract_target_diffs(&args.only_in_diff, root)
 }
