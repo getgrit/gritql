@@ -2139,6 +2139,43 @@ fn ignores_file_in_grit_dir() -> Result<()> {
 }
 
 #[test]
+fn override_grit_modules_at_apply() -> Result<()> {
+    // Grab the other grit directory
+    let (_temp_dir, other_dir) = get_fixture("override_custom_grit_dir", true)?;
+
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("simple_python", false)?;
+    let origin_content = std::fs::read_to_string(dir.join("main.py"))?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    apply_cmd
+        .arg("apply")
+        .arg("--force")
+        .arg("special_pattern")
+        .arg("--grit-dir")
+        .arg(other_dir);
+    let output = apply_cmd.output()?;
+
+    let stdout = String::from_utf8(output.stdout)?;
+    println!("stdout: {:?}", stdout);
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stderr: {:?}", stderr);
+
+    // Assert that the command failed
+    assert!(!output.status.success(),);
+
+    // Read back the main.py file
+    let target_file = dir.join("main.py");
+    let content: String = std::fs::read_to_string(target_file)?;
+
+    assert_eq!(origin_content, content);
+
+    Ok(())
+}
+
+#[test]
 fn language_option_file_pattern_apply() -> Result<()> {
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("simple_python", false)?;
