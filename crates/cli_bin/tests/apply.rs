@@ -2155,7 +2155,7 @@ fn override_grit_modules_at_apply() -> Result<()> {
         .arg("--force")
         .arg("special_pattern")
         .arg("--grit-dir")
-        .arg(other_dir);
+        .arg(other_dir.join(".grit"));
     let output = apply_cmd.output()?;
 
     let stdout = String::from_utf8(output.stdout)?;
@@ -2164,13 +2164,16 @@ fn override_grit_modules_at_apply() -> Result<()> {
     println!("stderr: {:?}", stderr);
 
     // Assert that the command failed
-    assert!(!output.status.success(),);
+    assert!(output.status.success(),);
 
     // Read back the main.py file
     let target_file = dir.join("main.py");
     let content: String = std::fs::read_to_string(target_file)?;
 
-    assert_eq!(origin_content, content);
+    assert_ne!(origin_content, content);
+
+    // Make sure it now has dotenv.mygoodness
+    assert!(content.contains("dotenv.mygoodness"));
 
     Ok(())
 }

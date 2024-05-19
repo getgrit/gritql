@@ -355,6 +355,8 @@ pub(crate) async fn run_apply_pattern(
             get_grit_files_from_flags_or_cwd(format_flags).await
         );
 
+        println!("libs: {:?}", pattern_libs);
+
         let (mut lang, pattern_body) = if pattern.ends_with(".grit") || pattern.ends_with(".md") {
             match fs::read_to_string(pattern.clone()).await {
                 Ok(pb) => {

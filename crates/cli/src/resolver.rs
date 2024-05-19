@@ -104,6 +104,7 @@ pub async fn get_grit_files_from_flags_or_cwd(
     flags: &GlobalFormatFlags,
 ) -> Result<PatternsDirectory> {
     if let Some(grit_dir) = &flags.grit_dir {
+        println!("Using grit dir: {}", grit_dir.display());
         from_known_grit_dir(grit_dir).await
     } else {
         let cwd = std::env::current_dir()?;
