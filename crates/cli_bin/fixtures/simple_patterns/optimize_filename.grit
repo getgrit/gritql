@@ -1,0 +1,7 @@
+language rust
+
+// Test that we extract filename patterns
+
+`Option<String>` where {
+  $filename <: includes "smart_insert.rs"
+}
