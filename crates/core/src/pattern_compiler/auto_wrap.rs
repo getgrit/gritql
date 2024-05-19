@@ -445,7 +445,10 @@ fn wrap_pattern_in_contains<Q: QueryContext>(
 /// }
 /// ```
 fn wrap_pattern_in_file<Q: QueryContext>(pattern: Pattern<Q>) -> Result<Pattern<Q>> {
+    println!("extract pattern from: {:?}", pattern);
     let filename_pattern = extract_filename_pattern(&pattern)?.unwrap_or(Pattern::Top);
+    println!("filename_pattern: {:?}", filename_pattern);
+
     let pattern = Pattern::File(Box::new(FilePattern::new(filename_pattern, pattern)));
     Ok(pattern)
 }

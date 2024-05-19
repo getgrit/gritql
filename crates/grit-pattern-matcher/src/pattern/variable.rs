@@ -71,6 +71,10 @@ impl Variable {
         Self::new(GLOBAL_VARS_SCOPE_INDEX, FILENAME_INDEX)
     }
 
+    pub fn is_file_name(&self) -> bool {
+        self.scope == GLOBAL_VARS_SCOPE_INDEX && self.index == FILENAME_INDEX
+    }
+
     pub fn text<'a, Q: QueryContext>(
         &self,
         state: &State<'a, Q>,
