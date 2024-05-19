@@ -17,6 +17,9 @@ pub struct GlobalFormatFlags {
     /// Override the default log level (info)
     #[arg(long, global = true)]
     pub log_level: Option<log::LevelFilter>,
+    /// Override the default .grit directory location
+    #[arg(long, global = true)]
+    pub grit_dir: Option<std::path::PathBuf>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
