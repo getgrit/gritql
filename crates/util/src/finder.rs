@@ -30,7 +30,7 @@ pub fn get_canonical_paths(walker: Walk) -> Result<Vec<PathBuf>, std::io::Error>
 pub fn get_input_files(files: &[PathBuf]) -> Vec<RichPath> {
     files
         .iter()
-        .filter_map(|p| match std::fs::read_to_string(p) {
+        .filter_map(|p| match fs_err::read_to_string(p) {
             Ok(content) => {
                 let hash = hash(&content);
                 Some(RichPath::new(p.to_owned(), Some(hash)))

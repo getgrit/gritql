@@ -6,7 +6,7 @@ use log::info;
 use marzano_core::{api::EnforcementLevel, fs::extract_ranges};
 use marzano_gritmodule::config::ResolvedGritDefinition;
 use marzano_gritmodule::utils::extract_path;
-use std::fs::OpenOptions;
+use fs_err::OpenOptions;
 use std::io::prelude::*;
 
 fn format_level(level: &EnforcementLevel) -> String {

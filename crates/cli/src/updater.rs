@@ -550,7 +550,7 @@ impl Updater {
         {
             use std::os::unix::fs::PermissionsExt;
 
-            let target_file = std::fs::File::open(&target_path)?;
+            let target_file = fs_err::File::open(&target_path)?;
             let mut perms = target_file.metadata()?.permissions();
             perms.set_mode(0o744);
             if let Err(e) = target_file.set_permissions(perms) {
@@ -832,7 +832,7 @@ fn release_details_relative_url(release: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::create_dir_all;
+    use fs_err::create_dir_all;
 
     use anyhow::Result;
     use chrono::NaiveDate;

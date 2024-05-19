@@ -74,7 +74,7 @@ async fn format_temp_dir(dir: &TempDir, languages: Vec<&PatternLanguage>) -> Res
         let mut cmd = Command::new("google-java-format");
         cmd.current_dir(dir);
         cmd.arg("--replace");
-        for entry in std::fs::read_dir(dir)? {
+        for entry in fs_err::read_dir(dir.as_ref())? {
             let entry = entry?;
             if let Some(name) = entry.path().file_name() {
                 if let Some(name_str) = name.to_str() {
@@ -96,7 +96,7 @@ async fn format_temp_dir(dir: &TempDir, languages: Vec<&PatternLanguage>) -> Res
         let mut cmd = Command::new("gofmt");
         cmd.current_dir(dir);
         cmd.arg("-w");
-        for entry in std::fs::read_dir(dir)? {
+        for entry in fs_err::read_dir(dir.as_ref())? {
             let entry = entry?;
             if let Some(name) = entry.path().file_name() {
                 if let Some(name_str) = name.to_str() {
@@ -117,7 +117,7 @@ async fn format_temp_dir(dir: &TempDir, languages: Vec<&PatternLanguage>) -> Res
     if languages.contains(&&PatternLanguage::Rust) {
         let mut cmd = Command::new("rustfmt");
         cmd.current_dir(dir);
-        for entry in std::fs::read_dir(dir)? {
+        for entry in fs_err::read_dir(dir.as_ref())? {
             let entry = entry?;
             if let Some(name) = entry.path().file_name() {
                 if let Some(name_str) = name.to_str() {
@@ -139,7 +139,7 @@ async fn format_temp_dir(dir: &TempDir, languages: Vec<&PatternLanguage>) -> Res
         let mut cmd = Command::new("ruff");
         cmd.current_dir(dir);
         cmd.arg("format");
-        for entry in std::fs::read_dir(dir)? {
+        for entry in fs_err::read_dir(dir.as_ref())? {
             let entry = entry?;
             if let Some(name) = entry.path().file_name() {
                 if let Some(name_str) = name.to_str() {
@@ -162,7 +162,7 @@ async fn format_temp_dir(dir: &TempDir, languages: Vec<&PatternLanguage>) -> Res
         cmd.current_dir(dir);
         cmd.arg("fmt");
 
-        for entry in std::fs::read_dir(dir)? {
+        for entry in fs_err::read_dir(dir.as_ref())? {
             let entry = entry?;
             if let Some(name) = entry.path().file_name() {
                 if let Some(name_str) = name.to_str() {

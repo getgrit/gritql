@@ -780,7 +780,7 @@ index 6785249..0f8780c 100644
 -    assert!(String::from_utf8(output.stdout)?.contains("Processed 1 files and found 1 match"));
 +    assert!(stdout.contains("Processed 1 files and found 1 match"));
  
-     let content = std::fs::read_to_string(dir.join("index.js"))?;
+     let content = fs_err::read_to_string(dir.join("index.js"))?;
      assert!(!content.contains("console.log('really cool')"));
 diff --git a/crates/util/Cargo.toml b/crates/util/Cargo.toml
 index 042a67d..e20e595 100644

@@ -134,7 +134,7 @@ fn check_github_output() -> Result<()> {
     assert_snapshot!(output);
 
     // Make sure we wrote the summary file
-    let summary = std::fs::read_to_string(summary_file)?;
+    let summary = fs_err::read_to_string(summary_file)?;
     assert_snapshot!(summary);
 
     Ok(())
@@ -170,7 +170,7 @@ fn check_clean_github_output() -> Result<()> {
     assert_snapshot!(output);
 
     // Make sure we wrote the summary file
-    let summary = std::fs::read_to_string(summary_file)?;
+    let summary = fs_err::read_to_string(summary_file)?;
     assert_snapshot!(summary);
 
     Ok(())
@@ -190,7 +190,7 @@ fn check_only_in_diff() -> Result<()> {
 
     let mut cmd = get_test_cmd()?;
 
-    let diff_content = std::fs::read_to_string(dir.join("test.diff"))?;
+    let diff_content = fs_err::read_to_string(dir.join("test.diff"))?;
 
     cmd.arg("check")
         .arg("--only-in-diff")

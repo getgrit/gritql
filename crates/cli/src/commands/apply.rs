@@ -148,17 +148,17 @@ mod tests {
         let fixtures_root = get_fixtures_root(env!("CARGO_MANIFEST_DIR"))?;
         let pattern_grit = fixtures_root.join("stdlib").join("raw_no_console_log.grit");
         let pattern_dest = tempdir.path().join("raw_no_console_log.grit");
-        std::fs::copy(pattern_grit, pattern_dest.clone())?;
+        fs_err::copy(pattern_grit, pattern_dest.clone())?;
         let input = fixtures_root.join("stdlib").join("simple.js");
         let input_dest = tempdir.path().join("simple.js");
-        std::fs::copy(input, &input_dest)?;
+        fs_err::copy(input, &input_dest)?;
         env::set_current_dir(tempdir.path())?;
         test_apply(
             "raw_no_console_log.grit".to_string(),
             vec![input_dest.clone()],
         )
         .await?;
-        let content = std::fs::read_to_string(&input_dest)?;
+        let content = fs_err::read_to_string(&input_dest)?;
         assert_eq!(content, "\n".to_owned());
         Ok(())
     }
@@ -173,10 +173,10 @@ mod tests {
         let fixtures_root = get_fixtures_root(env!("CARGO_MANIFEST_DIR"))?;
         let pattern_grit = fixtures_root.join("openai").join("pattern.grit");
         let pattern_dest = tempdir.path().join("pattern.grit");
-        std::fs::copy(pattern_grit, pattern_dest.clone())?;
+        fs_err::copy(pattern_grit, pattern_dest.clone())?;
         let input = fixtures_root.join("openai").join("input.py");
         let input_dest = tempdir.path().join("input.py");
-        std::fs::copy(input, &input_dest)?;
+        fs_err::copy(input, &input_dest)?;
         env::set_current_dir(tempdir.path())?;
         test_apply("pattern.grit".to_string(), vec![input_dest.clone()]).await?;
         Ok(())
