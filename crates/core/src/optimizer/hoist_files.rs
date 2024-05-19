@@ -1,7 +1,7 @@
 use anyhow::Result;
 use grit_pattern_matcher::{
     context::QueryContext,
-    pattern::{And, Bubble, Contains, Pattern, Predicate, Where},
+    pattern::{And, Any, Bubble, Contains, Includes, Or, Pattern, Predicate, Where},
 };
 
 trait FilenamePatternExtractor<Q: QueryContext> {
@@ -18,15 +18,17 @@ pub fn extract_filename_pattern<Q: QueryContext>(
         Pattern::Bubble(b) => b.extract_filename_pattern(),
         Pattern::Where(w) => w.extract_filename_pattern(),
 
-        // TODO: is this right?
-        Pattern::Variable(_) => Ok(Some(Pattern::Top)),
-        Pattern::CodeSnippet(_) => Ok(Some(Pattern::Top)),
+        Pattern::Rewrite(rw) => extract_filename_pattern(&rw.left),
 
-        Pattern::Rewrite(_)
-        | Pattern::Log(_)
-        | Pattern::Range(_)
-        | Pattern::Includes(_)
-        | Pattern::Within(_)
+        // Once we hit a leaf node, we can't go any further
+        Pattern::Variable(_) | Pattern::CodeSnippet(_) | Pattern::Range(_) => {
+            Ok(Some(Pattern::Top))
+        }
+
+        Pattern::Includes(inc) => extract_filename_pattern(&inc.includes),
+
+        // TODO: decide the rest of these
+        Pattern::Within(_)
         | Pattern::After(_)
         | Pattern::Before(_)
         | Pattern::Some(_)
@@ -87,6 +89,12 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Contains<Q> {
     }
 }
 
+impl<Q: QueryContext> FilenamePatternExtractor<Q> for Includes<Q> {
+    fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>> {
+        extract_filename_pattern(&self.includes)
+    }
+}
+
 impl<Q: QueryContext> FilenamePatternExtractor<Q> for Where<Q> {
     fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>> {
         let pattern = extract_filename_pattern(&self.pattern)?.unwrap_or(Pattern::Top);
@@ -101,20 +109,35 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Where<Q> {
     }
 }
 
+fn extract_patterns_from_predicates<Q: QueryContext>(
+    predicates: &[Predicate<Q>],
+) -> Result<Vec<Pattern<Q>>> {
+    let mut patterns = vec![];
+    for p in predicates {
+        let pattern = p.extract_filename_pattern()?;
+        if let Some(pattern) = pattern {
+            patterns.push(pattern);
+        } else {
+            return Ok(vec![]);
+        }
+    }
+    Ok(patterns)
+}
+
 impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
     fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>> {
         match self {
             Predicate::And(and) => {
-                let mut patterns = vec![];
-                for p in &and.predicates {
-                    let pattern = p.extract_filename_pattern()?;
-                    if let Some(pattern) = pattern {
-                        patterns.push(pattern);
-                    } else {
-                        return Ok(None);
-                    }
-                }
+                let patterns = extract_patterns_from_predicates(&and.predicates)?;
                 Ok(Some(Pattern::And(Box::new(And::new(patterns)))))
+            }
+            Predicate::Or(or) => {
+                let patterns = extract_patterns_from_predicates(&or.predicates)?;
+                Ok(Some(Pattern::Or(Box::new(Or::new(patterns)))))
+            }
+            Predicate::Any(a) => {
+                let patterns = extract_patterns_from_predicates(&a.predicates)?;
+                Ok(Some(Pattern::Any(Box::new(Any::new(patterns)))))
             }
             Predicate::Match(m) => {
                 match m.val {
@@ -143,17 +166,16 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
             Predicate::Accumulate(_) | Predicate::Assignment(_) | Predicate::Return(_) => {
                 Ok(Some(Pattern::Top))
             }
-            Predicate::Maybe(_)
-            | Predicate::Any(_)
-            | Predicate::Rewrite(_)
-            | Predicate::Log(_)
-            | Predicate::Call(_)
-            | Predicate::Not(_)
-            | Predicate::If(_)
-            | Predicate::True
-            | Predicate::False
-            | Predicate::Or(_)
-            | Predicate::Equal(_) => Ok(None),
+
+            Predicate::Maybe(_) | Predicate::True => Ok(Some(Pattern::Top)),
+            Predicate::False => Ok(None),
+            Predicate::Rewrite(rw) => extract_filename_pattern(&rw.left),
+            Predicate::Log(_) => Ok(Some(Pattern::Top)),
+
+            // These are more complicated, implement carefully
+            Predicate::Call(_) | Predicate::Not(_) | Predicate::If(_) | Predicate::Equal(_) => {
+                Ok(None)
+            }
         }
     }
 }

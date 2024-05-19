@@ -10,7 +10,7 @@ use grit_util::AnalysisLogs;
 
 #[derive(Debug, Clone)]
 pub struct Includes<Q: QueryContext> {
-    pub(crate) includes: Pattern<Q>,
+    pub includes: Pattern<Q>,
 }
 
 impl<Q: QueryContext> Includes<Q> {
