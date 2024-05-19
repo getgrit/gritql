@@ -122,7 +122,7 @@ pub(crate) async fn run_check(
     let filter_range = extract_filter_ranges(&arg.shared_filters, Some(&current_dir))?;
 
     // Construct a resolver
-    let resolver = GritModuleResolver::new(current_dir.to_str().unwrap());
+    let resolver = GritModuleResolver::new();
 
     let mut body_to_pattern: HashMap<String, &ResolvedGritDefinition> = HashMap::new();
     let compile_tasks: Result<HashMap<String, Problem>, _> = enforced

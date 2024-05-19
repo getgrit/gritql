@@ -28,27 +28,11 @@ pub enum Source {
 }
 
 // Equivalent to our PatternResolver in zesty, but more minimal
-pub struct GritModuleResolver<'a> {
-    _root_directory: &'a str,
-}
+pub struct GritModuleResolver {}
 
-#[derive(Debug)]
-pub struct RichPattern<'b> {
-    pub body: &'b str,
-    pub name: Option<String>,
-}
-
-impl<'b> fmt::Display for RichPattern<'b> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.body)
-    }
-}
-
-impl<'a> GritModuleResolver<'a> {
-    pub fn new(root_directory: &'a str) -> Self {
-        Self {
-            _root_directory: root_directory,
-        }
+impl GritModuleResolver {
+    pub fn new() -> Self {
+        Self {}
     }
 
     pub fn make_pattern<'b>(
@@ -61,6 +45,18 @@ impl<'a> GritModuleResolver<'a> {
             name,
         };
         Ok(pattern)
+    }
+}
+
+#[derive(Debug)]
+pub struct RichPattern<'b> {
+    pub body: &'b str,
+    pub name: Option<String>,
+}
+
+impl<'b> fmt::Display for RichPattern<'b> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.body)
     }
 }
 

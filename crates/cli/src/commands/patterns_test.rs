@@ -34,8 +34,7 @@ pub async fn get_marzano_pattern_test_results(
     args: PatternsTestArgs,
     output: OutputFormat,
 ) -> Result<()> {
-    let cwd = std::env::current_dir()?;
-    let resolver = GritModuleResolver::new(cwd.to_str().unwrap());
+    let resolver = GritModuleResolver::new();
 
     let final_results: DashMap<String, Vec<WrappedResult>> = DashMap::new();
     let unformatted_results: DashMap<PatternLanguage, Vec<WrappedResult>> = DashMap::new();

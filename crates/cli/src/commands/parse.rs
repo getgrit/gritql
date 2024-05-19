@@ -86,8 +86,7 @@ pub(crate) async fn run_parse(
 }
 
 async fn parse_one_pattern(body: String, path: Option<&PathBuf>) -> Result<MatchResult> {
-    let current_dir = std::env::current_dir()?;
-    let resolver = GritModuleResolver::new(current_dir.to_str().unwrap());
+    let resolver = GritModuleResolver::new();
     let lang = PatternLanguage::get_language(&body);
     let pattern = resolver.make_pattern(&body, None)?;
     let pattern_libs = get_grit_files_from_cwd().await?;

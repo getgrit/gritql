@@ -283,7 +283,7 @@ pub(crate) async fn run_apply_pattern(
     let module_resolution = span!(tracing::Level::INFO, "module_resolution",).entered();
 
     // Construct a resolver
-    let resolver = GritModuleResolver::new(cwd.to_str().unwrap());
+    let resolver = GritModuleResolver::new();
     let current_repo_root = marzano_gritmodule::fetcher::LocalRepo::from_dir(&cwd)
         .await
         .map(|repo| repo.root())
