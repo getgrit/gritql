@@ -11,7 +11,7 @@ use grit_util::AnalysisLogs;
 
 #[derive(Debug, Clone)]
 pub struct Any<Q: QueryContext> {
-    pub(crate) patterns: Vec<Pattern<Q>>,
+    pub patterns: Vec<Pattern<Q>>,
 }
 
 impl<Q: QueryContext> Any<Q> {

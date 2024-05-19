@@ -14,25 +14,48 @@ pub fn extract_filename_pattern<Q: QueryContext>(
     pattern: &Pattern<Q>,
 ) -> Result<Option<Pattern<Q>>> {
     let filename_pattern = match pattern {
+        // Once we hit a leaf node that is *not* matched against the filename, we can't go any further
+        Pattern::Variable(_)
+        | Pattern::CodeSnippet(_)
+        | Pattern::Range(_)
+        | Pattern::Top
+        | Pattern::Bottom => Ok(Some(Pattern::Top)),
+        // Traversing downwards, collecting patterns
         Pattern::Contains(c) => c.extract_filename_pattern(),
         Pattern::Bubble(b) => b.extract_filename_pattern(),
         Pattern::Where(w) => w.extract_filename_pattern(),
-
         Pattern::Rewrite(rw) => extract_filename_pattern(&rw.left),
-
-        // Once we hit a leaf node, we can't go any further
-        Pattern::Variable(_) | Pattern::CodeSnippet(_) | Pattern::Range(_) => {
-            Ok(Some(Pattern::Top))
-        }
-
         Pattern::Includes(inc) => extract_filename_pattern(&inc.includes),
+        Pattern::Every(every) => extract_filename_pattern(&every.pattern),
+        Pattern::Within(within) => extract_filename_pattern(&within.pattern),
+
+        // Mirror existing logic
+        Pattern::Maybe(_) => Ok(Some(Pattern::Top)),
+        Pattern::And(target) => {
+            let Some(patterns) = extract_filename_patterns_from_patterns(&target.patterns)? else {
+                return Ok(None);
+            };
+            Ok(Some(Pattern::And(Box::new(And::new(patterns)))))
+        }
+        Pattern::Or(target) => {
+            let Some(patterns) = extract_filename_patterns_from_patterns(&target.patterns)? else {
+                return Ok(None);
+            };
+            Ok(Some(Pattern::Or(Box::new(Or::new(patterns)))))
+        }
+        Pattern::Any(target) => {
+            let Some(patterns) = extract_filename_patterns_from_patterns(&target.patterns)? else {
+                return Ok(None);
+            };
+            Ok(Some(Pattern::Any(Box::new(Any::new(patterns)))))
+        }
+        Pattern::Some(some) => extract_filename_pattern(&some.pattern),
+
+        Pattern::Log(_) => Ok(Some(Pattern::Top)),
 
         // TODO: decide the rest of these
-        Pattern::Within(_)
-        | Pattern::After(_)
+        Pattern::After(_)
         | Pattern::Before(_)
-        | Pattern::Some(_)
-        | Pattern::Every(_)
         | Pattern::Add(_)
         | Pattern::Subtract(_)
         | Pattern::Multiply(_)
@@ -56,15 +79,9 @@ pub fn extract_filename_pattern<Q: QueryContext>(
         | Pattern::CallForeignFunction(_)
         | Pattern::Assignment(_)
         | Pattern::Accumulate(_)
-        | Pattern::And(_)
-        | Pattern::Or(_)
-        | Pattern::Maybe(_)
-        | Pattern::Any(_)
         | Pattern::Not(_)
         | Pattern::If(_)
         | Pattern::Undefined
-        | Pattern::Top
-        | Pattern::Bottom
         | Pattern::Underscore
         | Pattern::StringConstant(_)
         | Pattern::AstLeafNode(_)
@@ -109,34 +126,57 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Where<Q> {
     }
 }
 
+/// Given a list of patterns, extract the filename patterns from each of them
+fn extract_filename_patterns_from_patterns<Q: QueryContext>(
+    predicates: &[Pattern<Q>],
+) -> Result<Option<Vec<Pattern<Q>>>> {
+    let mut patterns = vec![];
+    for p in predicates {
+        let pattern = extract_filename_pattern(p)?;
+        if let Some(pattern) = pattern {
+            patterns.push(pattern);
+        } else {
+            return Ok(None);
+        }
+    }
+    Ok(Some(patterns))
+}
+
+/// Given a list of predicates, extract the filename patterns from each of them
 fn extract_patterns_from_predicates<Q: QueryContext>(
     predicates: &[Predicate<Q>],
-) -> Result<Vec<Pattern<Q>>> {
+) -> Result<Option<Vec<Pattern<Q>>>> {
     let mut patterns = vec![];
     for p in predicates {
         let pattern = p.extract_filename_pattern()?;
         if let Some(pattern) = pattern {
             patterns.push(pattern);
         } else {
-            return Ok(vec![]);
+            return Ok(None);
         }
     }
-    Ok(patterns)
+    Ok(Some(patterns))
 }
 
 impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
     fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>> {
         match self {
-            Predicate::And(and) => {
-                let patterns = extract_patterns_from_predicates(&and.predicates)?;
+            Predicate::And(target) => {
+                let Some(patterns) = extract_patterns_from_predicates(&target.predicates)? else {
+                    return Ok(None);
+                };
                 Ok(Some(Pattern::And(Box::new(And::new(patterns)))))
             }
-            Predicate::Or(or) => {
-                let patterns = extract_patterns_from_predicates(&or.predicates)?;
+            Predicate::Or(target) => {
+                let Some(patterns) = extract_patterns_from_predicates(&target.predicates)? else {
+                    return Ok(None);
+                };
                 Ok(Some(Pattern::Or(Box::new(Or::new(patterns)))))
             }
-            Predicate::Any(a) => {
-                let patterns = extract_patterns_from_predicates(&a.predicates)?;
+            Predicate::Any(target) => {
+                let Some(patterns) = extract_patterns_from_predicates(&target.predicates)? else {
+                    return Ok(None);
+                };
                 Ok(Some(Pattern::Any(Box::new(Any::new(patterns)))))
             }
             Predicate::Match(m) => {
@@ -167,15 +207,37 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
                 Ok(Some(Pattern::Top))
             }
 
-            Predicate::Maybe(_) | Predicate::True => Ok(Some(Pattern::Top)),
-            Predicate::False => Ok(None),
             Predicate::Rewrite(rw) => extract_filename_pattern(&rw.left),
             Predicate::Log(_) => Ok(Some(Pattern::Top)),
 
-            // These are more complicated, implement carefully
-            Predicate::Call(_) | Predicate::Not(_) | Predicate::If(_) | Predicate::Equal(_) => {
-                Ok(None)
+            // If we hit a leaf predicate that is *not* a match, stop traversing - it is always true
+            Predicate::True => Ok(Some(Pattern::Top)),
+            Predicate::False => Ok(None),
+
+            // We can safely ignore any maybe
+            Predicate::Maybe(_) => Ok(Some(Pattern::Top)),
+
+            // Look for predicates in the condition, left, and right
+            // Either we need both the condition and the left to be true
+            // OR we need the right to be true
+            Predicate::If(target) => {
+                let Some(condition) = target.if_.extract_filename_pattern()? else {
+                    return Ok(None);
+                };
+                let Some(then) = target.then.extract_filename_pattern()? else {
+                    return Ok(None);
+                };
+                let Some(else_) = target.else_.extract_filename_pattern()? else {
+                    return Ok(None);
+                };
+                Ok(Some(Pattern::Or(Box::new(Or::new(vec![
+                    Pattern::And(Box::new(And::new(vec![condition, then]))),
+                    else_,
+                ])))))
             }
+
+            // These are more complicated, implement carefully
+            Predicate::Call(_) | Predicate::Not(_) | Predicate::Equal(_) => Ok(None),
         }
     }
 }
