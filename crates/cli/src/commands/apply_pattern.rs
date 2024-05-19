@@ -207,7 +207,7 @@ pub(crate) async fn run_apply_pattern(
     details: &mut ApplyDetails,
     pattern_libs: Option<BTreeMap<String, String>>,
     default_lang: Option<PatternLanguage>,
-    format: &GlobalFormatFlags,
+    format_flags: &GlobalFormatFlags,
     root_path: Option<PathBuf>,
 ) -> Result<()> {
     let mut context = Updater::from_current_bin()
@@ -217,7 +217,7 @@ pub(crate) async fn run_apply_pattern(
         .unwrap();
 
     let format = OutputFormat::from_flags(
-        format,
+        format_flags,
         if arg.stdin {
             OutputFormat::Transformed
         } else {
@@ -350,7 +350,10 @@ pub(crate) async fn run_apply_pattern(
         #[cfg(feature = "grit_tracing")]
         let grit_file_discovery = span!(tracing::Level::INFO, "grit_file_discovery",).entered();
 
-        let pattern_libs = flushable_unwrap!(emitter, get_grit_files_from_flags_or_cwd().await);
+        let pattern_libs = flushable_unwrap!(
+            emitter,
+            get_grit_files_from_flags_or_cwd(format_flags).await
+        );
 
         let (mut lang, pattern_body) = if pattern.ends_with(".grit") || pattern.ends_with(".md") {
             match fs::read_to_string(pattern.clone()).await {

@@ -60,26 +60,30 @@ impl<'b> fmt::Display for RichPattern<'b> {
     }
 }
 
+async fn from_known_grit_dir(config_path: &PathBuf) -> Result<PatternsDirectory> {
+    let stdlib_modules = get_stdlib_modules();
+
+    let grit_parent = PathBuf::from(config_path.parent().context(format!(
+        "Unable to find parent of .grit directory at {}",
+        config_path.to_string_lossy()
+    ))?);
+    let parent_str = &grit_parent.to_string_lossy().to_string();
+    let repo = ModuleRepo::from_dir(&config_path).await;
+    get_grit_files(&repo, parent_str, Some(stdlib_modules)).await
+}
+
 pub async fn get_grit_files_from(cwd: Option<PathBuf>) -> Result<PatternsDirectory> {
     let existing_config = if let Some(cwd) = cwd {
         find_grit_dir_from(cwd).await
     } else {
         None
     };
-    let stdlib_modules = get_stdlib_modules();
 
     match existing_config {
-        Some(config) => {
-            let config_path = PathBuf::from_str(&config).unwrap();
-            let grit_parent = PathBuf::from(config_path.parent().context(format!(
-                "Unable to find parent of .grit directory at {}",
-                config
-            ))?);
-            let parent_str = &grit_parent.to_string_lossy().to_string();
-            let repo = ModuleRepo::from_dir(&config_path).await;
-            get_grit_files(&repo, parent_str, Some(stdlib_modules)).await
-        }
+        Some(config) => from_known_grit_dir(&PathBuf::from(config)).await,
         None => {
+            let stdlib_modules = get_stdlib_modules();
+
             let updater = Updater::from_current_bin().await?;
             let install_path = updater.install_path;
             let repo = ModuleRepo::from_dir(&install_path).await;
@@ -88,10 +92,23 @@ pub async fn get_grit_files_from(cwd: Option<PathBuf>) -> Result<PatternsDirecto
     }
 }
 
-#[tracing::instrument]
-pub async fn get_grit_files_from_flags_or_cwd() -> Result<PatternsDirectory> {
+/// Get the grit files from the current working directory
+#[deprecated = "Use get_grit_files_from_flags_or_cwd instead"]
+pub async fn get_grit_files_from_cwd() -> Result<PatternsDirectory> {
     let cwd = std::env::current_dir()?;
     get_grit_files_from(Some(cwd)).await
+}
+
+#[tracing::instrument]
+pub async fn get_grit_files_from_flags_or_cwd(
+    flags: &GlobalFormatFlags,
+) -> Result<PatternsDirectory> {
+    if let Some(grit_dir) = &flags.grit_dir {
+        from_known_grit_dir(grit_dir).await
+    } else {
+        let cwd = std::env::current_dir()?;
+        get_grit_files_from(Some(cwd)).await
+    }
 }
 
 pub async fn resolve_from_flags_or_cwd(
