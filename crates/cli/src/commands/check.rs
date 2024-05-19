@@ -104,7 +104,7 @@ pub(crate) async fn run_check(
     } else {
         try_join![
             resolve_from_cwd(&Source::All),
-            get_grit_files_from_flags_or_cwd(&format)
+            get_grit_files_from_flags_or_cwd(format)
         ]?
     };
 

@@ -1,8 +1,4 @@
-use crate::{
-    flags::GlobalFormatFlags,
-    jsonl::JSONLineMessenger,
-    resolver::{get_grit_files_from_cwd, get_grit_files_from_flags_or_cwd, GritModuleResolver},
-};
+use crate::{flags::GlobalFormatFlags, jsonl::JSONLineMessenger, resolver::GritModuleResolver};
 use anyhow::{bail, Result};
 use clap::Args;
 use grit_util::Position;
@@ -85,11 +81,12 @@ pub(crate) async fn run_parse(
     Ok(())
 }
 
+#[allow(deprecated)]
 async fn parse_one_pattern(body: String, path: Option<&PathBuf>) -> Result<MatchResult> {
     let resolver = GritModuleResolver::new();
     let lang = PatternLanguage::get_language(&body);
     let pattern = resolver.make_pattern(&body, None)?;
-    let pattern_libs = get_grit_files_from_cwd().await?;
+    let pattern_libs = crate::resolver::get_grit_files_from_cwd().await?;
     let pattern_libs = pattern_libs.get_language_directory_or_default(lang)?;
     let problem = match pattern.compile(&pattern_libs, None, None, None) {
         Ok(problem) => problem,

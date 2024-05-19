@@ -5,7 +5,7 @@ use marzano_gritmodule::config::{DefinitionSource, ResolvedGritDefinition};
 use crate::{
     flags::GlobalFormatFlags,
     lister::{list_applyables, Listable},
-    resolver::{resolve_from_cwd, resolve_from_flags_or_cwd},
+    resolver::{resolve_from_flags_or_cwd},
 };
 
 use super::list::ListArgs;

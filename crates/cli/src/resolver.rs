@@ -3,7 +3,11 @@ use colored::Colorize;
 use core::fmt;
 use log::{info, warn};
 use serde::Serialize;
-use std::{collections::HashMap, path::PathBuf, str::FromStr};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 use anyhow::{Context, Result};
 use marzano_gritmodule::{
@@ -60,7 +64,7 @@ impl<'b> fmt::Display for RichPattern<'b> {
     }
 }
 
-async fn from_known_grit_dir(config_path: &PathBuf) -> Result<PatternsDirectory> {
+async fn from_known_grit_dir(config_path: &Path) -> Result<PatternsDirectory> {
     let stdlib_modules = get_stdlib_modules();
 
     let grit_parent = PathBuf::from(config_path.parent().context(format!(
@@ -68,7 +72,7 @@ async fn from_known_grit_dir(config_path: &PathBuf) -> Result<PatternsDirectory>
         config_path.to_string_lossy()
     ))?);
     let parent_str = &grit_parent.to_string_lossy().to_string();
-    let repo = ModuleRepo::from_dir(&config_path).await;
+    let repo = ModuleRepo::from_dir(config_path).await;
     get_grit_files(&repo, parent_str, Some(stdlib_modules)).await
 }
 
@@ -116,9 +120,9 @@ pub async fn resolve_from_flags_or_cwd(
     source: &Source,
 ) -> Result<(Vec<ResolvedGritDefinition>, ModuleRepo)> {
     if let Some(grit_dir) = &flags.grit_dir {
-        resolve_from(grit_dir.clone(), &source).await
+        resolve_from(grit_dir.clone(), source).await
     } else {
-        resolve_from_cwd(&source).await
+        resolve_from_cwd(source).await
     }
 }
 

@@ -11,9 +11,12 @@ def run_cli(args: Any):
 
     return code.returncode
 
-def apply_pattern(pattern_file: str, args: Any):
-    """Applies a GritQL pattern file to the Grit CLI"""
-    return run_cli(["apply", pattern_file, *args])
+def apply_pattern(pattern_or_name: str, args: Any, grit_dir: str = None):
+    """Applies a GritQL pattern to the Grit CLI"""
+    final_args = ["apply", pattern_or_name, "--grit-dir", *args]
+    if grit_dir:
+        final_args += ["--grit-dir", grit_dir]
+    return run_cli(final_args)
 
 if __name__ == "__main__":
     run_cli(sys.argv[1:])
