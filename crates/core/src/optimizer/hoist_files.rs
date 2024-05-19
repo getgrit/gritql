@@ -136,7 +136,7 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
 
                 match &m.pattern {
                     Some(pattern) => extract_filename_pattern(pattern),
-                    // TODO: is this right? It does not seem right
+                    // TODO: is this right? Why do we ever have an empty pattern?
                     None => Ok(None),
                 }
             }
