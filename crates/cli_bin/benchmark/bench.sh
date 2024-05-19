@@ -71,6 +71,7 @@ bench_names=(
   "main_console_log_rewrite"
   "main_react_to_hooks"
   "main_quick_patterns_test"
+  "optimize_filename"
   "stdlib_patterns_test"
 )
 
@@ -81,6 +82,7 @@ commands=(
   "cd ${temp_repo_path} && ${bin_path} apply --force --dry-run --jsonl --min-visibility hidden ${fixtures_dir}/simple_patterns/console_log_rewrite.grit ${temp_repo_path}"
   "cd ${temp_repo_path} && ${bin_path} apply --force ${fixtures_dir}/simple_patterns/console_log_rewrite.grit ${temp_repo_path}"
   "cd ${temp_repo_path} && ${bin_path} apply --force ${fixtures_dir}/simple_patterns/react_to_hooks.grit ${temp_repo_path}"
+  "cd ${temp_repo_path} && ${bin_path} apply --force ${fixtures_dir}/simple_patterns/optimize_filename.grit ${temp_repo_path}"
   "cd ${fixtures_dir}/patterns_test && ${bin_path} patterns test"
   "cd ${temp_repo_path} && ${bin_path} patterns test --exclude ai"
 )

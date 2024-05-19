@@ -16,6 +16,7 @@ pub mod marzano_binding;
 pub mod marzano_code_snippet;
 pub mod marzano_context;
 pub mod marzano_resolved_pattern;
+mod optimizer;
 pub mod parse;
 mod paths;
 pub mod pattern_compiler;

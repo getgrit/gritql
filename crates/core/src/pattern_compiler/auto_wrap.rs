@@ -1,4 +1,4 @@
-use crate::variables::variable_from_name;
+use crate::{optimizer::hoist_files::extract_filename_pattern, variables::variable_from_name};
 
 use super::compiler::{DefinitionInfo, NodeCompilationContext};
 use anyhow::Result;
@@ -12,6 +12,7 @@ use grit_pattern_matcher::{
     },
 };
 use grit_util::FileRange;
+use log::debug;
 use std::collections::BTreeMap;
 
 pub(super) fn auto_wrap_pattern<Q: QueryContext>(
@@ -426,8 +427,31 @@ fn wrap_pattern_in_contains<Q: QueryContext>(
     Ok(Pattern::Contains(Box::new(Contains::new(bubble, None))))
 }
 
+/// Wraps the pattern in a file pattern, so it can match directly against files
+/// This also handles optimizing the pattern to avoid unnecessary file loading by hoisting $filename matches
+///
+/// For example:
+/// ```grit
+/// `console.log($foo)` where {
+///   $filename <: includes "foo.js"
+/// }
+/// ```
+///
+/// Will become:
+/// ```grit
+/// file(name=includes "foo.js") {
+///  `console.log($foo)` where {
+///   $filename <: includes "foo.js"
+///   }
+/// }
+/// ```
 fn wrap_pattern_in_file<Q: QueryContext>(pattern: Pattern<Q>) -> Result<Pattern<Q>> {
-    let pattern = Pattern::File(Box::new(FilePattern::new(Pattern::Top, pattern)));
+    let filename_pattern = extract_filename_pattern(&pattern)?.unwrap_or_else(|| {
+        debug!("Optimization skipped: no filename pattern found, wrapping in top pattern");
+        Pattern::Top
+    });
+
+    let pattern = Pattern::File(Box::new(FilePattern::new(filename_pattern, pattern)));
     Ok(pattern)
 }
 
