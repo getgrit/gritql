@@ -13,7 +13,7 @@ trait FilenamePatternExtractor<Q: QueryContext> {
 pub fn extract_filename_pattern<Q: QueryContext>(
     pattern: &Pattern<Q>,
 ) -> Result<Option<Pattern<Q>>> {
-    let filename_pattern = match pattern {
+    match pattern {
         // Once we hit a leaf node that is *not* matched against the filename, we can't go any further
         Pattern::Variable(_)
         | Pattern::CodeSnippet(_)
@@ -89,9 +89,7 @@ pub fn extract_filename_pattern<Q: QueryContext>(
         | Pattern::FloatConstant(_)
         | Pattern::BooleanConstant(_)
         | Pattern::Dynamic(_) => Ok(None),
-    };
-
-    filename_pattern
+    }
 }
 
 impl<Q: QueryContext> FilenamePatternExtractor<Q> for Bubble<Q> {
