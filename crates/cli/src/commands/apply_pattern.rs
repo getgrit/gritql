@@ -41,7 +41,7 @@ use marzano_messenger::{
     output_mode::OutputMode,
 };
 
-use crate::resolver::{get_grit_files_from_cwd, GritModuleResolver};
+use crate::resolver::{get_grit_files_from_flags_or_cwd, GritModuleResolver};
 use crate::utils::has_uncommitted_changes;
 
 use super::filters::SharedFilterArgs;
@@ -313,6 +313,7 @@ pub(crate) async fn run_apply_pattern(
         let stdlib_download_span = span!(tracing::Level::INFO, "stdlib_download",).entered();
 
         let mod_dir = find_grit_modules_dir(cwd.clone()).await;
+
         if !env::var("GRIT_DOWNLOADS_DISABLED")
             .unwrap_or_else(|_| "false".to_owned())
             .parse::<bool>()
@@ -349,7 +350,7 @@ pub(crate) async fn run_apply_pattern(
         #[cfg(feature = "grit_tracing")]
         let grit_file_discovery = span!(tracing::Level::INFO, "grit_file_discovery",).entered();
 
-        let pattern_libs = flushable_unwrap!(emitter, get_grit_files_from_cwd().await);
+        let pattern_libs = flushable_unwrap!(emitter, get_grit_files_from_flags_or_cwd().await);
 
         let (mut lang, pattern_body) = if pattern.ends_with(".grit") || pattern.ends_with(".md") {
             match fs::read_to_string(pattern.clone()).await {

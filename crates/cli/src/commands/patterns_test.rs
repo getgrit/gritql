@@ -18,7 +18,9 @@ use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIter
 use serde::Serialize;
 
 use crate::flags::{GlobalFormatFlags, OutputFormat};
-use crate::resolver::{get_grit_files_from_cwd, resolve_from_cwd, GritModuleResolver, Source};
+use crate::resolver::{
+    get_grit_files_from_flags_or_cwd, resolve_from_cwd, GritModuleResolver, Source,
+};
 use crate::result_formatting::FormattedResult;
 use crate::updater::Updater;
 use crate::ux::{indent, log_test_diff};
@@ -249,7 +251,7 @@ pub(crate) async fn run_patterns_test(
     flags: GlobalFormatFlags,
 ) -> Result<()> {
     let (mut patterns, _) = resolve_from_cwd(&Source::Local).await?;
-    let libs = get_grit_files_from_cwd().await?;
+    let libs = get_grit_files_from_flags_or_cwd().await?;
 
     if arg.filter.is_some() {
         let filter = arg.filter.as_ref().unwrap();

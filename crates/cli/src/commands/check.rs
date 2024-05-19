@@ -36,7 +36,7 @@ use crate::{
     github::{log_check_annotations, write_check_summary},
     messenger_variant::create_emitter,
     resolver::{
-        get_grit_files_from, get_grit_files_from_cwd, resolve_from, resolve_from_cwd,
+        get_grit_files_from, get_grit_files_from_flags_or_cwd, resolve_from, resolve_from_cwd,
         GritModuleResolver, Source,
     },
     scan::log_check_json,
@@ -102,7 +102,10 @@ pub(crate) async fn run_check(
         grit_files.merge(global_files);
         (resolved, grit_files)
     } else {
-        try_join![resolve_from_cwd(&Source::All), get_grit_files_from_cwd()]?
+        try_join![
+            resolve_from_cwd(&Source::All),
+            get_grit_files_from_flags_or_cwd()
+        ]?
     };
 
     let enforced = resolved_patterns

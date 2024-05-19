@@ -89,7 +89,7 @@ pub async fn get_grit_files_from(cwd: Option<PathBuf>) -> Result<PatternsDirecto
 }
 
 #[tracing::instrument]
-pub async fn get_grit_files_from_cwd() -> Result<PatternsDirectory> {
+pub async fn get_grit_files_from_flags_or_cwd() -> Result<PatternsDirectory> {
     let cwd = std::env::current_dir()?;
     get_grit_files_from(Some(cwd)).await
 }
