@@ -358,7 +358,7 @@ fn test_multifile_mania() {
 fn test_filename_query_optimization() {
     let pattern_src = r#"
         `console.log($_)` where {
-            $filename <: includes "target.js",
+            $filename <: "target.js",
         }
         "#;
     let libs = BTreeMap::new();
@@ -389,5 +389,44 @@ fn test_filename_query_optimization() {
     let results = run_on_test_files(&pattern, &test_files);
     // Confirm we have 4 DoneFiles and 1 match
     assert_eq!(results.len(), 5);
+    assert!(results.iter().any(|r| r.is_match()));
+}
+
+#[test]
+fn avoid_unsafe_hoists() {
+    let pattern_src = r#"
+        `console.log($msg)` where {
+            /// This is not safe to hoist, since $msg is not defined in the outer scope
+            $filename <: includes or { $msg, "target.js" }
+        }
+        "#;
+    let libs = BTreeMap::new();
+
+    let matching_src = r#"
+        console.log("target.js");
+        "#;
+
+    let pattern = src_to_problem_libs(
+        pattern_src.to_string(),
+        &libs,
+        TargetLanguage::default(),
+        None,
+        None,
+        None,
+        None,
+    )
+    .unwrap()
+    .problem;
+
+    // All together now
+    let test_files = vec![
+        SyntheticFile::new("wrong.js".to_owned(), matching_src.to_owned(), true),
+        SyntheticFile::new("target.js".to_owned(), matching_src.to_owned(), true),
+        SyntheticFile::new("other.js".to_owned(), matching_src.to_owned(), true),
+    ];
+    let results = run_on_test_files(&pattern, &test_files);
+    println!("{:?}", results);
+    // Confirm we have 3 DoneFiles and 1 match
+    assert_eq!(results.len(), 4);
     assert!(results.iter().any(|r| r.is_match()));
 }
