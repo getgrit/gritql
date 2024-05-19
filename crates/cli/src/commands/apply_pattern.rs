@@ -312,7 +312,13 @@ pub(crate) async fn run_apply_pattern(
         #[cfg(feature = "grit_tracing")]
         let stdlib_download_span = span!(tracing::Level::INFO, "stdlib_download",).entered();
 
-        let mod_dir = find_grit_modules_dir(cwd.clone()).await;
+        let target_grit_dir = format_flags
+            .grit_dir
+            .as_ref()
+            .and_then(|c| c.parent())
+            .unwrap_or_else(|| &cwd)
+            .to_path_buf();
+        let mod_dir = find_grit_modules_dir(target_grit_dir.clone()).await;
 
         if !env::var("GRIT_DOWNLOADS_DISABLED")
             .unwrap_or_else(|_| "false".to_owned())
@@ -322,7 +328,7 @@ pub(crate) async fn run_apply_pattern(
         {
             flushable_unwrap!(
                 emitter,
-                init_config_from_cwd::<KeepFetcherKind>(cwd.clone(), false).await
+                init_config_from_cwd::<KeepFetcherKind>(target_grit_dir, false).await
             );
         }
 
