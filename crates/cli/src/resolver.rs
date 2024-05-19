@@ -14,7 +14,7 @@ use marzano_gritmodule::{
     searcher::find_grit_dir_from,
 };
 
-use crate::updater::Updater;
+use crate::{flags::GlobalFormatFlags, updater::Updater};
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Debug)]
 #[serde(rename_all = "lowercase")]
@@ -92,6 +92,17 @@ pub async fn get_grit_files_from(cwd: Option<PathBuf>) -> Result<PatternsDirecto
 pub async fn get_grit_files_from_cwd() -> Result<PatternsDirectory> {
     let cwd = std::env::current_dir()?;
     get_grit_files_from(Some(cwd)).await
+}
+
+pub async fn resolve_from_flags_or_cwd(
+    flags: &GlobalFormatFlags,
+    source: &Source,
+) -> Result<(Vec<ResolvedGritDefinition>, ModuleRepo)> {
+    if let Some(grit_dir) = &flags.grit_dir {
+        resolve_from(grit_dir.clone(), &source).await
+    } else {
+        resolve_from_cwd(&source).await
+    }
 }
 
 pub async fn resolve_from(
