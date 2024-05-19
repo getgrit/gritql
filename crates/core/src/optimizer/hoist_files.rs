@@ -61,7 +61,6 @@ pub fn extract_filename_pattern<Q: QueryContext>(
 
         Pattern::Log(_) => Ok(Some(Pattern::Top)),
 
-        // TODO: decide the rest of these
         Pattern::Add(add) => {
             let Some(lhs) = extract_filename_pattern(&add.lhs)? else {
                 return Ok(None);
@@ -108,6 +107,7 @@ pub fn extract_filename_pattern<Q: QueryContext>(
             Ok(Some(Pattern::And(Box::new(And::new(vec![lhs, rhs])))))
         }
 
+        // TODO: decide the rest of these
         Pattern::Dots
         | Pattern::Sequential(_)
         | Pattern::Like(_)
