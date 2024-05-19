@@ -295,6 +295,56 @@ fn is_safe_to_hoist<Q: QueryContext>(pattern: &Pattern<Q>) -> Result<bool> {
         Pattern::Includes(inc) => is_safe_to_hoist(&inc.includes),
         Pattern::StringConstant(_) => Ok(true),
         // This is conservative, but it's a start
-        _ => Ok(false),
+        Pattern::AstNode(_)
+        | Pattern::List(_)
+        | Pattern::ListIndex(_)
+        | Pattern::Map(_)
+        | Pattern::Accessor(_)
+        | Pattern::Call(_)
+        | Pattern::Regex(_)
+        | Pattern::File(_)
+        | Pattern::Files(_)
+        | Pattern::Bubble(_)
+        | Pattern::Limit(_)
+        | Pattern::CallBuiltIn(_)
+        | Pattern::CallFunction(_)
+        | Pattern::CallForeignFunction(_)
+        | Pattern::Assignment(_)
+        | Pattern::Accumulate(_)
+        | Pattern::And(_)
+        | Pattern::Or(_)
+        | Pattern::Maybe(_)
+        | Pattern::Any(_)
+        | Pattern::Not(_)
+        | Pattern::If(_)
+        | Pattern::Undefined
+        | Pattern::Top
+        | Pattern::Bottom
+        | Pattern::Underscore
+        | Pattern::AstLeafNode(_)
+        | Pattern::IntConstant(_)
+        | Pattern::FloatConstant(_)
+        | Pattern::BooleanConstant(_)
+        | Pattern::Dynamic(_)
+        | Pattern::CodeSnippet(_)
+        | Pattern::Variable(_)
+        | Pattern::Rewrite(_)
+        | Pattern::Log(_)
+        | Pattern::Range(_)
+        | Pattern::Contains(_)
+        | Pattern::Within(_)
+        | Pattern::After(_)
+        | Pattern::Before(_)
+        | Pattern::Where(_)
+        | Pattern::Some(_)
+        | Pattern::Every(_)
+        | Pattern::Add(_)
+        | Pattern::Subtract(_)
+        | Pattern::Multiply(_)
+        | Pattern::Divide(_)
+        | Pattern::Modulo(_)
+        | Pattern::Dots
+        | Pattern::Sequential(_)
+        | Pattern::Like(_) => Ok(false),
     }
 }
