@@ -172,7 +172,7 @@ pub(crate) async fn run_patterns_edit(arg: PatternsEditArgs) -> Result<()> {
     let (_, repo) = resolve_from_cwd(&resolver::Source::All).await?;
     let _pattern = collect_from_file(&arg.path, &Some(repo)).await?;
 
-    let content = std::fs::read_to_string(&arg.path)?;
+    let content = fs_err::read_to_string(&arg.path)?;
     let payload = serde_json::to_value(OpenStudioSettings {
         content,
         path: arg.path.to_string_lossy().to_string(),

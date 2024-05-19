@@ -8,10 +8,10 @@ mod common;
 #[test]
 fn updates_nothing_valid_patterns() -> Result<()> {
     let (_temp_dir, _) = get_fixture("patterns_list", true)?;
-    let before_files = std::fs::read_dir(_temp_dir.path().join("patterns_list"))?
+    let before_files = fs_err::read_dir(_temp_dir.path().join("patterns_list"))?
         .filter_map(|res| {
             let path = res.ok()?.path();
-            std::fs::read_to_string(path).ok()
+            fs_err::read_to_string(path).ok()
         })
         .collect::<Vec<_>>();
 
@@ -23,10 +23,10 @@ fn updates_nothing_valid_patterns() -> Result<()> {
 
     println!("{:?}", cmd.output());
 
-    let after_files = std::fs::read_dir(_temp_dir.path().join("patterns_list"))?
+    let after_files = fs_err::read_dir(_temp_dir.path().join("patterns_list"))?
         .filter_map(|res| {
             let path = res.ok()?.path();
-            std::fs::read_to_string(path).ok()
+            fs_err::read_to_string(path).ok()
         })
         .collect::<Vec<_>>();
 
@@ -47,7 +47,7 @@ fn updates_invalid_pattern() -> Result<()> {
 
     println!("{:?}", cmd.output());
 
-    let after = std::fs::read_to_string(
+    let after = fs_err::read_to_string(
         _temp_dir
             .path()
             .join("patterns_list/.grit/patterns/broken_pattern.md"),
@@ -112,7 +112,7 @@ fn updates_multiple_invalid_patterns() -> Result<()> {
 
     let stdout = String::from_utf8(cmd.output()?.stdout)?;
     println!("stdout: {}", stdout);
-    let after = std::fs::read_to_string(
+    let after = fs_err::read_to_string(
         _temp_dir
             .path()
             .join("patterns_list/.grit/patterns/multiple_broken_patterns.md"),

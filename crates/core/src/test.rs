@@ -213,7 +213,7 @@ fn test_rewrite(dir: &str, pattern: &str, test: &str) -> Result<()> {
             .join("expected")
             .join(actual_filename);
 
-        std::fs::write(actual_path, &rewrite)?;
+        fs_err::write(actual_path, &rewrite)?;
     }
     assert_eq!(
         rewrite.trim(),
@@ -244,7 +244,7 @@ fn new_files_assertion(
     if !files_path.is_dir() {
         return Ok(());
     }
-    let files = std::fs::read_dir(files_path)?;
+    let files = fs_err::read_dir(files_path)?;
     let count = files.count();
     assert_eq!(
         count,
@@ -262,7 +262,7 @@ fn new_files_assertion(
     for file in files {
         let name = file.file_name();
         let name = name.to_str().unwrap();
-        let content = std::fs::read(file.path())?;
+        let content = fs_err::read(file.path())?;
         let content = String::from_utf8(content)?;
         let content = content.trim();
         let message = format!("pattern result missing file: {}", name);
@@ -311,9 +311,9 @@ fn test_setup(dir: &str, pattern: &str, test: &str) -> Result<(ExecutionResult, 
             test
         )
     })?;
-    let pattern = std::fs::read_to_string(pattern)?;
-    let input = std::fs::read_to_string(input)?;
-    let expected = std::fs::read_to_string(expected).ok();
+    let pattern = fs_err::read_to_string(pattern)?;
+    let input = fs_err::read_to_string(input)?;
+    let expected = fs_err::read_to_string(expected).ok();
     Ok((
         match_pattern_one_file(pattern, "test-file.tsx", &input, lang)?,
         expected,
@@ -4503,7 +4503,7 @@ fn simple_predicate_false() {
 fn test_import_none() {
     let root = get_fixtures_root().unwrap();
     let import_patterns = format!("{}/test_patterns/imports.grit", root.display());
-    let import_patterns = std::fs::read_to_string(import_patterns).unwrap();
+    let import_patterns = fs_err::read_to_string(import_patterns).unwrap();
 
     let pattern = r#"
 
@@ -4555,7 +4555,7 @@ fn rewrite_or_bubble_pattern_argument() {
 fn test_import_just_insert() {
     let root = get_fixtures_root().unwrap();
     let import_patterns = format!("{}/test_patterns/imports.grit", root.display());
-    let import_patterns = std::fs::read_to_string(import_patterns).unwrap();
+    let import_patterns = fs_err::read_to_string(import_patterns).unwrap();
 
     let pattern = r#"
 
@@ -4583,7 +4583,7 @@ fn test_import_just_insert() {
 fn pattern_call_as_rhs() {
     let root = get_fixtures_root().unwrap();
     let import_patterns = format!("{}/test_patterns/imports.grit", root.display());
-    let import_patterns = std::fs::read_to_string(import_patterns).unwrap();
+    let import_patterns = fs_err::read_to_string(import_patterns).unwrap();
 
     let pattern = r#"
         // does not work:
@@ -4623,7 +4623,7 @@ fn pattern_call_as_rhs() {
 fn pattern_call_as_lhs_and_rhs() {
     let root = get_fixtures_root().unwrap();
     let import_patterns = format!("{}/test_patterns/imports.grit", root.display());
-    let import_patterns = std::fs::read_to_string(import_patterns).unwrap();
+    let import_patterns = fs_err::read_to_string(import_patterns).unwrap();
 
     let pattern = r#"
             $x where {
@@ -4647,7 +4647,7 @@ fn pattern_call_as_lhs_and_rhs() {
 fn test_import_all_already_there() {
     let root = get_fixtures_root().unwrap();
     let import_patterns = format!("{}/test_patterns/imports.grit", root.display());
-    let import_patterns = std::fs::read_to_string(import_patterns).unwrap();
+    let import_patterns = fs_err::read_to_string(import_patterns).unwrap();
 
     let pattern = r#"
 
@@ -4679,7 +4679,7 @@ fn test_import_all_already_there() {
 fn test_import_multiple() {
     let root = get_fixtures_root().unwrap();
     let import_patterns = format!("{}/test_patterns/imports.grit", root.display());
-    let import_patterns = std::fs::read_to_string(import_patterns).unwrap();
+    let import_patterns = fs_err::read_to_string(import_patterns).unwrap();
 
     let pattern = r#"
 

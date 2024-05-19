@@ -167,7 +167,7 @@ pub async fn create_emitter<'a>(
     _root_path: Option<&PathBuf>,
 ) -> Result<MessengerVariant<'a>> {
     let writer: Option<Box<dyn Write + Send>> = if let Some(output_file) = output_file {
-        let file = std::fs::File::create(output_file)?;
+        let file = fs_err::File::create(output_file)?;
         let bufwriter = io::BufWriter::new(file);
         Some(Box::new(bufwriter))
     } else {

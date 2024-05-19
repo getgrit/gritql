@@ -1194,6 +1194,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "fs-err"
+version = "2.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88a41f105fe1d5b6b34b2055e3dc59bb79b46b48b2040b9e6c7b4b5de097aa41"
+dependencies = [
+ "autocfg",
+]
+
+[[package]]
 name = "fs-set-times"
 version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1440,6 +1449,7 @@ name = "grit_cache"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "fs-err",
  "marzano-gritmodule",
  "marzano-util",
  "tokio",
@@ -2019,6 +2029,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
+ "fs-err",
  "fs_extra",
  "insta",
  "marzano-cli",
@@ -2073,6 +2084,7 @@ dependencies = [
  "dialoguer",
  "env_logger",
  "flate2",
+ "fs-err",
  "futures-util",
  "git2",
  "grit-util",
@@ -2115,6 +2127,7 @@ version = "0.2.0"
 dependencies = [
  "anyhow",
  "embeddings",
+ "fs-err",
  "getrandom",
  "grit-pattern-matcher",
  "grit-util",
@@ -2156,6 +2169,7 @@ name = "marzano-gritmodule"
 version = "0.2.0"
 dependencies = [
  "anyhow",
+ "fs-err",
  "git2",
  "grit-util",
  "homedir",
@@ -2258,6 +2272,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64",
+ "fs-err",
  "futures",
  "grit-util",
  "http",

@@ -10,31 +10,31 @@ pub fn apply_rewrite(result: &MatchResult) -> Result<()> {
         MatchResult::CreateFile(f) => {
             let path = Path::new(&f.rewritten.source_file);
             if let Some(parent) = path.parent() {
-                std::fs::create_dir_all(parent)?;
+                fs_err::create_dir_all(parent)?;
             }
             // Write the file
-            std::fs::write(path, f.rewritten.content.as_bytes())?;
+            fs_err::write(path, f.rewritten.content.as_bytes())?;
         }
 
         MatchResult::Rewrite(r) => {
             let new_path = Path::new(&r.rewritten.source_file);
             if let Some(parent) = new_path.parent() {
-                std::fs::create_dir_all(parent)?;
+                fs_err::create_dir_all(parent)?;
             }
             if r.rewritten.source_file != r.original.source_file {
                 let old_path = Path::new(&r.original.source_file);
                 if old_path.exists() {
-                    std::fs::remove_file(old_path)?;
+                    fs_err::remove_file(old_path)?;
                 }
             }
             // Write the file
-            std::fs::write(new_path, r.rewritten.content.as_bytes())?;
+            fs_err::write(new_path, r.rewritten.content.as_bytes())?;
         }
 
         MatchResult::RemoveFile(f) => {
             let path = Path::new(&f.original.source_file);
             if path.exists() {
-                std::fs::remove_file(path)?;
+                fs_err::remove_file(path)?;
             }
         }
 

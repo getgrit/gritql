@@ -106,7 +106,7 @@ impl TryIntoInputFile for RichFile {
 impl TryIntoInputFile for PathBuf {
     fn try_into_cow(&self) -> Result<Cow<RichFile>> {
         let name = self.to_string_lossy().to_string();
-        let content = std::fs::read_to_string(self).map_err(|e| anyhow!(e))?;
+        let content = fs_err::read_to_string(self).map_err(|e| anyhow!(e))?;
         Ok(Cow::Owned(RichFile::new(name, content)))
     }
 }
@@ -114,7 +114,7 @@ impl TryIntoInputFile for PathBuf {
 impl TryIntoInputFile for &RichPath {
     fn try_into_cow(&self) -> Result<Cow<RichFile>> {
         let name = self.path.to_string_lossy().to_string();
-        let content = std::fs::read_to_string(&self.path).map_err(|e| anyhow!(e))?;
+        let content = fs_err::read_to_string(&self.path).map_err(|e| anyhow!(e))?;
         Ok(Cow::Owned(RichFile::new(name, content)))
     }
 }

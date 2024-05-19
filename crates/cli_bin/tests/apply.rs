@@ -224,7 +224,7 @@ fn run_stdlib_pattern_without_grit_config() -> Result<()> {
     let fixtures_root = get_fixtures_root()?;
     let require_js = fixtures_root.join("test_es6imports.js");
     let require_js_dest = tempdir.path().join("test_es6imports.js");
-    std::fs::copy(require_js, &require_js_dest)?;
+    fs_err::copy(require_js, &require_js_dest)?;
 
     // from the tempdir as cwd, run init
     run_init(&tempdir.path())?;
@@ -246,7 +246,7 @@ fn run_stdlib_pattern_without_grit_config() -> Result<()> {
     );
 
     // Read back the require.js file
-    let content: String = std::fs::read_to_string(&require_js_dest)?;
+    let content: String = fs_err::read_to_string(&require_js_dest)?;
 
     // assert that it matches snapshot
     assert_snapshot!(content);
@@ -281,7 +281,7 @@ fn run_pattern_with_sequential() -> Result<()> {
     );
 
     // Read back the lifecycle.tsx file
-    let content: String = std::fs::read_to_string(dir.join("react_to_hooks/input/lifecycle.tsx"))?;
+    let content: String = fs_err::read_to_string(dir.join("react_to_hooks/input/lifecycle.tsx"))?;
 
     // assert that it matches snapshot
     assert_snapshot!(content);
@@ -298,7 +298,7 @@ fn run_pattern_file_referencing_stdlib() -> Result<()> {
     let fixtures_root = get_fixtures_root()?;
     let pattern_grit = fixtures_root.join("stdlib").join("no_console_log.grit");
     let pattern_dest = tempdir.path().join("no_console_log.grit");
-    std::fs::copy(pattern_grit, pattern_dest)?;
+    fs_err::copy(pattern_grit, pattern_dest)?;
     let extensions = ["js", "cjs", "mjs", "cts", "mts"];
     let mut destinations = vec![];
     for extension in extensions {
@@ -306,7 +306,7 @@ fn run_pattern_file_referencing_stdlib() -> Result<()> {
             .join("stdlib")
             .join(format!("simple.{}", extension));
         let input_dest = tempdir.path().join(format!("simple.{}", extension));
-        std::fs::copy(input, &input_dest)?;
+        fs_err::copy(input, &input_dest)?;
         destinations.push(input_dest);
     }
 
@@ -334,7 +334,7 @@ fn run_pattern_file_referencing_stdlib() -> Result<()> {
         "Command didn't finish successfully"
     );
     for destination in destinations {
-        let content = std::fs::read_to_string(&destination)?;
+        let content = fs_err::read_to_string(&destination)?;
         assert_eq!(content, "\n".to_owned());
     }
 
@@ -371,7 +371,7 @@ fn run_pattern_file_referencing_stdlib_function() -> Result<()> {
 
     // Check contents
     let target_file = dir.join("simple.js");
-    let content: String = std::fs::read_to_string(target_file)?;
+    let content: String = fs_err::read_to_string(target_file)?;
     assert_eq!(
         content,
         "// TODO: Fix this\n// console.log('sanity');\n".to_owned()
@@ -402,7 +402,7 @@ fn run_pattern_file_referencing_python_stdlib() -> Result<()> {
     );
 
     let input_dest = dir.as_path().join("log.py");
-    let content: String = std::fs::read_to_string(input_dest)?;
+    let content: String = fs_err::read_to_string(input_dest)?;
     assert_eq!(content, "log(\"hello world!\")\n".to_owned());
 
     Ok(())
@@ -416,7 +416,7 @@ fn run_python_stdlib_pattern_name() -> Result<()> {
     let fixtures_root = get_fixtures_root()?;
     let input = fixtures_root.join("stdlib-python").join("log.py");
     let input_dest = tempdir.path().join("log.py");
-    std::fs::copy(input, &input_dest)?;
+    fs_err::copy(input, &input_dest)?;
 
     // from the tempdir as cwd, run marzano apply
     let mut apply_cmd = get_test_cmd()?;
@@ -435,7 +435,7 @@ fn run_python_stdlib_pattern_name() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    let content: String = std::fs::read_to_string(&input_dest)?;
+    let content: String = fs_err::read_to_string(&input_dest)?;
     assert_eq!(content, "log(\"hello world!\")\n".to_owned());
 
     Ok(())
@@ -454,10 +454,10 @@ fn run_named_pattern_referencing_python_stdlib() -> Result<()> {
         .join(REPO_CONFIG_PATTERNS_DIR)
         .join("fun_logger.md");
     fs::create_dir_all(pattern_dest.parent().unwrap())?;
-    std::fs::copy(pattern_grit, pattern_dest)?;
+    fs_err::copy(pattern_grit, pattern_dest)?;
     let input = fixtures_root.join("stdlib-python").join("log.py");
     let input_dest = tempdir.path().join("log.py");
-    std::fs::copy(input, &input_dest)?;
+    fs_err::copy(input, &input_dest)?;
 
     run_init(&tempdir.path())?;
 
@@ -478,7 +478,7 @@ fn run_named_pattern_referencing_python_stdlib() -> Result<()> {
         String::from_utf8(output.stderr)?
     );
 
-    let content: String = std::fs::read_to_string(&input_dest)?;
+    let content: String = fs_err::read_to_string(&input_dest)?;
     assert_eq!(content, "log(\"hello world!\")\n".to_owned());
 
     Ok(())
@@ -492,7 +492,7 @@ fn grit_dir_with_only_empty_gritmodules() -> Result<()> {
     let fixtures_root = get_fixtures_root()?;
     let require_js = fixtures_root.join("short-story.ts");
     let require_js_dest = tempdir.path().join("short-story.ts");
-    std::fs::copy(require_js, &require_js_dest)?;
+    fs_err::copy(require_js, &require_js_dest)?;
 
     // make an empty .grit/.gritmodules in the tempdir
     let grit_modules_dir = tempdir
@@ -523,7 +523,7 @@ fn grit_dir_with_only_empty_gritmodules() -> Result<()> {
     println!("stdout: {:?}", String::from_utf8(output.stdout)?);
 
     // Read back the require.js file
-    let content: String = std::fs::read_to_string(&require_js_dest)?;
+    let content: String = fs_err::read_to_string(&require_js_dest)?;
 
     // assert that it matches snapshot
     assert_snapshot!(content);
@@ -539,7 +539,7 @@ fn grit_dir_with_no_gritmodules_and_empty_config() -> Result<()> {
     let fixtures_root = get_fixtures_root()?;
     let require_js = fixtures_root.join("short-story.ts");
     let require_js_dest = tempdir.path().join("short-story.ts");
-    std::fs::copy(require_js, &require_js_dest)?;
+    fs_err::copy(require_js, &require_js_dest)?;
 
     let empty_config = r#"version: 0.0.1
 patterns: []"#;
@@ -572,7 +572,7 @@ patterns: []"#;
     println!("stdout: {:?}", String::from_utf8(output.stdout)?);
 
     // Read back the require.js file
-    let content: String = std::fs::read_to_string(&require_js_dest)?;
+    let content: String = fs_err::read_to_string(&require_js_dest)?;
 
     // assert that it matches snapshot
     assert_snapshot!(content);
@@ -664,7 +664,7 @@ fn random_int() -> Result<()> {
     );
 
     let file = dir.join("input.ts");
-    let content = std::fs::read_to_string(file)?;
+    let content = fs_err::read_to_string(file)?;
 
     println!("content: {:?}", content);
 
@@ -702,7 +702,7 @@ fn shuffle_list() -> Result<()> {
     );
 
     let file = dir.join("input.ts");
-    let content = std::fs::read_to_string(file)?;
+    let content = fs_err::read_to_string(file)?;
     println!("content: {:?}", content);
 
     // Split it by line
@@ -757,7 +757,7 @@ fn test_absolute_path() -> Result<()> {
     let mut content = None;
     for path in paths {
         let file = dir.join(path);
-        let file_content = std::fs::read_to_string(file)?;
+        let file_content = fs_err::read_to_string(file)?;
         if let Some(ref content) = content {
             assert_eq!(content, &file_content);
         } else {
@@ -770,7 +770,7 @@ fn test_absolute_path() -> Result<()> {
 
     // Now we read unique.js
     let file = dir.join("dir2/unique.js");
-    let content = std::fs::read_to_string(file)?;
+    let content = fs_err::read_to_string(file)?;
 
     println!("content: {:?}", content);
 
@@ -804,7 +804,7 @@ fn shuffle_binding() -> Result<()> {
     );
 
     let file = dir.join("input.ts");
-    let content = std::fs::read_to_string(file)?;
+    let content = fs_err::read_to_string(file)?;
     println!("content: {:?}", content);
 
     // Split it by line
@@ -843,7 +843,7 @@ fn basic_python_apply() -> Result<()> {
 
     // Read back the require.js file
     let target_file = dir.join("main.py");
-    let content: String = std::fs::read_to_string(target_file)?;
+    let content: String = fs_err::read_to_string(target_file)?;
 
     // assert that it matches snapshot
     assert_snapshot!(content);
@@ -876,7 +876,7 @@ fn basic_js_in_vue_apply() -> Result<()> {
 
     // Read back the require.js file
     let target_file = dir.join("simple.vue");
-    let content: String = std::fs::read_to_string(target_file)?;
+    let content: String = fs_err::read_to_string(target_file)?;
 
     // assert that it matches snapshot
     assert_snapshot!(content);
@@ -909,7 +909,7 @@ fn basic_css_in_vue_apply() -> Result<()> {
 
     // Read back the require.js file
     let target_file = dir.join("simple.vue");
-    let content: String = std::fs::read_to_string(target_file)?;
+    let content: String = fs_err::read_to_string(target_file)?;
 
     // assert that it matches snapshot
     assert_snapshot!(content);
@@ -925,7 +925,7 @@ fn invalid_md_file_parse_errors() -> Result<()> {
     let fixtures_root = get_fixtures_root()?;
     let require_js = fixtures_root.join("short-story.ts");
     let require_js_dest = tempdir.path().join("short-story.ts");
-    std::fs::copy(require_js, require_js_dest)?;
+    fs_err::copy(require_js, require_js_dest)?;
 
     // make an empty .grit/.gritmodules in the tempdir
     let grit_modules_dir = tempdir
@@ -947,7 +947,7 @@ fn invalid_md_file_parse_errors() -> Result<()> {
         .join("patterns")
         .join("js")
         .join("bad_pattern.md");
-    std::fs::copy(bad_pattern, bad_pattern_dest)?;
+    fs_err::copy(bad_pattern, bad_pattern_dest)?;
 
     let mut apply_cmd = get_test_cmd()?;
     apply_cmd.current_dir(tempdir.path());
@@ -970,7 +970,7 @@ fn grit_dir_with_outdated_grit_modules() -> Result<()> {
     let fixtures_root = get_fixtures_root()?;
     let require_js = fixtures_root.join("short-story.ts");
     let require_js_dest = tempdir.path().join("short-story.ts");
-    std::fs::copy(require_js, &require_js_dest)?;
+    fs_err::copy(require_js, &require_js_dest)?;
 
     // make an empty .grit/.gritmodules in the tempdir
     let grit_modules_dir = tempdir
@@ -1011,7 +1011,7 @@ fn grit_dir_with_outdated_grit_modules() -> Result<()> {
     );
 
     // Read back the require.js file
-    let content: String = std::fs::read_to_string(&require_js_dest)?;
+    let content: String = fs_err::read_to_string(&require_js_dest)?;
 
     // assert that it matches snapshot
     assert_snapshot!(content);
@@ -1028,7 +1028,7 @@ fn removes_extraneous_whitespace() -> Result<()> {
     let fixtures_root = get_fixtures_root()?;
     let fixture_path = fixtures_root.join("format").join("whitespace.js");
     let fixture_dest = tempdir.path().join("whitespace.js");
-    std::fs::copy(fixture_path, &fixture_dest)?;
+    fs_err::copy(fixture_path, &fixture_dest)?;
 
     cmd.arg("apply")
         .arg("no_console_log")
@@ -1041,7 +1041,7 @@ fn removes_extraneous_whitespace() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    let content: String = std::fs::read_to_string(&fixture_dest)?;
+    let content: String = fs_err::read_to_string(&fixture_dest)?;
 
     assert_snapshot!(content);
 
@@ -1123,7 +1123,7 @@ fn python_with_tabs() -> Result<()> {
 
     // Read back the main.py file
     let target_file = dir.join("main.py");
-    let content: String = std::fs::read_to_string(target_file)?;
+    let content: String = fs_err::read_to_string(target_file)?;
 
     // assert that it matches snapshot
     assert_snapshot!(content);
@@ -1253,10 +1253,10 @@ fn applies_openai_js() -> Result<()> {
     let fixtures_root = get_fixtures_root()?;
     let pattern_grit = fixtures_root.join("openai").join("basic_llm_call.grit");
     let pattern_dest = tempdir.path().join("basic_llm_call.grit");
-    std::fs::copy(pattern_grit, pattern_dest.clone())?;
+    fs_err::copy(pattern_grit, pattern_dest.clone())?;
     let input = fixtures_root.join("openai").join("foo.js");
     let input_dest = tempdir.path().join("foo.js");
-    std::fs::copy(input, &input_dest)?;
+    fs_err::copy(input, &input_dest)?;
     run_init(&tempdir.path())?;
     let mut apply_cmd = get_test_cmd()?;
     apply_cmd.current_dir(tempdir.path());
@@ -1271,7 +1271,7 @@ fn applies_openai_js() -> Result<()> {
         output.status.success(),
         "Command didn't finish successfully"
     );
-    let content = std::fs::read_to_string(&input_dest)?;
+    let content = fs_err::read_to_string(&input_dest)?;
     assert!(content.contains("How can I assist you today?"));
     Ok(())
 }
@@ -1293,7 +1293,7 @@ fn embedding_like() -> Result<()> {
         output.status.success(),
         "Command didn't finish successfully"
     );
-    let content = std::fs::read_to_string(dir.join("simple_assign.js"))?;
+    let content = fs_err::read_to_string(dir.join("simple_assign.js"))?;
     assert_eq!(content, "console.log('hello')");
     Ok(())
 }
@@ -1320,10 +1320,10 @@ fn filtered_apply_custom() -> Result<()> {
     println!("stdout: {:?}", stdout);
     assert!(stdout.contains("1 matches"));
 
-    let content = std::fs::read_to_string(dir.join("file.js"))?;
+    let content = fs_err::read_to_string(dir.join("file.js"))?;
     assert_snapshot!(content);
 
-    let content2 = std::fs::read_to_string(dir.join("file2.js"))?;
+    let content2 = fs_err::read_to_string(dir.join("file2.js"))?;
     assert_snapshot!(content2);
 
     Ok(())
@@ -1333,7 +1333,7 @@ fn filtered_apply_custom() -> Result<()> {
 fn filtered_apply() -> Result<()> {
     let (_temp_dir, dir) = get_fixture("filtered_apply", true)?;
 
-    let eslint_content = std::fs::read_to_string(dir.join("eslint.json"))?;
+    let eslint_content = fs_err::read_to_string(dir.join("eslint.json"))?;
 
     let mut apply_cmd = get_test_cmd()?;
     apply_cmd.current_dir(dir.clone());
@@ -1353,10 +1353,10 @@ fn filtered_apply() -> Result<()> {
     println!("stdout: {:?}", stdout);
     assert!(stdout.contains("2 matches"));
 
-    let content = std::fs::read_to_string(dir.join("file.js"))?;
+    let content = fs_err::read_to_string(dir.join("file.js"))?;
     assert_snapshot!(content);
 
-    let content2 = std::fs::read_to_string(dir.join("file2.js"))?;
+    let content2 = fs_err::read_to_string(dir.join("file2.js"))?;
     assert_snapshot!(content2);
 
     Ok(())
@@ -1381,7 +1381,7 @@ fn uses_llm_choice() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    let content = std::fs::read_to_string(dir.join("color.js"))?;
+    let content = fs_err::read_to_string(dir.join("color.js"))?;
     assert_snapshot!(content);
 
     Ok(())
@@ -1402,7 +1402,7 @@ fn yaml_padding() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    let content = std::fs::read_to_string(dir.join("file.yaml"))?;
+    let content = fs_err::read_to_string(dir.join("file.yaml"))?;
     assert_snapshot!(content);
 
     Ok(())
@@ -1515,7 +1515,7 @@ fn output_jsonl() -> Result<()> {
         String::from_utf8(output.stderr)?
     );
 
-    let content = std::fs::read_to_string(dir.join("output.jsonl"))?;
+    let content = fs_err::read_to_string(dir.join("output.jsonl"))?;
     assert_snapshot!(content);
 
     let line_count = content.lines().count();
@@ -1539,7 +1539,7 @@ fn nested_dir() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    let content = std::fs::read_to_string(dir.join("main.hcl"))?;
+    let content = fs_err::read_to_string(dir.join("main.hcl"))?;
     assert_snapshot!(content);
 
     Ok(())
@@ -1582,7 +1582,7 @@ fn fizzbuzz_ffi() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    let content = std::fs::read_to_string(dir.join("input.js"))?;
+    let content = fs_err::read_to_string(dir.join("input.js"))?;
     assert_snapshot!(content);
 
     Ok(())
@@ -1603,7 +1603,7 @@ fn ffi_assignment() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    let content = std::fs::read_to_string(dir.join("input.js"))?;
+    let content = fs_err::read_to_string(dir.join("input.js"))?;
     assert_snapshot!(content);
 
     Ok(())
@@ -1634,7 +1634,7 @@ fn apply_multifile_sample() -> Result<()> {
     println!("stdout: {:?}", stdout);
 
     // Read user2.ts
-    let content = std::fs::read_to_string(dir.join("user2.ts"))?;
+    let content = fs_err::read_to_string(dir.join("user2.ts"))?;
     assert_snapshot!(content);
 
     Ok(())
@@ -1659,7 +1659,7 @@ fn ai_constraint() -> Result<()> {
     let stdout = String::from_utf8(output.stdout)?;
     println!("stdout: {:?}", stdout);
 
-    let content = std::fs::read_to_string(dir.join("input.js"))?;
+    let content = fs_err::read_to_string(dir.join("input.js"))?;
     assert_snapshot!(content);
 
     Ok(())
@@ -1757,9 +1757,9 @@ fn applies_multifile_pattern_from_resolved_md() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    let test1 = std::fs::read_to_string(fixture_dir.join("file1.js"))?;
+    let test1 = fs_err::read_to_string(fixture_dir.join("file1.js"))?;
     assert_eq!(test1, "foo(1)");
-    let test2 = std::fs::read_to_string(fixture_dir.join("file2.js"))?;
+    let test2 = fs_err::read_to_string(fixture_dir.join("file2.js"))?;
     assert_eq!(test2, "baz(1)\nbar(3)");
 
     Ok(())
@@ -1783,9 +1783,9 @@ fn applies_recursive_multifile_pattern_from_resolved_md() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    let test1 = std::fs::read_to_string(fixture_dir.join("file1.js"))?;
+    let test1 = fs_err::read_to_string(fixture_dir.join("file1.js"))?;
     assert_eq!(test1, "foo(1)");
-    let test2 = std::fs::read_to_string(fixture_dir.join("file2.js"))?;
+    let test2 = fs_err::read_to_string(fixture_dir.join("file2.js"))?;
     assert_eq!(test2, "baz(1)\nbar(3)");
 
     Ok(())
@@ -1809,9 +1809,9 @@ fn applies_indirect_multi() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    let test1 = std::fs::read_to_string(fixture_dir.join("file1.js"))?;
+    let test1 = fs_err::read_to_string(fixture_dir.join("file1.js"))?;
     assert_eq!(test1, "foo(1)");
-    let test2 = std::fs::read_to_string(fixture_dir.join("file2.js"))?;
+    let test2 = fs_err::read_to_string(fixture_dir.join("file2.js"))?;
     assert_eq!(test2, "baz(1)\nbar(3)");
 
     Ok(())
@@ -1835,8 +1835,8 @@ fn applies_limit_on_multifile() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    let test1 = std::fs::read_to_string(fixture_dir.join("file1.js"))?;
-    let test2 = std::fs::read_to_string(fixture_dir.join("file2.js"))?;
+    let test1 = fs_err::read_to_string(fixture_dir.join("file1.js"))?;
+    let test2 = fs_err::read_to_string(fixture_dir.join("file2.js"))?;
 
     assert!(test1 == "const x = 6;" || test2 == "const x = 6;");
     assert!(test1 == "const y = 6;" || test2 == "const y = 6;");
@@ -1854,8 +1854,8 @@ fn applies_limit_on_multifile() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    let test1 = std::fs::read_to_string(fixture_dir.join("file1.js"))?;
-    let test2 = std::fs::read_to_string(fixture_dir.join("file2.js"))?;
+    let test1 = fs_err::read_to_string(fixture_dir.join("file1.js"))?;
+    let test2 = fs_err::read_to_string(fixture_dir.join("file2.js"))?;
     assert!(test1 == "const y = 6;" && test2 == "const y = 6;");
 
     Ok(())
@@ -1955,7 +1955,7 @@ fn run_simultaneous_apply_ops() -> Result<()> {
     for i in 0..total_cases {
         let src = fixture_dir.join("test.js");
         let dest = fixture_dir.join(format!("test{}.js", i));
-        std::fs::copy(src, dest)?;
+        fs_err::copy(src, dest)?;
     }
 
     println!("Copied files, starting actual test");
@@ -1980,7 +1980,7 @@ fn run_simultaneous_apply_ops() -> Result<()> {
                 bail!("Command didn't finish successfully");
             }
 
-            let test = std::fs::read_to_string(fixture_dir.join(&file))?;
+            let test = fs_err::read_to_string(fixture_dir.join(&file))?;
             if !test.contains("const did_it_get_touched = true;") {
                 bail!("File {} was not mutated", file);
             }
@@ -2030,7 +2030,7 @@ fn applies_user_pattern() -> Result<()> {
     let stdout = String::from_utf8(output.stdout)?;
     assert!(stdout.contains("Processed 1 files and found 1 matches"));
 
-    let content: String = std::fs::read_to_string(dir.join("whitespace.js"))?;
+    let content: String = fs_err::read_to_string(dir.join("whitespace.js"))?;
     assert_snapshot!(content);
 
     Ok(())
@@ -2112,7 +2112,7 @@ fn applies_on_file_in_hidden_directory() -> Result<()> {
     let stdout = String::from_utf8(output.stdout)?;
     assert!(stdout.contains("Processed 1 files and found 1 matches"));
 
-    let content: String = std::fs::read_to_string(dir.join(".circleci").join("config.yml"))?;
+    let content: String = fs_err::read_to_string(dir.join(".circleci").join("config.yml"))?;
     assert_eq!(content, "");
 
     Ok(())
@@ -2142,7 +2142,7 @@ fn ignores_file_in_grit_dir() -> Result<()> {
 fn language_option_file_pattern_apply() -> Result<()> {
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("simple_python", false)?;
-    let origin_content = std::fs::read_to_string(dir.join("main.py"))?;
+    let origin_content = fs_err::read_to_string(dir.join("main.py"))?;
 
     // from the tempdir as cwd, run init
     run_init(&dir.as_path())?;
@@ -2167,7 +2167,7 @@ fn language_option_file_pattern_apply() -> Result<()> {
 
     // Read back the main.py file
     let target_file = dir.join("main.py");
-    let content: String = std::fs::read_to_string(target_file)?;
+    let content: String = fs_err::read_to_string(target_file)?;
 
     assert_eq!(origin_content, content);
 
@@ -2203,7 +2203,7 @@ fn language_option_inline_pattern_apply() -> Result<()> {
 
     // Read back the main.py file
     let target_file = dir.join("main.py");
-    let content: String = std::fs::read_to_string(target_file)?;
+    let content: String = fs_err::read_to_string(target_file)?;
 
     // assert that it matches snapshot
     assert_snapshot!(content);
@@ -2244,7 +2244,7 @@ fn language_option_named_pattern_apply() -> Result<()> {
 
     // Read back the main.py file
     let target_file = dir.join("main.py");
-    let content: String = std::fs::read_to_string(target_file)?;
+    let content: String = fs_err::read_to_string(target_file)?;
 
     // assert that it matches snapshot
     assert_snapshot!(content);
@@ -2259,7 +2259,7 @@ fn language_option_conflict_apply() -> Result<()> {
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("simple_python", false)?;
 
-    let origin_content = std::fs::read_to_string(dir.join("main.py"))?;
+    let origin_content = fs_err::read_to_string(dir.join("main.py"))?;
 
     // from the tempdir as cwd, run init
     run_init(&dir.as_path())?;
@@ -2283,7 +2283,7 @@ fn language_option_conflict_apply() -> Result<()> {
 
     // Read back the main.py file
     let target_file = dir.join("main.py");
-    let content: String = std::fs::read_to_string(target_file)?;
+    let content: String = fs_err::read_to_string(target_file)?;
 
     // assert that it matches snapshot
     assert_eq!(origin_content, content);
@@ -2296,7 +2296,7 @@ fn invalid_language_option_apply() -> Result<()> {
     let pattern = r"`os.getenv` => `dotenv.fetch`";
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("simple_python", false)?;
-    let origin_content = std::fs::read_to_string(dir.join("main.py"))?;
+    let origin_content = fs_err::read_to_string(dir.join("main.py"))?;
 
     // from the tempdir as cwd, run init
     run_init(&dir.as_path())?;
@@ -2321,7 +2321,7 @@ fn invalid_language_option_apply() -> Result<()> {
 
     // Read back the main.py file
     let target_file = dir.join("main.py");
-    let content: String = std::fs::read_to_string(target_file)?;
+    let content: String = fs_err::read_to_string(target_file)?;
 
     // assert that it matches snapshot
     assert_eq!(origin_content, content);
@@ -2335,7 +2335,7 @@ fn apply_only_in_diff() -> Result<()> {
 
     let mut cmd = get_test_cmd()?;
 
-    let diff_content = std::fs::read_to_string(dir.join("test.diff"))?;
+    let diff_content = fs_err::read_to_string(dir.join("test.diff"))?;
 
     cmd.arg("apply")
         .arg("no_console_log")
@@ -2355,7 +2355,7 @@ fn apply_only_in_diff() -> Result<()> {
 
     assert!(stdout.contains("Processed 1 files and found 1 match"));
 
-    let content = std::fs::read_to_string(dir.join("index.js"))?;
+    let content = fs_err::read_to_string(dir.join("index.js"))?;
     assert!(!content.contains("console.log('really cool')"));
     assert!(content.contains("console.log('cool')"));
 
@@ -2429,7 +2429,7 @@ fn tty_behavior() -> Result<()> {
     assert!(stderr.contains("--force"));
 
     // Confirm file is not modified
-    let content = std::fs::read_to_string(dir.join("file.yaml"))?;
+    let content = fs_err::read_to_string(dir.join("file.yaml"))?;
     assert_snapshot!(content);
 
     // Run again with force
@@ -2447,7 +2447,7 @@ fn tty_behavior() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    let content = std::fs::read_to_string(dir.join("file.yaml"))?;
+    let content = fs_err::read_to_string(dir.join("file.yaml"))?;
     assert_snapshot!(content);
 
     Ok(())

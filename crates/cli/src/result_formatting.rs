@@ -10,7 +10,7 @@ use marzano_core::api::{
 use marzano_core::constants::DEFAULT_FILE_NAME;
 use marzano_messenger::output_mode::OutputMode;
 use std::fmt::Display;
-use std::fs::read_to_string;
+use fs_err::read_to_string;
 use std::{
     io::Write,
     sync::{Arc, Mutex},

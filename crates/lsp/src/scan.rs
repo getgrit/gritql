@@ -152,7 +152,7 @@ pub async fn make_pseudo_document(uri: &Url, client: &Client) -> Option<TextDocu
         uri.clone(),
         language_id,
         0,
-        std::fs::read_to_string(file_path).unwrap(),
+        fs_err::read_to_string(file_path).unwrap(),
     );
     Some(pseudo_document)
 }

@@ -46,7 +46,7 @@ fn run_pattern_with_private() -> Result<()> {
     );
 
     // Read back the lifecycle.tsx file
-    let content: String = std::fs::read_to_string(dir.join("input.ts"))?;
+    let content: String = fs_err::read_to_string(dir.join("input.ts"))?;
 
     // assert that it matches snapshot
     assert_snapshot!(content);

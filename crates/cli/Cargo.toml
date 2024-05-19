@@ -78,6 +78,8 @@ tracing-subscriber = { version = "0.3", default-features = false, optional = tru
 [target.'cfg(not(windows))'.dependencies]
 openssl = { version = "0.10", features = ["vendored"] }
 
+fs-err = { version = "2.11.0" }
+
 [dev-dependencies]
 trim-margin = "0.1.0"
 buildkite-test-collector = "0.1.1"

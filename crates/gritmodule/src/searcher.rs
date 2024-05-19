@@ -116,7 +116,7 @@ async fn fetch_remote_workflow(workflow_path_or_name: &str) -> Result<WorkflowIn
     let temp_file_path = temp_dir.into_path().join("downloaded_workflow.ts");
     let response = reqwest::get(workflow_path_or_name).await?;
     let content = response.text().await?;
-    std::fs::write(&temp_file_path, content)?;
+    fs_err::write(&temp_file_path, content)?;
     Ok(WorkflowInfo {
         path: temp_file_path,
     })

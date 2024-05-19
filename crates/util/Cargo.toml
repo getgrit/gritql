@@ -31,6 +31,7 @@ tokio = { version = "1.35.1", optional = true }
 serde_json = { version = "1.0.114" }
 futures = { version = "0.3.29", optional = true }
 http = { version = "0.2.11" }
+fs-err = { version = "2.11.0" }
 
 
 napi = { version = "2.16.4", default-features = false, features = [

@@ -374,7 +374,7 @@ pub(crate) async fn run_check(
                     .collect::<HashSet<_>>();
                 for pattern in applicable_patterns {
                     let problem = compiled_map.get(pattern).unwrap();
-                    let src = std::fs::read_to_string(file)?;
+                    let src = fs_err::read_to_string(file)?;
                     let res = problem.execute_file(&RichFile::new(file.to_string(), src), &context);
                     for r in res {
                         if let MatchResult::Rewrite(r) = r {

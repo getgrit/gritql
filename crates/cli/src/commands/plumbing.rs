@@ -95,7 +95,7 @@ pub enum PlumbingArgs {
 
 fn read_input(shared_args: &SharedPlumbingArgs) -> Result<String> {
     let buffer = if let Some(input) = &shared_args.input {
-        std::fs::read_to_string(input)?
+        fs_err::read_to_string(input)?
     } else {
         let mut buffer = String::new();
         stdin().read_to_string(&mut buffer)?;

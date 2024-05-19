@@ -19,7 +19,7 @@ pub(crate) async fn run_docgen(arg: DocGenArgs) -> Result<()> {
         hide_footer: true,
     });
 
-    std::fs::write(arg.outpath, output)?;
+    fs_err::write(arg.outpath, output)?;
 
     Ok(())
 }

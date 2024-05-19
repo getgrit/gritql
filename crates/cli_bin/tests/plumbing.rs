@@ -232,7 +232,7 @@ fn lists_imported_patterns() -> Result<()> {
 
     // Delete fixtures_path/.gritmodules, if it exists
     if fixture_path.join(".gritmodules").exists() {
-        std::fs::remove_dir_all(fixture_path.join(".gritmodules"))?;
+        fs_err::remove_dir_all(fixture_path.join(".gritmodules"))?;
     }
 
     let input = format!(r#"{{ "grit_dir" : {:?} }}"#, fixture_path.to_str().unwrap());
