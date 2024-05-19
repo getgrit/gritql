@@ -32,7 +32,7 @@ impl SyntheticFile {
 impl TryIntoInputFile for SyntheticFile {
     fn try_into_cow(&self) -> Result<Cow<RichFile>> {
         if !self.can_read {
-            println!("Tried to read file that should not be read: {}", self.path);
+            panic!("Tried to read file that should not be read: {}", self.path);
         }
 
         Ok(Cow::Owned(RichFile::new(

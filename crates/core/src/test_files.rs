@@ -353,3 +353,41 @@ fn test_multifile_mania() {
     // Make sure no errors
     assert!(!results.iter().any(|r| r.is_error()));
 }
+
+#[test]
+fn test_filename_query_optimization() {
+    let pattern_src = r#"
+        `console.log($_)` where {
+            $filename <: includes "target.js",
+        }
+        "#;
+    let libs = BTreeMap::new();
+
+    let matching_src = r#"
+        console.log("Hello, world!");
+        "#;
+
+    let pattern = src_to_problem_libs(
+        pattern_src.to_string(),
+        &libs,
+        TargetLanguage::default(),
+        None,
+        None,
+        None,
+        None,
+    )
+    .unwrap()
+    .problem;
+
+    // All together now
+    let test_files = vec![
+        SyntheticFile::new("wrong.js".to_owned(), matching_src.to_owned(), true),
+        SyntheticFile::new("target.js".to_owned(), matching_src.to_owned(), true),
+        SyntheticFile::new("other.js".to_owned(), matching_src.to_owned(), true),
+        SyntheticFile::new("do_not_read.js".to_owned(), String::new(), false),
+    ];
+    let results = run_on_test_files(&pattern, &test_files);
+    // Confirm we have 4 DoneFiles and 1 match
+    assert_eq!(results.len(), 5);
+    assert!(results.iter().any(|r| r.is_match()));
+}
