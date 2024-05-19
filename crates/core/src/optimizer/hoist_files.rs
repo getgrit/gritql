@@ -19,7 +19,13 @@ pub fn extract_filename_pattern<Q: QueryContext>(
         | Pattern::CodeSnippet(_)
         | Pattern::Range(_)
         | Pattern::Top
+        | Pattern::Undefined
+        | Pattern::Underscore
+        | Pattern::StringConstant(_)
+        | Pattern::AstLeafNode(_)
+        | Pattern::IntConstant(_)
         | Pattern::Bottom => Ok(Some(Pattern::Top)),
+
         // Traversing downwards, collecting patterns
         Pattern::Contains(c) => c.extract_filename_pattern(),
         Pattern::Bubble(b) => b.extract_filename_pattern(),
@@ -28,6 +34,8 @@ pub fn extract_filename_pattern<Q: QueryContext>(
         Pattern::Includes(inc) => extract_filename_pattern(&inc.includes),
         Pattern::Every(every) => extract_filename_pattern(&every.pattern),
         Pattern::Within(within) => extract_filename_pattern(&within.pattern),
+        Pattern::After(a) => extract_filename_pattern(&a.after),
+        Pattern::Before(b) => extract_filename_pattern(&b.before),
 
         // Mirror existing logic
         Pattern::Maybe(_) => Ok(Some(Pattern::Top)),
@@ -54,14 +62,53 @@ pub fn extract_filename_pattern<Q: QueryContext>(
         Pattern::Log(_) => Ok(Some(Pattern::Top)),
 
         // TODO: decide the rest of these
-        Pattern::After(_)
-        | Pattern::Before(_)
-        | Pattern::Add(_)
-        | Pattern::Subtract(_)
-        | Pattern::Multiply(_)
-        | Pattern::Divide(_)
-        | Pattern::Modulo(_)
-        | Pattern::Dots
+        Pattern::Add(add) => {
+            let Some(lhs) = extract_filename_pattern(&add.lhs)? else {
+                return Ok(None);
+            };
+            let Some(rhs) = extract_filename_pattern(&add.rhs)? else {
+                return Ok(None);
+            };
+            Ok(Some(Pattern::And(Box::new(And::new(vec![lhs, rhs])))))
+        }
+        Pattern::Subtract(sub) => {
+            let Some(lhs) = extract_filename_pattern(&sub.lhs)? else {
+                return Ok(None);
+            };
+            let Some(rhs) = extract_filename_pattern(&sub.rhs)? else {
+                return Ok(None);
+            };
+            Ok(Some(Pattern::And(Box::new(And::new(vec![lhs, rhs])))))
+        }
+        Pattern::Multiply(target) => {
+            let Some(lhs) = extract_filename_pattern(&target.lhs)? else {
+                return Ok(None);
+            };
+            let Some(rhs) = extract_filename_pattern(&target.rhs)? else {
+                return Ok(None);
+            };
+            Ok(Some(Pattern::And(Box::new(And::new(vec![lhs, rhs])))))
+        }
+        Pattern::Divide(target) => {
+            let Some(lhs) = extract_filename_pattern(&target.lhs)? else {
+                return Ok(None);
+            };
+            let Some(rhs) = extract_filename_pattern(&target.rhs)? else {
+                return Ok(None);
+            };
+            Ok(Some(Pattern::And(Box::new(And::new(vec![lhs, rhs])))))
+        }
+        Pattern::Modulo(target) => {
+            let Some(lhs) = extract_filename_pattern(&target.lhs)? else {
+                return Ok(None);
+            };
+            let Some(rhs) = extract_filename_pattern(&target.rhs)? else {
+                return Ok(None);
+            };
+            Ok(Some(Pattern::And(Box::new(And::new(vec![lhs, rhs])))))
+        }
+
+        Pattern::Dots
         | Pattern::Sequential(_)
         | Pattern::Like(_)
         | Pattern::AstNode(_)
@@ -81,11 +128,6 @@ pub fn extract_filename_pattern<Q: QueryContext>(
         | Pattern::Accumulate(_)
         | Pattern::Not(_)
         | Pattern::If(_)
-        | Pattern::Undefined
-        | Pattern::Underscore
-        | Pattern::StringConstant(_)
-        | Pattern::AstLeafNode(_)
-        | Pattern::IntConstant(_)
         | Pattern::FloatConstant(_)
         | Pattern::BooleanConstant(_)
         | Pattern::Dynamic(_) => Ok(None),
