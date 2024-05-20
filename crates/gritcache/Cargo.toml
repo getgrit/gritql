@@ -17,6 +17,7 @@ marzano-gritmodule = { path = "../gritmodule", features = [
 ], default-features = false }
 anyhow = { version = "1.0.70" }
 marzano-util = { path = "../util", features = [], default-features = false }
+fs-err = { version = "2.11.0" }
 
 [dev-dependencies]
 marzano-util = { path = "../util", features = ["finder"] }

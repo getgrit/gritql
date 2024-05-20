@@ -51,7 +51,7 @@ impl ThreadedCache {
 
     fn reset(path: &PathBuf) -> Result<()> {
         let mut writer = BufWriter::new(
-            std::fs::OpenOptions::new()
+            fs_err::OpenOptions::new()
                 .create(true)
                 .write(true)
                 .truncate(true)
@@ -63,7 +63,7 @@ impl ThreadedCache {
     }
 
     fn initialize(path: &PathBuf) -> Result<HashMap<HashKey, bool>> {
-        let file_vector = match std::fs::read(path) {
+        let file_vector = match fs_err::read(path) {
             Ok(bytes) => bytes,
             Err(e) => {
                 if e.kind() == std::io::ErrorKind::NotFound {
@@ -99,9 +99,9 @@ impl ThreadedCache {
         Ok(map)
     }
 
-    fn new_writer(path: &PathBuf) -> Result<BufWriter<std::fs::File>> {
+    fn new_writer(path: &PathBuf) -> Result<BufWriter<fs_err::File>> {
         let writer = BufWriter::new(
-            std::fs::OpenOptions::new()
+            fs_err::OpenOptions::new()
                 .create(true)
                 .append(true)
                 .open(path)
@@ -182,7 +182,7 @@ mod tests {
 
         // Delete file if exists
         if mismatches_cache_path.exists() {
-            std::fs::remove_file(&mismatches_cache_path)?;
+            fs_err::remove_file(&mismatches_cache_path)?;
         }
 
         // assert cache creation fails gracefully on invalid paths
@@ -262,7 +262,7 @@ mod tests {
         manager.join().unwrap();
 
         // Delete file
-        std::fs::remove_file(mismatches_cache_path.clone())?;
+        fs_err::remove_file(mismatches_cache_path.clone())?;
         Ok(())
     }
 }

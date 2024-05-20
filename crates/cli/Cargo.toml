@@ -19,7 +19,6 @@ path = "src/lib.rs"
 anyhow = { version = "1.0.70" }
 clap = { version = "4.1.13", features = ["derive"] }
 indicatif = { version = "0.17.5" }
-ignore = { version = "0.4.20" }
 # Do *NOT* upgrade beyond 1.0.171 until https://github.com/serde-rs/serde/issues/2538 is fixed
 serde = { version = "1.0.164", features = ["derive"] }
 serde_json = { version = "1.0.96" }
@@ -46,6 +45,7 @@ marzano-util = { path = "../util", features = ["finder"] }
 marzano-auth = { path = "../auth" }
 marzano_messenger = { path = "../marzano_messenger" }
 cli_server = { git = "https://github.com/getgrit/cli_server.git", optional = true }
+grit_cloud_client = { git = "https://github.com/getgrit/grit_cloud_client.git", optional = true }
 ai_builtins = { git = "https://github.com/getgrit/ai_builtins.git", optional = true }
 grit_cache = { path = "../gritcache" }
 tempfile = { version = "3.1" }
@@ -58,6 +58,9 @@ clap-markdown = { git = "https://github.com/getgrit/clap-markdown", rev = "4568d
 flate2 = { version = "1.0.17", features = [
   "rust_backend",
 ], default-features = false }
+axoupdater = { version = "0.6.4", default-features = false, features = [
+  "github_releases",
+] }
 
 opentelemetry-otlp = { version = "0.14.0", optional = true, features = [
   "http-proto",
@@ -72,9 +75,12 @@ tracing-opentelemetry = { version = "0.22.0", optional = true, default-features 
 tracing = { version = "0.1.40", default-features = false, features = [] }
 notify = "6.1.1"
 notify-debouncer-mini = "0.4.1"
+tracing-subscriber = { version = "0.3", default-features = false, optional = true }
 
 [target.'cfg(not(windows))'.dependencies]
 openssl = { version = "0.10", features = ["vendored"] }
+
+fs-err = { version = "2.11.0" }
 
 [dev-dependencies]
 trim-margin = "0.1.0"
@@ -88,6 +94,10 @@ default = [
   "external_functions",
   "updater",
   "workflows_v2",
+  "grit_tracing",
+  # Grit cloud feature for relaying workflow results
+  # "workflow_server",
+  # "remote_workflows",
   # "server",
   # "remote_redis",
   # "embeddings",
@@ -98,6 +108,8 @@ workflows_v2 = []
 bundled_workflows = []
 remote_redis = []
 remote_pubsub = []
+remote_workflows = ["dep:grit_cloud_client"]
+workflow_server = ["dep:grit_cloud_client"]
 server = [
   "workflows_v2",
   "external_functions",
@@ -106,6 +118,7 @@ server = [
   "remote_pubsub",
   "ai_builtins",
   "dep:cli_server",
+  "grit_tracing",
 ]
 updater = []
 grit_tracing = [
@@ -113,6 +126,7 @@ grit_tracing = [
   "dep:opentelemetry",
   "dep:opentelemetry_sdk",
   "dep:tracing-opentelemetry",
+  "dep:tracing-subscriber",
   "marzano-core/grit_tracing",
 ]
 external_functions = ["marzano-core/external_functions"]
@@ -131,6 +145,9 @@ grit_beta = [
   "external_functions",
   "updater",
   "ai_builtins",
+  "workflows_v2",
+  "remote_workflows",
+  "workflow_server",
   # "grit_timing",
 ]
 grit_timing = []

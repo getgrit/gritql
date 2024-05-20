@@ -6,7 +6,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 use lazy_static::lazy_static;
-use std::fs;
+use fs_err;
 
 use crate::{config::GRIT_MODULE_DIR, searcher::find_git_dir_from, utils::remove_dir_all_safe};
 
@@ -67,7 +67,90 @@ pub fn inject_token(remote: &str, token: &str) -> Result<String> {
     Ok(remote)
 }
 
-#[derive(Debug, Eq, Serialize, Deserialize, Default, Clone)]
+/// Represents a local repository
+pub struct LocalRepo {
+    repo: Repository,
+}
+
+impl LocalRepo {
+    pub async fn from_dir(dir: &Path) -> Option<Self> {
+        let git_dir = match find_git_dir_from(dir.to_path_buf()).await {
+            Some(git_dir) => git_dir,
+            None => return None,
+        };
+        let git_repo = match Repository::open(git_dir) {
+            Ok(repo) => repo,
+            Err(_) => {
+                return Default::default();
+            }
+        };
+        Some(Self { repo: git_repo })
+    }
+
+    /// Return the repo root path, on the filesystem
+    pub fn root(&self) -> Result<PathBuf> {
+        self.repo
+            .path()
+            .parent()
+            .map(|p| p.to_path_buf())
+            .ok_or_else(|| anyhow!("Failed to get repo root"))
+    }
+
+    /// Return the current branch, if any
+    ///
+    /// NOTE: this will only work if the branch has at least one commit (unborn branches will not be detected)
+    pub fn branch(&self) -> Option<String> {
+        match self.repo.head() {
+            Ok(head) => {
+                if head.is_branch() {
+                    match head.shorthand() {
+                        Some(branch) => Some(branch.to_string()),
+                        None => {
+                            log::error!("Failed to get branch name");
+                            None
+                        }
+                    }
+                } else {
+                    log::error!("Head is not a branch");
+                    None
+                }
+            }
+            Err(e) => {
+                log::error!("Failed to get branch: {}", e);
+                None
+            }
+        }
+    }
+
+    /// Return the remote url for the repo, if any is set
+    pub fn remote(&self) -> Option<String> {
+        let remote = match self.repo.remotes() {
+            Ok(remotes) => match remotes.get(0) {
+                Some(r) => {
+                    let git_remote = Repository::find_remote(&self.repo, r);
+                    match git_remote {
+                        Ok(remote_obj) => {
+                            let url = remote_obj.url();
+                            if url.is_none() {
+                                return Default::default();
+                            }
+                            url.unwrap().to_string()
+                        }
+                        Err(_) => {
+                            return Default::default();
+                        }
+                    }
+                }
+                None => return Default::default(),
+            },
+            Err(_) => return Default::default(),
+        };
+        Some(remote)
+    }
+}
+
+/// Represents a repository containing .grit patterns, used in our packaging system
+#[derive(Eq, Serialize, Deserialize, Default, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ModuleRepo {
     pub host: String,
@@ -121,43 +204,18 @@ impl ModuleRepo {
     }
 
     pub async fn from_dir(dir: &Path) -> Self {
-        let git_dir = match find_git_dir_from(dir.to_path_buf()).await {
-            Some(git_dir) => git_dir,
-            None => return Default::default(),
-        };
+        let local_repo = LocalRepo::from_dir(dir).await;
 
-        Self::from_git_dir(&PathBuf::from(git_dir))
+        match local_repo {
+            Some(local_repo) => (&local_repo).into(),
+            None => Default::default(),
+        }
     }
+}
 
-    pub fn from_git_dir(git_dir: &PathBuf) -> Self {
-        let git_repo = match Repository::open(git_dir) {
-            Ok(repo) => repo,
-            Err(_) => {
-                return Default::default();
-            }
-        };
-
-        let remote = match git_repo.remotes() {
-            Ok(remotes) => match remotes.get(0) {
-                Some(r) => {
-                    let git_remote = Repository::find_remote(&git_repo, r);
-                    match git_remote {
-                        Ok(remote_obj) => {
-                            let url = remote_obj.url();
-                            if url.is_none() {
-                                return Default::default();
-                            }
-                            url.unwrap().to_string()
-                        }
-                        Err(_) => {
-                            return Default::default();
-                        }
-                    }
-                }
-                None => return Default::default(),
-            },
-            Err(_) => return Default::default(),
-        };
+impl From<&LocalRepo> for ModuleRepo {
+    fn from(local_repo: &LocalRepo) -> Self {
+        let remote = local_repo.remote().unwrap_or_default();
 
         match ModuleRepo::from_remote(&remote) {
             Ok(module_repo) => module_repo,
@@ -212,7 +270,7 @@ fn reset_grit_modules(grit_modules_path: &Path) -> Result<()> {
     if grit_modules_path.exists() {
         remove_dir_all_safe(grit_modules_path)?;
     }
-    fs::create_dir_all(grit_modules_path)?;
+    fs_err::create_dir_all(grit_modules_path)?;
     Ok(())
 }
 
@@ -311,7 +369,7 @@ impl GritModuleFetcher for KeepFetcher {
     }
 
     fn prep_grit_modules(&self) -> Result<()> {
-        let _ = fs::create_dir_all(&self.clone_dir);
+        let _ = fs_err::create_dir_all(&self.clone_dir);
         Ok(())
     }
 }
@@ -322,6 +380,21 @@ mod tests {
 
     use super::*;
     use tempfile::tempdir;
+
+    #[tokio::test]
+    async fn local_repo_remote_and_branch() {
+        let dir = tempdir().unwrap().into_path();
+        let remote = "https://github.com/getgrit/stdlib.git";
+        Repository::clone(remote, dir.clone()).unwrap();
+
+        let repo = LocalRepo::from_dir(&dir).await.unwrap();
+
+        assert_eq!(
+            repo.remote().unwrap(),
+            "https://github.com/getgrit/stdlib.git"
+        );
+        assert_eq!(repo.branch().unwrap(), "main");
+    }
 
     #[test]
     fn clone_a_grit_module() {

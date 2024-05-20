@@ -7,6 +7,7 @@ use anyhow::Result;
 use clap::Args;
 use marzano_gritmodule::searcher::WorkflowInfo;
 use marzano_messenger::emit::Messager;
+
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -32,6 +33,17 @@ pub struct ApplyMigrationArgs {
     verbose: bool,
 }
 
+impl ApplyMigrationArgs {
+    /// Extracts the payload from the input if provided, otherwise returns an empty map
+    pub fn get_payload(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+        let map = match &self.input {
+            Some(i) => serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(i)?,
+            None => serde_json::Map::new(),
+        };
+        Ok(map)
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct WorkflowSettings {}
 
@@ -48,13 +60,13 @@ pub(crate) async fn run_apply_migration(
 pub(crate) async fn run_apply_migration(
     workflow: WorkflowInfo,
     paths: Vec<PathBuf>,
+    ranges: Option<Vec<marzano_util::diff::FileDiff>>,
     arg: ApplyMigrationArgs,
     flags: &GlobalFormatFlags,
 ) -> Result<()> {
-    let input = match &arg.input {
-        Some(i) => serde_json::from_str::<serde_json::Value>(i)?,
-        None => serde_json::json!({}),
-    };
+    use crate::workflows::display_workflow_outcome;
+
+    let input = arg.get_payload()?;
 
     let format = OutputFormat::from(flags);
     let mut emitter = create_emitter(
@@ -75,7 +87,8 @@ pub(crate) async fn run_apply_migration(
             verbose: arg.verbose,
             workflow_entrypoint: workflow.entrypoint().into(),
             paths,
-            payload: vec![serde_json::to_value(input)?],
+            input,
+            ranges,
         },
     )
     .await?;
@@ -83,16 +96,5 @@ pub(crate) async fn run_apply_migration(
     emitter.finish_workflow(&outcome)?;
     emitter.flush().await?;
 
-    match outcome.success {
-        true => {
-            log::info!(
-                "{}",
-                outcome
-                    .message
-                    .unwrap_or("Workflow completed successfully".to_string())
-            );
-            Ok(())
-        }
-        false => anyhow::bail!(outcome.message.unwrap_or("Workflow failed".to_string())),
-    }
+    display_workflow_outcome(outcome)
 }

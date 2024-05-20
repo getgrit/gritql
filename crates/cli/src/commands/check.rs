@@ -119,7 +119,7 @@ pub(crate) async fn run_check(
         std::env::current_dir()?
     };
 
-    let filter_range = extract_filter_ranges(&arg.shared_filters)?;
+    let filter_range = extract_filter_ranges(&arg.shared_filters, Some(&current_dir))?;
 
     // Construct a resolver
     let resolver = GritModuleResolver::new(current_dir.to_str().unwrap());
@@ -194,7 +194,7 @@ pub(crate) async fn run_check(
                 !cache.has_no_matches(hash, pattern.hash)
             })
             .collect();
-        let (result, no_match) = pattern.execute_paths(&un_cached_input_files, &context);
+        let (result, no_match) = pattern.execute_paths(un_cached_input_files, &context);
         if !no_match.is_empty() {
             for path in no_match.into_iter() {
                 let hash = path.hash.unwrap();
@@ -259,6 +259,7 @@ pub(crate) async fn run_check(
 
         match emitter {
             crate::messenger_variant::MessengerVariant::Formatted(_)
+            | crate::messenger_variant::MessengerVariant::Transformed(_)
             | crate::messenger_variant::MessengerVariant::JsonLine(_) => {
                 info!("Local only, skipping check registration.");
             }
@@ -373,7 +374,7 @@ pub(crate) async fn run_check(
                     .collect::<HashSet<_>>();
                 for pattern in applicable_patterns {
                     let problem = compiled_map.get(pattern).unwrap();
-                    let src = std::fs::read_to_string(file)?;
+                    let src = fs_err::read_to_string(file)?;
                     let res = problem.execute_file(&RichFile::new(file.to_string(), src), &context);
                     for r in res {
                         if let MatchResult::Rewrite(r) = r {

@@ -10,7 +10,7 @@ use dialoguer::Input;
 use indicatif::ProgressBar;
 use log::info;
 use marzano_core::{
-    api::{derive_log_level, is_match, AnalysisLogLevel, MatchResult},
+    api::{derive_log_level, is_match, AnalysisLog, AnalysisLogLevel, MatchResult},
     fs::apply_rewrite,
 };
 use marzano_language::target_language::TargetLanguage;
@@ -35,7 +35,29 @@ pub trait Messager: Send + Sync {
         }
     }
 
-    // Handle a group of execution results
+    fn apply_rewrite(
+        &mut self,
+        result: &MatchResult,
+        min_level: &VisibilityLevels,
+    ) -> anyhow::Result<()> {
+        if let Err(e) = apply_rewrite(result) {
+            let err_string = format!("Failed to apply rewrite: {}", e);
+            let err_log = if let Some(file_name) = result.file_name() {
+                AnalysisLog::new_error(err_string, file_name)
+            } else {
+                AnalysisLog::floating_error(err_string)
+            };
+
+            self.emit(&MatchResult::AnalysisLog(err_log), min_level)
+        } else {
+            Ok(())
+        }
+    }
+
+    /// This is the main entrypoint for handling a group of results
+    /// In interactive mode, it is responsible for asking the user what to do with each result
+    ///
+    /// Returns true if the process should continue, false if it should stop
     #[allow(clippy::too_many_arguments)]
     fn handle_results(
         &mut self,
@@ -47,10 +69,46 @@ pub trait Messager: Send + Sync {
         interactive: &mut bool,
         pg: Option<&ProgressBar>,
         processed: Option<&AtomicI32>,
-        mut parse_errors: Option<&mut HashMap<String, usize>>,
+        parse_errors: Option<&mut HashMap<String, usize>>,
         language: &TargetLanguage,
     ) -> bool {
-        for r in execution_result.into_iter() {
+        match self.handle_results_inner(
+            execution_result,
+            details,
+            dry_run,
+            min_level,
+            should_format,
+            interactive,
+            pg,
+            processed,
+            parse_errors,
+            language,
+        ) {
+            Ok(val) => val,
+            Err(err) => {
+                let err_log = AnalysisLog::new_error(err.to_string(), "unknown");
+                self.emit(&MatchResult::AnalysisLog(err_log), min_level)
+                    .expect("Failed to emit error log");
+                true
+            }
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn handle_results_inner(
+        &mut self,
+        execution_result: Vec<MatchResult>,
+        details: &mut ApplyDetails,
+        dry_run: bool,
+        min_level: &VisibilityLevels,
+        should_format: bool,
+        interactive: &mut bool,
+        pg: Option<&ProgressBar>,
+        processed: Option<&AtomicI32>,
+        mut parse_errors: Option<&mut HashMap<String, usize>>,
+        language: &TargetLanguage,
+    ) -> anyhow::Result<bool> {
+        for r in execution_result {
             if is_match(&r) {
                 details.matched += 1;
             }
@@ -89,11 +147,13 @@ pub trait Messager: Send + Sync {
                 }
             }
 
-            self.emit(&r, min_level).unwrap();
+            self.emit(&r, min_level)?;
 
             if !dry_run {
                 if is_match(&r) {
-                    let file_name = r.file_name().unwrap();
+                    let file_name = r
+                        .file_name()
+                        .ok_or_else(|| anyhow::Error::msg("File name is missing"))?;
                     if *interactive {
                         let (prefix, question, valid_chars, actions) =
                             if let MatchResult::Match(_) = r {
@@ -135,52 +195,51 @@ pub trait Messager: Send + Sync {
                                     Err(format!("Not a valid choice in {actions:}"))
                                 }
                             })
-                            .interact_text()
-                            .unwrap();
+                            .interact_text()?;
                         if let Some(pg) = pg {
                             pg.set_prefix("Analyzing")
                         }
                         match selection.trim().to_lowercase().as_str() {
                             "y" => {
-                                self.track_accept(&r).unwrap();
+                                self.track_accept(&r)?;
                             }
                             "n" => {
-                                self.track_reject(&r).unwrap();
+                                self.track_reject(&r)?;
                                 continue;
                             }
                             "s" => {
-                                self.track_supress(&r).unwrap();
+                                self.track_supress(&r)?;
                                 let suppress_rewrite = r
                                     .get_rewrite_to_suppress(
                                         language,
                                         details.named_pattern.as_deref(),
                                     )
-                                    .unwrap();
-                                apply_rewrite(&suppress_rewrite).unwrap();
+                                    .ok_or(anyhow::anyhow!("Failed to suppress rewrite"))?;
+                                self.apply_rewrite(&suppress_rewrite, min_level)?;
                                 continue;
                             }
                             "a" => {
-                                self.track_accept(&r).unwrap();
+                                self.track_accept(&r)?;
                                 *interactive = false;
                             }
                             "q" => {
-                                self.track_reject(&r).unwrap();
+                                self.track_reject(&r)?;
                                 *interactive = false;
-                                return false;
+                                return Ok(false);
                             }
                             _ => unreachable!(),
                         }
                     } else {
-                        self.track_accept(&r).unwrap();
+                        self.track_accept(&r)?;
                     }
                 }
-                apply_rewrite(&r).unwrap();
+                self.apply_rewrite(&r, min_level)?;
                 if should_format {
-                    format_result(r).unwrap();
+                    format_result(r)?;
                 }
             }
         }
-        true
+        Ok(true)
     }
 
     // Write a message to the output
@@ -220,12 +279,13 @@ pub trait Messager: Send + Sync {
 }
 
 /// Visibility levels dictate *which* objects we show (ex. just rewrites, or also every file analyzed)
-#[derive(Debug, PartialEq, PartialOrd, Clone, Copy, ValueEnum, Serialize)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy, ValueEnum, Serialize, Default)]
 pub enum VisibilityLevels {
-    Primary = 3,      // Always show this to users
+    Primary = 3, // Always show this to users
+    #[default]
     Supplemental = 2, // Show to users as secondary information
-    Debug = 1,        // Only show to users if they ask for it
-    Hidden = 0,       // Never show to users
+    Debug = 1,   // Only show to users if they ask for it
+    Hidden = 0,  // Never show to users
 }
 
 impl std::fmt::Display for VisibilityLevels {

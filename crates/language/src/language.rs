@@ -342,14 +342,7 @@ pub trait MarzanoLanguage<'a>: Language<Node<'a> = NodeWithSource<'a>> + NodeTyp
     fn metavariable_sort(&self) -> SortId;
 
     fn is_metavariable_node(&self, node: &NodeWithSource<'_>) -> bool {
-        node.node.is_named()
-            && (node.node.kind_id() == self.metavariable_sort()
-                || (self
-                    .alternate_metavariable_kinds()
-                    .contains(&node.node.kind().as_ref())
-                    && node
-                        .text()
-                        .is_ok_and(|t| self.exact_replaced_variable_regex().is_match(&t))))
+        node.node.is_named() && node.node.kind_id() == self.metavariable_sort()
     }
 
     fn get_equivalence_class(

@@ -1,0 +1,195 @@
+---
+source: crates/util/src/diff.rs
+expression: parsed
+---
+- oldPath: ".grit/workflows/autoreview/local.ts"
+  newPath: ".grit/workflows/autoreview/local.ts"
+  ranges:
+    - before:
+        start:
+          line: 1
+          column: 1
+        end:
+          line: 3
+          column: 1
+      after:
+        start:
+          line: 1
+          column: 1
+        end:
+          line: 2
+          column: 1
+    - before:
+        start:
+          line: 28
+          column: 1
+        end:
+          line: 29
+          column: 1
+      after:
+        start:
+          line: 27
+          column: 1
+        end:
+          line: 28
+          column: 1
+    - before:
+        start:
+          line: 49
+          column: 1
+        end:
+          line: 50
+          column: 1
+      after:
+        start:
+          line: 48
+          column: 1
+        end:
+          line: 49
+          column: 1
+    - before:
+        start:
+          line: 50
+          column: 1
+        end:
+          line: 50
+          column: 1
+      after:
+        start:
+          line: 50
+          column: 1
+        end:
+          line: 51
+          column: 1
+    - before:
+        start:
+          line: 52
+          column: 1
+        end:
+          line: 53
+          column: 1
+      after:
+        start:
+          line: 52
+          column: 1
+        end:
+          line: 53
+          column: 1
+    - before:
+        start:
+          line: 53
+          column: 1
+        end:
+          line: 53
+          column: 1
+      after:
+        start:
+          line: 54
+          column: 1
+        end:
+          line: 55
+          column: 1
+    - before:
+        start:
+          line: 54
+          column: 1
+        end:
+          line: 54
+          column: 1
+      after:
+        start:
+          line: 56
+          column: 1
+        end:
+          line: 66
+          column: 1
+    - before:
+        start:
+          line: 56
+          column: 1
+        end:
+          line: 57
+          column: 1
+      after:
+        start:
+          line: 67
+          column: 1
+        end:
+          line: 135
+          column: 1
+    - before:
+        start:
+          line: 58
+          column: 1
+        end:
+          line: 59
+          column: 1
+      after:
+        start:
+          line: 136
+          column: 1
+        end:
+          line: 137
+          column: 1
+- oldPath: apps/minas/src/sdk/internal.ts
+  newPath: apps/minas/src/sdk/internal.ts
+  ranges:
+    - before:
+        start:
+          line: 0
+          column: 1
+        end:
+          line: 0
+          column: 1
+      after:
+        start:
+          line: 1
+          column: 1
+        end:
+          line: 3
+          column: 1
+    - before:
+        start:
+          line: 98
+          column: 1
+        end:
+          line: 99
+          column: 1
+      after:
+        start:
+          line: 100
+          column: 1
+        end:
+          line: 103
+          column: 1
+- oldPath: packages/api/src/types.ts
+  newPath: packages/api/src/types.ts
+  ranges:
+    - before:
+        start:
+          line: 19
+          column: 1
+        end:
+          line: 20
+          column: 1
+      after:
+        start:
+          line: 19
+          column: 1
+        end:
+          line: 20
+          column: 1
+    - before:
+        start:
+          line: 23
+          column: 1
+        end:
+          line: 24
+          column: 1
+      after:
+        start:
+          line: 23
+          column: 1
+        end:
+          line: 24
+          column: 1

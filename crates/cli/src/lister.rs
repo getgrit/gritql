@@ -141,6 +141,14 @@ pub async fn list_applyables(
             return Ok(());
         }
 
+        if format.jsonl {
+            for pattern in &resolved_patterns {
+                // grit-ignore
+                println!("{}", serde_json::to_string(pattern)?);
+            }
+            return Ok(());
+        }
+
         let (config_patterns, stdlib_patterns): (Vec<_>, Vec<_>) = resolved_patterns
             .iter()
             .partition(|pattern| match pattern.source() {

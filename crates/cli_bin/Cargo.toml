@@ -8,14 +8,30 @@ homepage = "https://docs.grit.io/"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 authors.workspace = true
 documentation.workspace = true
+repository.workspace = true
 license = "MIT"
 publish = false
 
 [dependencies]
 anyhow = { version = "1.0.70" }
 marzano-cli = { path = "../cli", default-features = false }
+marzano-util = { path = "../util", default-features = false }
 tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.11", features = ["json", "stream"] }
+fs-err = { version = "2.11.0" }
+
 tracing = { version = "0.1.40", default-features = false }
+opentelemetry-otlp = { version = "0.14.0", optional = true, features = [
+  "http-proto",
+  "reqwest-client",
+] }
+opentelemetry = { version = "0.21.0", optional = true }
+opentelemetry_sdk = { version = "0.21.1", optional = true, features = [
+  "rt-tokio",
+] }
+tracing-opentelemetry = { version = "0.22.0", optional = true, default-features = false }
+tracing-subscriber = { version = "0.3", default-features = false, optional = true }
+
 
 [dev-dependencies]
 serde_json = "1.0.96"
@@ -30,12 +46,28 @@ assert_cmd = "2.0.12"
 marzano-gritmodule = { path = "../gritmodule" }
 
 [features]
-default = ["marzano-cli/default"]
+default = ["marzano-cli/default", "grit_tracing"]
 grit_tracing = [
   "marzano-cli/grit_tracing",
+  "opentelemetry",
+  "opentelemetry-otlp",
+  "opentelemetry_sdk",
+  "tracing-opentelemetry",
+  "tracing-subscriber",
 ]
 docgen = ["marzano-cli/docgen"]
 
 [package.metadata.dist]
+# this should be published by cargo-dist (needed because publish = false)
+dist = true
+# build flags for published builds
 default-features = false
 features = ["marzano-cli/grit_beta"]
+# the npm package should have this name
+npm-package = "cli"
+# the homebrew package should have this name
+formula = "grit"
+
+[package.metadata.dist.bin-aliases]
+# all installers should ensure marzano can also be run as "grit"
+marzano = ["grit"]

@@ -2,6 +2,7 @@ use crate::common::get_test_cmd;
 use anyhow::Result;
 use common::get_fixture;
 use insta::assert_snapshot;
+use insta::assert_yaml_snapshot;
 
 mod common;
 
@@ -45,6 +46,45 @@ fn list_corrupted_dir() -> Result<()> {
     println!("stdout: {}", String::from_utf8(output.stdout.clone())?);
 
     assert!(String::from_utf8(output.stderr)?.contains("ailed to parse markdown pattern"));
+
+    Ok(())
+}
+
+#[test]
+fn list_jsonl() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("patterns_list", true)?;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("patterns")
+        .arg("list")
+        .arg("--jsonl")
+        .current_dir(dir);
+
+    let output = cmd.output()?;
+
+    let stdout = String::from_utf8(output.stdout)?;
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stdout: {}", stdout);
+    println!("stderr: {}", stderr);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully"
+    );
+
+    let parsed_patterns: Vec<serde_json::Value> = stdout
+        .lines()
+        .map(|line| serde_json::from_str(line).expect("Failed to parse line as JSON"))
+        .collect();
+
+    assert!(!parsed_patterns.is_empty(), "No JSON lines were parsed.");
+
+    assert!(
+        parsed_patterns.len() > 5,
+        "Total JSON lines parsed should be more than 5."
+    );
+
+    assert_yaml_snapshot!(parsed_patterns);
 
     Ok(())
 }

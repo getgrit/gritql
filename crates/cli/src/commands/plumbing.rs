@@ -95,7 +95,7 @@ pub enum PlumbingArgs {
 
 fn read_input(shared_args: &SharedPlumbingArgs) -> Result<String> {
     let buffer = if let Some(input) = &shared_args.input {
-        std::fs::read_to_string(input)?
+        fs_err::read_to_string(input)?
     } else {
         let mut buffer = String::new();
         stdin().read_to_string(&mut buffer)?;
@@ -155,7 +155,7 @@ pub(crate) async fn run_plumbing(
                 details,
                 Some(pattern_libs.library()),
                 Some(pattern_libs.language()),
-                parent.into(),
+                &parent,
                 input.root_path.map(|p| ensure_trailing_slash(&p)),
             )
             .await

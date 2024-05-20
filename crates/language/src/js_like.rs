@@ -91,6 +91,19 @@ pub(crate) fn js_like_disregarded_field_values(
     res
 }
 
+pub(crate) fn js_like_is_metavariable<'a>(
+    node: &NodeWithSource,
+    lang: &impl MarzanoLanguage<'a>,
+    alternate_metavariable_kinds: &[&str],
+) -> bool {
+    node.node.is_named()
+        && (node.node.kind_id() == lang.metavariable_sort()
+            || (alternate_metavariable_kinds.contains(&node.node.kind().as_ref())
+                && node
+                    .text()
+                    .is_ok_and(|t| lang.exact_replaced_variable_regex().is_match(&t))))
+}
+
 pub(crate) struct MarzanoJsLikeParser(MarzanoParser);
 
 impl MarzanoJsLikeParser {
@@ -170,6 +183,8 @@ pub(crate) fn jslike_check_replacements(
         && n.text()
             .is_ok_and(|t| ["var", "let", "const"].contains(&t.as_ref()))
         || n.node.kind() == "empty_statement"
+            && n.parent()
+                .is_some_and(|p| ["program", "statement_block"].contains(&p.node.kind().as_ref()))
     {
         replacement_ranges.push(Replacement::new(n.range(), ""));
     } else if n.node.kind() == "import_statement" {

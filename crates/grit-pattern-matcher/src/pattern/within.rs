@@ -10,7 +10,7 @@ use grit_util::{AnalysisLogs, AstNode};
 
 #[derive(Debug, Clone)]
 pub struct Within<Q: QueryContext> {
-    pub(crate) pattern: Pattern<Q>,
+    pub pattern: Pattern<Q>,
 }
 
 impl<Q: QueryContext> Within<Q> {

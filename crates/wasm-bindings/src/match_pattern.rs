@@ -1,9 +1,10 @@
 use anyhow::Context;
 use grit_util::{Ast, Position};
+use marzano_core::pattern_compiler::PatternBuilder;
 use marzano_core::{
     api::{AnalysisLog, InputFile, MatchResult, PatternInfo},
     built_in_functions::BuiltIns,
-    pattern_compiler::{CompilationResult},
+    pattern_compiler::CompilationResult,
     tree_sitter_serde::tree_sitter_node_to_json,
 };
 use marzano_language::{
@@ -20,7 +21,6 @@ use std::{
 };
 use tree_sitter::{Language as TSLanguage, Parser as TSParser};
 use wasm_bindgen::prelude::*;
-use marzano_core::pattern_compiler::PatternBuilder;
 
 static GRIT_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static JAVASCRIPT_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
@@ -63,7 +63,6 @@ extern "C" {
     ) -> Result<String, JsValue>;
 }
 
-
 pub async fn parse_input_files_internal(
     pattern: String,
     paths: Vec<String>,
@@ -76,7 +75,8 @@ pub async fn parse_input_files_internal(
     let _ = web_tree_sitter_sg::TreeSitter::init().await;
     let mut pure_parser = setup_grit_parser().await?;
     let parser = &mut pure_parser;
-    let ParsedPattern { libs, tree, lang } = get_parsed_pattern(&pattern, lib_paths, lib_contents, parser).await?;
+    let ParsedPattern { libs, tree, lang } =
+        get_parsed_pattern(&pattern, lib_paths, lib_contents, parser).await?;
     let node = tree.root_node();
     let parsed_pattern = tree_sitter_node_to_json(&node.node, &pattern, &lang).to_string();
 
@@ -106,7 +106,7 @@ pub async fn parse_input_files_internal(
         parser,
         injected_builtins,
     )?;
-    match builder.compile(None, None) {
+    match builder.compile(None, None, true) {
         Ok(c) => {
             let warning_logs = c
                 .compilation_warnings
@@ -145,16 +145,11 @@ pub async fn parse_input_files(
     // Library file contents, in the same order as `lib_paths`.
     lib_contents: Vec<String>,
 ) -> Result<JsValue, JsError> {
-    let results = match parse_input_files_internal(
-        pattern,
-        paths,
-        contents,
-        lib_paths,
-        lib_contents,
-    ).await {
-        Ok(r) => r,
-        Err(e) => vec![error_to_log(e)],
-    };
+    let results =
+        match parse_input_files_internal(pattern, paths, contents, lib_paths, lib_contents).await {
+            Ok(r) => r,
+            Err(e) => vec![error_to_log(e)],
+        };
     Ok(serde_wasm_bindgen::to_value(&results)?)
 }
 
@@ -226,22 +221,16 @@ async fn match_pattern_internal(
     let injected_builtins: Option<BuiltIns> = None;
     #[cfg(feature = "ai_builtins")]
     let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
-    let builder = PatternBuilder::start(
-        pattern,
-        &libs,
-        lang,
-        None,
-        parser,
-        injected_builtins)?;
+    let builder = PatternBuilder::start(pattern, &libs, lang, None, parser, injected_builtins)?;
     let CompilationResult {
         problem: pattern, ..
-    } = builder.compile(None, None)?;
+    } = builder.compile(None, None, true)?;
     let files: Vec<RichFile> = paths
         .into_iter()
         .zip(contents)
         .map(|(p, c)| RichFile::new(p, c))
         .collect();
-    let results = pattern.execute_files(&files, &context);
+    let results = pattern.execute_files(files, &context);
     Ok(results)
 }
 
@@ -286,7 +275,9 @@ pub async fn match_pattern(
         lib_contents,
         llm_api_base,
         llm_api_bearer_token,
-    ).await {
+    )
+    .await
+    {
         Ok(r) => r,
         Err(e) => vec![error_to_log(e)],
     };
@@ -334,7 +325,9 @@ async fn get_cached_lang(lang: &PatternLanguage) -> anyhow::Result<&'static TSLa
     } else {
         let path = pattern_language_to_path(lang)?;
         let _language_already_set = lang_store.set(get_lang(&path).await?);
-        Ok(lang_store.get().ok_or_else(|| anyhow::anyhow!("Failed to get language"))?)
+        Ok(lang_store
+            .get()
+            .ok_or_else(|| anyhow::anyhow!("Failed to get language"))?)
     }
 }
 
@@ -345,7 +338,9 @@ async fn setup_grit_parser() -> anyhow::Result<MarzanoGritParser> {
         lang
     } else {
         let _language_already_set = GRIT_LANGUAGE.set(get_lang(&lang_path).await?);
-        GRIT_LANGUAGE.get().ok_or_else(|| anyhow::anyhow!("Failed to setup GRIT_LANGUAGE"))?
+        GRIT_LANGUAGE
+            .get()
+            .ok_or_else(|| anyhow::anyhow!("Failed to setup GRIT_LANGUAGE"))?
     };
     parser.set_language(lang)?;
     Ok(MarzanoGritParser::from_initialized_ts_parser(parser))
@@ -366,8 +361,7 @@ async fn get_language_for_tree(tree: &Tree) -> anyhow::Result<TargetLanguage> {
             // javascript also parses vue files to look for javascript so
             // we need to initialize the Vue struct with a wasm parser
             let vue_lang = get_cached_lang(&PatternLanguage::Vue).await?;
-            let _ = PatternLanguage::Vue
-                .to_target_with_ts_lang(vue_lang.clone());
+            let _ = PatternLanguage::Vue.to_target_with_ts_lang(vue_lang.clone());
         }
         let ts_lang = get_cached_lang(&lang).await?;
         Ok(lang.to_target_with_ts_lang(ts_lang.clone())?)

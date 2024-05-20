@@ -31,6 +31,14 @@ tokio = { version = "1.35.1", optional = true }
 serde_json = { version = "1.0.114" }
 futures = { version = "0.3.29", optional = true }
 http = { version = "0.2.11" }
+fs-err = { version = "2.11.0" }
+
+
+napi = { version = "2.16.4", default-features = false, features = [
+  "napi8",
+  "async",
+], optional = true}
+napi-derive = { version = "2.12.2", optional = true }
 
 [dev-dependencies]
 insta = { version = "1.30.0", features = ["yaml", "redactions"] }
@@ -50,3 +58,4 @@ network_requests = [
 network_requests_external = ["network_requests_common"]
 
 external_functions_ffi = []
+napi = ["dep:napi", "dep:napi-derive", "grit-util/napi"]

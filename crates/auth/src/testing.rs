@@ -12,7 +12,7 @@ use crate::{
 /// Attempts to read a variable, first from the environment, then from Doppler.
 ///
 /// If neither source has the variable, an error is returned.
-fn get_config_var(var_name: &str) -> Result<String> {
+pub fn get_config_var(var_name: &str) -> Result<String> {
     if let Ok(value) = env::var(var_name) {
         return Ok(value);
     }

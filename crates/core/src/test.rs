@@ -63,7 +63,7 @@ fn match_pattern_one_file(
     match_pattern_libs(pattern, &libs, file, src, default_language)
 }
 
-fn create_test_context() -> Result<ExecutionContext> {
+pub(crate) fn create_test_context() -> Result<ExecutionContext> {
     let context = ExecutionContext::default();
 
     // Exchange client tokens for a test token
@@ -82,7 +82,7 @@ fn create_test_context() -> Result<ExecutionContext> {
 }
 
 lazy_static! {
-    static ref TEST_EXECUTION_CONTEXT: Result<ExecutionContext> = create_test_context();
+    pub(crate) static ref TEST_EXECUTION_CONTEXT: Result<ExecutionContext> = create_test_context();
 }
 
 #[allow(clippy::wildcard_enum_match_arm)]
@@ -143,9 +143,9 @@ fn match_pattern_libs(
     Ok(execution_result)
 }
 
-struct TestArg {
-    pattern: String,
-    source: String,
+pub struct TestArg {
+    pub pattern: String,
+    pub source: String,
 }
 
 struct TestArgExpected {
@@ -213,7 +213,7 @@ fn test_rewrite(dir: &str, pattern: &str, test: &str) -> Result<()> {
             .join("expected")
             .join(actual_filename);
 
-        std::fs::write(actual_path, &rewrite)?;
+        fs_err::write(actual_path, &rewrite)?;
     }
     assert_eq!(
         rewrite.trim(),
@@ -244,7 +244,7 @@ fn new_files_assertion(
     if !files_path.is_dir() {
         return Ok(());
     }
-    let files = std::fs::read_dir(files_path)?;
+    let files = fs_err::read_dir(files_path)?;
     let count = files.count();
     assert_eq!(
         count,
@@ -262,7 +262,7 @@ fn new_files_assertion(
     for file in files {
         let name = file.file_name();
         let name = name.to_str().unwrap();
-        let content = std::fs::read(file.path())?;
+        let content = fs_err::read(file.path())?;
         let content = String::from_utf8(content)?;
         let content = content.trim();
         let message = format!("pattern result missing file: {}", name);
@@ -311,9 +311,9 @@ fn test_setup(dir: &str, pattern: &str, test: &str) -> Result<(ExecutionResult, 
             test
         )
     })?;
-    let pattern = std::fs::read_to_string(pattern)?;
-    let input = std::fs::read_to_string(input)?;
-    let expected = std::fs::read_to_string(expected).ok();
+    let pattern = fs_err::read_to_string(pattern)?;
+    let input = fs_err::read_to_string(input)?;
+    let expected = fs_err::read_to_string(expected).ok();
     Ok((
         match_pattern_one_file(pattern, "test-file.tsx", &input, lang)?,
         expected,
@@ -392,7 +392,7 @@ fn run_test_expected_with_new_file(arg: TestArgExpectedWithNewFile) -> Result<()
     Ok(())
 }
 
-fn run_test_match(arg: TestArg) -> Result<()> {
+pub fn run_test_match(arg: TestArg) -> Result<()> {
     let pattern = arg.pattern;
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let source = arg.source;
@@ -3884,6 +3884,38 @@ fn js_paren_params() {
 }
 
 #[test]
+fn js_preserve_significant_empty_statements() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"`$body` => `$body`"#.to_owned(),
+            source: r#"
+            for(;;);
+            if(true);
+            while(true);"#
+                .to_owned(),
+            expected: r#"
+            for(;;);
+            if(true);
+            while(true);"#
+                .to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn js_remove_redundant_empty_statements() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"`$body` => `$body`"#.to_owned(),
+            source: r#";;{;;};;"#.to_owned(),
+            expected: r#"{}"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn array_destrcutring_snippet() {
     run_test_match({
         TestArg {
@@ -4471,7 +4503,7 @@ fn simple_predicate_false() {
 fn test_import_none() {
     let root = get_fixtures_root().unwrap();
     let import_patterns = format!("{}/test_patterns/imports.grit", root.display());
-    let import_patterns = std::fs::read_to_string(import_patterns).unwrap();
+    let import_patterns = fs_err::read_to_string(import_patterns).unwrap();
 
     let pattern = r#"
 
@@ -4523,7 +4555,7 @@ fn rewrite_or_bubble_pattern_argument() {
 fn test_import_just_insert() {
     let root = get_fixtures_root().unwrap();
     let import_patterns = format!("{}/test_patterns/imports.grit", root.display());
-    let import_patterns = std::fs::read_to_string(import_patterns).unwrap();
+    let import_patterns = fs_err::read_to_string(import_patterns).unwrap();
 
     let pattern = r#"
 
@@ -4551,7 +4583,7 @@ fn test_import_just_insert() {
 fn pattern_call_as_rhs() {
     let root = get_fixtures_root().unwrap();
     let import_patterns = format!("{}/test_patterns/imports.grit", root.display());
-    let import_patterns = std::fs::read_to_string(import_patterns).unwrap();
+    let import_patterns = fs_err::read_to_string(import_patterns).unwrap();
 
     let pattern = r#"
         // does not work:
@@ -4591,7 +4623,7 @@ fn pattern_call_as_rhs() {
 fn pattern_call_as_lhs_and_rhs() {
     let root = get_fixtures_root().unwrap();
     let import_patterns = format!("{}/test_patterns/imports.grit", root.display());
-    let import_patterns = std::fs::read_to_string(import_patterns).unwrap();
+    let import_patterns = fs_err::read_to_string(import_patterns).unwrap();
 
     let pattern = r#"
             $x where {
@@ -4615,7 +4647,7 @@ fn pattern_call_as_lhs_and_rhs() {
 fn test_import_all_already_there() {
     let root = get_fixtures_root().unwrap();
     let import_patterns = format!("{}/test_patterns/imports.grit", root.display());
-    let import_patterns = std::fs::read_to_string(import_patterns).unwrap();
+    let import_patterns = fs_err::read_to_string(import_patterns).unwrap();
 
     let pattern = r#"
 
@@ -4647,7 +4679,7 @@ fn test_import_all_already_there() {
 fn test_import_multiple() {
     let root = get_fixtures_root().unwrap();
     let import_patterns = format!("{}/test_patterns/imports.grit", root.display());
-    let import_patterns = std::fs::read_to_string(import_patterns).unwrap();
+    let import_patterns = fs_err::read_to_string(import_patterns).unwrap();
 
     let pattern = r#"
 
@@ -4775,7 +4807,7 @@ multifile {
         .unwrap();
     let context = ExecutionContext::default();
     let results = pattern.execute_files(
-        &[
+        vec![
             RichFile::new(
                 "~/dev/rewriter/packages/sdk/src/stdlib/index.ts".to_string(),
                 content1,
@@ -4797,10 +4829,13 @@ fn test_filename() {
         |language js
         |
         |pattern foo() {
-        |  $_ where $filename => `the_new_name`
+        |  $b where {
+        |    $b <: contains `whatever` => `$filename`,
+        |    $filename => `the_new_name`,
+        |  }
         |}
         |
-        |file(name = $filename, body = $program) where $program <: foo()
+        |file(body = foo())
         |"#
     .trim_margin()
     .unwrap();
@@ -8289,7 +8324,7 @@ multifile {
     let context = ExecutionContext::default();
     let pattern = src_to_problem(pattern.to_owned(), js_lang).unwrap();
     let results = pattern.execute_files(
-        &[
+        vec![
             RichFile::new(
                 "file1.tsx".to_string(),
                 "foo(1)\nbar(1)\nbar(2)\nbaz(1)".to_string(),
@@ -8319,7 +8354,7 @@ multifile {
     let context = ExecutionContext::default();
     let pattern = src_to_problem(pattern.to_owned(), js_lang).unwrap();
     let results = pattern.execute_files(
-        &[
+        vec![
             RichFile::new("file1.tsx".to_string(), "foo(1)".to_string()),
             RichFile::new("file2.tsx".to_string(), "bar(1)\nbar(3)".to_string()),
         ],
@@ -11918,6 +11953,159 @@ fn trailing_comma_import() {
 }
 
 #[test]
+fn trailing_comma_import_from_python() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language python
+                |
+                |`foo` => .
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |from somewhere import this, foo
+                |from start import foo, fine
+                |from middle import this, foo, more
+                |"#
+            .trim_margin()
+            .unwrap(),
+            // Don't worry about formatting, just check that the trailing comma is removed
+            expected: r#"
+                |from somewhere import this
+                |from start import  fine
+                |from middle import this,  more
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn trailing_comma_import_from_python_with_alias() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language python
+                |
+                |aliased_import(name=contains `foo`) => .
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |from somewhere import this as Sam, foo as Bob
+                |from start import foo as Bob, fine
+                |from middle import this, foo as Bob, more
+                |"#
+            .trim_margin()
+            .unwrap(),
+            // Don't worry about formatting, just check that the trailing comma is removed
+            expected: r#"
+                |from somewhere import this as Sam
+                |from start import  fine
+                |from middle import this,  more
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn python_orphaned_from_imports() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language python
+                |
+                |pattern import_from($source, $names) {
+                |    import_from_statement(name=$names, module_name=dotted_name(name=$source)),
+                |}
+                |pattern find_replace_imports($list) {
+                |or {
+                |    import_from($source, $names) as $anchor where {
+                |    $list <: some bubble($source, $names, $anchor) [$from_package, $from_name, $to_package, $to_name] where {
+                |        $source <: includes $from_package,
+                |        // We might need to preserve an alias here
+                |        $replacement_name = $to_name,
+                |        // Did we find at least one true case where the name matched?
+                |        $has_target = false,
+                |        $has_other = false,
+                |
+                |        // Look at each name in a loop
+                |        $names <: some bubble($from_name, $has_other, $has_target, $replacement_name, $to_name) $this_name where {
+                |        or {
+                |            $this_name <: aliased_import(name=contains $from_name, $alias) => . where {
+                |            $replacement_name = `$to_name as $alias`,
+                |            $has_target = true
+                |            },
+                |            $this_name <: contains `$from_name` => . where $has_target = true,
+                |            $has_other = true,
+                |        }
+                |        },
+                |        $has_target <: true,
+                |        if ($has_other <: true) {
+                |        $anchor += `\nfrom $to_package import $replacement_name`
+                |        } else {
+                |        $anchor => `from $to_package import $replacement_name`
+                |        }
+                |    }      
+                |    },
+                |    `import $name` as $anchor where {
+                |    // Split the name into its constituent parts
+                |    $name <: dotted_name(name=$name_parts),
+                |    $target = $name_parts,
+                |    $list <: some bubble($target, $anchor) [$from_package, $from_name, $to_package, $to_name] where {
+                |        $prefix = split($from_package, "."),
+                |        $prefix += $from_name,
+                |        // TODO: extract into a universal function
+                |        $index = 0,
+                |        $prefix <: every bubble($target, $prefix, $index) $current where {
+                |        if ($prefix[$index] <: not undefined) {
+                |            $target[$index] <: $prefix[$index]
+                |        },
+                |        $index += 1
+                |        },
+                |        /// Ok, we found an overlap
+                |        $anchor => `import $to_package.$to_name`
+                |    }
+                |    }
+                |}
+                |}
+                |find_replace_imports([
+                |  [`somewhere`, `foo`, `other`, `food`],
+                |  [`somewhere`, `bar`, `other`, `ice`],
+                |])
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |from somewhere import (
+                |  foo,
+                |  bar
+                |)
+                |from nice import ice
+                |"#
+            .trim_margin()
+            .unwrap(),
+            // Don't worry about formatting, just check that the trailing comma is removed
+            expected: r#"
+                |from other import food
+                |
+                |from other import ice
+                |from nice import ice
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn yaml_string() {
     run_test_match({
         TestArg {
@@ -14556,7 +14744,7 @@ fn ruby_nested_module() {
                 |   module ^foo_child
                 |   end
                 |end` where {
-                |   ^foo_child => `Child`    
+                |   ^foo_child => `Child`
                 |}
                 |"#
             .trim_margin()

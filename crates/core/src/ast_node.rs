@@ -27,6 +27,8 @@ impl ASTNode {
 }
 
 impl AstNodePattern<MarzanoQueryContext> for ASTNode {
+    const INCLUDES_TRIVIA: bool = false;
+
     fn children(&self) -> Vec<PatternOrPredicate<MarzanoQueryContext>> {
         self.args
             .iter()
@@ -144,7 +146,11 @@ impl AstLeafNode {
     }
 }
 
-impl AstLeafNodePattern<MarzanoQueryContext> for AstLeafNode {}
+impl AstLeafNodePattern<MarzanoQueryContext> for AstLeafNode {
+    fn text(&self) -> Option<&str> {
+        Some(&self.text)
+    }
+}
 
 impl PatternName for AstLeafNode {
     fn name(&self) -> &'static str {

@@ -13,7 +13,7 @@ use tokio::runtime::Handle;
  * Nothing in the compiler should depend on ExecutionContext.
  * In theory, it should be possible to take a compiled pattern and run it with different execution contexts.
  */
-#[cfg(feature = "network_requests")]
+#[cfg(any(test, feature = "network_requests"))]
 #[derive(Clone, Debug)]
 pub struct ExecutionContext {
     llm_api: Option<LanguageModelAPI>,

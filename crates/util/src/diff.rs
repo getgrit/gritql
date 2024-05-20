@@ -1,16 +1,20 @@
 use anyhow::{bail, Result};
 use grit_util::{Position, RangeWithoutByte};
 use serde::Serialize;
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr};
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
+#[cfg_attr(feature = "napi", napi_derive::napi(object))]
+#[serde(rename_all = "camelCase")]
 pub struct RangePair {
     pub before: RangeWithoutByte,
     pub after: RangeWithoutByte,
 }
 
 // Define a new struct to hold before and after ranges
+#[cfg_attr(feature = "napi", napi_derive::napi(object))]
 #[derive(Debug, Clone, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct FileDiff {
     pub old_path: Option<String>,
     pub new_path: Option<String>,
@@ -87,6 +91,8 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 .trim_start_matches("a/")
                 .to_string();
 
+            insert_range_if_found(&mut current_range_pair, &mut results, has_context)?;
+
             results.push(FileDiff {
                 old_path: if old_file_name == "/dev/null" {
                     None
@@ -96,6 +102,8 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                 new_path: None,
                 ranges: Vec::new(),
             });
+            left_line_cursor = 0;
+            right_line_cursor = 0;
         } else if line.starts_with("+++ ") {
             let new_file_name = line
                 .split_whitespace()
@@ -129,6 +137,9 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
             left_line_cursor += 1;
             right_line_cursor += 1;
         } else if line.starts_with('-') || line.starts_with('+') {
+            if line[1..].starts_with("Subproject commit") {
+                continue;
+            }
             if line.starts_with('-') {
                 // Removed sections always come before added sections
                 if let Some(ref mut pair) = current_range_pair {
@@ -202,6 +213,9 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
     // If we have a current hunk, add it to the current file diff
     insert_range_if_found(&mut current_range_pair, &mut results, has_context)?;
 
+    // Remove any files with no ranges (likely submodules
+    results.retain(|file_diff| !file_diff.ranges.is_empty());
+
     Ok(results)
 }
 
@@ -223,6 +237,17 @@ fn insert_range_if_found(
         }
     }
     Ok(())
+}
+
+pub fn run_git_diff(path: &PathBuf) -> Result<String> {
+    let output = std::process::Command::new("git")
+        .arg("diff")
+        .arg("HEAD")
+        .arg("--relative")
+        .arg("--unified=0")
+        .current_dir(path)
+        .output()?;
+    Ok(String::from_utf8(output.stdout)?)
 }
 
 #[cfg(test)]
@@ -705,6 +730,47 @@ index f6e1a2c..2c58ad2 100644
         let new_content = include_str!("../fixtures/file.newline.js");
         let new_range = Range::from_byteless(parsed[0].ranges[0].after.clone(), new_content);
         assert_eq!(new_content[new_range.range_index()].to_string(), "\n");
+
+        assert_yaml_snapshot!(parsed);
+    }
+
+    #[test]
+    fn process_confusing_case() {
+        let diff = include_str!("../fixtures/confusing.diff");
+        let parsed = parse_modified_ranges(diff).expect("Failed to parse no confusing diff");
+
+        // Make sure it does not have any excessive ranges
+        let target_file_path = "packages/api/src/types.ts".to_string();
+        let target_file_diff = parsed
+            .iter()
+            .find(|file_diff| file_diff.new_path == Some(target_file_path.clone()));
+
+        if let Some(file_diff) = target_file_diff {
+            for range in &file_diff.ranges {
+                println!("evaluating range: {:?}", range);
+                if range.after.start.line >= 100 {
+                    panic!(
+                        "Found a range that is too large in {:?}: {:?}",
+                        file_diff.new_path, range
+                    );
+                }
+            }
+        } else {
+            panic!("Target file {:?} not found in the diff.", target_file_path);
+        }
+
+        let submodule_diff = parsed.iter().find(|file_diff| {
+            file_diff
+                .new_path
+                .as_ref()
+                .map_or(false, |path| path.contains("vendor/gritql"))
+        });
+        if let Some(file) = submodule_diff {
+            panic!(
+                "Found a submodule in diff, which should be ignored: {:?}",
+                file
+            );
+        }
 
         assert_yaml_snapshot!(parsed);
     }

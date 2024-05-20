@@ -2,7 +2,6 @@ use anyhow::Result;
 use grit_util::{FileRange, Position, RangeWithoutByte};
 use serde::Deserialize;
 
-
 use std::path::PathBuf;
 
 #[derive(Debug, Deserialize)]

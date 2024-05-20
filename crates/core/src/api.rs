@@ -35,6 +35,16 @@ pub enum MatchResult {
     AnalysisLog(AnalysisLog),
 }
 
+impl MatchResult {
+    pub fn is_match(&self) -> bool {
+        is_match(self)
+    }
+
+    pub fn is_error(&self) -> bool {
+        matches!(self, MatchResult::AnalysisLog(log) if log.level < 400)
+    }
+}
+
 /// Make a path look the way provolone expects it to
 /// Removes leading "./", or the root path if it's provided
 fn normalize_path_in_project<'a>(path: &'a str, root_path: Option<&'a PathBuf>) -> &'a str {
@@ -176,7 +186,7 @@ impl MatchResult {
         let original_file_name = self.extract_original_path()?;
         let original_match = self.extract_original_match()?;
 
-        let original_src = std::fs::read_to_string(original_file_name).ok()?;
+        let original_src = fs_err::read_to_string(original_file_name).ok()?;
         let rewritten_content =
             split_string_at_indices(&original_src, ranges_starts).join(&comment);
         let ef = EntireFile::file_to_entire_file(original_file_name, &rewritten_content, None);
@@ -275,10 +285,14 @@ pub struct InputFile {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct Match {
+    #[serde(default)]
     pub messages: Vec<Message>,
+    #[serde(default)]
     pub variables: Vec<VariableMatch>,
     pub source_file: String,
+    #[serde(default)]
     pub ranges: Vec<Range>,
+    #[serde(default)]
     pub debug: String,
 }
 
@@ -320,7 +334,9 @@ impl FileMatchResult for Match {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct EntireFile {
+    #[serde(default)]
     pub messages: Vec<Message>,
+    #[serde(default)]
     pub variables: Vec<VariableMatch>,
     pub source_file: String,
     pub content: String,
@@ -344,6 +360,8 @@ impl EntireFile {
 pub struct Rewrite {
     pub original: Match,
     pub rewritten: EntireFile,
+    /// Deprecated
+    #[serde(default)]
     pub ansi_summary: String,
     pub reason: Option<RewriteReason>,
 }
@@ -536,8 +554,19 @@ pub struct DoneFile {
     pub has_results: Option<bool>,
     #[serde(skip_serializing)]
     pub file_hash: Option<[u8; 32]>,
-    #[serde(skip_serializing)]
+    #[serde(skip_serializing, skip_deserializing)]
     pub from_cache: bool,
+}
+
+impl DoneFile {
+    pub fn new(relative_file_path: String) -> Self {
+        Self {
+            relative_file_path,
+            has_results: None,
+            file_hash: None,
+            from_cache: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -579,12 +608,25 @@ pub struct AnalysisLog {
 }
 
 impl AnalysisLog {
-    pub(crate) fn new_error(message: String, file: &str) -> Self {
+    pub fn new_error(message: String, file: &str) -> Self {
         Self {
             level: 280,
             message,
             position: Position::first(),
             file: file.to_owned(),
+            engine_id: "marzano".to_string(),
+            range: None,
+            syntax_tree: None,
+            source: None,
+        }
+    }
+
+    pub fn floating_error(message: String) -> Self {
+        Self {
+            level: 280,
+            message,
+            position: Position::first(),
+            file: "".to_string(),
             engine_id: "marzano".to_string(),
             range: None,
             syntax_tree: None,

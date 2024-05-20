@@ -52,16 +52,32 @@ pub(crate) async fn run_apply(
 ) -> Result<()> {
     #[cfg(feature = "workflows_v2")]
     {
-        if args.apply_migration_args.remote {
-            println!("Apply {} remotely", args.pattern_or_workflow);
-            anyhow::bail!("Remote workflows are not yet supported");
-        }
         let current_dir = current_dir()?;
+        let current_repo_root = marzano_gritmodule::fetcher::LocalRepo::from_dir(&current_dir)
+            .await
+            .map(|repo| repo.root())
+            .transpose()?;
+
+        let ranges = crate::commands::filters::extract_filter_diff(
+            &args.shared_apply_args,
+            current_repo_root.as_ref(),
+        )?;
+
+        #[cfg(feature = "remote_workflows")]
+        if args.apply_migration_args.remote {
+            return crate::workflows::run_remote_workflow(
+                args.pattern_or_workflow,
+                args.apply_migration_args,
+            )
+            .await;
+        }
+
         let custom_workflow = find_workflow_file_from(current_dir, &args.pattern_or_workflow).await;
         if let Some(custom_workflow) = custom_workflow {
             return run_apply_migration(
                 custom_workflow,
                 args.paths,
+                ranges,
                 args.apply_migration_args,
                 flags,
             )
@@ -78,7 +94,7 @@ pub(crate) async fn run_apply(
         details,
         None,
         None,
-        flags.into(),
+        flags,
         None,
     )
     .await
@@ -135,17 +151,17 @@ mod tests {
         let fixtures_root = get_fixtures_root(env!("CARGO_MANIFEST_DIR"))?;
         let pattern_grit = fixtures_root.join("stdlib").join("raw_no_console_log.grit");
         let pattern_dest = tempdir.path().join("raw_no_console_log.grit");
-        std::fs::copy(pattern_grit, pattern_dest.clone())?;
+        fs_err::copy(pattern_grit, pattern_dest.clone())?;
         let input = fixtures_root.join("stdlib").join("simple.js");
         let input_dest = tempdir.path().join("simple.js");
-        std::fs::copy(input, &input_dest)?;
+        fs_err::copy(input, &input_dest)?;
         env::set_current_dir(tempdir.path())?;
         test_apply(
             "raw_no_console_log.grit".to_string(),
             vec![input_dest.clone()],
         )
         .await?;
-        let content = std::fs::read_to_string(&input_dest)?;
+        let content = fs_err::read_to_string(&input_dest)?;
         assert_eq!(content, "\n".to_owned());
         Ok(())
     }
@@ -160,10 +176,10 @@ mod tests {
         let fixtures_root = get_fixtures_root(env!("CARGO_MANIFEST_DIR"))?;
         let pattern_grit = fixtures_root.join("openai").join("pattern.grit");
         let pattern_dest = tempdir.path().join("pattern.grit");
-        std::fs::copy(pattern_grit, pattern_dest.clone())?;
+        fs_err::copy(pattern_grit, pattern_dest.clone())?;
         let input = fixtures_root.join("openai").join("input.py");
         let input_dest = tempdir.path().join("input.py");
-        std::fs::copy(input, &input_dest)?;
+        fs_err::copy(input, &input_dest)?;
         env::set_current_dir(tempdir.path())?;
         test_apply("pattern.grit".to_string(), vec![input_dest.clone()]).await?;
         Ok(())

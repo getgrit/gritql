@@ -1,0 +1,133 @@
+diff --git a/.grit/workflows/autoreview/local.ts b/.grit/workflows/autoreview/local.ts
+index 56f899ed0..68bcef867 100644
+--- a/.grit/workflows/autoreview/local.ts
++++ b/.grit/workflows/autoreview/local.ts
+@@ -1,2 +1 @@
+-import keyBy from 'lodash/keyBy';
+-import filter from 'lodash/filter';
++import groupBy from 'lodash/groupBy';
+@@ -28 +27 @@ export default await sdk.defineWorkflow({
+-      reconstructDiff({ files: options.grit_target_ranges, repoUrl: options.grit_repo_url }),
++      reconstructDiff({ ranges: options.grit_target_ranges, repoUrl: options.grit_repo_url }),
+@@ -49 +48 @@ async function reconstructDiff({
+-  files,
++  ranges,
+@@ -50,0 +50 @@ async function reconstructDiff({
++  contextLines = 3,
+@@ -52 +52 @@ async function reconstructDiff({
+-  files: grit.FileRange[];
++  ranges: grit.FileRange[];
+@@ -53,0 +54 @@ async function reconstructDiff({
++  contextLines?: number;
+@@ -54,0 +56,10 @@ async function reconstructDiff({
++  const grouped = groupBy(ranges, (range) => range.filePath);
++  const files = Object.entries(grouped).map(([filePath, ranges]) => {
++    return {
++      filePath,
++      ranges: ranges.map((range) => range.range),
++    };
++  });
++
++  grit.logging.info('Reconstructing diff', { grouped, files });
++
+@@ -56 +67,68 @@ async function reconstructDiff({
+-  const fileContents = await grit.stdlib.readFiles({ paths }, {});
++  const fileContentsResult = await grit.stdlib.readFiles({ paths }, {});
++  if (!fileContentsResult.success) {
++    grit.logging.error('Failed to read files', { paths });
++    throw new Error('Failed to read files');
++  }
++
++  const fileContents = fileContentsResult.files;
++
++  const annotatedFiles = fileContents
++    .map((file, index) => {
++      const filePath = paths[index];
++      const fileContent = file.content;
++      // TODO: make this more efficient, so we don't have to split the file content twice
++      const fileContentByLine = fileContent.split('\n');
++      const rangeInfo = files[index].ranges;
++
++      // Handle a new file
++      if (
++        rangeInfo.length === 1 &&
++        rangeInfo[0].start.line === 1 &&
++        rangeInfo[0].end.line === fileContentByLine.length + 1
++      ) {
++        return `### ${filePath} (new file) ###\n${fileContent}`;
++      }
++
++      let thisFile = `### ${filePath} ###\n`;
++      let currentLine = 1;
++
++      const pushCurrentLine = (kind: 'prefix' | 'edit' | 'suffix') => {
++        const lineContent = fileContentByLine[currentLine - 1];
++        grit.logging.info(`Pushing line ${currentLine} of ${filePath}, as ${kind}: ${lineContent}`);
++        thisFile += `  ${lineContent}\n`;
++        currentLine++;
++      };
++
++      for (const range of rangeInfo) {
++        let firstContextLine = Math.max(range.start.line - contextLines, currentLine);
++        if (firstContextLine > currentLine) {
++          // Add a ...
++          thisFile += '...\n';
++        }
++        currentLine = firstContextLine;
++
++        grit.logging.debug(
++          `Start processing range in ${filePath}, with context at ${firstContextLine} and range at ${range.start.line}`,
++        );
++
++        // Process each line of context
++        while (currentLine < range.start.line) {
++          pushCurrentLine('prefix');
++        }
++
++        // Introduce the diff
++        thisFile += `<edit>\n`;
++        while (currentLine <= range.end.line) {
++          pushCurrentLine('content');
++        }
++        thisFile += `</edit>\n`;
++
++        // Add the context after the diff
++        while (currentLine < range.end.line + contextLines) {
++          pushCurrentLine('suffix');
++        }
++      }
++
++      return thisFile;
++    })
++    .join('\n\n');
+@@ -58 +136 @@ async function reconstructDiff({
+-  console.log('Files', paths, fileContents);
++  // grit.logging.info('Finished annotating', { paths, annotatedFiles });
+diff --git a/apps/minas/src/sdk/internal.ts b/apps/minas/src/sdk/internal.ts
+index 51c4576b0..972a38700 100644
+--- a/apps/minas/src/sdk/internal.ts
++++ b/apps/minas/src/sdk/internal.ts
+@@ -0,0 +1,2 @@
++import { join } from 'node:path';
++
+@@ -98 +100,3 @@ export const readFiles: typeof stdlib.readFiles = async (settings, options) => {
+-          const bunFile = Bun.file(sanitizeFilePath(path.join(context.topDir, path)));
++          const newPath = sanitizeFilePath(join(context.topDir, path));
++          console.log(`Trying to read ${newPath} instead of ${path}`);
++          const bunFile = Bun.file(newPath);
+diff --git a/packages/api/src/types.ts b/packages/api/src/types.ts
+index 85bb63329..3881150b7 100644
+--- a/packages/api/src/types.ts
++++ b/packages/api/src/types.ts
+@@ -19 +19 @@ export const isRichFile = (file: any): file is RichFile => {
+- * A summary of changes to a file, with before and after ranges
++ * One hunk of a diff - note that a single file might have multiple hunks
+@@ -23 +23 @@ export type FileRange = {
+-  ranges: Range[];
++  range: Range;
+diff --git a/vendor/gritql b/vendor/gritql
+--- a/vendor/gritql
++++ b/vendor/gritql
+@@ -1 +1 @@
+-Subproject commit 533155bb349500009c7884cc39129b22eacb65fe
++Subproject commit 533155bb349500009c7884cc39129b22eacb65fe-dirty

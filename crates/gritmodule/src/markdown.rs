@@ -14,7 +14,7 @@ use marzano_language::language::MarzanoLanguage as _;
 use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::rich_path::RichFile;
-use std::fs::OpenOptions;
+use fs_err::OpenOptions;
 use std::io::{Read, Seek, Write};
 use std::path::Path;
 use tokio::io::SeekFrom;

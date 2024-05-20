@@ -15,12 +15,17 @@ use cli_server::pubsub::GooglePubSubMessenger;
 #[cfg(feature = "remote_redis")]
 use cli_server::redis::RedisMessenger;
 
-use crate::{flags::OutputFormat, jsonl::JSONLineMessenger, result_formatting::FormattedMessager};
+use crate::{
+    flags::OutputFormat,
+    jsonl::JSONLineMessenger,
+    result_formatting::{FormattedMessager, TransformedMessenger},
+};
 
 #[allow(clippy::large_enum_variant)]
 pub enum MessengerVariant<'a> {
     Formatted(FormattedMessager<'a>),
     JsonLine(JSONLineMessenger<'a>),
+    Transformed(TransformedMessenger<'a>),
     #[cfg(feature = "remote_redis")]
     Redis(RedisMessenger),
     #[cfg(feature = "remote_pubsub")]
@@ -33,6 +38,7 @@ impl<'a> Messager for MessengerVariant<'a> {
     fn raw_emit(&mut self, message: &marzano_core::api::MatchResult) -> anyhow::Result<()> {
         match self {
             MessengerVariant::Formatted(m) => m.raw_emit(message),
+            MessengerVariant::Transformed(m) => m.raw_emit(message),
             MessengerVariant::JsonLine(m) => m.raw_emit(message),
             #[cfg(feature = "remote_redis")]
             MessengerVariant::Redis(m) => m.raw_emit(message),
@@ -46,6 +52,7 @@ impl<'a> Messager for MessengerVariant<'a> {
     fn emit_estimate(&mut self, count: usize) -> anyhow::Result<()> {
         match self {
             MessengerVariant::Formatted(m) => m.emit_estimate(count),
+            MessengerVariant::Transformed(m) => m.emit_estimate(count),
             MessengerVariant::JsonLine(m) => m.emit_estimate(count),
             #[cfg(feature = "remote_redis")]
             MessengerVariant::Redis(m) => m.emit_estimate(count),
@@ -59,6 +66,7 @@ impl<'a> Messager for MessengerVariant<'a> {
     fn start_workflow(&mut self) -> anyhow::Result<()> {
         match self {
             MessengerVariant::Formatted(m) => m.start_workflow(),
+            MessengerVariant::Transformed(m) => m.start_workflow(),
             MessengerVariant::JsonLine(m) => m.start_workflow(),
             #[cfg(feature = "remote_redis")]
             MessengerVariant::Redis(m) => m.start_workflow(),
@@ -72,6 +80,7 @@ impl<'a> Messager for MessengerVariant<'a> {
     fn finish_workflow(&mut self, outcome: &PackagedWorkflowOutcome) -> anyhow::Result<()> {
         match self {
             MessengerVariant::Formatted(m) => m.finish_workflow(outcome),
+            MessengerVariant::Transformed(m) => m.finish_workflow(outcome),
             MessengerVariant::JsonLine(m) => m.finish_workflow(outcome),
             #[cfg(feature = "remote_redis")]
             MessengerVariant::Redis(m) => m.finish_workflow(outcome),
@@ -92,6 +101,12 @@ impl<'a> From<FormattedMessager<'a>> for MessengerVariant<'a> {
 impl<'a> From<JSONLineMessenger<'a>> for MessengerVariant<'a> {
     fn from(value: JSONLineMessenger<'a>) -> Self {
         Self::JsonLine(value)
+    }
+}
+
+impl<'a> From<TransformedMessenger<'a>> for MessengerVariant<'a> {
+    fn from(value: TransformedMessenger<'a>) -> Self {
+        Self::Transformed(value)
     }
 }
 
@@ -152,7 +167,7 @@ pub async fn create_emitter<'a>(
     _root_path: Option<&PathBuf>,
 ) -> Result<MessengerVariant<'a>> {
     let writer: Option<Box<dyn Write + Send>> = if let Some(output_file) = output_file {
-        let file = std::fs::File::create(output_file)?;
+        let file = fs_err::File::create(output_file)?;
         let bufwriter = io::BufWriter::new(file);
         Some(Box::new(bufwriter))
     } else {
@@ -170,6 +185,7 @@ pub async fn create_emitter<'a>(
         OutputFormat::Json => {
             bail!("JSON output is not supported for apply_pattern");
         }
+        OutputFormat::Transformed => TransformedMessenger::new(writer).into(),
         OutputFormat::Jsonl => {
             let jsonl =
                 JSONLineMessenger::new(writer.unwrap_or_else(|| Box::new(io::stdout())), mode);

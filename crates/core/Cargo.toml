@@ -40,6 +40,9 @@ path-absolutize = { version = "3.1.1", optional = false, features = [
   "use_unix_paths_on_wasm",
 ] }
 getrandom = { version = "0.2.11", optional = true }
+lazy_static = {version = "1.4.0", optional = true }
+walkdir = { version = "2.3.3", optional = true }
+fs-err = { version = "2.11.0" }
 
 [dev-dependencies]
 similar = "2.2.1"
@@ -86,3 +89,4 @@ language-parsers = ["marzano-language/builtin-parser"]
 grit-parser = ["marzano-language/grit-parser"]
 absolute_filename = []
 non_wasm = ["absolute_filename"]
+test_utils = []

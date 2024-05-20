@@ -14,10 +14,6 @@ pub trait Language: Sized {
 
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)];
 
-    fn alternate_metavariable_kinds(&self) -> &[&'static str] {
-        &[]
-    }
-
     fn metavariable_prefix(&self) -> &'static str {
         "$"
     }

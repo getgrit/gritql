@@ -2,7 +2,8 @@ use crate::{
     built_in_functions::BuiltIns,
     clean::{get_replacement_ranges, replace_cleaned_ranges},
     foreign_function_definition::ForeignFunctionDefinition,
-    marzano_resolved_pattern::MarzanoResolvedPattern,
+    limits::is_file_too_big,
+    marzano_resolved_pattern::{MarzanoFile, MarzanoResolvedPattern},
     pattern_compiler::file_owner_compiler::FileOwnerCompiler,
     problem::MarzanoQueryContext,
     text_unparser::apply_effects,
@@ -24,14 +25,18 @@ use marzano_language::{
     language::{MarzanoLanguage, Tree},
     target_language::TargetLanguage,
 };
-use marzano_util::runtime::ExecutionContext;
-use std::path::PathBuf;
+use marzano_util::{
+    rich_path::{LoadableFile, RichFile},
+    runtime::ExecutionContext,
+};
+use std::{borrow::Cow, path::PathBuf};
 
 pub struct MarzanoContext<'a> {
     pub pattern_definitions: &'a Vec<PatternDefinition<MarzanoQueryContext>>,
     pub predicate_definitions: &'a Vec<PredicateDefinition<MarzanoQueryContext>>,
     pub function_definitions: &'a Vec<GritFunctionDefinition<MarzanoQueryContext>>,
     pub foreign_function_definitions: &'a Vec<ForeignFunctionDefinition>,
+    lazy_files: Vec<Box<dyn LoadableFile + 'a>>,
     pub files: &'a FileOwners<Tree>,
     pub built_ins: &'a BuiltIns,
     pub language: &'a TargetLanguage,
@@ -46,6 +51,7 @@ impl<'a> MarzanoContext<'a> {
         predicate_definitions: &'a Vec<PredicateDefinition<MarzanoQueryContext>>,
         function_definitions: &'a Vec<GritFunctionDefinition<MarzanoQueryContext>>,
         foreign_function_definitions: &'a Vec<ForeignFunctionDefinition>,
+        lazy_files: Vec<Box<dyn LoadableFile + 'a>>,
         files: &'a FileOwners<Tree>,
         built_ins: &'a BuiltIns,
         language: &'a TargetLanguage,
@@ -57,6 +63,7 @@ impl<'a> MarzanoContext<'a> {
             predicate_definitions,
             function_definitions,
             foreign_function_definitions,
+            lazy_files,
             files,
             built_ins,
             language,
@@ -112,6 +119,48 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
         self.built_ins.call(call, context, state, logs)
     }
 
+    fn load_file(
+        &self,
+        file: &MarzanoFile<'a>,
+        state: &mut State<'a, MarzanoQueryContext>,
+        logs: &mut AnalysisLogs,
+    ) -> anyhow::Result<bool> {
+        match file {
+            MarzanoFile::Resolved(_) => {
+                // Assume the file is already loaded
+            }
+            MarzanoFile::Ptr(ptr) => {
+                if state.files.is_loaded(ptr) {
+                    return Ok(true);
+                }
+                let index = ptr.file;
+
+                let cow: Cow<RichFile> = self.lazy_files[index as usize].try_into_cow()?;
+
+                if let Some(log) = is_file_too_big(&cow) {
+                    logs.push(log);
+                    return Ok(false);
+                }
+
+                let owned = cow.into_owned();
+
+                let file = FileOwnerCompiler::from_matches(
+                    owned.path,
+                    owned.content,
+                    None,
+                    false,
+                    self.language,
+                    logs,
+                )?;
+                if let Some(file) = file {
+                    self.files.push(file);
+                    state.files.load_file(ptr, self.files.last().unwrap());
+                }
+            }
+        }
+        Ok(true)
+    }
+
     // FIXME: Don't depend on Grit's file handling in context.
     fn files(&self) -> &FileOwners<Tree> {
         self.files
@@ -130,7 +179,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
     ) -> Result<bool> {
         let mut parser = self.language().get_parser();
 
-        let files = if let Some(files) = binding.get_file_pointers() {
+        let mut files = if let Some(files) = binding.get_file_pointers() {
             files
                 .iter()
                 .map(|f| state.files.latest_revision(f))
@@ -142,6 +191,11 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
         let binding = if files.len() == 1 {
             ResolvedPattern::from_file_pointer(*files.last().unwrap())
         } else {
+            // Load all files into memory and collect successful file pointers
+            files.retain(|file_ptr| {
+                self.load_file(&MarzanoFile::Ptr(*file_ptr), state, logs)
+                    .unwrap_or(false)
+            });
             ResolvedPattern::from_files(ResolvedPattern::from_list_parts(
                 files.iter().map(|f| ResolvedPattern::from_file_pointer(*f)),
             ))
@@ -160,7 +214,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
             suppressed,
         };
         for file_ptr in files {
-            let file = state.files.get_file(file_ptr);
+            let file = state.files.get_file_owner(file_ptr);
             let mut match_log = file.matches.borrow_mut();
 
             let filename_path = &file.name;
