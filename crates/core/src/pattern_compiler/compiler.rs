@@ -372,14 +372,14 @@ pub(crate) fn get_definitions(
         foreign_function_definitions,
     })
 }
-struct DefsToFilenames {
-    patterns: BTreeMap<String, String>,
-    predicates: BTreeMap<String, String>,
-    functions: BTreeMap<String, String>,
-    foreign_functions: BTreeMap<String, String>,
+pub struct DefsToFilenames {
+    pub patterns: BTreeMap<String, String>,
+    pub predicates: BTreeMap<String, String>,
+    pub functions: BTreeMap<String, String>,
+    pub foreign_functions: BTreeMap<String, String>,
 }
 
-fn defs_to_filenames(
+pub fn defs_to_filenames(
     libs: &BTreeMap<String, String>,
     parser: &mut MarzanoGritParser,
     root: NodeWithSource,
