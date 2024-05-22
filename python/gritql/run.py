@@ -7,8 +7,10 @@ from .installer import find_install
 def run_cli(args: Any):
     """Runs the Grit CLI"""
     cli_path = find_install()
-    print("ARGS", args)
+    print("Running GritQL pattern with args:", cli_path, args)
+
     code = subprocess.run([cli_path, *args])
+
 
     return code.returncode
 

@@ -10,7 +10,7 @@ version = "0.1.0"
 
 [tool.poetry]
 name = "gritql"
-version = "0.1.1"
+version = "0.1.2"
 description = "Python bindings for GritQL"
 authors = ["Grit <developers@grit.io>"]
 license = "MIT"

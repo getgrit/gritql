@@ -37,8 +37,6 @@ def find_install() -> Path:
     if sys.platform == "win32":
         raise CLIError("Windows is not supported yet in the migration CLI")
 
-    return Path("/Users/morgante/code/grit/gritql/target/debug/marzano")
-
     grit_path = shutil.which("grit")
     if grit_path:
         _debug(f"'grit' found in PATH at {grit_path}")
