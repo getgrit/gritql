@@ -2,14 +2,14 @@ use std::path::Path;
 
 use grit_util::{AnalysisLogs, SnippetTree};
 
-use crate::language::{MarzanoParser, Tree};
+use crate::language::{MarzanoLanguage, MarzanoParser, Tree};
 
 /// Custom Python parser, to include notebooks
 pub(crate) struct MarzanoNotebookParser(MarzanoParser);
 
 impl MarzanoNotebookParser {
     pub(crate) fn new<'a>(lang: &impl MarzanoLanguage<'a>) -> Self {
-        Self(MarzanoNotebookParser::new(lang))
+        Self(MarzanoParser::new(lang))
     }
 }
 
