@@ -122,6 +122,7 @@ fn append_code_range(
         let mut cursor = node.walk();
         if let Some(mut attributes) = node
             .child_by_field_name("start_tag")
+            // nb. This type matches the grammar
             .map(|n| n.children_by_field_name("atributes", &mut cursor))
         {
             if attributes.any(|n| is_lang_attribute(&n, text, name_array)) {
