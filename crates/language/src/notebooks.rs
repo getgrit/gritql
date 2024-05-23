@@ -43,29 +43,24 @@ fn is_code_cell_pair(node: &NodeWithSource, program_src: &[u8]) -> bool {
 }
 
 /// Given a pair, extract the value
-fn get_pair_sources(node: &NodeWithSource, program_src: &[u8]) -> Result
+fn get_pair_sources<'a>(
+    node: &'a NodeWithSource,
+    program_src: &[u8],
+) -> Option<NodeWithSource<'a>> {
     if node.node.kind() != "pair" {
-        bail!("Expected object");
+        return None;
     }
 
-    cursor.goto_first_child();
-    while cursor.goto_next_sibling() {
-        let node = cursor.node();
-        if node.kind() == "pair" {
-            let key = node
-                .child_by_field_name("key")
-                .ok_or_else(|| anyhow!("No key"))?;
-            let value = node
-                .child_by_field_name("value")
-                .ok_or_else(|| anyhow!("No value"))?;
-            if key.utf8_text(program_src)? == "\"source\"" {
-                let source = value.utf8_text(program_src)?;
-                sources.push(source.to_string());
-            }
-        }
+    if !node
+        .child_by_field_name("key")
+        .and_then(|key| key.node.utf8_text(program_src).ok())
+        .map(|key| key == "\"source\"")
+        .unwrap_or(false)
+    {
+        return None;
     }
 
-    Ok(sources)
+    node.child_by_field_name("value")
 }
 
 impl grit_util::Parser for MarzanoNotebookParser {
