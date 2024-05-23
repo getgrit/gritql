@@ -13,6 +13,11 @@ pub fn tree_sitter_node_to_json(
     language: &impl NodeTypes,
 ) -> serde_json::Value {
     let sort_id = node.kind_id();
+    panic!(
+        "holy shit we're just RIGHT FUCKING HERE and the node kind is {} and the kind id is {}",
+        node.kind(),
+        node.kind_id()
+    );
     let node_types = language.node_types();
     let empty: Vec<Field> = vec![];
     let node_fields = if node.is_error() {
