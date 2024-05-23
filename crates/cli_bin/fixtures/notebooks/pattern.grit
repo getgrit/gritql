@@ -6,5 +6,6 @@ or {
   // Cross-cell references
   `Tool($args)` => `Fool($args)` where {
     $program <: contains `from langchain.agents import $_`
-  }
+  },
+  `print($x)` => `ECHO $x`
 }
