@@ -18,6 +18,9 @@ pub fn tree_sitter_node_to_json(
     let node_fields = if node.is_error() {
         &empty
     } else {
+        if node_types.len() == 117 && sort_id == 194 {
+            panic!("Fuck we're here, kind is {}", node.kind())
+        }
         &node_types[sort_id as usize]
     };
     let mut cursor = node.walk();
