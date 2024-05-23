@@ -197,7 +197,7 @@ impl PatternLanguage {
             PatternLanguage::Json => &["json"],
             PatternLanguage::Java => &["java"],
             PatternLanguage::CSharp => &["cs"],
-            PatternLanguage::Python => &["py"],
+            PatternLanguage::Python => &["py", "ipynb"],
             PatternLanguage::MarkdownBlock => &["md", "mdx", "mdoc"],
             PatternLanguage::MarkdownInline => &["md", "mdx", "mdoc"],
             PatternLanguage::Go => &["go"],
@@ -356,6 +356,8 @@ pub fn expand_paths(
             file_types.select("js");
         }
     }
+
+    println!("file types: {:?}", file_types.build()?);
 
     let mut file_walker = WalkBuilder::new(start_paths[0].clone());
     file_walker.types(file_types.build()?);
