@@ -239,6 +239,8 @@ impl Parser for MarzanoParser {
             logs.append(&mut errors);
         }
 
+        println!("tree: {:?}", tree.root_node());
+
         Some(Tree::new(tree, body))
     }
 

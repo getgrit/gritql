@@ -271,7 +271,7 @@ impl PatternLanguage {
         self.get_file_extensions().contains(&ext)
     }
 
-    // slightly inneficient but ensures the names are cosnsistent
+    // slightly inefficient but ensures the names are consistent
     pub fn language_name(self) -> &'static str {
         self.try_into()
             .map(|l: TargetLanguage| l.language_name())
@@ -356,8 +356,6 @@ pub fn expand_paths(
             file_types.select("js");
         }
     }
-
-    println!("file types: {:?}", file_types.build()?);
 
     let mut file_walker = WalkBuilder::new(start_paths[0].clone());
     file_walker.types(file_types.build()?);

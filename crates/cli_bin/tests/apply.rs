@@ -863,11 +863,8 @@ fn python_in_notebook() -> Result<()> {
     let mut apply_cmd = get_test_cmd()?;
     apply_cmd.current_dir(dir.as_path());
     // apply_cmd.current_dir(basic_path);
-    apply_cmd
-        .arg("apply")
-        .arg("--force")
-        .arg("pattern.grit")
-        .arg("--min-visibility=debug");
+    apply_cmd.arg("apply").arg("--force").arg("pattern.grit");
+    // .arg("--min-visibility=debug");
     let output = apply_cmd.output()?;
 
     let stdout = String::from_utf8(output.stdout)?;
@@ -881,7 +878,8 @@ fn python_in_notebook() -> Result<()> {
         stderr
     );
 
-    panic!("TODO: Implement snapshot testing for notebooks");
+    // Make sure we process the file
+    assert!(stdout.contains("Processed 1 file"));
 
     // // Read back the require.js file
     // let target_file = dir.join("simple.vue");
@@ -889,6 +887,8 @@ fn python_in_notebook() -> Result<()> {
 
     // // assert that it matches snapshot
     // assert_snapshot!(content);
+
+    panic!("TODO: Implement snapshot testing for notebooks");
 
     Ok(())
 }
