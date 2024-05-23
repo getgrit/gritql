@@ -80,15 +80,16 @@ pub async fn parse_input_files_internal(
     let ParsedPattern { libs, tree, lang } =
         get_parsed_pattern(&pattern, lib_paths, lib_contents, parser).await?;
     let node = tree.root_node();
-    panic!(
-        "Crying now language is {} with {} node types and node is {:?} with kind {} and kind id {}",
-        lang.language_name(),
-        lang.node_types().len(),
-        &node.node,
-        &node.node.kind(),
-        &node.node.kind_id()
-    );
+    // panic!(
+    //     "Crying now language is {} with {} node types and node is {:?} with kind {} and kind id {}",
+    //     lang.language_name(),
+    //     lang.node_types().len(),
+    //     &node.node,
+    //     &node.node.kind(),
+    //     &node.node.kind_id()
+    // );
     let parsed_pattern = tree_sitter_node_to_json(&node.node, &pattern, &lang).to_string();
+    panic!("Fuck me actually we passed that");
 
     let mut results: Vec<MatchResult> = Vec::new();
     for (path, content) in paths.into_iter().zip(contents) {
