@@ -8,8 +8,8 @@ use marzano_core::{
     pattern_compiler::CompilationResult,
     tree_sitter_serde::tree_sitter_node_to_json,
 };
-use marzano_language::grit_ts_node::grit_node_types;
-use marzano_language::language::NodeTypes;
+use marzano_language::grit_ts_node::{grit_node_types, GritNodeTypes, NODE_TYPES_STRING};
+use marzano_language::language::{fields_for_nodes, NodeTypes};
 use marzano_language::{
     grit_parser::MarzanoGritParser,
     language::Tree,
@@ -89,8 +89,12 @@ pub async fn parse_input_files_internal(
     //     &node.node.kind(),
     //     &node.node.kind_id()
     // );
+    let GRIT_NODE_TYPES = fields_for_nodes(&GRIT_LANGUAGE.get().unwrap(), NODE_TYPES_STRING);
+    let grit_node_types = GritNodeTypes {
+        node_types: &GRIT_NODE_TYPES,
+    };
     let parsed_pattern =
-        tree_sitter_node_to_json(&node.node, &pattern, &grit_node_types()).to_string();
+        tree_sitter_node_to_json(&node.node, &pattern, &grit_node_types).to_string();
     // panic!("Fuck me actually we passed that");
 
     let mut results: Vec<MatchResult> = Vec::new();

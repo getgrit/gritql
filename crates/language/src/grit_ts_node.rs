@@ -1,14 +1,15 @@
 use crate::language::{fields_for_nodes, Field, NodeTypes, TSLanguage};
 use lazy_static::lazy_static;
 
-static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/grit-node-types.json");
+pub static NODE_TYPES_STRING: &str =
+    include_str!("../../../resources/node-types/grit-node-types.json");
 
 lazy_static! {
     static ref GRIT_NODE_TYPES: Vec<Vec<Field>> = fields_for_nodes(&language(), NODE_TYPES_STRING);
 }
 
 pub struct GritNodeTypes {
-    node_types: &'static [Vec<Field>],
+    pub node_types: &'static [Vec<Field>],
 }
 
 impl NodeTypes for GritNodeTypes {
