@@ -1,4 +1,5 @@
 use anyhow::Context;
+use grit_util::Language;
 use grit_util::{Ast, Position};
 use marzano_core::pattern_compiler::PatternBuilder;
 use marzano_core::{
@@ -7,6 +8,7 @@ use marzano_core::{
     pattern_compiler::CompilationResult,
     tree_sitter_serde::tree_sitter_node_to_json,
 };
+use marzano_language::language::NodeTypes;
 use marzano_language::{
     grit_parser::MarzanoGritParser,
     language::Tree,
@@ -79,8 +81,12 @@ pub async fn parse_input_files_internal(
         get_parsed_pattern(&pattern, lib_paths, lib_contents, parser).await?;
     let node = tree.root_node();
     panic!(
-        "Crying now language is {:?} and node is {:?}",
-        lang, &node.node
+        "Crying now language is {} with {} node types and node is {:?} with kind {} and kind id {}",
+        lang.language_name(),
+        lang.node_types().len(),
+        &node.node,
+        &node.node.kind(),
+        &node.node.kind_id()
     );
     let parsed_pattern = tree_sitter_node_to_json(&node.node, &pattern, &lang).to_string();
 
