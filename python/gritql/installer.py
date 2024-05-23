@@ -32,10 +32,13 @@ def _debug(message: str) -> None:
     sys.stdout.write(f"[DEBUG]: {message}\n")
 
 
+class CLIError(Exception):
+    pass
+
 def find_install() -> Path:
     """Installs the Grit CLI and returns the location of the binary"""
     if sys.platform == "win32":
-        raise Exception("Windows is not supported yet in the migration CLI")
+        raise CLIError("Windows is not supported yet in the migration CLI")
 
     grit_path = shutil.which("grit")
     if grit_path:
@@ -70,6 +73,7 @@ def find_install() -> Path:
     meta_url = f"https://api.keygen.sh/v1/accounts/{KEYGEN_ACCOUNT}/artifacts/{file_name}"
 
     sys.stdout.write(f"Retrieving Grit CLI metadata from {meta_url}\n")
+
     # TODO: remove httpx dependency
     with httpx.Client() as client:
         response = client.get(meta_url)  # pyright: ignore[reportUnknownMemberType]
