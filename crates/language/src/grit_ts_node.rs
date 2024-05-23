@@ -8,17 +8,17 @@ lazy_static! {
     static ref GRIT_NODE_TYPES: Vec<Vec<Field>> = fields_for_nodes(&language(), NODE_TYPES_STRING);
 }
 
-pub struct GritNodeTypes {
-    pub node_types: &'static [Vec<Field>],
+pub struct GritNodeTypes<'a> {
+    pub node_types: &'a [Vec<Field>],
 }
 
-impl NodeTypes for GritNodeTypes {
+impl NodeTypes for GritNodeTypes<'_> {
     fn node_types(&self) -> &[Vec<Field>] {
         self.node_types
     }
 }
 
-pub fn grit_node_types() -> GritNodeTypes {
+pub fn grit_node_types() -> GritNodeTypes<'static> {
     GritNodeTypes {
         node_types: &GRIT_NODE_TYPES,
     }

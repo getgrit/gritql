@@ -89,9 +89,9 @@ pub async fn parse_input_files_internal(
     //     &node.node.kind(),
     //     &node.node.kind_id()
     // );
-    let GRIT_NODE_TYPES = fields_for_nodes(&GRIT_LANGUAGE.get().unwrap(), NODE_TYPES_STRING);
+    let fields = fields_for_nodes(&GRIT_LANGUAGE.get().unwrap(), NODE_TYPES_STRING);
     let grit_node_types = GritNodeTypes {
-        node_types: &GRIT_NODE_TYPES,
+        node_types: &fields,
     };
     let parsed_pattern =
         tree_sitter_node_to_json(&node.node, &pattern, &grit_node_types).to_string();
