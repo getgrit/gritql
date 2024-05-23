@@ -85,6 +85,7 @@ pub async fn parse_input_files_internal(
         let path = PathBuf::from(path);
         let mut parser = setup_language_parser((&lang).into()).await?;
         let tree = parser.parse(content.as_bytes(), None).unwrap().unwrap();
+        panic!("Fuck here language is {:?}", lang);
         let input_file_debug_text =
             tree_sitter_node_to_json(&tree.root_node(), &content, &lang).to_string();
         let input_file = InputFile {

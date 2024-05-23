@@ -18,6 +18,7 @@ pub fn parse_input_file<'a>(
     let tree = parser
         .parse_file(input, Some(path), &mut vec![].into(), false)
         .context("Parsed tree is empty")?;
+    panic!("Lolol language is {}", lang.language_name());
     let input_file_debug_text = to_string_pretty(&tree_sitter_node_to_json(
         &tree.root_node().node,
         input,
