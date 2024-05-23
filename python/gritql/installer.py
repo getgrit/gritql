@@ -35,7 +35,7 @@ def _debug(message: str) -> None:
 def find_install() -> Path:
     """Installs the Grit CLI and returns the location of the binary"""
     if sys.platform == "win32":
-        raise CLIError("Windows is not supported yet in the migration CLI")
+        raise Exception("Windows is not supported yet in the migration CLI")
 
     grit_path = shutil.which("grit")
     if grit_path:
