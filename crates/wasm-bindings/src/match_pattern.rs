@@ -78,7 +78,10 @@ pub async fn parse_input_files_internal(
     let ParsedPattern { libs, tree, lang } =
         get_parsed_pattern(&pattern, lib_paths, lib_contents, parser).await?;
     let node = tree.root_node();
-    panic!("Crying now language is {:?}", lang);
+    panic!(
+        "Crying now language is {:?} and node is {:?}",
+        lang, &node.node
+    );
     let parsed_pattern = tree_sitter_node_to_json(&node.node, &pattern, &lang).to_string();
 
     let mut results: Vec<MatchResult> = Vec::new();
