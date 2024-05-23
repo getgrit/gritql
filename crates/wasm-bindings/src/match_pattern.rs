@@ -8,6 +8,7 @@ use marzano_core::{
     pattern_compiler::CompilationResult,
     tree_sitter_serde::tree_sitter_node_to_json,
 };
+use marzano_language::grit_ts_node::grit_node_types;
 use marzano_language::language::NodeTypes;
 use marzano_language::{
     grit_parser::MarzanoGritParser,
@@ -88,15 +89,16 @@ pub async fn parse_input_files_internal(
     //     &node.node.kind(),
     //     &node.node.kind_id()
     // );
-    let parsed_pattern = tree_sitter_node_to_json(&node.node, &pattern, &lang).to_string();
-    panic!("Fuck me actually we passed that");
+    let parsed_pattern =
+        tree_sitter_node_to_json(&node.node, &pattern, &grit_node_types()).to_string();
+    // panic!("Fuck me actually we passed that");
 
     let mut results: Vec<MatchResult> = Vec::new();
     for (path, content) in paths.into_iter().zip(contents) {
         let path = PathBuf::from(path);
         let mut parser = setup_language_parser((&lang).into()).await?;
         let tree = parser.parse(content.as_bytes(), None).unwrap().unwrap();
-        panic!("Fuck here language is {:?}", lang);
+        // panic!("Fuck here language is {:?}", lang);
         let input_file_debug_text =
             tree_sitter_node_to_json(&tree.root_node(), &content, &lang).to_string();
         let input_file = InputFile {
