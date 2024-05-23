@@ -82,14 +82,6 @@ pub async fn parse_input_files_internal(
     let ParsedPattern { libs, tree, lang } =
         get_parsed_pattern(&pattern, lib_paths, lib_contents, parser).await?;
     let node = tree.root_node();
-    // panic!(
-    //     "Crying now language is {} with {} node types and node is {:?} with kind {} and kind id {}",
-    //     lang.language_name(),
-    //     lang.node_types().len(),
-    //     &node.node,
-    //     &node.node.kind(),
-    //     &node.node.kind_id()
-    // );
     let fields = GRIT_NODE_TYPES
         .get_or_init(|| fields_for_nodes(&GRIT_LANGUAGE.get().unwrap(), NODE_TYPES_STRING));
     let grit_node_types = GritNodeTypes {
@@ -97,14 +89,12 @@ pub async fn parse_input_files_internal(
     };
     let parsed_pattern =
         tree_sitter_node_to_json(&node.node, &pattern, &grit_node_types).to_string();
-    // panic!("Fuck me actually we passed that");
 
     let mut results: Vec<MatchResult> = Vec::new();
     for (path, content) in paths.into_iter().zip(contents) {
         let path = PathBuf::from(path);
         let mut parser = setup_language_parser((&lang).into()).await?;
         let tree = parser.parse(content.as_bytes(), None).unwrap().unwrap();
-        // panic!("Fuck here language is {:?}", lang);
         let input_file_debug_text =
             tree_sitter_node_to_json(&tree.root_node(), &content, &lang).to_string();
         let input_file = InputFile {
