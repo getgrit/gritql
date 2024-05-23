@@ -88,3 +88,34 @@ fn list_jsonl() -> Result<()> {
 
     Ok(())
 }
+
+/// List all patterns in a directory with a custom grit directory by specifying the `--grit-dir` flag
+#[test]
+fn list_custom_grit_dir() -> Result<()> {
+    let (_other_fixture, other_dir) = get_fixture("patterns_list", true)?;
+
+    let (_temp_dir, dir) = get_fixture("one_bad_markdown", false)?;
+
+    let mut cmd = get_test_cmd()?;
+
+    cmd.arg("patterns")
+        .arg("list")
+        .arg("--jsonl")
+        .arg("--grit-dir")
+        .arg(other_dir)
+        .current_dir(dir);
+
+    let output = cmd.output()?;
+
+    println!("stderr: {}", String::from_utf8(output.stderr.clone())?);
+    println!("stdout: {}", String::from_utf8(output.stdout.clone())?);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully"
+    );
+
+    assert!(String::from_utf8(output.stdout)?.contains("remove_console_error"));
+
+    Ok(())
+}

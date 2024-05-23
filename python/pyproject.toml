@@ -1,0 +1,25 @@
+[project]
+name = "gritql"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+version = "0.1.0"
+
+[tool.poetry]
+name = "gritql"
+version = "0.1.2"
+description = "Python bindings for GritQL"
+authors = ["Grit <developers@grit.io>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

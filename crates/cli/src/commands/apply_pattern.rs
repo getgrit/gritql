@@ -41,7 +41,7 @@ use marzano_messenger::{
     output_mode::OutputMode,
 };
 
-use crate::resolver::{get_grit_files_from_cwd, GritModuleResolver};
+use crate::resolver::{get_grit_files_from_flags_or_cwd, GritModuleResolver};
 use crate::utils::has_uncommitted_changes;
 
 use super::filters::SharedFilterArgs;
@@ -207,7 +207,7 @@ pub(crate) async fn run_apply_pattern(
     details: &mut ApplyDetails,
     pattern_libs: Option<BTreeMap<String, String>>,
     default_lang: Option<PatternLanguage>,
-    format: &GlobalFormatFlags,
+    format_flags: &GlobalFormatFlags,
     root_path: Option<PathBuf>,
 ) -> Result<()> {
     let mut context = Updater::from_current_bin()
@@ -217,7 +217,7 @@ pub(crate) async fn run_apply_pattern(
         .unwrap();
 
     let format = OutputFormat::from_flags(
-        format,
+        format_flags,
         if arg.stdin {
             OutputFormat::Transformed
         } else {
@@ -283,7 +283,7 @@ pub(crate) async fn run_apply_pattern(
     let module_resolution = span!(tracing::Level::INFO, "module_resolution",).entered();
 
     // Construct a resolver
-    let resolver = GritModuleResolver::new(cwd.to_str().unwrap());
+    let resolver = GritModuleResolver::new();
     let current_repo_root = marzano_gritmodule::fetcher::LocalRepo::from_dir(&cwd)
         .await
         .map(|repo| repo.root())
@@ -312,7 +312,14 @@ pub(crate) async fn run_apply_pattern(
         #[cfg(feature = "grit_tracing")]
         let stdlib_download_span = span!(tracing::Level::INFO, "stdlib_download",).entered();
 
-        let mod_dir = find_grit_modules_dir(cwd.clone()).await;
+        let target_grit_dir = format_flags
+            .grit_dir
+            .as_ref()
+            .and_then(|c| c.parent())
+            .unwrap_or_else(|| &cwd)
+            .to_path_buf();
+        let mod_dir = find_grit_modules_dir(target_grit_dir.clone()).await;
+
         if !env::var("GRIT_DOWNLOADS_DISABLED")
             .unwrap_or_else(|_| "false".to_owned())
             .parse::<bool>()
@@ -321,7 +328,7 @@ pub(crate) async fn run_apply_pattern(
         {
             flushable_unwrap!(
                 emitter,
-                init_config_from_cwd::<KeepFetcherKind>(cwd.clone(), false).await
+                init_config_from_cwd::<KeepFetcherKind>(target_grit_dir, false).await
             );
         }
 
@@ -349,7 +356,10 @@ pub(crate) async fn run_apply_pattern(
         #[cfg(feature = "grit_tracing")]
         let grit_file_discovery = span!(tracing::Level::INFO, "grit_file_discovery",).entered();
 
-        let pattern_libs = flushable_unwrap!(emitter, get_grit_files_from_cwd().await);
+        let pattern_libs = flushable_unwrap!(
+            emitter,
+            get_grit_files_from_flags_or_cwd(format_flags).await
+        );
 
         let (mut lang, pattern_body) = if pattern.ends_with(".grit") || pattern.ends_with(".md") {
             match fs::read_to_string(pattern.clone()).await {

@@ -23,6 +23,7 @@ Options:
       --json                   Enable JSON output, only supported on some commands
       --jsonl                  Enable JSONL output, only supported on some commands
       --log-level <LOG_LEVEL>  Override the default log level (info)
+      --grit-dir <GRIT_DIR>    Override the default .grit directory location
   -h, --help                   Print help
   -V, --version                Print version
 
