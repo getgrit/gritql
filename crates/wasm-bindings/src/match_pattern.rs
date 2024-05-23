@@ -359,7 +359,7 @@ async fn setup_grit_parser() -> anyhow::Result<MarzanoGritParser> {
     } else {
         let new_lang = get_lang(&lang_path).await?;
         let _language_already_set = GRIT_LANGUAGE.set(new_lang);
-        GRIT_NODE_TYPES.set(fields_for_nodes(
+        let _ = GRIT_NODE_TYPES.set(fields_for_nodes(
             &GRIT_LANGUAGE.get().unwrap(),
             NODE_TYPES_STRING,
         ));
