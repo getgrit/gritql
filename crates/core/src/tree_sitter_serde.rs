@@ -13,20 +13,24 @@ pub fn tree_sitter_node_to_json(
     language: &impl NodeTypes,
 ) -> serde_json::Value {
     let sort_id = node.kind_id();
-    panic!(
-        "holy shit we're just RIGHT FUCKING HERE and the node kind is {} and the kind id is {} and the sort id is {}",
-        node.kind(),
-        node.kind_id(),
-        sort_id
-    );
+    // panic!(
+    //     "holy shit we're just RIGHT FUCKING HERE and the node kind is {} and the kind id is {} and the sort id is {}",
+    //     node.kind(),
+    //     node.kind_id(),
+    //     sort_id
+    // );
     let node_types = language.node_types();
     let empty: Vec<Field> = vec![];
     let node_fields = if node.is_error() {
         &empty
     } else {
-        // if node_types.len() == 117 && sort_id == 194 {
-        //     panic!("Fuck we're here, kind is {}", node.kind())
-        // }
+        if node_types.len() == 117 && sort_id == 194 {
+            panic!(
+                "Fuck we're here, kind is {} and src is {}",
+                node.kind(),
+                node.utf8_text(source.as_bytes()).unwrap()
+            );
+        }
         &node_types[sort_id as usize]
     };
     let mut cursor = node.walk();
