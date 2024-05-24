@@ -167,7 +167,8 @@ impl grit_util::Parser for MarzanoNotebookParser {
                 .ok()?
                 .map(|tree| Tree::new(tree, body));
 
-            println!("Tree: {:?}", tree);
+            
+
             tree
         } else {
             self.0.parse_file(body, path, logs, new)
