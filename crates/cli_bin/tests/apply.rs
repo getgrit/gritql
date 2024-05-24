@@ -881,12 +881,14 @@ fn python_in_notebook() -> Result<()> {
     // Make sure we process the file
     assert!(stdout.contains("Processed 1 file"));
 
-    // // Read back the require.js file
-    // let target_file = dir.join("simple.vue");
-    // let content: String = fs_err::read_to_string(target_file)?;
+    // Read back tiny_nb.ipynb
+    let target_file = dir.join("tiny_nb.ipynb");
+    let content: String = fs_err::read_to_string(target_file)?;
 
-    // // assert that it matches snapshot
-    // assert_snapshot!(content);
+    // assert that it matches snapshot
+    assert!(content.contains("ECHO 4"));
+    assert!(content.contains("ECHO 3"));
+    assert_snapshot!(content);
 
     panic!("TODO: Implement snapshot testing for notebooks");
 
