@@ -167,7 +167,12 @@ impl grit_util::Parser for MarzanoNotebookParser {
                 .ok()?
                 .map(|tree| Tree::new(tree, body));
 
-            
+            // let tree = self
+            //     .0
+            //     .parser
+            //     .parse(only_code_body_body.clone(), None)
+            //     .ok()?
+            //     .map(|tree| Tree::new(tree, only_code_body_body));
 
             tree
         } else {
@@ -182,5 +187,33 @@ impl grit_util::Parser for MarzanoNotebookParser {
         post: &'static str,
     ) -> SnippetTree<Tree> {
         self.0.parse_snippet(pre, source, post)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::python::Python;
+
+    use super::*;
+
+    #[test]
+    fn simple_notebook() {
+        let code = include_str!("../../../crates/cli_bin/fixtures/notebooks/tiny_nb.ipynb");
+        let mut parser = MarzanoNotebookParser::new(&Python::new(None));
+        let tree = parser
+            .parse_file(code, None, &mut AnalysisLogs::default(), false)
+            .unwrap();
+
+        let cursor = tree.root_node().node.walk();
+
+        for n in traverse(CursorWrapper::new(cursor, code), Order::Pre) {
+            println!("Node kind: {}", n.node.kind());
+            assert!(
+                !n.node.is_error(),
+                "Node is an error: {}",
+                n.node.utf8_text(code.as_bytes()).unwrap()
+            );
+        }
     }
 }

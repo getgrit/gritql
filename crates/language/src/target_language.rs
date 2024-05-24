@@ -165,6 +165,7 @@ impl PatternLanguage {
                 Some("inline") => Some(Self::MarkdownInline),
                 _ => Some(Self::MarkdownInline),
             },
+            "ipynb" => Some(Self::Python),
             "python" => Some(Self::Python),
             "go" => Some(Self::Go),
             "rust" => Some(Self::Rust),

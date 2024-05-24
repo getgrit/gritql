@@ -29,6 +29,7 @@ pub fn parse_input_file<'a>(
         syntax_tree: input_file_debug_text,
     })
 }
+
 #[cfg(not(feature = "grit-parser"))]
 pub fn parse_input_file<'a>(
     _lang: &impl MarzanoLanguage<'a>,
@@ -40,4 +41,50 @@ pub fn parse_input_file<'a>(
     Err(anyhow!(
         "enable grit-parser feature flag to parse a grit file"
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use grit_util::{traverse, Ast, Order};
+    use insta::{assert_snapshot, assert_yaml_snapshot};
+    use marzano_language::language::MarzanoLanguage;
+    use marzano_language::{python::Python, target_language::TargetLanguage};
+    use marzano_util::cursor_wrapper::CursorWrapper;
+
+    use crate::tree_sitter_serde::tree_sitter_node_to_json;
+
+    #[test]
+    fn simple_notebook() {
+        let source = include_str!("../../../crates/cli_bin/fixtures/notebooks/tiny_nb.ipynb");
+        let path = Path::new("tiny_nb.ipynb");
+        let lang = TargetLanguage::from_string("ipynb", None).unwrap();
+
+        println!("lang: {:?}", lang);
+
+        let mut parser = lang.get_parser();
+        let tree = parser
+            .parse_file(source, Some(path), &mut vec![].into(), false)
+            .unwrap();
+
+        let cursor = tree.root_node().node.walk();
+        for n in traverse(CursorWrapper::new(cursor, source), Order::Pre) {
+            println!("Node kind: {}", n.node.kind());
+            assert!(
+                !n.node.is_error(),
+                "Node is an error: {}",
+                n.node.utf8_text(source.as_bytes()).unwrap()
+            );
+        }
+
+        // println!("tree: {:?}", tree);
+        let json_rep = tree_sitter_node_to_json(&tree.root_node().node, source, &lang);
+
+        println!("json_rep: {:?}", json_rep);
+
+        assert_yaml_snapshot!(json_rep);
+
+        // let result = parse_input_file(&lang, code, Path::new("tiny_nb.ipynb"));
+    }
 }
