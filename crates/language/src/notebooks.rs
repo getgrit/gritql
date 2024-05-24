@@ -155,24 +155,24 @@ impl grit_util::Parser for MarzanoNotebookParser {
                 .iter()
                 .map(|range| &body[range.start_byte() as usize..range.end_byte() as usize])
                 .collect::<Vec<&str>>()
-                .join("");
+                .join("\n");
 
             println!("Only code body: \n{}", only_code_body_body);
 
-            self.0.parser.set_included_ranges(&all_ranges).ok()?;
-            let tree = self
-                .0
-                .parser
-                .parse(body, None)
-                .ok()?
-                .map(|tree| Tree::new(tree, body));
-
+            // self.0.parser.set_included_ranges(&all_ranges).ok()?;
             // let tree = self
             //     .0
             //     .parser
-            //     .parse(only_code_body_body.clone(), None)
+            //     .parse(body, None)
             //     .ok()?
-            //     .map(|tree| Tree::new(tree, only_code_body_body));
+            //     .map(|tree| Tree::new(tree, body));
+
+            let tree = self
+                .0
+                .parser
+                .parse(only_code_body_body.clone(), None)
+                .ok()?
+                .map(|tree| Tree::new(tree, only_code_body_body));
 
             tree
         } else {
