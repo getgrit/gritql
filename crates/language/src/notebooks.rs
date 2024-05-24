@@ -137,6 +137,8 @@ impl grit_util::Parser for MarzanoNotebookParser {
                 cursor.goto_parent(); // Exit the object
             }
 
+            println!("Found {} code cells", all_ranges.len());
+
             // println!("SOURCDE CODE!");
             for range in &all_ranges {
                 println!(
