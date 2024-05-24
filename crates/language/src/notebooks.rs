@@ -159,13 +159,13 @@ impl grit_util::Parser for MarzanoNotebookParser {
 
             println!("Only code body: \n{}", only_code_body_body);
 
-            // self.0.parser.set_included_ranges(&all_ranges).ok()?;
+            self.0.parser.set_included_ranges(&all_ranges).ok()?;
             let tree = self
                 .0
                 .parser
-                .parse(only_code_body_body.clone(), None)
+                .parse(body, None)
                 .ok()?
-                .map(|tree| Tree::new(tree, only_code_body_body));
+                .map(|tree| Tree::new(tree, body));
 
             println!("Tree: {:?}", tree);
             tree
