@@ -70,6 +70,10 @@ fn get_pair_sources<'a>(
     let mut cursor = CursorWrapper::new(children, program_src);
     for n in traverse(cursor, Order::Pre) {
         if n.node.kind() == "string_content" {
+            println!(
+                "Pushing range of {}",
+                n.node.utf8_text(program_src.as_bytes()).unwrap(),
+            );
             ranges.push(n.node.range());
         }
     }
@@ -140,19 +144,31 @@ impl grit_util::Parser for MarzanoNotebookParser {
             println!("Found {} code cells", all_ranges.len());
 
             // println!("SOURCDE CODE!");
-            for range in &all_ranges {
-                println!(
-                    "{}",
-                    &body[range.start_byte() as usize..range.end_byte() as usize]
-                );
-            }
+            // for range in &all_ranges {
+            //     println!(
+            //         "{}",
+            //         &body[range.start_byte() as usize..range.end_byte() as usize]
+            //     );
+            // }
 
-            self.0.parser.set_included_ranges(&all_ranges).ok()?;
-            self.0
+            let only_code_body_body = all_ranges
+                .iter()
+                .map(|range| &body[range.start_byte() as usize..range.end_byte() as usize])
+                .collect::<Vec<&str>>()
+                .join("");
+
+            println!("Only code body: \n{}", only_code_body_body);
+
+            // self.0.parser.set_included_ranges(&all_ranges).ok()?;
+            let tree = self
+                .0
                 .parser
-                .parse(body, None)
+                .parse(only_code_body_body.clone(), None)
                 .ok()?
-                .map(|tree| Tree::new(tree, body))
+                .map(|tree| Tree::new(tree, only_code_body_body));
+
+            println!("Tree: {:?}", tree);
+            tree
         } else {
             self.0.parse_file(body, path, logs, new)
         }

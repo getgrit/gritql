@@ -886,6 +886,7 @@ fn python_in_notebook() -> Result<()> {
     let content: String = fs_err::read_to_string(target_file)?;
 
     // assert that it matches snapshot
+    println!("content: {:?}", content);
     assert!(content.contains("ECHO 4"));
     assert!(content.contains("ECHO 3"));
     assert_snapshot!(content);
