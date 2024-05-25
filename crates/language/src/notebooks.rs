@@ -22,6 +22,170 @@ use crate::{
 
 const SUPPORTED_VERSION: i64 = 4;
 
+/// Returns `true` if a cell should be ignored due to the use of cell magics.
+/// Borrowed from [ruff](https://github.com/astral-sh/ruff/blob/33fd50027cb24e407746da339bdf2461df194d96/crates/ruff_notebook/src/cell.rs)
+fn is_magic_cell<'a>(lines: impl Iterator<Item = &'a str>) -> bool {
+    let mut lines = lines.peekable();
+
+    // Detect automatic line magics (automagic), which aren't supported by the parser. If a line
+    // magic uses automagic, Jupyter doesn't allow following it with non-magic lines anyway, so
+    // we aren't missing out on any valid Python code.
+    //
+    // For example, this is valid:
+    // ```jupyter
+    // cat /path/to/file
+    // cat /path/to/file
+    // ```
+    //
+    // But this is invalid:
+    // ```jupyter
+    // cat /path/to/file
+    // x = 1
+    // ```
+    //
+    // See: https://ipython.readthedocs.io/en/stable/interactive/magics.html
+    if let Some(line) = lines.peek() {
+        let mut tokens = line.split_whitespace();
+
+        // The first token must be an automagic, like `load_exit`.
+        if tokens.next().is_some_and(|token| {
+            matches!(
+                token,
+                "alias"
+                    | "alias_magic"
+                    | "autoawait"
+                    | "autocall"
+                    | "automagic"
+                    | "bookmark"
+                    | "cd"
+                    | "code_wrap"
+                    | "colors"
+                    | "conda"
+                    | "config"
+                    | "debug"
+                    | "dhist"
+                    | "dirs"
+                    | "doctest_mode"
+                    | "edit"
+                    | "env"
+                    | "gui"
+                    | "history"
+                    | "killbgscripts"
+                    | "load"
+                    | "load_ext"
+                    | "loadpy"
+                    | "logoff"
+                    | "logon"
+                    | "logstart"
+                    | "logstate"
+                    | "logstop"
+                    | "lsmagic"
+                    | "macro"
+                    | "magic"
+                    | "mamba"
+                    | "matplotlib"
+                    | "micromamba"
+                    | "notebook"
+                    | "page"
+                    | "pastebin"
+                    | "pdb"
+                    | "pdef"
+                    | "pdoc"
+                    | "pfile"
+                    | "pinfo"
+                    | "pinfo2"
+                    | "pip"
+                    | "popd"
+                    | "pprint"
+                    | "precision"
+                    | "prun"
+                    | "psearch"
+                    | "psource"
+                    | "pushd"
+                    | "pwd"
+                    | "pycat"
+                    | "pylab"
+                    | "quickref"
+                    | "recall"
+                    | "rehashx"
+                    | "reload_ext"
+                    | "rerun"
+                    | "reset"
+                    | "reset_selective"
+                    | "run"
+                    | "save"
+                    | "sc"
+                    | "set_env"
+                    | "sx"
+                    | "system"
+                    | "tb"
+                    | "time"
+                    | "timeit"
+                    | "unalias"
+                    | "unload_ext"
+                    | "who"
+                    | "who_ls"
+                    | "whos"
+                    | "xdel"
+                    | "xmode"
+            )
+        }) {
+            // The second token must _not_ be an operator, like `=` (to avoid false positives).
+            // The assignment operators can never follow an automagic. Some binary operators
+            // _can_, though (e.g., `cd -` is valid), so we omit them.
+            if !tokens.next().is_some_and(|token| {
+                matches!(
+                    token,
+                    "=" | "+=" | "-=" | "*=" | "/=" | "//=" | "%=" | "**=" | "&=" | "|=" | "^="
+                )
+            }) {
+                return true;
+            }
+        }
+    }
+
+    // Detect cell magics (which operate on multiple lines).
+    lines.any(|line| {
+        let Some(first) = line.split_whitespace().next() else {
+            return false;
+        };
+        if first.len() < 2 {
+            return false;
+        }
+        let Some(command) = first.strip_prefix("%%") else {
+            return false;
+        };
+        // These cell magics are special in that the lines following them are valid
+        // Python code and the variables defined in that scope are available to the
+        // rest of the notebook.
+        //
+        // For example:
+        //
+        // Cell 1:
+        // ```python
+        // x = 1
+        // ```
+        //
+        // Cell 2:
+        // ```python
+        // %%time
+        // y = x
+        // ```
+        //
+        // Cell 3:
+        // ```python
+        // print(y)  # Here, `y` is available.
+        // ```
+        //
+        // This is to avoid false positives when these variables are referenced
+        // elsewhere in the notebook.
+        !matches!(
+            command,
+            "capture" | "debug" | "prun" | "pypy" | "python" | "python3" | "time" | "timeit"
+        )
+    })
+}
+
 /// Custom Python parser, to include notebooks
 pub(crate) struct MarzanoNotebookParser(MarzanoParser);
 
@@ -74,7 +238,7 @@ impl MarzanoNotebookParser {
 
             let mut cursor = n.walk();
 
-            let mut is_code_cell = true;
+            let mut is_code_cell = false;
 
             let mut source_ranges: Option<(String, SourceMapSection)> = None;
 
@@ -128,6 +292,8 @@ impl MarzanoNotebookParser {
                                 continue;
                             }
                         };
+                        // Add a newline to separate cells
+                        inner_code_body.push('\n');
                         let inner_range_end = inner_code_body.len() + this_content.len();
                         source_ranges = Some((
                             this_content,
@@ -147,8 +313,11 @@ impl MarzanoNotebookParser {
             if is_code_cell {
                 if let Some(source_range) = source_ranges {
                     let (content, section) = source_range;
-                    inner_code_body.push_str(&content);
-                    source_map.add_section(section);
+                    if !is_magic_cell(content.lines()) {
+                        println!("Adding section: {:?}", content);
+                        inner_code_body.push_str(&content);
+                        source_map.add_section(section);
+                    }
                 }
             }
 

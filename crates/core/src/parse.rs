@@ -66,6 +66,9 @@ mod tests {
             .parse_file(source, Some(path), &mut vec![].into(), FileOrigin::Fresh)
             .unwrap();
 
+        let source_code = tree.source.clone();
+        println!("Source code: {}", source_code);
+
         let mut simple_rep = String::new();
 
         let cursor = tree.root_node().node.walk();
@@ -102,5 +105,15 @@ mod tests {
         let source = include_str!("../../../crates/cli_bin/fixtures/notebooks/other_nb.ipynb");
         let path = Path::new("other_nb.ipynb");
         assert_snapshot!(verify_notebook(source, path));
+    }
+
+    /// Make sure we skip over cells with magic, which we don't parse yet
+    #[test]
+    fn magic_notebook() {
+        let source = include_str!("../../../crates/cli_bin/fixtures/notebooks/magic.ipynb");
+        let path = Path::new("magic.ipynb");
+        let code = verify_notebook(source, path);
+        assert!(!code.contains("pip"));
+        assert_snapshot!(code);
     }
 }
