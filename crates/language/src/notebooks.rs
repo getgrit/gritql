@@ -274,7 +274,7 @@ impl MarzanoNotebookParser {
                         let text = value.node.utf8_text(body.as_bytes()).ok()?;
                         let value: serde_json::Value = serde_json::from_str(&text).ok()?;
 
-                        let (this_content, format) = match value {
+                        let (mut this_content, format) = match value {
                             serde_json::Value::Array(value) => (
                                 value
                                     .iter()
@@ -293,7 +293,7 @@ impl MarzanoNotebookParser {
                             }
                         };
                         // Add a newline to separate cells
-                        inner_code_body.push('\n');
+                        this_content.push('\n');
                         let inner_range_end = inner_code_body.len() + this_content.len();
                         source_ranges = Some((
                             this_content,
