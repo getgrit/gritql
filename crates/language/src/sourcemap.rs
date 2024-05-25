@@ -1,3 +1,5 @@
+use grit_util::ByteRange;
+
 /// A source map is used when the code we are parsing is embedded inside a larger file.
 /// For example, we want to focus on the Python code inside a Jupyter notebook.
 #[derive(Debug, Clone)]
@@ -17,7 +19,10 @@ impl EmbeddedSourceMap {
 
 #[derive(Debug, Clone)]
 pub struct SourceMapSection {
-    pub(crate) range: tree_sitter::Range,
+    /// The range of the code within the outer document
+    pub(crate) outer_range: ByteRange,
+    /// The range of the code inside the inner document
+    pub(crate) inner_range: ByteRange,
     pub(crate) format: SourceValueFormat,
 }
 

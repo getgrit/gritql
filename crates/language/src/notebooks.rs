@@ -1,6 +1,7 @@
 use grit_util::Ast;
 use grit_util::AstCursor;
 use grit_util::AstNode;
+use grit_util::ByteRange;
 use marzano_util::node_with_source::NodeWithSource;
 use std::path::Path;
 use tree_sitter::Query;
@@ -148,7 +149,7 @@ impl grit_util::Parser for MarzanoNotebookParser {
             // tree
 
             // TREE SITTER VERSION:
-            let mut only_code_body_body = String::new();
+            let mut inner_code_body = String::new();
             let mut source_map = EmbeddedSourceMap::new();
 
             let json = Json::new(None);
@@ -189,31 +190,36 @@ impl grit_util::Parser for MarzanoNotebookParser {
                             let text = value.node.utf8_text(body.as_bytes()).ok()?;
                             let value: serde_json::Value = serde_json::from_str(&text).ok()?;
 
-                            match value {
-                                // serde_json::Value::String(_) => {
-                                //     let range = value.range();
-                                //     source_ranges
-                                //         .get_or_insert_with(Vec::new)
-                                //         .push(SourceMapSection { range });
-                                // }
-                                serde_json::Value::Array(value) => {
-                                    let this_content = value
+                            let (this_content, format) = match value {
+                                serde_json::Value::Array(value) => (
+                                    value
                                         .iter()
                                         .map(|v| v.as_str().unwrap_or(""))
                                         .collect::<Vec<&str>>()
-                                        .join("\n");
-                                    source_ranges = Some((
-                                        this_content,
-                                        SourceMapSection {
-                                            range,
-                                            format: SourceValueFormat::Array,
-                                        },
-                                    ));
-                                }
+                                        .join("\n"),
+                                    SourceValueFormat::Array,
+                                ),
+                                serde_json::Value::String(s) => (s, SourceValueFormat::String),
                                 _ => {
                                     // bail!("Unexpected source value: {:?}", value);
+                                    continue;
                                 }
-                            }
+                            };
+                            let inner_range = ByteRange::new(
+                                inner_code_body.len(),
+                                inner_code_body.len() + this_content.len(),
+                            );
+                            source_ranges = Some((
+                                this_content,
+                                SourceMapSection {
+                                    outer_range: ByteRange::new(
+                                        range.start_byte().try_into().unwrap(),
+                                        range.end_byte().try_into().unwrap(),
+                                    ),
+                                    inner_range,
+                                    format,
+                                },
+                            ));
                         }
                     }
                 }
@@ -221,7 +227,7 @@ impl grit_util::Parser for MarzanoNotebookParser {
                 if is_code_cell {
                     if let Some(source_range) = source_ranges {
                         let (content, section) = source_range;
-                        only_code_body_body.push_str(&content);
+                        inner_code_body.push_str(&content);
                         source_map.add_section(section);
                     }
                 }
@@ -229,15 +235,15 @@ impl grit_util::Parser for MarzanoNotebookParser {
                 cursor.goto_parent(); // Exit the object
             }
 
-            println!("Only code body: \n{}", only_code_body_body);
+            println!("Only code body: \n{}", inner_code_body);
 
             let tree = self
                 .0
                 .parser
-                .parse(only_code_body_body.clone(), None)
+                .parse(inner_code_body.clone(), None)
                 .ok()?
                 .map(|tree| {
-                    let mut tree = Tree::new(tree, only_code_body_body);
+                    let mut tree = Tree::new(tree, inner_code_body);
                     tree.source_map = Some(source_map);
                     tree
                 });
