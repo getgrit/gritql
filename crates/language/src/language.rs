@@ -197,6 +197,13 @@ impl Tree {
             source_map: None,
         }
     }
+
+    pub fn outer_source(&self) -> &str {
+        match &self.source_map {
+            Some(map) => &map.outer_source,
+            None => &self.source,
+        }
+    }
 }
 
 impl Ast for Tree {

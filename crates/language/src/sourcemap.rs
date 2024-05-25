@@ -5,11 +5,16 @@ use grit_util::ByteRange;
 #[derive(Debug, Clone)]
 pub struct EmbeddedSourceMap {
     sections: Vec<SourceMapSection>,
+    /// This is a bit suboptimal, but we assume nobody has tons of embedded files
+    pub(crate) outer_source: String,
 }
 
 impl EmbeddedSourceMap {
-    pub fn new() -> Self {
-        Self { sections: vec![] }
+    pub fn new(outer_source: &str) -> Self {
+        Self {
+            sections: vec![],
+            outer_source: outer_source.to_string(),
+        }
     }
 
     pub fn add_section(&mut self, section: SourceMapSection) {

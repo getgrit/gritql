@@ -375,7 +375,7 @@ impl From<Rewrite> for MatchResult {
 impl Rewrite {
     fn file_to_rewrite<'a>(
         initial: &FileOwner<Tree>,
-        rewrite: &FileOwner<Tree>,
+        rewritten_file: &FileOwner<Tree>,
         language: &impl MarzanoLanguage<'a>,
     ) -> Result<Self> {
         let original = if let Some(ranges) = &initial.matches.borrow().input_matches {
@@ -388,10 +388,11 @@ impl Rewrite {
         } else {
             bail!("cannot have rewrite without matches")
         };
+        println!("Compute rewrite for {:?}", rewritten_file);
         let rewritten = EntireFile::file_to_entire_file(
-            rewrite.name.to_string_lossy().as_ref(),
-            &rewrite.tree.source,
-            rewrite.matches.borrow().byte_ranges.as_ref(),
+            rewritten_file.name.to_string_lossy().as_ref(),
+            rewritten_file.tree.outer_source(),
+            rewritten_file.matches.borrow().byte_ranges.as_ref(),
         );
         Ok(Rewrite::new(original, rewritten))
     }

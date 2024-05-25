@@ -150,7 +150,7 @@ impl grit_util::Parser for MarzanoNotebookParser {
 
             // TREE SITTER VERSION:
             let mut inner_code_body = String::new();
-            let mut source_map = EmbeddedSourceMap::new();
+            let mut source_map = EmbeddedSourceMap::new(body);
 
             let json = Json::new(None);
             let mut parser = json.get_parser();
@@ -237,8 +237,7 @@ impl grit_util::Parser for MarzanoNotebookParser {
 
             println!("Only code body: \n{}", inner_code_body);
 
-            let tree = self
-                .0
+            self.0
                 .parser
                 .parse(inner_code_body.clone(), None)
                 .ok()?
@@ -246,9 +245,7 @@ impl grit_util::Parser for MarzanoNotebookParser {
                     let mut tree = Tree::new(tree, inner_code_body);
                     tree.source_map = Some(source_map);
                     tree
-                });
-
-            tree
+                })
         } else {
             self.0.parse_file(body, path, logs, old_tree)
         }
