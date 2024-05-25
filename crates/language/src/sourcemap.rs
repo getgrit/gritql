@@ -34,22 +34,27 @@ impl EmbeddedSourceMap {
             None => return Ok(new_map),
         };
 
-        let mut accumulated_offset = 0;
+        let mut accumulated_offset: i32 = 0;
 
         for (source_range, replacement_length) in adjustments.iter().rev() {
             // Make sure we are on the right section
             while source_range.start > current.inner_range_end {
                 current = match section_iterator.next() {
-                    Some(section) => section,
+                    Some(section) => {
+                        // Apply our accumulaed offset to the section
+                        section.inner_range_end =
+                            (section.inner_range_end as i32 + accumulated_offset) as usize;
+                        section
+                    }
                     None => return Ok(new_map),
                 };
             }
 
             let length_diff =
                 *replacement_length as i32 - (source_range.end - source_range.start) as i32;
+            // Accumulate the overall offset, which we will use for future sections
             accumulated_offset += length_diff;
-
-            println!("testing range {:?} by {}", source_range, length_diff);
+            // Apply the offset to the current section
             current.inner_range_end = (current.inner_range_end as i32 + length_diff) as usize;
         }
         Ok(new_map)
