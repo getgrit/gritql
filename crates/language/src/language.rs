@@ -1,7 +1,8 @@
 use anyhow::{Context, Result};
 use enum_dispatch::enum_dispatch;
 use grit_util::{
-    traverse, AnalysisLogBuilder, AnalysisLogs, Ast, AstNode, Language, Order, Parser, SnippetTree,
+    traverse, AnalysisLogBuilder, AnalysisLogs, Ast, AstNode, FileOrigin, Language, Order, Parser,
+    SnippetTree,
 };
 use itertools::Itertools;
 use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
@@ -243,12 +244,12 @@ impl Parser for MarzanoParser {
         body: &str,
         path: Option<&Path>,
         logs: &mut AnalysisLogs,
-        old_tree: Option<&Self::Tree>,
+        old_tree: FileOrigin<'_, Tree>,
     ) -> Option<Tree> {
         let tree = self.parser.parse(body, None).ok()??;
 
         if let Some(path) = path {
-            let mut errors = file_parsing_error(&tree, path, body, old_tree.is_some()).ok()?;
+            let mut errors = file_parsing_error(&tree, path, body, !old_tree.is_fresh()).ok()?;
             logs.append(&mut errors);
         }
 

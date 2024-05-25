@@ -13,7 +13,7 @@ pub use ast_node::AstNode;
 pub use ast_node_traversal::{traverse, AstCursor, Order};
 pub use code_range::CodeRange;
 pub use language::{GritMetaValue, Language, Replacement};
-pub use parser::{Ast, Parser, SnippetTree};
+pub use parser::{Ast, FileOrigin, Parser, SnippetTree};
 pub use position::Position;
 pub use ranges::{
     ByteRange, FileRange, InputRanges, MatchRanges, Range, RangeWithoutByte, UtilRange,

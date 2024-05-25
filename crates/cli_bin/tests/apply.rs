@@ -862,9 +862,11 @@ fn python_in_notebook() -> Result<()> {
     // from the tempdir as cwd, run marzano apply
     let mut apply_cmd = get_test_cmd()?;
     apply_cmd.current_dir(dir.as_path());
-    // apply_cmd.current_dir(basic_path);
-    apply_cmd.arg("apply").arg("--force").arg("pattern.grit");
-    // .arg("--min-visibility=debug");
+    apply_cmd
+        .arg("apply")
+        .arg("--force")
+        .arg("pattern.grit")
+        .arg("tiny_nb.ipynb");
     let output = apply_cmd.output()?;
 
     let stdout = String::from_utf8(output.stdout)?;

@@ -19,7 +19,7 @@ use grit_pattern_matcher::{
         PredicateDefinition, ResolvedPattern, State,
     },
 };
-use grit_util::{AnalysisLogs, Ast, InputRanges, MatchRanges};
+use grit_util::{AnalysisLogs, Ast, FileOrigin, InputRanges, MatchRanges};
 use im::vector;
 use marzano_language::{
     language::{MarzanoLanguage, Tree},
@@ -148,7 +148,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     owned.path,
                     owned.content,
                     None,
-                    None,
+                    FileOrigin::Fresh,
                     self.language,
                     logs,
                 )?;
@@ -250,7 +250,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
 
                 if let Some(new_ranges) = new_ranges {
                     let tree = parser
-                        .parse_file(&new_src, None, logs, Some(&file.tree))
+                        .parse_file(&new_src, None, logs, FileOrigin::Mutated(&file.tree))
                         .unwrap();
                     let root = tree.root_node();
                     let replacement_ranges = get_replacement_ranges(root, self.language());
@@ -267,7 +267,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                         new_filename.clone(),
                         new_src,
                         Some(ranges),
-                        Some(&file.tree),
+                        FileOrigin::Mutated(&file.tree),
                         self.language(),
                         logs,
                     )?
@@ -314,7 +314,8 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 name.clone(),
                 body,
                 None,
-                None,
+                // Some(&tree),
+                FileOrigin::Fresh,
                 self.language(),
                 logs,
             )?

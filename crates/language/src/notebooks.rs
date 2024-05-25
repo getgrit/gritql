@@ -2,6 +2,7 @@ use grit_util::Ast;
 use grit_util::AstCursor;
 use grit_util::AstNode;
 use grit_util::ByteRange;
+use grit_util::FileOrigin;
 use marzano_util::node_with_source::NodeWithSource;
 use std::path::Path;
 use tree_sitter::Query;
@@ -121,12 +122,12 @@ impl grit_util::Parser for MarzanoNotebookParser {
         body: &str,
         path: Option<&Path>,
         logs: &mut AnalysisLogs,
-        old_tree: Option<&Self::Tree>,
+        old_tree: FileOrigin<'_, Tree>,
     ) -> Option<Tree> {
         if path
             .and_then(Path::extension)
             .is_some_and(|ext| ext == "ipynb")
-            && old_tree.is_none()
+            && old_tree.is_fresh()
         {
             // TODO: validate nbformat
             // let notebook: Notebook = serde_json::from_str(body).ok()?;
@@ -154,7 +155,7 @@ impl grit_util::Parser for MarzanoNotebookParser {
 
             let json = Json::new(None);
             let mut parser = json.get_parser();
-            let tree = parser.parse_file(body, None, logs, None)?;
+            let tree = parser.parse_file(body, None, logs, FileOrigin::Fresh)?;
             let root = tree.root_node().node;
             let cursor = root.walk();
 

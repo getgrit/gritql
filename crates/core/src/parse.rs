@@ -16,7 +16,12 @@ pub fn parse_input_file<'a>(
 
     let mut parser = lang.get_parser();
     let tree = parser
-        .parse_file(input, Some(path), &mut vec![].into(), None)
+        .parse_file(
+            input,
+            Some(path),
+            &mut vec![].into(),
+            grit_util::FileOrigin::Fresh,
+        )
         .context("Parsed tree is empty")?;
     let input_file_debug_text = to_string_pretty(&tree_sitter_node_to_json(
         &tree.root_node().node,
@@ -47,7 +52,7 @@ pub fn parse_input_file<'a>(
 mod tests {
     use std::path::Path;
 
-    use grit_util::{traverse, Ast, Order};
+    use grit_util::{traverse, Ast, FileOrigin, Order};
     use insta::assert_snapshot;
     use marzano_language::language::MarzanoLanguage;
     use marzano_language::target_language::TargetLanguage;
@@ -58,7 +63,7 @@ mod tests {
 
         let mut parser = lang.get_parser();
         let tree = parser
-            .parse_file(source, Some(path), &mut vec![].into(), None)
+            .parse_file(source, Some(path), &mut vec![].into(), FileOrigin::Fresh)
             .unwrap();
 
         let mut simple_rep = String::new();

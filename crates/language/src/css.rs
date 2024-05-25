@@ -5,7 +5,7 @@ use crate::{
     },
     vue::get_vue_ranges,
 };
-use grit_util::{AnalysisLogs, Language, Parser, SnippetTree};
+use grit_util::{AnalysisLogs, FileOrigin, Language, Parser, SnippetTree};
 use marzano_util::node_with_source::NodeWithSource;
 use std::{path::Path, sync::OnceLock};
 
@@ -119,7 +119,7 @@ impl Parser for MarzanoCssParser {
         body: &str,
         path: Option<&Path>,
         logs: &mut AnalysisLogs,
-        old_tree: Option<&Tree>,
+        old_tree: FileOrigin<'_, Tree>,
     ) -> Option<Tree> {
         if path
             .and_then(Path::extension)
