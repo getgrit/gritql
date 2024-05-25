@@ -13,6 +13,7 @@ use grit_util::Range;
 use grit_util::{AnalysisLogs, Parser, SnippetTree};
 use marzano_util::cursor_wrapper::CursorWrapper;
 
+use crate::sourcemap::EmbeddedSourceMap;
 use crate::sourcemap::SourceMapSection;
 use crate::sourcemap::SourceValueFormat;
 use crate::{
@@ -148,7 +149,7 @@ impl grit_util::Parser for MarzanoNotebookParser {
 
             // TREE SITTER VERSION:
             let mut only_code_body_body = String::new();
-            let mut all_ranges: Vec<SourceMapSection> = Vec::new();
+            let mut source_map = EmbeddedSourceMap::new();
 
             let json = Json::new(None);
             let mut parser = json.get_parser();
@@ -219,16 +220,14 @@ impl grit_util::Parser for MarzanoNotebookParser {
 
                 if is_code_cell {
                     if let Some(source_range) = source_ranges {
-                        let (content, range) = source_range;
+                        let (content, section) = source_range;
                         only_code_body_body.push_str(&content);
-                        all_ranges.push(range);
+                        source_map.add_section(section);
                     }
                 }
 
                 cursor.goto_parent(); // Exit the object
             }
-
-            println!("Found {} code cells", all_ranges.len());
 
             println!("Only code body: \n{}", only_code_body_body);
 
@@ -237,7 +236,11 @@ impl grit_util::Parser for MarzanoNotebookParser {
                 .parser
                 .parse(only_code_body_body.clone(), None)
                 .ok()?
-                .map(|tree| Tree::new(tree, only_code_body_body));
+                .map(|tree| {
+                    let mut tree = Tree::new(tree, only_code_body_body);
+                    tree.source_map = Some(source_map);
+                    tree
+                });
 
             tree
         } else {
