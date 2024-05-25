@@ -58,7 +58,7 @@ mod tests {
 
         let mut parser = lang.get_parser();
         let tree = parser
-            .parse_file(source, Some(path), &mut vec![].into(), false)
+            .parse_file(source, Some(path), &mut vec![].into(), None)
             .unwrap();
 
         let mut simple_rep = String::new();

@@ -248,6 +248,8 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     logs,
                 )?;
 
+                println!("ranges: {:?}", new_ranges);
+
                 if let Some(new_ranges) = new_ranges {
                     let tree = parser
                         .parse_file(&new_src, None, logs, Some(&file.tree))

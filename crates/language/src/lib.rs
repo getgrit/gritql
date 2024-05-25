@@ -21,6 +21,7 @@ pub mod python;
 pub mod ruby;
 pub mod rust;
 pub mod solidity;
+mod sourcemap;
 pub mod sql;
 pub mod target_language;
 pub mod toml;
