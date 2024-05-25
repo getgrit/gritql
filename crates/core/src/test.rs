@@ -203,6 +203,7 @@ fn test_rewrite(dir: &str, pattern: &str, test: &str) -> Result<()> {
             expected.trim(),
             diff_str
         );
+        println!("{}", message);
         // save actual in a ${test}.actual.tsx file
         let actual_filename = test.to_owned() + ".actual.tsx";
         let root_filename = get_fixtures_root()?;
