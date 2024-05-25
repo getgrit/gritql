@@ -50,7 +50,7 @@ mod tests {
     use grit_util::{traverse, Ast, Order};
     use insta::assert_snapshot;
     use marzano_language::language::MarzanoLanguage;
-    use marzano_language::{python::Python, target_language::TargetLanguage};
+    use marzano_language::target_language::TargetLanguage;
     use marzano_util::cursor_wrapper::CursorWrapper;
 
     fn verify_notebook(source: &str, path: &Path) {
