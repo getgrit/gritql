@@ -366,6 +366,10 @@ impl grit_util::Parser for MarzanoNotebookParser {
             let tree = self.parse_file_as_notebook(body, path, logs);
             if let Some(tree) = tree {
                 return Some(tree);
+            } else {
+                // Parse an empty file if we can't parse the notebook
+                // TODO: find a better way to handle this
+                return self.0.parse_file("", path, logs, old_tree);
             }
         }
 
