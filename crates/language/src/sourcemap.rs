@@ -23,11 +23,14 @@ impl EmbeddedSourceMap {
         self.sections.push(section);
     }
 
-    pub fn clone_with_adjusments(
+    pub fn clone_with_adjusments<'a>(
         &self,
-        adjustments: &[(std::ops::Range<usize>, usize)],
+        adjustments: impl Iterator<Item = &'a (std::ops::Range<usize>, usize)>,
     ) -> Result<EmbeddedSourceMap> {
         let mut new_map = self.clone();
+
+        println!("Cloning and adjusting sections: {:?}", new_map.sections);
+
         let mut section_iterator = new_map.sections.iter_mut();
         let mut current = match section_iterator.next() {
             Some(section) => section,
@@ -36,31 +39,53 @@ impl EmbeddedSourceMap {
 
         let mut accumulated_offset: i32 = 0;
 
-        for (source_range, replacement_length) in adjustments.iter().rev() {
+        for (source_range, replacement_length) in adjustments {
+            println!(
+                "Compare {} to {}",
+                source_range.start, current.inner_range_end
+            );
+
             // Make sure we are on the right section
             while source_range.start > current.inner_range_end {
+                println!(
+                    "IT IS TIME TO ADVANCE from {} becuse we hit {} - adding {} to {}",
+                    current.inner_range_end,
+                    source_range.start,
+                    accumulated_offset,
+                    current.inner_range_end
+                );
+                // Apply the accumulated offset to the section
+                current.inner_range_end =
+                    (current.inner_range_end as i32 + accumulated_offset) as usize;
                 current = match section_iterator.next() {
-                    Some(section) => {
-                        // Apply our accumulaed offset to the section
-                        section.inner_range_end =
-                            (section.inner_range_end as i32 + accumulated_offset) as usize;
-                        section
+                    Some(section) => section,
+                    None => {
+                        bail!("Section range is out of bounds")
                     }
-                    None => return Ok(new_map),
                 };
             }
 
             let length_diff =
                 *replacement_length as i32 - (source_range.end - source_range.start) as i32;
+
             // Accumulate the overall offset, which we will use for future sections
             accumulated_offset += length_diff;
-            // Apply the offset to the current section
-            current.inner_range_end = (current.inner_range_end as i32 + length_diff) as usize;
+        }
+
+        // Apply the accumulated offset to all remaining sections (including the last one we were on)
+        current.inner_range_end = (current.inner_range_end as i32 + accumulated_offset) as usize;
+        for section in section_iterator {
+            println!(
+                "IT IS TIME TO ADVANCE from {} becuse we hit the end - adding {}",
+                current.inner_range_end, accumulated_offset
+            );
+            section.inner_range_end =
+                (section.inner_range_end as i32 + accumulated_offset) as usize;
         }
 
         println!(
-            "It is time to adjust, we adjusted by a net of {}",
-            accumulated_offset,
+            "We adjusted by a net of {} into the sections {:?}",
+            accumulated_offset, new_map.sections
         );
 
         Ok(new_map)
@@ -90,7 +115,7 @@ impl EmbeddedSourceMap {
 
             let length_diff = json.len() as i32 - (outer_range.end - outer_range.start) as i32;
             current_outer_offset += length_diff;
-            current_inner_offset = section.inner_range_end;
+            current_inner_offset = section.inner_range_end + section.inner_end_trim;
 
             outer_source.replace_range(outer_range, &json);
         }
@@ -120,10 +145,93 @@ impl SourceMapSection {
         };
         structure.to_string()
     }
+
+    pub fn new(
+        outer_range: ByteRange,
+        inner_range_end: usize,
+        format: SourceValueFormat,
+        inner_end_trim: usize,
+    ) -> Self {
+        Self {
+            outer_range,
+            inner_range_end,
+            format,
+            inner_end_trim,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
 pub enum SourceValueFormat {
     String,
     Array,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use grit_util::ByteRange;
+
+    #[test]
+    fn test_clone_with_adjustments_single_stage() {
+        let mut source_map = EmbeddedSourceMap::new(r#"["abcd", "efgh"]"#);
+        source_map.add_section(SourceMapSection::new(
+            ByteRange::new(1, 7),
+            5,
+            SourceValueFormat::String,
+            1,
+        ));
+        source_map.add_section(SourceMapSection::new(
+            ByteRange::new(9, 15),
+            10,
+            SourceValueFormat::String,
+            1,
+        ));
+
+        // Get the source map with the adjustments
+        let code = source_map.fill_with_inner("abcd\nefgh").unwrap();
+        assert_eq!(code, r#"["abcd", "efgh"]"#);
+
+        // Add a total of 2 characters to the source map, in the first section
+        let adjustments = vec![(1..2, 2), (3..4, 2)];
+        let adjusted = source_map
+            .clone_with_adjusments(adjustments.iter())
+            .unwrap();
+        assert_eq!(
+            adjusted.fill_with_inner("abbccd\nefgh").unwrap(),
+            r#"["abbccd", "efgh"]"#
+        );
+    }
+
+    #[test]
+    fn test_clone_with_adjustments_multi_stage() {
+        let mut source_map = EmbeddedSourceMap::new(r#"["abcd", "efgh"]"#);
+        source_map.add_section(SourceMapSection::new(
+            ByteRange::new(1, 7),
+            5,
+            SourceValueFormat::String,
+            1,
+        ));
+        source_map.add_section(SourceMapSection::new(
+            ByteRange::new(9, 15),
+            10,
+            SourceValueFormat::String,
+            1,
+        ));
+
+        // First pass
+        // d -> ddd
+        // f -> fff
+        let adjustments = vec![(4..5, 3), (7..8, 3)];
+        let adjusted = source_map
+            .clone_with_adjusments(adjustments.iter())
+            .unwrap();
+
+        // The first range should end at 
+
+        assert_eq!(
+            adjusted.fill_with_inner("abcddd\nefffgh").unwrap(),
+            r#"["abcddd", "nefffgh"]"#
+        );
+    }
 }

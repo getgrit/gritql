@@ -186,3 +186,54 @@ fn test_multi_cell_small() {
     }
 }
 
+#[test]
+fn test_sequential() {
+    // Make sure we handle sequential transforms too
+
+    let pattern_src = r#"
+        language python
+
+    sequential {
+            bubble file($body) where $body <: contains bubble `print($x)` => `p($x)`,
+            bubble file($body) where $body <: contains bubble `p($y)` => `s($y)`,
+            bubble file($body) where $body <: contains bubble `s($a)` => `flint($a)`,
+    }
+    "#;
+    let libs = BTreeMap::new();
+
+    let matching_src = include_str!("../../../crates/cli_bin/fixtures/notebooks/multi_cell.ipynb");
+
+    let pattern = src_to_problem_libs(
+        pattern_src.to_string(),
+        &libs,
+        TargetLanguage::from_extension("ipynb").unwrap(),
+        None,
+        None,
+        None,
+        None,
+    )
+    .unwrap()
+    .problem;
+
+    // Basic match works
+    let test_files = vec![SyntheticFile::new(
+        "target.ipynb".to_owned(),
+        matching_src.to_owned(),
+        true,
+    )];
+    let results = run_on_test_files(&pattern, &test_files);
+
+    println!("{:?}", results);
+    assert!(!results.iter().any(|r| r.is_error()));
+
+    let rewrite = results
+        .iter()
+        .find(|r| matches!(r, MatchResult::Rewrite(_)))
+        .unwrap();
+
+    if let MatchResult::Rewrite(rewrite) = rewrite {
+        assert_snapshot!(rewrite.rewritten.content);
+    } else {
+        panic!("Expected a rewrite");
+    }
+}

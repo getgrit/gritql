@@ -434,7 +434,7 @@ mod tests {
     #[test]
     fn simple_notebook() {
         let code = include_str!("../../../crates/cli_bin/fixtures/notebooks/tiny_nb.ipynb");
-        let mut parser = MarzanoNotebookParser::new(&Python::new(None));
+        let mut parser = MarzanoNotebookParser::new(&Python::new(None), "python");
         let tree = parser
             .parse_file(code, None, &mut AnalysisLogs::default(), FileOrigin::Fresh)
             .unwrap();

@@ -1,8 +1,10 @@
 language python
 
 sequential {
-  bubble file($body) where $body <: contains bubble `print($x)` => `p($x, 3)`,
-  bubble file($body) where $body <: contains bubble `p($z)` => `BIG_FINAL($z)`,
-  bubble file($body) where $body <: contains bubble `BIG_FINAL($k)` => `TRY_LINAL($k)`,
-  bubble file($body) where $body <: contains bubble `TRY_LINAL($j)` => `print($j)`,
+  bubble file($body) where $body <: contains bubble `print($x)` => `p($x)`,
+  bubble file($body) where $body <: contains bubble `p($y)` => `s($y)`,
+  bubble file($body) where $body <: contains bubble `s($a)` => `flint($a)`,
+  // bubble file($body) where $body <: contains bubble `pig($z)` => `BIG_FINAL($z)`,
+  // bubble file($body) where $body <: contains bubble `BIG_FINAL($k)` => `TRY_LINAL($k)`,
+  // bubble file($body) where $body <: contains bubble `TRY_LINAL($j)` => `print($j)`,
 }
