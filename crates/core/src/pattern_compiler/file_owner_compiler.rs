@@ -20,9 +20,12 @@ impl FileOwnerCompiler {
         let new = !old_tree.is_fresh();
 
         // If we have an old tree, attach it here
-        let new_map = if let Some(old_tree) = old_tree.original() {
-            // TODO: avoid this clone
-            old_tree.source_map.clone()
+        let new_map = if let FileOrigin::Mutated((old_tree, mutations)) = old_tree {
+            if let Some(old_map) = &old_tree.source_map {
+                Some(old_map.clone_with_adjusments(mutations)?)
+            } else {
+                None
+            }
         } else {
             None
         };

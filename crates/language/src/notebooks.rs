@@ -128,10 +128,7 @@ impl MarzanoNotebookParser {
                                 continue;
                             }
                         };
-                        let inner_range = ByteRange::new(
-                            inner_code_body.len(),
-                            inner_code_body.len() + this_content.len(),
-                        );
+                        let inner_range_end = inner_code_body.len() + this_content.len();
                         source_ranges = Some((
                             this_content,
                             SourceMapSection {
@@ -139,7 +136,7 @@ impl MarzanoNotebookParser {
                                     range.start_byte().try_into().unwrap(),
                                     range.end_byte().try_into().unwrap(),
                                 ),
-                                inner_range,
+                                inner_range_end,
                                 format,
                             },
                         ));

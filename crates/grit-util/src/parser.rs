@@ -20,15 +20,6 @@ impl<'tree, Tree: Ast> FileOrigin<'tree, Tree> {
     pub fn is_fresh(&self) -> bool {
         matches!(self, FileOrigin::Fresh)
     }
-
-    /// Get the original tree, if any
-    pub fn original(&self) -> Option<&'tree Tree> {
-        match self {
-            FileOrigin::Fresh => None,
-            FileOrigin::Mutated((tree, ..)) => Some(tree),
-            FileOrigin::New => None,
-        }
-    }
 }
 
 pub trait Parser {

@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use grit_util::ByteRange;
 use serde_json::json;
 
@@ -23,18 +23,53 @@ impl EmbeddedSourceMap {
         self.sections.push(section);
     }
 
+    pub fn clone_with_adjusments(
+        &self,
+        adjustments: &Vec<(std::ops::Range<usize>, usize)>,
+    ) -> Result<EmbeddedSourceMap> {
+        let mut new_map = self.clone();
+        let mut section_iterator = new_map.sections.iter_mut();
+        let mut current = match section_iterator.next() {
+            Some(section) => section,
+            None => return Ok(new_map),
+        };
+
+        let mut accumulated_offset = 0;
+
+        for (source_range, replacement_length) in adjustments.iter().rev() {
+            // Make sure we are on the right section
+            while source_range.start > current.inner_range_end {
+                current = match section_iterator.next() {
+                    Some(section) => section,
+                    None => return Ok(new_map),
+                };
+            }
+
+            let length_diff =
+                *replacement_length as i32 - (source_range.end - source_range.start) as i32;
+            accumulated_offset += length_diff;
+
+            println!("testing range {:?} by {}", source_range, length_diff);
+            current.inner_range_end = (current.inner_range_end as i32 + length_diff) as usize;
+        }
+        Ok(new_map)
+    }
+
     pub fn fill_with_inner(&self, new_inner_source: &str) -> Result<String> {
         let mut outer_source = self.outer_source.clone();
+
+        let mut current_inner_offset = 0;
 
         for section in &self.sections {
             // TODO: actually get the *updated* range
             let replacement_code = new_inner_source
-                .get(section.inner_range.start..section.inner_range.end)
+                .get(current_inner_offset..section.inner_range_end)
                 .ok_or(anyhow::anyhow!("Section range is out of bounds"))?;
 
             let json = section.as_json(replacement_code);
 
             outer_source.replace_range(section.outer_range.start..section.outer_range.end, &json);
+            current_inner_offset = section.inner_range_end;
         }
 
         Ok(outer_source)
@@ -45,8 +80,8 @@ impl EmbeddedSourceMap {
 pub struct SourceMapSection {
     /// The range of the code within the outer document
     pub(crate) outer_range: ByteRange,
-    /// The range of the code inside the inner document
-    pub(crate) inner_range: ByteRange,
+    /// The end of the range from the inner document
+    pub(crate) inner_range_end: usize,
     pub(crate) format: SourceValueFormat,
 }
 
