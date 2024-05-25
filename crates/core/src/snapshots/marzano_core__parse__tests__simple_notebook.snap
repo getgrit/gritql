@@ -1,6 +1,6 @@
 ---
 source: crates/core/src/parse.rs
-expression: simple_rep
+expression: "verify_notebook(source, path)"
 ---
 module                         | print(4)\nprint("3")\nprint(5)
 call                           | print(4)

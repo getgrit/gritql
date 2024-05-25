@@ -53,7 +53,7 @@ mod tests {
     use marzano_language::target_language::TargetLanguage;
     use marzano_util::cursor_wrapper::CursorWrapper;
 
-    fn verify_notebook(source: &str, path: &Path) {
+    fn verify_notebook(source: &str, path: &Path) -> String {
         let lang = TargetLanguage::from_string("ipynb", None).unwrap();
 
         let mut parser = lang.get_parser();
@@ -82,20 +82,20 @@ mod tests {
             );
         }
 
-        assert_snapshot!(simple_rep);
+        simple_rep
     }
 
     #[test]
     fn simple_notebook() {
         let source = include_str!("../../../crates/cli_bin/fixtures/notebooks/tiny_nb.ipynb");
         let path = Path::new("tiny_nb.ipynb");
-        verify_notebook(source, path);
+        assert_snapshot!(verify_notebook(source, path));
     }
 
     #[test]
     fn other_notebook() {
         let source = include_str!("../../../crates/cli_bin/fixtures/notebooks/other_nb.ipynb");
         let path = Path::new("other_nb.ipynb");
-        verify_notebook(source, path);
+        assert_snapshot!(verify_notebook(source, path));
     }
 }

@@ -1,6 +1,6 @@
 ---
 source: crates/core/src/parse.rs
-expression: simple_rep
+expression: "verify_notebook(source, path)"
 ---
 module                         | import configparser\n\nconfig = configparser.ConfigParser()\nconfig.read("./secrets.ini")
 import_statement               | import configparser
