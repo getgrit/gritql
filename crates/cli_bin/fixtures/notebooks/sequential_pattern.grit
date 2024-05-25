@@ -1,0 +1,7 @@
+language python
+
+sequential {
+  `print($x)` => `p($x, 3)`,
+  `p($z)` => `BIG_FINAL($z)`,
+  `BIG_FINAL($k)` => `WOWOWOWOWOWOWOWOWO($k)`
+}
