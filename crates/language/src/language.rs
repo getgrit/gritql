@@ -231,7 +231,7 @@ impl Parser for MarzanoParser {
         body: &str,
         path: Option<&Path>,
         logs: &mut AnalysisLogs,
-        old_tree: &Option<Self::Tree>,
+        old_tree: Option<&Self::Tree>,
     ) -> Option<Tree> {
         let tree = self.parser.parse(body, None).ok()??;
 

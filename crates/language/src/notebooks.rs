@@ -106,7 +106,7 @@ impl grit_util::Parser for MarzanoNotebookParser {
         body: &str,
         path: Option<&Path>,
         logs: &mut AnalysisLogs,
-        old_tree: &Option<Self::Tree>,
+        old_tree: Option<&Self::Tree>,
     ) -> Option<Tree> {
         if path
             .and_then(Path::extension)

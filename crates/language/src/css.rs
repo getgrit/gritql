@@ -119,7 +119,7 @@ impl Parser for MarzanoCssParser {
         body: &str,
         path: Option<&Path>,
         logs: &mut AnalysisLogs,
-        old_tree: &Option<Tree>,
+        old_tree: Option<&Tree>,
     ) -> Option<Tree> {
         if path
             .and_then(Path::extension)
