@@ -263,11 +263,11 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
 
                     let ranges =
                         MatchRanges::new(new_ranges.into_iter().map(|r| r.into()).collect());
-                    let owned_file = FileOwnerCompiler::from_matches(
+                    let rewritten_file = FileOwnerCompiler::from_matches(
                         new_filename.clone(),
                         new_src,
                         Some(ranges),
-                        Some(&tree),
+                        Some(&file.tree),
                         self.language(),
                         logs,
                     )?
@@ -277,7 +277,8 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                             new_filename.to_string_lossy()
                         )
                     })?;
-                    self.files().push(owned_file);
+
+                    self.files().push(rewritten_file);
                     state
                         .files
                         .push_revision(&file_ptr, self.files().last().unwrap())

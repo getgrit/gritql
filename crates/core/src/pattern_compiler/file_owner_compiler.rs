@@ -17,12 +17,19 @@ impl FileOwnerCompiler {
         logs: &mut AnalysisLogs,
     ) -> Result<Option<FileOwner<Tree>>> {
         let name = name.into();
-        let Some(tree) = language
+        let Some(mut tree) = language
             .get_parser()
             .parse_file(&source, Some(&name), logs, old_tree)
         else {
             return Ok(None);
         };
+
+        // If we have an old tree, attach it here
+        if let Some(old_tree) = old_tree {
+            // TODO: avoid this clone
+            tree.source_map = old_tree.source_map.clone();
+        }
+
         let absolute_path = absolutize(&name)?;
         Ok(Some(FileOwner {
             name,

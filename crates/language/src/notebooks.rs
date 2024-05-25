@@ -235,8 +235,6 @@ impl grit_util::Parser for MarzanoNotebookParser {
                 cursor.goto_parent(); // Exit the object
             }
 
-            println!("Only code body: \n{}", inner_code_body);
-
             self.0
                 .parser
                 .parse(inner_code_body.clone(), None)

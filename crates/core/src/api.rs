@@ -388,7 +388,7 @@ impl Rewrite {
         } else {
             bail!("cannot have rewrite without matches")
         };
-        println!("Compute rewrite for {:?}", rewritten_file);
+        println!("Compute rewrite for {:?}", rewritten_file.tree.source_map);
         let rewritten = EntireFile::file_to_entire_file(
             rewritten_file.name.to_string_lossy().as_ref(),
             rewritten_file.tree.outer_source(),
