@@ -1,0 +1,107 @@
+---
+source: crates/core/src/parse.rs
+expression: code
+---
+module                         | x = 1\npip install maybeshow\n\ncolors = 6\nprint(colors)\n\n\n\n\n\n\n\ndef maybeshow():\n    pass\n\n%timeit foo()\n\n\ndef foo():\n    pass\n\n%timeit other('hello maybeshow')\n\ndef sample_func(xx):\n    """\n    转置 (transpose)\n    """\n    return xx.T\n# https://github.com/astral-sh/ruff-vscode/issues/362\nDEFAULT_SYSTEM_PROMPT = (\n    "Ты — Сайга, русскоязычный автоматический ассистент. "\n    "Ты разговариваешь с людьми и помогаешь им."\n)\n\n%%timeit\nprint('hello maybeshow')
+assignment                     | x = 1
+identifier                     | x
+=                              | =
+integer                        | 1
+ERROR                          | pip install
+identifier                     | pip
+identifier                     | maybeshow
+assignment                     | colors = 6
+identifier                     | colors
+=                              | =
+integer                        | 6
+call                           | print(colors)
+identifier                     | print
+argument_list                  | (colors)
+(                              | (
+identifier                     | colors
+)                              | )
+function_definition            | def maybeshow():\n    pass
+def                            | def
+identifier                     | maybeshow
+(                              | (
+)                              | )
+:                              | :
+block                          | pass
+pass_statement                 | pass
+pass                           | pass
+ERROR                          | %timeit
+modulo                         | %
+identifier                     | timeit
+call                           | foo()
+identifier                     | foo
+argument_list                  | ()
+(                              | (
+)                              | )
+function_definition            | def foo():\n    pass
+def                            | def
+identifier                     | foo
+(                              | (
+)                              | )
+:                              | :
+block                          | pass
+pass_statement                 | pass
+pass                           | pass
+ERROR                          | %timeit
+modulo                         | %
+identifier                     | timeit
+call                           | other('hello maybeshow')
+identifier                     | other
+argument_list                  | ('hello maybeshow')
+(                              | (
+string                         | 'hello maybeshow'
+string_start                   | '
+string_content                 | hello maybeshow
+string_end                     | '
+)                              | )
+function_definition            | def sample_func(xx):\n    """\n    转置 (transpose)\n    """\n    return xx.T
+def                            | def
+identifier                     | sample_func
+(                              | (
+identifier                     | xx
+)                              | )
+:                              | :
+block                          | """\n    转置 (transpose)\n    """\n    return xx.T
+string                         | """\n    转置 (transpose)\n    """
+string_start                   | """
+string_content                 | \n    转置 (transpose)\n    
+string_end                     | """
+return_statement               | return xx.T
+return                         | return
+attribute                      | xx.T
+identifier                     | xx
+.                              | .
+identifier                     | T
+comment                        | # https://github.com/astral-sh/ruff-vscode/issues/362
+assignment                     | DEFAULT_SYSTEM_PROMPT = (\n    "Ты — Сайга, русскоязычный автоматический ассистент. "\n    "Ты разговариваешь с людьми и помогаешь им."\n)
+identifier                     | DEFAULT_SYSTEM_PROMPT
+=                              | =
+parenthesized_expression       | (\n    "Ты — Сайга, русскоязычный автоматический ассистент. "\n    "Ты разговариваешь с людьми и помогаешь им."\n)
+(                              | (
+concatenated_string            | "Ты — Сайга, русскоязычный автоматический ассистент. "\n    "Ты разговариваешь с людьми и помогаешь им."
+string                         | "Ты — Сайга, русскоязычный автоматический ассистент. "
+string_start                   | "
+string_content                 | Ты — Сайга, русскоязычный автоматический ассистент. 
+string_end                     | "
+string                         | "Ты разговариваешь с людьми и помогаешь им."
+string_start                   | "
+string_content                 | Ты разговариваешь с людьми и помогаешь им.
+string_end                     | "
+)                              | )
+ERROR                          | %%
+modulo                         | %
+modulo                         | %
+identifier                     | timeit
+call                           | print('hello maybeshow')
+identifier                     | print
+argument_list                  | ('hello maybeshow')
+(                              | (
+string                         | 'hello maybeshow'
+string_start                   | '
+string_content                 | hello maybeshow
+string_end                     | '
+)                              | )
