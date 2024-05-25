@@ -70,48 +70,6 @@ impl EmbeddedSourceMap {
                 (section.inner_range_end as i32 + accumulated_offset) as usize;
         }
 
-        // for (source_range, replacement_length) in adjustments {
-        //     // Make sure we are on the right section
-        //     while source_range.start > current.inner_range_end {
-        //         println!(
-        //             "Hit the end of {}, adding {} and looking for next",
-        //             current.inner_range_end, accumulated_offset
-        //         );
-        //         // Apply the accumulated offset to the section
-        //         current.inner_range_end =
-        //             (current.inner_range_end as i32 + accumulated_offset) as usize;
-        //         current = match section_iterator.next() {
-        //             Some(section) => section,
-        //             None => {
-        //                 // We hit the end
-        //                 bail!("Section range is out of bounds");
-        //                 return Ok(new_map);
-        //             }
-        //         };
-        //     }
-
-        //     let length_diff =
-        //         *replacement_length as i32 - (source_range.end - source_range.start) as i32;
-
-        //     // Accumulate the overall offset, which we will use for future sections
-        //     accumulated_offset += length_diff;
-        // }
-
-        // Apply the accumulated offset to all remaining sections (including the last one we were on)
-        // println!(
-        //     "ADJUSTING current {} by {}",
-        //     current.inner_range_end, accumulated_offset
-        // );
-        // current.inner_range_end = (current.inner_range_end as i32 + accumulated_offset) as usize;
-        // for section in section_iterator {
-        //     println!(
-        //         "IT IS TIME TO ADVANCE from {} becuse we hit the end - adding {}",
-        //         current.inner_range_end, accumulated_offset
-        //     );
-        //     section.inner_range_end =
-        //         (section.inner_range_end as i32 + accumulated_offset) as usize;
-        // }
-
         println!(
             "We adjusted by a net of {} into the sections {:?}",
             accumulated_offset, new_map.sections
