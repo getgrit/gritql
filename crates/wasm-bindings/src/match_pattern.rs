@@ -83,9 +83,9 @@ pub async fn parse_input_files_internal(
         get_parsed_pattern(&pattern, lib_paths, lib_contents, parser).await?;
     let node = tree.root_node();
     let fields = GRIT_NODE_TYPES
-        .get_or_init(|| fields_for_nodes(&GRIT_LANGUAGE.get().unwrap(), NODE_TYPES_STRING));
+        .get_or_init(|| fields_for_nodes(GRIT_LANGUAGE.get().unwrap(), NODE_TYPES_STRING));
     let grit_node_types = GritNodeTypes {
-        node_types: &fields,
+        node_types: fields,
     };
     let parsed_pattern =
         tree_sitter_node_to_json(&node.node, &pattern, &grit_node_types).to_string();
@@ -350,7 +350,7 @@ async fn setup_grit_parser() -> anyhow::Result<MarzanoGritParser> {
         let new_lang = get_lang(&lang_path).await?;
         let _language_already_set = GRIT_LANGUAGE.set(new_lang);
         let _ = GRIT_NODE_TYPES.set(fields_for_nodes(
-            &GRIT_LANGUAGE.get().unwrap(),
+            GRIT_LANGUAGE.get().unwrap(),
             NODE_TYPES_STRING,
         ));
         GRIT_LANGUAGE

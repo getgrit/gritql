@@ -1,19 +1,15 @@
-use grit_util::AnalysisLog;
 use grit_util::Ast;
 use grit_util::AstCursor;
 use grit_util::AstNode;
 use grit_util::ByteRange;
 use grit_util::FileOrigin;
-use marzano_util::node_with_source::NodeWithSource;
-use std::path::Path;
-use tree_sitter::Query;
 
-use anyhow::bail;
-use anyhow::Result;
+use std::path::Path;
+
 use grit_util::traverse;
 use grit_util::Order;
-use grit_util::Range;
-use grit_util::{AnalysisLogs, Parser, SnippetTree};
+
+use grit_util::{AnalysisLogs, SnippetTree};
 use marzano_util::cursor_wrapper::CursorWrapper;
 
 use crate::sourcemap::EmbeddedSourceMap;

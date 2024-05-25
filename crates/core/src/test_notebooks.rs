@@ -2,7 +2,7 @@ use insta::assert_snapshot;
 use marzano_language::target_language::TargetLanguage;
 
 use crate::{
-    api::{MatchResult, Rewrite},
+    api::MatchResult,
     test_utils::{run_on_test_files, SyntheticFile},
 };
 
@@ -49,12 +49,11 @@ fn test_base_case() {
         .find(|r| matches!(r, MatchResult::Rewrite(_)))
         .unwrap();
 
-    match rewrite {
-        MatchResult::Rewrite(rewrite) => {
-            assert_snapshot!(rewrite.rewritten.content);
-        }
-        _ => panic!("Expected a rewrite"),
-    };
+    if let MatchResult::Rewrite(rewrite) = rewrite {
+        assert_snapshot!(rewrite.rewritten.content);
+    } else {
+        panic!("Expected a rewrite");
+    }
 }
 
 // #[test]
