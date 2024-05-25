@@ -185,3 +185,4 @@ fn test_multi_cell_small() {
         panic!("Expected a rewrite");
     }
 }
+

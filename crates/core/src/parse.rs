@@ -67,7 +67,6 @@ mod tests {
             .unwrap();
 
         let source_code = tree.source.clone();
-        println!("Source code: {}", source_code);
 
         let mut simple_rep = String::new();
 
