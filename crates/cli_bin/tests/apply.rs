@@ -888,8 +888,6 @@ fn python_in_notebook() -> Result<()> {
     assert!(content.contains("flint(5)"));
     assert_snapshot!(content);
 
-    panic!("TODO: Implement snapshot testing for notebooks");
-
     Ok(())
 }
 

@@ -2,22 +2,31 @@
 source: crates/core/src/parse.rs
 expression: simple_rep
 ---
-module                         | print(4)\nprint(3)\nprint(5)
-call                           | print(4)
-identifier                     | print
-argument_list                  | (4)
+module                         | import configparser\n\nconfig = configparser.ConfigParser()\nconfig.read("./secrets.ini")
+import_statement               | import configparser
+import                         | import
+dotted_name                    | configparser
+identifier                     | configparser
+assignment                     | config = configparser.ConfigParser()
+identifier                     | config
+=                              | =
+call                           | configparser.ConfigParser()
+attribute                      | configparser.ConfigParser
+identifier                     | configparser
+.                              | .
+identifier                     | ConfigParser
+argument_list                  | ()
 (                              | (
-integer                        | 4
 )                              | )
-call                           | print(3)
-identifier                     | print
-argument_list                  | (3)
+call                           | config.read("./secrets.ini")
+attribute                      | config.read
+identifier                     | config
+.                              | .
+identifier                     | read
+argument_list                  | ("./secrets.ini")
 (                              | (
-integer                        | 3
-)                              | )
-call                           | print(5)
-identifier                     | print
-argument_list                  | (5)
-(                              | (
-integer                        | 5
+string                         | "./secrets.ini"
+string_start                   | "
+string_content                 | ./secrets.ini
+string_end                     | "
 )                              | )

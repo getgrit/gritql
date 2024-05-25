@@ -2,31 +2,25 @@
 source: crates/core/src/parse.rs
 expression: simple_rep
 ---
-module                         | import configparser\n\n\n\nconfig = configparser.ConfigParser()\n\nconfig.read("./secrets.ini")
-import_statement               | import configparser
-import                         | import
-dotted_name                    | configparser
-identifier                     | configparser
-assignment                     | config = configparser.ConfigParser()
-identifier                     | config
-=                              | =
-call                           | configparser.ConfigParser()
-attribute                      | configparser.ConfigParser
-identifier                     | configparser
-.                              | .
-identifier                     | ConfigParser
-argument_list                  | ()
+module                         | print(4)\nprint("3")\nprint(5)
+call                           | print(4)
+identifier                     | print
+argument_list                  | (4)
 (                              | (
+integer                        | 4
 )                              | )
-call                           | config.read("./secrets.ini")
-attribute                      | config.read
-identifier                     | config
-.                              | .
-identifier                     | read
-argument_list                  | ("./secrets.ini")
+call                           | print("3")
+identifier                     | print
+argument_list                  | ("3")
 (                              | (
-string                         | "./secrets.ini"
+string                         | "3"
 string_start                   | "
-string_content                 | ./secrets.ini
+string_content                 | 3
 string_end                     | "
+)                              | )
+call                           | print(5)
+identifier                     | print
+argument_list                  | (5)
+(                              | (
+integer                        | 5
 )                              | )
