@@ -19,7 +19,6 @@ impl FileOwnerCompiler {
         let name = name.into();
         let new = !old_tree.is_fresh();
 
-        println!("New one, from {:?}", old_tree);
 
         // If we have an old tree, attach it here
         let new_map = if let Some(old_tree) = old_tree.original() {
