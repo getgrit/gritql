@@ -124,7 +124,7 @@ impl grit_util::Parser for MarzanoNotebookParser {
         logs: &mut AnalysisLogs,
         old_tree: FileOrigin<'_, Tree>,
     ) -> Option<Tree> {
-        if path
+        let tree = if path
             .and_then(Path::extension)
             .is_some_and(|ext| ext == "ipynb")
             && old_tree.is_fresh()
@@ -247,7 +247,8 @@ impl grit_util::Parser for MarzanoNotebookParser {
                 })
         } else {
             self.0.parse_file(body, path, logs, old_tree)
-        }
+        };
+        tree
     }
 
     fn parse_snippet(

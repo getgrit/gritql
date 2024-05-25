@@ -41,6 +41,7 @@ fn test_changing_lengths() {
         true,
     )];
     let results = run_on_test_files(&pattern, &test_files);
+    println!("{:?}", results);
     assert!(!results.iter().any(|r| r.is_error()));
 
     let rewrite = results
