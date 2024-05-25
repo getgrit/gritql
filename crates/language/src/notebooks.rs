@@ -317,6 +317,8 @@ impl MarzanoNotebookParser {
                         println!("Adding section: {:?}", content);
                         inner_code_body.push_str(&content);
                         source_map.add_section(section);
+                    } else {
+                        println!("Magic cell found, skipping: {}", content);
                     }
                 }
             }
