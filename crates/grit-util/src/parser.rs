@@ -7,10 +7,12 @@ pub enum FileOrigin<'tree, Tree>
 where
     Tree: Ast,
 {
-    /// A brand new file we are parsing for the first time, from disk
+    /// A file we are parsing for the first time, from disk
     Fresh,
     /// A file we have parsed before, and are re-parsing after mutating
     Mutated(&'tree Tree),
+    /// A file that was constructed by Grit
+    New,
 }
 
 impl<'tree, Tree: Ast> FileOrigin<'tree, Tree> {
@@ -24,6 +26,7 @@ impl<'tree, Tree: Ast> FileOrigin<'tree, Tree> {
         match self {
             FileOrigin::Fresh => None,
             FileOrigin::Mutated(tree) => Some(tree),
+            FileOrigin::New => None,
         }
     }
 }

@@ -314,8 +314,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 name.clone(),
                 body,
                 None,
-                // Some(&tree),
-                FileOrigin::Fresh,
+                FileOrigin::New,
                 self.language(),
                 logs,
             )?
