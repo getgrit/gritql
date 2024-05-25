@@ -49,71 +49,6 @@ impl MarzanoNotebookParser {
     }
 }
 
-/// Check if a pair in an object is a code cell
-fn is_code_cell_pair(node: &NodeWithSource, program_src: &[u8]) -> bool {
-    node.node.kind() == "pair"
-        && node
-            .child_by_field_name("key")
-            .and_then(|key| key.node.utf8_text(program_src).ok())
-            .map(|key| key == "\"cell_type\"")
-            .unwrap_or(false)
-        && node
-            .child_by_field_name("value")
-            .and_then(|value| value.node.utf8_text(program_src).ok())
-            .map(|value| value == "\"code\"")
-            .unwrap_or(false)
-}
-
-/// Given a pair, extract the value
-// fn get_pair_sources<'a>(
-//     node: &'a NodeWithSource,
-//     program_src: &str,
-// ) -> Option<Vec<tree_sitter::Range>> {
-//     if node.node.kind() != "pair" {
-//         return None;
-//     }
-
-//     if !node
-//         .child_by_field_name("key")
-//         .and_then(|key| key.node.utf8_text(program_src.as_bytes()).ok())
-//         .map(|key| key == "\"source\"")
-//         .unwrap_or(false)
-//     {
-//         return None;
-//     }
-
-//     let Some(value) = node.child_by_field_name("value") else {
-//         return None;
-//     };
-
-//     return Some(vec![value.range()]);
-
-//     // let mut ranges = Vec::new();
-
-//     // let children = value.node.walk();
-//     // let mut cursor = CursorWrapper::new(children, program_src);
-//     // for n in traverse(cursor, Order::Pre) {
-//     //     println!(
-//     //         "Node kind: {} text: {}",
-//     //         n.node.kind(),
-//     //         n.node.utf8_text(program_src.as_bytes()).unwrap()
-//     //     );
-//     //     //     if n.node.kind() == "string_content" {
-//     //     //         println!(
-//     //     //             "Pushing range of {}",
-//     //     //             n.node.utf8_text(program_src.as_bytes()).unwrap(),
-//     //     //         );
-//     //     //         ranges.push(n.node.range());
-//     //     //     }
-//     // }
-
-//     // if ranges.is_empty() {
-//     //     return None;
-//     // }
-
-//     // Some(ranges)
-// }
-
 impl grit_util::Parser for MarzanoNotebookParser {
     type Tree = Tree;
 
@@ -129,27 +64,6 @@ impl grit_util::Parser for MarzanoNotebookParser {
             .is_some_and(|ext| ext == "ipynb")
             && old_tree.is_fresh()
         {
-            // TODO: validate nbformat
-            // let notebook: Notebook = serde_json::from_str(body).ok()?;
-            // let mut new_src = Vec::new();
-
-            // for cell in notebook.cells {
-            //     let source = cell.source.join("\n");
-            //     new_src.push(source);
-            // }
-
-            // let new_src = new_src.join("\n");
-
-            // let tree = self
-            //     .0
-            //     .parser
-            //     .parse(&new_src, None)
-            //     .ok()?
-            //     .map(|tree| Tree::new(tree, &new_src));
-
-            // tree
-
-            // TREE SITTER VERSION:
             let mut inner_code_body = String::new();
             let mut source_map = EmbeddedSourceMap::new(body);
 
@@ -175,7 +89,18 @@ impl grit_util::Parser for MarzanoNotebookParser {
                     // Iterate over the children of the object
                     let node = cursor.node();
 
-                    if is_code_cell_pair(&node, body.as_bytes()) {
+                    if node.node.kind() == "pair"
+                        && node
+                            .child_by_field_name("key")
+                            .and_then(|key| key.node.utf8_text(body.as_bytes()).ok())
+                            .map(|key| key == "\"cell_type\"")
+                            .unwrap_or(false)
+                        && node
+                            .child_by_field_name("value")
+                            .and_then(|value| value.node.utf8_text(body.as_bytes()).ok())
+                            .map(|value| value == "\"code\"")
+                            .unwrap_or(false)
+                    {
                         is_code_cell = true;
                     }
 
