@@ -223,7 +223,6 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
 
             let src = &file.tree.source;
 
-
             if match_log.input_matches.is_none() {
                 match_log.input_matches = Some(input_ranges.clone());
             }

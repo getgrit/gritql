@@ -1,12 +1,12 @@
 use crate::analyze::group_checks;
 use crate::ux::CheckResult;
 use anyhow::{Context as _, Result};
+use fs_err::OpenOptions;
 use grit_util::Range;
 use log::info;
 use marzano_core::{api::EnforcementLevel, fs::extract_ranges};
 use marzano_gritmodule::config::ResolvedGritDefinition;
 use marzano_gritmodule::utils::extract_path;
-use fs_err::OpenOptions;
 use std::io::prelude::*;
 
 fn format_level(level: &EnforcementLevel) -> String {

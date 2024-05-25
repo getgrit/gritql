@@ -5,8 +5,8 @@ use git2::Repository;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-use lazy_static::lazy_static;
 use fs_err;
+use lazy_static::lazy_static;
 
 use crate::{config::GRIT_MODULE_DIR, searcher::find_git_dir_from, utils::remove_dir_all_safe};
 

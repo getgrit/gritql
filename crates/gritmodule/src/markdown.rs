@@ -6,6 +6,7 @@ use crate::{
     utils::is_pattern_name,
 };
 use anyhow::{bail, Context, Result};
+use fs_err::OpenOptions;
 use grit_util::{traverse, Ast, Order, Position};
 use marzano_core::analysis::defines_itself;
 use marzano_core::api::EnforcementLevel;
@@ -14,7 +15,6 @@ use marzano_language::language::MarzanoLanguage as _;
 use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::rich_path::RichFile;
-use fs_err::OpenOptions;
 use std::io::{Read, Seek, Write};
 use std::path::Path;
 use tokio::io::SeekFrom;
