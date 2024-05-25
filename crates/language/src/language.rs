@@ -181,6 +181,7 @@ pub trait NodeTypes {
 #[derive(Clone, Debug)]
 pub struct Tree {
     tree: TSTree,
+    /// The pure source code of the tree, which does not necessarily match the original file
     pub source: String,
 }
 

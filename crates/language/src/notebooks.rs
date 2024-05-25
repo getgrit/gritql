@@ -111,6 +111,7 @@ impl grit_util::Parser for MarzanoNotebookParser {
         if path
             .and_then(Path::extension)
             .is_some_and(|ext| ext == "ipynb")
+            && !new
         {
             let notebook: Notebook = serde_json::from_str(body).ok()?;
             let mut new_src = Vec::new();

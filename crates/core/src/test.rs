@@ -12052,7 +12052,7 @@ fn python_orphaned_from_imports() {
                 |        } else {
                 |        $anchor => `from $to_package import $replacement_name`
                 |        }
-                |    }      
+                |    }
                 |    },
                 |    `import $name` as $anchor where {
                 |    // Split the name into its constituent parts
@@ -14831,3 +14831,4 @@ fn ruby_array_global() {
     })
     .unwrap();
 }
+
