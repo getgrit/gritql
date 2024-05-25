@@ -256,7 +256,7 @@ defineProps<{
                 snippet,
                 Some(Path::new("test.vue")),
                 &mut vec![].into(),
-                false,
+                FileOrigin::Fresh,
             )
             .unwrap();
         print_node(&tree.root_node().node);

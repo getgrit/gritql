@@ -14830,4 +14830,3 @@ fn ruby_array_global() {
     })
     .unwrap();
 }
-

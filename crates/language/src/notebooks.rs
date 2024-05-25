@@ -273,7 +273,7 @@ mod tests {
         let code = include_str!("../../../crates/cli_bin/fixtures/notebooks/tiny_nb.ipynb");
         let mut parser = MarzanoNotebookParser::new(&Python::new(None));
         let tree = parser
-            .parse_file(code, None, &mut AnalysisLogs::default(), None)
+            .parse_file(code, None, &mut AnalysisLogs::default(), FileOrigin::Fresh)
             .unwrap();
 
         let cursor = tree.root_node().node.walk();
