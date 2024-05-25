@@ -48,12 +48,10 @@ mod tests {
     use std::path::Path;
 
     use grit_util::{traverse, Ast, Order};
-    use insta::{assert_snapshot, assert_yaml_snapshot};
+    use insta::assert_snapshot;
     use marzano_language::language::MarzanoLanguage;
     use marzano_language::{python::Python, target_language::TargetLanguage};
     use marzano_util::cursor_wrapper::CursorWrapper;
-
-    use crate::tree_sitter_serde::tree_sitter_node_to_json;
 
     fn verify_notebook(source: &str, path: &Path) {
         let lang = TargetLanguage::from_string("ipynb", None).unwrap();
