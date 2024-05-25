@@ -25,7 +25,7 @@ impl EmbeddedSourceMap {
 
     pub fn clone_with_adjusments(
         &self,
-        adjustments: &Vec<(std::ops::Range<usize>, usize)>,
+        adjustments: &[(std::ops::Range<usize>, usize)],
     ) -> Result<EmbeddedSourceMap> {
         let mut new_map = self.clone();
         let mut section_iterator = new_map.sections.iter_mut();
@@ -57,6 +57,12 @@ impl EmbeddedSourceMap {
             // Apply the offset to the current section
             current.inner_range_end = (current.inner_range_end as i32 + length_diff) as usize;
         }
+
+        println!(
+            "It is time to adjust, we adjusted by a net of {}",
+            accumulated_offset,
+        );
+
         Ok(new_map)
     }
 
@@ -65,6 +71,11 @@ impl EmbeddedSourceMap {
 
         let mut current_inner_offset = 0;
         let mut current_outer_offset = 0;
+
+        println!(
+            "it is fill time!: {}, {:?} {:?}",
+            new_inner_source, self.sections, self.outer_source,
+        );
 
         for section in &self.sections {
             // TODO: actually get the *updated* range

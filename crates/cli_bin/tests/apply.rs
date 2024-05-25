@@ -974,6 +974,44 @@ fn python_string_cells() -> Result<()> {
 }
 
 #[test]
+fn python_sequential() -> Result<()> {
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("notebooks", false)?;
+
+    // from the tempdir as cwd, run init
+    run_init(&dir.as_path())?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    apply_cmd
+        .arg("apply")
+        .arg("--force")
+        .arg("sequential_pattern.grit")
+        .arg("multi_cell.ipynb");
+    let output = apply_cmd.output()?;
+
+    let stdout = String::from_utf8(output.stdout)?;
+    println!("stdout: {:?}", stdout);
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stderr: {:?}", stderr);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        stderr
+    );
+
+    // Read back tiny_nb.ipynb
+    let target_file = dir.join("multi_cell.ipynb");
+    let content: String = fs_err::read_to_string(target_file)?;
+
+    println!("content: {:?}", content);
+
+    Ok(())
+}
+
+#[test]
 fn python_invalid_notebook() -> Result<()> {
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("notebooks", false)?;
