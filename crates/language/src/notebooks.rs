@@ -126,6 +126,7 @@ impl grit_util::Parser for MarzanoNotebookParser {
             .is_some_and(|ext| ext == "ipynb")
             && old_tree.is_none()
         {
+            // TODO: validate nbformat
             // let notebook: Notebook = serde_json::from_str(body).ok()?;
             // let mut new_src = Vec::new();
 
