@@ -353,6 +353,25 @@ impl EntireFile {
             byte_ranges: byte_range.map(|r| r.to_owned()),
         }
     }
+
+    fn from_file(file: &FileOwner<Tree>) -> Result<Self> {
+        if let Some(source_map) = &file.tree.source_map {
+            let outer_source = source_map.fill_with_inner(&file.tree.source)?;
+
+            Ok(Self::file_to_entire_file(
+                file.name.to_string_lossy().as_ref(),
+                &outer_source,
+                // Exclude the matches, since they aren't reliable yet
+                None,
+            ))
+        } else {
+            Ok(Self::file_to_entire_file(
+                file.name.to_string_lossy().as_ref(),
+                file.tree.outer_source(),
+                file.matches.borrow().byte_ranges.as_ref(),
+            ))
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -388,12 +407,7 @@ impl Rewrite {
         } else {
             bail!("cannot have rewrite without matches")
         };
-        println!("Compute rewrite for {:?}", rewritten_file.tree.source_map);
-        let rewritten = EntireFile::file_to_entire_file(
-            rewritten_file.name.to_string_lossy().as_ref(),
-            rewritten_file.tree.outer_source(),
-            rewritten_file.matches.borrow().byte_ranges.as_ref(),
-        );
+        let rewritten = EntireFile::from_file(rewritten_file)?;
         Ok(Rewrite::new(original, rewritten))
     }
 }

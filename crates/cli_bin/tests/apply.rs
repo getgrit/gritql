@@ -884,8 +884,8 @@ fn python_in_notebook() -> Result<()> {
 
     // assert that it matches snapshot
     println!("content: {:?}", content);
-    assert!(content.contains("ECHO 4"));
-    assert!(content.contains("ECHO 5"));
+    assert!(content.contains("flint(4)"));
+    assert!(content.contains("flint(5)"));
     assert_snapshot!(content);
 
     panic!("TODO: Implement snapshot testing for notebooks");
