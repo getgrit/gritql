@@ -238,7 +238,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 .is_some()
             {
                 let code = file.tree.root_node();
-                let (new_src, new_ranges) = apply_effects(
+                let (new_src, new_ranges, adjustment_ranges) = apply_effects(
                     code,
                     state.effects.clone(),
                     &state.files,
@@ -248,9 +248,14 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     logs,
                 )?;
 
-                if let Some(new_ranges) = new_ranges {
+                if let (Some(new_ranges), Some(edit_ranges)) = (new_ranges, adjustment_ranges) {
                     let tree = parser
-                        .parse_file(&new_src, None, logs, FileOrigin::Mutated(&file.tree))
+                        .parse_file(
+                            &new_src,
+                            None,
+                            logs,
+                            FileOrigin::Mutated((&file.tree, &edit_ranges)),
+                        )
                         .unwrap();
                     let root = tree.root_node();
                     let replacement_ranges = get_replacement_ranges(root, self.language());
@@ -267,7 +272,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                         new_filename.clone(),
                         new_src,
                         Some(ranges),
-                        FileOrigin::Mutated(&file.tree),
+                        FileOrigin::Mutated((&file.tree, &edit_ranges)),
                         self.language(),
                         logs,
                     )?

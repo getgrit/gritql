@@ -1,8 +1,8 @@
 use crate::{AnalysisLogs, AstNode};
-use std::path::Path;
+use std::{ops::Range, path::Path};
 
 /// Information on where a file came from, for the parser to be smarter
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug)]
 pub enum FileOrigin<'tree, Tree>
 where
     Tree: Ast,
@@ -10,7 +10,7 @@ where
     /// A file we are parsing for the first time, from disk
     Fresh,
     /// A file we have parsed before, and are re-parsing after mutating
-    Mutated(&'tree Tree),
+    Mutated((&'tree Tree, &'tree Vec<(Range<usize>, usize)>)),
     /// A file that was constructed by Grit
     New,
 }
@@ -25,7 +25,7 @@ impl<'tree, Tree: Ast> FileOrigin<'tree, Tree> {
     pub fn original(&self) -> Option<&'tree Tree> {
         match self {
             FileOrigin::Fresh => None,
-            FileOrigin::Mutated(tree) => Some(tree),
+            FileOrigin::Mutated((tree, ..)) => Some(tree),
             FileOrigin::New => None,
         }
     }

@@ -27,7 +27,11 @@ pub(crate) fn apply_effects<'a, Q: QueryContext>(
     new_filename: &mut PathBuf,
     context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<(String, Option<Vec<Range<usize>>>)> {
+) -> Result<(
+    String,
+    Option<Vec<Range<usize>>>,
+    Option<Vec<(Range<usize>, usize)>>,
+)> {
     let language = context.language();
     let current_name = context.name();
 
@@ -36,10 +40,10 @@ pub(crate) fn apply_effects<'a, Q: QueryContext>(
         .filter(|effect| !effect.binding.is_suppressed(language, current_name))
         .collect();
     if effects.is_empty() {
-        return Ok((code.full_source().to_owned(), None));
+        return Ok((code.full_source().to_owned(), None, None));
     }
     let mut memo: HashMap<CodeRange, Option<String>> = HashMap::new();
-    let (from_inline, ranges) = linearize_binding(
+    let (from_inline, output_ranges, effect_ranges) = linearize_binding(
         language,
         &effects,
         files,
@@ -59,5 +63,9 @@ pub(crate) fn apply_effects<'a, Q: QueryContext>(
             }
         }
     }
-    Ok((from_inline.to_string(), Some(ranges)))
+    Ok((
+        from_inline.to_string(),
+        Some(output_ranges),
+        Some(effect_ranges),
+    ))
 }

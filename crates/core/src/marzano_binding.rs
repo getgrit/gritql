@@ -186,7 +186,11 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
     range: CodeRange,
     distributed_indent: Option<usize>,
     logs: &mut AnalysisLogs,
-) -> Result<(Cow<'a, str>, Vec<StdRange<usize>>)> {
+) -> Result<(
+    Cow<'a, str>,
+    Vec<StdRange<usize>>,
+    Vec<(StdRange<usize>, usize)>,
+)> {
     let effects1 = get_top_level_effects(effects, memo, &range, language, logs)?;
 
     let effects1 = effects1
@@ -276,7 +280,7 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
         &mut replacements,
         language,
     )?;
-    let (res, offset) = inline_sorted_snippets_with_offset(
+    let (res, offset, mapping) = inline_sorted_snippets_with_offset(
         language,
         adjusted_source.to_string(),
         range.start as usize,
@@ -285,12 +289,7 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
     )?;
     memo.insert(range, Some(res.clone()));
 
-    let paired_ranges: Vec<(StdRange<usize>, usize)> = replacements
-        .iter()
-        .map(|(effect_range, _)| (effect_range.effective_range(), effect_range.)
-        .collect();
-
-    Ok((res.into(), offset))
+    Ok((res.into(), offset, mapping))
 }
 
 impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
