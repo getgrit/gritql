@@ -2,7 +2,7 @@
 source: crates/core/src/parse.rs
 expression: code
 ---
-module                         | x = 1\npip install maybeshow\n\ncolors = 6\nprint(colors)\n\n\n\n\n\n\n\ndef maybeshow():\n    pass\n\n%timeit foo()\n\n\ndef foo():\n    pass\n\n%timeit other('hello maybeshow')\n\ndef sample_func(xx):\n    """\n    转置 (transpose)\n    """\n    return xx.T\n# https://github.com/astral-sh/ruff-vscode/issues/362\nDEFAULT_SYSTEM_PROMPT = (\n    "Ты — Сайга, русскоязычный автоматический ассистент. "\n    "Ты разговариваешь с людьми и помогаешь им."\n)\n\n%%timeit\nprint('hello maybeshow')
+module                         | x = 1\npip install maybeshow\ncolors = 6\nprint(colors)\ndef maybeshow():\n    pass\n\n%timeit foo()\ndef foo():\n    pass\n%timeit other('hello maybeshow')\ndef sample_func(xx):\n    """\n    转置 (transpose)\n    """\n    return xx.T\n# https://github.com/astral-sh/ruff-vscode/issues/362\nDEFAULT_SYSTEM_PROMPT = (\n    "Ты — Сайга, русскоязычный автоматический ассистент. "\n    "Ты разговариваешь с людьми и помогаешь им."\n)\n%%timeit\nprint('hello maybeshow')\n
 assignment                     | x = 1
 identifier                     | x
 =                              | =
