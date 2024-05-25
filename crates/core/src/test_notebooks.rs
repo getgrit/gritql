@@ -197,6 +197,7 @@ fn test_sequential() {
             bubble file($body) where $body <: contains bubble `print($x)` => `p($x)`,
             bubble file($body) where $body <: contains bubble `p($y)` => `s($y)`,
             bubble file($body) where $body <: contains bubble `s($a)` => `flint($a)`,
+            bubble file($body) where $body <: contains bubble `flint($a)` => `x($a, 10)`,
     }
     "#;
     let libs = BTreeMap::new();

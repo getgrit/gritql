@@ -22,7 +22,7 @@ impl FileOwnerCompiler {
         // If we have an old tree, attach it here
         let new_map = if let FileOrigin::Mutated((old_tree, mutations)) = old_tree {
             if let Some(old_map) = &old_tree.source_map {
-                Some(old_map.clone_with_adjusments(mutations)?)
+                Some(old_map.clone_with_adjusments(mutations.iter().rev())?)
             } else {
                 None
             }
