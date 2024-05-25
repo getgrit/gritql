@@ -9,7 +9,7 @@ pub trait Parser {
         body: &str,
         path: Option<&Path>,
         logs: &mut AnalysisLogs,
-        new: bool,
+        old_tree: &Option<Self::Tree>,
     ) -> Option<Self::Tree>;
 
     fn parse_snippet(

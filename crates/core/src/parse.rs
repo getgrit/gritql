@@ -16,7 +16,7 @@ pub fn parse_input_file<'a>(
 
     let mut parser = lang.get_parser();
     let tree = parser
-        .parse_file(input, Some(path), &mut vec![].into(), false)
+        .parse_file(input, Some(path), &mut vec![].into(), &None)
         .context("Parsed tree is empty")?;
     let input_file_debug_text = to_string_pretty(&tree_sitter_node_to_json(
         &tree.root_node().node,

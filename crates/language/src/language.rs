@@ -231,12 +231,12 @@ impl Parser for MarzanoParser {
         body: &str,
         path: Option<&Path>,
         logs: &mut AnalysisLogs,
-        new: bool,
+        old_tree: &Option<Self::Tree>,
     ) -> Option<Tree> {
         let tree = self.parser.parse(body, None).ok()??;
 
         if let Some(path) = path {
-            let mut errors = file_parsing_error(&tree, path, body, new).ok()?;
+            let mut errors = file_parsing_error(&tree, path, body, old_tree.is_some()).ok()?;
             logs.append(&mut errors);
         }
 

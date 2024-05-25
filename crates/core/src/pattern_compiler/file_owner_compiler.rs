@@ -12,14 +12,14 @@ impl FileOwnerCompiler {
         name: impl Into<PathBuf>,
         source: String,
         matches: Option<MatchRanges>,
-        new: bool,
+        old_tree: &Option<Tree>,
         language: &impl MarzanoLanguage<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Option<FileOwner<Tree>>> {
         let name = name.into();
         let Some(tree) = language
             .get_parser()
-            .parse_file(&source, Some(&name), logs, new)
+            .parse_file(&source, Some(&name), logs, &old_tree)
         else {
             return Ok(None);
         };
@@ -29,7 +29,7 @@ impl FileOwnerCompiler {
             absolute_path,
             tree,
             matches: matches.unwrap_or_default().into(),
-            new,
+            new: old_tree.is_some(),
         }))
     }
 }

@@ -120,7 +120,7 @@ impl Parser for MarzanoJsLikeParser {
         body: &str,
         path: Option<&Path>,
         logs: &mut AnalysisLogs,
-        new: bool,
+        old_tree: &Option<Tree>,
     ) -> Option<Tree> {
         if path
             .and_then(Path::extension)
@@ -137,7 +137,7 @@ impl Parser for MarzanoJsLikeParser {
                 .ok()?
                 .map(|tree| Tree::new(tree, body))
         } else {
-            self.0.parse_file(body, path, logs, new)
+            self.0.parse_file(body, path, logs, old_tree)
         }
     }
 

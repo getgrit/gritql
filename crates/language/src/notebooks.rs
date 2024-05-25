@@ -106,12 +106,12 @@ impl grit_util::Parser for MarzanoNotebookParser {
         body: &str,
         path: Option<&Path>,
         logs: &mut AnalysisLogs,
-        new: bool,
+        old_tree: &Option<Self::Tree>,
     ) -> Option<Tree> {
         if path
             .and_then(Path::extension)
             .is_some_and(|ext| ext == "ipynb")
-            && !new
+            && old_tree.is_none()
         {
             let notebook: Notebook = serde_json::from_str(body).ok()?;
             let mut new_src = Vec::new();
@@ -210,7 +210,7 @@ impl grit_util::Parser for MarzanoNotebookParser {
 
             // tree
         } else {
-            self.0.parse_file(body, path, logs, new)
+            self.0.parse_file(body, path, logs, old_tree)
         }
     }
 
@@ -236,7 +236,7 @@ mod tests {
         let code = include_str!("../../../crates/cli_bin/fixtures/notebooks/tiny_nb.ipynb");
         let mut parser = MarzanoNotebookParser::new(&Python::new(None));
         let tree = parser
-            .parse_file(code, None, &mut AnalysisLogs::default(), false)
+            .parse_file(code, None, &mut AnalysisLogs::default(), None)
             .unwrap();
 
         let cursor = tree.root_node().node.walk();

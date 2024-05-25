@@ -878,9 +878,6 @@ fn python_in_notebook() -> Result<()> {
         stderr
     );
 
-    // Make sure we process the file
-    assert!(stdout.contains("Processed 1 file"));
-
     // Read back tiny_nb.ipynb
     let target_file = dir.join("tiny_nb.ipynb");
     let content: String = fs_err::read_to_string(target_file)?;

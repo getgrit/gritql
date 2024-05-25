@@ -148,7 +148,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     owned.path,
                     owned.content,
                     None,
-                    false,
+                    &None,
                     self.language,
                     logs,
                 )?;
@@ -247,9 +247,9 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     self,
                     logs,
                 )?;
-                println!("new src: {:?}", new_src);
+
                 if let Some(new_ranges) = new_ranges {
-                    let tree = parser.parse_file(&new_src, None, logs, true).unwrap();
+                    let tree = parser.parse_file(&new_src, None, logs, &None).unwrap();
                     let root = tree.root_node();
                     let replacement_ranges = get_replacement_ranges(root, self.language());
                     let cleaned_src = replace_cleaned_ranges(replacement_ranges, &new_src)?;
@@ -259,13 +259,15 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                         new_src
                     };
 
+                    print!("old code: {}", file.tree.source);
+
                     let ranges =
                         MatchRanges::new(new_ranges.into_iter().map(|r| r.into()).collect());
                     let owned_file = FileOwnerCompiler::from_matches(
                         new_filename.clone(),
                         new_src,
                         Some(ranges),
-                        true,
+                        &None,
                         self.language(),
                         logs,
                     )?
@@ -311,7 +313,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 name.clone(),
                 body,
                 None,
-                true,
+                &None,
                 self.language(),
                 logs,
             )?
