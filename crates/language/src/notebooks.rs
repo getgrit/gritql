@@ -196,7 +196,7 @@ impl grit_util::Parser for MarzanoNotebookParser {
                                         .iter()
                                         .map(|v| v.as_str().unwrap_or(""))
                                         .collect::<Vec<&str>>()
-                                        .join("\n"),
+                                        .join(""),
                                     SourceValueFormat::Array,
                                 ),
                                 serde_json::Value::String(s) => (s, SourceValueFormat::String),
