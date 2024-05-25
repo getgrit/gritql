@@ -304,6 +304,7 @@ impl MarzanoNotebookParser {
                                 ),
                                 inner_range_end,
                                 format,
+                                inner_end_trim: 1,
                             },
                         ));
                     }

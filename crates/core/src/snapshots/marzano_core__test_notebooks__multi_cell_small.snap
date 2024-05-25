@@ -18,7 +18,10 @@ expression: rewrite.rewritten.content
       "cell_type": "markdown",
       "id": "33c5d4c8",
       "metadata": {},
-      "source": ["# This is good\nIt is just markdown..."]
+      "source": [
+        "# This is good\n",
+        "It is just markdown..."
+      ]
     },
     {
       "cell_type": "code",

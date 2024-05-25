@@ -69,7 +69,7 @@ impl EmbeddedSourceMap {
         for section in &self.sections {
             // TODO: actually get the *updated* range
             let replacement_code = new_inner_source
-                .get(current_inner_offset..section.inner_range_end)
+                .get(current_inner_offset..(section.inner_range_end - section.inner_end_trim))
                 .ok_or(anyhow::anyhow!("Section range is out of bounds"))?;
 
             let json = section.as_json(replacement_code);
@@ -95,6 +95,8 @@ pub struct SourceMapSection {
     /// The end of the range from the inner document
     pub(crate) inner_range_end: usize,
     pub(crate) format: SourceValueFormat,
+    /// Content we should trim from the inner document before inserting back in (ex. "\n" at the end)
+    pub(crate) inner_end_trim: usize,
 }
 
 impl SourceMapSection {
