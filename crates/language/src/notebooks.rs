@@ -18,6 +18,19 @@ use crate::{
     language::{MarzanoLanguage, MarzanoParser, Tree},
 };
 
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Notebook {
+    cells: Vec<Cell>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Cell {
+    cell_type: String,
+    source: Vec<String>,
+}
+
 /// Custom Python parser, to include notebooks
 pub(crate) struct MarzanoNotebookParser(MarzanoParser);
 
@@ -99,82 +112,100 @@ impl grit_util::Parser for MarzanoNotebookParser {
             .and_then(Path::extension)
             .is_some_and(|ext| ext == "ipynb")
         {
-            let mut all_ranges = Vec::new();
+            // let notebook: Notebook = serde_json::from_str(body).ok()?;
+            // let mut content = Vec::new();
 
-            let json = Json::new(None);
-            let mut parser = json.get_parser();
-            let tree = parser.parse_file(body, None, logs, false)?;
-            let root = tree.root_node().node;
-            let cursor = root.walk();
-
-            for n in traverse(CursorWrapper::new(cursor, body), Order::Pre) {
-                if n.node.kind() != "object" {
-                    continue;
-                }
-
-                let mut cursor = n.walk();
-
-                let mut is_code_cell = true;
-
-                let mut source_ranges = None;
-
-                cursor.goto_first_child(); // Enter the object
-                while cursor.goto_next_sibling() {
-                    // Iterate over the children of the object
-                    let node = cursor.node();
-
-                    if is_code_cell_pair(&node, body.as_bytes()) {
-                        is_code_cell = true;
-                    }
-
-                    if let Some(ranges) = get_pair_sources(&node, body) {
-                        source_ranges = Some(ranges);
-                    }
-                }
-
-                if is_code_cell {
-                    if let Some(source_cells) = source_ranges {
-                        all_ranges.extend(source_cells);
-                    }
-                }
-
-                cursor.goto_parent(); // Exit the object
-            }
-
-            println!("Found {} code cells", all_ranges.len());
-
-            // println!("SOURCDE CODE!");
-            // for range in &all_ranges {
-            //     println!(
-            //         "{}",
-            //         &body[range.start_byte() as usize..range.end_byte() as usize]
-            //     );
+            // for cell in notebook.cells {
+            //     let source = cell.source.join("\n");
+            //     content.push(source);
             // }
 
-            let only_code_body_body = all_ranges
-                .iter()
-                .map(|range| &body[range.start_byte() as usize..range.end_byte() as usize])
-                .collect::<Vec<&str>>()
-                .join("\n");
+                        // // self.0.parser.set_included_ranges(&all_ranges).ok()?;
+            // // let tree = self
+            // //     .0
+            // //     .parser
+            // //     .parse(body, None)
+            // //     .ok()?
+            // //     .map(|tree| Tree::new(tree, body));
 
-            println!("Only code body: \n{}", only_code_body_body);
 
-            // self.0.parser.set_included_ranges(&all_ranges).ok()?;
+            /// TREE SITTER VERSION:
+            // let mut all_ranges = Vec::new();
+
+            // let json = Json::new(None);
+            // let mut parser = json.get_parser();
+            // let tree = parser.parse_file(body, None, logs, false)?;
+            // let root = tree.root_node().node;
+            // let cursor = root.walk();
+
+            // for n in traverse(CursorWrapper::new(cursor, body), Order::Pre) {
+            //     if n.node.kind() != "object" {
+            //         continue;
+            //     }
+
+            //     let mut cursor = n.walk();
+
+            //     let mut is_code_cell = true;
+
+            //     let mut source_ranges = None;
+
+            //     cursor.goto_first_child(); // Enter the object
+            //     while cursor.goto_next_sibling() {
+            //         // Iterate over the children of the object
+            //         let node = cursor.node();
+
+            //         if is_code_cell_pair(&node, body.as_bytes()) {
+            //             is_code_cell = true;
+            //         }
+
+            //         if let Some(ranges) = get_pair_sources(&node, body) {
+            //             source_ranges = Some(ranges);
+            //         }
+            //     }
+
+            //     if is_code_cell {
+            //         if let Some(source_cells) = source_ranges {
+            //             all_ranges.extend(source_cells);
+            //         }
+            //     }
+
+            //     cursor.goto_parent(); // Exit the object
+            // }
+
+            // println!("Found {} code cells", all_ranges.len());
+
+            // // println!("SOURCDE CODE!");
+            // // for range in &all_ranges {
+            // //     println!(
+            // //         "{}",
+            // //         &body[range.start_byte() as usize..range.end_byte() as usize]
+            // //     );
+            // // }
+
+            // let only_code_body_body = all_ranges
+            //     .iter()
+            //     .map(|range| &body[range.start_byte() as usize..range.end_byte() as usize])
+            //     .collect::<Vec<&str>>()
+            //     .join("\n");
+
+            // println!("Only code body: \n{}", only_code_body_body);
+
+            // // self.0.parser.set_included_ranges(&all_ranges).ok()?;
+            // // let tree = self
+            // //     .0
+            // //     .parser
+            // //     .parse(body, None)
+            // //     .ok()?
+            // //     .map(|tree| Tree::new(tree, body));
+
             // let tree = self
             //     .0
             //     .parser
-            //     .parse(body, None)
+            //     .parse(only_code_body_body.clone(), None)
             //     .ok()?
-            //     .map(|tree| Tree::new(tree, body));
+            //     .map(|tree| Tree::new(tree, only_code_body_body));
 
-            let tree = self
-                .0
-                .parser
-                .parse(only_code_body_body.clone(), None)
-                .ok()?
-                .map(|tree| Tree::new(tree, only_code_body_body));
-
-            tree
+            // tree
         } else {
             self.0.parse_file(body, path, logs, new)
         }

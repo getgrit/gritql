@@ -6,7 +6,6 @@ pub mod built_in_functions;
 mod clean;
 pub mod compact_api;
 pub mod constants;
-mod effects_dependency_graph;
 mod equivalence;
 mod foreign_function_definition;
 pub mod fs;
