@@ -357,7 +357,6 @@ impl MarzanoNotebookParser {
             return None;
         }
 
-        // If the language is not
         if let Some(language_string) = language_string {
             if language_string != self.language {
                 logs.add_warning(
