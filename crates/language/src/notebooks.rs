@@ -112,24 +112,26 @@ impl grit_util::Parser for MarzanoNotebookParser {
             .and_then(Path::extension)
             .is_some_and(|ext| ext == "ipynb")
         {
-            // let notebook: Notebook = serde_json::from_str(body).ok()?;
-            // let mut content = Vec::new();
+            let notebook: Notebook = serde_json::from_str(body).ok()?;
+            let mut new_src = Vec::new();
 
-            // for cell in notebook.cells {
-            //     let source = cell.source.join("\n");
-            //     content.push(source);
-            // }
+            for cell in notebook.cells {
+                let source = cell.source.join("\n");
+                new_src.push(source);
+            }
 
-                        // // self.0.parser.set_included_ranges(&all_ranges).ok()?;
-            // // let tree = self
-            // //     .0
-            // //     .parser
-            // //     .parse(body, None)
-            // //     .ok()?
-            // //     .map(|tree| Tree::new(tree, body));
+            let new_src = new_src.join("\n");
 
+            let tree = self
+                .0
+                .parser
+                .parse(&new_src, None)
+                .ok()?
+                .map(|tree| Tree::new(tree, &new_src));
 
-            /// TREE SITTER VERSION:
+            tree
+
+            // TREE SITTER VERSION:
             // let mut all_ranges = Vec::new();
 
             // let json = Json::new(None);

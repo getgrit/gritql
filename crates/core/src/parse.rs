@@ -63,22 +63,28 @@ mod tests {
             .parse_file(source, Some(path), &mut vec![].into(), false)
             .unwrap();
 
+        let mut simple_rep = String::new();
+
         let cursor = tree.root_node().node.walk();
         for n in traverse(CursorWrapper::new(cursor, source), Order::Pre) {
-            println!("Node kind: {}", n.node.kind());
+            simple_rep += format!(
+                "{:<width$} | {}\n",
+                n.node.kind(),
+                n.node
+                    .utf8_text(tree.source.as_bytes())
+                    .unwrap()
+                    .replace('\n', "\\n"),
+                width = 30
+            )
+            .as_str();
             assert!(
                 !n.node.is_error(),
                 "Node is an error: {}",
-                n.node.utf8_text(source.as_bytes()).unwrap()
+                n.node.utf8_text(tree.source.as_bytes()).unwrap()
             );
         }
 
-        // println!("tree: {:?}", tree);
-        let json_rep = tree_sitter_node_to_json(&tree.root_node().node, source, &lang);
-
-        println!("json_rep: {:?}", json_rep);
-
-        assert_yaml_snapshot!(json_rep);
+        assert_snapshot!(simple_rep);
     }
 
     #[test]

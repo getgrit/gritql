@@ -247,6 +247,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     self,
                     logs,
                 )?;
+                println!("new src: {:?}", new_src);
                 if let Some(new_ranges) = new_ranges {
                     let tree = parser.parse_file(&new_src, None, logs, true).unwrap();
                     let root = tree.root_node();
