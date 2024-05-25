@@ -253,6 +253,7 @@ impl PatternLanguage {
             "json" => Some(Self::Json),
             "java" => Some(Self::Java),
             "cs" => Some(Self::CSharp),
+            "ipynb" => Some(Self::Python),
             "py" => Some(Self::Python),
             "md" | "mdx" | "mdoc" => Some(Self::MarkdownBlock),
             "go" => Some(Self::Go),
