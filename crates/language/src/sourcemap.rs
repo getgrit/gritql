@@ -64,6 +64,7 @@ impl EmbeddedSourceMap {
         let mut outer_source = self.outer_source.clone();
 
         let mut current_inner_offset = 0;
+        let mut current_outer_offset = 0;
 
         for section in &self.sections {
             // TODO: actually get the *updated* range
@@ -73,8 +74,14 @@ impl EmbeddedSourceMap {
 
             let json = section.as_json(replacement_code);
 
-            outer_source.replace_range(section.outer_range.start..section.outer_range.end, &json);
+            let outer_range = (section.outer_range.start as i32 + current_outer_offset) as usize
+                ..(section.outer_range.end as i32 + current_outer_offset) as usize;
+
+            let length_diff = json.len() as i32 - (outer_range.end - outer_range.start) as i32;
+            current_outer_offset += length_diff;
             current_inner_offset = section.inner_range_end;
+
+            outer_source.replace_range(outer_range, &json);
         }
 
         Ok(outer_source)
