@@ -232,6 +232,7 @@ pub(crate) fn inline_sorted_snippets_with_offset(
             output_ranges.push(start..end);
         }
     }
+    let replacement_ranges: Vec<(Range<usize>, usize)> = Vec::with_capacity(replacements.len());
     for (range, snippet) in replacements {
         let range = adjust_range(&range.effective_range(), offset, &code)?;
         if range.start > code.len() || range.end > code.len() {

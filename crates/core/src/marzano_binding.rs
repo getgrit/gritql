@@ -284,6 +284,12 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
         distributed_indent.is_some(),
     )?;
     memo.insert(range, Some(res.clone()));
+
+    let paired_ranges: Vec<(StdRange<usize>, usize)> = replacements
+        .iter()
+        .map(|(effect_range, _)| (effect_range.effective_range(), effect_range.)
+        .collect();
+
     Ok((res.into(), offset))
 }
 
