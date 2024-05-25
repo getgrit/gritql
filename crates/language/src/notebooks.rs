@@ -121,7 +121,10 @@ impl MarzanoNotebookParser {
                             ),
                             serde_json::Value::String(s) => (s, SourceValueFormat::String),
                             _ => {
-                                // bail!("Unexpected source value: {:?}", value);
+                                logs.add_warning(
+                                    path.map(|m| m.into()),
+                                    "Unsupported cell source format, expected a string or array of strings".to_string(),
+                                );
                                 continue;
                             }
                         };
