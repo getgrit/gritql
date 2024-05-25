@@ -4,7 +4,7 @@ use log::{debug, info};
 
 use marzano_core::api::MatchResult;
 use marzano_core::constants::DEFAULT_FILE_NAME;
-use marzano_gritmodule::config::{GritPatternSample, GritPatternTestInfo};
+use marzano_gritmodule::config::{GritPatternSample, GritPatternTestInfo, ResolvedGritDefinition};
 use marzano_gritmodule::formatting::format_rich_files;
 use marzano_gritmodule::markdown::replace_sample_in_md_file;
 use marzano_gritmodule::patterns_directory::PatternsDirectory;
@@ -13,9 +13,7 @@ use marzano_gritmodule::testing::{
     GritTestResultState, MismatchInfo, SampleTestResult,
 };
 
-use marzano_language::{
-    grit_parser::MarzanoGritParser, language::Tree, target_language::PatternLanguage,
-};
+use marzano_language::{grit_parser::MarzanoGritParser, target_language::PatternLanguage};
 
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use serde::Serialize;
@@ -30,13 +28,11 @@ use marzano_messenger::emit::{get_visibility, VisibilityLevels};
 use super::patterns::PatternsTestArgs;
 
 use anyhow::{anyhow, bail, Context as _, Result};
-use std::collections::BTreeMap;
-use std::path::PathBuf;
 use std::{path::Path, time::Duration};
 
-use grit_util::{traverse, Ast, AstNode, Order};
+use grit_util::Ast;
 use marzano_core::analysis::is_multifile;
-use marzano_core::pattern_compiler::compiler::{defs_to_filenames, DefsToFilenames};
+use marzano_core::pattern_compiler::compiler::get_dependents_of_target_patterns;
 use notify::{self, RecursiveMode};
 use notify_debouncer_mini::{new_debouncer_opt, Config};
 
@@ -259,19 +255,10 @@ pub async fn get_marzano_pattern_test_results(
 pub(crate) async fn run_patterns_test(
     arg: PatternsTestArgs,
     flags: GlobalFormatFlags,
-    watch_mode_args: Option<Vec<String>>,
+    watch_mode_arg: Option<String>,
 ) -> Result<()> {
     let (mut patterns, _) = resolve_from_cwd(&Source::Local).await?;
     let libs = get_grit_files_from_cwd().await?;
-
-    if !watch_mode_args.is_none() {
-        let watch_mode_args = watch_mode_args.unwrap();
-        //filter out patterns that are not affected under watchmode
-        patterns = patterns
-            .into_iter()
-            .filter(|p| watch_mode_args.contains(&p.local_name))
-            .collect::<Vec<_>>()
-    }
 
     if arg.filter.is_some() {
         let filter = arg.filter.as_ref().unwrap();
@@ -291,7 +278,19 @@ pub(crate) async fn run_patterns_test(
         }
     }
 
-    let testable_patterns = collect_testable_patterns(patterns);
+    let mut testable_patterns = collect_testable_patterns(patterns.clone());
+    if watch_mode_arg.is_some() {
+        let modified_file_path = watch_mode_arg.unwrap();
+        //filter out patterns that are not affected under watchmode
+        let affected_patterns_names =
+            get_affected_patterns(modified_file_path, patterns, &libs, &testable_patterns).unwrap();
+
+        info!("[Watch Mode] Patterns changed/affected : {:?}\n[Watch Mode] Re-running test for changed/affected patterns...\n",affected_patterns_names);
+        testable_patterns = testable_patterns
+            .into_iter()
+            .filter(|p| affected_patterns_names.contains(p.local_name.as_ref().unwrap()))
+            .collect::<Vec<_>>()
+    }
 
     if testable_patterns.is_empty() {
         bail!("No testable patterns found. To test a pattern, make sure it is defined in .grit/grit.yaml or a .md file in your .grit/patterns directory.");
@@ -305,8 +304,9 @@ pub(crate) async fn run_patterns_test(
     Ok(())
 }
 
-fn enable_watch_mode(cmd_arg: PatternsTestArgs, cmd_flags: GlobalFormatFlags) -> () {
+fn enable_watch_mode(cmd_arg: PatternsTestArgs, cmd_flags: GlobalFormatFlags) {
     let path = Path::new(".grit");
+    let ignore_path = [".grit/.gritmodules", ".gitignore", ".grit/*.log"];
     // setup debouncer
     let (tx, rx) = std::sync::mpsc::channel();
     // notify backend configuration
@@ -327,23 +327,28 @@ fn enable_watch_mode(cmd_arg: PatternsTestArgs, cmd_flags: GlobalFormatFlags) ->
     // event pocessing
     for result in rx {
         match result {
-            Ok(event) => {
-                let modified_file_path = event.get(0).unwrap().path.clone();
+            Ok(event) => 'event_block: {
+                let modified_file_path = event
+                    .get(0)
+                    .unwrap()
+                    .path
+                    .clone()
+                    .into_os_string()
+                    .into_string()
+                    .unwrap();
+                //temorary fix, until notify crate adds support for ignoring paths
+                for path in &ignore_path {
+                    if modified_file_path.contains(path) {
+                        break 'event_block;
+                    }
+                }
                 log::info!("\n[Watch Mode] File modified: {:?}", modified_file_path);
 
                 let mut arg = cmd_arg.clone();
                 let flags = cmd_flags.clone();
                 arg.watch = false; //avoid creating infinite watchers
                 tokio::task::spawn(async move {
-                    let affected_patterns_names =
-                        get_affected_patterns(modified_file_path).await.unwrap();
-
-                    info!(
-                        "[Watch Mode] Patterns changed/affected : {:?}\n[Watch Mode] Re-running test for changed/affected patterns...\n",
-                        affected_patterns_names
-                    );
-
-                    let _ = run_patterns_test(arg, flags, Some(affected_patterns_names)).await;
+                    let _ = run_patterns_test(arg, flags, Some(modified_file_path)).await;
                 });
             }
             Err(error) => {
@@ -353,14 +358,16 @@ fn enable_watch_mode(cmd_arg: PatternsTestArgs, cmd_flags: GlobalFormatFlags) ->
     }
 }
 
-async fn get_affected_patterns(modified_file_path: PathBuf) -> Result<Vec<String>> {
-    let modified_file_path_string = modified_file_path.into_os_string().into_string().unwrap();
-
-    let (patterns, _) = resolve_from_cwd(&Source::Local).await?;
-    let affected_patterns = collect_testable_patterns(patterns.clone())
-        .into_iter()
+fn get_affected_patterns(
+    modified_file_path: String,
+    patterns: Vec<ResolvedGritDefinition>,
+    libs: &PatternsDirectory,
+    testable_patterns: &Vec<GritPatternTestInfo>,
+) -> Result<Vec<String>> {
+    let affected_patterns = testable_patterns
+        .iter()
         .filter(|p| {
-            p.config.path.is_some() && p.config.path.as_ref().unwrap() == &modified_file_path_string
+            p.config.path.is_some() && p.config.path.as_ref().unwrap() == &modified_file_path
         })
         .collect::<Vec<_>>();
 
@@ -370,14 +377,13 @@ async fn get_affected_patterns(modified_file_path: PathBuf) -> Result<Vec<String
     }
     let mut affected_patterns_dependents_names = <Vec<String>>::new();
 
-    let grit_files = get_grit_files_from_cwd().await?;
     let current_dir = std::env::current_dir()?;
     let resolver = GritModuleResolver::new(current_dir.to_str().unwrap());
 
     for p in patterns {
         let body = format!("{}()", p.local_name);
         let lang = PatternLanguage::get_language(&p.body);
-        let grit_files = grit_files.get_language_directory_or_default(lang)?;
+        let libs = libs.get_language_directory_or_default(lang)?;
         let rich_pattern = resolver
             .make_pattern(&body, Some(p.local_name.to_string()))
             .unwrap();
@@ -385,10 +391,10 @@ async fn get_affected_patterns(modified_file_path: PathBuf) -> Result<Vec<String
         let mut parser = MarzanoGritParser::new()?;
         let src_tree = parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
         let root = src_tree.root_node();
-        let is_multifile = is_multifile(&root, &grit_files, &mut parser)?;
+        let is_multifile = is_multifile(&root, &libs, &mut parser)?;
 
-        let dependents = get_dependents_of_affected_patterns(
-            &grit_files,
+        let dependents = get_dependents_of_target_patterns(
+            &libs,
             &src,
             &mut parser,
             !is_multifile,
@@ -408,121 +414,6 @@ async fn get_affected_patterns(modified_file_path: PathBuf) -> Result<Vec<String
         }
     }
     Ok(affected_patterns_names)
-}
-
-pub(crate) fn get_dependents_of_affected_patterns(
-    libs: &BTreeMap<String, String>,
-    src: &str,
-    parser: &mut MarzanoGritParser,
-    will_autowrap: bool,
-    affected_patterns: &Vec<String>,
-) -> Result<Vec<String>> {
-    let mut dependents = <Vec<String>>::new();
-    let node_like = "nodeLike";
-    let predicate_call = "predicateCall";
-
-    let tree = parser.parse_file(src, Some(Path::new(DEFAULT_FILE_NAME)))?;
-
-    let DefsToFilenames {
-        patterns: pattern_file,
-        predicates: predicate_file,
-        functions: function_file,
-        foreign_functions: foreign_file,
-    } = defs_to_filenames(libs, parser, tree.root_node())?;
-
-    let mut traversed_stack = <Vec<String>>::new();
-
-    // gross but necessary due to running these patterns before and after each file
-    let mut stack: Vec<Tree> = if will_autowrap {
-        let before_each_file = "before_each_file()";
-        let before_tree =
-            parser.parse_file(before_each_file, Some(Path::new(DEFAULT_FILE_NAME)))?;
-        let after_each_file = "after_each_file()";
-        let after_tree = parser.parse_file(after_each_file, Some(Path::new(DEFAULT_FILE_NAME)))?;
-
-        vec![tree, before_tree, after_tree]
-    } else {
-        vec![tree]
-    };
-    while let Some(tree) = stack.pop() {
-        let root = tree.root_node();
-        let cursor = root.walk();
-
-        for n in traverse(cursor, Order::Pre).filter(|n| {
-            n.node.is_named() && (n.node.kind() == node_like || n.node.kind() == predicate_call)
-        }) {
-            let name = n
-                .child_by_field_name("name")
-                .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
-            let name = name.text()?;
-            let name = name.trim().to_string();
-
-            if affected_patterns.contains(&name) {
-                while let Some(e) = traversed_stack.pop() {
-                    dependents.push(e);
-                }
-            }
-            if n.node.kind() == node_like {
-                if let Some(tree) = find_child_tree_definition(
-                    &pattern_file,
-                    parser,
-                    libs,
-                    &mut traversed_stack,
-                    &name,
-                )? {
-                    stack.push(tree);
-                }
-                if let Some(tree) = find_child_tree_definition(
-                    &function_file,
-                    parser,
-                    libs,
-                    &mut traversed_stack,
-                    &name,
-                )? {
-                    stack.push(tree);
-                }
-                if let Some(tree) = find_child_tree_definition(
-                    &foreign_file,
-                    parser,
-                    libs,
-                    &mut traversed_stack,
-                    &name,
-                )? {
-                    stack.push(tree);
-                }
-            } else if n.node.kind() == predicate_call {
-                if let Some(tree) = find_child_tree_definition(
-                    &predicate_file,
-                    parser,
-                    libs,
-                    &mut traversed_stack,
-                    &name,
-                )? {
-                    stack.push(tree);
-                }
-            }
-        }
-    }
-    Ok(dependents)
-}
-
-fn find_child_tree_definition(
-    files: &BTreeMap<String, String>,
-    parser: &mut MarzanoGritParser,
-    libs: &BTreeMap<String, String>,
-    traversed_stack: &mut Vec<String>,
-    name: &str,
-) -> Result<Option<Tree>> {
-    if let Some(file_name) = files.get(name) {
-        if !traversed_stack.contains(&name.to_string()) {
-            if let Some(file_body) = libs.get(file_name) {
-                traversed_stack.push(name.to_owned());
-                let tree = parser.parse_file(file_body, Some(Path::new(file_name)))?;
-                return Ok(Some(tree));
-            }
-        }
-    };
-    Ok(None)
 }
 
 #[derive(Debug, Serialize)]
