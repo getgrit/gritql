@@ -1,6 +1,7 @@
 use crate::{
     language::{fields_for_nodes, Field, MarzanoLanguage, NodeTypes, SortId, TSLanguage, Tree},
     notebooks::MarzanoNotebookParser,
+    target_language::TargetLanguage,
 };
 use grit_util::{Ast, AstNode, CodeRange, Language, Parser, Replacement};
 use marzano_util::node_with_source::NodeWithSource;
@@ -148,7 +149,7 @@ impl<'a> MarzanoLanguage<'a> for Python {
     }
 
     fn get_parser(&self) -> Box<dyn Parser<Tree = Tree>> {
-        Box::new(MarzanoNotebookParser::new(self))
+        Box::new(MarzanoNotebookParser::new(self, "python"))
     }
 }
 

@@ -3,6 +3,7 @@ use grit_util::AstCursor;
 use grit_util::AstNode;
 use grit_util::ByteRange;
 use grit_util::FileOrigin;
+use grit_util::Language;
 
 use std::path::Path;
 
@@ -15,6 +16,7 @@ use marzano_util::cursor_wrapper::CursorWrapper;
 use crate::sourcemap::EmbeddedSourceMap;
 use crate::sourcemap::SourceMapSection;
 use crate::sourcemap::SourceValueFormat;
+use crate::target_language::TargetLanguage;
 use crate::{
     json::Json,
     language::{MarzanoLanguage, MarzanoParser, Tree},
@@ -187,11 +189,17 @@ fn is_magic_cell<'a>(lines: impl Iterator<Item = &'a str>) -> bool {
 }
 
 /// Custom Python parser, to include notebooks
-pub(crate) struct MarzanoNotebookParser(MarzanoParser);
+pub(crate) struct MarzanoNotebookParser {
+    parser: MarzanoParser,
+    language: &'static str,
+}
 
 impl MarzanoNotebookParser {
-    pub(crate) fn new<'a>(lang: &impl MarzanoLanguage<'a>) -> Self {
-        Self(MarzanoParser::new(lang))
+    pub(crate) fn new<'a>(lang: &impl MarzanoLanguage<'a>, language_name: &'static str) -> Self {
+        Self {
+            parser: MarzanoParser::new(lang),
+            language: language_name,
+        }
     }
 
     fn parse_file_as_notebook(
@@ -204,6 +212,7 @@ impl MarzanoNotebookParser {
         let mut source_map = EmbeddedSourceMap::new(body);
 
         let mut nbformat_version: Option<i64> = None;
+        let mut language_string: Option<String> = None;
 
         let json = Json::new(None);
         let mut parser = json.get_parser();
@@ -232,6 +241,20 @@ impl MarzanoNotebookParser {
                 }
                 nbformat_version = Some(value);
             }
+
+            if n.node.kind() == "pair"
+                && n.child_by_field_name("key")
+                    .and_then(|key| key.node.utf8_text(body.as_bytes()).ok())
+                    .map(|key| key == "\"language\"")
+                    .unwrap_or(false)
+            {
+                let text: Option<String> = n
+                    .child_by_field_name("value")
+                    .and_then(|value| value.node.utf8_text(body.as_bytes()).ok())
+                    .and_then(|text| serde_json::from_str(&text).ok());
+                language_string = text;
+            }
+
             if n.node.kind() != "object" {
                 continue;
             }
@@ -315,11 +338,9 @@ impl MarzanoNotebookParser {
                 if let Some(source_range) = source_ranges {
                     let (content, section) = source_range;
                     if !is_magic_cell(content.lines()) {
-                        println!("Adding section: {:?}", content);
                         inner_code_body.push_str(&content);
                         source_map.add_section(section);
                     } else {
-                        println!("Magic cell found, skipping: {}", content);
                     }
                 }
             }
@@ -336,7 +357,24 @@ impl MarzanoNotebookParser {
             return None;
         }
 
-        self.0
+        // If the language is not
+        if let Some(language_string) = language_string {
+            if language_string != self.language {
+                logs.add_warning(
+                    path.map(|m| m.into()),
+                    format!(
+                        "Skipping notebook with different language: {}, expected {}",
+                        language_string, self.language
+                    ),
+                );
+                return None;
+            }
+        } else {
+            logs.add_warning(path.map(|m| m.into()), "No language found".to_string());
+            return None;
+        }
+
+        self.parser
             .parser
             .parse(inner_code_body.clone(), None)
             .ok()?
@@ -369,11 +407,11 @@ impl grit_util::Parser for MarzanoNotebookParser {
             } else {
                 // Parse an empty file if we can't parse the notebook
                 // TODO: find a better way to handle this
-                return self.0.parse_file("", path, logs, old_tree);
+                return self.parser.parse_file("", path, logs, old_tree);
             }
         }
 
-        self.0.parse_file(body, path, logs, old_tree)
+        self.parser.parse_file(body, path, logs, old_tree)
     }
 
     fn parse_snippet(
@@ -382,7 +420,7 @@ impl grit_util::Parser for MarzanoNotebookParser {
         source: &str,
         post: &'static str,
     ) -> SnippetTree<Tree> {
-        self.0.parse_snippet(pre, source, post)
+        self.parser.parse_snippet(pre, source, post)
     }
 }
 

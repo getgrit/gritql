@@ -962,8 +962,8 @@ fn python_invalid_notebook() -> Result<()> {
         stderr
     );
 
-    assert!(stderr.contains("No nbformat version found"));
-    assert!(stderr.contains("found 0 matches"));
+    assert!(stdout.contains("No nbformat version found"));
+    assert!(stdout.contains("found 0 matches"));
 
     Ok(())
 }
@@ -983,7 +983,8 @@ fn ignore_r_code_notebooks() -> Result<()> {
         .arg("apply")
         .arg("--force")
         .arg("pattern.grit")
-        .arg("r_code.ipynb");
+        .arg("r_code.ipynb")
+        .arg("javascript.ipynb");
     let output = apply_cmd.output()?;
 
     let stdout = String::from_utf8(output.stdout)?;

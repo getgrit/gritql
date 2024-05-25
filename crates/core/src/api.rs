@@ -356,7 +356,6 @@ impl EntireFile {
 
     fn from_file(file: &FileOwner<Tree>) -> Result<Self> {
         if let Some(source_map) = &file.tree.source_map {
-            println!("Filling with inner source: {:?}", file.matches.borrow());
             let outer_source = source_map.fill_with_inner(&file.tree.source)?;
 
             Ok(Self::file_to_entire_file(
