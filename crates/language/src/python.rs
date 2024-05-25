@@ -1,5 +1,8 @@
-use crate::language::{fields_for_nodes, Field, MarzanoLanguage, NodeTypes, SortId, TSLanguage};
-use grit_util::{Ast, AstNode, CodeRange, Language, Replacement};
+use crate::{
+    language::{fields_for_nodes, Field, MarzanoLanguage, NodeTypes, SortId, TSLanguage, Tree},
+    notebooks::MarzanoNotebookParser,
+};
+use grit_util::{Ast, AstNode, CodeRange, Language, Parser, Replacement};
 use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
 
@@ -142,6 +145,10 @@ impl<'a> MarzanoLanguage<'a> for Python {
 
     fn metavariable_sort(&self) -> SortId {
         self.metavariable_sort
+    }
+
+    fn get_parser(&self) -> Box<dyn Parser<Tree = Tree>> {
+        Box::new(MarzanoNotebookParser::new(self))
     }
 }
 

@@ -16,7 +16,12 @@ pub fn parse_input_file<'a>(
 
     let mut parser = lang.get_parser();
     let tree = parser
-        .parse_file(input, Some(path), &mut vec![].into(), false)
+        .parse_file(
+            input,
+            Some(path),
+            &mut vec![].into(),
+            grit_util::FileOrigin::Fresh,
+        )
         .context("Parsed tree is empty")?;
     let input_file_debug_text = to_string_pretty(&tree_sitter_node_to_json(
         &tree.root_node().node,
@@ -29,6 +34,7 @@ pub fn parse_input_file<'a>(
         syntax_tree: input_file_debug_text,
     })
 }
+
 #[cfg(not(feature = "grit-parser"))]
 pub fn parse_input_file<'a>(
     _lang: &impl MarzanoLanguage<'a>,
@@ -40,4 +46,61 @@ pub fn parse_input_file<'a>(
     Err(anyhow!(
         "enable grit-parser feature flag to parse a grit file"
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use grit_util::{traverse, Ast, FileOrigin, Order};
+    use insta::assert_snapshot;
+    use marzano_language::language::MarzanoLanguage;
+    use marzano_language::target_language::TargetLanguage;
+    use marzano_util::cursor_wrapper::CursorWrapper;
+
+    fn verify_notebook(source: &str, path: &Path) -> String {
+        let lang = TargetLanguage::from_string("ipynb", None).unwrap();
+
+        let mut parser = lang.get_parser();
+        let tree = parser
+            .parse_file(source, Some(path), &mut vec![].into(), FileOrigin::Fresh)
+            .unwrap();
+
+        let mut simple_rep = String::new();
+
+        let cursor = tree.root_node().node.walk();
+        for n in traverse(CursorWrapper::new(cursor, source), Order::Pre) {
+            simple_rep += format!(
+                "{:<width$} | {}\n",
+                n.node.kind(),
+                n.node
+                    .utf8_text(tree.source.as_bytes())
+                    .unwrap()
+                    .replace('\n', "\\n"),
+                width = 30
+            )
+            .as_str();
+            assert!(
+                !n.node.is_error(),
+                "Node is an error: {}",
+                n.node.utf8_text(tree.source.as_bytes()).unwrap()
+            );
+        }
+
+        simple_rep
+    }
+
+    #[test]
+    fn simple_notebook() {
+        let source = include_str!("../../../crates/cli_bin/fixtures/notebooks/tiny_nb.ipynb");
+        let path = Path::new("tiny_nb.ipynb");
+        assert_snapshot!(verify_notebook(source, path));
+    }
+
+    #[test]
+    fn other_notebook() {
+        let source = include_str!("../../../crates/cli_bin/fixtures/notebooks/other_nb.ipynb");
+        let path = Path::new("other_nb.ipynb");
+        assert_snapshot!(verify_notebook(source, path));
+    }
 }

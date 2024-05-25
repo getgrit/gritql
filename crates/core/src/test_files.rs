@@ -425,7 +425,6 @@ fn avoid_unsafe_hoists() {
         SyntheticFile::new("other.js".to_owned(), matching_src.to_owned(), true),
     ];
     let results = run_on_test_files(&pattern, &test_files);
-    println!("{:?}", results);
     // Confirm we have 3 DoneFiles and 1 match
     assert_eq!(results.len(), 4);
     assert!(results.iter().any(|r| r.is_match()));

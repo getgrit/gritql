@@ -165,6 +165,7 @@ impl PatternLanguage {
                 Some("inline") => Some(Self::MarkdownInline),
                 _ => Some(Self::MarkdownInline),
             },
+            "ipynb" => Some(Self::Python),
             "python" => Some(Self::Python),
             "go" => Some(Self::Go),
             "rust" => Some(Self::Rust),
@@ -197,7 +198,7 @@ impl PatternLanguage {
             PatternLanguage::Json => &["json"],
             PatternLanguage::Java => &["java"],
             PatternLanguage::CSharp => &["cs"],
-            PatternLanguage::Python => &["py"],
+            PatternLanguage::Python => &["py", "ipynb"],
             PatternLanguage::MarkdownBlock => &["md", "mdx", "mdoc"],
             PatternLanguage::MarkdownInline => &["md", "mdx", "mdoc"],
             PatternLanguage::Go => &["go"],
@@ -252,6 +253,7 @@ impl PatternLanguage {
             "json" => Some(Self::Json),
             "java" => Some(Self::Java),
             "cs" => Some(Self::CSharp),
+            "ipynb" => Some(Self::Python),
             "py" => Some(Self::Python),
             "md" | "mdx" | "mdoc" => Some(Self::MarkdownBlock),
             "go" => Some(Self::Go),
@@ -271,7 +273,7 @@ impl PatternLanguage {
         self.get_file_extensions().contains(&ext)
     }
 
-    // slightly inneficient but ensures the names are cosnsistent
+    // slightly inefficient but ensures the names are consistent
     pub fn language_name(self) -> &'static str {
         self.try_into()
             .map(|l: TargetLanguage| l.language_name())

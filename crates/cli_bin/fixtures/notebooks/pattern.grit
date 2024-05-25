@@ -1,0 +1,11 @@
+language python
+
+or {
+  // Simple replacement
+  `configparser.ConfigParser()` => `FigParser.Fig()`,
+  // Cross-cell references
+  `Tool($args)` => `Fool($args)` where {
+    $program <: contains `from langchain.agents import $_`
+  },
+  `print($x)` => `flint($x)`
+}

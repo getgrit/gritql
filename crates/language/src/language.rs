@@ -1,13 +1,16 @@
 use anyhow::{Context, Result};
 use enum_dispatch::enum_dispatch;
 use grit_util::{
-    traverse, AnalysisLogBuilder, AnalysisLogs, Ast, AstNode, Language, Order, Parser, SnippetTree,
+    traverse, AnalysisLogBuilder, AnalysisLogs, Ast, AstNode, FileOrigin, Language, Order, Parser,
+    SnippetTree,
 };
 use itertools::Itertools;
 use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
 use serde_json::Value;
 use std::{borrow::Cow, cmp::max, collections::HashMap, path::Path};
 pub(crate) use tree_sitter::{Language as TSLanguage, Parser as TSParser, Tree as TSTree};
+
+use crate::sourcemap::EmbeddedSourceMap;
 
 pub type SortId = u16;
 pub type FieldId = u16;
@@ -181,7 +184,10 @@ pub trait NodeTypes {
 #[derive(Clone, Debug)]
 pub struct Tree {
     tree: TSTree,
+    /// The pure source code of the tree, which does not necessarily match the original file
     pub source: String,
+    /// A source map, if needed
+    pub source_map: Option<EmbeddedSourceMap>,
 }
 
 impl Tree {
@@ -189,6 +195,14 @@ impl Tree {
         Self {
             tree,
             source: source.into(),
+            source_map: None,
+        }
+    }
+
+    pub fn outer_source(&self) -> &str {
+        match &self.source_map {
+            Some(map) => &map.outer_source,
+            None => &self.source,
         }
     }
 }
@@ -230,12 +244,12 @@ impl Parser for MarzanoParser {
         body: &str,
         path: Option<&Path>,
         logs: &mut AnalysisLogs,
-        new: bool,
+        old_tree: FileOrigin<'_, Tree>,
     ) -> Option<Tree> {
         let tree = self.parser.parse(body, None).ok()??;
 
         if let Some(path) = path {
-            let mut errors = file_parsing_error(&tree, path, body, new).ok()?;
+            let mut errors = file_parsing_error(&tree, path, body, !old_tree.is_fresh()).ok()?;
             logs.append(&mut errors);
         }
 

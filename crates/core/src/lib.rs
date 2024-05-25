@@ -6,7 +6,6 @@ pub mod built_in_functions;
 mod clean;
 pub mod compact_api;
 pub mod constants;
-mod effects_dependency_graph;
 mod equivalence;
 mod foreign_function_definition;
 pub mod fs;
@@ -34,6 +33,8 @@ mod variables;
 // and here we import it to avoid an unused dependency warning
 #[cfg(feature = "wasm_core")]
 use getrandom as _;
+#[cfg(test)]
+mod test_notebooks;
 
 #[cfg(test)]
 mod test;

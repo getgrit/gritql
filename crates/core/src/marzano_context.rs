@@ -19,7 +19,7 @@ use grit_pattern_matcher::{
         PredicateDefinition, ResolvedPattern, State,
     },
 };
-use grit_util::{AnalysisLogs, Ast, InputRanges, MatchRanges};
+use grit_util::{AnalysisLogs, Ast, FileOrigin, InputRanges, MatchRanges};
 use im::vector;
 use marzano_language::{
     language::{MarzanoLanguage, Tree},
@@ -148,7 +148,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     owned.path,
                     owned.content,
                     None,
-                    false,
+                    FileOrigin::Fresh,
                     self.language,
                     logs,
                 )?;
@@ -247,8 +247,11 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     self,
                     logs,
                 )?;
+
                 if let Some(new_ranges) = new_ranges {
-                    let tree = parser.parse_file(&new_src, None, logs, true).unwrap();
+                    let tree = parser
+                        .parse_file(&new_src, None, logs, FileOrigin::Mutated(&file.tree))
+                        .unwrap();
                     let root = tree.root_node();
                     let replacement_ranges = get_replacement_ranges(root, self.language());
                     let cleaned_src = replace_cleaned_ranges(replacement_ranges, &new_src)?;
@@ -260,11 +263,11 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
 
                     let ranges =
                         MatchRanges::new(new_ranges.into_iter().map(|r| r.into()).collect());
-                    let owned_file = FileOwnerCompiler::from_matches(
+                    let rewritten_file = FileOwnerCompiler::from_matches(
                         new_filename.clone(),
                         new_src,
                         Some(ranges),
-                        true,
+                        FileOrigin::Mutated(&file.tree),
                         self.language(),
                         logs,
                     )?
@@ -274,7 +277,8 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                             new_filename.to_string_lossy()
                         )
                     })?;
-                    self.files().push(owned_file);
+
+                    self.files().push(rewritten_file);
                     state
                         .files
                         .push_revision(&file_ptr, self.files().last().unwrap())
@@ -310,7 +314,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 name.clone(),
                 body,
                 None,
-                true,
+                FileOrigin::New,
                 self.language(),
                 logs,
             )?
