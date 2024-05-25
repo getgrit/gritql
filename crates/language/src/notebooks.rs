@@ -216,9 +216,9 @@ impl grit_util::Parser for MarzanoNotebookParser {
 #[cfg(test)]
 mod tests {
 
-    use crate::python::Python;
-
     use super::*;
+    use crate::python::Python;
+    use grit_util::Parser as _;
 
     #[test]
     fn simple_notebook() {
