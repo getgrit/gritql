@@ -969,6 +969,40 @@ fn python_invalid_notebook() -> Result<()> {
 }
 
 #[test]
+fn ignore_r_code_notebooks() -> Result<()> {
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("notebooks", false)?;
+
+    // from the tempdir as cwd, run init
+    run_init(&dir.as_path())?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    apply_cmd
+        .arg("apply")
+        .arg("--force")
+        .arg("pattern.grit")
+        .arg("r_code.ipynb");
+    let output = apply_cmd.output()?;
+
+    let stdout = String::from_utf8(output.stdout)?;
+    println!("stdout: {:?}", stdout);
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stderr: {:?}", stderr);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        stderr
+    );
+
+    assert!(stderr.contains("found 0 matches"));
+
+    Ok(())
+}
+
+#[test]
 fn basic_js_in_vue_apply() -> Result<()> {
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("js_in_vue", false)?;
