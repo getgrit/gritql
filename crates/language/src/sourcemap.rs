@@ -51,35 +51,53 @@ impl EmbeddedSourceMap {
             adjustments.clone().collect::<Vec<_>>()
         );
 
-        let mut accumulated_offset: i32 = 0;
-        let mut next_offset = 0;
+        let mut section_iter = new_map.sections.iter().enumerate().peekable();
 
-        for section in new_map.sections.iter_mut() {
-            let mut section_offset = mem::take(&mut next_offset);
-            for (source_range, replacement_length) in adjustments.by_ref() {
-                let length_diff =
-                    *replacement_length as i32 - (source_range.end - source_range.start) as i32;
+        let mut section_adjustments: Vec<i64> = vec![0; new_map.sections.len()];
 
-                if source_range.start >= section.inner_range_end {
-                    // Save this diff, since we will not be able to read it the next time
-                    next_offset = length_diff;
+        for (source_range, replacement_length) in adjustments {
+            // Find the section that contains the source range
+            while let Some((index, section)) = section_iter.peek() {
+                // If the section contains the source range, apply the adjustment
+                if section.inner_range_end >= source_range.start {
+                    let length_diff =
+                        *replacement_length as i64 - (source_range.end - source_range.start) as i64;
+                    section_adjustments[*index] += length_diff;
                     break;
                 }
-
-                section_offset += length_diff;
+                // Otherwise, move to the next section
+                section_iter.next();
             }
-
-            // Apply the accumulated offset to the section
-            accumulated_offset += section_offset;
-
-            println!(
-                "Adding offset {} to section {:?}",
-                accumulated_offset, section
-            );
-
-            section.inner_range_end =
-                (section.inner_range_end as i32 + accumulated_offset) as usize;
         }
+
+        // Apply the accumulated offset to the section
+        let mut accumulated_offset = 0;
+        for (section, adjustment) in new_map.sections.iter_mut().zip(section_adjustments) {
+            accumulated_offset += adjustment;
+            section.inner_range_end =
+                (section.inner_range_end as i64 + accumulated_offset) as usize;
+        }
+
+        // for section in section_iter {
+        //     let mut section_offset = mem::take(&mut next_offset);
+        //     for (source_range, replacement_length) in adjustments.by_ref() {
+        //         let length_diff =
+        //             *replacement_length as i32 - (source_range.end - source_range.start) as i32;
+
+        //         section_offset += length_diff;
+        //     }
+
+        //     // Apply the accumulated offset to the section
+        //     accumulated_offset += section_offset;
+
+        //     println!(
+        //         "Adding offset {} to section {:?}",
+        //         accumulated_offset, section
+        //     );
+
+        //     section.inner_range_end =
+        //         (section.inner_range_end as i32 + accumulated_offset) as usize;
+        // }
         Ok(new_map)
     }
 
