@@ -1,6 +1,5 @@
 ---
 source: crates/cli_bin/tests/apply.rs
-assertion_line: 891
 expression: content
 ---
 {
@@ -13,7 +12,7 @@ expression: content
         "tags": []
       },
       "outputs": [],
-      "source": ["flint(4)\nflint(\"3\")\nflint(5)\n"]
+      "source": ["flint(4)\nflint(\"3\")\nflint(5)"]
     }
   ],
   "metadata": {

@@ -176,7 +176,7 @@ impl EffectRange {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub(crate) fn linearize_binding<'a, Q: QueryContext>(
     language: &Q::Language<'a>,
     effects: &[Effect<'a, Q>],

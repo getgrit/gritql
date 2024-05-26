@@ -852,7 +852,7 @@ fn basic_python_apply() -> Result<()> {
 }
 
 #[test]
-fn python_in_notebook() -> Result<()> {
+fn python_notebook_basic() -> Result<()> {
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("notebooks", false)?;
 
@@ -894,7 +894,7 @@ fn python_in_notebook() -> Result<()> {
 }
 
 #[test]
-fn python_newline_handling() -> Result<()> {
+fn python_notebook_newline_handling() -> Result<()> {
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("notebooks", false)?;
 
@@ -934,7 +934,7 @@ fn python_newline_handling() -> Result<()> {
 }
 
 #[test]
-fn python_string_cells() -> Result<()> {
+fn python_notebook_string_cells() -> Result<()> {
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("notebooks", false)?;
 
@@ -1038,7 +1038,7 @@ fn ignore_r_code_notebooks() -> Result<()> {
         stderr
     );
 
-    assert!(stderr.contains("found 0 matches"));
+    assert!(stdout.contains("found 0 matches"));
 
     Ok(())
 }
