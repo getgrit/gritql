@@ -1,8 +1,8 @@
 ---
 source: crates/core/src/parse.rs
-expression: "verify_notebook(source, path)"
+expression: "verify_notebook(source, path, false)"
 ---
-module                         | print(4)\nprint("3")\nprint(5)
+module                         | print(4)\nprint("3")\nprint(5)\n
 call                           | print(4)
 identifier                     | print
 argument_list                  | (4)

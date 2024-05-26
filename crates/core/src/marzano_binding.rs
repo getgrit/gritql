@@ -1,8 +1,8 @@
-use crate::equivalence::are_equivalent;
 use crate::inline_snippets::inline_sorted_snippets_with_offset;
 use crate::problem::MarzanoQueryContext;
 use crate::smart_insert::calculate_padding;
 use crate::suppress::is_suppress_comment;
+use crate::{equivalence::are_equivalent, inline_snippets::ReplacementInfo};
 use anyhow::{anyhow, Result};
 use grit_pattern_matcher::{
     binding::Binding,
@@ -176,7 +176,7 @@ impl EffectRange {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub(crate) fn linearize_binding<'a, Q: QueryContext>(
     language: &Q::Language<'a>,
     effects: &[Effect<'a, Q>],
@@ -186,7 +186,7 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
     range: CodeRange,
     distributed_indent: Option<usize>,
     logs: &mut AnalysisLogs,
-) -> Result<(Cow<'a, str>, Vec<StdRange<usize>>)> {
+) -> Result<(Cow<'a, str>, Vec<StdRange<usize>>, Vec<ReplacementInfo>)> {
     let effects1 = get_top_level_effects(effects, memo, &range, language, logs)?;
 
     let effects1 = effects1
@@ -276,7 +276,7 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
         &mut replacements,
         language,
     )?;
-    let (res, offset) = inline_sorted_snippets_with_offset(
+    let (res, offset, mapping) = inline_sorted_snippets_with_offset(
         language,
         adjusted_source.to_string(),
         range.start as usize,
@@ -284,7 +284,8 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
         distributed_indent.is_some(),
     )?;
     memo.insert(range, Some(res.clone()));
-    Ok((res.into(), offset))
+
+    Ok((res.into(), offset, mapping))
 }
 
 impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {

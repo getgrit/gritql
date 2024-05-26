@@ -7,5 +7,6 @@ or {
   `Tool($args)` => `Fool($args)` where {
     $program <: contains `from langchain.agents import $_`
   },
-  `print($x)` => `flint($x)`
+  `print($x)` => `flint($x)`,
+  `math.pi` => `math.tau / 2`,
 }

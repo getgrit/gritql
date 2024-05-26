@@ -58,13 +58,15 @@ mod tests {
     use marzano_language::target_language::TargetLanguage;
     use marzano_util::cursor_wrapper::CursorWrapper;
 
-    fn verify_notebook(source: &str, path: &Path) -> String {
+    fn verify_notebook(source: &str, path: &Path, allow_errors: bool) -> String {
         let lang = TargetLanguage::from_string("ipynb", None).unwrap();
 
         let mut parser = lang.get_parser();
         let tree = parser
             .parse_file(source, Some(path), &mut vec![].into(), FileOrigin::Fresh)
             .unwrap();
+
+        println!("Source code: {}", tree.source);
 
         let mut simple_rep = String::new();
 
@@ -80,11 +82,13 @@ mod tests {
                 width = 30
             )
             .as_str();
-            assert!(
-                !n.node.is_error(),
-                "Node is an error: {}",
-                n.node.utf8_text(tree.source.as_bytes()).unwrap()
-            );
+            if !allow_errors {
+                assert!(
+                    !n.node.is_error(),
+                    "Node is an error: {}",
+                    n.node.utf8_text(tree.source.as_bytes()).unwrap()
+                );
+            }
         }
 
         simple_rep
@@ -94,13 +98,26 @@ mod tests {
     fn simple_notebook() {
         let source = include_str!("../../../crates/cli_bin/fixtures/notebooks/tiny_nb.ipynb");
         let path = Path::new("tiny_nb.ipynb");
-        assert_snapshot!(verify_notebook(source, path));
+        assert_snapshot!(verify_notebook(source, path, false));
     }
 
     #[test]
     fn other_notebook() {
         let source = include_str!("../../../crates/cli_bin/fixtures/notebooks/other_nb.ipynb");
         let path = Path::new("other_nb.ipynb");
-        assert_snapshot!(verify_notebook(source, path));
+        assert_snapshot!(verify_notebook(source, path, false));
+    }
+
+    /// Make sure we skip over cells with magic, which we don't parse yet
+    #[test]
+    fn magic_notebook() {
+        let source = include_str!("../../../crates/cli_bin/fixtures/notebooks/magic.ipynb");
+        let path = Path::new("magic.ipynb");
+        let code = verify_notebook(source, path, true);
+        assert!(!code.contains("nevershow"));
+        // Some magic is kind of hard to parse, but error recovery appears to be sufficient to not mangle the rest of the notebook
+        assert!(code.contains("maybeshow"));
+        assert!(code.contains("DEFAULT_SYSTEM_PROMPT"));
+        assert_snapshot!(code);
     }
 }

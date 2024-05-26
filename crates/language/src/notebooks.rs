@@ -4,6 +4,7 @@ use grit_util::AstNode;
 use grit_util::ByteRange;
 use grit_util::FileOrigin;
 
+
 use std::path::Path;
 
 use grit_util::traverse;
@@ -15,6 +16,7 @@ use marzano_util::cursor_wrapper::CursorWrapper;
 use crate::sourcemap::EmbeddedSourceMap;
 use crate::sourcemap::SourceMapSection;
 use crate::sourcemap::SourceValueFormat;
+
 use crate::{
     json::Json,
     language::{MarzanoLanguage, MarzanoParser, Tree},
@@ -22,12 +24,182 @@ use crate::{
 
 const SUPPORTED_VERSION: i64 = 4;
 
+/// Returns `true` if a cell should be ignored due to the use of cell magics.
+/// Borrowed from [ruff](https://github.com/astral-sh/ruff/blob/33fd50027cb24e407746da339bdf2461df194d96/crates/ruff_notebook/src/cell.rs)
+fn is_magic_cell<'a>(lines: impl Iterator<Item = &'a str>) -> bool {
+    let mut lines = lines.peekable();
+
+    // Detect automatic line magics (automagic), which aren't supported by the parser. If a line
+    // magic uses automagic, Jupyter doesn't allow following it with non-magic lines anyway, so
+    // we aren't missing out on any valid Python code.
+    //
+    // For example, this is valid:
+    // ```jupyter
+    // cat /path/to/file
+    // cat /path/to/file
+    // ```
+    //
+    // But this is invalid:
+    // ```jupyter
+    // cat /path/to/file
+    // x = 1
+    // ```
+    //
+    // See: https://ipython.readthedocs.io/en/stable/interactive/magics.html
+    if let Some(line) = lines.peek() {
+        let mut tokens = line.split_whitespace();
+
+        // The first token must be an automagic, like `load_exit`.
+        if tokens.next().is_some_and(|token| {
+            matches!(
+                token,
+                "alias"
+                    | "alias_magic"
+                    | "autoawait"
+                    | "autocall"
+                    | "automagic"
+                    | "bookmark"
+                    | "cd"
+                    | "code_wrap"
+                    | "colors"
+                    | "conda"
+                    | "config"
+                    | "debug"
+                    | "dhist"
+                    | "dirs"
+                    | "doctest_mode"
+                    | "edit"
+                    | "env"
+                    | "gui"
+                    | "history"
+                    | "killbgscripts"
+                    | "load"
+                    | "load_ext"
+                    | "loadpy"
+                    | "logoff"
+                    | "logon"
+                    | "logstart"
+                    | "logstate"
+                    | "logstop"
+                    | "lsmagic"
+                    | "macro"
+                    | "magic"
+                    | "mamba"
+                    | "matplotlib"
+                    | "micromamba"
+                    | "notebook"
+                    | "page"
+                    | "pastebin"
+                    | "pdb"
+                    | "pdef"
+                    | "pdoc"
+                    | "pfile"
+                    | "pinfo"
+                    | "pinfo2"
+                    | "pip"
+                    | "popd"
+                    | "pprint"
+                    | "precision"
+                    | "prun"
+                    | "psearch"
+                    | "psource"
+                    | "pushd"
+                    | "pwd"
+                    | "pycat"
+                    | "pylab"
+                    | "quickref"
+                    | "recall"
+                    | "rehashx"
+                    | "reload_ext"
+                    | "rerun"
+                    | "reset"
+                    | "reset_selective"
+                    | "run"
+                    | "save"
+                    | "sc"
+                    | "set_env"
+                    | "sx"
+                    | "system"
+                    | "tb"
+                    | "time"
+                    | "timeit"
+                    | "unalias"
+                    | "unload_ext"
+                    | "who"
+                    | "who_ls"
+                    | "whos"
+                    | "xdel"
+                    | "xmode"
+            )
+        }) {
+            // The second token must _not_ be an operator, like `=` (to avoid false positives).
+            // The assignment operators can never follow an automagic. Some binary operators
+            // _can_, though (e.g., `cd -` is valid), so we omit them.
+            if !tokens.next().is_some_and(|token| {
+                matches!(
+                    token,
+                    "=" | "+=" | "-=" | "*=" | "/=" | "//=" | "%=" | "**=" | "&=" | "|=" | "^="
+                )
+            }) {
+                return true;
+            }
+        }
+    }
+
+    // Detect cell magics (which operate on multiple lines).
+    lines.any(|line| {
+        let Some(first) = line.split_whitespace().next() else {
+            return false;
+        };
+        if first.len() < 2 {
+            return false;
+        }
+        let Some(command) = first.strip_prefix("%%") else {
+            return false;
+        };
+        // These cell magics are special in that the lines following them are valid
+        // Python code and the variables defined in that scope are available to the
+        // rest of the notebook.
+        //
+        // For example:
+        //
+        // Cell 1:
+        // ```python
+        // x = 1
+        // ```
+        //
+        // Cell 2:
+        // ```python
+        // %%time
+        // y = x
+        // ```
+        //
+        // Cell 3:
+        // ```python
+        // print(y)  # Here, `y` is available.
+        // ```
+        //
+        // This is to avoid false positives when these variables are referenced
+        // elsewhere in the notebook.
+        !matches!(
+            command,
+            "capture" | "debug" | "prun" | "pypy" | "python" | "python3" | "time" | "timeit"
+        )
+    })
+}
+
 /// Custom Python parser, to include notebooks
-pub(crate) struct MarzanoNotebookParser(MarzanoParser);
+pub(crate) struct MarzanoNotebookParser {
+    parser: MarzanoParser,
+    language: &'static str,
+}
 
 impl MarzanoNotebookParser {
-    pub(crate) fn new<'a>(lang: &impl MarzanoLanguage<'a>) -> Self {
-        Self(MarzanoParser::new(lang))
+    pub(crate) fn new<'a>(lang: &impl MarzanoLanguage<'a>, language_name: &'static str) -> Self {
+        Self {
+            parser: MarzanoParser::new(lang),
+            language: language_name,
+        }
     }
 
     fn parse_file_as_notebook(
@@ -40,6 +212,7 @@ impl MarzanoNotebookParser {
         let mut source_map = EmbeddedSourceMap::new(body);
 
         let mut nbformat_version: Option<i64> = None;
+        let mut language_string: Option<String> = None;
 
         let json = Json::new(None);
         let mut parser = json.get_parser();
@@ -68,13 +241,27 @@ impl MarzanoNotebookParser {
                 }
                 nbformat_version = Some(value);
             }
+
+            if n.node.kind() == "pair"
+                && n.child_by_field_name("key")
+                    .and_then(|key| key.node.utf8_text(body.as_bytes()).ok())
+                    .map(|key| key == "\"language\"")
+                    .unwrap_or(false)
+            {
+                let text: Option<String> = n
+                    .child_by_field_name("value")
+                    .and_then(|value| value.node.utf8_text(body.as_bytes()).ok())
+                    .and_then(|text| serde_json::from_str(&text).ok());
+                language_string = text;
+            }
+
             if n.node.kind() != "object" {
                 continue;
             }
 
             let mut cursor = n.walk();
 
-            let mut is_code_cell = true;
+            let mut is_code_cell = false;
 
             let mut source_ranges: Option<(String, SourceMapSection)> = None;
 
@@ -110,7 +297,7 @@ impl MarzanoNotebookParser {
                         let text = value.node.utf8_text(body.as_bytes()).ok()?;
                         let value: serde_json::Value = serde_json::from_str(&text).ok()?;
 
-                        let (this_content, format) = match value {
+                        let (mut this_content, format) = match value {
                             serde_json::Value::Array(value) => (
                                 value
                                     .iter()
@@ -128,10 +315,9 @@ impl MarzanoNotebookParser {
                                 continue;
                             }
                         };
-                        let inner_range = ByteRange::new(
-                            inner_code_body.len(),
-                            inner_code_body.len() + this_content.len(),
-                        );
+                        // Add a newline to separate cells
+                        this_content.push('\n');
+                        let inner_range_end = inner_code_body.len() + this_content.len();
                         source_ranges = Some((
                             this_content,
                             SourceMapSection {
@@ -139,8 +325,9 @@ impl MarzanoNotebookParser {
                                     range.start_byte().try_into().unwrap(),
                                     range.end_byte().try_into().unwrap(),
                                 ),
-                                inner_range,
+                                inner_range_end,
                                 format,
+                                inner_end_trim: 1,
                             },
                         ));
                     }
@@ -150,8 +337,10 @@ impl MarzanoNotebookParser {
             if is_code_cell {
                 if let Some(source_range) = source_ranges {
                     let (content, section) = source_range;
-                    inner_code_body.push_str(&content);
-                    source_map.add_section(section);
+                    if !is_magic_cell(content.lines()) {
+                        inner_code_body.push_str(&content);
+                        source_map.add_section(section);
+                    } 
                 }
             }
 
@@ -167,7 +356,23 @@ impl MarzanoNotebookParser {
             return None;
         }
 
-        self.0
+        if let Some(language_string) = language_string {
+            if language_string != self.language {
+                logs.add_warning(
+                    path.map(|m| m.into()),
+                    format!(
+                        "Skipping notebook with different language: {}, expected {}",
+                        language_string, self.language
+                    ),
+                );
+                return None;
+            }
+        } else {
+            logs.add_warning(path.map(|m| m.into()), "No language found".to_string());
+            return None;
+        }
+
+        self.parser
             .parser
             .parse(inner_code_body.clone(), None)
             .ok()?
@@ -197,10 +402,14 @@ impl grit_util::Parser for MarzanoNotebookParser {
             let tree = self.parse_file_as_notebook(body, path, logs);
             if let Some(tree) = tree {
                 return Some(tree);
+            } else {
+                // Parse an empty file if we can't parse the notebook
+                // TODO: find a better way to handle this
+                return self.parser.parse_file("", path, logs, old_tree);
             }
         }
 
-        self.0.parse_file(body, path, logs, old_tree)
+        self.parser.parse_file(body, path, logs, old_tree)
     }
 
     fn parse_snippet(
@@ -209,7 +418,7 @@ impl grit_util::Parser for MarzanoNotebookParser {
         source: &str,
         post: &'static str,
     ) -> SnippetTree<Tree> {
-        self.0.parse_snippet(pre, source, post)
+        self.parser.parse_snippet(pre, source, post)
     }
 }
 
@@ -223,7 +432,7 @@ mod tests {
     #[test]
     fn simple_notebook() {
         let code = include_str!("../../../crates/cli_bin/fixtures/notebooks/tiny_nb.ipynb");
-        let mut parser = MarzanoNotebookParser::new(&Python::new(None));
+        let mut parser = MarzanoNotebookParser::new(&Python::new(None), "python");
         let tree = parser
             .parse_file(code, None, &mut AnalysisLogs::default(), FileOrigin::Fresh)
             .unwrap();

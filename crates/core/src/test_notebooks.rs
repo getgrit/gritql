@@ -89,3 +89,152 @@ fn test_old_notebooks() {
     // We *do* expect an error on old notebooks
     assert!(results.iter().any(|r| r.is_error()));
 }
+
+#[test]
+fn test_changing_size() {
+    // The rewrite has a different length, so the source map needs to be used
+
+    let pattern_src = r#"
+        language python
+
+        `print($x)` => `THIS_IS_MUCH_MUCH_MUCH_MUCH_MUCH_MUCH_LONGER($x)`
+        "#;
+    let libs = BTreeMap::new();
+
+    let matching_src = include_str!("../../../crates/cli_bin/fixtures/notebooks/tiny_nb.ipynb");
+
+    let pattern = src_to_problem_libs(
+        pattern_src.to_string(),
+        &libs,
+        TargetLanguage::from_extension("ipynb").unwrap(),
+        None,
+        None,
+        None,
+        None,
+    )
+    .unwrap()
+    .problem;
+
+    // Basic match works
+    let test_files = vec![SyntheticFile::new(
+        "target.ipynb".to_owned(),
+        matching_src.to_owned(),
+        true,
+    )];
+    let results = run_on_test_files(&pattern, &test_files);
+
+    println!("{:?}", results);
+    assert!(!results.iter().any(|r| r.is_error()));
+
+    let rewrite = results
+        .iter()
+        .find(|r| matches!(r, MatchResult::Rewrite(_)))
+        .unwrap();
+
+    if let MatchResult::Rewrite(rewrite) = rewrite {
+        assert_snapshot!(rewrite.rewritten.content);
+    } else {
+        panic!("Expected a rewrite");
+    }
+}
+
+#[test]
+fn test_multi_cell_small() {
+    // The rewrite has a different length, so the source map needs to be used
+
+    let pattern_src = r#"
+        language python
+
+        `print($x)` => `p($x)`
+        "#;
+    let libs = BTreeMap::new();
+
+    let matching_src = include_str!("../../../crates/cli_bin/fixtures/notebooks/multi_cell.ipynb");
+
+    let pattern = src_to_problem_libs(
+        pattern_src.to_string(),
+        &libs,
+        TargetLanguage::from_extension("ipynb").unwrap(),
+        None,
+        None,
+        None,
+        None,
+    )
+    .unwrap()
+    .problem;
+
+    // Basic match works
+    let test_files = vec![SyntheticFile::new(
+        "target.ipynb".to_owned(),
+        matching_src.to_owned(),
+        true,
+    )];
+    let results = run_on_test_files(&pattern, &test_files);
+
+    println!("{:?}", results);
+    assert!(!results.iter().any(|r| r.is_error()));
+
+    let rewrite = results
+        .iter()
+        .find(|r| matches!(r, MatchResult::Rewrite(_)))
+        .unwrap();
+
+    if let MatchResult::Rewrite(rewrite) = rewrite {
+        assert_snapshot!(rewrite.rewritten.content);
+    } else {
+        panic!("Expected a rewrite");
+    }
+}
+
+#[test]
+fn test_sequential() {
+    // Make sure we handle sequential transforms too
+
+    let pattern_src = r#"
+        language python
+
+    sequential {
+            bubble file($body) where $body <: contains bubble `print($x)` => `p($x)`,
+            bubble file($body) where $body <: contains bubble `p($y)` => `s($y)`,
+            bubble file($body) where $body <: contains bubble `s($a)` => `flint($a)`,
+            bubble file($body) where $body <: contains bubble `flint($a)` => `x($a, 10)`,
+    }
+    "#;
+    let libs = BTreeMap::new();
+
+    let matching_src = include_str!("../../../crates/cli_bin/fixtures/notebooks/multi_cell.ipynb");
+
+    let pattern = src_to_problem_libs(
+        pattern_src.to_string(),
+        &libs,
+        TargetLanguage::from_extension("ipynb").unwrap(),
+        None,
+        None,
+        None,
+        None,
+    )
+    .unwrap()
+    .problem;
+
+    // Basic match works
+    let test_files = vec![SyntheticFile::new(
+        "target.ipynb".to_owned(),
+        matching_src.to_owned(),
+        true,
+    )];
+    let results = run_on_test_files(&pattern, &test_files);
+
+    println!("{:?}", results);
+    assert!(!results.iter().any(|r| r.is_error()));
+
+    let rewrite = results
+        .iter()
+        .find(|r| matches!(r, MatchResult::Rewrite(_)))
+        .unwrap();
+
+    if let MatchResult::Rewrite(rewrite) = rewrite {
+        assert_snapshot!(rewrite.rewritten.content);
+    } else {
+        panic!("Expected a rewrite");
+    }
+}

@@ -1,0 +1,56 @@
+---
+source: crates/core/src/test_notebooks.rs
+expression: rewrite.rewritten.content
+---
+{
+  "cells": [
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "id": "5e3cb542-933d-4bf3-a82b-d9d6395a7832",
+      "metadata": {
+        "tags": []
+      },
+      "outputs": [],
+      "source": ["p(4)\np(\"3\")\np(5)"]
+    },
+    {
+      "cell_type": "markdown",
+      "id": "33c5d4c8",
+      "metadata": {},
+      "source": [
+        "# This is good\n",
+        "It is just markdown..."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "id": "51a446c5",
+      "metadata": {},
+      "outputs": [],
+      "source": ["p(\"20\")\ndef hello():\n  p(\"I LOVE IT\")"]
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "display_name": "conda210",
+      "language": "python",
+      "name": "conda210"
+    },
+    "language_info": {
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "file_extension": ".py",
+      "mimetype": "text/x-python",
+      "name": "python",
+      "nbconvert_exporter": "python",
+      "pygments_lexer": "ipython3",
+      "version": "3.9.16"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5
+}

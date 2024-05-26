@@ -852,7 +852,7 @@ fn basic_python_apply() -> Result<()> {
 }
 
 #[test]
-fn python_in_notebook() -> Result<()> {
+fn python_notebook_basic() -> Result<()> {
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("notebooks", false)?;
 
@@ -889,6 +889,156 @@ fn python_in_notebook() -> Result<()> {
     assert!(content.contains("flint(4)"));
     assert!(content.contains("flint(5)"));
     assert_snapshot!(content);
+
+    Ok(())
+}
+
+#[test]
+fn python_notebook_newline_handling() -> Result<()> {
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("notebooks", false)?;
+
+    // from the tempdir as cwd, run init
+    run_init(&dir.as_path())?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    apply_cmd
+        .arg("apply")
+        .arg("--force")
+        .arg("pattern.grit")
+        .arg("newline.ipynb");
+    let output = apply_cmd.output()?;
+
+    let stdout = String::from_utf8(output.stdout)?;
+    println!("stdout: {:?}", stdout);
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stderr: {:?}", stderr);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        stderr
+    );
+
+    // Read back tiny_nb.ipynb
+    let target_file = dir.join("newline.ipynb");
+    let content: String = fs_err::read_to_string(target_file)?;
+
+    // Make sure it matches the contents of newline_after.ipynb
+    let expected_content = fs_err::read_to_string(dir.join("newline_after.ipynb"))?;
+    assert_eq!(content, expected_content);
+
+    Ok(())
+}
+
+#[test]
+fn python_notebook_string_cells() -> Result<()> {
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("notebooks", false)?;
+
+    // from the tempdir as cwd, run init
+    run_init(&dir.as_path())?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    apply_cmd
+        .arg("apply")
+        .arg("--force")
+        .arg("pattern.grit")
+        .arg("just_strings.ipynb");
+    let output = apply_cmd.output()?;
+
+    let stdout = String::from_utf8(output.stdout)?;
+    println!("stdout: {:?}", stdout);
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stderr: {:?}", stderr);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        stderr
+    );
+
+    // Read back tiny_nb.ipynb
+    let target_file = dir.join("just_strings.ipynb");
+    let content: String = fs_err::read_to_string(target_file)?;
+
+    // Make sure it matches the contents of newline_after.ipynb
+    let expected_content = fs_err::read_to_string(dir.join("just_strings_after.ipynb"))?;
+    assert_eq!(content, expected_content);
+
+    Ok(())
+}
+
+#[test]
+fn python_invalid_notebook() -> Result<()> {
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("notebooks", false)?;
+
+    // from the tempdir as cwd, run init
+    run_init(&dir.as_path())?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    apply_cmd
+        .arg("apply")
+        .arg("--force")
+        .arg("pattern.grit")
+        .arg("wrong_schema.ipynb");
+    let output = apply_cmd.output()?;
+
+    let stdout = String::from_utf8(output.stdout)?;
+    println!("stdout: {:?}", stdout);
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stderr: {:?}", stderr);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        stderr
+    );
+
+    assert!(stdout.contains("No nbformat version found"));
+    assert!(stdout.contains("found 0 matches"));
+
+    Ok(())
+}
+
+#[test]
+fn ignore_r_code_notebooks() -> Result<()> {
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("notebooks", false)?;
+
+    // from the tempdir as cwd, run init
+    run_init(&dir.as_path())?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    apply_cmd
+        .arg("apply")
+        .arg("--force")
+        .arg("pattern.grit")
+        .arg("r_code.ipynb")
+        .arg("javascript.ipynb");
+    let output = apply_cmd.output()?;
+
+    let stdout = String::from_utf8(output.stdout)?;
+    println!("stdout: {:?}", stdout);
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stderr: {:?}", stderr);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        stderr
+    );
+
+    assert!(stdout.contains("found 0 matches"));
 
     Ok(())
 }

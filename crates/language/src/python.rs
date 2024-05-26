@@ -148,7 +148,7 @@ impl<'a> MarzanoLanguage<'a> for Python {
     }
 
     fn get_parser(&self) -> Box<dyn Parser<Tree = Tree>> {
-        Box::new(MarzanoNotebookParser::new(self))
+        Box::new(MarzanoNotebookParser::new(self, "python"))
     }
 }
 
