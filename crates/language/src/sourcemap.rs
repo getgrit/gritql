@@ -1,6 +1,6 @@
 use std::mem;
 
-use anyhow::{bail, Result};
+use anyhow::{Result};
 use grit_util::ByteRange;
 use serde_json::json;
 

@@ -5,6 +5,9 @@ use grit_util::Language;
 use itertools::Itertools;
 use std::{cell::RefCell, collections::HashSet, ops::Range, rc::Rc};
 
+/// Left hand side range, with the length of the replacement string
+pub type ReplacementInfo = (Range<usize>, usize);
+
 fn filter_out_nested(replacements: &mut Vec<(EffectRange, String)>) {
     let max_insert_index = match replacements.first() {
         Some((range, _)) => range.effective_range().end + 1,
@@ -124,7 +127,7 @@ pub(crate) fn inline_sorted_snippets_with_offset(
     offset: usize,
     replacements: &mut Vec<(EffectRange, String)>,
     should_pad_snippet: bool,
-) -> Result<(String, Vec<Range<usize>>, Vec<(Range<usize>, usize)>)> {
+) -> Result<(String, Vec<Range<usize>>, Vec<ReplacementInfo>)> {
     if !is_sorted_descending(replacements) {
         bail!("Replacements must be in descending order.");
     }

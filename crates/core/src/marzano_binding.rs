@@ -1,8 +1,8 @@
-use crate::equivalence::are_equivalent;
 use crate::inline_snippets::inline_sorted_snippets_with_offset;
 use crate::problem::MarzanoQueryContext;
 use crate::smart_insert::calculate_padding;
 use crate::suppress::is_suppress_comment;
+use crate::{equivalence::are_equivalent, inline_snippets::ReplacementInfo};
 use anyhow::{anyhow, Result};
 use grit_pattern_matcher::{
     binding::Binding,
@@ -186,11 +186,7 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
     range: CodeRange,
     distributed_indent: Option<usize>,
     logs: &mut AnalysisLogs,
-) -> Result<(
-    Cow<'a, str>,
-    Vec<StdRange<usize>>,
-    Vec<(StdRange<usize>, usize)>,
-)> {
+) -> Result<(Cow<'a, str>, Vec<StdRange<usize>>, Vec<ReplacementInfo>)> {
     let effects1 = get_top_level_effects(effects, memo, &range, language, logs)?;
 
     let effects1 = effects1

@@ -66,7 +66,7 @@ mod tests {
             .parse_file(source, Some(path), &mut vec![].into(), FileOrigin::Fresh)
             .unwrap();
 
-        let source_code = tree.source.clone();
+        let _source_code = tree.source.clone();
 
         let mut simple_rep = String::new();
 

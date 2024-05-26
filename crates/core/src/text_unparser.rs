@@ -1,4 +1,4 @@
-use crate::marzano_binding::linearize_binding;
+use crate::{inline_snippets::ReplacementInfo, marzano_binding::linearize_binding};
 use anyhow::Result;
 use grit_pattern_matcher::{
     binding::Binding,
@@ -30,7 +30,7 @@ pub(crate) fn apply_effects<'a, Q: QueryContext>(
 ) -> Result<(
     String,
     Option<Vec<Range<usize>>>,
-    Option<Vec<(Range<usize>, usize)>>,
+    Option<Vec<ReplacementInfo>>,
 )> {
     let language = context.language();
     let current_name = context.name();

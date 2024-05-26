@@ -3,7 +3,7 @@ use grit_util::AstCursor;
 use grit_util::AstNode;
 use grit_util::ByteRange;
 use grit_util::FileOrigin;
-use grit_util::Language;
+
 
 use std::path::Path;
 
@@ -16,7 +16,7 @@ use marzano_util::cursor_wrapper::CursorWrapper;
 use crate::sourcemap::EmbeddedSourceMap;
 use crate::sourcemap::SourceMapSection;
 use crate::sourcemap::SourceValueFormat;
-use crate::target_language::TargetLanguage;
+
 use crate::{
     json::Json,
     language::{MarzanoLanguage, MarzanoParser, Tree},
@@ -340,8 +340,7 @@ impl MarzanoNotebookParser {
                     if !is_magic_cell(content.lines()) {
                         inner_code_body.push_str(&content);
                         source_map.add_section(section);
-                    } else {
-                    }
+                    } 
                 }
             }
 
