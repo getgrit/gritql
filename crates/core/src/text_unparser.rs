@@ -18,6 +18,14 @@ use std::path::{Path, PathBuf};
  * Bindings is a mapping from variable names to replacement string -- which is obtained from any of the nodes in the bindings vector.
  */
 
+/// The outcome of applying an effect to a code snippet or file
+/// new_source, replacement_ranges in original source, replacement_infos for input
+type EffectOutcome = (
+    String,
+    Option<Vec<Range<usize>>>,
+    Option<Vec<ReplacementInfo>>,
+);
+
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn apply_effects<'a, Q: QueryContext>(
     code: Q::Node<'a>,
@@ -27,11 +35,7 @@ pub(crate) fn apply_effects<'a, Q: QueryContext>(
     new_filename: &mut PathBuf,
     context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<(
-    String,
-    Option<Vec<Range<usize>>>,
-    Option<Vec<ReplacementInfo>>,
-)> {
+) -> Result<EffectOutcome> {
     let language = context.language();
     let current_name = context.name();
 
