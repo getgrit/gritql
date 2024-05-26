@@ -228,7 +228,7 @@ mod tests {
             r#"["bc", "efgh", "zko"]"#
         );
 
-        // Third pass, we make even more changes but only in the middle
+        // Final pass, we make even more changes but only in the middle
         // e -> ekg
         let adjustments = vec![(3..4, 3)];
         let adjusted = adjusted.clone_with_edits(adjustments.iter()).unwrap();
