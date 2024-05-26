@@ -296,7 +296,7 @@ mod tests {
         or {
             `from langchain.agents import $stuffs` as $anchor where {
                 $stuffs <: contains `load_tools` => .,
-                $anchor += `\nfrom my_thing insert tools`
+                $anchor += `\nfrom my_thing import tools`
             }
         }
         "#;

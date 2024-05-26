@@ -71,7 +71,7 @@ expression: rewrite.rewritten.content
       "id": "b3367417",
       "metadata": {},
       "outputs": [],
-      "source": ["import os\n\nfrom langchain.agents import AgentType, initialize_agent \n\nfrom my_thing insert tools\nfrom langchain_openai import OpenAI\n\nos.environ[\"OPENAI_API_KEY\"] = \"\"\nos.environ[\"OPENWEATHERMAP_API_KEY\"] = \"\"\n\nllm = OpenAI(temperature=0)\n\ntools = load_tools([\"openweathermap-api\"], llm)\n\nagent_chain = initialize_agent(\n    tools=tools, llm=llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True\n)"]
+      "source": ["import os\n\nfrom langchain.agents import AgentType, initialize_agent \n\nfrom my_thing import tools\nfrom langchain_openai import OpenAI\n\nos.environ[\"OPENAI_API_KEY\"] = \"\"\nos.environ[\"OPENWEATHERMAP_API_KEY\"] = \"\"\n\nllm = OpenAI(temperature=0)\n\ntools = load_tools([\"openweathermap-api\"], llm)\n\nagent_chain = initialize_agent(\n    tools=tools, llm=llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True\n)"]
     },
     {
       "cell_type": "code",
