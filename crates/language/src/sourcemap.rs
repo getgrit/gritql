@@ -25,11 +25,31 @@ impl EmbeddedSourceMap {
         self.sections.push(section);
     }
 
+    pub fn new_section(
+        &mut self,
+        outer_range: std::ops::Range<usize>,
+        inner_range_end: usize,
+        format: SourceValueFormat,
+        inner_end_trim: usize,
+    ) {
+        self.sections.push(SourceMapSection {
+            outer_range: ByteRange::new(outer_range.start, outer_range.end),
+            inner_range_end,
+            format,
+            inner_end_trim,
+        })
+    }
+
     pub fn clone_with_edits<'a>(
         &self,
-        mut adjustments: impl Iterator<Item = &'a (std::ops::Range<usize>, usize)>,
+        mut adjustments: impl Iterator<Item = &'a (std::ops::Range<usize>, usize)> + Clone,
     ) -> Result<EmbeddedSourceMap> {
         let mut new_map = self.clone();
+
+        println!(
+            "Applying edits to source map: {:?}",
+            adjustments.clone().collect::<Vec<_>>()
+        );
 
         let mut accumulated_offset: i32 = 0;
         let mut next_offset = 0;
@@ -51,6 +71,11 @@ impl EmbeddedSourceMap {
 
             // Apply the accumulated offset to the section
             accumulated_offset += section_offset;
+
+            println!(
+                "Adding offset {} to section {:?}",
+                accumulated_offset, section
+            );
 
             section.inner_range_end =
                 (section.inner_range_end as i32 + accumulated_offset) as usize;
@@ -235,6 +260,30 @@ mod tests {
         assert_eq!(
             adjusted.fill_with_inner("bc|ekgfgh|zko|").unwrap(),
             r#"["bc", "ekgfgh", "zko"]"#
+        );
+    }
+
+    #[test]
+    fn test_five_sections_with_single_edit() {
+        let mut source_map = EmbeddedSourceMap::new(r#"["abcd", "efgh", "zko", "znzo"]"#);
+        source_map.new_section(1..7, 5, SourceValueFormat::String, 1);
+        source_map.new_section(9..15, 10, SourceValueFormat::String, 1);
+        source_map.new_section(17..22, 14, SourceValueFormat::String, 1);
+        source_map.new_section(24..30, 19, SourceValueFormat::String, 1);
+
+        // Verify the initial state
+        assert_eq!(
+            source_map.fill_with_inner("abcd|efgh|zko|znzo|").unwrap(),
+            r#"["abcd", "efgh", "zko", "znzo"]"#
+        );
+
+        // First pass, only edit the 3rd section (adding 2 characters)
+        // k -> PP
+        let adjustments = vec![(11..12, 2)];
+        let adjusted = source_map.clone_with_edits(adjustments.iter()).unwrap();
+        assert_eq!(
+            adjusted.fill_with_inner("abcd|efgh|zPPo|znzo|").unwrap(),
+            r#"["abcd", "efgh", "zPPo", "znzo"]"#
         );
     }
 }
