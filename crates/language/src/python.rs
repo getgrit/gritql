@@ -107,8 +107,10 @@ impl Language for Python {
                         replacements.push(Replacement::new(n.range(), ""));
                         break;
                     } else if ch == ',' {
-                        // Delete: the , from x import foo,
-                        replacements.push(Replacement::new(end_range, ""));
+                        if !did_close_paren {
+                            // Delete: the , from x import foo,
+                            replacements.push(Replacement::new(end_range, ""));
+                        }
                         break;
                     } else if !ch.is_whitespace() {
                         break;

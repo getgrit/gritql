@@ -12091,6 +12091,15 @@ fn python_orphaned_from_imports() {
                 |)
                 |from nice import ice
                 |from online import dragon, dungeon
+                |
+                |# leave this alone
+                |from langchain.chains.query_constructor.ir import (
+                |   Comparator,
+                |   Comparison,
+                |    Operation,
+                |    Operator,
+                |    StructuredQuery,
+                |)
                 |"#
             .trim_margin()
             .unwrap(),
@@ -12105,6 +12114,15 @@ fn python_orphaned_from_imports() {
                 |from myth import dragon
                 |
                 |from game import dungeon
+                |
+                |# leave this alone
+                |from langchain.chains.query_constructor.ir import (
+                |   Comparator,
+                |   Comparison,
+                |    Operation,
+                |    Operator,
+                |    StructuredQuery,
+                |)
                 |"#
             .trim_margin()
             .unwrap(),
