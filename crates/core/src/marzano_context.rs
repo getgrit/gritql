@@ -23,7 +23,6 @@ use grit_util::{AnalysisLogs, Ast, FileOrigin, InputRanges, MatchRanges};
 use im::vector;
 use marzano_language::{
     language::{MarzanoLanguage, Tree},
-    sourcemap::EmbeddedSourceMap,
     target_language::TargetLanguage,
 };
 use marzano_util::{
@@ -262,6 +261,17 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                         .unwrap();
                     let root = tree.root_node();
                     let replacement_ranges = get_replacement_ranges(root, self.language());
+                    let new_map = if let Some(new_map) = new_map {
+                        if replacement_ranges.is_empty() {
+                            Some(new_map)
+                        } else {
+                            let replacement_edits: Vec<(std::ops::Range<usize>, usize)> =
+                                replacement_ranges.iter().map(|r| r.into()).collect();
+                            Some(new_map.clone_with_edits(replacement_edits.iter())?)
+                        }
+                    } else {
+                        None
+                    };
                     let cleaned_src = replace_cleaned_ranges(replacement_ranges, &new_src)?;
                     let new_src = if let Some(src) = cleaned_src {
                         src

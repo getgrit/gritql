@@ -149,3 +149,12 @@ impl Replacement {
         Self { range, replacement }
     }
 }
+
+impl From<&Replacement> for (std::ops::Range<usize>, usize) {
+    fn from(replacement: &Replacement) -> Self {
+        (
+            (replacement.range.start_byte as usize)..(replacement.range.end_byte as usize),
+            replacement.replacement.len(),
+        )
+    }
+}
