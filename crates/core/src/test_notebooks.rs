@@ -247,7 +247,7 @@ mod tests {
         language python
 
         `from langchain.agents import AgentType, initialize_agent, load_tools` as $anchor where {
-                $anchor += `from foo insert new_import`
+                $anchor += `\nfrom foo insert new_import`
         }
         "#;
         let libs = BTreeMap::new();
