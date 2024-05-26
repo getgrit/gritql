@@ -40,7 +40,7 @@ impl EmbeddedSourceMap {
 
     pub fn clone_with_edits<'a>(
         &self,
-        adjustments: impl Iterator<Item = &'a (std::ops::Range<usize>, usize)> + Clone,
+        adjustments: impl Iterator<Item = &'a (std::ops::Range<usize>, usize)>,
     ) -> Result<EmbeddedSourceMap> {
         let mut new_map = self.clone();
 
