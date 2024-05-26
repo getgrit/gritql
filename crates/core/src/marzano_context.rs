@@ -23,6 +23,7 @@ use grit_util::{AnalysisLogs, Ast, FileOrigin, InputRanges, MatchRanges};
 use im::vector;
 use marzano_language::{
     language::{MarzanoLanguage, Tree},
+    sourcemap::EmbeddedSourceMap,
     target_language::TargetLanguage,
 };
 use marzano_util::{
@@ -149,6 +150,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     owned.content,
                     None,
                     FileOrigin::Fresh,
+                    None,
                     self.language,
                     logs,
                 )?;
@@ -249,13 +251,14 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 )?;
 
                 if let (Some(new_ranges), Some(edit_ranges)) = (new_ranges, adjustment_ranges) {
+                    let new_map = if let Some(old_map) = file.tree.source_map.as_ref() {
+                        Some(old_map.clone_with_edits(edit_ranges.iter().rev())?)
+                    } else {
+                        None
+                    };
+
                     let tree = parser
-                        .parse_file(
-                            &new_src,
-                            None,
-                            logs,
-                            FileOrigin::Mutated((&file.tree, &edit_ranges)),
-                        )
+                        .parse_file(&new_src, None, logs, FileOrigin::Mutated)
                         .unwrap();
                     let root = tree.root_node();
                     let replacement_ranges = get_replacement_ranges(root, self.language());
@@ -272,7 +275,8 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                         new_filename.clone(),
                         new_src,
                         Some(ranges),
-                        FileOrigin::Mutated((&file.tree, &edit_ranges)),
+                        FileOrigin::Mutated,
+                        new_map,
                         self.language(),
                         logs,
                     )?
@@ -320,6 +324,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 body,
                 None,
                 FileOrigin::New,
+                None,
                 self.language(),
                 logs,
             )?

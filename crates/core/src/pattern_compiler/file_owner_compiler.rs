@@ -2,7 +2,10 @@ use crate::paths::absolutize;
 use anyhow::Result;
 use grit_pattern_matcher::file_owners::FileOwner;
 use grit_util::{AnalysisLogs, FileOrigin, MatchRanges};
-use marzano_language::language::{MarzanoLanguage, Tree};
+use marzano_language::{
+    language::{MarzanoLanguage, Tree},
+    sourcemap::EmbeddedSourceMap,
+};
 use std::path::PathBuf;
 
 pub(crate) struct FileOwnerCompiler;
@@ -13,22 +16,12 @@ impl FileOwnerCompiler {
         source: String,
         matches: Option<MatchRanges>,
         old_tree: FileOrigin<'_, Tree>,
+        new_map: Option<EmbeddedSourceMap>,
         language: &impl MarzanoLanguage<'a>,
         logs: &mut AnalysisLogs,
     ) -> Result<Option<FileOwner<Tree>>> {
         let name = name.into();
         let new = !old_tree.is_fresh();
-
-        // If we have an old tree, attach it here
-        let new_map = if let FileOrigin::Mutated((old_tree, mutations)) = old_tree {
-            if let Some(old_map) = &old_tree.source_map {
-                Some(old_map.clone_with_edits(mutations.iter().rev())?)
-            } else {
-                None
-            }
-        } else {
-            None
-        };
 
         let Some(mut tree) = language
             .get_parser()
