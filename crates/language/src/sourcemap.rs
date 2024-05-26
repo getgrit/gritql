@@ -1,6 +1,6 @@
 use std::mem;
 
-use anyhow::{Result};
+use anyhow::Result;
 use grit_util::ByteRange;
 use serde_json::json;
 
@@ -31,8 +31,6 @@ impl EmbeddedSourceMap {
     ) -> Result<EmbeddedSourceMap> {
         let mut new_map = self.clone();
 
-        println!("Cloning and adjusting sections: {:?}", new_map.sections);
-
         // let mut section_iterator = new_map.sections.iter_mut();
 
         let mut accumulated_offset: i32 = 0;
@@ -41,11 +39,6 @@ impl EmbeddedSourceMap {
         for section in new_map.sections.iter_mut() {
             let mut section_offset = mem::take(&mut next_offset);
             for (source_range, replacement_length) in adjustments.by_ref() {
-                println!(
-                    "Checking section {} with range {:?}",
-                    section.inner_range_end, source_range
-                );
-
                 let length_diff =
                     *replacement_length as i32 - (source_range.end - source_range.start) as i32;
 
@@ -61,20 +54,10 @@ impl EmbeddedSourceMap {
             }
             // Apply the accumulated offset to the section
             accumulated_offset += section_offset;
-            println!(
-                "Adjusting section {} by {}",
-                section.inner_range_end, accumulated_offset
-            );
 
             section.inner_range_end =
                 (section.inner_range_end as i32 + accumulated_offset) as usize;
         }
-
-        println!(
-            "We adjusted by a net of {} into the sections {:?}",
-            accumulated_offset, new_map.sections
-        );
-
         Ok(new_map)
     }
 
@@ -84,20 +67,10 @@ impl EmbeddedSourceMap {
         let mut current_inner_offset = 0;
         let mut current_outer_offset = 0;
 
-        println!(
-            "it is fill time!: {}, {:?} {:?}",
-            new_inner_source, self.sections, self.outer_source,
-        );
-
         for section in &self.sections {
-            // TODO: actually get the *updated* range
             let (start, end) = (
                 current_inner_offset,
                 section.inner_range_end - section.inner_end_trim,
-            );
-            println!(
-                "Attempt to read range: {}..{} from {}",
-                start, end, new_inner_source
             );
 
             let replacement_code = new_inner_source.get(start..end).ok_or(anyhow::anyhow!(
