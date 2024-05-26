@@ -46,9 +46,9 @@ impl EmbeddedSourceMap {
                     break;
                 }
 
-                // Accumulate the overall offset, which we will use for future sections
                 section_offset += length_diff;
             }
+
             // Apply the accumulated offset to the section
             accumulated_offset += section_offset;
 
