@@ -25,13 +25,11 @@ impl EmbeddedSourceMap {
         self.sections.push(section);
     }
 
-    pub fn clone_with_adjusments<'a>(
+    pub fn clone_with_edits<'a>(
         &self,
         mut adjustments: impl Iterator<Item = &'a (std::ops::Range<usize>, usize)>,
     ) -> Result<EmbeddedSourceMap> {
         let mut new_map = self.clone();
-
-        // let mut section_iterator = new_map.sections.iter_mut();
 
         let mut accumulated_offset: i32 = 0;
         let mut next_offset = 0;
@@ -42,7 +40,6 @@ impl EmbeddedSourceMap {
                 let length_diff =
                     *replacement_length as i32 - (source_range.end - source_range.start) as i32;
 
-                // Ok, we hit the end of this section, apply what we have learned so far
                 if source_range.start >= section.inner_range_end {
                     // Save this diff, since we will not be able to read it the next time
                     next_offset = length_diff;
@@ -164,9 +161,7 @@ mod tests {
 
         // Add a total of 2 characters to the source map, in the first section
         let adjustments = vec![(1..2, 2), (2..3, 2)];
-        let adjusted = source_map
-            .clone_with_adjusments(adjustments.iter())
-            .unwrap();
+        let adjusted = source_map.clone_with_edits(adjustments.iter()).unwrap();
         assert_eq!(adjusted.sections[0].inner_range_end, 7);
         assert_eq!(adjusted.sections[1].inner_range_end, 12);
         assert_eq!(
@@ -201,9 +196,7 @@ mod tests {
         // d -> ddd
         // f -> fff
         let adjustments = vec![(3..4, 3), (6..7, 3)];
-        let adjusted = source_map
-            .clone_with_adjusments(adjustments.iter())
-            .unwrap();
+        let adjusted = source_map.clone_with_edits(adjustments.iter()).unwrap();
         assert_eq!(adjusted.sections[0].inner_range_end, 7);
         assert_eq!(adjusted.sections[1].inner_range_end, 14);
         assert_eq!(adjusted.sections[2].inner_range_end, 18);
@@ -217,7 +210,7 @@ mod tests {
         // ddd -> deleted
         // fff -> f
         let adjustments = vec![(0..1, 0), (3..6, 0), (8..11, 1)];
-        let adjusted = adjusted.clone_with_adjusments(adjustments.iter()).unwrap();
+        let adjusted = adjusted.clone_with_edits(adjustments.iter()).unwrap();
         assert_eq!(adjusted.sections[0].inner_range_end, 3);
         assert_eq!(adjusted.sections[1].inner_range_end, 8);
         assert_eq!(adjusted.sections[2].inner_range_end, 12);
@@ -229,7 +222,7 @@ mod tests {
 
         // Third pass, we do nothing
         let adjustments = vec![];
-        let adjusted = adjusted.clone_with_adjusments(adjustments.iter()).unwrap();
+        let adjusted = adjusted.clone_with_edits(adjustments.iter()).unwrap();
         assert_eq!(
             adjusted.fill_with_inner("bc|efgh|zko|").unwrap(),
             r#"["bc", "efgh", "zko"]"#
@@ -238,7 +231,7 @@ mod tests {
         // Third pass, we make even more changes but only in the middle
         // e -> ekg
         let adjustments = vec![(3..4, 3)];
-        let adjusted = adjusted.clone_with_adjusments(adjustments.iter()).unwrap();
+        let adjusted = adjusted.clone_with_edits(adjustments.iter()).unwrap();
         assert_eq!(
             adjusted.fill_with_inner("bc|ekgfgh|zko|").unwrap(),
             r#"["bc", "ekgfgh", "zko"]"#
