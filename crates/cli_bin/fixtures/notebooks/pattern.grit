@@ -9,4 +9,5 @@ or {
   },
   `print($x)` => `flint($x)`,
   `math.pi` => `math.tau / 2`,
+  `from langchain_community.llms import $x` => `from langchain_community_new.llms import $x`,
 }
