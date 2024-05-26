@@ -1,5 +1,3 @@
-use std::mem;
-
 use anyhow::Result;
 use grit_util::ByteRange;
 use serde_json::json;
@@ -42,7 +40,7 @@ impl EmbeddedSourceMap {
 
     pub fn clone_with_edits<'a>(
         &self,
-        mut adjustments: impl Iterator<Item = &'a (std::ops::Range<usize>, usize)> + Clone,
+        adjustments: impl Iterator<Item = &'a (std::ops::Range<usize>, usize)> + Clone,
     ) -> Result<EmbeddedSourceMap> {
         let mut new_map = self.clone();
 
