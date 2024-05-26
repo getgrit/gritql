@@ -46,11 +46,6 @@ impl EmbeddedSourceMap {
     ) -> Result<EmbeddedSourceMap> {
         let mut new_map = self.clone();
 
-        println!(
-            "Applying edits to source map: {:?}",
-            adjustments.clone().collect::<Vec<_>>()
-        );
-
         let mut section_iter = new_map.sections.iter().enumerate().peekable();
 
         let mut section_adjustments: Vec<i64> = vec![0; new_map.sections.len()];
@@ -59,7 +54,7 @@ impl EmbeddedSourceMap {
             // Find the section that contains the source range
             while let Some((index, section)) = section_iter.peek() {
                 // If the section contains the source range, apply the adjustment
-                if section.inner_range_end >= source_range.start {
+                if section.inner_range_end > source_range.start {
                     let length_diff =
                         *replacement_length as i64 - (source_range.end - source_range.start) as i64;
                     section_adjustments[*index] += length_diff;
@@ -78,26 +73,6 @@ impl EmbeddedSourceMap {
                 (section.inner_range_end as i64 + accumulated_offset) as usize;
         }
 
-        // for section in section_iter {
-        //     let mut section_offset = mem::take(&mut next_offset);
-        //     for (source_range, replacement_length) in adjustments.by_ref() {
-        //         let length_diff =
-        //             *replacement_length as i32 - (source_range.end - source_range.start) as i32;
-
-        //         section_offset += length_diff;
-        //     }
-
-        //     // Apply the accumulated offset to the section
-        //     accumulated_offset += section_offset;
-
-        //     println!(
-        //         "Adding offset {} to section {:?}",
-        //         accumulated_offset, section
-        //     );
-
-        //     section.inner_range_end =
-        //         (section.inner_range_end as i32 + accumulated_offset) as usize;
-        // }
         Ok(new_map)
     }
 
