@@ -9,5 +9,7 @@ or {
   },
   `print($x)` => `flint($x)`,
   `math.pi` => `math.tau / 2`,
-  `from langchain_community.llms import $x` => `from langchain_community_new.llms import $x`,
+  `from langchain.agents import AgentType, initialize_agent, load_tools` as $anchor where {
+    $anchor += `from foo insert new_import`
+  }
 }
