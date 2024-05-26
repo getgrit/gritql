@@ -12101,8 +12101,38 @@ fn python_orphaned_from_imports() {
                 |from other import ice
                 |from nice import ice
                 |
+                |
                 |from myth import dragon
-                |from online import dragon
+                |
+                |from game import dungeon
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn python_simple_orphan_from() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language python
+                |
+                |`something` => .
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |from somewhere import something
+                |print("hello")
+                |"#
+            .trim_margin()
+            .unwrap(),
+            // Don't worry about formatting, just check that the trailing comma is removed
+            expected: r#"
+                |print("hello")
                 |"#
             .trim_margin()
             .unwrap(),
