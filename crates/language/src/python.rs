@@ -90,7 +90,19 @@ impl Language for Python {
             if n.text().is_ok_and(|t| t == "->") {
                 replacements.push(Replacement::new(n.range(), ""));
             }
-        } else if n.node.kind() == "import_from_statement" {
+            return;
+        }
+        if n.node.kind() == "import_from_statement" {
+            if let Some(name_field) = n.node.child_by_field_name("name") {
+                let names_text = name_field
+                    .utf8_text(n.source.as_bytes())
+                    .unwrap_or_default();
+                // If we have an empty names text remove the whole thing
+                if names_text.trim().is_empty() {
+                    replacements.push(Replacement::new(n.range(), ""));
+                    return;
+                }
+            }
             if let Ok(t) = n.text() {
                 let mut end_range = n.range();
                 end_range.start_byte = end_range.end_byte;
@@ -108,10 +120,11 @@ impl Language for Python {
                         break;
                     } else if ch == ',' {
                         if !did_close_paren {
-                            // Delete: the , from x import foo,
+                            // Delete: the , from x import foo, *and keep looking*
                             replacements.push(Replacement::new(end_range, ""));
+                        } else {
+                            break;
                         }
-                        break;
                     } else if !ch.is_whitespace() {
                         break;
                     }
