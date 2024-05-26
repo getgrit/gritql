@@ -12078,6 +12078,8 @@ fn python_orphaned_from_imports() {
                 |find_replace_imports([
                 |  [`somewhere`, `foo`, `other`, `food`],
                 |  [`somewhere`, `bar`, `other`, `ice`],
+                |  [`online`, `dragon`, `myth`, `dragon`],
+                |  [`online`, `dungeon`, `game`, `dungeon`],
                 |])
                 |"#
             .trim_margin()
@@ -12088,6 +12090,7 @@ fn python_orphaned_from_imports() {
                 |  bar
                 |)
                 |from nice import ice
+                |from online import dragon, dungeon
                 |"#
             .trim_margin()
             .unwrap(),
@@ -12097,6 +12100,9 @@ fn python_orphaned_from_imports() {
                 |
                 |from other import ice
                 |from nice import ice
+                |
+                |from myth import dragon
+                |from online import dragon
                 |"#
             .trim_margin()
             .unwrap(),
