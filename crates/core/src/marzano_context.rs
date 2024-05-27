@@ -1,6 +1,6 @@
 use crate::{
     built_in_functions::BuiltIns,
-    clean::{get_replacement_ranges, replace_cleaned_ranges},
+    clean::{get_replacement_ranges, merge_ranges, replace_cleaned_ranges},
     foreign_function_definition::ForeignFunctionDefinition,
     limits::is_file_too_big,
     marzano_resolved_pattern::{MarzanoFile, MarzanoResolvedPattern},
@@ -260,14 +260,15 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                         .parse_file(&new_src, None, logs, FileOrigin::Mutated)
                         .unwrap();
                     let root = tree.root_node();
-                    let replacement_ranges = get_replacement_ranges(root, self.language());
+                    let replacement_ranges =
+                        merge_ranges(get_replacement_ranges(root, self.language()));
                     let new_map = if let Some(new_map) = new_map {
                         if replacement_ranges.is_empty() {
                             Some(new_map)
                         } else {
                             let replacement_edits: Vec<(std::ops::Range<usize>, usize)> =
                                 replacement_ranges.iter().map(|r| r.into()).collect();
-                            Some(new_map.clone_with_edits(replacement_edits.iter())?)
+                            Some(new_map.clone_with_edits(replacement_edits.iter().rev())?)
                         }
                     } else {
                         None

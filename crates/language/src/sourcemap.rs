@@ -44,11 +44,15 @@ impl EmbeddedSourceMap {
     ) -> Result<EmbeddedSourceMap> {
         let mut new_map = self.clone();
 
+        println!("New adjustment cycle!");
+
         let mut section_iter = new_map.sections.iter().enumerate().peekable();
 
         let mut section_adjustments: Vec<i64> = vec![0; new_map.sections.len()];
 
         for (source_range, replacement_length) in adjustments {
+            println!("Adjusting {:?} with {}", source_range, replacement_length);
+
             // Find the section that contains the source range
             while let Some((index, section)) = section_iter.peek() {
                 // If the section contains the source range, apply the adjustment
@@ -67,6 +71,7 @@ impl EmbeddedSourceMap {
         let mut accumulated_offset = 0;
         for (section, adjustment) in new_map.sections.iter_mut().zip(section_adjustments) {
             accumulated_offset += adjustment;
+            println!("Adding {} to section {:?}", accumulated_offset, section);
             section.inner_range_end =
                 (section.inner_range_end as i64 + accumulated_offset) as usize;
         }
