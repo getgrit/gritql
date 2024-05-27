@@ -186,7 +186,15 @@ pub(crate) fn inline_sorted_snippets_with_offset(
         }
     }
 
-    let mut code = delete_hanging_comma(&code, replacements, offset)?;
+    println!(
+        "Target ranges: {:?}",
+        replacements
+            .iter()
+            .map(|r| r.0.effective_range())
+            .collect::<Vec<_>>()
+    );
+    let (mut code, original_ranges) = delete_hanging_comma(&code, replacements, offset)?;
+    println!("Target ranges: {:?}", original_ranges);
 
     // we could optimize by checking if offset is zero, or some other flag
     // so we only compute if top level.
@@ -232,22 +240,32 @@ pub(crate) fn inline_sorted_snippets_with_offset(
                         range.start
                     )
                 })?;
+            let output_length = end - start;
+            println!(
+                "Mapping from {} to {} with real length {}",
+                range.end - range.start,
+                len,
+                output_length
+            );
             output_ranges.push(start..end);
         }
     }
-    let replacement_ranges: Vec<(Range<usize>, usize)> = replacements
-        .iter()
-        .map(|(range, snippet)| (range.effective_range(), snippet.len()))
-        .collect();
 
     for (range, snippet) in replacements {
         let range = adjust_range(&range.effective_range(), offset, &code)?;
         if range.start > code.len() || range.end > code.len() {
             bail!("Range {:?} is out of bounds for code:\n{}\n", range, code);
         }
+        println!(
+            "Replacing range {:?} (length: {}) range.with snippet:\n{}",
+            range,
+            range.end - range.start,
+            snippet
+        );
         code.replace_range(range, snippet);
     }
-    Ok((code, output_ranges, replacement_ranges))
+
+    Ok((code, output_ranges, original_ranges))
 }
 
 fn adjust_range(range: &Range<usize>, offset: usize, code: &str) -> Result<Range<usize>> {
@@ -304,7 +322,7 @@ fn delete_hanging_comma(
     code: &str,
     replacements: &mut [(EffectRange, String)],
     offset: usize,
-) -> Result<String> {
+) -> Result<(String, Vec<ReplacementInfo>)> {
     let deletion_ranges = replacements
         .iter()
         .filter_map(|r| {
@@ -341,7 +359,7 @@ fn delete_hanging_comma(
     update_comma_insertion_strings(code, &comma_inserts);
     let to_delete = get_deletion_indices(code, &deletion_ranges);
     let ranges = replacements.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
-    let mut ranges_updates: Vec<(usize, usize)> = ranges.iter().map(|_| (0, 0)).collect();
+    let mut ranges_updates: Vec<(usize, usize, usize)> = ranges.iter().map(|_| (0, 0, 0)).collect();
     let mut to_delete = to_delete.iter();
     let mut result = String::new();
     let chars = code.chars().enumerate();
@@ -355,18 +373,35 @@ fn delete_hanging_comma(
             next_comma = to_delete.next();
         }
     }
+
+    // println!("adjusted ranges: {:?}", ranges_updates);
+    let mut replacement_ranges: Vec<(Range<usize>, usize)> = Vec::with_capacity(replacements.len());
+
     for (r, u) in replacements.iter_mut().zip(ranges_updates) {
+        let effective_range = r.0.effective_range();
+        // we want to include comma in the range
+        println!(
+            "adjusted range: {:?}, use offset: {:?}",
+            effective_range.end - effective_range.start,
+            u
+        );
+        replacement_ranges.push((effective_range, r.1.len()));
+
         r.0.range.start -= u.0;
         r.0.range.end -= u.1;
     }
-    Ok(result)
+    Ok((result, replacement_ranges))
 }
 
+/// After commas are deleted, calculate how much each range has shifted
+/// (left shift amount, right shift amount, length adjustment)
+/// The length adjustment is used to account for the deleted comma
 fn update_range_shifts(
     index: usize,
-    shifts: &[(usize, usize)],
+    shifts: &[(usize, usize, usize)],
     ranges: &[EffectRange],
-) -> Vec<(usize, usize)> {
+) -> Vec<(usize, usize, usize)> {
+    let mut did_adjust = false;
     ranges
         .iter()
         .zip(shifts.iter())
@@ -381,7 +416,13 @@ fn update_range_shifts(
             if r > index {
                 sr += 1;
             }
-            (sl, sr)
+            let new_shift = if l > index && r > index {
+                did_adjust = true;
+                1
+            } else {
+                0
+            };
+            (sl, sr, shift.2 + new_shift)
         })
         .collect()
 }
