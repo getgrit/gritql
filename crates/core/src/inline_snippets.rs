@@ -359,34 +359,38 @@ fn delete_hanging_comma(
     update_comma_insertion_strings(code, &comma_inserts);
     let to_delete = get_deletion_indices(code, &deletion_ranges);
     let ranges = replacements.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
-    let mut ranges_updates: Vec<(usize, usize, usize)> = ranges.iter().map(|_| (0, 0, 0)).collect();
+    let mut ranges_updates: Vec<(usize, usize)> = ranges.iter().map(|_| (0, 0)).collect();
     let mut to_delete = to_delete.iter();
     let mut result = String::new();
     let chars = code.chars().enumerate();
     let mut next_comma = to_delete.next();
 
+    // Keep track of ranges we need to expand into, since we deleted code in the range
+    // This isn't perfect, but it's good enough for now
+
     for (index, c) in chars {
         if Some(&index) != next_comma {
             result.push(c);
         } else {
+            for (range, ..) in (*replacements).iter_mut().rev() {
+                if range.start() > index {
+                    range.expansion += 1;
+                    break;
+                }
+            }
             ranges_updates = update_range_shifts(index + offset, &ranges_updates, &ranges);
             next_comma = to_delete.next();
         }
     }
 
-    // println!("adjusted ranges: {:?}", ranges_updates);
-    let mut replacement_ranges: Vec<(Range<usize>, usize)> = Vec::with_capacity(replacements.len());
+    println!("All the replacements! {:?}", replacements);
+
+    let replacement_ranges: Vec<(Range<usize>, usize)> = replacements
+        .iter()
+        .map(|r| (r.0.estimated_range(), r.1.len()))
+        .collect();
 
     for (r, u) in replacements.iter_mut().zip(ranges_updates) {
-        let effective_range = r.0.effective_range();
-        // we want to include comma in the range
-        println!(
-            "adjusted range: {:?}, use offset: {:?}",
-            effective_range.end - effective_range.start,
-            u
-        );
-        replacement_ranges.push((effective_range, r.1.len()));
-
         r.0.range.start -= u.0;
         r.0.range.end -= u.1;
     }
@@ -394,14 +398,12 @@ fn delete_hanging_comma(
 }
 
 /// After commas are deleted, calculate how much each range has shifted
-/// (left shift amount, right shift amount, length adjustment)
-/// The length adjustment is used to account for the deleted comma
+/// (start shift amount, end shift amount)
 fn update_range_shifts(
     index: usize,
-    shifts: &[(usize, usize, usize)],
+    shifts: &[(usize, usize)],
     ranges: &[EffectRange],
-) -> Vec<(usize, usize, usize)> {
-    let mut did_adjust = false;
+) -> Vec<(usize, usize)> {
     ranges
         .iter()
         .zip(shifts.iter())
@@ -416,13 +418,8 @@ fn update_range_shifts(
             if r > index {
                 sr += 1;
             }
-            let new_shift = if l > index && r > index {
-                did_adjust = true;
-                1
-            } else {
-                0
-            };
-            (sl, sr, shift.2 + new_shift)
+
+            (sl, sr)
         })
         .collect()
 }

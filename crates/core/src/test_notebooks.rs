@@ -348,7 +348,7 @@ mod tests {
         or {
             `from $src import $thing` as $base where {
                 $src <: includes "langchain",
-                $thing <: some bubble($base) `$one_thing` => .
+                $thing <: contains bubble($base) {`$one_thing` => .}
             }
         }
         "#;

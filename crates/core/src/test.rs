@@ -12127,6 +12127,20 @@ fn python_orphaned_from_imports() {
                 |
                 |from game import dungeon
                 |
+                |# problematic
+                |cypher = cypher_response.invoke({"question": "Who played in Casino movie?"})
+                |cypher
+                |
+                |
+                |from lcn import CypherQueryCorrector
+                |
+                |from lcn import Schema
+                |# Cypher validation tool for relationship directions
+                |corrector_schema = [
+                |    Schema(el["start"], el["type"], el["end"])
+                |    for el in graph.structured_schema.get("relationships")
+                |]
+                |
                 |# leave this alone
                 |from langchain.chains.query_constructor.ir import (
                 |   Comparator,
