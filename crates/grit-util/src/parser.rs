@@ -1,5 +1,5 @@
 use crate::{AnalysisLogs, AstNode};
-use std::{ops::Range, path::Path};
+use std::{marker::PhantomData, path::Path};
 
 /// Information on where a file came from, for the parser to be smarter
 #[derive(Clone, Debug)]
@@ -10,9 +10,11 @@ where
     /// A file we are parsing for the first time, from disk
     Fresh,
     /// A file we have parsed before, and are re-parsing after mutating
-    Mutated((&'tree Tree, &'tree Vec<(Range<usize>, usize)>)),
+    Mutated,
     /// A file that was constructed by Grit
     New,
+    /// We might need these
+    _Phantom(PhantomData<&'tree Tree>),
 }
 
 impl<'tree, Tree: Ast> FileOrigin<'tree, Tree> {

@@ -12078,6 +12078,10 @@ fn python_orphaned_from_imports() {
                 |find_replace_imports([
                 |  [`somewhere`, `foo`, `other`, `food`],
                 |  [`somewhere`, `bar`, `other`, `ice`],
+                |  [`online`, `dragon`, `myth`, `dragon`],
+                |  [`online`, `dungeon`, `game`, `dungeon`],
+                |  [`langchain.chains.graph_qa.cypher_utils`, `CypherQueryCorrector`, `lcn`, `CypherQueryCorrector`],
+                |  [`langchain.chains.graph_qa.cypher_utils`, `Schema`, `lcn`, `Schema`],
                 |])
                 |"#
             .trim_margin()
@@ -12088,6 +12092,26 @@ fn python_orphaned_from_imports() {
                 |  bar
                 |)
                 |from nice import ice
+                |from online import dragon, dungeon
+                |
+                |# problematic
+                |cypher = cypher_response.invoke({"question": "Who played in Casino movie?"})
+                |cypher
+                |from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
+                |# Cypher validation tool for relationship directions
+                |corrector_schema = [
+                |    Schema(el["start"], el["type"], el["end"])
+                |    for el in graph.structured_schema.get("relationships")
+                |]
+                |
+                |# leave this alone
+                |from langchain.chains.query_constructor.ir import (
+                |   Comparator,
+                |   Comparison,
+                |    Operation,
+                |    Operator,
+                |    StructuredQuery,
+                |)
                 |"#
             .trim_margin()
             .unwrap(),
@@ -12097,6 +12121,101 @@ fn python_orphaned_from_imports() {
                 |
                 |from other import ice
                 |from nice import ice
+                |
+                |
+                |from myth import dragon
+                |
+                |from game import dungeon
+                |
+                |# problematic
+                |cypher = cypher_response.invoke({"question": "Who played in Casino movie?"})
+                |cypher
+                |
+                |
+                |from lcn import CypherQueryCorrector
+                |
+                |from lcn import Schema
+                |# Cypher validation tool for relationship directions
+                |corrector_schema = [
+                |    Schema(el["start"], el["type"], el["end"])
+                |    for el in graph.structured_schema.get("relationships")
+                |]
+                |
+                |# leave this alone
+                |from langchain.chains.query_constructor.ir import (
+                |   Comparator,
+                |   Comparison,
+                |    Operation,
+                |    Operator,
+                |    StructuredQuery,
+                |)
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn python_simple_orphan_from() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language python
+                |
+                |`something` => .
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |from somewhere import something
+                |print("hello")
+                |"#
+            .trim_margin()
+            .unwrap(),
+            // Don't worry about formatting, just check that the trailing comma is removed
+            expected: r#"
+                |print("hello")
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn python_multiline_removal_from() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language python
+                |
+                |or {`CypherQueryCorrector` => ., `Schema` => .}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |# Somehow this causes problems
+                |cypher_template = """Based on the Neo4j graph schema below, write a Cypher query that would answer the user's question:
+                |{wattenberg}
+                |Cypher query:"""
+                |
+                |from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
+                |print("hello")
+                |"#
+            .trim_margin()
+            .unwrap(),
+            // Don't worry about formatting, just check that the trailing comma is removed
+            expected: r#"
+                |# Somehow this causes problems
+                |cypher_template = """Based on the Neo4j graph schema below, write a Cypher query that would answer the user's question:
+                |{wattenberg}
+                |Cypher query:"""
+                |
+                |
+                |print("hello")
                 |"#
             .trim_margin()
             .unwrap(),

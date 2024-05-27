@@ -2,7 +2,7 @@ use anyhow::Result;
 use grit_util::{traverse, AstNode, Language, Order, Replacement};
 use itertools::Itertools;
 
-fn merge_ranges(ranges: Vec<Replacement>) -> Vec<Replacement> {
+pub fn merge_ranges(ranges: Vec<Replacement>) -> Vec<Replacement> {
     if ranges.is_empty() {
         return vec![];
     }
@@ -36,7 +36,6 @@ pub(crate) fn replace_cleaned_ranges(
     if replacement_ranges.is_empty() {
         return Ok(None);
     }
-    let replacement_ranges = merge_ranges(replacement_ranges);
     let mut src = src.to_string();
     for range in &replacement_ranges {
         src.replace_range(

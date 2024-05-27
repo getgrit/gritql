@@ -3,7 +3,7 @@ use grit_util::AstCursor;
 use grit_util::AstNode;
 use grit_util::ByteRange;
 use grit_util::FileOrigin;
-
+use serde::Deserialize;
 
 use std::path::Path;
 
@@ -23,6 +23,13 @@ use crate::{
 };
 
 const SUPPORTED_VERSION: i64 = 4;
+
+/// Kernel information.
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+pub struct LanguageInfo {
+    /// The programming language which this kernel runs.
+    pub name: String,
+}
 
 /// Returns `true` if a cell should be ignored due to the use of cell magics.
 /// Borrowed from [ruff](https://github.com/astral-sh/ruff/blob/33fd50027cb24e407746da339bdf2461df194d96/crates/ruff_notebook/src/cell.rs)
@@ -212,7 +219,7 @@ impl MarzanoNotebookParser {
         let mut source_map = EmbeddedSourceMap::new(body);
 
         let mut nbformat_version: Option<i64> = None;
-        let mut language_string: Option<String> = None;
+        let mut language_info: Option<LanguageInfo> = None;
 
         let json = Json::new(None);
         let mut parser = json.get_parser();
@@ -245,14 +252,13 @@ impl MarzanoNotebookParser {
             if n.node.kind() == "pair"
                 && n.child_by_field_name("key")
                     .and_then(|key| key.node.utf8_text(body.as_bytes()).ok())
-                    .map(|key| key == "\"language\"")
+                    .map(|key| key == "\"language_info\"")
                     .unwrap_or(false)
             {
-                let text: Option<String> = n
+                language_info = n
                     .child_by_field_name("value")
                     .and_then(|value| value.node.utf8_text(body.as_bytes()).ok())
                     .and_then(|text| serde_json::from_str(&text).ok());
-                language_string = text;
             }
 
             if n.node.kind() != "object" {
@@ -340,7 +346,7 @@ impl MarzanoNotebookParser {
                     if !is_magic_cell(content.lines()) {
                         inner_code_body.push_str(&content);
                         source_map.add_section(section);
-                    } 
+                    }
                 }
             }
 
@@ -356,13 +362,13 @@ impl MarzanoNotebookParser {
             return None;
         }
 
-        if let Some(language_string) = language_string {
-            if language_string != self.language {
+        if let Some(language) = language_info {
+            if language.name != self.language {
                 logs.add_warning(
                     path.map(|m| m.into()),
                     format!(
                         "Skipping notebook with different language: {}, expected {}",
-                        language_string, self.language
+                        language.name, self.language
                     ),
                 );
                 return None;

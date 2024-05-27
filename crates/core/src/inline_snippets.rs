@@ -186,7 +186,7 @@ pub(crate) fn inline_sorted_snippets_with_offset(
         }
     }
 
-    let mut code = delete_hanging_comma(&code, replacements, offset)?;
+    let (mut code, original_ranges) = delete_hanging_comma(&code, replacements, offset)?;
 
     // we could optimize by checking if offset is zero, or some other flag
     // so we only compute if top level.
@@ -235,10 +235,6 @@ pub(crate) fn inline_sorted_snippets_with_offset(
             output_ranges.push(start..end);
         }
     }
-    let replacement_ranges: Vec<(Range<usize>, usize)> = replacements
-        .iter()
-        .map(|(range, snippet)| (range.effective_range(), snippet.len()))
-        .collect();
 
     for (range, snippet) in replacements {
         let range = adjust_range(&range.effective_range(), offset, &code)?;
@@ -247,7 +243,8 @@ pub(crate) fn inline_sorted_snippets_with_offset(
         }
         code.replace_range(range, snippet);
     }
-    Ok((code, output_ranges, replacement_ranges))
+
+    Ok((code, output_ranges, original_ranges))
 }
 
 fn adjust_range(range: &Range<usize>, offset: usize, code: &str) -> Result<Range<usize>> {
@@ -304,7 +301,7 @@ fn delete_hanging_comma(
     code: &str,
     replacements: &mut [(EffectRange, String)],
     offset: usize,
-) -> Result<String> {
+) -> Result<(String, Vec<ReplacementInfo>)> {
     let deletion_ranges = replacements
         .iter()
         .filter_map(|r| {
@@ -344,24 +341,42 @@ fn delete_hanging_comma(
     let mut ranges_updates: Vec<(usize, usize)> = ranges.iter().map(|_| (0, 0)).collect();
     let mut to_delete = to_delete.iter();
     let mut result = String::new();
+
     let chars = code.chars().enumerate();
+
     let mut next_comma = to_delete.next();
+
+    let mut replacement_ranges: Vec<(Range<usize>, usize)> = replacements
+        .iter()
+        .map(|r| (r.0.effective_range(), r.1.len()))
+        .collect();
 
     for (index, c) in chars {
         if Some(&index) != next_comma {
             result.push(c);
         } else {
+            // Keep track of ranges we need to expand into, since we deleted code in the range
+            // This isn't perfect, but it's good enough for tracking cell boundaries
+            for (range, ..) in replacement_ranges.iter_mut().rev() {
+                if range.end >= index {
+                    range.end += 1;
+                    break;
+                }
+            }
             ranges_updates = update_range_shifts(index + offset, &ranges_updates, &ranges);
             next_comma = to_delete.next();
         }
     }
+
     for (r, u) in replacements.iter_mut().zip(ranges_updates) {
         r.0.range.start -= u.0;
         r.0.range.end -= u.1;
     }
-    Ok(result)
+    Ok((result, replacement_ranges))
 }
 
+/// After commas are deleted, calculate how much each range has shifted
+/// (start shift amount, end shift amount)
 fn update_range_shifts(
     index: usize,
     shifts: &[(usize, usize)],
@@ -381,6 +396,7 @@ fn update_range_shifts(
             if r > index {
                 sr += 1;
             }
+
             (sl, sr)
         })
         .collect()

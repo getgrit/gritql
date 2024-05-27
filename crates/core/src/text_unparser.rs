@@ -57,6 +57,7 @@ pub(crate) fn apply_effects<'a, Q: QueryContext>(
         language.should_pad_snippet().then_some(0),
         logs,
     )?;
+
     for effect in effects.iter() {
         if let Some(filename) = effect.binding.as_filename() {
             if std::ptr::eq(filename, the_filename) {

@@ -168,6 +168,7 @@ impl EffectRange {
     }
 
     // The range which is actually edited by this effect
+    // This is used for most operations, but does not account for expansion from deleted commas
     pub(crate) fn effective_range(&self) -> StdRange<usize> {
         match self.kind {
             EffectKind::Rewrite => self.range.clone(),

@@ -1,5 +1,3 @@
-use std::mem;
-
 use anyhow::Result;
 use grit_util::ByteRange;
 use serde_json::json;
@@ -25,41 +23,66 @@ impl EmbeddedSourceMap {
         self.sections.push(section);
     }
 
+    pub fn new_section(
+        &mut self,
+        outer_range: std::ops::Range<usize>,
+        inner_range_end: usize,
+        format: SourceValueFormat,
+        inner_end_trim: usize,
+    ) {
+        self.sections.push(SourceMapSection {
+            outer_range: ByteRange::new(outer_range.start, outer_range.end),
+            inner_range_end,
+            format,
+            inner_end_trim,
+        })
+    }
+
     pub fn clone_with_edits<'a>(
         &self,
-        mut adjustments: impl Iterator<Item = &'a (std::ops::Range<usize>, usize)>,
+        adjustments: impl Iterator<Item = &'a (std::ops::Range<usize>, usize)>,
     ) -> Result<EmbeddedSourceMap> {
         let mut new_map = self.clone();
 
-        let mut accumulated_offset: i32 = 0;
-        let mut next_offset = 0;
+        println!("New adjustment cycle!");
 
-        for section in new_map.sections.iter_mut() {
-            let mut section_offset = mem::take(&mut next_offset);
-            for (source_range, replacement_length) in adjustments.by_ref() {
-                let length_diff =
-                    *replacement_length as i32 - (source_range.end - source_range.start) as i32;
+        let mut section_iter = new_map.sections.iter().enumerate().peekable();
 
-                if source_range.start >= section.inner_range_end {
-                    // Save this diff, since we will not be able to read it the next time
-                    next_offset = length_diff;
+        let mut section_adjustments: Vec<i64> = vec![0; new_map.sections.len()];
+
+        for (source_range, replacement_length) in adjustments {
+            // Find the section that contains the source range
+            while let Some((index, section)) = section_iter.peek() {
+                // If the section contains the source range, apply the adjustment
+                if section.inner_range_end > source_range.start {
+                    let length_diff =
+                        *replacement_length as i64 - (source_range.end - source_range.start) as i64;
+                    println!("Adjusting {:?} with {}", source_range, length_diff);
+
+                    section_adjustments[*index] += length_diff;
                     break;
                 }
-
-                section_offset += length_diff;
+                // Otherwise, move to the next section
+                section_iter.next();
             }
-
-            // Apply the accumulated offset to the section
-            accumulated_offset += section_offset;
-
-            section.inner_range_end =
-                (section.inner_range_end as i32 + accumulated_offset) as usize;
         }
+
+        // Apply the accumulated offset to the section
+        let mut accumulated_offset = 0;
+        for (section, adjustment) in new_map.sections.iter_mut().zip(section_adjustments) {
+            accumulated_offset += adjustment;
+            println!("Adding {} to section {:?}", accumulated_offset, section);
+            section.inner_range_end =
+                (section.inner_range_end as i64 + accumulated_offset) as usize;
+        }
+
         Ok(new_map)
     }
 
     pub fn fill_with_inner(&self, new_inner_source: &str) -> Result<String> {
         let mut outer_source = self.outer_source.clone();
+
+        println!("inner output: {}", new_inner_source);
 
         let mut current_inner_offset = 0;
         let mut current_outer_offset = 0;
@@ -71,9 +94,10 @@ impl EmbeddedSourceMap {
             );
 
             let replacement_code = new_inner_source.get(start..end).ok_or(anyhow::anyhow!(
-                "Section range {}-{} is out of bounds",
+                "Section range {}-{} is out of bounds inside {}",
                 start,
-                end
+                end,
+                new_inner_source.len()
             ))?;
 
             let json = section.as_json(replacement_code);
@@ -235,6 +259,30 @@ mod tests {
         assert_eq!(
             adjusted.fill_with_inner("bc|ekgfgh|zko|").unwrap(),
             r#"["bc", "ekgfgh", "zko"]"#
+        );
+    }
+
+    #[test]
+    fn test_five_sections_with_single_edit() {
+        let mut source_map = EmbeddedSourceMap::new(r#"["abcd", "efgh", "zko", "znzo"]"#);
+        source_map.new_section(1..7, 5, SourceValueFormat::String, 1);
+        source_map.new_section(9..15, 10, SourceValueFormat::String, 1);
+        source_map.new_section(17..22, 14, SourceValueFormat::String, 1);
+        source_map.new_section(24..30, 19, SourceValueFormat::String, 1);
+
+        // Verify the initial state
+        assert_eq!(
+            source_map.fill_with_inner("abcd|efgh|zko|znzo|").unwrap(),
+            r#"["abcd", "efgh", "zko", "znzo"]"#
+        );
+
+        // First pass, only edit the 3rd section (adding 2 characters)
+        // k -> PP
+        let adjustments = vec![(11..12, 2)];
+        let adjusted = source_map.clone_with_edits(adjustments.iter()).unwrap();
+        assert_eq!(
+            adjusted.fill_with_inner("abcd|efgh|zPPo|znzo|").unwrap(),
+            r#"["abcd", "efgh", "zPPo", "znzo"]"#
         );
     }
 }
