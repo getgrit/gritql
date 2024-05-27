@@ -260,25 +260,25 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                         .parse_file(&new_src, None, logs, FileOrigin::Mutated)
                         .unwrap();
                     let root = tree.root_node();
-                    let replacement_ranges =
-                        merge_ranges(get_replacement_ranges(root, self.language()));
-                    let new_map = if let Some(new_map) = new_map {
-                        if replacement_ranges.is_empty() {
-                            Some(new_map)
-                        } else {
-                            let replacement_edits: Vec<(std::ops::Range<usize>, usize)> =
-                                replacement_ranges.iter().map(|r| r.into()).collect();
-                            Some(new_map.clone_with_edits(replacement_edits.iter().rev())?)
-                        }
-                    } else {
-                        None
-                    };
-                    let cleaned_src = replace_cleaned_ranges(replacement_ranges, &new_src)?;
-                    let new_src = if let Some(src) = cleaned_src {
-                        src
-                    } else {
-                        new_src
-                    };
+                    // let replacement_ranges =
+                    //     merge_ranges(get_replacement_ranges(root, self.language()));
+                    // let new_map = if let Some(new_map) = new_map {
+                    //     if replacement_ranges.is_empty() {
+                    //         Some(new_map)
+                    //     } else {
+                    //         let replacement_edits: Vec<(std::ops::Range<usize>, usize)> =
+                    //             replacement_ranges.iter().map(|r| r.into()).collect();
+                    //         Some(new_map.clone_with_edits(replacement_edits.iter().rev())?)
+                    //     }
+                    // } else {
+                    //     None
+                    // };
+                    // let cleaned_src = replace_cleaned_ranges(replacement_ranges, &new_src)?;
+                    // let new_src = if let Some(src) = cleaned_src {
+                    //     src
+                    // } else {
+                    //     new_src
+                    // };
 
                     let ranges =
                         MatchRanges::new(new_ranges.into_iter().map(|r| r.into()).collect());

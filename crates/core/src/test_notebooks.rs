@@ -339,8 +339,9 @@ mod tests {
         }
     }
 
+    /// Ensure our comma expansion does not make the wrong ranges
     #[test]
-    fn test_multiple_add_remove_imports() {
+    fn test_multiple_add_remove_imports_with_commas() {
         let pattern_src = r#"
         language python
 

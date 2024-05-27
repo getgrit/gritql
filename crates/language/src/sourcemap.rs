@@ -51,14 +51,14 @@ impl EmbeddedSourceMap {
         let mut section_adjustments: Vec<i64> = vec![0; new_map.sections.len()];
 
         for (source_range, replacement_length) in adjustments {
-            println!("Adjusting {:?} with {}", source_range, replacement_length);
-
             // Find the section that contains the source range
             while let Some((index, section)) = section_iter.peek() {
                 // If the section contains the source range, apply the adjustment
                 if section.inner_range_end > source_range.start {
                     let length_diff =
                         *replacement_length as i64 - (source_range.end - source_range.start) as i64;
+                    println!("Adjusting {:?} with {}", source_range, length_diff);
+
                     section_adjustments[*index] += length_diff;
                     break;
                 }
@@ -82,6 +82,8 @@ impl EmbeddedSourceMap {
     pub fn fill_with_inner(&self, new_inner_source: &str) -> Result<String> {
         let mut outer_source = self.outer_source.clone();
 
+        println!("inner output: {}", new_inner_source);
+
         let mut current_inner_offset = 0;
         let mut current_outer_offset = 0;
 
@@ -92,9 +94,10 @@ impl EmbeddedSourceMap {
             );
 
             let replacement_code = new_inner_source.get(start..end).ok_or(anyhow::anyhow!(
-                "Section range {}-{} is out of bounds",
+                "Section range {}-{} is out of bounds inside {}",
                 start,
-                end
+                end,
+                new_inner_source.len()
             ))?;
 
             let json = section.as_json(replacement_code);
