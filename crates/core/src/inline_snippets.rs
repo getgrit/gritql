@@ -186,15 +186,7 @@ pub(crate) fn inline_sorted_snippets_with_offset(
         }
     }
 
-    println!(
-        "Target ranges: {:?}",
-        replacements
-            .iter()
-            .map(|r| r.0.effective_range())
-            .collect::<Vec<_>>()
-    );
     let (mut code, original_ranges) = delete_hanging_comma(&code, replacements, offset)?;
-    println!("Target ranges: {:?}", original_ranges);
 
     // we could optimize by checking if offset is zero, or some other flag
     // so we only compute if top level.
@@ -241,12 +233,6 @@ pub(crate) fn inline_sorted_snippets_with_offset(
                     )
                 })?;
             let output_length = end - start;
-            println!(
-                "Mapping from {} to {} with real length {}",
-                range.end - range.start,
-                len,
-                output_length
-            );
             output_ranges.push(start..end);
         }
     }
@@ -256,12 +242,6 @@ pub(crate) fn inline_sorted_snippets_with_offset(
         if range.start > code.len() || range.end > code.len() {
             bail!("Range {:?} is out of bounds for code:\n{}\n", range, code);
         }
-        println!(
-            "Replacing range {:?} (length: {}) range.with snippet:\n{}",
-            range,
-            range.end - range.start,
-            snippet
-        );
         code.replace_range(range, snippet);
     }
 
@@ -382,8 +362,6 @@ fn delete_hanging_comma(
             next_comma = to_delete.next();
         }
     }
-
-    println!("All the replacements! {:?}", replacements);
 
     let replacement_ranges: Vec<(Range<usize>, usize)> = replacements
         .iter()
