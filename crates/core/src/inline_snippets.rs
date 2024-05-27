@@ -346,15 +346,20 @@ fn delete_hanging_comma(
 
     let mut next_comma = to_delete.next();
 
+    let mut replacement_ranges: Vec<(Range<usize>, usize)> = replacements
+        .iter()
+        .map(|r| (r.0.effective_range(), r.1.len()))
+        .collect();
+
     for (index, c) in chars {
         if Some(&index) != next_comma {
             result.push(c);
         } else {
             // Keep track of ranges we need to expand into, since we deleted code in the range
-            // This isn't perfect, but it's good enough for now
-            for (range, ..) in (*replacements).iter_mut().rev() {
-                if range.range.end >= index {
-                    range.expansion += 1;
+            // This isn't perfect, but it's good enough for tracking cell boundaries
+            for (range, ..) in replacement_ranges.iter_mut().rev() {
+                if range.end >= index {
+                    range.end += 1;
                     break;
                 }
             }
@@ -362,11 +367,6 @@ fn delete_hanging_comma(
             next_comma = to_delete.next();
         }
     }
-
-    let replacement_ranges: Vec<(Range<usize>, usize)> = replacements
-        .iter()
-        .map(|r| (r.0.estimated_range(), r.1.len()))
-        .collect();
 
     for (r, u) in replacements.iter_mut().zip(ranges_updates) {
         r.0.range.start -= u.0;

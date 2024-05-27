@@ -156,18 +156,11 @@ fn adjust_padding<'a>(
 pub(crate) struct EffectRange {
     pub(crate) kind: EffectKind,
     pub(crate) range: StdRange<usize>,
-    /// Expansion that should be included, to account for commas
-    /// This is not a precise measure, but should mostly follow cell boundaries
-    pub(crate) expansion: usize,
 }
 
 impl EffectRange {
     pub(crate) fn new(kind: EffectKind, range: StdRange<usize>) -> Self {
-        Self {
-            kind,
-            range,
-            expansion: 0,
-        }
+        Self { kind, range }
     }
 
     pub(crate) fn start(&self) -> usize {
@@ -181,11 +174,6 @@ impl EffectRange {
             EffectKind::Rewrite => self.range.clone(),
             EffectKind::Insert => self.range.end..self.range.end,
         }
-    }
-
-    // The full effective range, including an attempt to account for expansion from deleted commas
-    pub(crate) fn estimated_range(&self) -> StdRange<usize> {
-        self.effective_range().start..(self.effective_range().end + self.expansion)
     }
 }
 
