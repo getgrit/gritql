@@ -1,3 +1,7 @@
+---
+source: crates/core/src/test_notebooks.rs
+expression: rewrite.rewritten.content
+---
 {
   "cells": [
     {
@@ -6,18 +10,7 @@
       "id": "a0377478",
       "metadata": {},
       "outputs": [],
-      "source": [
-        "print \"hi!\"\n",
-        "from langchain_experimental.tabular_synthetic_data.openai import (\n",
-        "    OPENAI_TEMPLATE,\n",
-        "    create_openai_data_generator,\n",
-        ")\n",
-        "from langchain_experimental.tabular_synthetic_data.openai import (\n",
-        "    OTHER_TEMPLATE,\n",
-        "    create_other_data_generator,\n",
-        "    SOMETHING_SPECIAL,\n",
-        ")\n"
-      ]
+      "source": ["print \"hi!\"\n\n\nfrom somewhere import something\n\n\nfrom somewhere import something\n"]
     },
     {
       "cell_type": "code",
@@ -25,15 +18,7 @@
       "id": "291bad6e",
       "metadata": {},
       "outputs": [],
-      "source": [
-        "class MedicalBilling(BaseModel):\n",
-        "    patient_id: int\n",
-        "    patient_name: str\n",
-        "    diagnosis_code: str\n",
-        "    procedure_code: str\n",
-        "    total_charge: float\n",
-        "    insurance_claim_amount: float"
-      ]
+      "source": ["class MedicalBilling(BaseModel):\n    patient_id: int\n    patient_name: str\n    diagnosis_code: str\n    procedure_code: str\n    total_charge: float\n    insurance_claim_amount: float"]
     }
   ],
   "metadata": {

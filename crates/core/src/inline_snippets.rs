@@ -232,7 +232,6 @@ pub(crate) fn inline_sorted_snippets_with_offset(
                         range.start
                     )
                 })?;
-            let output_length = end - start;
             output_ranges.push(start..end);
         }
     }
@@ -342,18 +341,19 @@ fn delete_hanging_comma(
     let mut ranges_updates: Vec<(usize, usize)> = ranges.iter().map(|_| (0, 0)).collect();
     let mut to_delete = to_delete.iter();
     let mut result = String::new();
-    let chars = code.chars().enumerate();
-    let mut next_comma = to_delete.next();
 
-    // Keep track of ranges we need to expand into, since we deleted code in the range
-    // This isn't perfect, but it's good enough for now
+    let chars = code.chars().enumerate();
+
+    let mut next_comma = to_delete.next();
 
     for (index, c) in chars {
         if Some(&index) != next_comma {
             result.push(c);
         } else {
+            // Keep track of ranges we need to expand into, since we deleted code in the range
+            // This isn't perfect, but it's good enough for now
             for (range, ..) in (*replacements).iter_mut().rev() {
-                if range.start() > index {
+                if range.range.end >= index {
                     range.expansion += 1;
                     break;
                 }

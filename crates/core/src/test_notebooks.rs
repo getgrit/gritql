@@ -345,10 +345,11 @@ mod tests {
         let pattern_src = r#"
         language python
 
-        or {
-            `from $src import $thing` as $base where {
-                $src <: includes "langchain",
-                $thing <: contains bubble($base) {`$one_thing` => .}
+        `from $src import $thing` as $base where {
+            $src <: includes "langchain",
+            $thing <: contains bubble($base) `$thing` => . where {
+                $name = text($thing),
+                $base += `\nfrom somewhere import something`,
             }
         }
         "#;

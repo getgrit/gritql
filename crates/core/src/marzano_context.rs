@@ -249,6 +249,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     logs,
                 )?;
 
+
                 if let (Some(new_ranges), Some(edit_ranges)) = (new_ranges, adjustment_ranges) {
                     let new_map = if let Some(old_map) = file.tree.source_map.as_ref() {
                         Some(old_map.clone_with_edits(edit_ranges.iter().rev())?)
