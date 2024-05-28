@@ -3,7 +3,7 @@ use std::{env, fmt, io::ErrorKind, path::PathBuf, str::FromStr};
 
 use tracing::instrument;
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use clap::Args;
 use colored::Colorize;
 use log::info;
@@ -28,7 +28,7 @@ pub struct InitArgs {
 
 pub(crate) async fn run_init(arg: InitArgs) -> Result<()> {
     if arg.global {
-        init_global_grit_modules::<CleanFetcherKind>().await?;
+        init_global_grit_modules::<CleanFetcherKind>(None).await?;
     } else {
         let cwd = std::env::current_dir()?;
         init_config_from_cwd::<CleanFetcherKind>(cwd, true).await?;
@@ -62,12 +62,12 @@ pub async fn init_config_from_cwd<T: FetcherType>(
         Some(config) => PathBuf::from_str(&config).unwrap(),
         None => {
             if !create_local {
-                return init_global_grit_modules::<T>().await;
+                return init_global_grit_modules::<T>(None).await;
             }
             let git_dir = match find_git_dir_from(cwd).await {
                 Some(dir) => dir,
                 None => {
-                    return init_global_grit_modules::<T>().await;
+                    return init_global_grit_modules::<T>(None).await;
                 }
             };
             let git_path = PathBuf::from_str(&git_dir).unwrap();
@@ -116,13 +116,40 @@ patterns:
     Ok(ConfigSource::Local(config_path))
 }
 
-pub async fn init_global_grit_modules<T: FetcherType>() -> Result<ConfigSource> {
+pub async fn init_global_grit_modules<T: FetcherType>(
+    from_module: Option<ModuleRepo>,
+) -> Result<ConfigSource> {
     let global_grit_modules_dir = find_global_grit_modules_dir().await?;
 
     let token = env::var("GRIT_PROVIDER_TOKEN").ok();
     let fetcher = T::make_fetcher(global_grit_modules_dir, token);
-    fetcher.prep_grit_modules()?;
-    install_default_stdlib(&fetcher, None).await?;
+
+    if let Some(module) = from_module {
+        match fetcher.fetch_grit_module(&module) {
+            Ok(_) => {}
+            Err(err) => {
+                bail!(
+                    "Failed to fetch remote grit module {}: {}",
+                    module.full_name,
+                    err.to_string()
+                )
+            }
+        }
+        fetch_modules::<T>(
+            &module,
+            &fetcher
+                .clone_dir()
+                .parent()
+                .context("Unable to find global grit dir")?
+                .parent()
+                .context("Unable to find global grit dir")?
+                .to_string_lossy(),
+        )
+        .await?;
+    } else {
+        fetcher.prep_grit_modules()?;
+        install_default_stdlib(&fetcher, None).await?;
+    }
 
     Ok(ConfigSource::Global(find_global_grit_dir().await?))
 }
