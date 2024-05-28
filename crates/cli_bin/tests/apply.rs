@@ -2806,3 +2806,24 @@ def cool(name):
 
     Ok(())
 }
+
+#[test]
+fn apply_remote_pattern() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("valibot", false)?;
+
+    let mut cmd = get_test_cmd()?;
+
+    cmd.arg("apply")
+        .arg("github.com/fabian-hiller/valibot#migrate_to_v0_31_0")
+        .current_dir(dir.clone());
+
+    let output = cmd.output()?;
+
+    assert!(output.status.success(), "Command should have succeeded");
+
+    let test_file = dir.join("test.js");
+    let content: String = fs_err::read_to_string(&test_file)?;
+    assert_snapshot!(content);
+
+    Ok(())
+}
