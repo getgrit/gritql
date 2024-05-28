@@ -40,7 +40,7 @@ pub async fn prep_grit_modules(
     let grit_dir = grit_parent.join(REPO_CONFIG_DIR_NAME);
     let repo = ModuleRepo::from_dir(&grit_dir).await;
     if fetch {
-        let _ = fetch_modules::<KeepFetcherKind>(&repo, &grit_parent.to_string_lossy()).await;
+        let _ = fetch_modules::<KeepFetcherKind>(&repo, &grit_parent.to_string_lossy(), None).await;
     }
     let parent_str = grit_parent.to_string_lossy().to_string();
     Ok((repo, parent_str, Some(stdlib_modules)))

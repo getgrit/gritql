@@ -112,12 +112,12 @@ patterns:
     ))?);
     let parent_str = &grit_parent.to_string_lossy().to_string();
     let repo = ModuleRepo::from_dir(&config_path).await;
-    fetch_modules::<T>(&repo, parent_str).await?;
+    fetch_modules::<T>(&repo, parent_str, None).await?;
     Ok(ConfigSource::Local(config_path))
 }
 
 pub async fn init_global_grit_modules<T: FetcherType>(
-    from_module: Option<ModuleRepo>,
+    from_module: Option<&ModuleRepo>,
 ) -> Result<ConfigSource> {
     let global_grit_modules_dir = find_global_grit_modules_dir().await?;
 
@@ -125,8 +125,8 @@ pub async fn init_global_grit_modules<T: FetcherType>(
     let fetcher = T::make_fetcher(global_grit_modules_dir, token);
 
     if let Some(module) = from_module {
-        match fetcher.fetch_grit_module(&module) {
-            Ok(_) => {}
+        let location = match fetcher.fetch_grit_module(module) {
+            Ok(loc) => loc,
             Err(err) => {
                 bail!(
                     "Failed to fetch remote grit module {}: {}",
@@ -134,16 +134,17 @@ pub async fn init_global_grit_modules<T: FetcherType>(
                     err.to_string()
                 )
             }
-        }
+        };
         fetch_modules::<T>(
-            &module,
-            &fetcher
-                .clone_dir()
-                .parent()
-                .context("Unable to find global grit dir")?
-                .parent()
-                .context("Unable to find global grit dir")?
-                .to_string_lossy(),
+            module,
+            &location,
+            Some(
+                fetcher
+                    .clone_dir()
+                    .parent()
+                    .context("Unable to find global grit dir")?
+                    .to_path_buf(),
+            ),
         )
         .await?;
     } else {

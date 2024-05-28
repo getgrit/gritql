@@ -34,13 +34,17 @@ pub fn is_pattern_name(pattern: &str) -> bool {
     regex.is_match(pattern)
 }
 
-pub fn is_remote_name(pattern: &str) -> bool {
+pub fn parse_remote_name(pattern: &str) -> Option<ModuleRepo> {
     let hash_index = pattern.find('#');
     let hash_index = match hash_index {
         Some(index) => index,
-        None => return false,
+        None => return None,
     };
     let repo_str = &pattern[..hash_index];
     let pattern_name = &pattern[hash_index + 1..];
-    is_pattern_name(pattern_name) && ModuleRepo::from_repo_str(repo_str).is_ok()
+    if is_pattern_name(pattern_name) {
+        ModuleRepo::from_repo_str(repo_str).ok()
+    } else {
+        None
+    }
 }

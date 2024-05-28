@@ -64,7 +64,7 @@ impl<'b> fmt::Display for RichPattern<'b> {
     }
 }
 
-async fn from_known_grit_dir(config_path: &Path) -> Result<PatternsDirectory> {
+pub async fn get_grit_files_from_known_grit_dir(config_path: &Path) -> Result<PatternsDirectory> {
     let stdlib_modules = get_stdlib_modules();
 
     let grit_parent = PathBuf::from(config_path.parent().context(format!(
@@ -84,7 +84,7 @@ pub async fn get_grit_files_from(cwd: Option<PathBuf>) -> Result<PatternsDirecto
     };
 
     match existing_config {
-        Some(config) => from_known_grit_dir(&PathBuf::from(config)).await,
+        Some(config) => get_grit_files_from_known_grit_dir(&PathBuf::from(config)).await,
         None => {
             let stdlib_modules = get_stdlib_modules();
 
@@ -108,7 +108,7 @@ pub async fn get_grit_files_from_flags_or_cwd(
     flags: &GlobalFormatFlags,
 ) -> Result<PatternsDirectory> {
     if let Some(grit_dir) = &flags.grit_dir {
-        from_known_grit_dir(grit_dir).await
+        get_grit_files_from_known_grit_dir(grit_dir).await
     } else {
         let cwd = std::env::current_dir()?;
         get_grit_files_from(Some(cwd)).await
