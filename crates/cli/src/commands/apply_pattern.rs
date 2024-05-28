@@ -429,11 +429,11 @@ pub(crate) async fn run_apply_pattern(
             };
             (lang, body)
         } else if is_remote_name {
-            let raw_name = &pattern.split('#').last().unwrap_or(&pattern);
+            let raw_name = pattern.split('#').last().unwrap_or(&pattern);
             let presumptive_grit_file = pattern_libs.get(format!("{}.grit", raw_name).as_str());
             let lang = match presumptive_grit_file {
                 Some(g) => PatternLanguage::get_language(g),
-                None => PatternLanguage::get_language(&raw_name),
+                None => PatternLanguage::get_language(raw_name),
             };
             let body = format!("{}()", raw_name);
             (lang, body)
