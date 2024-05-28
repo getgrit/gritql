@@ -23,7 +23,7 @@ exclude = [
 ]
 
 [workspace.package]
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Iuvo AI, Inc.", "Grit Contributors"]
 description = "GritQL is a query language for searching, linting, and modifying code."
 repository = "https://github.com/getgrit/gritql/"
