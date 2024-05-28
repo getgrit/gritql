@@ -396,29 +396,23 @@ pub(crate) async fn run_apply_pattern(
                     }
                 }
             }
+        } else if is_pattern_name(&pattern) {
+            let raw_name = pattern.trim_end_matches("()");
+            details.named_pattern = Some(raw_name.to_string());
+            let presumptive_grit_file = pattern_libs.get(format!("{}.grit", raw_name).as_str());
+            let lang = match presumptive_grit_file {
+                Some(g) => PatternLanguage::get_language(g),
+                None => PatternLanguage::get_language(&pattern),
+            };
+            let body = if pattern.ends_with(')') {
+                pattern.clone()
+            } else {
+                format!("{}()", pattern)
+            };
+            (lang, body)
         } else {
-            match is_pattern_name(&pattern) {
-                true => {
-                    let raw_name = pattern.trim_end_matches("()");
-                    details.named_pattern = Some(raw_name.to_string());
-                    let presumptive_grit_file =
-                        pattern_libs.get(format!("{}.grit", raw_name).as_str());
-                    let lang = match presumptive_grit_file {
-                        Some(g) => PatternLanguage::get_language(g),
-                        None => PatternLanguage::get_language(&pattern),
-                    };
-                    let body = if pattern.ends_with(')') {
-                        pattern.clone()
-                    } else {
-                        format!("{}()", pattern)
-                    };
-                    (lang, body)
-                }
-                false => {
-                    let lang = PatternLanguage::get_language(&pattern);
-                    (lang, pattern.clone())
-                }
-            }
+            let lang = PatternLanguage::get_language(&pattern);
+            (lang, pattern.clone())
         };
         if let Some(lang_option) = &default_lang {
             if let Some(lang) = lang {
