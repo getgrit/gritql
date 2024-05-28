@@ -368,10 +368,6 @@ pub(crate) async fn run_apply_pattern(
 
         let pattern_libs = if let Some(target) = target_remote {
             let global = find_global_grit_dir().await?;
-            println!(
-                "Getting grit files from known grit dir {}",
-                global.display()
-            );
             flushable_unwrap!(
                 emitter,
                 get_grit_files_from_known_grit_dir(&global, vec![target]).await
@@ -431,6 +427,15 @@ pub(crate) async fn run_apply_pattern(
             } else {
                 format!("{}()", pattern)
             };
+            (lang, body)
+        } else if is_remote_name {
+            let raw_name = &pattern.split('#').last().unwrap_or(&pattern);
+            let presumptive_grit_file = pattern_libs.get(format!("{}.grit", raw_name).as_str());
+            let lang = match presumptive_grit_file {
+                Some(g) => PatternLanguage::get_language(g),
+                None => PatternLanguage::get_language(&raw_name),
+            };
+            let body = format!("{}()", raw_name);
             (lang, body)
         } else {
             let lang = PatternLanguage::get_language(&pattern);
