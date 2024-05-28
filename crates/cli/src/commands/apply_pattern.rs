@@ -322,6 +322,7 @@ pub(crate) async fn run_apply_pattern(
             .to_path_buf();
         let mod_dir = find_grit_modules_dir(target_grit_dir.clone()).await;
         let target_remote = parse_remote_name(&pattern);
+        let is_remote_name = target_remote.is_some();
 
         if !env::var("GRIT_DOWNLOADS_DISABLED")
             .unwrap_or_else(|_| "false".to_owned())
@@ -365,9 +366,16 @@ pub(crate) async fn run_apply_pattern(
         #[cfg(feature = "grit_tracing")]
         let grit_file_discovery = span!(tracing::Level::INFO, "grit_file_discovery",).entered();
 
-        let pattern_libs = if target_remote.is_some() {
+        let pattern_libs = if let Some(target) = target_remote {
             let global = find_global_grit_dir().await?;
-            flushable_unwrap!(emitter, get_grit_files_from_known_grit_dir(&global).await)
+            println!(
+                "Getting grit files from known grit dir {}",
+                global.display()
+            );
+            flushable_unwrap!(
+                emitter,
+                get_grit_files_from_known_grit_dir(&global, vec![target]).await
+            )
         } else {
             flushable_unwrap!(
                 emitter,
