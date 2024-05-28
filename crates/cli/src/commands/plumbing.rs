@@ -202,7 +202,7 @@ pub(crate) async fn run_plumbing(
             if input.paths.is_empty() {
                 return Ok(());
             }
-            init_global_grit_modules::<KeepFetcherKind>().await?;
+            init_global_grit_modules::<KeepFetcherKind>(None).await?;
             let combined_args = CheckArg {
                 paths: input.paths,
                 ..args
