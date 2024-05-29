@@ -14977,7 +14977,7 @@ fn or_file() {
             .trim_margin()
             .unwrap(),
             expected: r#"
-                |var increment = function (i) {
+                |var increment = function () {
                 |   return  + 1;
                 |};
                 |"#
