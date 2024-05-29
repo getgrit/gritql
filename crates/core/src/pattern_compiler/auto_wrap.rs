@@ -314,6 +314,19 @@ fn should_wrap_in_file<Q: QueryContext>(
             &pattern_definitions[call.index].pattern,
             pattern_definitions,
         ),
+        Pattern::And(a) => a
+            .patterns
+            .iter()
+            .all(|c| should_wrap_in_file(c, pattern_definitions)),
+        Pattern::Or(o) => o
+            .patterns
+            .iter()
+            .all(|c| should_wrap_in_file(c, pattern_definitions)),
+        Pattern::Any(a) => a
+            .patterns
+            .iter()
+            .all(|c| should_wrap_in_file(c, pattern_definitions)),
+        Pattern::Not(n) => should_wrap_in_file(&n.pattern, pattern_definitions),
         Pattern::AstNode(_)
         | Pattern::Contains(_)
         | Pattern::List(_)
@@ -326,10 +339,6 @@ fn should_wrap_in_file<Q: QueryContext>(
         | Pattern::CallForeignFunction(_)
         | Pattern::Assignment(_)
         | Pattern::Accumulate(_)
-        | Pattern::And(_)
-        | Pattern::Or(_)
-        | Pattern::Any(_)
-        | Pattern::Not(_)
         | Pattern::If(_)
         | Pattern::Undefined
         | Pattern::Top

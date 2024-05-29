@@ -14950,3 +14950,40 @@ fn ruby_array_global() {
     })
     .unwrap();
 }
+
+#[test]
+fn or_file() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |or {
+                |   bubble file($body) where {
+                |       $body <: contains `i` => .
+                |   },
+                |   bubble file($body) where {
+                |       $body <: contains `1` => .
+                |   }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |var increment = function (i) {
+                |   return i + 1;
+                |};
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |var increment = function () {
+                |   return  + 1;
+                |};
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
