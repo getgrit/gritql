@@ -69,7 +69,7 @@ impl NodeTypes for Yaml {
 }
 
 impl Language for Yaml {
-    type Node<'a> = NodeWithSource<'a>;
+    use_marzano_delegate!();
 
     fn language_name(&self) -> &'static str {
         "YAML"
@@ -81,14 +81,6 @@ impl Language for Yaml {
 
     fn comment_prefix(&self) -> &'static str {
         "#"
-    }
-
-    fn is_comment(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_comment_node(self, node)
-    }
-
-    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_metavariable_node(self, node)
     }
 
     // Given a character, return the character that should be used to pad the snippet (if any)

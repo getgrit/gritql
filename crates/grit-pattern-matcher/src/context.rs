@@ -20,7 +20,7 @@ pub trait QueryContext: Clone + std::fmt::Debug + Sized + 'static {
     type ResolvedPattern<'a>: ResolvedPattern<'a, Self>;
     type Language<'a>: Language<Node<'a> = Self::Node<'a>>;
     type File<'a>: File<'a, Self>;
-    type Tree: Ast + Clone;
+    type Tree<'a>: Ast<Node<'a> = Self::Node<'a>> + Clone;
 }
 
 /// Contains context necessary for query execution.
@@ -53,7 +53,7 @@ pub trait ExecContext<'a, Q: QueryContext> {
     ) -> Result<bool>;
 
     // FIXME: Don't depend on Grit's file handling in Context.
-    fn files(&self) -> &FileOwners<Q::Tree>;
+    fn files(&self) -> &FileOwners<Q::Tree<'a>>;
 
     fn language(&self) -> &Q::Language<'a>;
 

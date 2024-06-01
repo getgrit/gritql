@@ -6,13 +6,10 @@ use super::{
     variable_content::VariableContent,
     State,
 };
-use crate::{
-    context::QueryContext,
-    effects::{Effect, EffectKind},
-};
+use crate::{context::QueryContext, effects::Effect};
 use anyhow::{bail, Result};
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{AnalysisLogs, EffectKind};
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]

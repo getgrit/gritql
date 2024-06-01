@@ -1,7 +1,5 @@
-use crate::marzano_binding;
-use crate::marzano_binding::EffectRange;
 use anyhow::{anyhow, bail, Result};
-use grit_util::Language;
+use grit_util::{EffectRange, Language};
 use itertools::Itertools;
 use std::{cell::RefCell, collections::HashSet, ops::Range, rc::Rc};
 
@@ -113,8 +111,8 @@ fn pad_snippet(
         }
     }
 
-    let padding = padding.into_iter().collect::<String>();
-    marzano_binding::pad_snippet(&padding, snippet, language)
+    let padding: String = padding.into_iter().collect();
+    Ok(language.pad_snippet(snippet, &padding).to_string())
 }
 
 // checks on this one are likely redundant as

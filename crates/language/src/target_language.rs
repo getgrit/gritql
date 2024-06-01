@@ -498,21 +498,43 @@ macro_rules! generate_target_language {
                 }
             }
 
+            fn align_padding<'a>(
+                &self,
+                node: &Self::Node<'a>,
+                range: &CodeRange,
+                skip_ranges: &[CodeRange],
+                new_padding: Option<usize>,
+                offset: usize,
+                substitutions: &mut [(grit_util::EffectRange, String)],
+            ) -> std::borrow::Cow<'a, str> {
+                match self {
+                    $(Self::$language(lang) => Language::align_padding(
+                        lang,
+                        node,
+                        range,
+                        skip_ranges,
+                        new_padding,
+                        offset,
+                        substitutions
+                    )),+
+                }
+            }
+
+            fn pad_snippet<'a>(&self, snippet: &'a str, padding: &str) -> std::borrow::Cow<'a, str> {
+                match self {
+                    $(Self::$language(lang) => Language::pad_snippet(lang, snippet, padding)),+
+                }
+            }
+
+            fn get_skip_padding_ranges(&self, node: &Self::Node<'_>) -> Vec<grit_util::CodeRange> {
+                match self {
+                    $(Self::$language(lang) => Language::get_skip_padding_ranges(lang, node)),+
+                }
+            }
+
             fn should_pad_snippet(&self) -> bool {
                 match self {
                     $(Self::$language(lang) => Language::should_pad_snippet(lang)),+
-                }
-            }
-
-            fn should_skip_padding(&self, node: &NodeWithSource<'_>) -> bool {
-                match self {
-                    $(Self::$language(lang) => Language::should_skip_padding(lang, node)),+
-                }
-            }
-
-            fn get_skip_padding_ranges_for_snippet(&self, snippet: &str) -> Vec<CodeRange> {
-                match self {
-                    $(Self::$language(lang) => Language::get_skip_padding_ranges_for_snippet(lang, snippet)),+
                 }
             }
 

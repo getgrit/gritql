@@ -1,5 +1,5 @@
 use crate::{AnalysisLogs, AstNode};
-use std::{marker::PhantomData, path::Path};
+use std::{borrow::Cow, marker::PhantomData, path::Path};
 
 /// Information on where a file came from, for the parser to be smarter
 #[derive(Clone, Debug)]
@@ -49,6 +49,9 @@ pub trait Ast: std::fmt::Debug + PartialEq + Sized {
         Self: 'a;
 
     fn root_node(&self) -> Self::Node<'_>;
+
+    /// Returns the full source code of the tree.
+    fn source(&self) -> Cow<str>;
 }
 
 #[derive(Clone, Debug)]

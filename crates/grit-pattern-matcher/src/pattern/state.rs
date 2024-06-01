@@ -34,11 +34,11 @@ pub struct FileRegistry<'a, Q: QueryContext> {
     /// Original file paths, for lazy loading
     file_paths: Vec<&'a PathBuf>,
     /// The actual FileOwner, which has the full file available
-    owners: Vector<Vector<&'a FileOwner<Q::Tree>>>,
+    owners: Vector<Vector<&'a FileOwner<Q::Tree<'a>>>>,
 }
 
 impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
-    pub fn get_file_owner(&self, pointer: FilePtr) -> &'a FileOwner<Q::Tree> {
+    pub fn get_file_owner(&self, pointer: FilePtr) -> &'a FileOwner<Q::Tree<'a>> {
         self.owners[pointer.file as usize][pointer.version as usize]
     }
 
@@ -86,7 +86,7 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
     }
 
     /// Load a file in
-    pub fn load_file(&mut self, pointer: &FilePtr, file: &'a FileOwner<Q::Tree>) {
+    pub fn load_file(&mut self, pointer: &FilePtr, file: &'a FileOwner<Q::Tree<'a>>) {
         self.push_revision(pointer, file)
     }
 
@@ -108,16 +108,16 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
         }
     }
 
-    pub fn files(&self) -> &Vector<Vector<&'a FileOwner<Q::Tree>>> {
+    pub fn files(&self) -> &Vector<Vector<&'a FileOwner<Q::Tree<'a>>>> {
         &self.owners
     }
 
-    pub fn push_revision(&mut self, pointer: &FilePtr, file: &'a FileOwner<Q::Tree>) {
+    pub fn push_revision(&mut self, pointer: &FilePtr, file: &'a FileOwner<Q::Tree<'a>>) {
         self.version_count[pointer.file as usize] += 1;
         self.owners[pointer.file as usize].push_back(file)
     }
 
-    pub fn push_new_file(&mut self, file: &'a FileOwner<Q::Tree>) -> FilePtr {
+    pub fn push_new_file(&mut self, file: &'a FileOwner<Q::Tree<'a>>) -> FilePtr {
         self.version_count.push(1);
         self.file_paths.push(&file.name);
         self.owners.push_back(vector![file]);

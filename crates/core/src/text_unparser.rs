@@ -6,7 +6,7 @@ use grit_pattern_matcher::{
     effects::Effect,
     pattern::{FileRegistry, ResolvedPattern},
 };
-use grit_util::{AnalysisLogs, AstNode, CodeRange, Language};
+use grit_util::{AnalysisLogs, Ast, CodeRange, Language};
 use im::Vector;
 use std::collections::HashMap;
 use std::ops::Range;
@@ -28,7 +28,7 @@ type EffectOutcome = (
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn apply_effects<'a, Q: QueryContext>(
-    code: Q::Node<'a>,
+    code: &'a Q::Tree<'a>,
     effects: Vector<Effect<'a, Q>>,
     files: &FileRegistry<'a, Q>,
     the_filename: &Path,
@@ -44,16 +44,17 @@ pub(crate) fn apply_effects<'a, Q: QueryContext>(
         .filter(|effect| !effect.binding.is_suppressed(language, current_name))
         .collect();
     if effects.is_empty() {
-        return Ok((code.full_source().to_owned(), None, None));
+        return Ok((code.source().to_string(), None, None));
     }
+
     let mut memo: HashMap<CodeRange, Option<String>> = HashMap::new();
     let (from_inline, output_ranges, effect_ranges) = linearize_binding(
         language,
         &effects,
         files,
         &mut memo,
-        code.clone(),
-        CodeRange::new(0, code.full_source().len() as u32, code.full_source()),
+        &code.root_node(),
+        CodeRange::new(0, code.source().len() as u32, &code.source()),
         language.should_pad_snippet().then_some(0),
         logs,
     )?;

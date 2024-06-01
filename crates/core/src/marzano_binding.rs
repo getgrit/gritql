@@ -8,11 +8,12 @@ use grit_pattern_matcher::{
     binding::Binding,
     constant::Constant,
     context::QueryContext,
-    effects::{Effect, EffectKind},
+    effects::Effect,
     pattern::{get_top_level_effects, FileRegistry, ResolvedPattern},
 };
 use grit_util::{
-    AnalysisLogBuilder, AnalysisLogs, AstNode, ByteRange, CodeRange, Language, Position, Range,
+    AnalysisLogBuilder, AnalysisLogs, AstNode, ByteRange, CodeRange, EffectKind, EffectRange,
+    Language, Position, Range,
 };
 use itertools::{EitherOrBoth, Itertools};
 use marzano_language::language::{FieldId, MarzanoLanguage};
@@ -52,138 +53,13 @@ impl PartialEq for MarzanoBinding<'_> {
     }
 }
 
-pub(crate) fn pad_snippet(padding: &str, snippet: &str, lang: &impl Language) -> Result<String> {
-    let mut lines = snippet.split('\n');
-    let mut result = lines.next().unwrap_or_default().to_string();
-
-    // Add the rest of lines in the snippet with padding
-    let skip_ranges = lang.get_skip_padding_ranges_for_snippet(snippet);
-    for line in lines {
-        let index = get_slice_byte_offset(snippet, line);
-        if !is_index_in_ranges(index, &skip_ranges) {
-            result.push_str(&format!("\n{}{}", &padding, line))
-        } else {
-            result.push_str(&format!("\n{}", line))
-        }
-    }
-    Ok(result)
-}
-
-fn adjust_ranges(substitutions: &mut [(EffectRange, String)], index: usize, delta: isize) {
-    for (EffectRange { range, .. }, _) in substitutions.iter_mut() {
-        if range.start >= index {
-            range.start = (range.start as isize + delta) as usize;
-        }
-        if range.end >= index {
-            range.end = (range.end as isize + delta) as usize;
-        }
-    }
-}
-
-pub(crate) fn is_index_in_ranges(index: u32, skip_ranges: &[CodeRange]) -> bool {
-    skip_ranges
-        .iter()
-        .any(|r| r.start <= index && index < r.end)
-}
-
-// safety ensure that sup and sub are slices of the same string.
-fn get_slice_byte_offset(sup: &str, sub: &str) -> u32 {
-    unsafe { sub.as_ptr().byte_offset_from(sup.as_ptr()) }.unsigned_abs() as u32
-}
-
-// in multiline snippets, remove padding from every line equal to the padding of the first line,
-// such that the first line is left-aligned.
-fn adjust_padding<'a>(
-    src: &'a str,
-    range: &CodeRange,
-    skip_ranges: &[CodeRange],
-    new_padding: Option<usize>,
-    offset: usize,
-    substitutions: &mut [(EffectRange, String)],
-    lang: &impl Language,
-) -> Result<Cow<'a, str>> {
-    if let Some(new_padding) = new_padding {
-        let newline_index = src[0..range.start as usize].rfind('\n');
-        let pad_strip_amount = if let Some(index) = newline_index {
-            src[index..range.start as usize]
-                .chars()
-                .take_while(|c| c.is_whitespace())
-                .count()
-                - 1
-        } else {
-            0
-        };
-        let mut result = String::new();
-        let snippet = &src[range.start as usize..range.end as usize];
-        let mut lines = snippet.split('\n');
-        // assumes codebase uses spaces for indentation
-        let delta: isize = (new_padding as isize) - (pad_strip_amount as isize);
-        let padding = " ".repeat(pad_strip_amount);
-        let new_padding = " ".repeat(new_padding);
-        result.push_str(lines.next().unwrap_or_default());
-        for line in lines {
-            result.push('\n');
-            let index = get_slice_byte_offset(src, line);
-            if !is_index_in_ranges(index, skip_ranges) {
-                if line.trim().is_empty() {
-                    adjust_ranges(substitutions, offset + result.len(), -(line.len() as isize));
-                    continue;
-                }
-                adjust_ranges(substitutions, offset + result.len(), delta);
-                let line = line.strip_prefix(&padding).ok_or_else(|| {
-                anyhow!(
-                    "expected line \n{}\n to start with {} spaces, code is either not indented with spaces, or does not consistently indent code blocks",
-                    line,
-                    pad_strip_amount
-                )
-            })?;
-                result.push_str(&new_padding);
-                result.push_str(line);
-            } else {
-                result.push_str(line)
-            }
-        }
-        for (_, snippet) in substitutions.iter_mut() {
-            *snippet = pad_snippet(&new_padding, snippet, lang)?;
-        }
-        Ok(result.into())
-    } else {
-        Ok(src[range.start as usize..range.end as usize].into())
-    }
-}
-
-#[derive(Debug, Clone)]
-pub(crate) struct EffectRange {
-    pub(crate) kind: EffectKind,
-    pub(crate) range: StdRange<usize>,
-}
-
-impl EffectRange {
-    pub(crate) fn new(kind: EffectKind, range: StdRange<usize>) -> Self {
-        Self { kind, range }
-    }
-
-    pub(crate) fn start(&self) -> usize {
-        self.range.start
-    }
-
-    // The range which is actually edited by this effect
-    // This is used for most operations, but does not account for expansion from deleted commas
-    pub(crate) fn effective_range(&self) -> StdRange<usize> {
-        match self.kind {
-            EffectKind::Rewrite => self.range.clone(),
-            EffectKind::Insert => self.range.end..self.range.end,
-        }
-    }
-}
-
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub(crate) fn linearize_binding<'a, Q: QueryContext>(
     language: &Q::Language<'a>,
     effects: &[Effect<'a, Q>],
     files: &FileRegistry<'a, Q>,
     memo: &mut HashMap<CodeRange, Option<String>>,
-    source: Q::Node<'a>,
+    source: &Q::Node<'a>,
     range: CodeRange,
     distributed_indent: Option<usize>,
     logs: &mut AnalysisLogs,
@@ -195,32 +71,29 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
         .map(|effect| {
             let binding = effect.binding;
             let binding_range = Binding::code_range(&binding, language);
-            if let (Some(src), Some(range)) = (binding.source(), binding_range.as_ref()) {
+            if let Some(range) = binding_range.as_ref() {
                 match effect.kind {
                     EffectKind::Rewrite => {
                         if let Some(o) = memo.get(range) {
-                            if let Some(s) = o {
-                                return Ok((binding, s.to_owned().into(), effect.kind));
+                            let aligned_snippet = if let Some(s) = o {
+                                s.clone().into()
                             } else {
                                 let skip_padding_ranges = binding
                                     .as_node()
                                     .map(|n| language.get_skip_padding_ranges(&n))
                                     .unwrap_or_default();
 
-                                return Ok((
-                                    binding,
-                                    adjust_padding(
-                                        src,
-                                        range,
-                                        &skip_padding_ranges,
-                                        distributed_indent,
-                                        0,
-                                        &mut [],
-                                        language,
-                                    )?,
-                                    effect.kind,
-                                ));
-                            }
+                                language.align_padding(
+                                    source,
+                                    range,
+                                    &skip_padding_ranges,
+                                    distributed_indent,
+                                    0,
+                                    &mut [],
+                                )
+                            };
+
+                            return Ok((binding, aligned_snippet, effect.kind));
                         } else {
                             memo.insert(range.clone(), None);
                         }
@@ -266,17 +139,16 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    let skip_padding_ranges = language.get_skip_padding_ranges(&source);
+    let skip_padding_ranges = language.get_skip_padding_ranges(source);
     // we need to update the ranges of the replacements to account for padding discrepency
-    let adjusted_source = adjust_padding(
-        source.full_source(),
+    let adjusted_source = language.align_padding(
+        source,
         &range,
         &skip_padding_ranges,
         distributed_indent,
         range.start as usize,
         &mut replacements,
-        language,
-    )?;
+    );
     let (res, offset, mapping) = inline_sorted_snippets_with_offset(
         language,
         adjusted_source.to_string(),
@@ -538,7 +410,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
                 effects,
                 files,
                 memo,
-                node.clone(),
+                node,
                 node.code_range(),
                 distributed_indent,
                 logs,
@@ -559,7 +431,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
                         memo,
                         // ideally we should be passing list as an ast_node
                         // a little tricky atm
-                        parent_node.clone(),
+                        parent_node,
                         range,
                         distributed_indent,
                         logs,
