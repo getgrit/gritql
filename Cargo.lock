@@ -1400,7 +1400,7 @@ dependencies = [
 
 [[package]]
 name = "grit-pattern-matcher"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "elsa",
@@ -1414,7 +1414,7 @@ dependencies = [
 
 [[package]]
 name = "grit-util"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "derive_builder",
  "napi",
@@ -1426,7 +1426,7 @@ dependencies = [
 
 [[package]]
 name = "grit-wasm-bindings"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "ai_builtins",
  "anyhow",
@@ -2166,7 +2166,7 @@ dependencies = [
 
 [[package]]
 name = "marzano-gritmodule"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "fs-err",
