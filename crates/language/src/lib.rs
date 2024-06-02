@@ -1,3 +1,61 @@
+macro_rules! use_marzano_base_delegate {
+    () => {
+        type Node<'a> = NodeWithSource<'a>;
+
+        fn align_padding<'a>(
+            &self,
+            node: &Self::Node<'a>,
+            range: &grit_util::CodeRange,
+            skip_ranges: &[grit_util::CodeRange],
+            new_padding: Option<usize>,
+            offset: usize,
+            substitutions: &mut [(grit_util::EffectRange, String)],
+        ) -> std::borrow::Cow<'a, str> {
+            MarzanoLanguage::align_padding(
+                self,
+                node,
+                range,
+                skip_ranges,
+                new_padding,
+                offset,
+                substitutions,
+            )
+        }
+
+        fn pad_snippet<'a>(&self, snippet: &'a str, padding: &str) -> std::borrow::Cow<'a, str> {
+            MarzanoLanguage::pad_snippet(self, snippet, padding)
+        }
+
+        fn get_skip_padding_ranges(&self, node: &Self::Node<'_>) -> Vec<grit_util::CodeRange> {
+            MarzanoLanguage::get_skip_padding_ranges(self, node)
+        }
+
+        fn is_comment(&self, node: &NodeWithSource) -> bool {
+            MarzanoLanguage::is_comment_node(self, node)
+        }
+    };
+}
+
+macro_rules! use_marzano_js_like_delegate {
+    () => {
+        use_marzano_base_delegate!();
+
+        fn check_replacements(&self, n: NodeWithSource<'_>, replacements: &mut Vec<Replacement>) {
+            jslike_check_replacements(n, replacements)
+        }
+    };
+}
+
+macro_rules! use_marzano_delegate {
+    () => {
+        use_marzano_base_delegate!();
+
+        fn is_metavariable(&self, node: &NodeWithSource) -> bool {
+            MarzanoLanguage::is_metavariable_node(self, node)
+        }
+    };
+}
+
 pub mod csharp;
 pub mod css;
 pub mod foreign_language;

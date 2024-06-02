@@ -1,4 +1,5 @@
-use crate::{context::QueryContext, effects::EffectKind, pattern::EffectRange};
+use crate::{context::QueryContext, pattern::EffectRange};
+use grit_util::EffectKind;
 use std::{cmp::Ordering, ops::Range};
 
 pub trait Interval {

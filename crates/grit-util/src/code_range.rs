@@ -31,4 +31,9 @@ impl CodeRange {
         let address = thin_ptr as usize;
         self.address == address
     }
+
+    /// Returns whether the given index is contained within the range.
+    pub fn contains(&self, index: u32) -> bool {
+        self.start <= index && self.end > index
+    }
 }

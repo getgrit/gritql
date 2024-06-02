@@ -238,9 +238,8 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 .cloned()
                 .is_some()
             {
-                let code = file.tree.root_node();
                 let (new_src, new_ranges, adjustment_ranges) = apply_effects(
-                    code,
+                    &file.tree,
                     state.effects.clone(),
                     &state.files,
                     &file.name,
@@ -248,7 +247,6 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     self,
                     logs,
                 )?;
-
 
                 if let (Some(new_ranges), Some(edit_ranges)) = (new_ranges, adjustment_ranges) {
                     let new_map = if let Some(old_map) = file.tree.source_map.as_ref() {

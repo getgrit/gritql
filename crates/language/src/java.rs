@@ -53,7 +53,7 @@ impl Java {
     }
 }
 impl Language for Java {
-    type Node<'a> = NodeWithSource<'a>;
+    use_marzano_delegate!();
 
     fn language_name(&self) -> &'static str {
         "Java"
@@ -67,14 +67,6 @@ impl Language for Java {
             ("class GRIT_CLASS { ", " GRIT_FUNCTION() {} }"),
             ("class GRIT_CLASS { GRIT_FN(", ") {} }"),
         ]
-    }
-
-    fn is_comment(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_comment_node(self, node)
-    }
-
-    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_metavariable_node(self, node)
     }
 }
 

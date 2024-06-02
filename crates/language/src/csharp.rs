@@ -52,7 +52,7 @@ impl NodeTypes for CSharp {
 }
 
 impl Language for CSharp {
-    type Node<'a> = NodeWithSource<'a>;
+    use_marzano_delegate!();
 
     fn language_name(&self) -> &'static str {
         "CSharp"
@@ -60,14 +60,6 @@ impl Language for CSharp {
 
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
         &[("", "")]
-    }
-
-    fn is_comment(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_comment_node(self, node)
-    }
-
-    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_metavariable_node(self, node)
     }
 }
 

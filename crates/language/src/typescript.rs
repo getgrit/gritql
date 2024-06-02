@@ -72,7 +72,7 @@ impl NodeTypes for TypeScript {
 }
 
 impl Language for TypeScript {
-    type Node<'a> = NodeWithSource<'a>;
+    use_marzano_js_like_delegate!();
 
     fn language_name(&self) -> &'static str {
         "TypeScript"
@@ -101,10 +101,6 @@ impl Language for TypeScript {
         ]
     }
 
-    fn is_comment(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_comment_node(self, node)
-    }
-
     fn is_metavariable(&self, node: &NodeWithSource) -> bool {
         js_like_is_metavariable(
             node,
@@ -129,10 +125,6 @@ impl Language for TypeScript {
         } else {
             None
         }
-    }
-
-    fn check_replacements(&self, n: NodeWithSource<'_>, replacements: &mut Vec<Replacement>) {
-        jslike_check_replacements(n, replacements)
     }
 }
 

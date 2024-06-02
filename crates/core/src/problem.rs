@@ -503,5 +503,5 @@ impl QueryContext for MarzanoQueryContext {
     type ResolvedPattern<'a> = MarzanoResolvedPattern<'a>;
     type Language<'a> = TargetLanguage;
     type File<'a> = MarzanoFile<'a>;
-    type Tree = Tree;
+    type Tree<'a> = Tree;
 }

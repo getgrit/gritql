@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
 use enum_dispatch::enum_dispatch;
 use grit_util::{
-    traverse, AnalysisLogBuilder, AnalysisLogs, Ast, AstNode, FileOrigin, Language, Order, Parser,
-    SnippetTree,
+    traverse, AnalysisLogBuilder, AnalysisLogs, Ast, AstNode, CodeRange, EffectRange, FileOrigin,
+    Language, Order, Parser, SnippetTree,
 };
 use itertools::Itertools;
 use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
@@ -213,6 +213,10 @@ impl Ast for Tree {
     fn root_node(&self) -> Self::Node<'_> {
         NodeWithSource::new(self.tree.root_node(), &self.source)
     }
+
+    fn source(&self) -> Cow<str> {
+        Cow::Borrowed(&self.source)
+    }
 }
 
 impl PartialEq for Tree {
@@ -304,6 +308,99 @@ pub trait MarzanoLanguage<'a>: Language<Node<'a> = NodeWithSource<'a>> + NodeTyp
             .collect()
     }
 
+    fn align_padding<'b>(
+        &self,
+        node: &NodeWithSource<'b>,
+        range: &CodeRange,
+        skip_ranges: &[CodeRange],
+        new_padding: Option<usize>,
+        offset: usize,
+        substitutions: &mut [(EffectRange, String)],
+    ) -> std::borrow::Cow<'b, str> {
+        let src = node.source;
+        let Some(new_padding) = new_padding else {
+            return src[range.start as usize..range.end as usize].into();
+        };
+
+        let newline_index = src[0..range.start as usize].rfind('\n');
+        let pad_strip_amount = if let Some(index) = newline_index {
+            src[index..range.start as usize]
+                .chars()
+                .take_while(|c| c.is_whitespace())
+                .count()
+                - 1
+        } else {
+            0
+        };
+
+        let mut result = String::new();
+        let snippet = &src[range.start as usize..range.end as usize];
+        let mut lines = snippet.split('\n');
+
+        // assumes codebase uses spaces for indentation
+        let delta: isize = (new_padding as isize) - (pad_strip_amount as isize);
+        let padding = " ".repeat(pad_strip_amount);
+        let new_padding = " ".repeat(new_padding);
+        result.push_str(lines.next().unwrap_or_default());
+        for line in lines {
+            result.push('\n');
+
+            // Safety: Safe because lines are slices of `snippet`, which is a slice of `src`.
+            let index = unsafe { get_slice_byte_offset(src, line) };
+
+            if !skip_ranges.iter().any(|r| r.contains(index)) {
+                if line.trim().is_empty() {
+                    adjust_ranges(substitutions, offset + result.len(), -(line.len() as isize));
+                    continue;
+                }
+
+                adjust_ranges(substitutions, offset + result.len(), delta);
+                if let Some(stripped_line) = line.strip_prefix(&padding) {
+                    result.push_str(&new_padding);
+                    result.push_str(stripped_line);
+                } else {
+                    result.push_str(line);
+                }
+            } else {
+                result.push_str(line)
+            }
+        }
+
+        for (_, snippet) in substitutions.iter_mut() {
+            match MarzanoLanguage::pad_snippet(self, snippet, &new_padding) {
+                std::borrow::Cow::Owned(padded) => *snippet = padded,
+                std::borrow::Cow::Borrowed(_) => {
+                    // a borrowed result implies the padding didn't change
+                }
+            }
+        }
+
+        result.into()
+    }
+
+    // in languages we pad such as python or yaml there are
+    // some kinds of nodes we don't want to pad, such as python strings.
+    // this function identifies those nodes.
+    #[allow(unused_variables)]
+    fn should_skip_padding(&self, node: &Self::Node<'a>) -> bool {
+        false
+    }
+
+    fn get_skip_padding_ranges(&self, node: &Self::Node<'a>) -> Vec<CodeRange> {
+        let mut ranges = Vec::new();
+        for n in traverse(node.walk(), Order::Pre) {
+            if self.should_skip_padding(&n) {
+                ranges.push(n.code_range())
+            }
+        }
+        ranges
+    }
+
+    #[allow(unused_variables)]
+    fn get_skip_padding_ranges_for_snippet(&self, snippet: &str) -> Vec<CodeRange> {
+        Vec::new()
+    }
+
     /// Ordinarily, we want to match on all possible fields, including the absence of nodes within a field.
     /// e.g., `my_function()` should not match `my_function(arg)`.
     ///
@@ -366,6 +463,41 @@ pub trait MarzanoLanguage<'a>: Language<Node<'a> = NodeWithSource<'a>> + NodeTyp
     ) -> Result<Option<LeafEquivalenceClass>, String> {
         Ok(None)
     }
+
+    fn pad_snippet<'b>(&self, snippet: &'b str, padding: &str) -> Cow<'b, str> {
+        if padding.is_empty() {
+            return snippet.into();
+        }
+
+        let mut lines = snippet.split('\n');
+        let mut result = Cow::Borrowed(lines.next().unwrap_or_default());
+
+        // Add the rest of lines in the snippet with padding
+        let skip_ranges = self.get_skip_padding_ranges_for_snippet(snippet);
+        for line in lines {
+            // Safety: This is safe because `line` is a slice of `snippet`.
+            let index = unsafe { get_slice_byte_offset(snippet, line) };
+
+            let result = result.to_mut();
+            result.push('\n');
+            if !skip_ranges.iter().any(|r| r.contains(index)) {
+                result.push_str(padding)
+            }
+            result.push_str(line);
+        }
+        result
+    }
+}
+
+fn adjust_ranges(substitutions: &mut [(EffectRange, String)], index: usize, delta: isize) {
+    for (EffectRange { range, .. }, _) in substitutions.iter_mut() {
+        if range.start >= index {
+            range.start = (range.start as isize + delta) as usize;
+        }
+        if range.end >= index {
+            range.end = (range.end as isize + delta) as usize;
+        }
+    }
 }
 
 fn file_parsing_error(
@@ -402,6 +534,16 @@ fn file_parsing_error(
         }
     }
     Ok(errors.into())
+}
+
+/// Returns the byte offset of `sub` relative to `sup`.
+///
+/// This function assumes `sub` starts at or after `sup`, since it cannot return
+/// negative offsets.
+///
+/// Safety: `sup` and `sub` must be slices of the same string.
+unsafe fn get_slice_byte_offset(sup: &str, sub: &str) -> u32 {
+    sub.as_ptr().byte_offset_from(sup.as_ptr()).unsigned_abs() as u32
 }
 
 pub fn nodes_from_indices(indices: &[SnippetTree<Tree>]) -> Vec<NodeWithSource> {

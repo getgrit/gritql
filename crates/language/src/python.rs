@@ -58,7 +58,7 @@ impl NodeTypes for Python {
 }
 
 impl Language for Python {
-    type Node<'a> = NodeWithSource<'a>;
+    use_marzano_delegate!();
 
     fn language_name(&self) -> &'static str {
         "Python"
@@ -75,14 +75,6 @@ impl Language for Python {
 
     fn comment_prefix(&self) -> &'static str {
         "#"
-    }
-
-    fn is_comment(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_comment_node(self, node)
-    }
-
-    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_metavariable_node(self, node)
     }
 
     fn check_replacements(&self, n: NodeWithSource<'_>, replacements: &mut Vec<Replacement>) {
@@ -152,17 +144,6 @@ impl Language for Python {
         true
     }
 
-    fn should_skip_padding(&self, node: &NodeWithSource<'_>) -> bool {
-        self.skip_padding_sorts.contains(&node.node.kind_id())
-    }
-
-    fn get_skip_padding_ranges_for_snippet(&self, snippet: &str) -> Vec<CodeRange> {
-        let mut parser = self.get_parser();
-        let snippet = parser.parse_snippet("", snippet, "");
-        let root = snippet.tree.root_node();
-        self.get_skip_padding_ranges(&root)
-    }
-
     fn make_single_line_comment(&self, text: &str) -> String {
         format!("# {}\n", text)
     }
@@ -183,6 +164,17 @@ impl<'a> MarzanoLanguage<'a> for Python {
 
     fn get_parser(&self) -> Box<dyn Parser<Tree = Tree>> {
         Box::new(MarzanoNotebookParser::new(self, "python"))
+    }
+
+    fn should_skip_padding(&self, node: &NodeWithSource<'_>) -> bool {
+        self.skip_padding_sorts.contains(&node.node.kind_id())
+    }
+
+    fn get_skip_padding_ranges_for_snippet(&self, snippet: &str) -> Vec<CodeRange> {
+        let mut parser = self.get_parser();
+        let snippet = parser.parse_snippet("", snippet, "");
+        let root = snippet.tree.root_node();
+        MarzanoLanguage::get_skip_padding_ranges(self, &root)
     }
 }
 

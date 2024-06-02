@@ -5,13 +5,9 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::{
-    context::ExecContext,
-    context::QueryContext,
-    effects::{Effect, EffectKind},
-};
+use crate::{context::ExecContext, context::QueryContext, effects::Effect};
 use anyhow::{bail, Result};
-use grit_util::AnalysisLogs;
+use grit_util::{AnalysisLogs, EffectKind};
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]
