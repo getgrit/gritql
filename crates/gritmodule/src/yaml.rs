@@ -39,7 +39,7 @@ pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
 
 pub fn get_patterns_from_yaml(
     file: &RichFile,
-    source_module: &ModuleRepo,
+    source_module: &Option<ModuleRepo>,
     root: &Option<String>,
 ) -> Result<Vec<ModuleGritPattern>> {
     let mut config = get_grit_config(&file.content, &extract_relative_file_path(file, root))?;
