@@ -56,6 +56,7 @@ macro_rules! use_marzano_delegate {
     };
 }
 
+pub mod cpp;
 pub mod csharp;
 pub mod css;
 pub mod foreign_language;
