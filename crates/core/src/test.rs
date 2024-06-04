@@ -14987,3 +14987,37 @@ fn or_file() {
     })
     .unwrap();
 }
+
+#[test]
+fn cpp_simple() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language cpp
+                |`char* editor = $sliteral;` => `char* editor = "emacs";`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"char* editor = "vim";"#.to_owned(),
+            expected: r#"char* editor = "emacs";"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn cpp_replace_printf() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language cpp
+                |`printf("%s", $sliteral);` => `std::cout << $sliteral;`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"printf("%s", "Hello, world!");"#.to_owned(),
+            expected: r#"std::cout << "Hello, world!";"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
