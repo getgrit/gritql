@@ -3,7 +3,11 @@ use colored::Colorize;
 use core::fmt;
 use log::{info, warn};
 use serde::Serialize;
-use std::{collections::HashMap, path::PathBuf, str::FromStr};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 use anyhow::{Context, Result};
 use marzano_gritmodule::{
@@ -14,7 +18,7 @@ use marzano_gritmodule::{
     searcher::find_grit_dir_from,
 };
 
-use crate::updater::Updater;
+use crate::{flags::GlobalFormatFlags, updater::Updater};
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Debug)]
 #[serde(rename_all = "lowercase")]
@@ -28,27 +32,11 @@ pub enum Source {
 }
 
 // Equivalent to our PatternResolver in zesty, but more minimal
-pub struct GritModuleResolver<'a> {
-    _root_directory: &'a str,
-}
+pub struct GritModuleResolver {}
 
-#[derive(Debug)]
-pub struct RichPattern<'b> {
-    pub body: &'b str,
-    pub name: Option<String>,
-}
-
-impl<'b> fmt::Display for RichPattern<'b> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.body)
-    }
-}
-
-impl<'a> GritModuleResolver<'a> {
-    pub fn new(root_directory: &'a str) -> Self {
-        Self {
-            _root_directory: root_directory,
-        }
+impl GritModuleResolver {
+    pub fn new() -> Self {
+        Self {}
     }
 
     pub fn make_pattern<'b>(
@@ -64,26 +52,46 @@ impl<'a> GritModuleResolver<'a> {
     }
 }
 
+#[derive(Debug)]
+pub struct RichPattern<'b> {
+    pub body: &'b str,
+    pub name: Option<String>,
+}
+
+impl<'b> fmt::Display for RichPattern<'b> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.body)
+    }
+}
+
+pub async fn get_grit_files_from_known_grit_dir(
+    config_path: &Path,
+    must_process: Vec<ModuleRepo>,
+) -> Result<PatternsDirectory> {
+    let mut stdlib_modules = get_stdlib_modules();
+    stdlib_modules.extend(must_process);
+
+    let grit_parent = PathBuf::from(config_path.parent().context(format!(
+        "Unable to find parent of .grit directory at {}",
+        config_path.to_string_lossy()
+    ))?);
+    let parent_str = &grit_parent.to_string_lossy().to_string();
+    let repo = ModuleRepo::from_dir(config_path).await;
+    get_grit_files(&repo, parent_str, Some(stdlib_modules)).await
+}
+
 pub async fn get_grit_files_from(cwd: Option<PathBuf>) -> Result<PatternsDirectory> {
     let existing_config = if let Some(cwd) = cwd {
         find_grit_dir_from(cwd).await
     } else {
         None
     };
-    let stdlib_modules = get_stdlib_modules();
 
     match existing_config {
-        Some(config) => {
-            let config_path = PathBuf::from_str(&config).unwrap();
-            let grit_parent = PathBuf::from(config_path.parent().context(format!(
-                "Unable to find parent of .grit directory at {}",
-                config
-            ))?);
-            let parent_str = &grit_parent.to_string_lossy().to_string();
-            let repo = ModuleRepo::from_dir(&config_path).await;
-            get_grit_files(&repo, parent_str, Some(stdlib_modules)).await
-        }
+        Some(config) => get_grit_files_from_known_grit_dir(&PathBuf::from(config), vec![]).await,
         None => {
+            let stdlib_modules = get_stdlib_modules();
+
             let updater = Updater::from_current_bin().await?;
             let install_path = updater.install_path;
             let repo = ModuleRepo::from_dir(&install_path).await;
@@ -92,10 +100,34 @@ pub async fn get_grit_files_from(cwd: Option<PathBuf>) -> Result<PatternsDirecto
     }
 }
 
-#[tracing::instrument]
+/// Get the grit files from the current working directory
+#[deprecated = "Use get_grit_files_from_flags_or_cwd instead"]
 pub async fn get_grit_files_from_cwd() -> Result<PatternsDirectory> {
     let cwd = std::env::current_dir()?;
     get_grit_files_from(Some(cwd)).await
+}
+
+#[tracing::instrument]
+pub async fn get_grit_files_from_flags_or_cwd(
+    flags: &GlobalFormatFlags,
+) -> Result<PatternsDirectory> {
+    if let Some(grit_dir) = &flags.grit_dir {
+        get_grit_files_from_known_grit_dir(grit_dir, vec![]).await
+    } else {
+        let cwd = std::env::current_dir()?;
+        get_grit_files_from(Some(cwd)).await
+    }
+}
+
+pub async fn resolve_from_flags_or_cwd(
+    flags: &GlobalFormatFlags,
+    source: &Source,
+) -> Result<(Vec<ResolvedGritDefinition>, ModuleRepo)> {
+    if let Some(grit_dir) = &flags.grit_dir {
+        resolve_from(grit_dir.clone(), source).await
+    } else {
+        resolve_from_cwd(source).await
+    }
 }
 
 pub async fn resolve_from(

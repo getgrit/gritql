@@ -92,9 +92,10 @@ pub async fn find_user_patterns() -> Result<Vec<ResolvedGritDefinition>> {
 pub async fn fetch_modules<T: FetcherType>(
     module: &ModuleRepo,
     grit_parent_dir: &str,
+    override_grit_dir: Option<PathBuf>,
 ) -> Result<()> {
     let as_path = PathBuf::from_str(grit_parent_dir).unwrap();
-    let grit_dir = as_path.join(REPO_CONFIG_DIR_NAME);
+    let grit_dir = override_grit_dir.unwrap_or_else(|| as_path.join(REPO_CONFIG_DIR_NAME));
 
     // Since git cloning is slow, two processes can try to clone at the same time and cause issues because they are overwriting each other
     // To avoid this, we create a random dir name and move it to the actual gritmodules dir after cloning is complete

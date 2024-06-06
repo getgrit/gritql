@@ -26,7 +26,7 @@ uuid = { version = "1.1", features = ["v4", "serde"] }
 tokio = { version = "1", features = ["full"] }
 chrono = { version = "0.4.26", features = ["serde"] }
 reqwest = { version = "0.11", features = ["json", "stream"] }
-futures-util = "0.3.30"
+futures-util = { version = "0.3.30" }
 lazy_static = { version = "1.4.0" }
 indicatif-log-bridge = { version = "0.2.1" }
 colored = { version = "2.0.4" }
@@ -77,10 +77,10 @@ notify = "6.1.1"
 notify-debouncer-mini = "0.4.1"
 tracing-subscriber = { version = "0.3", default-features = false, optional = true }
 
+fs-err = { version = "2.11.0" }
+
 [target.'cfg(not(windows))'.dependencies]
 openssl = { version = "0.10", features = ["vendored"] }
-
-fs-err = { version = "2.11.0" }
 
 [dev-dependencies]
 trim-margin = "0.1.0"

@@ -7,14 +7,14 @@ use grit_pattern_matcher::{
     binding::Binding,
     constant::Constant,
     context::ExecContext,
-    effects::{Effect, EffectKind},
+    effects::Effect,
     pattern::{
         to_unsigned, Accessor, DynamicPattern, DynamicSnippet, DynamicSnippetPart, File, FilePtr,
         FileRegistry, GritCall, ListIndex, Pattern, PatternName, PatternOrResolved, ResolvedFile,
         ResolvedPattern, ResolvedSnippet, State,
     },
 };
-use grit_util::{AnalysisLogs, Ast, AstNode, CodeRange, Range};
+use grit_util::{AnalysisLogs, Ast, AstNode, CodeRange, EffectKind, Range};
 use im::{vector, Vector};
 use marzano_language::{language::FieldId, target_language::TargetLanguage};
 use marzano_util::node_with_source::NodeWithSource;

@@ -1,0 +1,9 @@
+---
+source: crates/cli_bin/tests/apply.rs
+expression: content
+---
+const Schema1 = v.pipe(v.string(), v.email("Email required"));
+const Schema2 = v.pipe(v.string(), v.email(), v.endsWith("@example.com"));
+const Schema3 = v.pipe(v.string(), v.email(),
+  v.endsWith("@example.com"),
+  v.maxLength(30),);

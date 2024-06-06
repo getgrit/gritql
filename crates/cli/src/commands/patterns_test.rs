@@ -19,7 +19,9 @@ use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIter
 use serde::Serialize;
 
 use crate::flags::{GlobalFormatFlags, OutputFormat};
-use crate::resolver::{get_grit_files_from_cwd, resolve_from_cwd, GritModuleResolver, Source};
+use crate::resolver::{
+    get_grit_files_from_flags_or_cwd, resolve_from_cwd, GritModuleResolver, Source,
+};
 use crate::result_formatting::FormattedResult;
 use crate::updater::Updater;
 use crate::ux::{indent, log_test_diff};
@@ -49,8 +51,7 @@ pub async fn get_marzano_pattern_test_results(
     }
     info!("Found {} testable patterns.", patterns.len());
 
-    let cwd = std::env::current_dir()?;
-    let resolver = GritModuleResolver::new(cwd.to_str().unwrap());
+    let resolver = GritModuleResolver::new();
 
     let final_results: DashMap<String, Vec<WrappedResult>> = DashMap::new();
     let unformatted_results: DashMap<PatternLanguage, Vec<WrappedResult>> = DashMap::new();
@@ -264,7 +265,7 @@ pub(crate) async fn run_patterns_test(
     flags: GlobalFormatFlags,
 ) -> Result<()> {
     let (mut patterns, _) = resolve_from_cwd(&Source::Local).await?;
-    let libs = get_grit_files_from_cwd().await?;
+    let libs = get_grit_files_from_flags_or_cwd(&flags).await?;
 
     if arg.filter.is_some() {
         let filter = arg.filter.as_ref().unwrap();
@@ -451,8 +452,7 @@ fn get_dependents_of_target_patterns(
     }
     let mut dependents_names = <Vec<String>>::new();
 
-    let current_dir = std::env::current_dir()?;
-    let resolver = GritModuleResolver::new(current_dir.to_str().unwrap());
+    let resolver = GritModuleResolver::new();
 
     for p in testable_patterns {
         let body = format!("{}()", p.local_name.as_ref().unwrap());

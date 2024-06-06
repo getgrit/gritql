@@ -1,10 +1,5 @@
 use crate::context::QueryContext;
-
-#[derive(Debug, Clone)]
-pub enum EffectKind {
-    Rewrite,
-    Insert,
-}
+use grit_util::EffectKind;
 
 #[derive(Debug, Clone)]
 pub struct Effect<'a, Q: QueryContext> {

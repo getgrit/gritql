@@ -76,7 +76,7 @@ impl NodeTypes for Tsx {
 }
 
 impl Language for Tsx {
-    type Node<'a> = NodeWithSource<'a>;
+    use_marzano_js_like_delegate!();
 
     fn language_name(&self) -> &'static str {
         "TSX"
@@ -105,10 +105,6 @@ impl Language for Tsx {
         ]
     }
 
-    fn is_comment(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_comment_node(self, node)
-    }
-
     fn is_metavariable(&self, node: &NodeWithSource) -> bool {
         js_like_is_metavariable(
             node,
@@ -133,10 +129,6 @@ impl Language for Tsx {
         } else {
             None
         }
-    }
-
-    fn check_replacements(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Replacement>) {
-        jslike_check_replacements(n, orphan_ranges)
     }
 }
 

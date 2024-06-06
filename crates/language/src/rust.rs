@@ -105,7 +105,7 @@ impl NodeTypes for Rust {
 }
 
 impl Language for Rust {
-    type Node<'a> = NodeWithSource<'a>;
+    use_marzano_delegate!();
 
     fn language_name(&self) -> &'static str {
         "Rust"
@@ -119,14 +119,6 @@ impl Language for Rust {
             ("fn GRIT_FN(", ") {}"),
             ("fn GRIT_FN(GRIT_ARG:", ") { }"),
         ]
-    }
-
-    fn is_comment(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_comment_node(self, node)
-    }
-
-    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_metavariable_node(self, node)
     }
 }
 

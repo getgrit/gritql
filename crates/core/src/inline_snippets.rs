@@ -1,9 +1,10 @@
-use crate::marzano_binding;
-use crate::marzano_binding::EffectRange;
 use anyhow::{anyhow, bail, Result};
-use grit_util::Language;
+use grit_util::{EffectRange, Language};
 use itertools::Itertools;
 use std::{cell::RefCell, collections::HashSet, ops::Range, rc::Rc};
+
+/// Left hand side range, with the length of the replacement string
+pub type ReplacementInfo = (Range<usize>, usize);
 
 fn filter_out_nested(replacements: &mut Vec<(EffectRange, String)>) {
     let max_insert_index = match replacements.first() {
@@ -110,8 +111,8 @@ fn pad_snippet(
         }
     }
 
-    let padding = padding.into_iter().collect::<String>();
-    marzano_binding::pad_snippet(&padding, snippet, language)
+    let padding: String = padding.into_iter().collect();
+    Ok(language.pad_snippet(snippet, &padding).to_string())
 }
 
 // checks on this one are likely redundant as
@@ -124,7 +125,7 @@ pub(crate) fn inline_sorted_snippets_with_offset(
     offset: usize,
     replacements: &mut Vec<(EffectRange, String)>,
     should_pad_snippet: bool,
-) -> Result<(String, Vec<Range<usize>>)> {
+) -> Result<(String, Vec<Range<usize>>, Vec<ReplacementInfo>)> {
     if !is_sorted_descending(replacements) {
         bail!("Replacements must be in descending order.");
     }
@@ -183,7 +184,7 @@ pub(crate) fn inline_sorted_snippets_with_offset(
         }
     }
 
-    let mut code = delete_hanging_comma(&code, replacements, offset)?;
+    let (mut code, original_ranges) = delete_hanging_comma(&code, replacements, offset)?;
 
     // we could optimize by checking if offset is zero, or some other flag
     // so we only compute if top level.
@@ -232,6 +233,7 @@ pub(crate) fn inline_sorted_snippets_with_offset(
             output_ranges.push(start..end);
         }
     }
+
     for (range, snippet) in replacements {
         let range = adjust_range(&range.effective_range(), offset, &code)?;
         if range.start > code.len() || range.end > code.len() {
@@ -239,7 +241,8 @@ pub(crate) fn inline_sorted_snippets_with_offset(
         }
         code.replace_range(range, snippet);
     }
-    Ok((code, output_ranges))
+
+    Ok((code, output_ranges, original_ranges))
 }
 
 fn adjust_range(range: &Range<usize>, offset: usize, code: &str) -> Result<Range<usize>> {
@@ -296,7 +299,7 @@ fn delete_hanging_comma(
     code: &str,
     replacements: &mut [(EffectRange, String)],
     offset: usize,
-) -> Result<String> {
+) -> Result<(String, Vec<ReplacementInfo>)> {
     let deletion_ranges = replacements
         .iter()
         .filter_map(|r| {
@@ -336,24 +339,42 @@ fn delete_hanging_comma(
     let mut ranges_updates: Vec<(usize, usize)> = ranges.iter().map(|_| (0, 0)).collect();
     let mut to_delete = to_delete.iter();
     let mut result = String::new();
+
     let chars = code.chars().enumerate();
+
     let mut next_comma = to_delete.next();
+
+    let mut replacement_ranges: Vec<(Range<usize>, usize)> = replacements
+        .iter()
+        .map(|r| (r.0.effective_range(), r.1.len()))
+        .collect();
 
     for (index, c) in chars {
         if Some(&index) != next_comma {
             result.push(c);
         } else {
+            // Keep track of ranges we need to expand into, since we deleted code in the range
+            // This isn't perfect, but it's good enough for tracking cell boundaries
+            for (range, ..) in replacement_ranges.iter_mut().rev() {
+                if range.end >= index {
+                    range.end += 1;
+                    break;
+                }
+            }
             ranges_updates = update_range_shifts(index + offset, &ranges_updates, &ranges);
             next_comma = to_delete.next();
         }
     }
+
     for (r, u) in replacements.iter_mut().zip(ranges_updates) {
         r.0.range.start -= u.0;
         r.0.range.end -= u.1;
     }
-    Ok(result)
+    Ok((result, replacement_ranges))
 }
 
+/// After commas are deleted, calculate how much each range has shifted
+/// (start shift amount, end shift amount)
 fn update_range_shifts(
     index: usize,
     shifts: &[(usize, usize)],
@@ -373,6 +394,7 @@ fn update_range_shifts(
             if r > index {
                 sr += 1;
             }
+
             (sl, sr)
         })
         .collect()

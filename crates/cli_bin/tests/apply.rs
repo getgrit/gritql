@@ -852,6 +852,198 @@ fn basic_python_apply() -> Result<()> {
 }
 
 #[test]
+fn python_notebook_basic() -> Result<()> {
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("notebooks", false)?;
+
+    // from the tempdir as cwd, run init
+    run_init(&dir.as_path())?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    apply_cmd
+        .arg("apply")
+        .arg("--force")
+        .arg("pattern.grit")
+        .arg("tiny_nb.ipynb");
+    let output = apply_cmd.output()?;
+
+    let stdout = String::from_utf8(output.stdout)?;
+    println!("stdout: {:?}", stdout);
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stderr: {:?}", stderr);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        stderr
+    );
+
+    // Read back tiny_nb.ipynb
+    let target_file = dir.join("tiny_nb.ipynb");
+    let content: String = fs_err::read_to_string(target_file)?;
+
+    // assert that it matches snapshot
+    println!("content: {:?}", content);
+    assert!(content.contains("flint(4)"));
+    assert!(content.contains("flint(5)"));
+    assert_snapshot!(content);
+
+    Ok(())
+}
+
+#[test]
+fn python_notebook_newline_handling() -> Result<()> {
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("notebooks", false)?;
+
+    // from the tempdir as cwd, run init
+    run_init(&dir.as_path())?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    apply_cmd
+        .arg("apply")
+        .arg("--force")
+        .arg("pattern.grit")
+        .arg("newline.ipynb");
+    let output = apply_cmd.output()?;
+
+    let stdout = String::from_utf8(output.stdout)?;
+    println!("stdout: {:?}", stdout);
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stderr: {:?}", stderr);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        stderr
+    );
+
+    // Read back tiny_nb.ipynb
+    let target_file = dir.join("newline.ipynb");
+    let content: String = fs_err::read_to_string(target_file)?;
+
+    // Make sure it matches the contents of newline_after.ipynb
+    let expected_content = fs_err::read_to_string(dir.join("newline_after.ipynb"))?;
+    assert_eq!(content, expected_content);
+
+    Ok(())
+}
+
+#[test]
+fn python_notebook_string_cells() -> Result<()> {
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("notebooks", false)?;
+
+    // from the tempdir as cwd, run init
+    run_init(&dir.as_path())?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    apply_cmd
+        .arg("apply")
+        .arg("--force")
+        .arg("pattern.grit")
+        .arg("just_strings.ipynb");
+    let output = apply_cmd.output()?;
+
+    let stdout = String::from_utf8(output.stdout)?;
+    println!("stdout: {:?}", stdout);
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stderr: {:?}", stderr);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        stderr
+    );
+
+    // Read back tiny_nb.ipynb
+    let target_file = dir.join("just_strings.ipynb");
+    let content: String = fs_err::read_to_string(target_file)?;
+
+    // Make sure it matches the contents of newline_after.ipynb
+    let expected_content = fs_err::read_to_string(dir.join("just_strings_after.ipynb"))?;
+    assert_eq!(content, expected_content);
+
+    Ok(())
+}
+
+#[test]
+fn python_invalid_notebook() -> Result<()> {
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("notebooks", false)?;
+
+    // from the tempdir as cwd, run init
+    run_init(&dir.as_path())?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    apply_cmd
+        .arg("apply")
+        .arg("--force")
+        .arg("pattern.grit")
+        .arg("wrong_schema.ipynb");
+    let output = apply_cmd.output()?;
+
+    let stdout = String::from_utf8(output.stdout)?;
+    println!("stdout: {:?}", stdout);
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stderr: {:?}", stderr);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        stderr
+    );
+
+    assert!(stdout.contains("No nbformat version found"));
+    assert!(stdout.contains("found 0 matches"));
+
+    Ok(())
+}
+
+#[test]
+fn ignore_r_code_notebooks() -> Result<()> {
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("notebooks", false)?;
+
+    // from the tempdir as cwd, run init
+    run_init(&dir.as_path())?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    apply_cmd
+        .arg("apply")
+        .arg("--force")
+        .arg("pattern.grit")
+        .arg("r_code.ipynb")
+        .arg("javascript.ipynb");
+    let output = apply_cmd.output()?;
+
+    let stdout = String::from_utf8(output.stdout)?;
+    println!("stdout: {:?}", stdout);
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stderr: {:?}", stderr);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        stderr
+    );
+
+    assert!(stdout.contains("found 0 matches"));
+
+    Ok(())
+}
+
+#[test]
 fn basic_js_in_vue_apply() -> Result<()> {
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("js_in_vue", false)?;
@@ -2139,6 +2331,46 @@ fn ignores_file_in_grit_dir() -> Result<()> {
 }
 
 #[test]
+fn override_grit_modules_at_apply() -> Result<()> {
+    // Grab the other grit directory
+    let (_temp_dir, other_dir) = get_fixture("override_custom_grit_dir", true)?;
+
+    // Keep _temp_dir around so that the tempdir is not deleted
+    let (_temp_dir, dir) = get_fixture("simple_python", false)?;
+    let origin_content = std::fs::read_to_string(dir.join("main.py"))?;
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.as_path());
+    apply_cmd
+        .arg("apply")
+        .arg("--force")
+        .arg("special_pattern")
+        .arg("--grit-dir")
+        .arg(other_dir.join(".grit"));
+    let output = apply_cmd.output()?;
+
+    let stdout = String::from_utf8(output.stdout)?;
+    println!("stdout: {:?}", stdout);
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stderr: {:?}", stderr);
+
+    // Assert that the command failed
+    assert!(output.status.success(),);
+
+    // Read back the main.py file
+    let target_file = dir.join("main.py");
+    let content: String = std::fs::read_to_string(target_file)?;
+
+    assert_ne!(origin_content, content);
+
+    // Make sure it now has dotenv.mygoodness
+    assert!(content.contains("dotenv.mygoodness"));
+
+    Ok(())
+}
+
+#[test]
 fn language_option_file_pattern_apply() -> Result<()> {
     // Keep _temp_dir around so that the tempdir is not deleted
     let (_temp_dir, dir) = get_fixture("simple_python", false)?;
@@ -2571,6 +2803,27 @@ def cool(name):
     assert!(!result.status.success(), "Command should have failed");
 
     assert!(stderr.contains("--stdin"));
+
+    Ok(())
+}
+
+#[test]
+fn apply_remote_pattern() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("valibot", false)?;
+
+    let mut cmd = get_test_cmd()?;
+
+    cmd.arg("apply")
+        .arg("github.com/fabian-hiller/valibot#migrate_to_v0_31_0")
+        .current_dir(dir.clone());
+
+    let output = cmd.output()?;
+
+    assert!(output.status.success(), "Command should have succeeded");
+
+    let test_file = dir.join("test.js");
+    let content: String = fs_err::read_to_string(&test_file)?;
+    assert_snapshot!(content);
 
     Ok(())
 }

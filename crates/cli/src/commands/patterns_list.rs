@@ -5,7 +5,7 @@ use marzano_gritmodule::config::{DefinitionSource, ResolvedGritDefinition};
 use crate::{
     flags::GlobalFormatFlags,
     lister::{list_applyables, Listable},
-    resolver::resolve_from_cwd,
+    resolver::resolve_from_flags_or_cwd,
 };
 
 use super::list::ListArgs;
@@ -36,6 +36,6 @@ impl Listable for ResolvedGritDefinition {
 }
 
 pub(crate) async fn run_patterns_list(arg: ListArgs, parent: GlobalFormatFlags) -> Result<()> {
-    let (resolved, curr_repo) = resolve_from_cwd(&arg.source).await?;
+    let (resolved, curr_repo) = resolve_from_flags_or_cwd(&parent, &arg.source).await?;
     list_applyables(false, false, resolved, arg.level, &parent, curr_repo).await
 }

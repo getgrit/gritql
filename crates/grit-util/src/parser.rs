@@ -1,5 +1,28 @@
 use crate::{AnalysisLogs, AstNode};
-use std::path::Path;
+use std::{borrow::Cow, marker::PhantomData, path::Path};
+
+/// Information on where a file came from, for the parser to be smarter
+#[derive(Clone, Debug)]
+pub enum FileOrigin<'tree, Tree>
+where
+    Tree: Ast,
+{
+    /// A file we are parsing for the first time, from disk
+    Fresh,
+    /// A file we have parsed before, and are re-parsing after mutating
+    Mutated,
+    /// A file that was constructed by Grit
+    New,
+    /// We might need these
+    _Phantom(PhantomData<&'tree Tree>),
+}
+
+impl<'tree, Tree: Ast> FileOrigin<'tree, Tree> {
+    /// Is this a file we are parsing for the first time, from outside Grit?
+    pub fn is_fresh(&self) -> bool {
+        matches!(self, FileOrigin::Fresh)
+    }
+}
 
 pub trait Parser {
     type Tree: Ast;
@@ -9,7 +32,7 @@ pub trait Parser {
         body: &str,
         path: Option<&Path>,
         logs: &mut AnalysisLogs,
-        new: bool,
+        origin: FileOrigin<Self::Tree>,
     ) -> Option<Self::Tree>;
 
     fn parse_snippet(
@@ -26,6 +49,9 @@ pub trait Ast: std::fmt::Debug + PartialEq + Sized {
         Self: 'a;
 
     fn root_node(&self) -> Self::Node<'_>;
+
+    /// Returns the full source code of the tree.
+    fn source(&self) -> Cow<str>;
 }
 
 #[derive(Clone, Debug)]

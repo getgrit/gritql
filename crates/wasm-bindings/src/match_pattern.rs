@@ -1,4 +1,5 @@
 use anyhow::Context;
+use grit_util::Language;
 use grit_util::{Ast, Position};
 use marzano_core::pattern_compiler::PatternBuilder;
 use marzano_core::{
@@ -7,6 +8,8 @@ use marzano_core::{
     pattern_compiler::CompilationResult,
     tree_sitter_serde::tree_sitter_node_to_json,
 };
+use marzano_language::grit_ts_node::{grit_node_types, GritNodeTypes, NODE_TYPES_STRING};
+use marzano_language::language::{fields_for_nodes, Field, NodeTypes};
 use marzano_language::{
     grit_parser::MarzanoGritParser,
     language::Tree,
@@ -23,6 +26,7 @@ use tree_sitter::{Language as TSLanguage, Parser as TSParser};
 use wasm_bindgen::prelude::*;
 
 static GRIT_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static GRIT_NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static JAVASCRIPT_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static TYPESCRIPT_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static TSX_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
@@ -78,7 +82,11 @@ pub async fn parse_input_files_internal(
     let ParsedPattern { libs, tree, lang } =
         get_parsed_pattern(&pattern, lib_paths, lib_contents, parser).await?;
     let node = tree.root_node();
-    let parsed_pattern = tree_sitter_node_to_json(&node.node, &pattern, &lang).to_string();
+    let fields = GRIT_NODE_TYPES
+        .get_or_init(|| fields_for_nodes(GRIT_LANGUAGE.get().unwrap(), NODE_TYPES_STRING));
+    let grit_node_types = GritNodeTypes { node_types: fields };
+    let parsed_pattern =
+        tree_sitter_node_to_json(&node.node, &pattern, &grit_node_types).to_string();
 
     let mut results: Vec<MatchResult> = Vec::new();
     for (path, content) in paths.into_iter().zip(contents) {
@@ -337,7 +345,12 @@ async fn setup_grit_parser() -> anyhow::Result<MarzanoGritParser> {
     let lang = if let Some(lang) = GRIT_LANGUAGE.get() {
         lang
     } else {
-        let _language_already_set = GRIT_LANGUAGE.set(get_lang(&lang_path).await?);
+        let new_lang = get_lang(&lang_path).await?;
+        let _language_already_set = GRIT_LANGUAGE.set(new_lang);
+        let _ = GRIT_NODE_TYPES.set(fields_for_nodes(
+            GRIT_LANGUAGE.get().unwrap(),
+            NODE_TYPES_STRING,
+        ));
         GRIT_LANGUAGE
             .get()
             .ok_or_else(|| anyhow::anyhow!("Failed to setup GRIT_LANGUAGE"))?

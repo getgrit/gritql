@@ -1,0 +1,5 @@
+language python
+
+pattern special_pattern() {
+  `os.getenv` => `dotenv.mygoodness`
+}

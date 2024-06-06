@@ -35,6 +35,15 @@ impl AnalysisLogs {
     pub fn new() -> Self {
         Self(Vec::new())
     }
+
+    pub fn add_warning(&mut self, file: Option<PathBuf>, message: impl Into<String>) {
+        self.0.push(AnalysisLog {
+            level: Some(339),
+            file,
+            message: message.into(),
+            ..AnalysisLog::default()
+        });
+    }
 }
 
 impl Default for AnalysisLogs {

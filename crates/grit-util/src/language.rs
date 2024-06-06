@@ -1,4 +1,6 @@
-use crate::{constants::*, traverse, AstNode, ByteRange, CodeRange, Order, Range};
+use std::borrow::Cow;
+
+use crate::{constants::*, ranges::EffectRange, AstNode, ByteRange, CodeRange, Range};
 use regex::Regex;
 
 pub enum GritMetaValue {
@@ -60,29 +62,22 @@ pub trait Language: Sized {
         Some(node.byte_range())
     }
 
-    // in languages we pad such as python or yaml there are
-    // some kinds of nodes we don't want to pad, such as python strings.
-    // this function identifies those nodes.
-    #[allow(unused_variables)]
-    fn should_skip_padding(&self, node: &Self::Node<'_>) -> bool {
-        false
-    }
+    /// Removes the padding from every line in the snippet identified by the
+    /// given `range`, such that the first line of the snippet is left-aligned.
+    fn align_padding<'a>(
+        &self,
+        node: &Self::Node<'a>,
+        range: &CodeRange,
+        skip_ranges: &[CodeRange],
+        new_padding: Option<usize>,
+        offset: usize,
+        substitutions: &mut [(EffectRange, String)],
+    ) -> Cow<'a, str>;
 
-    #[allow(unused_variables)]
-    fn get_skip_padding_ranges_for_snippet(&self, snippet: &str) -> Vec<CodeRange> {
-        Vec::new()
-    }
-
-    #[allow(unused_variables)]
-    fn get_skip_padding_ranges(&self, node: &Self::Node<'_>) -> Vec<CodeRange> {
-        let mut ranges = Vec::new();
-        for n in traverse(node.walk(), Order::Pre) {
-            if self.should_skip_padding(&n) {
-                ranges.push(n.code_range())
-            }
-        }
-        ranges
-    }
+    /// Pads `snippet` by applying the given `padding` to every line.
+    ///
+    /// Takes padding rules for whitespace-significant languages into account.
+    fn pad_snippet<'a>(&self, snippet: &'a str, padding: &str) -> Cow<'a, str>;
 
     fn substitute_metavariable_prefix(&self, src: &str) -> String {
         self.metavariable_regex()
@@ -126,6 +121,8 @@ pub trait Language: Sized {
         }
     }
 
+    fn get_skip_padding_ranges(&self, node: &Self::Node<'_>) -> Vec<CodeRange>;
+
     /// Whether snippets should be padded.
     ///
     /// This is generally `true` for languages with relevant whitespace.
@@ -147,5 +144,14 @@ pub struct Replacement {
 impl Replacement {
     pub fn new(range: Range, replacement: &'static str) -> Self {
         Self { range, replacement }
+    }
+}
+
+impl From<&Replacement> for (std::ops::Range<usize>, usize) {
+    fn from(replacement: &Replacement) -> Self {
+        (
+            (replacement.range.start_byte as usize)..(replacement.range.end_byte as usize),
+            replacement.replacement.len(),
+        )
     }
 }

@@ -6,7 +6,7 @@ use crate::{
     },
     vue::get_vue_ranges,
 };
-use grit_util::{AnalysisLogs, AstNode, Parser, Replacement, SnippetTree};
+use grit_util::{AnalysisLogs, AstNode, FileOrigin, Parser, Replacement, SnippetTree};
 use marzano_util::node_with_source::NodeWithSource;
 use std::path::Path;
 
@@ -120,7 +120,7 @@ impl Parser for MarzanoJsLikeParser {
         body: &str,
         path: Option<&Path>,
         logs: &mut AnalysisLogs,
-        new: bool,
+        old_tree: FileOrigin<'_, Tree>,
     ) -> Option<Tree> {
         if path
             .and_then(Path::extension)
@@ -137,7 +137,7 @@ impl Parser for MarzanoJsLikeParser {
                 .ok()?
                 .map(|tree| Tree::new(tree, body))
         } else {
-            self.0.parse_file(body, path, logs, new)
+            self.0.parse_file(body, path, logs, old_tree)
         }
     }
 
@@ -256,7 +256,7 @@ defineProps<{
                 snippet,
                 Some(Path::new("test.vue")),
                 &mut vec![].into(),
-                false,
+                FileOrigin::Fresh,
             )
             .unwrap();
         print_node(&tree.root_node().node);

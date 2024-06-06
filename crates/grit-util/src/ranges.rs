@@ -1,4 +1,4 @@
-use crate::Position;
+use crate::{EffectKind, Position};
 use serde::{Deserialize, Serialize};
 use std::{ops::Add, path::PathBuf};
 
@@ -345,5 +345,30 @@ mod tests {
         let range = ByteRange::new(15, 17);
         let new_range = range.to_char_range("const [µb, fµa]");
         assert_eq!(new_range, ByteRange::new(13, 15));
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct EffectRange {
+    pub kind: EffectKind,
+    pub range: std::ops::Range<usize>,
+}
+
+impl EffectRange {
+    pub fn new(kind: EffectKind, range: std::ops::Range<usize>) -> Self {
+        Self { kind, range }
+    }
+
+    pub fn start(&self) -> usize {
+        self.range.start
+    }
+
+    // The range which is actually edited by this effect
+    // This is used for most operations, but does not account for expansion from deleted commas
+    pub fn effective_range(&self) -> std::ops::Range<usize> {
+        match self.kind {
+            EffectKind::Rewrite => self.range.clone(),
+            EffectKind::Insert => self.range.end..self.range.end,
+        }
     }
 }

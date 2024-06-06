@@ -1,6 +1,6 @@
 use crate::{
     built_in_functions::BuiltIns,
-    clean::{get_replacement_ranges, replace_cleaned_ranges},
+    clean::{get_replacement_ranges, merge_ranges, replace_cleaned_ranges},
     foreign_function_definition::ForeignFunctionDefinition,
     limits::is_file_too_big,
     marzano_resolved_pattern::{MarzanoFile, MarzanoResolvedPattern},
@@ -19,7 +19,7 @@ use grit_pattern_matcher::{
         PredicateDefinition, ResolvedPattern, State,
     },
 };
-use grit_util::{AnalysisLogs, Ast, InputRanges, MatchRanges};
+use grit_util::{AnalysisLogs, Ast, FileOrigin, InputRanges, MatchRanges};
 use im::vector;
 use marzano_language::{
     language::{MarzanoLanguage, Tree},
@@ -148,7 +148,8 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     owned.path,
                     owned.content,
                     None,
-                    false,
+                    FileOrigin::Fresh,
+                    None,
                     self.language,
                     logs,
                 )?;
@@ -237,9 +238,8 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 .cloned()
                 .is_some()
             {
-                let code = file.tree.root_node();
-                let (new_src, new_ranges) = apply_effects(
-                    code,
+                let (new_src, new_ranges, adjustment_ranges) = apply_effects(
+                    &file.tree,
                     state.effects.clone(),
                     &state.files,
                     &file.name,
@@ -247,10 +247,31 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                     self,
                     logs,
                 )?;
-                if let Some(new_ranges) = new_ranges {
-                    let tree = parser.parse_file(&new_src, None, logs, true).unwrap();
+
+                if let (Some(new_ranges), Some(edit_ranges)) = (new_ranges, adjustment_ranges) {
+                    let new_map = if let Some(old_map) = file.tree.source_map.as_ref() {
+                        Some(old_map.clone_with_edits(edit_ranges.iter().rev())?)
+                    } else {
+                        None
+                    };
+
+                    let tree = parser
+                        .parse_file(&new_src, None, logs, FileOrigin::Mutated)
+                        .unwrap();
                     let root = tree.root_node();
-                    let replacement_ranges = get_replacement_ranges(root, self.language());
+                    let replacement_ranges =
+                        merge_ranges(get_replacement_ranges(root, self.language()));
+                    let new_map = if let Some(new_map) = new_map {
+                        if replacement_ranges.is_empty() {
+                            Some(new_map)
+                        } else {
+                            let replacement_edits: Vec<(std::ops::Range<usize>, usize)> =
+                                replacement_ranges.iter().map(|r| r.into()).collect();
+                            Some(new_map.clone_with_edits(replacement_edits.iter().rev())?)
+                        }
+                    } else {
+                        None
+                    };
                     let cleaned_src = replace_cleaned_ranges(replacement_ranges, &new_src)?;
                     let new_src = if let Some(src) = cleaned_src {
                         src
@@ -260,11 +281,12 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
 
                     let ranges =
                         MatchRanges::new(new_ranges.into_iter().map(|r| r.into()).collect());
-                    let owned_file = FileOwnerCompiler::from_matches(
+                    let rewritten_file = FileOwnerCompiler::from_matches(
                         new_filename.clone(),
                         new_src,
                         Some(ranges),
-                        true,
+                        FileOrigin::Mutated,
+                        new_map,
                         self.language(),
                         logs,
                     )?
@@ -274,7 +296,8 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                             new_filename.to_string_lossy()
                         )
                     })?;
-                    self.files().push(owned_file);
+
+                    self.files().push(rewritten_file);
                     state
                         .files
                         .push_revision(&file_ptr, self.files().last().unwrap())
@@ -310,7 +333,8 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 name.clone(),
                 body,
                 None,
-                true,
+                FileOrigin::New,
+                None,
                 self.language(),
                 logs,
             )?

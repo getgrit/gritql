@@ -1,4 +1,4 @@
-use crate::marzano_binding::linearize_binding;
+use crate::{inline_snippets::ReplacementInfo, marzano_binding::linearize_binding};
 use anyhow::Result;
 use grit_pattern_matcher::{
     binding::Binding,
@@ -6,7 +6,7 @@ use grit_pattern_matcher::{
     effects::Effect,
     pattern::{FileRegistry, ResolvedPattern},
 };
-use grit_util::{AnalysisLogs, AstNode, CodeRange, Language};
+use grit_util::{AnalysisLogs, Ast, CodeRange, Language};
 use im::Vector;
 use std::collections::HashMap;
 use std::ops::Range;
@@ -18,16 +18,24 @@ use std::path::{Path, PathBuf};
  * Bindings is a mapping from variable names to replacement string -- which is obtained from any of the nodes in the bindings vector.
  */
 
+/// The outcome of applying an effect to a code snippet or file
+/// new_source, replacement_ranges in original source, replacement_infos for input
+type EffectOutcome = (
+    String,
+    Option<Vec<Range<usize>>>,
+    Option<Vec<ReplacementInfo>>,
+);
+
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn apply_effects<'a, Q: QueryContext>(
-    code: Q::Node<'a>,
+    code: &'a Q::Tree<'a>,
     effects: Vector<Effect<'a, Q>>,
     files: &FileRegistry<'a, Q>,
     the_filename: &Path,
     new_filename: &mut PathBuf,
     context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<(String, Option<Vec<Range<usize>>>)> {
+) -> Result<EffectOutcome> {
     let language = context.language();
     let current_name = context.name();
 
@@ -36,19 +44,21 @@ pub(crate) fn apply_effects<'a, Q: QueryContext>(
         .filter(|effect| !effect.binding.is_suppressed(language, current_name))
         .collect();
     if effects.is_empty() {
-        return Ok((code.full_source().to_owned(), None));
+        return Ok((code.source().to_string(), None, None));
     }
+
     let mut memo: HashMap<CodeRange, Option<String>> = HashMap::new();
-    let (from_inline, ranges) = linearize_binding(
+    let (from_inline, output_ranges, effect_ranges) = linearize_binding(
         language,
         &effects,
         files,
         &mut memo,
-        code.clone(),
-        CodeRange::new(0, code.full_source().len() as u32, code.full_source()),
+        &code.root_node(),
+        CodeRange::new(0, code.source().len() as u32, &code.source()),
         language.should_pad_snippet().then_some(0),
         logs,
     )?;
+
     for effect in effects.iter() {
         if let Some(filename) = effect.binding.as_filename() {
             if std::ptr::eq(filename, the_filename) {
@@ -59,5 +69,9 @@ pub(crate) fn apply_effects<'a, Q: QueryContext>(
             }
         }
     }
-    Ok((from_inline.to_string(), Some(ranges)))
+    Ok((
+        from_inline.to_string(),
+        Some(output_ranges),
+        Some(effect_ranges),
+    ))
 }

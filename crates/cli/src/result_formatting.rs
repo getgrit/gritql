@@ -2,6 +2,7 @@ use anyhow::anyhow;
 use colored::Colorize;
 use console::style;
 use core::fmt;
+use fs_err::read_to_string;
 use log::info;
 use marzano_core::api::{
     AllDone, AnalysisLog, CreateFile, DoneFile, FileMatchResult, InputFile, Match, MatchResult,
@@ -10,7 +11,6 @@ use marzano_core::api::{
 use marzano_core::constants::DEFAULT_FILE_NAME;
 use marzano_messenger::output_mode::OutputMode;
 use std::fmt::Display;
-use fs_err::read_to_string;
 use std::{
     io::Write,
     sync::{Arc, Mutex},

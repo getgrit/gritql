@@ -42,10 +42,6 @@ pub trait AstNode: std::fmt::Debug + Sized {
     /// Returns the code range of the node.
     fn code_range(&self) -> CodeRange;
 
-    /// Returns the full source code of the parse tree to which the node
-    /// belongs.
-    fn full_source(&self) -> &str;
-
     /// Returns a cursor for traversing the tree, starting at the current node.
     fn walk(&self) -> impl AstCursor<Node = Self>;
 }

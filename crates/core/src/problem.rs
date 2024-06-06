@@ -19,7 +19,7 @@ use grit_pattern_matcher::{
         PredicateDefinition, ResolvedPattern, State, VariableContent,
     },
 };
-use grit_util::{VariableMatch};
+use grit_util::VariableMatch;
 use im::vector;
 use log::error;
 use marzano_language::{language::Tree, target_language::TargetLanguage};
@@ -503,5 +503,5 @@ impl QueryContext for MarzanoQueryContext {
     type ResolvedPattern<'a> = MarzanoResolvedPattern<'a>;
     type Language<'a> = TargetLanguage;
     type File<'a> = MarzanoFile<'a>;
-    type Tree = Tree;
+    type Tree<'a> = Tree;
 }

@@ -52,7 +52,7 @@ impl NodeTypes for Html {
 }
 
 impl Language for Html {
-    type Node<'a> = NodeWithSource<'a>;
+    use_marzano_delegate!();
 
     fn language_name(&self) -> &'static str {
         "HTML"
@@ -60,14 +60,6 @@ impl Language for Html {
 
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
         &[("", "")]
-    }
-
-    fn is_comment(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_comment_node(self, node)
-    }
-
-    fn is_metavariable(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_metavariable_node(self, node)
     }
 
     fn make_single_line_comment(&self, text: &str) -> String {

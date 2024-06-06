@@ -77,7 +77,7 @@ impl NodeTypes for JavaScript {
 }
 
 impl Language for JavaScript {
-    type Node<'a> = NodeWithSource<'a>;
+    use_marzano_js_like_delegate!();
 
     fn language_name(&self) -> &'static str {
         "JavaScript"
@@ -105,10 +105,6 @@ impl Language for JavaScript {
         ]
     }
 
-    fn is_comment(&self, node: &NodeWithSource) -> bool {
-        MarzanoLanguage::is_comment_node(self, node)
-    }
-
     fn is_metavariable(&self, node: &NodeWithSource) -> bool {
         js_like_is_metavariable(node, self, &["template_content"])
     }
@@ -129,10 +125,6 @@ impl Language for JavaScript {
         } else {
             None
         }
-    }
-
-    fn check_replacements(&self, n: NodeWithSource<'_>, orphan_ranges: &mut Vec<Replacement>) {
-        jslike_check_replacements(n, orphan_ranges)
     }
 }
 

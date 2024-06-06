@@ -61,7 +61,8 @@ patterns:
         // Allow tests and build utils
         $absolute_filename <: not includes or {
           "tests/",
-          "build.rs"
+          "build.rs",
+          "test"
         },
         $print <: not within `mod tests { $_ }`
       } => $outcome

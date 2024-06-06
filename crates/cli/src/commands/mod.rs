@@ -549,7 +549,8 @@ pub async fn run_command_with_tracing() -> Result<()> {
     if let Err(ref e) = res {
         if let Some(good) = e.downcast_ref::<GoodError>() {
             if let Some(msg) = &good.message {
-                log::info!("{}", msg);
+                // grit-ignore no_println_in_core: This is an outer error message
+                println!("{}", msg);
             }
             std::process::exit(1);
         }

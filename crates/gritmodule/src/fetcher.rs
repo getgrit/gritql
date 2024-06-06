@@ -5,8 +5,8 @@ use git2::Repository;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-use lazy_static::lazy_static;
 use fs_err;
+use lazy_static::lazy_static;
 
 use crate::{config::GRIT_MODULE_DIR, searcher::find_git_dir_from, utils::remove_dir_all_safe};
 
@@ -262,6 +262,7 @@ fn clone_repo<'a>(
 }
 
 pub trait GritModuleFetcher: Send + Sync {
+    fn clone_dir(&self) -> &PathBuf;
     fn fetch_grit_module(&self, repo: &ModuleRepo) -> Result<String>;
     fn prep_grit_modules(&self) -> Result<()>;
 }
@@ -319,6 +320,10 @@ impl CleanFetcher {
 }
 
 impl GritModuleFetcher for CleanFetcher {
+    fn clone_dir(&self) -> &PathBuf {
+        &self.clone_dir
+    }
+
     fn fetch_grit_module(&self, repo: &ModuleRepo) -> Result<String> {
         let target_dir = self.get_grit_module_dir(repo);
         self.clone_repo(repo, &target_dir)?;
@@ -362,6 +367,10 @@ impl KeepFetcher {
 }
 
 impl GritModuleFetcher for KeepFetcher {
+    fn clone_dir(&self) -> &PathBuf {
+        &self.clone_dir
+    }
+
     fn fetch_grit_module(&self, repo: &ModuleRepo) -> Result<String> {
         let target_dir = self.get_grit_module_dir(repo);
         self.clone_repo(repo, &target_dir)?;
