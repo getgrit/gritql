@@ -77,7 +77,7 @@ jobs:
     strategy:
       fail-fast: false
     runs-on:
-      - ubuntu-latest
+      - nscloud-ubuntu-22.04-amd64-8x32
     permissions:
       contents: "read"
       id-token: "write"
