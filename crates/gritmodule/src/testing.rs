@@ -9,7 +9,8 @@ use marzano_util::rich_path::RichFile;
 use serde::{Deserialize, Serialize};
 
 use crate::config::{
-    GritPatternSample, GritPatternTestConfig, GritPatternTestInfo, ResolvedGritDefinition,
+    GritPatternSample, GritPatternTestConfig, GritPatternTestInfo, ModuleGritPattern,
+    ResolvedGritDefinition,
 };
 
 fn map_pattern_to_test_info(pattern: &mut ResolvedGritDefinition) -> GritPatternTestInfo {
@@ -29,6 +30,29 @@ pub fn collect_testable_patterns(
 ) -> Vec<GritPatternTestInfo> {
     let testable_patterns: Vec<GritPatternTestInfo> =
         patterns.iter_mut().map(map_pattern_to_test_info).collect();
+    testable_patterns
+}
+
+fn map_file_pattern_to_test_info(pattern: &mut ModuleGritPattern) -> GritPatternTestInfo {
+    let samples = pattern.config.samples.take();
+    GritPatternTestInfo {
+        body: pattern.config.body.clone().unwrap(),
+        config: GritPatternTestConfig {
+            path: Some(pattern.config.path.clone()),
+            samples,
+        },
+        local_name: Some(pattern.local_name.clone()),
+    }
+}
+
+pub fn get_grit_pattern_test_info(
+    mut patterns: Vec<ModuleGritPattern>,
+) -> Vec<GritPatternTestInfo> {
+    let testable_patterns: Vec<GritPatternTestInfo> = patterns
+        .iter_mut()
+        .filter(|p| p.config.body.is_some())
+        .map(map_file_pattern_to_test_info)
+        .collect();
     testable_patterns
 }
 

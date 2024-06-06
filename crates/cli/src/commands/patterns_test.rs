@@ -4,13 +4,13 @@ use log::{debug, info};
 
 use marzano_core::api::MatchResult;
 use marzano_core::constants::DEFAULT_FILE_NAME;
-use marzano_gritmodule::config::{GritPatternSample, GritPatternTestInfo, ResolvedGritDefinition};
+use marzano_gritmodule::config::{GritPatternSample, GritPatternTestInfo};
 use marzano_gritmodule::formatting::format_rich_files;
 use marzano_gritmodule::markdown::replace_sample_in_md_file;
 use marzano_gritmodule::patterns_directory::PatternsDirectory;
 use marzano_gritmodule::testing::{
-    collect_testable_patterns, get_sample_name, has_output_mismatch, test_pattern_sample,
-    GritTestResultState, MismatchInfo, SampleTestResult,
+    collect_testable_patterns, get_grit_pattern_test_info, get_sample_name, has_output_mismatch,
+    test_pattern_sample, GritTestResultState, MismatchInfo, SampleTestResult,
 };
 
 use marzano_language::{grit_parser::MarzanoGritParser, target_language::PatternLanguage};
@@ -28,11 +28,13 @@ use marzano_messenger::emit::{get_visibility, VisibilityLevels};
 use super::patterns::PatternsTestArgs;
 
 use anyhow::{anyhow, bail, Context as _, Result};
+use std::collections::HashMap;
 use std::{path::Path, time::Duration};
 
 use grit_util::Ast;
 use marzano_core::analysis::is_multifile;
-use marzano_core::pattern_compiler::compiler::get_dependents_of_target_patterns;
+use marzano_core::pattern_compiler::compiler::get_dependents_of_target_patterns_by_traversal_from_src;
+use marzano_gritmodule::searcher::collect_from_file;
 use notify::{self, RecursiveMode};
 use notify_debouncer_mini::{new_debouncer_opt, Config};
 
@@ -42,6 +44,11 @@ pub async fn get_marzano_pattern_test_results(
     args: &PatternsTestArgs,
     output: OutputFormat,
 ) -> Result<()> {
+    if patterns.is_empty() {
+        bail!("No testable patterns found. To test a pattern, make sure it is defined in .grit/grit.yaml or a .md file in your .grit/patterns directory.");
+    }
+    info!("Found {} testable patterns.", patterns.len());
+
     let cwd = std::env::current_dir()?;
     let resolver = GritModuleResolver::new(cwd.to_str().unwrap());
 
@@ -255,7 +262,6 @@ pub async fn get_marzano_pattern_test_results(
 pub(crate) async fn run_patterns_test(
     arg: PatternsTestArgs,
     flags: GlobalFormatFlags,
-    watch_mode_arg: Option<String>,
 ) -> Result<()> {
     let (mut patterns, _) = resolve_from_cwd(&Source::Local).await?;
     let libs = get_grit_files_from_cwd().await?;
@@ -278,35 +284,25 @@ pub(crate) async fn run_patterns_test(
         }
     }
 
-    let mut testable_patterns = collect_testable_patterns(patterns.clone());
-    if watch_mode_arg.is_some() {
-        let modified_file_path = watch_mode_arg.unwrap();
-        //filter out patterns that are not affected under watchmode
-        let affected_patterns_names =
-            get_affected_patterns(modified_file_path, patterns, &libs, &testable_patterns).unwrap();
+    let testable_patterns = collect_testable_patterns(patterns.clone());
 
-        info!("[Watch Mode] Patterns changed/affected : {:?}\n[Watch Mode] Re-running test for changed/affected patterns...\n",affected_patterns_names);
-        testable_patterns = testable_patterns
-            .into_iter()
-            .filter(|p| affected_patterns_names.contains(p.local_name.as_ref().unwrap()))
-            .collect::<Vec<_>>()
-    }
-
-    if testable_patterns.is_empty() {
-        bail!("No testable patterns found. To test a pattern, make sure it is defined in .grit/grit.yaml or a .md file in your .grit/patterns directory.");
-    }
-    info!("Found {} testable patterns.", testable_patterns.len(),);
-    get_marzano_pattern_test_results(testable_patterns, &libs, &arg, flags.clone().into()).await?;
+    get_marzano_pattern_test_results(testable_patterns.clone(), &libs, &arg, flags.clone().into())
+        .await?;
 
     if arg.watch {
-        enable_watch_mode(arg, flags);
+        let _ = enable_watch_mode(testable_patterns, &libs, &arg, flags.clone().into()).await;
     }
     Ok(())
 }
 
-fn enable_watch_mode(cmd_arg: PatternsTestArgs, cmd_flags: GlobalFormatFlags) {
+async fn enable_watch_mode(
+    testable_patterns: Vec<GritPatternTestInfo>,
+    libs: &PatternsDirectory,
+    args: &PatternsTestArgs,
+    output: OutputFormat,
+) -> Result<()> {
     let path = Path::new(".grit");
-    let ignore_path = [".grit/.gritmodules", ".gitignore", ".grit/*.log"];
+    let ignore_path = [".grit/.gritmodules", ".grit/.gitignore", ".log"];
     // setup debouncer
     let (tx, rx) = std::sync::mpsc::channel();
     // notify backend configuration
@@ -323,6 +319,11 @@ fn enable_watch_mode(cmd_arg: PatternsTestArgs, cmd_flags: GlobalFormatFlags) {
         .watch(path, RecursiveMode::Recursive)
         .unwrap();
     log::info!("\n[Watch Mode] enabled on path: {}", path.display());
+
+    let testable_patterns_map = testable_patterns
+        .iter()
+        .map(|p| (p.local_name.clone().unwrap(), p.clone()))
+        .collect::<HashMap<_, _>>();
 
     // event pocessing
     for result in rx {
@@ -343,49 +344,122 @@ fn enable_watch_mode(cmd_arg: PatternsTestArgs, cmd_flags: GlobalFormatFlags) {
                     }
                 }
                 log::info!("\n[Watch Mode] File modified: {:?}", modified_file_path);
+                let (modified_patterns, deleted_patterns) =
+                    get_modified_and_deleted_patterns(&modified_file_path, &testable_patterns)
+                        .await?;
+                if modified_patterns.is_empty() && deleted_patterns.is_empty() {
+                    log::info!("[Watch Mode] No patterns changed.\n");
+                    break 'event_block;
+                }
+                let modified_patterns_names = modified_patterns
+                    .iter()
+                    .map(|p| p.local_name.as_ref().unwrap())
+                    .collect::<Vec<_>>();
+                let deleted_patterns_names = deleted_patterns
+                    .iter()
+                    .map(|p| p.local_name.as_ref().unwrap())
+                    .collect::<Vec<_>>();
+                log::info!(
+                    "[Watch Mode] Modified patterns: {:?}",
+                    modified_patterns_names
+                );
+                log::info!(
+                    "[Watch Mode] Deleted patterns: {:?}",
+                    deleted_patterns_names
+                );
 
-                let mut arg = cmd_arg.clone();
-                let flags = cmd_flags.clone();
-                arg.watch = false; //avoid creating infinite watchers
-                tokio::task::spawn(async move {
-                    let _ = run_patterns_test(arg, flags, Some(modified_file_path)).await;
-                });
+                let mut patterns_to_test = modified_patterns.clone();
+                let mut patterns_to_test_names = patterns_to_test
+                    .iter()
+                    .map(|p| p.local_name.clone().unwrap())
+                    .collect::<Vec<_>>();
+
+                if modified_patterns.len() > 0 {
+                    let modified_patterns_dependents_names = get_dependents_of_target_patterns(
+                        &libs,
+                        &testable_patterns,
+                        &modified_patterns,
+                    )?;
+
+                    log::info!(
+                        "[Watch Mode] Modified patterns' Dependents Names: {:?}",
+                        modified_patterns_dependents_names
+                    );
+
+                    for name in &modified_patterns_dependents_names {
+                        if !patterns_to_test_names.contains(&name) {
+                            patterns_to_test.push(testable_patterns_map.get(name).unwrap().clone());
+                            patterns_to_test_names.push(name.to_owned());
+                        }
+                    }
+                }
+
+                if deleted_patterns.len() > 0 {
+                    let deleted_patterns_dependents_names = get_dependents_of_target_patterns(
+                        &libs,
+                        &testable_patterns,
+                        &deleted_patterns,
+                    )?;
+
+                    log::info!(
+                        "[Watch Mode] Deleted patterns' Dependents Names: {:?}",
+                        deleted_patterns_dependents_names
+                    );
+
+                    for name in &deleted_patterns_dependents_names {
+                        if !deleted_patterns_names.contains(&name)
+                            && !patterns_to_test_names.contains(&name)
+                        {
+                            patterns_to_test.push(testable_patterns_map.get(name).unwrap().clone());
+                            patterns_to_test_names.push(name.to_owned());
+                        }
+                    }
+                }
+
+                log::info!(
+                    "[Watch Mode] Pattern to re-test: {:?}",
+                    patterns_to_test_names
+                );
+                if patterns_to_test_names.len() < 1 {
+                    break 'event_block;
+                }
+
+                let _ = get_marzano_pattern_test_results(
+                    patterns_to_test,
+                    &libs,
+                    &args,
+                    output.clone().into(),
+                )
+                .await;
             }
             Err(error) => {
                 log::error!("Error {error:?}")
             }
         }
     }
+    Ok(())
 }
 
-fn get_affected_patterns(
-    modified_file_path: String,
-    patterns: Vec<ResolvedGritDefinition>,
+fn get_dependents_of_target_patterns(
     libs: &PatternsDirectory,
     testable_patterns: &Vec<GritPatternTestInfo>,
+    target_patterns: &Vec<GritPatternTestInfo>,
 ) -> Result<Vec<String>> {
-    let affected_patterns = testable_patterns
-        .iter()
-        .filter(|p| {
-            p.config.path.is_some() && p.config.path.as_ref().unwrap() == &modified_file_path
-        })
-        .collect::<Vec<_>>();
-
-    let mut affected_patterns_names = <Vec<String>>::new();
-    for affected_pattern in &affected_patterns {
-        affected_patterns_names.push(affected_pattern.local_name.clone().unwrap());
+    let mut target_patterns_names = <Vec<String>>::new();
+    for p in target_patterns {
+        target_patterns_names.push(p.local_name.clone().unwrap());
     }
-    let mut affected_patterns_dependents_names = <Vec<String>>::new();
+    let mut dependents_names = <Vec<String>>::new();
 
     let current_dir = std::env::current_dir()?;
     let resolver = GritModuleResolver::new(current_dir.to_str().unwrap());
 
-    for p in patterns {
-        let body = format!("{}()", p.local_name);
+    for p in testable_patterns {
+        let body = format!("{}()", p.local_name.as_ref().unwrap());
         let lang = PatternLanguage::get_language(&p.body);
         let libs = libs.get_language_directory_or_default(lang)?;
         let rich_pattern = resolver
-            .make_pattern(&body, Some(p.local_name.to_string()))
+            .make_pattern(&body, p.local_name.to_owned())
             .unwrap();
         let src = rich_pattern.body;
         let mut parser = MarzanoGritParser::new()?;
@@ -393,27 +467,47 @@ fn get_affected_patterns(
         let root = src_tree.root_node();
         let is_multifile = is_multifile(&root, &libs, &mut parser)?;
 
-        let dependents = get_dependents_of_target_patterns(
+        let dependents = get_dependents_of_target_patterns_by_traversal_from_src(
             &libs,
             &src,
             &mut parser,
             !is_multifile,
-            &affected_patterns_names,
+            &target_patterns_names,
         )?;
 
         for d in dependents {
-            if !affected_patterns_dependents_names.contains(&d) {
-                affected_patterns_dependents_names.push(d);
+            if !dependents_names.contains(&d) {
+                dependents_names.push(d);
             }
         }
     }
+    Ok(dependents_names)
+}
 
-    for depen in affected_patterns_dependents_names {
-        if !affected_patterns_names.contains(&depen) {
-            affected_patterns_names.push(depen);
+async fn get_modified_and_deleted_patterns(
+    modified_path: &String,
+    testable_patterns: &Vec<GritPatternTestInfo>,
+) -> Result<(Vec<GritPatternTestInfo>, Vec<GritPatternTestInfo>)> {
+    let path = Path::new(modified_path);
+    let file_patterns = collect_from_file(path, &None).await?;
+    let modified_patterns = get_grit_pattern_test_info(file_patterns);
+
+    let mut modified_pattern_names = <Vec<String>>::new();
+    for pattern in &modified_patterns {
+        modified_pattern_names.push(pattern.local_name.clone().unwrap());
+    }
+    //modified_patterns = patterns which are updated/edited or newly created.
+    //deleted_patterns = patterns which are deleted. Only remaining dependents of deleted_patterns should gets tested.
+    let mut deleted_patterns = <Vec<GritPatternTestInfo>>::new();
+    for pattern in testable_patterns {
+        if pattern.config.path.as_ref().unwrap() == modified_path
+            && !modified_pattern_names.contains(pattern.local_name.as_ref().unwrap())
+        {
+            deleted_patterns.push(pattern.clone());
         }
     }
-    Ok(affected_patterns_names)
+
+    Ok((modified_patterns, deleted_patterns))
 }
 
 #[derive(Debug, Serialize)]

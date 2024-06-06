@@ -373,7 +373,7 @@ async fn run_command() -> Result<()> {
         Commands::Parse(arg) => run_parse(arg, app.format_flags, None).await,
         Commands::Patterns(arg) => match arg.patterns_commands {
             PatternCommands::List(arg) => run_patterns_list(arg, app.format_flags).await,
-            PatternCommands::Test(arg) => run_patterns_test(arg, app.format_flags, None).await,
+            PatternCommands::Test(arg) => run_patterns_test(arg, app.format_flags).await,
             PatternCommands::Edit(arg) => run_patterns_edit(arg).await,
             PatternCommands::Describe(arg) => run_patterns_describe(arg).await,
         },
@@ -549,7 +549,7 @@ pub async fn run_command_with_tracing() -> Result<()> {
     if let Err(ref e) = res {
         if let Some(good) = e.downcast_ref::<GoodError>() {
             if let Some(msg) = &good.message {
-                println!("{}", msg);
+                log::info!("{}", msg);
             }
             std::process::exit(1);
         }

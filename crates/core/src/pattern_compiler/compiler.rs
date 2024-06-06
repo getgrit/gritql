@@ -567,7 +567,7 @@ fn find_definition_if_exists(
     Ok(None)
 }
 
-pub fn get_dependents_of_target_patterns(
+pub fn get_dependents_of_target_patterns_by_traversal_from_src(
     libs: &BTreeMap<String, String>,
     src: &str,
     parser: &mut MarzanoGritParser,
