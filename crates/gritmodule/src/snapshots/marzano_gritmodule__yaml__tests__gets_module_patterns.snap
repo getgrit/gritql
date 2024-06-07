@@ -72,9 +72,5 @@ expression: patterns
       line: 9
       column: 11
     raw: ~
-  module:
-    host: ""
-    fullName: ""
-    remote: ""
-    providerName: ""
+  module: ~
   local_name: remove_console_error
