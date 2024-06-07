@@ -13,45 +13,43 @@ use crate::config::{
     ResolvedGritDefinition,
 };
 
-fn map_pattern_to_test_info(pattern: &mut ResolvedGritDefinition) -> GritPatternTestInfo {
-    let samples = pattern.config.samples.take();
+fn map_pattern_to_test_info(pattern: ResolvedGritDefinition) -> GritPatternTestInfo {
+    let samples = pattern.config.samples;
     GritPatternTestInfo {
-        body: pattern.body.clone(),
+        body: pattern.body,
         config: GritPatternTestConfig {
-            path: Some(pattern.config.path.clone()),
+            path: Some(pattern.config.path),
             samples,
         },
-        local_name: Some(pattern.local_name.clone()),
+        local_name: Some(pattern.local_name),
     }
 }
 
 pub fn collect_testable_patterns(
-    mut patterns: Vec<ResolvedGritDefinition>,
+    patterns: Vec<ResolvedGritDefinition>,
 ) -> Vec<GritPatternTestInfo> {
     let testable_patterns: Vec<GritPatternTestInfo> =
-        patterns.iter_mut().map(map_pattern_to_test_info).collect();
+        patterns.into_iter().map(map_pattern_to_test_info).collect();
     testable_patterns
 }
 
-fn map_file_pattern_to_test_info(pattern: &mut ModuleGritPattern) -> GritPatternTestInfo {
-    let samples = pattern.config.samples.take();
+fn map_file_pattern_to_test_info(pattern: ModuleGritPattern) -> GritPatternTestInfo {
+    let samples = pattern.config.samples;
     GritPatternTestInfo {
-        body: pattern.config.body.clone().unwrap(),
+        body: pattern.config.body.unwrap(),
         config: GritPatternTestConfig {
-            path: Some(pattern.config.path.clone()),
+            path: Some(pattern.config.path),
             samples,
         },
-        local_name: Some(pattern.local_name.clone()),
+        local_name: Some(pattern.local_name),
     }
 }
 
-pub fn get_grit_pattern_test_info(
-    mut patterns: Vec<ModuleGritPattern>,
-) -> Vec<GritPatternTestInfo> {
+pub fn get_grit_pattern_test_info(patterns: Vec<ModuleGritPattern>) -> Vec<GritPatternTestInfo> {
     let testable_patterns: Vec<GritPatternTestInfo> = patterns
-        .iter_mut()
+        .into_iter()
         .filter(|p| p.config.body.is_some())
-        .map(map_file_pattern_to_test_info)
+        .map(|pattern: ModuleGritPattern| map_file_pattern_to_test_info(pattern))
         .collect();
     testable_patterns
 }

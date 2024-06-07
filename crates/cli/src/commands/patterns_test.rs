@@ -285,13 +285,13 @@ pub(crate) async fn run_patterns_test(
         }
     }
 
-    let testable_patterns = collect_testable_patterns(patterns.clone());
+    let testable_patterns = collect_testable_patterns(patterns);
 
     get_marzano_pattern_test_results(testable_patterns.clone(), &libs, &arg, flags.clone().into())
         .await?;
 
     if arg.watch {
-        let _ = enable_watch_mode(testable_patterns, &libs, &arg, flags.clone().into()).await;
+        let _ = enable_watch_mode(testable_patterns, &libs, &arg, flags.into()).await;
     }
     Ok(())
 }
@@ -348,6 +348,7 @@ async fn enable_watch_mode(
                 let (modified_patterns, deleted_patterns) =
                     get_modified_and_deleted_patterns(&modified_file_path, &testable_patterns)
                         .await?;
+
                 if modified_patterns.is_empty() && deleted_patterns.is_empty() {
                     log::info!("[Watch Mode] No patterns changed.\n");
                     break 'event_block;
@@ -417,10 +418,7 @@ async fn enable_watch_mode(
                     }
                 }
 
-                log::info!(
-                    "[Watch Mode] Pattern to re-test: {:?}",
-                    patterns_to_test_names
-                );
+                log::info!("[Watch Mode] Pattern to test: {:?}", patterns_to_test_names);
                 if patterns_to_test_names.len() < 1 {
                     break 'event_block;
                 }
@@ -492,16 +490,16 @@ async fn get_modified_and_deleted_patterns(
     let file_patterns = collect_from_file(path, &None).await?;
     let modified_patterns = get_grit_pattern_test_info(file_patterns);
 
-    let mut modified_pattern_names = <Vec<String>>::new();
+    let mut modified_pattern_names = <Vec<&String>>::new();
     for pattern in &modified_patterns {
-        modified_pattern_names.push(pattern.local_name.clone().unwrap());
+        modified_pattern_names.push(pattern.local_name.as_ref().unwrap());
     }
     //modified_patterns = patterns which are updated/edited or newly created.
     //deleted_patterns = patterns which are deleted. Only remaining dependents of deleted_patterns should gets tested.
     let mut deleted_patterns = <Vec<GritPatternTestInfo>>::new();
     for pattern in testable_patterns {
         if pattern.config.path.as_ref().unwrap() == modified_path
-            && !modified_pattern_names.contains(pattern.local_name.as_ref().unwrap())
+            && !modified_pattern_names.contains(&pattern.local_name.as_ref().unwrap())
         {
             deleted_patterns.push(pattern.clone());
         }
