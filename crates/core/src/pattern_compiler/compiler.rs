@@ -572,7 +572,7 @@ pub fn get_dependents_of_target_patterns_by_traversal_from_src(
     src: &str,
     parser: &mut MarzanoGritParser,
     will_autowrap: bool,
-    target_patterns: &Vec<String>,
+    target_patterns: &[String],
 ) -> Result<Vec<String>> {
     let mut dependents = <Vec<String>>::new();
     let node_like = "nodeLike";

@@ -330,8 +330,7 @@ async fn enable_watch_mode(
     for result in rx {
         match result {
             Ok(event) => 'event_block: {
-                let modified_file_path = event
-                    .get(0)
+                let modified_file_path = event.first()
                     .unwrap()
                     .path
                     .clone()
@@ -376,9 +375,9 @@ async fn enable_watch_mode(
                     .map(|p| p.local_name.clone().unwrap())
                     .collect::<Vec<_>>();
 
-                if modified_patterns.len() > 0 {
+                if !modified_patterns.is_empty() {
                     let modified_patterns_dependents_names = get_dependents_of_target_patterns(
-                        &libs,
+                        libs,
                         &testable_patterns,
                         &modified_patterns,
                     )?;
@@ -389,16 +388,16 @@ async fn enable_watch_mode(
                     );
 
                     for name in &modified_patterns_dependents_names {
-                        if !patterns_to_test_names.contains(&name) {
+                        if !patterns_to_test_names.contains(name) {
                             patterns_to_test.push(testable_patterns_map.get(name).unwrap().clone());
                             patterns_to_test_names.push(name.to_owned());
                         }
                     }
                 }
 
-                if deleted_patterns.len() > 0 {
+                if !deleted_patterns.is_empty() {
                     let deleted_patterns_dependents_names = get_dependents_of_target_patterns(
-                        &libs,
+                        libs,
                         &testable_patterns,
                         &deleted_patterns,
                     )?;
@@ -410,7 +409,7 @@ async fn enable_watch_mode(
 
                     for name in &deleted_patterns_dependents_names {
                         if !deleted_patterns_names.contains(&name)
-                            && !patterns_to_test_names.contains(&name)
+                            && !patterns_to_test_names.contains(name)
                         {
                             patterns_to_test.push(testable_patterns_map.get(name).unwrap().clone());
                             patterns_to_test_names.push(name.to_owned());
@@ -419,15 +418,15 @@ async fn enable_watch_mode(
                 }
 
                 log::info!("[Watch Mode] Pattern to test: {:?}", patterns_to_test_names);
-                if patterns_to_test_names.len() < 1 {
+                if patterns_to_test_names.is_empty() {
                     break 'event_block;
                 }
 
                 let _ = get_marzano_pattern_test_results(
                     patterns_to_test,
-                    &libs,
-                    &args,
-                    output.clone().into(),
+                    libs,
+                    args,
+                    output.clone(),
                 )
                 .await;
             }
@@ -461,13 +460,13 @@ fn get_dependents_of_target_patterns(
             .unwrap();
         let src = rich_pattern.body;
         let mut parser = MarzanoGritParser::new()?;
-        let src_tree = parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
+        let src_tree = parser.parse_file(src, Some(Path::new(DEFAULT_FILE_NAME)))?;
         let root = src_tree.root_node();
         let is_multifile = is_multifile(&root, &libs, &mut parser)?;
 
         let dependents = get_dependents_of_target_patterns_by_traversal_from_src(
             &libs,
-            &src,
+            src,
             &mut parser,
             !is_multifile,
             &target_patterns_names,
