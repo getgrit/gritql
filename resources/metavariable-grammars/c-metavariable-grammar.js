@@ -52,6 +52,17 @@ module.exports = grammar({
     [$._block_item, $.statement],
     [$._top_level_item, $._top_level_statement],
     [$.type_specifier, $._top_level_expression_statement],
+
+    // Grit-caused conflicts
+    [$.linkage_specification, $.storage_class_specifier],
+    [$.identifier, $.char_literal, $.string_literal],
+    [$.identifier, $.string_literal],
+    [$.type_specifier, $.concatenated_string],
+    [$.identifier, $.char_literal],
+    [$.expression, $.concatenated_string],
+    [$.identifier, $.number_literal, $.char_literal, $.string_literal],
+    [$.number_literal, $.char_literal, $.string_literal],
+    [$.identifier, $.number_literal, $.char_literal]
   ],
 
   extras: $ => [
@@ -78,7 +89,7 @@ module.exports = grammar({
     $._abstract_declarator,
   ],
 
-  word: $ => $.identifier,
+  word: $ => $._identifier,
 
   rules: {
     translation_unit: $ => repeat($._top_level_item),
@@ -996,7 +1007,7 @@ module.exports = grammar({
     ),
 
 
-    //assignment_expression: $ => choice($.grit_metavariable, $._assignment_expression),
+    //assignment_expression: $ => choice($._assignment_expression, $.grit_metavariable),
     assignment_expression: $ => prec.right(PREC.ASSIGNMENT, seq(
       field('left', $._assignment_left_expression),
       field('operator', choice(
@@ -1245,8 +1256,8 @@ module.exports = grammar({
 
     field_designator: $ => seq('.', $._field_identifier),
 
-    //number_literal: $ => choice($.grit_metavariable, $._number_literal),
-    number_literal: _ => {
+    number_literal: $ => choice($._number_literal, $.grit_metavariable),
+    _number_literal: _ => {
       const separator = '\'';
       const hex = /[0-9a-fA-F]/;
       const decimal = /[0-9]/;
@@ -1277,7 +1288,7 @@ module.exports = grammar({
       ));
     },
 
-    char_literal: $ => choice($.grit_metavariable, $._number_literal),
+    char_literal: $ => choice($.grit_metavariable, $._char_literal),
     _char_literal: $ => seq(
       choice('L\'', 'u\'', 'U\'', 'u8\'', '\''),
       repeat1(choice(
@@ -1298,7 +1309,7 @@ module.exports = grammar({
       repeat(choice($.string_literal, $.identifier)),
     )),
 
-    string_literal: $ => choice($.grit_metavariable, $._string_literal)
+    string_literal: $ => choice($.grit_metavariable, $._string_literal),
 
     _string_literal: $ => seq(
       choice('L"', 'u"', 'U"', 'u8"', '"'),
@@ -1330,8 +1341,8 @@ module.exports = grammar({
     false: _ => token(choice('FALSE', 'false')),
     null: _ => choice('NULL', 'nullptr'),
 
-    identifier: $ => choice($.grit_metavariable, $._identifier)
-    _identifier: _ =>
+    identifier: $ => field('identifier', choice($.grit_metavariable, $._identifier)),
+    _identifier: $ =>
       // eslint-disable-next-line max-len
       /(\p{XID_Start}|\$|_|\\u[0-9A-Fa-f]{4}|\\U[0-9A-Fa-f]{8})(\p{XID_Continue}|\$|\\u[0-9A-Fa-f]{4}|\\U[0-9A-Fa-f]{8})*/,
 
