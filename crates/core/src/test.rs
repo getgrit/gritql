@@ -14989,7 +14989,7 @@ fn or_file() {
 }
 
 #[test]
-fn simple_cpp() {
+fn cpp_simple() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
