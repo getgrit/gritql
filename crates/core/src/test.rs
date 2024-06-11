@@ -14989,12 +14989,12 @@ fn or_file() {
 }
 
 #[test]
-fn cpp_simple() {
+fn simple_cpp() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
                 |language cpp
-                |`char* editor = $sliteral;` => `char* editor = "emacs";`
+                |`char* editor = $string_literal;` => `char* editor = "emacs";`
                 |"#
             .trim_margin()
             .unwrap(),
@@ -15006,17 +15006,34 @@ fn cpp_simple() {
 }
 
 #[test]
-fn cpp_replace_printf() {
+fn cpp_rename_variable_name() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
                 |language cpp
-                |`printf("%s", $sliteral);` => `std::cout << $sliteral;`
+                |`char* $name = $val;` => `char* new_name = $val;`
                 |"#
             .trim_margin()
             .unwrap(),
-            source: r#"printf("%s", "Hello, world!");"#.to_owned(),
-            expected: r#"std::cout << "Hello, world!";"#.to_owned(),
+            source: r#"char* my_string = "hey";"#.to_owned(),
+            expected: r#"char* new_name = "hey";"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn cpp_change_float_to_double() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language cpp
+                |`int $foo` => `int what`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"int foo"#.to_owned(),
+            expected: r#"int foo"#.to_owned(),
         }
     })
     .unwrap();

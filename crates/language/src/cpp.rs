@@ -62,7 +62,14 @@ impl Language for Cpp {
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
         // TODO: Unclear about other good additions here. Presumably, there are many.
         // TODO: Unclear if the following additions are good or bad.
-        &[("", ""), ("", ";"), ("{", "}"), ("", "  void GRIT_FN() {}")]
+        &[
+            ("", ""),
+            ("", ";"),
+            ("{", "}"),
+            ("", "  void GRIT_FN() {}"),
+            ("void GRIT_FN(", "){}"),
+            ("void GRIT_FN(){", "}"),
+        ]
     }
 }
 

@@ -42,6 +42,8 @@ process.on('uncaughtException', (err) => {
 ///////////////////////////////////////////////////
 const allLanguages = [
   'c-sharp',
+  'c',
+  'cpp',
   'css',
   'go',
   'hcl',
