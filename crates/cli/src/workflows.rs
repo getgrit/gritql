@@ -109,8 +109,10 @@ where
     })?;
 
     if let Some(username) = auth.get_user_name()? {
-        arg.input
-            .insert(GRIT_VCS_USER_NAME.to_string(), username.into());
+        if !arg.input.contains_key(GRIT_VCS_USER_NAME) {
+            arg.input
+                .insert(GRIT_VCS_USER_NAME.to_string(), username.into());
+        }
     }
 
     let runner_path = updater
@@ -231,7 +233,9 @@ pub async fn run_remote_workflow(
     let mut input = args.get_payload()?;
 
     if let Some(username) = auth.get_user_name()? {
-        input.insert(GRIT_VCS_USER_NAME.to_string(), username.into());
+        if !input.contains_key(GRIT_VCS_USER_NAME) {
+            input.insert(GRIT_VCS_USER_NAME.to_string(), username.into());
+        }
     }
 
     let settings =
