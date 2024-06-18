@@ -9,9 +9,17 @@ pub struct AuthInfo {
 }
 
 #[derive(serde::Deserialize, Debug)]
+struct HasuraClaims {
+    #[serde(rename = "x-hasura-raw-nickname")]
+    nickname: Option<String>,
+}
+
+#[derive(serde::Deserialize, Debug)]
 struct AuthInfoPayload {
     exp: u64,
     sub: String,
+    #[serde(rename = "https://hasura.io/jwt/claims")]
+    hasura_claims: Option<HasuraClaims>,
 }
 
 impl AuthInfo {
@@ -37,6 +45,11 @@ impl AuthInfo {
         Ok(expiry)
     }
 
+    pub fn get_user_name(&self) -> Result<Option<String>> {
+        let payload = self.get_payload()?;
+        Ok(payload.hasura_claims.and_then(|c| c.nickname))
+    }
+
     pub fn get_user_id(&self) -> Result<String> {
         let payload = self.get_payload()?;
         Ok(payload.sub)
@@ -58,5 +71,25 @@ impl std::fmt::Display for AuthInfo {
             self.get_expiry(),
             payload
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_user_name() {
+        // This token is safe, it isn't signed by a real authority - only use for testing
+        let jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2F1dGgwLmdyaXQuaW8vIiwic3ViIjoiZ2l0aHVifDE2Mjc4MDEiLCJhdWQiOiJodHRwczovL2FwaTIuZ3JpdC5pbyIsImlhdCI6MTcxODcyNjM1MywiZXhwIjoxNzE4ODEyNzUzLCJzY29wZSI6Im9mZmxpbmVfYWNjZXNzIiwiaHR0cHM6Ly9oYXN1cmEuaW8vand0L2NsYWltcyI6eyJ4LWhhc3VyYS1kZWZhdWx0LXJvbGUiOiJ1c2VyIiwieC1oYXN1cmEtYWxsb3dlZC1yb2xlcyI6WyJ1c2VyIl0sIngtaGFzdXJhLXVzZXItaWQiOiJnaXRodWJ8MTYyNzgwMSIsIngtaGFzdXJhLXJhdy1uaWNrbmFtZSI6Im5hbmN5IiwieC1oYXN1cmEtdXNlci10ZW5hbnQiOiJnaXRodWIiLCJ4LWhhc3VyYS1hdXRoLXByb3ZpZGVyIjoiZ2l0aHViIiwieC1oYXN1cmEtdXNlci1uaWNrbmFtZSI6ImdpdGh1YnxuYW5jeSJ9fQ.UNiKbUgbITr4aKhZuwEwXzmjeH6kyHxQjQiL4YODGWY";
+        let auth_info = AuthInfo {
+            access_token: jwt.to_string(),
+        };
+
+        match auth_info.get_user_name() {
+            Ok(Some(username)) => assert_eq!(username, "nancy"),
+            Ok(None) => panic!("Username not found"),
+            Err(e) => panic!("Error occurred: {}", e),
+        }
     }
 }
