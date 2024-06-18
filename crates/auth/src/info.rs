@@ -81,13 +81,13 @@ mod tests {
     #[test]
     fn test_get_user_name() {
         // This token is safe, it isn't signed by a real authority - only use for testing
-        let jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2F1dGgwLmdyaXQuaW8vIiwic3ViIjoiZ2l0aHVifDE2Mjc4MDEiLCJhdWQiOiJodHRwczovL2FwaTIuZ3JpdC5pbyIsImlhdCI6MTcxODcyNjM1MywiZXhwIjoxNzE4ODEyNzUzLCJzY29wZSI6Im9mZmxpbmVfYWNjZXNzIiwiaHR0cHM6Ly9oYXN1cmEuaW8vand0L2NsYWltcyI6eyJ4LWhhc3VyYS1kZWZhdWx0LXJvbGUiOiJ1c2VyIiwieC1oYXN1cmEtYWxsb3dlZC1yb2xlcyI6WyJ1c2VyIl0sIngtaGFzdXJhLXVzZXItaWQiOiJnaXRodWJ8MTYyNzgwMSIsIngtaGFzdXJhLXJhdy1uaWNrbmFtZSI6Im5hbmN5IiwieC1oYXN1cmEtdXNlci10ZW5hbnQiOiJnaXRodWIiLCJ4LWhhc3VyYS1hdXRoLXByb3ZpZGVyIjoiZ2l0aHViIiwieC1oYXN1cmEtdXNlci1uaWNrbmFtZSI6ImdpdGh1YnxuYW5jeSJ9fQ.UNiKbUgbITr4aKhZuwEwXzmjeH6kyHxQjQiL4YODGWY";
+        let jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJodHRwczovL2hhc3VyYS5pby9qd3QvY2xhaW1zIjp7IngtaGFzdXJhLWRlZmF1bHQtcm9sZSI6InVzZXIiLCJ4LWhhc3VyYS1hbGxvd2VkLXJvbGVzIjpbInVzZXIiXSwieC1oYXN1cmEtdXNlci1pZCI6ImdpdGh1YnwxNjI3ODAxIiwieC1oYXN1cmEtcmF3LW5pY2tuYW1lIjoibW9yZ2FudGUiLCJ4LWhhc3VyYS11c2VyLXRlbmFudCI6ImdpdGh1YiIsIngtaGFzdXJhLWF1dGgtcHJvdmlkZXIiOiJnaXRodWIiLCJ4LWhhc3VyYS11c2VyLW5pY2tuYW1lIjoiZ2l0aHVifG1vcmdhbnRlIn0sImlzcyI6Imh0dHBzOi8vYXV0aDAuZ3JpdC5pby8iLCJzdWIiOiJnaXRodWJ8MTYyNzgwMSIsImF1ZCI6Imh0dHBzOi8vYXBpMi5ncml0LmlvIiwiaWF0IjoxNzE4NzI2MzUzLCJleHAiOjE3MTg4MTI3NTN9.eEU0bSldfdxuWpXAKfWAuJBqTMR5BAdnAEhFu-hVlI4";
         let auth_info = AuthInfo {
             access_token: jwt.to_string(),
         };
 
         match auth_info.get_user_name() {
-            Ok(Some(username)) => assert_eq!(username, "nancy"),
+            Ok(Some(username)) => assert_eq!(username, "morgante"),
             Ok(None) => panic!("Username not found"),
             Err(e) => panic!("Error occurred: {}", e),
         }
