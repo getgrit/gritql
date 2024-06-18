@@ -1,4 +1,5 @@
-use anyhow::{bail, Result};
+use crate::updater::{SupportedApp, Updater};
+use anyhow::Result;
 use console::style;
 use log::debug;
 use marzano_auth::env::{get_grit_api_url, ENV_VAR_GRIT_API_URL, ENV_VAR_GRIT_AUTH_TOKEN};
@@ -13,11 +14,10 @@ use tokio::fs;
 use tokio::process::Command;
 use uuid::Uuid;
 
-use crate::updater::{SupportedApp, Updater};
-
 pub static GRIT_REPO_URL_NAME: &str = "grit_repo_url";
 pub static GRIT_REPO_BRANCH_NAME: &str = "grit_branch";
 pub static GRIT_TARGET_RANGES: &str = "grit_target_ranges";
+pub static GRIT_VCS_USER_NAME: &str = "grit_vcs_username";
 pub static ENV_GRIT_WORKSPACE_ROOT: &str = "GRIT_WORKSPACE_ROOT";
 
 // Sync with cli/src/worker.ts
@@ -101,6 +101,18 @@ where
         );
     }
 
+    let auth = updater.get_valid_auth().map_err(|_| {
+        anyhow::anyhow!(
+            "No valid authentication token found, please run {}",
+            style("grit auth login").bold().red()
+        )
+    })?;
+
+    if let Some(username) = auth.get_user_name()? {
+        arg.input
+            .insert(GRIT_VCS_USER_NAME.to_string(), username.into());
+    }
+
     let runner_path = updater
         .get_app_bin_and_install(SupportedApp::WorkflowRunner)
         .await?;
@@ -127,16 +139,6 @@ where
         &tempfile_path.to_string_lossy()
     );
 
-    let grit_token = match updater.get_valid_auth() {
-        Ok(token) => token.access_token,
-        Err(_) => {
-            bail!(
-                "No valid authentication token found, please run {}",
-                style("grit auth login").bold().red()
-            );
-        }
-    };
-
     let mut child = Command::new(runner_path);
     child
         .arg(tempfile_path.to_string_lossy().to_string())
@@ -147,7 +149,7 @@ where
 
     let mut final_child = child
         .env(ENV_VAR_GRIT_API_URL, get_grit_api_url())
-        .env(ENV_VAR_GRIT_AUTH_TOKEN, grit_token)
+        .env(ENV_VAR_GRIT_AUTH_TOKEN, auth.access_token)
         .env(ENV_GRIT_WORKSPACE_ROOT, root)
         .arg("--file")
         .arg(&tempfile_path)
@@ -226,7 +228,11 @@ pub async fn run_remote_workflow(
     pb.set_message("Launching workflow on Grit Cloud");
 
     let repo = ModuleRepo::from_dir(&cwd).await;
-    let input = args.get_payload()?;
+    let mut input = args.get_payload()?;
+
+    if let Some(username) = auth.get_user_name()? {
+        input.insert(GRIT_VCS_USER_NAME.to_string(), username.into());
+    }
 
     let settings =
         grit_cloud_client::RemoteWorkflowSettings::new(workflow_name, &repo, input.into());

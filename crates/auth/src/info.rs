@@ -9,9 +9,17 @@ pub struct AuthInfo {
 }
 
 #[derive(serde::Deserialize, Debug)]
+struct HasuraClaims {
+    #[serde(rename = "x-hasura-raw-nickname")]
+    nickname: Option<String>,
+}
+
+#[derive(serde::Deserialize, Debug)]
 struct AuthInfoPayload {
     exp: u64,
     sub: String,
+    #[serde(rename = "https://hasura.io/jwt/claims")]
+    hasura_claims: Option<HasuraClaims>,
 }
 
 impl AuthInfo {
@@ -37,6 +45,11 @@ impl AuthInfo {
         Ok(expiry)
     }
 
+    pub fn get_user_name(&self) -> Result<Option<String>> {
+        let payload = self.get_payload()?;
+        Ok(payload.hasura_claims.and_then(|c| c.nickname))
+    }
+
     pub fn get_user_id(&self) -> Result<String> {
         let payload = self.get_payload()?;
         Ok(payload.sub)
@@ -58,5 +71,25 @@ impl std::fmt::Display for AuthInfo {
             self.get_expiry(),
             payload
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_user_name() {
+        // This token is safe, it isn't signed by a real authority - only use for testing
+        let jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJodHRwczovL2hhc3VyYS5pby9qd3QvY2xhaW1zIjp7IngtaGFzdXJhLWRlZmF1bHQtcm9sZSI6InVzZXIiLCJ4LWhhc3VyYS1hbGxvd2VkLXJvbGVzIjpbInVzZXIiXSwieC1oYXN1cmEtdXNlci1pZCI6ImdpdGh1YnwxNjI3ODAxIiwieC1oYXN1cmEtcmF3LW5pY2tuYW1lIjoibW9yZ2FudGUiLCJ4LWhhc3VyYS11c2VyLXRlbmFudCI6ImdpdGh1YiIsIngtaGFzdXJhLWF1dGgtcHJvdmlkZXIiOiJnaXRodWIiLCJ4LWhhc3VyYS11c2VyLW5pY2tuYW1lIjoiZ2l0aHVifG1vcmdhbnRlIn0sImlzcyI6Imh0dHBzOi8vYXV0aDAuZ3JpdC5pby8iLCJzdWIiOiJnaXRodWJ8MTYyNzgwMSIsImF1ZCI6Imh0dHBzOi8vYXBpMi5ncml0LmlvIiwiaWF0IjoxNzE4NzI2MzUzLCJleHAiOjE3MTg4MTI3NTN9.eEU0bSldfdxuWpXAKfWAuJBqTMR5BAdnAEhFu-hVlI4";
+        let auth_info = AuthInfo {
+            access_token: jwt.to_string(),
+        };
+
+        match auth_info.get_user_name() {
+            Ok(Some(username)) => assert_eq!(username, "morgante"),
+            Ok(None) => panic!("Username not found"),
+            Err(e) => panic!("Error occurred: {}", e),
+        }
     }
 }
