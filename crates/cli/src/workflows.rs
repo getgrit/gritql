@@ -68,7 +68,7 @@ where
     let (server_addr, handle, shutdown_tx) = {
         let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
         let socket = tokio::net::TcpListener::bind("0.0.0.0:0").await?;
-        let server_addr = format!("http://{}", socket.local_addr()?);
+        let server_addr = format!("http://{}", socket.local_addr()?).to_string();
         let handle = grit_cloud_client::spawn_server_tasks(emitter, shutdown_rx, socket);
         info!("Started local server at {}", server_addr);
         (server_addr, handle, shutdown_tx)
