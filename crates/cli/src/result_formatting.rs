@@ -3,10 +3,10 @@ use colored::Colorize;
 use console::style;
 use core::fmt;
 use fs_err::read_to_string;
-use log::info;
+use log::{debug, error, info, warn};
 use marzano_core::api::{
-    AllDone, AnalysisLog, CreateFile, DoneFile, FileMatchResult, InputFile, Match, MatchResult,
-    PatternInfo, RemoveFile, Rewrite,
+    AllDone, AnalysisLog, AnalysisLogLevel, CreateFile, DoneFile, FileMatchResult, InputFile,
+    Match, MatchResult, PatternInfo, RemoveFile, Rewrite,
 };
 use marzano_core::constants::DEFAULT_FILE_NAME;
 use marzano_messenger::output_mode::OutputMode;
@@ -341,6 +341,29 @@ impl Messager for FormattedMessager<'_> {
         self.total_supressed += 1;
         Ok(())
     }
+
+    fn emit_log(&mut self, log: &marzano_messenger::SimpleLogMessage) -> anyhow::Result<()> {
+        if let Some(writer) = &mut self.writer {
+            let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
+            writeln!(writer, "[{:?}] {}", log.level, log.message)?;
+        } else {
+            match log.level {
+                AnalysisLogLevel::Debug => {
+                    debug!("{}", log.message);
+                }
+                AnalysisLogLevel::Info => {
+                    info!("{}", log.message);
+                }
+                AnalysisLogLevel::Warn => {
+                    warn!("{}", log.message);
+                }
+                AnalysisLogLevel::Error => {
+                    error!("{}", log.message);
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 /// Prints the transformed files themselves, with no metadata
@@ -417,6 +440,11 @@ impl Messager for TransformedMessenger<'_> {
     }
     fn track_supress(&mut self, _supressed: &MatchResult) -> anyhow::Result<()> {
         self.total_supressed += 1;
+        Ok(())
+    }
+
+    fn emit_log(&mut self, log: &marzano_messenger::SimpleLogMessage) -> anyhow::Result<()> {
+        log::debug!("Log received over RPC: {:?}", log);
         Ok(())
     }
 }

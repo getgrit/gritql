@@ -246,10 +246,7 @@ pub trait Messager: Send + Sync {
     fn raw_emit(&mut self, message: &MatchResult) -> anyhow::Result<()>;
 
     // Write a log message
-    fn emit_log(&mut self, _log: &SimpleLogMessage) -> anyhow::Result<()> {
-        // do nothing
-        Ok(())
-    }
+    fn emit_log(&mut self, _log: &SimpleLogMessage) -> anyhow::Result<()>;
 
     // Send the total count
     fn emit_estimate(&mut self, _count: usize) -> anyhow::Result<()> {
