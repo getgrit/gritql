@@ -209,6 +209,7 @@ pub fn display_workflow_outcome(outcome: PackagedWorkflowOutcome) -> Result<()> 
 pub async fn run_remote_workflow(
     workflow_name: String,
     args: crate::commands::apply_migration::ApplyMigrationArgs,
+    ranges: Option<Vec<FileDiff>>,
 ) -> Result<()> {
     use colored::Colorize;
     use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
@@ -238,9 +239,9 @@ pub async fn run_remote_workflow(
         }
     }
 
-    if let Some(ranges) = arg.ranges {
+    if let Some(ranges) = ranges {
         if !input.contains_key(GRIT_TARGET_RANGES) {
-            arg.input.insert(
+            input.insert(
                 GRIT_TARGET_RANGES.to_string(),
                 serde_json::to_value(ranges)?,
             );
