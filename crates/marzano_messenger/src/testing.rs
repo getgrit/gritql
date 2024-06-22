@@ -8,15 +8,19 @@ use crate::emit::Messager;
 /// This should be used in tests to avoid sending messages to real backends.
 pub struct TestingMessenger {
     message_count: usize,
+    log_count: usize,
 }
 
 impl TestingMessenger {
     pub fn new() -> Self {
-        Self { message_count: 0 }
+        Self {
+            message_count: 0,
+            log_count: 0,
+        }
     }
 
-    pub fn message_count(&self) -> usize {
-        self.message_count
+    pub fn total_count(&self) -> usize {
+        self.log_count + self.message_count
     }
 }
 
@@ -29,6 +33,11 @@ impl Default for TestingMessenger {
 impl Messager for TestingMessenger {
     fn raw_emit(&mut self, _message: &MatchResult) -> Result<()> {
         self.message_count += 1;
+        Ok(())
+    }
+
+    fn emit_log(&mut self, _log: &crate::SimpleLogMessage) -> anyhow::Result<()> {
+        self.log_count += 1;
         Ok(())
     }
 }
