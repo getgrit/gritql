@@ -238,6 +238,15 @@ pub async fn run_remote_workflow(
         }
     }
 
+    if let Some(ranges) = arg.ranges {
+        if !input.contains_key(GRIT_TARGET_RANGES) {
+            arg.input.insert(
+                GRIT_TARGET_RANGES.to_string(),
+                serde_json::to_value(ranges)?,
+            );
+        }
+    }
+
     let settings =
         grit_cloud_client::RemoteWorkflowSettings::new(workflow_name, &repo, input.into());
     let url = grit_cloud_client::run_remote_workflow(settings, &auth).await?;
