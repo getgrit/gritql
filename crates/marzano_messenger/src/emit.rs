@@ -16,7 +16,7 @@ use marzano_core::{
 use marzano_language::target_language::TargetLanguage;
 use serde::{Deserialize, Serialize};
 
-use crate::{format::format_result, workflows::PackagedWorkflowOutcome};
+use crate::{format::format_result, workflows::PackagedWorkflowOutcome, SimpleLogMessage};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct ApplyDetails {
@@ -244,6 +244,9 @@ pub trait Messager: Send + Sync {
 
     // Write a message to the output
     fn raw_emit(&mut self, message: &MatchResult) -> anyhow::Result<()>;
+
+    // Write a log message
+    fn emit_log(&mut self, _log: &SimpleLogMessage) -> anyhow::Result<()>;
 
     // Send the total count
     fn emit_estimate(&mut self, _count: usize) -> anyhow::Result<()> {

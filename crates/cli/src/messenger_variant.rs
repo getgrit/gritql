@@ -49,6 +49,20 @@ impl<'a> Messager for MessengerVariant<'a> {
         }
     }
 
+    fn emit_log(&mut self, log: &marzano_messenger::SimpleLogMessage) -> anyhow::Result<()> {
+        match self {
+            MessengerVariant::Formatted(m) => m.emit_log(log),
+            MessengerVariant::Transformed(m) => m.emit_log(log),
+            MessengerVariant::JsonLine(m) => m.emit_log(log),
+            #[cfg(feature = "remote_redis")]
+            MessengerVariant::Redis(m) => m.emit_log(log),
+            #[cfg(feature = "remote_pubsub")]
+            MessengerVariant::GooglePubSub(m) => m.emit_log(log),
+            #[cfg(feature = "server")]
+            MessengerVariant::Combined(m) => m.emit_log(log),
+        }
+    }
+
     fn emit_estimate(&mut self, count: usize) -> anyhow::Result<()> {
         match self {
             MessengerVariant::Formatted(m) => m.emit_estimate(count),
