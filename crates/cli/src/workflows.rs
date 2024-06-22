@@ -1,7 +1,7 @@
 use crate::updater::{SupportedApp, Updater};
 use anyhow::Result;
 use console::style;
-use log::{debug, info};
+use log::debug;
 use marzano_auth::env::{get_grit_api_url, ENV_VAR_GRIT_API_URL, ENV_VAR_GRIT_AUTH_TOKEN};
 use marzano_gritmodule::{fetcher::LocalRepo, searcher::find_grit_dir_from};
 use marzano_messenger::{emit::Messager, workflows::PackagedWorkflowOutcome};
@@ -70,7 +70,7 @@ where
         let socket = tokio::net::TcpListener::bind("0.0.0.0:0").await?;
         let server_addr = format!("http://{}", socket.local_addr()?).to_string();
         let handle = grit_cloud_client::spawn_server_tasks(emitter, shutdown_rx, socket);
-        info!("Started local server at {}", server_addr);
+        log::info!("Started local server at {}", server_addr);
         (server_addr, handle, shutdown_tx)
     };
 
