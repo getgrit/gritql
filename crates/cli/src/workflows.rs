@@ -67,9 +67,10 @@ where
     #[cfg(feature = "workflow_server")]
     let (server_addr, handle, shutdown_tx) = {
         let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
-        let socket = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
-        let server_addr = format!("http://{}", socket.local_addr()?);
+        let socket = tokio::net::TcpListener::bind("0.0.0.0:0").await?;
+        let server_addr = format!("http://{}", socket.local_addr()?).to_string();
         let handle = grit_cloud_client::spawn_server_tasks(emitter, shutdown_rx, socket);
+        log::info!("Started local server at {}", server_addr);
         (server_addr, handle, shutdown_tx)
     };
 
@@ -209,6 +210,7 @@ pub fn display_workflow_outcome(outcome: PackagedWorkflowOutcome) -> Result<()> 
 pub async fn run_remote_workflow(
     workflow_name: String,
     args: crate::commands::apply_migration::ApplyMigrationArgs,
+    ranges: Option<Vec<FileDiff>>,
 ) -> Result<()> {
     use colored::Colorize;
     use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
@@ -235,6 +237,15 @@ pub async fn run_remote_workflow(
     if let Some(username) = auth.get_user_name()? {
         if !input.contains_key(GRIT_VCS_USER_NAME) {
             input.insert(GRIT_VCS_USER_NAME.to_string(), username.into());
+        }
+    }
+
+    if let Some(ranges) = ranges {
+        if !input.contains_key(GRIT_TARGET_RANGES) {
+            input.insert(
+                GRIT_TARGET_RANGES.to_string(),
+                serde_json::to_value(ranges)?,
+            );
         }
     }
 
