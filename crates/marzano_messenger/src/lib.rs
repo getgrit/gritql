@@ -1,3 +1,4 @@
+mod check;
 pub mod emit;
 pub mod format;
 mod logs;
