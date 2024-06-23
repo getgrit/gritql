@@ -1,7 +1,9 @@
 use anyhow::{bail, Result};
 use marzano_core::api::AnalysisLog;
 use marzano_messenger::{
-    emit::Messager, output_mode::OutputMode, workflows::PackagedWorkflowOutcome,
+    emit::Messager,
+    output_mode::OutputMode,
+    workflows::{PackagedWorkflowOutcome, WorkflowMessenger},
 };
 use std::{
     io::{self, Write},
@@ -14,6 +16,8 @@ use cli_server::combined::CombinedMessenger;
 use cli_server::pubsub::GooglePubSubMessenger;
 #[cfg(feature = "remote_redis")]
 use cli_server::redis::RedisMessenger;
+#[cfg(feature = "server")]
+use cli_server::workflows::RemoteWorkflowMessenger;
 
 use crate::{
     flags::OutputFormat,
@@ -102,6 +106,33 @@ impl<'a> Messager for MessengerVariant<'a> {
             MessengerVariant::GooglePubSub(m) => m.finish_workflow(outcome),
             #[cfg(feature = "server")]
             MessengerVariant::Combined(m) => m.finish_workflow(outcome),
+        }
+    }
+}
+
+impl<'a> WorkflowMessenger for MessengerVariant<'a> {
+    fn save_metadata(
+        &mut self,
+        message: &marzano_messenger::workflows::SimpleWorkflowMessage,
+    ) -> anyhow::Result<()> {
+        match self {
+            MessengerVariant::Formatted(_)
+            | MessengerVariant::Transformed(_)
+            | MessengerVariant::JsonLine(_) => {
+                // These are local, so no need to save metadata
+                log::info!(
+                    "Skipping save_metadata for local messenger: {} {:?}",
+                    message.kind,
+                    message.message
+                );
+                Ok(())
+            }
+            #[cfg(feature = "remote_redis")]
+            MessengerVariant::Redis(m) => m.save_metadata(message),
+            #[cfg(feature = "remote_pubsub")]
+            MessengerVariant::GooglePubSub(m) => m.save_metadata(message),
+            #[cfg(feature = "server")]
+            MessengerVariant::Combined(m) => m.save_metadata(message),
         }
     }
 }
