@@ -120,7 +120,7 @@ impl<'a> WorkflowMessenger for MessengerVariant<'a> {
             | MessengerVariant::Transformed(_)
             | MessengerVariant::JsonLine(_) => {
                 // These are local, so no need to save metadata
-                log::info!(
+                log::debug!(
                     "Skipping save_metadata for local messenger: {} {:?}",
                     message.kind,
                     message.message

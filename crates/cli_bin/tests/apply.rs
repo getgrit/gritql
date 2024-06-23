@@ -2822,7 +2822,7 @@ fn apply_remote_pattern() -> Result<()> {
     assert!(output.status.success(), "Command should have succeeded");
 
     let test_file = dir.join("test.js");
-    let content: String = fs_err::read_to_string(&test_file)?;
+    let content: String = fs_err::read_to_string(test_file)?;
     assert_snapshot!(content);
 
     Ok(())
