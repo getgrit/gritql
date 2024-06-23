@@ -4,6 +4,7 @@ use console::style;
 use log::debug;
 use marzano_auth::env::{get_grit_api_url, ENV_VAR_GRIT_API_URL, ENV_VAR_GRIT_AUTH_TOKEN};
 use marzano_gritmodule::{fetcher::LocalRepo, searcher::find_grit_dir_from};
+use marzano_messenger::workflows::WorkflowMessenger;
 use marzano_messenger::{emit::Messager, workflows::PackagedWorkflowOutcome};
 use marzano_util::diff::FileDiff;
 use serde::Serialize;
@@ -53,7 +54,7 @@ pub async fn run_bin_workflow<M>(
     mut arg: WorkflowInputs,
 ) -> Result<(M, PackagedWorkflowOutcome)>
 where
-    M: Messager + Send + 'static,
+    M: Messager + WorkflowMessenger + Send + 'static,
 {
     let cwd = std::env::current_dir()?;
 
