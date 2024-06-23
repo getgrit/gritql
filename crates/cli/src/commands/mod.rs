@@ -28,6 +28,8 @@ pub(crate) mod apply_migration;
 pub(crate) mod workflows;
 #[cfg(feature = "workflows_v2")]
 pub(crate) mod workflows_list;
+#[cfg(feature = "workflows_v2")]
+pub(crate) mod workflows_view;
 
 use crate::error::GoodError;
 
