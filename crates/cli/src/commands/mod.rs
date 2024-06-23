@@ -192,6 +192,7 @@ impl fmt::Display for Commands {
             #[cfg(feature = "workflows_v2")]
             Commands::Workflows(arg) => match arg.workflows_commands {
                 WorkflowCommands::List(_) => write!(f, "workflows list"),
+                WorkflowCommands::View(_) => write!(f, "workflows view"),
             },
             Commands::Plumbing(_) => write!(f, "plumbing"),
             Commands::Version(_) => write!(f, "version"),
@@ -382,6 +383,9 @@ async fn run_command() -> Result<()> {
         #[cfg(feature = "workflows_v2")]
         Commands::Workflows(arg) => match arg.workflows_commands {
             WorkflowCommands::List(arg) => run_list_workflows(&arg, &app.format_flags).await,
+            WorkflowCommands::View(arg) => {
+                workflows_view::run_view_workflow(&arg, &app.format_flags).await
+            }
         },
         Commands::Plumbing(arg) => {
             run_plumbing(arg, multi, &mut apply_details, app.format_flags).await

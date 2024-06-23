@@ -77,6 +77,7 @@ tracing-subscriber = { version = "0.3", default-features = false, optional = tru
 
 fs-err = { version = "2.11.0" }
 
+
 [target.'cfg(not(windows))'.dependencies]
 openssl = { version = "0.10", features = ["vendored"] }
 
