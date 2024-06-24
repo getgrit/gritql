@@ -480,7 +480,6 @@ impl Rewrite {
         Self {
             original,
             rewritten,
-            reason: None,
         }
     }
 }
@@ -490,6 +489,7 @@ impl Rewrite {
 pub struct CreateFile {
     pub rewritten: EntireFile,
     range: Option<Vec<Range>>,
+    pub reason: Option<MatchReason>,
 }
 
 impl From<CreateFile> for MatchResult {
