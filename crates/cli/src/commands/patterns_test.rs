@@ -3,7 +3,6 @@ use dashmap::{DashMap, ReadOnlyView};
 use log::{debug, info};
 
 use marzano_core::api::MatchResult;
-use marzano_core::constants::DEFAULT_FILE_NAME;
 use marzano_gritmodule::config::{GritPatternSample, GritPatternTestInfo};
 use marzano_gritmodule::formatting::format_rich_files;
 use marzano_gritmodule::markdown::replace_sample_in_md_file;
@@ -33,8 +32,6 @@ use anyhow::{anyhow, bail, Context as _, Result};
 use std::collections::HashMap;
 use std::{path::Path, time::Duration};
 
-use grit_util::Ast;
-use marzano_core::analysis::is_multifile;
 use marzano_core::pattern_compiler::compiler::get_dependents_of_target_patterns_by_traversal_from_src;
 use marzano_gritmodule::searcher::collect_from_file;
 use notify::{self, RecursiveMode};
@@ -315,10 +312,7 @@ async fn enable_watch_mode(
     // select backend via fish operator, here PollWatcher backend
     let mut debouncer = new_debouncer_opt::<_, notify::PollWatcher>(debouncer_config, tx).unwrap();
 
-    debouncer
-        .watcher()
-        .watch(path, RecursiveMode::Recursive)
-        .unwrap();
+    debouncer.watcher().watch(path, RecursiveMode::Recursive)?;
     log::info!("\n[Watch Mode] enabled on path: {}", path.display());
 
     let testable_patterns_map = testable_patterns
@@ -330,13 +324,13 @@ async fn enable_watch_mode(
     for result in rx {
         match result {
             Ok(event) => 'event_block: {
-                let modified_file_path = event.first()
-                    .unwrap()
-                    .path
-                    .clone()
-                    .into_os_string()
-                    .into_string()
-                    .unwrap();
+                let modified_file_path = event.first().unwrap().path.clone();
+
+                if !modified_file_path.is_file() {
+                    break 'event_block;
+                }
+                let modified_file_path = modified_file_path.into_os_string().into_string().unwrap();
+
                 //temorary fix, until notify crate adds support for ignoring paths
                 for path in &ignore_path {
                     if modified_file_path.contains(path) {
@@ -352,22 +346,11 @@ async fn enable_watch_mode(
                     log::info!("[Watch Mode] No patterns changed.\n");
                     break 'event_block;
                 }
-                let modified_patterns_names = modified_patterns
-                    .iter()
-                    .map(|p| p.local_name.as_ref().unwrap())
-                    .collect::<Vec<_>>();
+
                 let deleted_patterns_names = deleted_patterns
                     .iter()
                     .map(|p| p.local_name.as_ref().unwrap())
                     .collect::<Vec<_>>();
-                log::info!(
-                    "[Watch Mode] Modified patterns: {:?}",
-                    modified_patterns_names
-                );
-                log::info!(
-                    "[Watch Mode] Deleted patterns: {:?}",
-                    deleted_patterns_names
-                );
 
                 let mut patterns_to_test = modified_patterns.clone();
                 let mut patterns_to_test_names = patterns_to_test
@@ -381,12 +364,6 @@ async fn enable_watch_mode(
                         &testable_patterns,
                         &modified_patterns,
                     )?;
-
-                    log::info!(
-                        "[Watch Mode] Modified patterns' Dependents Names: {:?}",
-                        modified_patterns_dependents_names
-                    );
-
                     for name in &modified_patterns_dependents_names {
                         if !patterns_to_test_names.contains(name) {
                             patterns_to_test.push(testable_patterns_map.get(name).unwrap().clone());
@@ -401,12 +378,6 @@ async fn enable_watch_mode(
                         &testable_patterns,
                         &deleted_patterns,
                     )?;
-
-                    log::info!(
-                        "[Watch Mode] Deleted patterns' Dependents Names: {:?}",
-                        deleted_patterns_dependents_names
-                    );
-
                     for name in &deleted_patterns_dependents_names {
                         if !deleted_patterns_names.contains(&name)
                             && !patterns_to_test_names.contains(name)
@@ -422,16 +393,12 @@ async fn enable_watch_mode(
                     break 'event_block;
                 }
 
-                let _ = get_marzano_pattern_test_results(
-                    patterns_to_test,
-                    libs,
-                    args,
-                    output.clone(),
-                )
-                .await;
+                let _ =
+                    get_marzano_pattern_test_results(patterns_to_test, libs, args, output.clone())
+                        .await;
             }
             Err(error) => {
-                log::error!("Error {error:?}")
+                log::error!("[Watch Mode] Error: {error:?}")
             }
         }
     }
@@ -460,15 +427,11 @@ fn get_dependents_of_target_patterns(
             .unwrap();
         let src = rich_pattern.body;
         let mut parser = MarzanoGritParser::new()?;
-        let src_tree = parser.parse_file(src, Some(Path::new(DEFAULT_FILE_NAME)))?;
-        let root = src_tree.root_node();
-        let is_multifile = is_multifile(&root, &libs, &mut parser)?;
 
         let dependents = get_dependents_of_target_patterns_by_traversal_from_src(
             &libs,
             src,
             &mut parser,
-            !is_multifile,
             &target_patterns_names,
         )?;
 
@@ -486,7 +449,7 @@ async fn get_modified_and_deleted_patterns(
     testable_patterns: &Vec<GritPatternTestInfo>,
 ) -> Result<(Vec<GritPatternTestInfo>, Vec<GritPatternTestInfo>)> {
     let path = Path::new(modified_path);
-    let file_patterns = collect_from_file(path, &None).await?;
+    let file_patterns = collect_from_file(path, &None).await.unwrap_or(vec![]);
     let modified_patterns = get_grit_pattern_test_info(file_patterns);
 
     let mut modified_pattern_names = <Vec<&String>>::new();

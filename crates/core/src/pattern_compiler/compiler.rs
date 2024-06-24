@@ -571,7 +571,6 @@ pub fn get_dependents_of_target_patterns_by_traversal_from_src(
     libs: &BTreeMap<String, String>,
     src: &str,
     parser: &mut MarzanoGritParser,
-    will_autowrap: bool,
     target_patterns: &[String],
 ) -> Result<Vec<String>> {
     let mut dependents = <Vec<String>>::new();
@@ -587,20 +586,16 @@ pub fn get_dependents_of_target_patterns_by_traversal_from_src(
         foreign_functions: foreign_file,
     } = defs_to_filenames(libs, parser, tree.root_node())?;
 
+    let name_to_filename: BTreeMap<String, String> = pattern_file
+        .iter()
+        .map(|(k, v)| (k.clone(), (v.clone())))
+        .chain(predicate_file.iter().map(|(k, v)| (k.clone(), (v.clone()))))
+        .chain(function_file.iter().map(|(k, v)| (k.clone(), (v.clone()))))
+        .chain(foreign_file.iter().map(|(k, v)| (k.clone(), (v.clone()))))
+        .collect();
+
     let mut traversed_stack = <Vec<String>>::new();
-
-    // gross but necessary due to running these patterns before and after each file
-    let mut stack: Vec<Tree> = if will_autowrap {
-        let before_each_file = "before_each_file()";
-        let before_tree =
-            parser.parse_file(before_each_file, Some(Path::new(DEFAULT_FILE_NAME)))?;
-        let after_each_file = "after_each_file()";
-        let after_tree = parser.parse_file(after_each_file, Some(Path::new(DEFAULT_FILE_NAME)))?;
-
-        vec![tree, before_tree, after_tree]
-    } else {
-        vec![tree]
-    };
+    let mut stack: Vec<Tree> = vec![tree];
     while let Some(tree) = stack.pop() {
         let root = tree.root_node();
         let cursor = root.walk();
@@ -619,37 +614,9 @@ pub fn get_dependents_of_target_patterns_by_traversal_from_src(
                     dependents.push(e);
                 }
             }
-            if n.node.kind() == node_like {
+            if let Some(file_name) = name_to_filename.get(&name) {
                 if let Some(tree) = find_child_tree_definition(
-                    &pattern_file,
-                    parser,
-                    libs,
-                    &mut traversed_stack,
-                    &name,
-                )? {
-                    stack.push(tree);
-                }
-                if let Some(tree) = find_child_tree_definition(
-                    &function_file,
-                    parser,
-                    libs,
-                    &mut traversed_stack,
-                    &name,
-                )? {
-                    stack.push(tree);
-                }
-                if let Some(tree) = find_child_tree_definition(
-                    &foreign_file,
-                    parser,
-                    libs,
-                    &mut traversed_stack,
-                    &name,
-                )? {
-                    stack.push(tree);
-                }
-            } else if n.node.kind() == predicate_call {
-                if let Some(tree) = find_child_tree_definition(
-                    &predicate_file,
+                    file_name,
                     parser,
                     libs,
                     &mut traversed_stack,
@@ -664,21 +631,19 @@ pub fn get_dependents_of_target_patterns_by_traversal_from_src(
 }
 
 fn find_child_tree_definition(
-    files: &BTreeMap<String, String>,
+    file_name: &str,
     parser: &mut MarzanoGritParser,
     libs: &BTreeMap<String, String>,
     traversed_stack: &mut Vec<String>,
     name: &str,
 ) -> Result<Option<Tree>> {
-    if let Some(file_name) = files.get(name) {
-        if !traversed_stack.contains(&name.to_string()) {
-            if let Some(file_body) = libs.get(file_name) {
-                traversed_stack.push(name.to_owned());
-                let tree = parser.parse_file(file_body, Some(Path::new(file_name)))?;
-                return Ok(Some(tree));
-            }
+    if !traversed_stack.contains(&name.to_string()) {
+        if let Some(file_body) = libs.get(file_name) {
+            traversed_stack.push(name.to_owned());
+            let tree = parser.parse_file(file_body, Some(Path::new(file_name)))?;
+            return Ok(Some(tree));
         }
-    };
+    }
     Ok(None)
 }
 
