@@ -379,9 +379,6 @@ impl EntireFile {
 pub struct Rewrite {
     pub original: Match,
     pub rewritten: EntireFile,
-    /// Deprecated
-    #[serde(default)]
-    pub ansi_summary: String,
     pub reason: Option<RewriteReason>,
 }
 
@@ -481,7 +478,6 @@ impl Rewrite {
         Self {
             original,
             rewritten,
-            ansi_summary: String::new(),
             reason: None,
         }
     }
@@ -491,7 +487,6 @@ impl Rewrite {
 #[serde(rename_all = "camelCase")]
 pub struct CreateFile {
     pub rewritten: EntireFile,
-    pub ansi_summary: String,
     range: Option<Vec<Range>>,
 }
 
@@ -505,7 +500,6 @@ impl CreateFile {
     fn file_to_create(name: &str, body: &str) -> CreateFile {
         CreateFile {
             rewritten: EntireFile::file_to_entire_file(name, body, None),
-            ansi_summary: String::new(),
             range: None,
         }
     }
@@ -540,7 +534,6 @@ impl FileMatchResult for CreateFile {
 #[serde(rename_all = "camelCase")]
 pub struct RemoveFile {
     pub original: Match,
-    pub ansi_summary: String,
 }
 
 impl From<RemoveFile> for MatchResult {
