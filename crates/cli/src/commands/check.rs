@@ -6,8 +6,7 @@ use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use log::info;
 use marzano_core::{
     api::{
-        is_match, AllDone, AllDoneReason, EnforcementLevel, MatchResult, MatchReason,
-        RewriteSource,
+        is_match, AllDone, AllDoneReason, EnforcementLevel, MatchReason, MatchResult, RewriteSource,
     },
     fs::apply_rewrite,
     problem::Problem,
@@ -289,9 +288,10 @@ pub(crate) async fn run_check(
                             source: RewriteSource::Gritql,
                             name: Some(result.pattern.local_name.to_string()),
                             level: Some(result.pattern.level()),
+                            explanation: None,
                         });
                         let mut rewrite = r.clone();
-                        rewrite.reason = reason;
+                        rewrite.original.reason = reason;
                         Some(MatchResult::Rewrite(rewrite))
                     }
                     _ => None,

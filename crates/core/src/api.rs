@@ -317,6 +317,7 @@ impl Match {
             ranges: match_ranges.ranges.clone(),
             variables: match_ranges.variables.clone(),
             messages: vec![],
+            reason: None,
         }
     }
 }
@@ -503,6 +504,7 @@ impl CreateFile {
         CreateFile {
             rewritten: EntireFile::file_to_entire_file(name, body, None),
             range: None,
+            reason: None,
         }
     }
 }

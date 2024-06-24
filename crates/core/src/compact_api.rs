@@ -54,6 +54,7 @@ pub enum CompactResult {
 pub struct CompactMatch {
     pub source_file: String,
     pub ranges: Vec<Range>,
+    pub reason: Option<MatchReason>,
 }
 
 impl From<Match> for CompactMatch {
@@ -61,6 +62,7 @@ impl From<Match> for CompactMatch {
         CompactMatch {
             source_file: m.source_file,
             ranges: m.ranges,
+            reason: m.reason,
         }
     }
 }
@@ -84,7 +86,6 @@ impl From<EntireFile> for CompactFile {
 pub struct CompactRewrite {
     pub original: CompactMatch,
     pub rewritten: CompactFile,
-    pub reason: Option<MatchReason>,
 }
 
 impl From<Rewrite> for CompactRewrite {
@@ -92,7 +93,6 @@ impl From<Rewrite> for CompactRewrite {
         CompactRewrite {
             original: m.original.into(),
             rewritten: m.rewritten.into(),
-            reason: m.reason,
         }
     }
 }
@@ -101,12 +101,14 @@ impl From<Rewrite> for CompactRewrite {
 #[serde(rename_all = "camelCase")]
 pub struct CompactCreateFile {
     pub rewritten: CompactFile,
+    pub reason: Option<MatchReason>,
 }
 
 impl From<CreateFile> for CompactCreateFile {
     fn from(m: CreateFile) -> Self {
         CompactCreateFile {
             rewritten: m.rewritten.into(),
+            reason: m.reason,
         }
     }
 }

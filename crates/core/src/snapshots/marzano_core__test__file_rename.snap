@@ -46,6 +46,7 @@ expression: results
     sourceFile: test-file.tsx
     ranges: []
     debug: "{\n  \"SORT\": \"program\",\n  \"RANGE\": {\n    \"start\": {\n      \"line\": 1,\n      \"column\": 1\n    },\n    \"end\": {\n      \"line\": 2,\n      \"column\": 1\n    }\n  },\n  \"statements\": [\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 1,\n          \"column\": 1\n        },\n        \"end\": {\n          \"line\": 1,\n          \"column\": 24\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"call_expression\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 1,\n            \"column\": 1\n          },\n          \"end\": {\n            \"line\": 1,\n            \"column\": 24\n          }\n        },\n        \"arguments\": [\n          {\n            \"SORT\": \"identifier\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 1,\n                \"column\": 11\n              },\n              \"end\": {\n                \"line\": 1,\n                \"column\": 23\n              }\n            },\n            \"TEXT\": \"the_new_name\"\n          }\n        ],\n        \"function\": {\n          \"SORT\": \"identifier\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 1,\n              \"column\": 1\n            },\n            \"end\": {\n              \"line\": 1,\n              \"column\": 10\n            }\n          },\n          \"TEXT\": \"rename_to\"\n        },\n        \"CHILDREN\": [\n          {\n            \"SORT\": \"(\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 1,\n                \"column\": 10\n              },\n              \"end\": {\n                \"line\": 1,\n                \"column\": 11\n              }\n            },\n            \"TEXT\": \"(\"\n          },\n          {\n            \"SORT\": \")\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 1,\n                \"column\": 23\n              },\n              \"end\": {\n                \"line\": 1,\n                \"column\": 24\n              }\n            },\n            \"TEXT\": \")\"\n          }\n        ]\n      }\n    }\n  ]\n}"
+    reason: ~
   rewritten:
     messages: []
     variables: []
@@ -54,7 +55,5 @@ expression: results
     byteRanges:
       - start: 0
         end: 27
-  ansiSummary: ""
-  reason: ~
 - __typename: DoneFile
   relativeFilePath: test-file.tsx
