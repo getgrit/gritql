@@ -102,7 +102,7 @@ impl MatchResult {
         }
     }
 
-    pub(crate) fn file_to_match_result<'a>(
+    pub(crate) fn file_to_match_result(
         file: &Vector<&FileOwner<Tree>>,
     ) -> Result<Option<MatchResult>> {
         if file.is_empty() {
@@ -170,7 +170,11 @@ impl MatchResult {
             | MatchResult::RemoveFile(RemoveFile { reason: r, .. })
             | MatchResult::Rewrite(Rewrite { reason: r, .. })
             | MatchResult::CreateFile(CreateFile { reason: r, .. }) => r.as_ref(),
-            _ => None,
+            MatchResult::PatternInfo(_)
+            | MatchResult::AllDone(_)
+            | MatchResult::InputFile(_)
+            | MatchResult::DoneFile(_)
+            | MatchResult::AnalysisLog(_) => None,
         }
     }
 
@@ -316,7 +320,7 @@ pub struct Match {
 }
 
 impl FileMatch {
-    fn file_to_file_match<'a>(match_ranges: &InputRanges, name: &str) -> Self {
+    fn file_to_file_match(match_ranges: &InputRanges, name: &str) -> Self {
         Self {
             source_file: name.to_owned(),
             ranges: match_ranges.ranges.clone(),
@@ -397,7 +401,7 @@ impl From<Rewrite> for MatchResult {
 }
 
 impl Rewrite {
-    fn file_to_rewrite<'a>(
+    fn file_to_rewrite(
         initial: &FileOwner<Tree>,
         rewritten_file: &FileOwner<Tree>,
     ) -> Result<Self> {
