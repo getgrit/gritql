@@ -101,9 +101,8 @@ impl MatchResult {
         }
     }
 
-    pub(crate) fn file_to_match_result<'a>(
+    pub(crate) fn file_to_match_result(
         file: &Vector<&FileOwner<Tree>>,
-        language: &impl MarzanoLanguage<'a>,
     ) -> Result<Option<MatchResult>> {
         if file.is_empty() {
             bail!("cannot have file with no versions")
@@ -121,8 +120,6 @@ impl MatchResult {
                 return Ok(Some(MatchResult::Match(Match::file_to_match(
                     ranges,
                     file.name.to_string_lossy().as_ref(),
-                    &file.tree,
-                    language,
                 ))));
             } else {
                 return Ok(None);
@@ -131,7 +128,6 @@ impl MatchResult {
             return Ok(Some(MatchResult::Rewrite(Rewrite::file_to_rewrite(
                 file.front().unwrap(),
                 file.back().unwrap(),
-                language,
             )?)));
         }
     }
@@ -292,25 +288,11 @@ pub struct Match {
     pub source_file: String,
     #[serde(default)]
     pub ranges: Vec<Range>,
-    #[serde(default)]
-    pub debug: String,
 }
 
 impl Match {
-    fn file_to_match<'a>(
-        match_ranges: &InputRanges,
-        name: &str,
-        tree: &Tree,
-        language: &impl MarzanoLanguage<'a>,
-    ) -> Self {
-        let input_file_debug_text = to_string_pretty(&tree_sitter_node_to_json(
-            &tree.root_node().node,
-            &tree.source,
-            language,
-        ))
-        .unwrap();
+    fn file_to_match(match_ranges: &InputRanges, name: &str) -> Self {
         Self {
-            debug: input_file_debug_text,
             source_file: name.to_owned(),
             ranges: match_ranges.ranges.clone(),
             variables: match_ranges.variables.clone(),
@@ -392,18 +374,12 @@ impl From<Rewrite> for MatchResult {
 }
 
 impl Rewrite {
-    fn file_to_rewrite<'a>(
+    fn file_to_rewrite(
         initial: &FileOwner<Tree>,
         rewritten_file: &FileOwner<Tree>,
-        language: &impl MarzanoLanguage<'a>,
     ) -> Result<Self> {
         let original = if let Some(ranges) = &initial.matches.borrow().input_matches {
-            Match::file_to_match(
-                ranges,
-                initial.name.to_string_lossy().as_ref(),
-                &initial.tree,
-                language,
-            )
+            Match::file_to_match(ranges, initial.name.to_string_lossy().as_ref())
         } else {
             bail!("cannot have rewrite without matches")
         };

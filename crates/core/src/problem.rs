@@ -474,7 +474,7 @@ impl Problem {
             .execute(&binding, &mut state, &context, &mut user_logs)?
         {
             for file in state.files.files() {
-                if let Some(result) = MatchResult::file_to_match_result(file, &self.language)? {
+                if let Some(result) = MatchResult::file_to_match_result(file)? {
                     results.push(result)
                 }
             }
