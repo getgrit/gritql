@@ -282,6 +282,24 @@ pub struct InputFile {
     pub syntax_tree: String,
 }
 
+/// Just the basic match internals
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "camelCase")]
+pub struct FileMatch {
+    #[serde(default)]
+    pub messages: Vec<Message>,
+    #[serde(default)]
+    pub variables: Vec<VariableMatch>,
+    pub source_file: String,
+    #[serde(default)]
+    pub ranges: Vec<Range>,
+    #[serde(default)]
+    pub debug: String,
+    #[serde(default)]
+    pub reason: Option<MatchReason>,
+}
+
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct Match {
