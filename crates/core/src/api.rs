@@ -282,7 +282,7 @@ pub struct InputFile {
     pub syntax_tree: String,
 }
 
-/// Just the basic match internals
+/// This represents the details of a match in a file, but is not directly a match result.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct FileMatch {
@@ -293,25 +293,13 @@ pub struct FileMatch {
     pub source_file: String,
     #[serde(default)]
     pub ranges: Vec<Range>,
-    #[serde(default)]
-    pub debug: String,
-    #[serde(default)]
-    pub reason: Option<MatchReason>,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct Match {
-    #[serde(default)]
-    pub messages: Vec<Message>,
-    #[serde(default)]
-    pub variables: Vec<VariableMatch>,
-    pub source_file: String,
-    #[serde(default)]
-    pub ranges: Vec<Range>,
-    #[serde(default)]
-    pub debug: String,
+    #[serde(flatten)]
+    pub file: FileMatch,
     #[serde(default)]
     pub reason: Option<MatchReason>,
 }
@@ -398,8 +386,10 @@ impl EntireFile {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct Rewrite {
-    pub original: Match,
+    pub original: FileMatch,
     pub rewritten: EntireFile,
+    #[serde(default)]
+    pub reason: Option<MatchReason>,
 }
 
 impl From<Rewrite> for MatchResult {
@@ -555,7 +545,9 @@ impl FileMatchResult for CreateFile {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct RemoveFile {
-    pub original: Match,
+    pub original: FileMatch,
+    #[serde(default)]
+    pub reason: Option<MatchReason>,
 }
 
 impl From<RemoveFile> for MatchResult {
