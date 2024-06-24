@@ -42,14 +42,13 @@ expression: results
           column: 23
         startByte: 13
         endByte: 23
-    debug: "{\n  \"SORT\": \"program\",\n  \"RANGE\": {\n    \"start\": {\n      \"line\": 2,\n      \"column\": 13\n    },\n    \"end\": {\n      \"line\": 2,\n      \"column\": 23\n    }\n  },\n  \"statements\": [\n    {\n      \"SORT\": \"expression_statement\",\n      \"RANGE\": {\n        \"start\": {\n          \"line\": 2,\n          \"column\": 13\n        },\n        \"end\": {\n          \"line\": 2,\n          \"column\": 23\n        }\n      },\n      \"expression\": {\n        \"SORT\": \"new_expression\",\n        \"RANGE\": {\n          \"start\": {\n            \"line\": 2,\n            \"column\": 13\n          },\n          \"end\": {\n            \"line\": 2,\n            \"column\": 23\n          }\n        },\n        \"constructor\": {\n          \"SORT\": \"identifier\",\n          \"RANGE\": {\n            \"start\": {\n              \"line\": 2,\n              \"column\": 17\n            },\n            \"end\": {\n              \"line\": 2,\n              \"column\": 21\n            }\n          },\n          \"TEXT\": \"Date\"\n        },\n        \"CHILDREN\": [\n          {\n            \"SORT\": \"new\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 2,\n                \"column\": 13\n              },\n              \"end\": {\n                \"line\": 2,\n                \"column\": 16\n              }\n            },\n            \"TEXT\": \"new\"\n          },\n          {\n            \"SORT\": \"(\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 2,\n                \"column\": 21\n              },\n              \"end\": {\n                \"line\": 2,\n                \"column\": 22\n              }\n            },\n            \"TEXT\": \"(\"\n          },\n          {\n            \"SORT\": \")\",\n            \"RANGE\": {\n              \"start\": {\n                \"line\": 2,\n                \"column\": 22\n              },\n              \"end\": {\n                \"line\": 2,\n                \"column\": 23\n              }\n            },\n            \"TEXT\": \")\"\n          }\n        ]\n      }\n    }\n  ]\n}"
-    reason: ~
   rewritten:
     messages: []
     variables: []
     sourceFile: test-file.tsx
     content: "\n            new Date()"
     byteRanges: []
+  reason: ~
 - __typename: DoneFile
   relativeFilePath: test-file.tsx
 - __typename: AnalysisLog
