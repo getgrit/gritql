@@ -44,4 +44,9 @@ impl<'a> Messager for JSONLineMessenger<'a> {
 
         Ok(())
     }
+
+    fn emit_log(&mut self, log: &marzano_messenger::SimpleLogMessage) -> anyhow::Result<()> {
+        log::debug!("Log received over RPC: {:?}", log);
+        Ok(())
+    }
 }

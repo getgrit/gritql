@@ -668,7 +668,7 @@ impl From<GritAnalysisLog> for AnalysisLog {
     }
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Serialize, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Debug, Copy, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum AnalysisLogLevel {
     Error = 200,

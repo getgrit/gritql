@@ -86,10 +86,14 @@ pub(crate) async fn run_doctor(_arg: DoctorArgs) -> Result<()> {
                 (auth.get_user_id()?).to_string().yellow()
             );
 
+            if let Some(username) = auth.get_user_name()? {
+                info!("  Auth user name: {}", username.yellow());
+            }
+
             if auth.is_expired()? {
                 info!(
                     "  Auth token expired: {}.",
-                    format!("{}", auth.get_expiry()?).yellow()
+                    format!("{}", auth.get_expiry()?).red().bold()
                 );
             } else {
                 info!(
