@@ -2,8 +2,8 @@ use grit_util::Range;
 use serde::Serialize;
 
 use crate::api::{
-    AllDone, AnalysisLog, CreateFile, DoneFile, EntireFile, InputFile, Match, MatchResult,
-    PatternInfo, RemoveFile, Rewrite, RewriteReason,
+    AllDone, AnalysisLog, CreateFile, DoneFile, EntireFile, InputFile, Match, MatchReason,
+    MatchResult, PatternInfo, RemoveFile, Rewrite,
 };
 
 /// Compact API representations for all API types.
@@ -84,7 +84,7 @@ impl From<EntireFile> for CompactFile {
 pub struct CompactRewrite {
     pub original: CompactMatch,
     pub rewritten: CompactFile,
-    pub reason: Option<RewriteReason>,
+    pub reason: Option<MatchReason>,
 }
 
 impl From<Rewrite> for CompactRewrite {

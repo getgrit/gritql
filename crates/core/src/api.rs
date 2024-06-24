@@ -294,6 +294,8 @@ pub struct Match {
     pub ranges: Vec<Range>,
     #[serde(default)]
     pub debug: String,
+    #[serde(default)]
+    pub reason: Option<MatchReason>,
 }
 
 impl Match {
@@ -379,7 +381,6 @@ impl EntireFile {
 pub struct Rewrite {
     pub original: Match,
     pub rewritten: EntireFile,
-    pub reason: Option<RewriteReason>,
 }
 
 impl From<Rewrite> for MatchResult {
@@ -423,10 +424,11 @@ impl FileMatchResult for Rewrite {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
-pub struct RewriteReason {
+pub struct MatchReason {
     pub metadata_json: Option<String>,
     pub source: RewriteSource,
     pub name: Option<String>,
+    pub explanation: Option<String>,
     pub level: Option<EnforcementLevel>,
 }
 
