@@ -110,10 +110,10 @@ fn match_pattern_libs(
             }
             MatchResult::Match(m) => {
                 execution_result.the_match = Some(ExecutionMatch {
-                    ranges: m.ranges,
-                    variables: m.variables,
+                    ranges: m.file.ranges,
+                    variables: m.file.variables,
                     rewrite: None,
-                    filename: m.source_file,
+                    filename: m.file.source_file,
                     new_files: HashMap::new(),
                 });
             }
