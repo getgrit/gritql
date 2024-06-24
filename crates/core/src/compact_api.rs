@@ -60,8 +60,8 @@ pub struct CompactMatch {
 impl From<Match> for CompactMatch {
     fn from(m: Match) -> Self {
         CompactMatch {
-            source_file: m.source_file,
-            ranges: m.ranges,
+            source_file: m.file.source_file,
+            ranges: m.file.ranges,
             reason: m.reason,
         }
     }
@@ -91,7 +91,11 @@ pub struct CompactRewrite {
 impl From<Rewrite> for CompactRewrite {
     fn from(m: Rewrite) -> Self {
         CompactRewrite {
-            original: m.original.into(),
+            original: CompactMatch {
+                source_file: m.original.source_file,
+                ranges: m.original.ranges,
+                reason: m.reason,
+            },
             rewritten: m.rewritten.into(),
         }
     }
@@ -122,7 +126,11 @@ pub struct CompactRemoveFile {
 impl From<RemoveFile> for CompactRemoveFile {
     fn from(m: RemoveFile) -> Self {
         CompactRemoveFile {
-            original: m.original.into(),
+            original: CompactMatch {
+                source_file: m.original.source_file,
+                ranges: m.original.ranges,
+                reason: m.reason,
+            },
         }
     }
 }

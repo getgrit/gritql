@@ -71,7 +71,8 @@ impl MatchResult {
             }
             MatchResult::AllDone(_) => {}
             MatchResult::Match(m) => {
-                m.source_file = normalize_path_in_project(&m.source_file, root_path).to_owned()
+                m.file.source_file =
+                    normalize_path_in_project(&m.file.source_file, root_path).to_owned()
             }
             MatchResult::InputFile(input_file) => {
                 input_file.source_file =
@@ -103,7 +104,6 @@ impl MatchResult {
 
     pub(crate) fn file_to_match_result<'a>(
         file: &Vector<&FileOwner<Tree>>,
-        language: &impl MarzanoLanguage<'a>,
     ) -> Result<Option<MatchResult>> {
         if file.is_empty() {
             bail!("cannot have file with no versions")
@@ -118,12 +118,13 @@ impl MatchResult {
                 if ranges.suppressed {
                     return Ok(None);
                 }
-                return Ok(Some(MatchResult::Match(Match::file_to_match(
-                    ranges,
-                    file.name.to_string_lossy().as_ref(),
-                    &file.tree,
-                    language,
-                ))));
+                return Ok(Some(MatchResult::Match(Match {
+                    file: FileMatch::file_to_file_match(
+                        ranges,
+                        file.name.to_string_lossy().as_ref(),
+                    ),
+                    reason: None,
+                })));
             } else {
                 return Ok(None);
             }
@@ -131,7 +132,6 @@ impl MatchResult {
             return Ok(Some(MatchResult::Rewrite(Rewrite::file_to_rewrite(
                 file.front().unwrap(),
                 file.back().unwrap(),
-                language,
             )?)));
         }
     }
@@ -140,7 +140,7 @@ impl MatchResult {
         match self {
             MatchResult::PatternInfo(pi) => Some(&pi.source_file),
             MatchResult::AllDone(_) => None,
-            MatchResult::Match(m) => Some(&m.source_file),
+            MatchResult::Match(m) => Some(&m.file.source_file),
             MatchResult::InputFile(input_file) => Some(&input_file.source_file),
             MatchResult::Rewrite(r) => Some(r.file_name()),
             MatchResult::CreateFile(cf) => Some(cf.file_name()),
@@ -150,7 +150,7 @@ impl MatchResult {
         }
     }
 
-    fn extract_original_match(&self) -> Option<&Match> {
+    fn extract_original_match(&self) -> Option<&FileMatch> {
         match self {
             MatchResult::DoneFile(_)
             | MatchResult::AnalysisLog(_)
@@ -158,9 +158,19 @@ impl MatchResult {
             | MatchResult::CreateFile(_)
             | MatchResult::AllDone(_)
             | MatchResult::PatternInfo(_) => None,
-            MatchResult::Match(m)
+            MatchResult::Match(Match { file: m, .. })
             | MatchResult::RemoveFile(RemoveFile { original: m, .. })
             | MatchResult::Rewrite(Rewrite { original: m, .. }) => Some(m),
+        }
+    }
+
+    fn extract_reason(&self) -> Option<&MatchReason> {
+        match self {
+            MatchResult::Match(Match { reason: r, .. })
+            | MatchResult::RemoveFile(RemoveFile { reason: r, .. })
+            | MatchResult::Rewrite(Rewrite { reason: r, .. })
+            | MatchResult::CreateFile(CreateFile { reason: r, .. }) => r.as_ref(),
+            _ => None,
         }
     }
 
@@ -193,6 +203,7 @@ impl MatchResult {
         Some(MatchResult::Rewrite(Rewrite::new(
             original_match.clone(),
             ef,
+            self.extract_reason().cloned(),
         )))
     }
 }
@@ -304,31 +315,18 @@ pub struct Match {
     pub reason: Option<MatchReason>,
 }
 
-impl Match {
-    fn file_to_match<'a>(
-        match_ranges: &InputRanges,
-        name: &str,
-        tree: &Tree,
-        language: &impl MarzanoLanguage<'a>,
-    ) -> Self {
-        let input_file_debug_text = to_string_pretty(&tree_sitter_node_to_json(
-            &tree.root_node().node,
-            &tree.source,
-            language,
-        ))
-        .unwrap();
+impl FileMatch {
+    fn file_to_file_match<'a>(match_ranges: &InputRanges, name: &str) -> Self {
         Self {
-            debug: input_file_debug_text,
             source_file: name.to_owned(),
             ranges: match_ranges.ranges.clone(),
             variables: match_ranges.variables.clone(),
             messages: vec![],
-            reason: None,
         }
     }
 }
 
-impl FileMatchResult for Match {
+impl FileMatchResult for FileMatch {
     fn file_name(&self) -> &str {
         &self.source_file
     }
@@ -402,20 +400,14 @@ impl Rewrite {
     fn file_to_rewrite<'a>(
         initial: &FileOwner<Tree>,
         rewritten_file: &FileOwner<Tree>,
-        language: &impl MarzanoLanguage<'a>,
     ) -> Result<Self> {
         let original = if let Some(ranges) = &initial.matches.borrow().input_matches {
-            Match::file_to_match(
-                ranges,
-                initial.name.to_string_lossy().as_ref(),
-                &initial.tree,
-                language,
-            )
+            FileMatch::file_to_file_match(ranges, initial.name.to_string_lossy().as_ref())
         } else {
             bail!("cannot have rewrite without matches")
         };
         let rewritten = EntireFile::from_file(rewritten_file)?;
-        Ok(Rewrite::new(original, rewritten))
+        Ok(Rewrite::new(original, rewritten, None))
     }
 }
 
@@ -485,10 +477,11 @@ pub enum RewriteSource {
 }
 
 impl Rewrite {
-    pub fn new(original: Match, rewritten: EntireFile) -> Self {
+    pub fn new(original: FileMatch, rewritten: EntireFile, reason: Option<MatchReason>) -> Self {
         Self {
             original,
             rewritten,
+            reason,
         }
     }
 }

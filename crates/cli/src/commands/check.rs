@@ -291,7 +291,7 @@ pub(crate) async fn run_check(
                             explanation: None,
                         });
                         let mut rewrite = r.clone();
-                        rewrite.original.reason = reason;
+                        rewrite.reason = reason;
                         Some(MatchResult::Rewrite(rewrite))
                     }
                     _ => None,
