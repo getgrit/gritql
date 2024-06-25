@@ -71,8 +71,7 @@ impl MatchResult {
             }
             MatchResult::AllDone(_) => {}
             MatchResult::Match(m) => {
-                m.file.source_file =
-                    normalize_path_in_project(&m.file.source_file, root_path).to_owned()
+                m.source_file = normalize_path_in_project(&m.source_file, root_path).to_owned()
             }
             MatchResult::InputFile(input_file) => {
                 input_file.source_file =
@@ -118,13 +117,9 @@ impl MatchResult {
                 if ranges.suppressed {
                     return Ok(None);
                 }
-                return Ok(Some(MatchResult::Match(Match {
-                    file: FileMatch::file_to_file_match(
-                        ranges,
-                        file.name.to_string_lossy().as_ref(),
-                    ),
-                    reason: None,
-                })));
+                let fm =
+                    FileMatch::file_to_file_match(ranges, file.name.to_string_lossy().as_ref());
+                return Ok(Some(MatchResult::Match(fm.into())));
             } else {
                 return Ok(None);
             }
@@ -140,7 +135,7 @@ impl MatchResult {
         match self {
             MatchResult::PatternInfo(pi) => Some(&pi.source_file),
             MatchResult::AllDone(_) => None,
-            MatchResult::Match(m) => Some(&m.file.source_file),
+            MatchResult::Match(m) => Some(&m.source_file),
             MatchResult::InputFile(input_file) => Some(&input_file.source_file),
             MatchResult::Rewrite(r) => Some(r.file_name()),
             MatchResult::CreateFile(cf) => Some(cf.file_name()),
@@ -150,7 +145,7 @@ impl MatchResult {
         }
     }
 
-    fn extract_original_match(&self) -> Option<&FileMatch> {
+    fn extract_original_match(&self) -> Option<FileMatch> {
         match self {
             MatchResult::DoneFile(_)
             | MatchResult::AnalysisLog(_)
@@ -158,9 +153,9 @@ impl MatchResult {
             | MatchResult::CreateFile(_)
             | MatchResult::AllDone(_)
             | MatchResult::PatternInfo(_) => None,
-            MatchResult::Match(Match { file: m, .. })
-            | MatchResult::RemoveFile(RemoveFile { original: m, .. })
-            | MatchResult::Rewrite(Rewrite { original: m, .. }) => Some(m),
+            MatchResult::Match(m) => Some(m.clone().into()),
+            MatchResult::RemoveFile(RemoveFile { original: m, .. }) => Some(m.clone()),
+            MatchResult::Rewrite(Rewrite { original: m, .. }) => Some(m.clone()),
         }
     }
 
@@ -180,8 +175,17 @@ impl MatchResult {
 
     /// Extract the original path, if any
     pub fn extract_original_path(&self) -> Option<&str> {
-        let original_match = self.extract_original_match()?;
-        Some(&original_match.source_file)
+        match self {
+            MatchResult::DoneFile(_)
+            | MatchResult::AnalysisLog(_)
+            | MatchResult::InputFile(_)
+            | MatchResult::CreateFile(_)
+            | MatchResult::AllDone(_)
+            | MatchResult::PatternInfo(_) => None,
+            MatchResult::Match(m) => Some(&m.source_file),
+            MatchResult::RemoveFile(r) => Some(&r.original.source_file),
+            MatchResult::Rewrite(r) => Some(&r.original.source_file),
+        }
     }
 
     /// Given a MatchResult, create a MatchResult::Rewrite that suppresses the match.
@@ -205,7 +209,7 @@ impl MatchResult {
             split_string_at_indices(&original_src, ranges_starts).join(&comment);
         let ef = EntireFile::file_to_entire_file(original_file_name, &rewritten_content, None);
         Some(MatchResult::Rewrite(Rewrite::new(
-            original_match.clone(),
+            original_match,
             ef,
             self.extract_reason().cloned(),
         )))
@@ -310,15 +314,6 @@ pub struct FileMatch {
     pub ranges: Vec<Range>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(rename_all = "camelCase")]
-pub struct Match {
-    #[serde(flatten)]
-    pub file: FileMatch,
-    #[serde(default)]
-    pub reason: Option<MatchReason>,
-}
-
 impl FileMatch {
     fn file_to_file_match(match_ranges: &InputRanges, name: &str) -> Self {
         Self {
@@ -339,6 +334,57 @@ impl FileMatchResult for FileMatch {
     }
     fn action() -> &'static str {
         "matched"
+    }
+}
+
+impl From<Match> for FileMatch {
+    fn from(m: Match) -> Self {
+        Self {
+            messages: m.messages,
+            variables: m.variables,
+            source_file: m.source_file,
+            ranges: m.ranges,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "camelCase")]
+pub struct Match {
+    /// Do *NOT* use serde(flatten) in wasm-serializable items
+    /// Due to https://github.com/RReverser/serde-wasm-bindgen/issues/49, they will end up as maps.
+    #[serde(default)]
+    pub messages: Vec<Message>,
+    #[serde(default)]
+    pub variables: Vec<VariableMatch>,
+    pub source_file: String,
+    #[serde(default)]
+    pub ranges: Vec<Range>,
+    #[serde(default)]
+    pub reason: Option<MatchReason>,
+}
+
+impl FileMatchResult for Match {
+    fn file_name(&self) -> &str {
+        &self.source_file
+    }
+    fn ranges(&mut self) -> &Vec<Range> {
+        &self.ranges
+    }
+    fn action() -> &'static str {
+        "matched"
+    }
+}
+
+impl From<FileMatch> for Match {
+    fn from(file_match: FileMatch) -> Self {
+        Self {
+            messages: file_match.messages,
+            variables: file_match.variables,
+            source_file: file_match.source_file,
+            ranges: file_match.ranges,
+            reason: None,
+        }
     }
 }
 

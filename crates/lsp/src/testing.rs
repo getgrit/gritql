@@ -178,7 +178,7 @@ pub async fn maybe_test_pattern(
         for mut result in outcome.matches {
             match result {
                 MatchResult::Match(ref mut m) => {
-                    m.file.ranges.iter_mut().for_each(|r| {
+                    m.ranges.iter_mut().for_each(|r| {
                         r.add(offset_position, offset_bytes);
                     });
                 }
