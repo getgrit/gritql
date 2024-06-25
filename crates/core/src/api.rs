@@ -351,8 +351,8 @@ impl From<Match> for FileMatch {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct Match {
-    /// Do *NOT* use serde(flatten) in wasm-serializable items
-    /// Due to https://github.com/RReverser/serde-wasm-bindgen/issues/49, they will end up as maps.
+    // Do *NOT* use serde(flatten) in wasm-serializable items
+    // Due to https://github.com/RReverser/serde-wasm-bindgen/issues/49, they will end up as maps.
     #[serde(default)]
     pub messages: Vec<Message>,
     #[serde(default)]
