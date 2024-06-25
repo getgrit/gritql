@@ -52,7 +52,7 @@ pub fn apply_rewrite(result: &MatchResult) -> Result<()> {
 pub fn extract_ranges(result: &MatchResult) -> Option<&Vec<Range>> {
     match result {
         MatchResult::AnalysisLog(_) => None,
-        MatchResult::Match(m) => Some(&m.file.ranges),
+        MatchResult::Match(m) => Some(&m.ranges),
         MatchResult::InputFile(_) => None,
         MatchResult::CreateFile(_) => None,
         MatchResult::RemoveFile(r) => Some(&r.original.ranges),

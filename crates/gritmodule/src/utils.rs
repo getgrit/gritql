@@ -10,7 +10,7 @@ use crate::fetcher::ModuleRepo;
 pub fn extract_path(result: &MatchResult) -> Option<&String> {
     match result {
         MatchResult::AnalysisLog(_) => None,
-        MatchResult::Match(m) => Some(&m.file.source_file),
+        MatchResult::Match(m) => Some(&m.source_file),
         MatchResult::InputFile(i) => Some(&i.source_file),
         MatchResult::CreateFile(c) => Some(&c.rewritten.source_file),
         MatchResult::RemoveFile(r) => Some(&r.original.source_file),

@@ -60,8 +60,8 @@ pub struct CompactMatch {
 impl From<Match> for CompactMatch {
     fn from(m: Match) -> Self {
         CompactMatch {
-            source_file: m.file.source_file,
-            ranges: m.file.ranges,
+            source_file: m.source_file,
+            ranges: m.ranges,
             reason: m.reason,
         }
     }
