@@ -2,8 +2,8 @@ use grit_util::Range;
 use serde::Serialize;
 
 use crate::api::{
-    AllDone, AnalysisLog, CreateFile, DoneFile, EntireFile, InputFile, Match, MatchResult,
-    PatternInfo, RemoveFile, Rewrite, RewriteReason,
+    AllDone, AnalysisLog, CreateFile, DoneFile, EntireFile, InputFile, Match, MatchReason,
+    MatchResult, PatternInfo, RemoveFile, Rewrite,
 };
 
 /// Compact API representations for all API types.
@@ -54,13 +54,15 @@ pub enum CompactResult {
 pub struct CompactMatch {
     pub source_file: String,
     pub ranges: Vec<Range>,
+    pub reason: Option<MatchReason>,
 }
 
 impl From<Match> for CompactMatch {
     fn from(m: Match) -> Self {
         CompactMatch {
-            source_file: m.source_file,
-            ranges: m.ranges,
+            source_file: m.file.source_file,
+            ranges: m.file.ranges,
+            reason: m.reason,
         }
     }
 }
@@ -84,15 +86,17 @@ impl From<EntireFile> for CompactFile {
 pub struct CompactRewrite {
     pub original: CompactMatch,
     pub rewritten: CompactFile,
-    pub reason: Option<RewriteReason>,
 }
 
 impl From<Rewrite> for CompactRewrite {
     fn from(m: Rewrite) -> Self {
         CompactRewrite {
-            original: m.original.into(),
+            original: CompactMatch {
+                source_file: m.original.source_file,
+                ranges: m.original.ranges,
+                reason: m.reason,
+            },
             rewritten: m.rewritten.into(),
-            reason: m.reason,
         }
     }
 }
@@ -101,12 +105,14 @@ impl From<Rewrite> for CompactRewrite {
 #[serde(rename_all = "camelCase")]
 pub struct CompactCreateFile {
     pub rewritten: CompactFile,
+    pub reason: Option<MatchReason>,
 }
 
 impl From<CreateFile> for CompactCreateFile {
     fn from(m: CreateFile) -> Self {
         CompactCreateFile {
             rewritten: m.rewritten.into(),
+            reason: m.reason,
         }
     }
 }
@@ -120,7 +126,11 @@ pub struct CompactRemoveFile {
 impl From<RemoveFile> for CompactRemoveFile {
     fn from(m: RemoveFile) -> Self {
         CompactRemoveFile {
-            original: m.original.into(),
+            original: CompactMatch {
+                source_file: m.original.source_file,
+                ranges: m.original.ranges,
+                reason: m.reason,
+            },
         }
     }
 }

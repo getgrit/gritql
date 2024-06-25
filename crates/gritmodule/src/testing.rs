@@ -231,7 +231,7 @@ pub fn test_pattern_sample(
                     continue;
                 }
                 raw_actual_outputs.push(RichFile {
-                    path: r.source_file.clone(),
+                    path: r.file.source_file.clone(),
                     content: sample.input.clone(),
                 });
             }

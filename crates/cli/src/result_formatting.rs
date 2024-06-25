@@ -154,7 +154,7 @@ impl fmt::Display for FormattedResult {
                     MatchResult::AllDone(r) => {
                         print_all_done(r, f)?;
                     }
-                    MatchResult::Match(r) => print_file_ranges(&mut r.clone(), f)?,
+                    MatchResult::Match(r) => print_file_ranges(&mut r.file.clone(), f)?,
                     MatchResult::Rewrite(r) => print_file_ranges(&mut r.clone(), f)?,
                     MatchResult::CreateFile(r) => print_file_ranges(&mut r.clone(), f)?,
                     MatchResult::RemoveFile(r) => print_file_ranges(&mut r.clone(), f)?,
@@ -166,16 +166,16 @@ impl fmt::Display for FormattedResult {
                 Ok(())
             }
             FormattedResult::Match(m) => {
-                let path_title = m.file_name().bold();
+                let path_title = m.file.file_name().bold();
                 writeln!(f, "{}", path_title)?;
-                let source = read_to_string(m.file_name());
+                let source = read_to_string(m.file.file_name());
                 match source {
                     Err(e) => {
                         writeln!(f, "Could not read file: {}", e)?;
                         return Ok(());
                     }
                     Ok(source) => {
-                        let ranges = &mut m.ranges.iter();
+                        let ranges = &mut m.file.ranges.iter();
                         // Iterate through the lines of the file
                         let mut line_number = 0;
                         let mut next_range = ranges.next();
@@ -395,7 +395,7 @@ impl Messager for TransformedMessenger<'_> {
                 // ignore these
             }
             MatchResult::Match(message) => {
-                info!("Matched file {}", message.file_name());
+                info!("Matched file {}", message.file.file_name());
             }
             MatchResult::Rewrite(file) => {
                 // Write the file contents to the output

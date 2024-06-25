@@ -184,7 +184,7 @@ mod tests {
         assert_eq!(code, r#"["abcd", "efgh"]"#);
 
         // Add a total of 2 characters to the source map, in the first section
-        let adjustments = vec![(1..2, 2), (2..3, 2)];
+        let adjustments = [(1..2, 2), (2..3, 2)];
         let adjusted = source_map.clone_with_edits(adjustments.iter()).unwrap();
         assert_eq!(adjusted.sections[0].inner_range_end, 7);
         assert_eq!(adjusted.sections[1].inner_range_end, 12);
@@ -219,7 +219,7 @@ mod tests {
         // First pass
         // d -> ddd
         // f -> fff
-        let adjustments = vec![(3..4, 3), (6..7, 3)];
+        let adjustments = [(3..4, 3), (6..7, 3)];
         let adjusted = source_map.clone_with_edits(adjustments.iter()).unwrap();
         assert_eq!(adjusted.sections[0].inner_range_end, 7);
         assert_eq!(adjusted.sections[1].inner_range_end, 14);
@@ -233,7 +233,7 @@ mod tests {
         // a -> deleted
         // ddd -> deleted
         // fff -> f
-        let adjustments = vec![(0..1, 0), (3..6, 0), (8..11, 1)];
+        let adjustments = [(0..1, 0), (3..6, 0), (8..11, 1)];
         let adjusted = adjusted.clone_with_edits(adjustments.iter()).unwrap();
         assert_eq!(adjusted.sections[0].inner_range_end, 3);
         assert_eq!(adjusted.sections[1].inner_range_end, 8);
@@ -245,7 +245,7 @@ mod tests {
         );
 
         // Third pass, we do nothing
-        let adjustments = vec![];
+        let adjustments = [];
         let adjusted = adjusted.clone_with_edits(adjustments.iter()).unwrap();
         assert_eq!(
             adjusted.fill_with_inner("bc|efgh|zko|").unwrap(),
@@ -254,7 +254,7 @@ mod tests {
 
         // Final pass, we make even more changes but only in the middle
         // e -> ekg
-        let adjustments = vec![(3..4, 3)];
+        let adjustments = [(3..4, 3)];
         let adjusted = adjusted.clone_with_edits(adjustments.iter()).unwrap();
         assert_eq!(
             adjusted.fill_with_inner("bc|ekgfgh|zko|").unwrap(),
@@ -278,7 +278,7 @@ mod tests {
 
         // First pass, only edit the 3rd section (adding 2 characters)
         // k -> PP
-        let adjustments = vec![(11..12, 2)];
+        let adjustments = [(11..12, 2)];
         let adjusted = source_map.clone_with_edits(adjustments.iter()).unwrap();
         assert_eq!(
             adjusted.fill_with_inner("abcd|efgh|zPPo|znzo|").unwrap(),
