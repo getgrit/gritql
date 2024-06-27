@@ -4,7 +4,6 @@ use log::info;
 use marzano_core::api::EnforcementLevel;
 use marzano_language::{grit_parser::MarzanoGritParser, target_language::PatternLanguage};
 use serde::{Deserialize, Serialize};
-use std::str::FromStr as _;
 use std::{
     cmp::Ordering,
     path::{Path, PathBuf},

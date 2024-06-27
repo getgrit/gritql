@@ -5,7 +5,7 @@ use log::{info, warn};
 use serde::Serialize;
 use std::{
     collections::HashMap,
-    path::{Path, PathBuf},
+    path::{PathBuf},
     str::FromStr,
 };
 
@@ -15,7 +15,7 @@ use marzano_gritmodule::{
     fetcher::ModuleRepo,
     patterns_directory::PatternsDirectory,
     resolver::{
-        find_and_resolve_grit_dir, find_local_patterns, find_user_patterns, get_grit_files,
+        find_and_resolve_grit_dir, find_local_patterns, find_user_patterns,
         get_grit_files_from_known_grit_dir, resolve_patterns,
     },
     searcher::find_grit_dir_from,
