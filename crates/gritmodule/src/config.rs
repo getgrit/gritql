@@ -1,14 +1,30 @@
+use anyhow::Context;
 use grit_util::{Position, Range};
+use log::info;
 use marzano_core::api::EnforcementLevel;
 use marzano_language::{grit_parser::MarzanoGritParser, target_language::PatternLanguage};
 use serde::{Deserialize, Serialize};
+use std::str::FromStr as _;
 use std::{
     cmp::Ordering,
     path::{Path, PathBuf},
     vec::Vec,
 };
+use std::{env, fmt, io::ErrorKind, str::FromStr};
+use tokio::{fs, io::AsyncWriteExt};
+use tracing::instrument;
 
-use crate::{fetcher::ModuleRepo, parser::PatternFileExt, utils::is_pattern_name};
+use crate::fetcher::GritModuleFetcher;
+use crate::installer::install_default_stdlib;
+use crate::resolver::fetch_modules;
+use crate::searcher::{
+    find_git_dir_from, find_global_grit_dir, find_global_grit_modules_dir, find_grit_dir_from,
+};
+use crate::{
+    fetcher::{FetcherType, ModuleRepo},
+    parser::PatternFileExt,
+    utils::is_pattern_name,
+};
 use anyhow::{bail, Result};
 
 #[derive(Debug, Deserialize)]
@@ -332,4 +348,122 @@ pub fn get_stdlib_modules() -> Vec<ModuleRepo> {
     DEFAULT_STDLIBS
         .map(|s| ModuleRepo::from_remote(s).unwrap())
         .to_vec()
+}
+
+pub enum ConfigSource {
+    Local(PathBuf),
+    Global(PathBuf),
+}
+
+impl fmt::Display for ConfigSource {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ConfigSource::Local(path) => write!(f, "local config at {}", path.display()),
+            ConfigSource::Global(path) => write!(f, "global config at {}", path.display()),
+        }
+    }
+}
+
+#[instrument]
+pub async fn init_config_from_cwd<T: FetcherType>(
+    cwd: PathBuf,
+    create_local: bool,
+) -> Result<ConfigSource> {
+    let existing_config = find_grit_dir_from(cwd.clone()).await;
+    let config_path = match existing_config {
+        Some(config) => PathBuf::from_str(&config).unwrap(),
+        None => {
+            if !create_local {
+                return init_global_grit_modules::<T>(None).await;
+            }
+            let git_dir = match find_git_dir_from(cwd).await {
+                Some(dir) => dir,
+                None => {
+                    return init_global_grit_modules::<T>(None).await;
+                }
+            };
+            let git_path = PathBuf::from_str(&git_dir).unwrap();
+            let repo_root = git_path.parent().context(format!(
+                "Unable to find repo root dir as parent of {}",
+                git_dir
+            ))?;
+            let grit_dir = repo_root.join(REPO_CONFIG_DIR_NAME);
+            let default_config = r#"version: 0.0.1
+patterns:
+  - name: github.com/getgrit/stdlib#*"#;
+            let grit_yaml = grit_dir.join("grit.yaml");
+            fs::create_dir_all(&grit_dir).await?;
+            fs::write(&grit_yaml, default_config).await?;
+            let message = format!("Initialized grit config at {}", grit_yaml.display());
+            info!("{}", message);
+            grit_dir
+        }
+    };
+
+    // atomically write .gitignore
+    match fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(config_path.join(".gitignore"))
+        .await
+    {
+        Ok(mut f) => {
+            f.write_all(".gritmodules*\n*.log\n".as_bytes()).await?;
+            f.flush().await?;
+        }
+        Err(e) => {
+            if e.kind() != ErrorKind::AlreadyExists {
+                return Err(e.into());
+            }
+        }
+    }
+
+    let grit_parent = PathBuf::from(config_path.parent().context(format!(
+        "Unable to find parent of .grit directory at {}",
+        config_path.display()
+    ))?);
+    let parent_str = &grit_parent.to_string_lossy().to_string();
+    let repo = ModuleRepo::from_dir(&config_path).await;
+    fetch_modules::<T>(&repo, parent_str, None).await?;
+    Ok(ConfigSource::Local(config_path))
+}
+
+pub async fn init_global_grit_modules<T: FetcherType>(
+    from_module: Option<&ModuleRepo>,
+) -> Result<ConfigSource> {
+    let global_grit_modules_dir = find_global_grit_modules_dir().await?;
+
+    let token = env::var("GRIT_PROVIDER_TOKEN").ok();
+    let fetcher = T::make_fetcher(global_grit_modules_dir, token);
+
+    if let Some(module) = from_module {
+        let location = match fetcher.fetch_grit_module(module) {
+            Ok(loc) => loc,
+            Err(err) => {
+                bail!(
+                    "Failed to fetch remote grit module {}: {}",
+                    module.full_name,
+                    err.to_string()
+                )
+            }
+        };
+        fetch_modules::<T>(
+            module,
+            &location,
+            Some(
+                fetcher
+                    .clone_dir()
+                    .parent()
+                    .context("Unable to find global grit dir")?
+                    .to_path_buf(),
+            ),
+        )
+        .await?;
+    } else {
+        fetcher.prep_grit_modules()?;
+        install_default_stdlib(&fetcher, None).await?;
+    }
+
+    Ok(ConfigSource::Global(find_global_grit_dir().await?))
 }

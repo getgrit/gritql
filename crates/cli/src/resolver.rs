@@ -64,42 +64,6 @@ impl<'b> fmt::Display for RichPattern<'b> {
     }
 }
 
-pub async fn get_grit_files_from_known_grit_dir(
-    config_path: &Path,
-    must_process: Vec<ModuleRepo>,
-) -> Result<PatternsDirectory> {
-    let mut stdlib_modules = get_stdlib_modules();
-    stdlib_modules.extend(must_process);
-
-    let grit_parent = PathBuf::from(config_path.parent().context(format!(
-        "Unable to find parent of .grit directory at {}",
-        config_path.to_string_lossy()
-    ))?);
-    let parent_str = &grit_parent.to_string_lossy().to_string();
-    let repo = ModuleRepo::from_dir(config_path).await;
-    get_grit_files(&repo, parent_str, Some(stdlib_modules)).await
-}
-
-pub async fn get_grit_files_from(cwd: Option<PathBuf>) -> Result<PatternsDirectory> {
-    let existing_config = if let Some(cwd) = cwd {
-        find_grit_dir_from(cwd).await
-    } else {
-        None
-    };
-
-    match existing_config {
-        Some(config) => get_grit_files_from_known_grit_dir(&PathBuf::from(config), vec![]).await,
-        None => {
-            let stdlib_modules = get_stdlib_modules();
-
-            let updater = Updater::from_current_bin().await?;
-            let install_path = updater.install_path;
-            let repo = ModuleRepo::from_dir(&install_path).await;
-            get_grit_files(&repo, &install_path.to_string_lossy(), Some(stdlib_modules)).await
-        }
-    }
-}
-
 /// Get the grit files from the current working directory
 #[deprecated = "Use get_grit_files_from_flags_or_cwd instead"]
 pub async fn get_grit_files_from_cwd() -> Result<PatternsDirectory> {
@@ -128,6 +92,13 @@ pub async fn resolve_from_flags_or_cwd(
     } else {
         resolve_from_cwd(source).await
     }
+}
+
+pub async fn get_grit_files_from(cwd: Option<PathBuf>) -> Result<PatternsDirectory> {
+    let installer = Updater::from_current_bin().await?;
+    let install_path = updater.install_path;
+
+    find_and_resolve_grit_dir(cwd, install_path)
 }
 
 pub async fn resolve_from(

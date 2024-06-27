@@ -3,6 +3,8 @@ use clap::Args;
 
 use dialoguer::Confirm;
 
+use marzano_gritmodule::config::{init_config_from_cwd, init_global_grit_modules};
+use marzano_gritmodule::resolver::get_grit_files_from_known_grit_dir;
 use marzano_util::rich_path::RichFile;
 use tracing::instrument;
 #[cfg(feature = "grit_tracing")]
@@ -41,13 +43,10 @@ use marzano_messenger::{
     output_mode::OutputMode,
 };
 
-use crate::resolver::{
-    get_grit_files_from_flags_or_cwd, get_grit_files_from_known_grit_dir, GritModuleResolver,
-};
+use crate::resolver::{get_grit_files_from_flags_or_cwd, GritModuleResolver};
 use crate::utils::has_uncommitted_changes;
 
 use super::filters::SharedFilterArgs;
-use super::init::{init_config_from_cwd, init_global_grit_modules};
 
 /// Apply a pattern to a set of paths on disk which will be rewritten in place
 #[derive(Deserialize)]
