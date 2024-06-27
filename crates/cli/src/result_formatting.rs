@@ -152,7 +152,7 @@ impl fmt::Display for FormattedResult {
                         // These are not shown in compact mode
                     }
                     MatchResult::AllDone(r) => {
-                        print_all_done(r, f)?;
+                        // print_all_done(r, f)?;
                     }
                     MatchResult::Match(r) => print_file_ranges(&mut r.clone(), f)?,
                     MatchResult::Rewrite(r) => print_file_ranges(&mut r.clone(), f)?,
