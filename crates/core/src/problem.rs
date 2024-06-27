@@ -349,8 +349,12 @@ impl Problem {
         self.execute_shared(files, context, tx, cache)
     }
 
-    /// Given an input channel and an output channel, execute the pattern on each input path and stream results to the output path
-    pub fn execute_streaming_child(
+    /// Given an input channel and an output channel, chain the input channel to the output channel
+    ///
+    /// Files that match from the input channel are executed by this pattern
+    /// All other message types are simply forwarded to the output channel
+    ///
+    pub fn execute_streaming_relay(
         &self,
         incoming_rx: Receiver<Vec<MatchResult>>,
         context: &ExecutionContext,
@@ -381,10 +385,32 @@ impl Problem {
                 incoming_rx.iter().for_each(|res| {
                     let mut paths = Vec::new();
 
-                    for m in res.iter() {
-                        if is_match(m) {
-                            if let Some(name) = m.file_name() {
-                                paths.push(PathBuf::from(name));
+                    for m in res.into_iter() {
+                        match m {
+                            MatchResult::Match(m) => {
+                                if let Some(name) = m.file_name() {
+                                    paths.push(PathBuf::from(name));
+                                }
+                            }
+                            MatchResult::PatternInfo(_)
+                            | MatchResult::AllDone(_)
+                            | MatchResult::InputFile(_)
+                            | MatchResult::AnalysisLog(_)
+                            | MatchResult::DoneFile(_) => {
+                                outgoing_tx.send(vec![m]).unwrap();
+                            }
+                            MatchResult::Rewrite(_)
+                            | MatchResult::CreateFile(_)
+                            | MatchResult::RemoveFile(_) => {
+                                outgoing_tx
+                                    .send(vec![
+                                    m,
+                                    MatchResult::AnalysisLog(AnalysisLog::floating_error(
+                                        "Streaming does not support rewrites, creates, or removes"
+                                            .to_string(),
+                                    )),
+                                ])
+                                    .unwrap();
                             }
                         }
                     }
