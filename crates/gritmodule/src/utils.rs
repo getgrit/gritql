@@ -2,9 +2,10 @@ use std::{env::current_exe, fs::canonicalize, path::Path};
 
 use anyhow::{bail, Result};
 use marzano_core::api::MatchResult;
+use marzano_language::target_language::PatternLanguage;
 use regex::Regex;
 
-use crate::fetcher::ModuleRepo;
+use crate::{fetcher::ModuleRepo, patterns_directory::PatternsDirectory};
 
 /// Extracts the *rewritten* (after applying a pattern) path from a `MatchResult`.
 pub fn extract_path(result: &MatchResult) -> Option<&String> {
@@ -46,5 +47,45 @@ pub fn parse_remote_name(pattern: &str) -> Option<ModuleRepo> {
         ModuleRepo::from_repo_str(repo_str).ok()
     } else {
         None
+    }
+}
+
+/// Given a raw pattern, try to expand into the actual applyable pattern body
+///
+/// Returns a tuple of:
+/// - The language of the pattern
+/// - The name of the pattern (if it is a named pattern)
+/// - The body of the pattern to apply
+pub fn infer_pattern<'a>(
+    pattern: &'a str,
+    input_language: PatternLanguage,
+    pattern_libs: &'a PatternsDirectory,
+) -> (Option<PatternLanguage>, Option<&'a str>, String) {
+    if is_pattern_name(pattern) {
+        let raw_name = pattern.trim_end_matches("()");
+        // details.named_pattern = Some(raw_name.to_string());
+        let presumptive_grit_file = pattern_libs.get(format!("{}.grit", raw_name).as_str());
+        let lang = match presumptive_grit_file {
+            Some(g) => PatternLanguage::get_language(g),
+            None => PatternLanguage::get_language(pattern),
+        };
+        let body = if pattern.ends_with(')') {
+            pattern.to_owned()
+        } else {
+            format!("{}()", pattern)
+        };
+        (lang, Some(raw_name), body)
+    } else if parse_remote_name(pattern).is_some() {
+        let raw_name = pattern.split('#').last().unwrap_or(pattern);
+        let presumptive_grit_file = pattern_libs.get(format!("{}.grit", raw_name).as_str());
+        let lang = match presumptive_grit_file {
+            Some(g) => PatternLanguage::get_language(g),
+            None => PatternLanguage::get_language(raw_name),
+        };
+        let body = format!("{}()", raw_name);
+        (lang, Some(raw_name), body)
+    } else {
+        let lang = PatternLanguage::get_language(pattern);
+        (lang, None, pattern.to_owned())
     }
 }
