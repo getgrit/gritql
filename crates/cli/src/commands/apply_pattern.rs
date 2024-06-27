@@ -414,11 +414,7 @@ pub(crate) async fn run_apply_pattern(
                     }
                 }
             } else {
-                infer_pattern(
-                    &pattern,
-                    default_lang.unwrap_or(PatternLanguage::default()),
-                    &pattern_libs,
-                )
+                infer_pattern(&pattern, &pattern_libs)
             };
 
         if let Some(named_pattern) = named_pattern {

@@ -58,7 +58,6 @@ pub fn parse_remote_name(pattern: &str) -> Option<ModuleRepo> {
 /// - The body of the pattern to apply
 pub fn infer_pattern<'a>(
     pattern: &'a str,
-    input_language: PatternLanguage,
     pattern_libs: &'a PatternsDirectory,
 ) -> (Option<PatternLanguage>, Option<&'a str>, String) {
     if is_pattern_name(pattern) {
