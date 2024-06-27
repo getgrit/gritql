@@ -3,6 +3,8 @@ use clap::Args;
 
 use dialoguer::Confirm;
 
+use marzano_gritmodule::config::{init_config_from_path, init_global_grit_modules};
+use marzano_gritmodule::resolver::get_grit_files_from_known_grit_dir;
 use marzano_util::rich_path::RichFile;
 use tracing::instrument;
 #[cfg(feature = "grit_tracing")]
@@ -18,7 +20,7 @@ use marzano_core::pattern_compiler::CompilationResult;
 use marzano_gritmodule::fetcher::KeepFetcherKind;
 use marzano_gritmodule::markdown::get_body_from_md_content;
 use marzano_gritmodule::searcher::{find_global_grit_dir, find_grit_modules_dir};
-use marzano_gritmodule::utils::{is_pattern_name, parse_remote_name};
+use marzano_gritmodule::utils::{infer_pattern, is_pattern_name, parse_remote_name};
 use marzano_language::target_language::PatternLanguage;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -41,13 +43,10 @@ use marzano_messenger::{
     output_mode::OutputMode,
 };
 
-use crate::resolver::{
-    get_grit_files_from_flags_or_cwd, get_grit_files_from_known_grit_dir, GritModuleResolver,
-};
+use crate::resolver::{get_grit_files_from_flags_or_cwd, GritModuleResolver};
 use crate::utils::has_uncommitted_changes;
 
 use super::filters::SharedFilterArgs;
-use super::init::{init_config_from_cwd, init_global_grit_modules};
 
 /// Apply a pattern to a set of paths on disk which will be rewritten in place
 #[derive(Deserialize)]
@@ -105,9 +104,6 @@ pub struct ApplyPatternArgs {
     // If the pattern already has a limit, this will override it
     #[clap(short = 'm', long = "limit")]
     pub limit: Option<usize>,
-    // TODO: consider removing this
-    #[clap(long = "ignore-limit", default_value = "false", hide = true)]
-    ignore_limit: bool,
     // Dry run
     #[clap(
         long = "dry-run",
@@ -170,7 +166,6 @@ impl Default for ApplyPatternArgs {
         Self {
             output: Default::default(),
             limit: Default::default(),
-            ignore_limit: Default::default(),
             dry_run: Default::default(),
             force: Default::default(),
             format: Default::default(),
@@ -248,10 +243,6 @@ pub(crate) async fn run_apply_pattern(
         default_lang
     };
 
-    if arg.ignore_limit {
-        context.ignore_limit_pattern = true;
-    }
-
     let interactive = arg.interactive;
     let min_level = &arg.visibility;
 
@@ -322,7 +313,6 @@ pub(crate) async fn run_apply_pattern(
             .to_path_buf();
         let mod_dir = find_grit_modules_dir(target_grit_dir.clone()).await;
         let target_remote = parse_remote_name(&pattern);
-        let is_remote_name = target_remote.is_some();
 
         if !env::var("GRIT_DOWNLOADS_DISABLED")
             .unwrap_or_else(|_| "false".to_owned())
@@ -333,7 +323,7 @@ pub(crate) async fn run_apply_pattern(
         {
             flushable_unwrap!(
                 emitter,
-                init_config_from_cwd::<KeepFetcherKind>(target_grit_dir, false).await
+                init_config_from_path::<KeepFetcherKind>(target_grit_dir, false).await
             );
         } else if let Some(target) = &target_remote {
             flushable_unwrap!(
@@ -379,68 +369,50 @@ pub(crate) async fn run_apply_pattern(
             )
         };
 
-        let (mut lang, pattern_body) = if pattern.ends_with(".grit") || pattern.ends_with(".md") {
-            match fs::read_to_string(pattern.clone()).await {
-                Ok(pb) => {
-                    if pattern.ends_with(".grit") {
-                        let lang = PatternLanguage::get_language(&pb);
-                        (lang, pb)
-                    } else if pattern.ends_with(".md") {
-                        let body = flushable_unwrap!(emitter, get_body_from_md_content(&pb));
-                        let lang = PatternLanguage::get_language(&body);
-                        (lang, body)
-                    } else {
-                        unreachable!()
+        let (mut lang, named_pattern, pattern_body) =
+            if pattern.ends_with(".grit") || pattern.ends_with(".md") {
+                match fs::read_to_string(pattern.clone()).await {
+                    Ok(pb) => {
+                        if pattern.ends_with(".grit") {
+                            let lang = PatternLanguage::get_language(&pb);
+                            (lang, None, pb)
+                        } else if pattern.ends_with(".md") {
+                            let body = flushable_unwrap!(emitter, get_body_from_md_content(&pb));
+                            let lang = PatternLanguage::get_language(&body);
+                            (lang, None, body)
+                        } else {
+                            unreachable!()
+                        }
+                    }
+                    Err(_) => {
+                        let my_err = anyhow::anyhow!("Could not read pattern file: {}", pattern);
+                        let log = MatchResult::AnalysisLog(AnalysisLog {
+                            level: 100,
+                            message: my_err.to_string(),
+                            position: Position::first(),
+                            file: "PlaygroundPattern".to_string(),
+                            engine_id: "marzano".to_string(),
+                            syntax_tree: None,
+                            range: None,
+                            source: None,
+                        });
+                        emitter.emit(&log, min_level).unwrap();
+                        emitter.flush().await?;
+                        if format.is_always_ok().0 {
+                            return Ok(());
+                        } else {
+                            return Err(my_err);
+                        }
                     }
                 }
-                Err(_) => {
-                    let my_err = anyhow::anyhow!("Could not read pattern file: {}", pattern);
-                    let log = MatchResult::AnalysisLog(AnalysisLog {
-                        level: 100,
-                        message: my_err.to_string(),
-                        position: Position::first(),
-                        file: "PlaygroundPattern".to_string(),
-                        engine_id: "marzano".to_string(),
-                        syntax_tree: None,
-                        range: None,
-                        source: None,
-                    });
-                    emitter.emit(&log, min_level).unwrap();
-                    emitter.flush().await?;
-                    if format.is_always_ok().0 {
-                        return Ok(());
-                    } else {
-                        return Err(my_err);
-                    }
-                }
-            }
-        } else if is_pattern_name(&pattern) {
-            let raw_name = pattern.trim_end_matches("()");
-            details.named_pattern = Some(raw_name.to_string());
-            let presumptive_grit_file = pattern_libs.get(format!("{}.grit", raw_name).as_str());
-            let lang = match presumptive_grit_file {
-                Some(g) => PatternLanguage::get_language(g),
-                None => PatternLanguage::get_language(&pattern),
-            };
-            let body = if pattern.ends_with(')') {
-                pattern.clone()
             } else {
-                format!("{}()", pattern)
+                infer_pattern(&pattern, &pattern_libs)
             };
-            (lang, body)
-        } else if is_remote_name {
-            let raw_name = pattern.split('#').last().unwrap_or(&pattern);
-            let presumptive_grit_file = pattern_libs.get(format!("{}.grit", raw_name).as_str());
-            let lang = match presumptive_grit_file {
-                Some(g) => PatternLanguage::get_language(g),
-                None => PatternLanguage::get_language(raw_name),
-            };
-            let body = format!("{}()", raw_name);
-            (lang, body)
-        } else {
-            let lang = PatternLanguage::get_language(&pattern);
-            (lang, pattern.clone())
-        };
+
+        if let Some(named_pattern) = named_pattern {
+            details.named_pattern = Some(named_pattern.to_string());
+        }
+
         if let Some(lang_option) = &default_lang {
             if let Some(lang) = lang {
                 if lang != *lang_option {
