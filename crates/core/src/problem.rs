@@ -34,6 +34,7 @@ use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
 use sha2::{Digest, Sha256};
 
+use crate::api::FileMatchResult;
 use std::{
     collections::HashMap,
     path::PathBuf,
@@ -388,9 +389,7 @@ impl Problem {
                     for m in res.into_iter() {
                         match m {
                             MatchResult::Match(m) => {
-                                if let Some(name) = m.file_name() {
-                                    paths.push(PathBuf::from(name));
-                                }
+                                paths.push(PathBuf::from(m.file_name()));
                             }
                             MatchResult::PatternInfo(_)
                             | MatchResult::AllDone(_)
