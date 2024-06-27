@@ -1,19 +1,10 @@
-use marzano_gritmodule::{
-    config::{init_config_from_cwd, init_global_grit_modules},
-};
+use marzano_gritmodule::config::{init_config_from_cwd, init_global_grit_modules};
 
-
-
-
-use anyhow::{Result};
+use anyhow::Result;
 use clap::Args;
 
-
-use marzano_gritmodule::{
-    fetcher::{CleanFetcherKind},
-};
+use marzano_gritmodule::fetcher::CleanFetcherKind;
 use serde::Serialize;
-
 
 #[derive(Args, Debug, Serialize)]
 pub struct InitArgs {

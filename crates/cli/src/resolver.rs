@@ -3,11 +3,7 @@ use colored::Colorize;
 use core::fmt;
 use log::{info, warn};
 use serde::Serialize;
-use std::{
-    collections::HashMap,
-    path::{PathBuf},
-    str::FromStr,
-};
+use std::{collections::HashMap, path::PathBuf, str::FromStr};
 
 use anyhow::{Context, Result};
 use marzano_gritmodule::{
