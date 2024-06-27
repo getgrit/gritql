@@ -1,7 +1,9 @@
 use anyhow::{anyhow, bail, Result};
 use clap::{Args, Subcommand};
 use indicatif::MultiProgress;
-use marzano_gritmodule::config::GritPatternTestInfo;
+use marzano_gritmodule::config::{
+    init_config_from_cwd, init_global_grit_modules, GritPatternTestInfo,
+};
 use marzano_gritmodule::fetcher::KeepFetcherKind;
 use marzano_gritmodule::patterns_directory::PatternsDirectory;
 use marzano_gritmodule::searcher::find_grit_modules_dir;
@@ -21,7 +23,6 @@ use super::super::analytics::AnalyticsArgs;
 use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
 use super::check::{run_check, CheckArg};
 use super::filters::SharedFilterArgs;
-use super::init::{init_config_from_cwd, init_global_grit_modules};
 use super::list::ListArgs;
 use super::parse::{run_parse, ParseInput};
 use super::patterns::PatternsTestArgs;

@@ -14,7 +14,10 @@ use marzano_gritmodule::{
     config::{get_stdlib_modules, ResolvedGritDefinition},
     fetcher::ModuleRepo,
     patterns_directory::PatternsDirectory,
-    resolver::{find_local_patterns, find_user_patterns, get_grit_files, resolve_patterns},
+    resolver::{
+        find_and_resolve_grit_dir, find_local_patterns, find_user_patterns, get_grit_files,
+        get_grit_files_from_known_grit_dir, resolve_patterns,
+    },
     searcher::find_grit_dir_from,
 };
 
@@ -64,13 +67,6 @@ impl<'b> fmt::Display for RichPattern<'b> {
     }
 }
 
-/// Get the grit files from the current working directory
-#[deprecated = "Use get_grit_files_from_flags_or_cwd instead"]
-pub async fn get_grit_files_from_cwd() -> Result<PatternsDirectory> {
-    let cwd = std::env::current_dir()?;
-    get_grit_files_from(Some(cwd)).await
-}
-
 #[tracing::instrument]
 pub async fn get_grit_files_from_flags_or_cwd(
     flags: &GlobalFormatFlags,
@@ -96,9 +92,9 @@ pub async fn resolve_from_flags_or_cwd(
 
 pub async fn get_grit_files_from(cwd: Option<PathBuf>) -> Result<PatternsDirectory> {
     let installer = Updater::from_current_bin().await?;
-    let install_path = updater.install_path;
+    let install_path = installer.install_path;
 
-    find_and_resolve_grit_dir(cwd, install_path)
+    find_and_resolve_grit_dir(cwd, Some(install_path)).await
 }
 
 pub async fn resolve_from(

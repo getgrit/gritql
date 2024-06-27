@@ -1,4 +1,7 @@
-use marzano_gritmodule::fetcher::GritModuleFetcher;
+use marzano_gritmodule::{
+    config::{init_config_from_cwd, init_global_grit_modules},
+    fetcher::GritModuleFetcher,
+};
 use std::{env, fmt, io::ErrorKind, path::PathBuf, str::FromStr};
 
 use tracing::instrument;

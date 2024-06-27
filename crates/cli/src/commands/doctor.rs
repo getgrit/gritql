@@ -9,14 +9,12 @@ use marzano_auth::env::get_grit_api_url;
 use marzano_auth::env::ENV_VAR_GRAPHQL_API_URL;
 use marzano_auth::env::ENV_VAR_GRIT_API_URL;
 use marzano_auth::env::ENV_VAR_GRIT_APP_URL;
+use marzano_gritmodule::config::init_config_from_cwd;
 use marzano_gritmodule::fetcher::KeepFetcherKind;
 use marzano_gritmodule::searcher::find_grit_modules_dir;
 use serde::Serialize;
 
-use crate::{
-    commands::init::init_config_from_cwd,
-    updater::{SupportedApp, Updater},
-};
+use crate::updater::{SupportedApp, Updater};
 
 #[derive(Args, Debug, Serialize)]
 pub struct DoctorArgs {}
