@@ -3,7 +3,7 @@ use clap::Args;
 
 use dialoguer::Confirm;
 
-use marzano_gritmodule::config::{init_config_from_cwd, init_global_grit_modules};
+use marzano_gritmodule::config::{init_config_from_path, init_global_grit_modules};
 use marzano_gritmodule::resolver::get_grit_files_from_known_grit_dir;
 use marzano_util::rich_path::RichFile;
 use tracing::instrument;
@@ -332,7 +332,7 @@ pub(crate) async fn run_apply_pattern(
         {
             flushable_unwrap!(
                 emitter,
-                init_config_from_cwd::<KeepFetcherKind>(target_grit_dir, false).await
+                init_config_from_path::<KeepFetcherKind>(target_grit_dir, false).await
             );
         } else if let Some(target) = &target_remote {
             flushable_unwrap!(

@@ -365,7 +365,7 @@ impl fmt::Display for ConfigSource {
 }
 
 #[instrument]
-pub async fn init_config_from_cwd<T: FetcherType>(
+pub async fn init_config_from_path<T: FetcherType>(
     cwd: PathBuf,
     create_local: bool,
 ) -> Result<ConfigSource> {

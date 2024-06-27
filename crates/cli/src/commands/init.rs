@@ -1,4 +1,4 @@
-use marzano_gritmodule::config::{init_config_from_cwd, init_global_grit_modules};
+use marzano_gritmodule::config::{init_config_from_path, init_global_grit_modules};
 
 use anyhow::Result;
 use clap::Args;
@@ -18,7 +18,7 @@ pub(crate) async fn run_init(arg: InitArgs) -> Result<()> {
         init_global_grit_modules::<CleanFetcherKind>(None).await?;
     } else {
         let cwd = std::env::current_dir()?;
-        init_config_from_cwd::<CleanFetcherKind>(cwd, true).await?;
+        init_config_from_path::<CleanFetcherKind>(cwd, true).await?;
     }
 
     Ok(())

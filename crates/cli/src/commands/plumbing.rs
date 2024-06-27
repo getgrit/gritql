@@ -2,7 +2,7 @@ use anyhow::{anyhow, bail, Result};
 use clap::{Args, Subcommand};
 use indicatif::MultiProgress;
 use marzano_gritmodule::config::{
-    init_config_from_cwd, init_global_grit_modules, GritPatternTestInfo,
+    init_config_from_path, init_global_grit_modules, GritPatternTestInfo,
 };
 use marzano_gritmodule::fetcher::KeepFetcherKind;
 use marzano_gritmodule::patterns_directory::PatternsDirectory;
@@ -136,7 +136,7 @@ pub(crate) async fn run_plumbing(
                 PatternsDirectory::new()
             } else {
                 let path = PathBuf::from(input.paths.first().unwrap());
-                init_config_from_cwd::<KeepFetcherKind>(path.clone(), false).await?;
+                init_config_from_path::<KeepFetcherKind>(path.clone(), false).await?;
                 get_grit_files_from(Some(path)).await?
             };
             let raw_name = input.pattern_body.trim_end_matches("()");
