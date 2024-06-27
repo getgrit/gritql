@@ -104,9 +104,6 @@ pub struct ApplyPatternArgs {
     // If the pattern already has a limit, this will override it
     #[clap(short = 'm', long = "limit")]
     pub limit: Option<usize>,
-    // TODO: consider removing this
-    #[clap(long = "ignore-limit", default_value = "false", hide = true)]
-    ignore_limit: bool,
     // Dry run
     #[clap(
         long = "dry-run",
@@ -169,7 +166,6 @@ impl Default for ApplyPatternArgs {
         Self {
             output: Default::default(),
             limit: Default::default(),
-            ignore_limit: Default::default(),
             dry_run: Default::default(),
             force: Default::default(),
             format: Default::default(),
@@ -246,10 +242,6 @@ pub(crate) async fn run_apply_pattern(
     } else {
         default_lang
     };
-
-    if arg.ignore_limit {
-        context.ignore_limit_pattern = true;
-    }
 
     let interactive = arg.interactive;
     let min_level = &arg.visibility;
