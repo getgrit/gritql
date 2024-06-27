@@ -281,6 +281,10 @@ pub trait Messager: Send + Sync {
     }
 }
 
+pub trait FlushableMessenger {
+    async fn flush(&mut self) -> Result<()>;
+}
+
 /// Visibility levels dictate *which* objects we show (ex. just rewrites, or also every file analyzed)
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy, ValueEnum, Serialize, Default)]
 pub enum VisibilityLevels {

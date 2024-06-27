@@ -9,7 +9,7 @@ use crate::{
     marzano_resolved_pattern::{MarzanoFile, MarzanoResolvedPattern},
     pattern_compiler::compiler::VariableLocations,
 };
-use anyhow::Result;
+use anyhow::{bail, Result};
 use grit_pattern_matcher::{
     constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
     context::QueryContext,
@@ -37,7 +37,7 @@ use sha2::{Digest, Sha256};
 use std::{
     collections::HashMap,
     path::PathBuf,
-    sync::mpsc::{self, Sender},
+    sync::mpsc::{self, Receiver, Sender},
 };
 use std::{fmt::Debug, str::FromStr};
 use tracing::{event, Level};
@@ -338,6 +338,7 @@ impl Problem {
         results
     }
 
+    /// Given a vec of paths, execute the problem on each path and stream the results
     pub fn execute_paths_streaming(
         &self,
         files: Vec<PathBuf>,
@@ -346,6 +347,53 @@ impl Problem {
         cache: &impl GritCache,
     ) {
         self.execute_shared(files, context, tx, cache)
+    }
+
+    /// Given an input channel and an output channel, execute the pattern on each input path and stream results to the output path
+    pub fn execute_streaming_child(
+        &self,
+        incoming_rx: Receiver<Vec<MatchResult>>,
+        context: &ExecutionContext,
+        outgoing_tx: Sender<Vec<MatchResult>>,
+        cache: &impl GritCache,
+    ) -> Result<()> {
+        if self.is_multifile {
+            bail!("Streaming is not supported for multifile patterns");
+        }
+
+        #[cfg(feature = "grit_tracing")]
+        let parent_span = tracing::span!(Level::INFO, "execute_shared_body",).entered();
+        #[cfg(feature = "grit_tracing")]
+        let parent_cx = parent_span.context();
+
+        rayon::scope(|s| {
+            #[cfg(feature = "grit_tracing")]
+            let grouped_ctx = parent_cx;
+
+            s.spawn(move |_| {
+                #[cfg(feature = "grit_tracing")]
+                let task_span = tracing::info_span!("apply_file_inner").entered();
+                #[cfg(feature = "grit_tracing")]
+                task_span.set_parent(grouped_ctx);
+
+                event!(Level::INFO, "spawn execute_shared_body");
+
+                incoming_rx.iter().for_each(|res| {
+                    let mut paths = Vec::new();
+
+                    for m in res.iter() {
+                        if is_match(m) {
+                            if let Some(name) = m.file_name() {
+                                paths.push(PathBuf::from(name));
+                            }
+                        }
+                    }
+                    self.execute_shared(paths, context, outgoing_tx.clone(), &NullCache::new());
+                });
+            })
+        });
+
+        Ok(())
     }
 
     #[cfg_attr(feature = "grit_tracing", tracing::instrument(skip_all))]
