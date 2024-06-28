@@ -175,6 +175,7 @@ impl DefinitionSource {
     }
 }
 
+#[cfg_attr(feature = "napi", napi_derive::napi(object))]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ResolvedGritDefinition {
