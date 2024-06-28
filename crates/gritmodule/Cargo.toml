@@ -36,14 +36,5 @@ homedir = { version = "0.2.1" }
 tracing = { version = "0.1.40", default-features = false, features = [] }
 fs-err = { version = "2.11.0" }
 
-napi = { version = "2.16.4", default-features = false, features = [
-  "napi8",
-  "async",
-], optional = true}
-napi-derive = { version = "2.12.2", optional = true }
-
 [dev-dependencies]
 insta = { version = "1.30.0", features = ["yaml"] }
-
-[features]
-napi = ["dep:napi", "dep:napi-derive"]
