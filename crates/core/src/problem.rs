@@ -360,7 +360,7 @@ impl Problem {
         incoming_rx: Receiver<Vec<MatchResult>>,
         context: &ExecutionContext,
         outgoing_tx: Sender<Vec<MatchResult>>,
-        cache: &impl GritCache,
+        _cache: &impl GritCache,
     ) -> Result<()> {
         if self.is_multifile {
             bail!("Streaming is not supported for multifile patterns");
