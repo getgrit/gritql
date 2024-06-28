@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use marzano_core::api::AnalysisLog;
 use marzano_messenger::{
-    emit::Messager,
+    emit::{FlushableMessenger, Messager},
     output_mode::OutputMode,
     workflows::{PackagedWorkflowOutcome, WorkflowMessenger},
 };
@@ -186,8 +186,10 @@ impl<'a> MessengerVariant<'a> {
             _ => None,
         }
     }
+}
 
-    pub async fn flush(&mut self) -> anyhow::Result<()> {
+impl FlushableMessenger for MessengerVariant<'_> {
+    async fn flush(&mut self) -> anyhow::Result<()> {
         match self {
             #[cfg(feature = "remote_redis")]
             MessengerVariant::Redis(ref mut redis) => redis.flush().await,

@@ -43,6 +43,20 @@ impl MatchResult {
     pub fn is_error(&self) -> bool {
         matches!(self, MatchResult::AnalysisLog(log) if log.level < 400)
     }
+
+    pub fn kind(&self) -> &'static str {
+        match self {
+            MatchResult::PatternInfo(_) => "PatternInfo",
+            MatchResult::AllDone(_) => "AllDone",
+            MatchResult::Match(_) => "Match",
+            MatchResult::InputFile(_) => "InputFile",
+            MatchResult::Rewrite(_) => "Rewrite",
+            MatchResult::CreateFile(_) => "CreateFile",
+            MatchResult::RemoveFile(_) => "RemoveFile",
+            MatchResult::DoneFile(_) => "DoneFile",
+            MatchResult::AnalysisLog(_) => "AnalysisLog",
+        }
+    }
 }
 
 /// Make a path look the way provolone expects it to

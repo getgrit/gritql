@@ -1,5 +1,6 @@
 use crate::flags::GlobalFormatFlags;
 use crate::{flags::OutputFormat, messenger_variant::create_emitter};
+use marzano_messenger::emit::FlushableMessenger;
 
 #[cfg(not(feature = "workflows_v2"))]
 use anyhow::bail;

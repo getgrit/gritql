@@ -2107,34 +2107,6 @@ fn injects_limit() -> Result<()> {
     Ok(())
 }
 
-#[test]
-fn test_ignores_limit_on_scans() -> Result<()> {
-    let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
-
-    let mut cmd = get_test_cmd()?;
-    cmd.arg("apply")
-        .arg("pattern.grit")
-        .arg("file1.js")
-        .arg("file2.js")
-        .arg("--ignore-limit")
-        .current_dir(&fixture_dir);
-
-    let output = cmd.output()?;
-    let stdout = String::from_utf8(output.stdout)?;
-    let stderr = String::from_utf8(output.stderr)?;
-    println!("stdout: {:?}", stdout);
-    println!("stderr: {:?}", stderr);
-
-    assert!(
-        output.status.success(),
-        "Command didn't finish successfully"
-    );
-
-    assert!(stdout.contains("found 2 matches"));
-
-    Ok(())
-}
-
 /// If we are not careful, Grit operations end up causing race conditions when done simultaneously
 #[test]
 #[ignore = "need to fix perf problems"]

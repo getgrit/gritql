@@ -1,7 +1,7 @@
 use anyhow::Result;
 use marzano_core::api::MatchResult;
 
-use crate::emit::Messager;
+use crate::emit::{FlushableMessenger, Messager};
 
 /// A testing messenger that doesn't actually send messages anywhere.
 ///
@@ -38,6 +38,12 @@ impl Messager for TestingMessenger {
 
     fn emit_log(&mut self, _log: &crate::SimpleLogMessage) -> anyhow::Result<()> {
         self.log_count += 1;
+        Ok(())
+    }
+}
+
+impl FlushableMessenger for TestingMessenger {
+    async fn flush(&mut self) -> Result<()> {
         Ok(())
     }
 }
