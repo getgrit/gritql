@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use marzano_core::api::MatchResult;
 use serde::{Deserialize, Serialize};
 
@@ -15,13 +17,7 @@ pub trait WorkflowMessenger: Messager {
     fn save_metadata(&mut self, message: &SimpleWorkflowMessage) -> anyhow::Result<()>;
 
     /// Emit a match result from a workflow, which has some additional metadata around workspace and paths
-    fn emit_from_workflow(&mut self, message: &WorkflowMatchResult) -> anyhow::Result<()> {
-        self.emit(
-            &message.result,
-            // This is meant to match what we do in the CLI server
-            &VisibilityLevels::Debug,
-        )
-    }
+    fn emit_from_workflow(&mut self, message: &WorkflowMatchResult) -> anyhow::Result<()>;
 }
 
 /// Simple workflow message representation, mainly intended for RPC
@@ -35,5 +31,5 @@ pub struct SimpleWorkflowMessage {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WorkflowMatchResult {
     pub result: MatchResult,
-    pub workspace_path: Option<String>,
+    pub workspace_path: Option<PathBuf>,
 }
