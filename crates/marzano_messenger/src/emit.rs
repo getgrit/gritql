@@ -281,6 +281,10 @@ pub trait Messager: Send + Sync {
     }
 }
 
+pub trait FlushableMessenger {
+    fn flush(&mut self) -> impl std::future::Future<Output = Result<()>> + Send;
+}
+
 /// Visibility levels dictate *which* objects we show (ex. just rewrites, or also every file analyzed)
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy, ValueEnum, Serialize, Default)]
 pub enum VisibilityLevels {

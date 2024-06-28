@@ -22,6 +22,7 @@ use marzano_gritmodule::markdown::get_body_from_md_content;
 use marzano_gritmodule::searcher::{find_global_grit_dir, find_grit_modules_dir};
 use marzano_gritmodule::utils::{infer_pattern, is_pattern_name, parse_remote_name};
 use marzano_language::target_language::PatternLanguage;
+use marzano_messenger::emit::FlushableMessenger as _;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::env;

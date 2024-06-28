@@ -13,6 +13,7 @@ use marzano_core::{
 };
 use marzano_gritmodule::{config::ResolvedGritDefinition, utils::extract_path};
 use marzano_language::target_language::{expand_paths, PatternLanguage};
+use marzano_messenger::emit::FlushableMessenger as _;
 use marzano_util::cache::GritCache;
 use marzano_util::rich_path::RichPath;
 use marzano_util::{finder::get_input_files, rich_path::RichFile};
