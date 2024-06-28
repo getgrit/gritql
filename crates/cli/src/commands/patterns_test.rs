@@ -320,21 +320,21 @@ async fn enable_watch_mode(
         .map(|p| (p.local_name.clone().unwrap(), p.clone()))
         .collect::<HashMap<_, _>>();
 
-    // event pocessing
+    // event processing
     for result in rx {
         match result {
-            Ok(event) => 'event_block: {
+            Ok(event) => {
                 let modified_file_path = event.first().unwrap().path.clone();
 
                 if !modified_file_path.is_file() {
-                    break 'event_block;
+                    continue;
                 }
                 let modified_file_path = modified_file_path.into_os_string().into_string().unwrap();
 
-                //temorary fix, until notify crate adds support for ignoring paths
+                //temporary fix, until notify crate adds support for ignoring paths
                 for path in &ignore_path {
                     if modified_file_path.contains(path) {
-                        break 'event_block;
+                        continue;
                     }
                 }
                 log::info!("\n[Watch Mode] File modified: {:?}", modified_file_path);
@@ -344,7 +344,7 @@ async fn enable_watch_mode(
 
                 if modified_patterns.is_empty() && deleted_patterns.is_empty() {
                     log::info!("[Watch Mode] No patterns changed.\n");
-                    break 'event_block;
+                    continue;
                 }
 
                 let deleted_patterns_names = deleted_patterns
@@ -390,7 +390,7 @@ async fn enable_watch_mode(
 
                 log::info!("[Watch Mode] Pattern to test: {:?}", patterns_to_test_names);
                 if patterns_to_test_names.is_empty() {
-                    break 'event_block;
+                    continue;
                 }
 
                 let _ =
