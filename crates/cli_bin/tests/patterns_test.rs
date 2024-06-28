@@ -1,4 +1,15 @@
+use std::{
+    env, fs,
+    io::{BufRead, BufReader},
+    path::Path,
+    process::{Command, Stdio},
+    sync::mpsc,
+    thread,
+    time::Duration,
+};
+
 use anyhow::Result;
+use assert_cmd::cargo::CommandCargoExt;
 use insta::assert_snapshot;
 
 use crate::common::{get_fixture, get_test_cmd};
@@ -307,5 +318,63 @@ fn tests_python_pattern_with_file_name() -> Result<()> {
 
     assert!(output.status.success());
 
+    Ok(())
+}
+
+#[test]
+fn watch_mode_of_patterns_test() -> Result<()> {
+    let (tx, rx) = mpsc::channel();
+    let cur_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+    let root_dir = Path::new(&cur_dir)
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .to_owned();
+    let test_yaml_path = root_dir.join(".grit").join("test").join("test.yaml");
+
+    let _cmd_handle = thread::spawn(move || {
+        let mut cmd = Command::cargo_bin("marzano")
+            .unwrap()
+            .args(&["patterns", "test", "--watch"])
+            .current_dir(&root_dir)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("Failed to start command");
+
+        let stdout = BufReader::new(cmd.stdout.take().unwrap());
+        let stderr = BufReader::new(cmd.stderr.take().unwrap());
+        for line in stdout.lines().chain(stderr.lines()) {
+            if let Ok(line) = line {
+                tx.send(line).unwrap();
+            }
+        }
+    });
+    thread::sleep(Duration::from_secs(1));
+
+    let _modifier_handle = thread::spawn(move || {
+        let content = fs::read_to_string(&test_yaml_path).unwrap();
+        fs::write(&test_yaml_path, content).unwrap();
+    });
+    thread::sleep(Duration::from_secs(1));
+
+    let mut output = Vec::new();
+    while let Ok(line) = rx.try_recv() {
+        output.push(line);
+    }
+    let expected_output = vec![
+        "[Watch Mode] enabled on path: .grit",
+        "[Watch Mode] File modified: \".grit/test/test.yaml\"",
+        "[Watch Mode] Pattern to test: [\"our_cargo_use_long_dependency\", \"cargo_use_long_dependency\", \"no_treesitter_in_grit_crates\", \"no_println_in_lsp\", \"no_println_in_core\"]",
+        "Found 5 testable patterns.",
+    ];
+    for expected_line in expected_output {
+        assert!(
+            output.iter().any(|line| line.contains(expected_line)),
+            "Expected output not found: {}",
+            expected_line
+        );
+    }
     Ok(())
 }
