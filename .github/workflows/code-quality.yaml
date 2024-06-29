@@ -13,8 +13,7 @@ jobs:
     steps:
       - name: clone code
         uses: actions/checkout@v3
-        with:
-          submodules: true
+      - run: nsc git-checkout update-submodules --mirror_base_path=${NSC_GIT_MIRROR} --repository_path=${GITHUB_WORKSPACE} --recurse
       - name: Install Protoc
         run: sudo apt-get install -y protobuf-compiler
       - run: rustup component add clippy
