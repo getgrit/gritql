@@ -142,10 +142,16 @@ impl<'a> WorkflowMessenger for MessengerVariant<'a> {
     ) -> anyhow::Result<()> {
         // This is meant to match what we do in the CLI server
         let level = VisibilityLevels::Debug;
+
         match self {
             MessengerVariant::Formatted(_)
             | MessengerVariant::Transformed(_)
-            | MessengerVariant::JsonLine(_) => self.emit(&message.result, &level),
+            | MessengerVariant::JsonLine(_) => {
+                // For local emitters,, we will also apply rewrites
+                self.emit(&message.result, &level)?;
+                self.apply_rewrite(&message.result, &level)?;
+                Ok(())
+            }
             #[cfg(feature = "remote_redis")]
             MessengerVariant::Redis(m) => m.emit_from_workflow(message),
             #[cfg(feature = "remote_pubsub")]

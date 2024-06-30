@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use marzano_core::api::MatchResult;
 use serde::{Deserialize, Serialize};
 
-use crate::emit::{Messager};
+use crate::emit::Messager;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct PackagedWorkflowOutcome {
