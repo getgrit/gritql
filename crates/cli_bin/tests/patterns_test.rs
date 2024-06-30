@@ -357,9 +357,9 @@ fn watch_mode_of_patterns_test() -> Result<()> {
         output.push(line);
     }
     let expected_output = vec![
-        "[Watch Mode] enabled on path: .grit",
+        "[Watch Mode] Enabled on path: .grit",
         "[Watch Mode] File modified: \".grit/grit.yaml\"",
-        "[Watch Mode] Pattern to test: [\"our_cargo_use_long_dependency\", \"cargo_use_long_dependency\", \"no_treesitter_in_grit_crates\", \"no_println_in_lsp\", \"no_println_in_core\"]",
+        "[Watch Mode] Pattern(s) to test: [\"our_cargo_use_long_dependency\", \"cargo_use_long_dependency\", \"no_treesitter_in_grit_crates\", \"no_println_in_lsp\", \"no_println_in_core\"]",
         "Found 5 testable patterns.",
     ];
     for expected_line in expected_output {

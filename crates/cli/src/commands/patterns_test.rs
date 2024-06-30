@@ -313,7 +313,7 @@ async fn enable_watch_mode(
     let mut debouncer = new_debouncer_opt::<_, notify::PollWatcher>(debouncer_config, tx).unwrap();
 
     debouncer.watcher().watch(path, RecursiveMode::Recursive)?;
-    log::info!("\n[Watch Mode] enabled on path: {}", path.display());
+    log::info!("\n[Watch Mode] Enabled on path: {}", path.display());
 
     let testable_patterns_map = testable_patterns
         .iter()
@@ -388,7 +388,10 @@ async fn enable_watch_mode(
                     }
                 }
 
-                log::info!("[Watch Mode] Pattern to test: {:?}", patterns_to_test_names);
+                log::info!(
+                    "[Watch Mode] Pattern(s) to test: {:?}",
+                    patterns_to_test_names
+                );
                 if patterns_to_test_names.is_empty() {
                     continue;
                 }
