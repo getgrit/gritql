@@ -1,7 +1,10 @@
 use anyhow::Result;
 use marzano_core::api::MatchResult;
 
-use crate::emit::{FlushableMessenger, Messager};
+use crate::{
+    emit::{FlushableMessenger, Messager},
+    workflows::{WorkflowMessenger},
+};
 
 /// A testing messenger that doesn't actually send messages anywhere.
 ///
@@ -45,5 +48,21 @@ impl Messager for TestingMessenger {
 impl FlushableMessenger for TestingMessenger {
     async fn flush(&mut self) -> Result<()> {
         Ok(())
+    }
+}
+
+impl WorkflowMessenger for TestingMessenger {
+    fn save_metadata(
+        &mut self,
+        _metadata: &crate::workflows::SimpleWorkflowMessage,
+    ) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    fn emit_from_workflow(
+        &mut self,
+        message: &crate::workflows::WorkflowMatchResult,
+    ) -> anyhow::Result<()> {
+        self.emit(&message.result, &crate::emit::VisibilityLevels::Debug)
     }
 }
