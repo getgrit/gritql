@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use marzano_core::api::AnalysisLog;
 use marzano_messenger::{
-    emit::{FlushableMessenger, Messager},
+    emit::{FlushableMessenger, Messager, VisibilityLevels},
     output_mode::OutputMode,
     workflows::{PackagedWorkflowOutcome, WorkflowMessenger},
 };
@@ -133,6 +133,31 @@ impl<'a> WorkflowMessenger for MessengerVariant<'a> {
             MessengerVariant::GooglePubSub(m) => m.save_metadata(message),
             #[cfg(feature = "server")]
             MessengerVariant::Combined(m) => m.save_metadata(message),
+        }
+    }
+
+    fn emit_from_workflow(
+        &mut self,
+        message: &marzano_messenger::workflows::WorkflowMatchResult,
+    ) -> anyhow::Result<()> {
+        // This is meant to match what we do in the CLI server
+        let level = VisibilityLevels::Debug;
+
+        match self {
+            MessengerVariant::Formatted(_)
+            | MessengerVariant::Transformed(_)
+            | MessengerVariant::JsonLine(_) => {
+                // For local emitters,, we will also apply rewrites
+                self.emit(&message.result, &level)?;
+                self.apply_rewrite(&message.result, &level)?;
+                Ok(())
+            }
+            #[cfg(feature = "remote_redis")]
+            MessengerVariant::Redis(m) => m.emit_from_workflow(message),
+            #[cfg(feature = "remote_pubsub")]
+            MessengerVariant::GooglePubSub(m) => m.emit_from_workflow(message),
+            #[cfg(feature = "server")]
+            MessengerVariant::Combined(m) => m.emit_from_workflow(message),
         }
     }
 }

@@ -65,7 +65,10 @@ fn normalize_path_in_project<'a>(path: &'a str, root_path: Option<&'a PathBuf>) 
     #[cfg(debug_assertions)]
     if let Some(root_path) = root_path {
         if !root_path.to_str().unwrap_or_default().ends_with('/') {
-            panic!("root_path must end with a slash.");
+            panic!(
+                "root_path '{}' must end with a slash.",
+                root_path.to_str().unwrap_or_default()
+            );
         }
     }
     if let Some(root_path) = root_path {
