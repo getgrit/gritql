@@ -134,8 +134,7 @@ impl MatchResult {
                 if ranges.suppressed {
                     return Ok(None);
                 }
-                let fm =
-                    FileMatch::file_to_file_match(ranges, file.name.to_string_lossy().as_ref());
+                let fm = EntireFile::from_file(file)?;
                 return Ok(Some(MatchResult::Match(fm.into())));
             } else {
                 return Ok(None);
@@ -162,7 +161,7 @@ impl MatchResult {
         }
     }
 
-    fn extract_original_match(&self) -> Option<FileMatch> {
+    fn extract_original_match(&self) -> Option<EntireFile> {
         match self {
             MatchResult::DoneFile(_)
             | MatchResult::AnalysisLog(_)
@@ -318,53 +317,6 @@ pub struct InputFile {
     pub syntax_tree: String,
 }
 
-/// This represents the details of a match in a file, but is not directly a match result.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(rename_all = "camelCase")]
-pub struct FileMatch {
-    #[serde(default)]
-    pub messages: Vec<Message>,
-    #[serde(default)]
-    pub variables: Vec<VariableMatch>,
-    pub source_file: String,
-    #[serde(default)]
-    pub ranges: Vec<Range>,
-}
-
-impl FileMatch {
-    fn file_to_file_match(match_ranges: &InputRanges, name: &str) -> Self {
-        Self {
-            source_file: name.to_owned(),
-            ranges: match_ranges.ranges.clone(),
-            variables: match_ranges.variables.clone(),
-            messages: vec![],
-        }
-    }
-}
-
-impl FileMatchResult for FileMatch {
-    fn file_name(&self) -> &str {
-        &self.source_file
-    }
-    fn ranges(&mut self) -> &Vec<Range> {
-        &self.ranges
-    }
-    fn action() -> &'static str {
-        "matched"
-    }
-}
-
-impl From<Match> for FileMatch {
-    fn from(m: Match) -> Self {
-        Self {
-            messages: m.messages,
-            variables: m.variables,
-            source_file: m.source_file,
-            ranges: m.ranges,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct Match {
@@ -375,10 +327,40 @@ pub struct Match {
     #[serde(default)]
     pub variables: Vec<VariableMatch>,
     pub source_file: String,
+    /// The full content of the file
+    #[serde(default)]
+    pub content: String,
     #[serde(default)]
     pub ranges: Vec<Range>,
     #[serde(default)]
     pub reason: Option<MatchReason>,
+}
+
+impl From<EntireFile> for Match {
+    fn from(file_match: EntireFile) -> Self {
+        Self {
+            messages: file_match.messages,
+            variables: file_match.variables,
+            source_file: file_match.source_file,
+            ranges: file_match.ranges,
+            reason: None,
+            content: file_match.content,
+        }
+    }
+}
+
+impl From<Match> for EntireFile {
+    fn from(file_match: Match) -> Self {
+        Self {
+            messages: file_match.messages,
+            variables: file_match.variables,
+            source_file: file_match.source_file,
+            ranges: file_match.ranges,
+            // TODO: fix this
+            byte_ranges: None,
+            content: file_match.content,
+        }
+    }
 }
 
 impl FileMatchResult for Match {
@@ -393,18 +375,6 @@ impl FileMatchResult for Match {
     }
 }
 
-impl From<FileMatch> for Match {
-    fn from(file_match: FileMatch) -> Self {
-        Self {
-            messages: file_match.messages,
-            variables: file_match.variables,
-            source_file: file_match.source_file,
-            ranges: file_match.ranges,
-            reason: None,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct EntireFile {
@@ -415,6 +385,8 @@ pub struct EntireFile {
     pub source_file: String,
     pub content: String,
     pub byte_ranges: Option<Vec<ByteRange>>,
+    #[serde(default)]
+    pub ranges: Vec<Range>,
 }
 
 impl EntireFile {
@@ -425,6 +397,7 @@ impl EntireFile {
             variables: vec![],
             messages: vec![],
             byte_ranges: byte_range.map(|r| r.to_owned()),
+            ranges: todo!(),
         }
     }
 
@@ -451,7 +424,7 @@ impl EntireFile {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct Rewrite {
-    pub original: FileMatch,
+    pub original: EntireFile,
     pub rewritten: EntireFile,
     #[serde(default)]
     pub reason: Option<MatchReason>,
@@ -469,7 +442,7 @@ impl Rewrite {
         rewritten_file: &FileOwner<Tree>,
     ) -> Result<Self> {
         let original = if let Some(ranges) = &initial.matches.borrow().input_matches {
-            FileMatch::file_to_file_match(ranges, initial.name.to_string_lossy().as_ref())
+            EntireFile::from_file(initial)?
         } else {
             bail!("cannot have rewrite without matches")
         };
@@ -544,7 +517,7 @@ pub enum RewriteSource {
 }
 
 impl Rewrite {
-    pub fn new(original: FileMatch, rewritten: EntireFile, reason: Option<MatchReason>) -> Self {
+    pub fn new(original: EntireFile, rewritten: EntireFile, reason: Option<MatchReason>) -> Self {
         Self {
             original,
             rewritten,
@@ -605,7 +578,7 @@ impl FileMatchResult for CreateFile {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct RemoveFile {
-    pub original: FileMatch,
+    pub original: EntireFile,
     #[serde(default)]
     pub reason: Option<MatchReason>,
 }
