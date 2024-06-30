@@ -356,7 +356,7 @@ impl From<Match> for EntireFile {
             variables: file_match.variables,
             source_file: file_match.source_file,
             ranges: file_match.ranges,
-            // TODO: fix this
+            // TODO: fix this or drop byte_ranges entirely
             byte_ranges: None,
             content: file_match.content,
         }
@@ -397,7 +397,9 @@ impl EntireFile {
             variables: vec![],
             messages: vec![],
             byte_ranges: byte_range.map(|r| r.to_owned()),
-            ranges: todo!(),
+            ranges: byte_range
+                .map(|r| r.iter().map(|r| Range::from_byte_range(body, r)).collect())
+                .unwrap_or_default(),
         }
     }
 
@@ -441,11 +443,7 @@ impl Rewrite {
         initial: &FileOwner<Tree>,
         rewritten_file: &FileOwner<Tree>,
     ) -> Result<Self> {
-        let original = if let Some(ranges) = &initial.matches.borrow().input_matches {
-            EntireFile::from_file(initial)?
-        } else {
-            bail!("cannot have rewrite without matches")
-        };
+        let original = EntireFile::from_file(initial)?;
         let rewritten = EntireFile::from_file(rewritten_file)?;
         Ok(Rewrite::new(original, rewritten, None))
     }
