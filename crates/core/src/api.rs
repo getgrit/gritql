@@ -390,6 +390,8 @@ pub struct EntireFile {
 }
 
 impl EntireFile {
+    /// Create an entire file for cases where we don't really have an original file to reference
+    /// When working with rewrites, `from_file` should be used instead
     fn file_to_entire_file(name: &str, body: &str, byte_range: Option<&Vec<ByteRange>>) -> Self {
         Self {
             source_file: name.to_owned(),
@@ -403,23 +405,28 @@ impl EntireFile {
         }
     }
 
+    /// Create an entire file from a file owner, including handling source maps and byte ranges
     fn from_file(file: &FileOwner<Tree>) -> Result<Self> {
-        if let Some(source_map) = &file.tree.source_map {
+        let mut basic = if let Some(source_map) = &file.tree.source_map {
             let outer_source = source_map.fill_with_inner(&file.tree.source)?;
 
-            Ok(Self::file_to_entire_file(
+            Self::file_to_entire_file(
                 file.name.to_string_lossy().as_ref(),
                 &outer_source,
                 // Exclude the matches, since they aren't reliable yet
                 None,
-            ))
+            )
         } else {
-            Ok(Self::file_to_entire_file(
+            Self::file_to_entire_file(
                 file.name.to_string_lossy().as_ref(),
                 file.tree.outer_source(),
                 file.matches.borrow().byte_ranges.as_ref(),
-            ))
-        }
+            )
+        };
+        if let Some(input_ranges) = file.matches.borrow().input_matches.as_ref() {
+            basic.variables = input_ranges.variables.clone();
+        };
+        Ok(basic)
     }
 }
 
