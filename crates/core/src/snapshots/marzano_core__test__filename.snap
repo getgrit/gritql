@@ -30,6 +30,8 @@ expression: results
             startByte: 0
             endByte: 10
     sourceFile: test-file.tsx
+    content: "whatever;\n"
+    byteRanges: ~
     ranges: []
   rewritten:
     messages: []
@@ -39,6 +41,15 @@ expression: results
     byteRanges:
       - start: 0
         end: 13
+    ranges:
+      - start:
+          line: 1
+          column: 1
+        end:
+          line: 1
+          column: 14
+        startByte: 0
+        endByte: 13
   reason: ~
 - __typename: DoneFile
   relativeFilePath: test-file.tsx

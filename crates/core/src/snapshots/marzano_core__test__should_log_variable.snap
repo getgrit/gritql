@@ -52,6 +52,8 @@ expression: results
             startByte: 16
             endByte: 50
     sourceFile: test-file.tsx
+    content: "var increment = function (i) {\n    return i + 1;\n};"
+    byteRanges: ~
     ranges:
       - start:
           line: 1
@@ -69,6 +71,15 @@ expression: results
     byteRanges:
       - start: 16
         end: 42
+    ranges:
+      - start:
+          line: 1
+          column: 17
+        end:
+          line: 3
+          column: 2
+        startByte: 16
+        endByte: 42
   reason: ~
 - __typename: DoneFile
   relativeFilePath: test-file.tsx

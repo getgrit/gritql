@@ -131,7 +131,15 @@ expression: results
     sourceFile: test-file.tsx
     content: "foo(1, 11);\nfoo(1, 12);\nfoo(1, 12);\nfoo(2, 21);\nend\n"
     byteRanges: ~
-    ranges: []
+    ranges:
+      - start:
+          line: 5
+          column: 1
+        end:
+          line: 5
+          column: 4
+        startByte: 48
+        endByte: 51
   rewritten:
     messages: []
     variables: []

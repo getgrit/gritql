@@ -424,6 +424,7 @@ impl EntireFile {
             )
         };
         if let Some(input_ranges) = file.matches.borrow().input_matches.as_ref() {
+            basic.ranges = input_ranges.ranges.clone();
             basic.variables = input_ranges.variables.clone();
         };
         Ok(basic)

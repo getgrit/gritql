@@ -133,6 +133,8 @@ expression: results
             startByte: 11
             endByte: 12
     sourceFile: file1.tsx
+    content: "foo(1)\nbar(1)\nbar(2)\nbaz(1)"
+    byteRanges: ~
     ranges: []
   rewritten:
     messages: []
@@ -144,6 +146,23 @@ expression: results
         end: 13
       - start: 21
         end: 27
+    ranges:
+      - start:
+          line: 2
+          column: 1
+        end:
+          line: 2
+          column: 7
+        startByte: 7
+        endByte: 13
+      - start:
+          line: 4
+          column: 1
+        end:
+          line: 4
+          column: 7
+        startByte: 21
+        endByte: 27
   reason: ~
 - __typename: Rewrite
   original:
@@ -276,6 +295,8 @@ expression: results
             startByte: 11
             endByte: 12
     sourceFile: file2.tsx
+    content: "foo(2)\nfoo(1)\nbar(1)\nbar(2)\nbaz(1)"
+    byteRanges: ~
     ranges: []
   rewritten:
     messages: []
@@ -287,6 +308,23 @@ expression: results
         end: 20
       - start: 28
         end: 34
+    ranges:
+      - start:
+          line: 3
+          column: 1
+        end:
+          line: 3
+          column: 7
+        startByte: 14
+        endByte: 20
+      - start:
+          line: 5
+          column: 1
+        end:
+          line: 5
+          column: 7
+        startByte: 28
+        endByte: 34
   reason: ~
 - __typename: DoneFile
   relativeFilePath: file1.tsx
