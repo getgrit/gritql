@@ -11,6 +11,7 @@ use std::{
 use anyhow::Result;
 use assert_cmd::cargo::CommandCargoExt;
 use insta::assert_snapshot;
+use tempfile::tempdir;
 
 use crate::common::{get_fixture, get_test_cmd};
 
@@ -331,13 +332,21 @@ fn watch_mode_of_patterns_test() -> Result<()> {
         .parent()
         .unwrap()
         .to_owned();
-    let test_yaml_path = root_dir.join(".grit").join("test").join("test.yaml");
 
+    let temp_dir = tempdir()?;
+    let temp_grit_dir = temp_dir.path().join(".grit");
+    fs::create_dir(&temp_grit_dir)?;
+
+    let test_yaml_path = temp_grit_dir.join("grit.yaml");
+    let source_yaml_path = root_dir.join(".grit").join("grit.yaml");
+    fs::copy(source_yaml_path, &test_yaml_path)?;
+
+    let temp_dir_path = temp_dir.path().to_owned();
     let _cmd_handle = thread::spawn(move || {
         let mut cmd = Command::cargo_bin("marzano")
             .unwrap()
             .args(&["patterns", "test", "--watch"])
-            .current_dir(&root_dir)
+            .current_dir(&temp_dir_path)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
@@ -353,10 +362,8 @@ fn watch_mode_of_patterns_test() -> Result<()> {
     });
     thread::sleep(Duration::from_secs(1));
 
-    let _modifier_handle = thread::spawn(move || {
-        let content = fs::read_to_string(&test_yaml_path).unwrap();
-        fs::write(&test_yaml_path, content).unwrap();
-    });
+    let content = fs::read_to_string(&test_yaml_path).expect("Unable to read the file");
+    fs::write(&test_yaml_path, content).unwrap();
     thread::sleep(Duration::from_secs(1));
 
     let mut output = Vec::new();
@@ -365,7 +372,7 @@ fn watch_mode_of_patterns_test() -> Result<()> {
     }
     let expected_output = vec![
         "[Watch Mode] enabled on path: .grit",
-        "[Watch Mode] File modified: \".grit/test/test.yaml\"",
+        "[Watch Mode] File modified: \".grit/grit.yaml\"",
         "[Watch Mode] Pattern to test: [\"our_cargo_use_long_dependency\", \"cargo_use_long_dependency\", \"no_treesitter_in_grit_crates\", \"no_println_in_lsp\", \"no_println_in_core\"]",
         "Found 5 testable patterns.",
     ];
