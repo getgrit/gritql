@@ -764,6 +764,12 @@ mod tests {
     }
 
     #[test]
+    fn test_normalized_relative_path() {
+        let path = "src/main.rs";
+        assert_eq!(normalize_path_in_project(path, None), "src/main.rs");
+    }
+
+    #[test]
     fn test_normalize_path_in_project_with_root() {
         let path = "/home/user/project/src/main.rs";
         let root_path = PathBuf::from("/home/user/project/");
