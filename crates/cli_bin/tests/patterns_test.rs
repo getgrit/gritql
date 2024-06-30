@@ -1,7 +1,6 @@
 use std::{
     env, fs,
     io::{BufRead, BufReader},
-    path::Path,
     process::{Command, Stdio},
     sync::mpsc,
     thread,
@@ -11,7 +10,6 @@ use std::{
 use anyhow::Result;
 use assert_cmd::cargo::CommandCargoExt;
 use insta::assert_snapshot;
-use tempfile::tempdir;
 
 use crate::common::{get_fixture, get_test_cmd};
 
@@ -325,23 +323,11 @@ fn tests_python_pattern_with_file_name() -> Result<()> {
 #[test]
 fn watch_mode_of_patterns_test() -> Result<()> {
     let (tx, rx) = mpsc::channel();
-    let cur_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let root_dir = Path::new(&cur_dir)
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .to_owned();
 
-    let temp_dir = tempdir()?;
-    let temp_grit_dir = temp_dir.path().join(".grit");
-    fs::create_dir(&temp_grit_dir)?;
-
+    let (temp_dir, temp_grit_dir) = get_fixture(".grit", false)?;
     let test_yaml_path = temp_grit_dir.join("grit.yaml");
-    let source_yaml_path = root_dir.join(".grit").join("grit.yaml");
-    fs::copy(source_yaml_path, &test_yaml_path)?;
-
     let temp_dir_path = temp_dir.path().to_owned();
+
     let _cmd_handle = thread::spawn(move || {
         let mut cmd = Command::cargo_bin("marzano")
             .unwrap()
