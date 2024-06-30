@@ -204,6 +204,21 @@ impl MatchResult {
         }
     }
 
+    /// Get the original content
+    pub fn extract_original_content(&self) -> Option<&str> {
+        match self {
+            MatchResult::DoneFile(_)
+            | MatchResult::AnalysisLog(_)
+            | MatchResult::InputFile(_)
+            | MatchResult::CreateFile(_)
+            | MatchResult::AllDone(_)
+            | MatchResult::PatternInfo(_) => None,
+            MatchResult::Match(m) => Some(&m.content),
+            MatchResult::RemoveFile(r) => Some(&r.original.content),
+            MatchResult::Rewrite(r) => Some(&r.original.content),
+        }
+    }
+
     /// Given a MatchResult, create a MatchResult::Rewrite that suppresses the match.
     /// Returns None if it has any issues.
     pub fn get_rewrite_to_suppress<'a>(
@@ -220,9 +235,8 @@ impl MatchResult {
         let original_file_name = self.extract_original_path()?;
         let original_match = self.extract_original_match()?;
 
-        let original_src = fs_err::read_to_string(original_file_name).ok()?;
-        let rewritten_content =
-            split_string_at_indices(&original_src, ranges_starts).join(&comment);
+        let original_src = self.extract_original_content()?;
+        let rewritten_content = split_string_at_indices(original_src, ranges_starts).join(&comment);
         let ef = EntireFile::file_to_entire_file(original_file_name, &rewritten_content, None);
         Some(MatchResult::Rewrite(Rewrite::new(
             original_match,
