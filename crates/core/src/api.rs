@@ -2,7 +2,7 @@ use crate::{fs, problem::Problem, tree_sitter_serde::tree_sitter_node_to_json};
 use anyhow::{bail, Result};
 use grit_pattern_matcher::file_owners::FileOwner;
 pub use grit_util::ByteRange;
-use grit_util::{AnalysisLog as GritAnalysisLog, Ast, InputRanges, Position, Range, VariableMatch};
+use grit_util::{AnalysisLog as GritAnalysisLog, Ast, Position, Range, VariableMatch};
 use im::Vector;
 use marzano_language::grit_ts_node::grit_node_types;
 use marzano_language::language::{MarzanoLanguage, Tree};
