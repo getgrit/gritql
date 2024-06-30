@@ -65,31 +65,7 @@ expression: results
         end: 14
       - start: 14
         end: 19
-    ranges:
-      - start:
-          line: 1
-          column: 1
-        end:
-          line: 1
-          column: 8
-        startByte: 0
-        endByte: 7
-      - start:
-          line: 1
-          column: 8
-        end:
-          line: 1
-          column: 15
-        startByte: 7
-        endByte: 14
-      - start:
-          line: 1
-          column: 15
-        end:
-          line: 1
-          column: 20
-        startByte: 14
-        endByte: 19
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: test-file.tsx

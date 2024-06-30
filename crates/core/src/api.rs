@@ -399,9 +399,7 @@ impl EntireFile {
             variables: vec![],
             messages: vec![],
             byte_ranges: byte_range.map(|r| r.to_owned()),
-            ranges: byte_range
-                .map(|r| r.iter().map(|r| Range::from_byte_range(body, r)).collect())
-                .unwrap_or_default(),
+            ranges: vec![],
         }
     }
 

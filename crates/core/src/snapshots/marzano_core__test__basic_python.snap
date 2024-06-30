@@ -60,15 +60,7 @@ expression: results
     byteRanges:
       - start: 0
         end: 19
-    ranges:
-      - start:
-          line: 1
-          column: 1
-        end:
-          line: 1
-          column: 20
-        startByte: 0
-        endByte: 19
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: foo.py

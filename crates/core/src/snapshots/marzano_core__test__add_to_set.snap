@@ -145,15 +145,7 @@ expression: results
     byteRanges:
       - start: 48
         end: 68
-    ranges:
-      - start:
-          line: 5
-          column: 1
-        end:
-          line: 5
-          column: 21
-        startByte: 48
-        endByte: 68
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: test-file.tsx

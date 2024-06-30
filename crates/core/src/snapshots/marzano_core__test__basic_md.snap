@@ -49,15 +49,7 @@ expression: results
     byteRanges:
       - start: 0
         end: 15
-    ranges:
-      - start:
-          line: 1
-          column: 1
-        end:
-          line: 1
-          column: 16
-        startByte: 0
-        endByte: 15
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: foo.md

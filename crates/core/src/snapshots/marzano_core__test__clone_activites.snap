@@ -121,15 +121,7 @@ expression: results
     byteRanges:
       - start: 26
         end: 47
-    ranges:
-      - start:
-          line: 2
-          column: 3
-        end:
-          line: 2
-          column: 24
-        startByte: 26
-        endByte: 47
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: ~/dev/rewriter/packages/sdk/src/stdlib/index.ts

@@ -55,15 +55,7 @@ expression: results
     byteRanges:
       - start: 58
         end: 63
-    ranges:
-      - start:
-          line: 4
-          column: 19
-        end:
-          line: 4
-          column: 24
-        startByte: 58
-        endByte: 63
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: foo.package.json
