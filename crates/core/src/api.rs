@@ -62,18 +62,14 @@ impl MatchResult {
 /// Make a path look the way provolone expects it to
 /// Removes leading "./", or the root path if it's provided
 fn normalize_path_in_project<'a>(path: &'a str, root_path: Option<&'a PathBuf>) -> &'a str {
-    #[cfg(debug_assertions)]
     if let Some(root_path) = root_path {
-        if !root_path.to_str().unwrap_or_default().ends_with('/') {
-            panic!(
-                "root_path '{}' must end with a slash.",
-                root_path.to_str().unwrap_or_default()
-            );
+        if root_path.ends_with("/") {
+            path.strip_prefix(root_path.to_string_lossy().as_ref())
+                .unwrap_or(path)
+        } else {
+            path.strip_prefix(&format!("{}/", root_path.to_string_lossy()))
+                .unwrap_or(path)
         }
-    }
-    if let Some(root_path) = root_path {
-        let root_path = root_path.to_str().unwrap();
-        path.strip_prefix(root_path).unwrap_or(path)
     } else {
         path.strip_prefix("./").unwrap_or(path)
     }
