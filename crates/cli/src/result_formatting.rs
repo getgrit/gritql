@@ -2,7 +2,6 @@ use anyhow::anyhow;
 use colored::Colorize;
 use console::style;
 use core::fmt;
-use fs_err::read_to_string;
 use log::{debug, error, info, warn};
 use marzano_core::api::{
     AllDone, AnalysisLog, AnalysisLogLevel, CreateFile, DoneFile, FileMatchResult, InputFile,
@@ -168,7 +167,7 @@ impl fmt::Display for FormattedResult {
             FormattedResult::Match(m) => {
                 let path_title = m.file_name().bold();
                 writeln!(f, "{}", path_title)?;
-                let source = read_to_string(m.file_name());
+                let source = m.content();
                 match source {
                     Err(e) => {
                         writeln!(f, "Could not read file: {}", e)?;
@@ -401,18 +400,18 @@ impl Messager for TransformedMessenger<'_> {
                 // Write the file contents to the output
                 if let Some(writer) = &mut self.writer {
                     let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
-                    writeln!(writer, "{}", file.rewritten.content)?;
+                    writeln!(writer, "{}", file.content().unwrap_or_default())?;
                 } else {
-                    info!("{}", file.rewritten.content);
+                    info!("{}", file.content().unwrap_or_default());
                 }
             }
             MatchResult::CreateFile(file) => {
                 // Write the file contents to the output
                 if let Some(writer) = &mut self.writer {
                     let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
-                    writeln!(writer, "{}", file.rewritten.content)?;
+                    writeln!(writer, "{}", file.content().unwrap_or_default())?;
                 } else {
-                    info!("{}", file.rewritten.content);
+                    info!("{}", file.content().unwrap_or_default());
                 }
             }
             MatchResult::RemoveFile(file) => {

@@ -96,8 +96,7 @@ pub fn rewrite_as_edit(doc: &TextDocumentItem, result: Rewrite) -> TextEdit {
         let end = offset_to_zero_based_position(current_content.len(), current_content);
         tower_lsp::lsp_types::Range { start, end }
     };
-    let new_text = result.rewritten.content;
-    TextEdit::new(old_range, new_text)
+    TextEdit::new(old_range, result.rewritten.content.unwrap_or_default())
 }
 
 fn offset_to_zero_based_position(offset: usize, content: &str) -> Position {

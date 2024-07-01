@@ -627,7 +627,7 @@ impl VariableLocations {
                         ranges: var
                             .locations
                             .iter()
-                            .map(|range| Range::from_byte_range(source, *range))
+                            .map(|range| Range::from_byte_range(source, range))
                             .collect(),
                     });
                 }

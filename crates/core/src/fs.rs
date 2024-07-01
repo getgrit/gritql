@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use crate::api::FileMatchResult;
 use crate::api::MatchResult;
 use anyhow::Result;
 use grit_util::Range;
@@ -13,7 +14,8 @@ pub fn apply_rewrite(result: &MatchResult) -> Result<()> {
                 fs_err::create_dir_all(parent)?;
             }
             // Write the file
-            fs_err::write(path, f.rewritten.content.as_bytes())?;
+            let content = f.content()?;
+            fs_err::write(path, content.as_bytes())?;
         }
 
         MatchResult::Rewrite(r) => {
@@ -28,7 +30,7 @@ pub fn apply_rewrite(result: &MatchResult) -> Result<()> {
                 }
             }
             // Write the file
-            fs_err::write(new_path, r.rewritten.content.as_bytes())?;
+            fs_err::write(new_path, r.content()?.as_bytes())?;
         }
 
         MatchResult::RemoveFile(f) => {

@@ -30,6 +30,8 @@ expression: results
             startByte: 0
             endByte: 8
     sourceFile: test-file.tsx
+    content: "whatever;\n"
+    byteRanges: ~
     ranges:
       - start:
           line: 1
@@ -47,6 +49,7 @@ expression: results
     byteRanges:
       - start: 0
         end: 7
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: test-file.tsx

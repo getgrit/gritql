@@ -165,6 +165,7 @@ expression: results
           startByte: 9
           endByte: 12
   sourceFile: test-file.tsx
+  content: "import { foo, bar } from 'bar'\nimport { other } from 'other.file'\n"
   ranges:
     - start:
         line: 1

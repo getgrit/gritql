@@ -82,6 +82,8 @@ expression: results
         scopedName: 2_0_$to_rewrite
         ranges: []
     sourceFile: test-file.tsx
+    content: "\n            it('consolidates', async () => {\n              foo;\n              foo;\n              foo;\n            });\n        "
+    byteRanges: ~
     ranges:
       - start:
           line: 2
@@ -103,6 +105,7 @@ expression: results
         end: 88
       - start: 104
         end: 110
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: test-file.tsx

@@ -219,7 +219,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         match self {
             Self::Empty(_, _) => None,
             Self::Node(node) => Some(node.range()),
-            Self::String(source, range) => Some(Range::from_byte_range(source, *range)),
+            Self::String(source, range) => Some(Range::from_byte_range(source, range)),
             Self::List(parent_node, field_id) => {
                 get_range_nodes_for_list(parent_node, field_id, language).map(
                     |(leading_node, trailing_node)| Range {

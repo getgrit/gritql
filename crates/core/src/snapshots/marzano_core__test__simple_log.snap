@@ -40,6 +40,7 @@ expression: results
           startByte: 0
           endByte: 13
   sourceFile: test-file.tsx
+  content: "foo;bar;baz;\n"
   ranges:
     - start:
         line: 1

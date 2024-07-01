@@ -44,6 +44,8 @@ expression: results
             startByte: 10
             endByte: 22
     sourceFile: test-file.tsx
+    content: "rename_to(the_new_name)\n"
+    byteRanges: ~
     ranges: []
   rewritten:
     messages: []
@@ -53,6 +55,7 @@ expression: results
     byteRanges:
       - start: 0
         end: 27
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: test-file.tsx

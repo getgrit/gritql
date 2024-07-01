@@ -3,6 +3,7 @@ mod tests {
     use insta::assert_snapshot;
     use marzano_language::target_language::TargetLanguage;
 
+    use crate::api::FileMatchResult;
     use crate::{
         api::MatchResult,
         pattern_compiler::src_to_problem_libs,
@@ -50,7 +51,7 @@ mod tests {
             .unwrap();
 
         if let MatchResult::Rewrite(rewrite) = rewrite {
-            assert_snapshot!(rewrite.rewritten.content);
+            assert_snapshot!(rewrite.content().unwrap());
         } else {
             panic!("Expected a rewrite");
         }
@@ -132,7 +133,7 @@ mod tests {
             .unwrap();
 
         if let MatchResult::Rewrite(rewrite) = rewrite {
-            assert_snapshot!(rewrite.rewritten.content);
+            assert_snapshot!(rewrite.rewritten.content.as_deref().unwrap());
         } else {
             panic!("Expected a rewrite");
         }
@@ -181,7 +182,7 @@ mod tests {
             .unwrap();
 
         if let MatchResult::Rewrite(rewrite) = rewrite {
-            assert_snapshot!(rewrite.rewritten.content);
+            assert_snapshot!(rewrite.content().unwrap());
         } else {
             panic!("Expected a rewrite");
         }
@@ -235,7 +236,7 @@ mod tests {
             .unwrap();
 
         if let MatchResult::Rewrite(rewrite) = rewrite {
-            assert_snapshot!(rewrite.rewritten.content);
+            assert_snapshot!(rewrite.content().unwrap());
         } else {
             panic!("Expected a rewrite");
         }
@@ -282,7 +283,7 @@ mod tests {
             .unwrap();
 
         if let MatchResult::Rewrite(rewrite) = rewrite {
-            assert_snapshot!(rewrite.rewritten.content);
+            assert_snapshot!(rewrite.content().unwrap());
         } else {
             panic!("Expected a rewrite");
         }
@@ -332,8 +333,8 @@ mod tests {
             .unwrap();
 
         if let MatchResult::Rewrite(rewrite) = rewrite {
-            assert!(!rewrite.rewritten.content.contains("\"gent_chain.run"));
-            assert_snapshot!(rewrite.rewritten.content);
+            assert!(!rewrite.content().unwrap().contains("\"gent_chain.run"));
+            assert_snapshot!(rewrite.content().unwrap());
         } else {
             panic!("Expected a rewrite");
         }
@@ -389,8 +390,8 @@ mod tests {
             .unwrap();
 
         if let MatchResult::Rewrite(rewrite) = rewrite {
-            assert!(!rewrite.rewritten.content.contains("\"gent_chain.run"));
-            assert_snapshot!(rewrite.rewritten.content);
+            assert!(!rewrite.content().unwrap().contains("\"gent_chain.run"));
+            assert_snapshot!(rewrite.content().unwrap());
         } else {
             panic!("Expected a rewrite");
         }
@@ -439,7 +440,7 @@ mod tests {
             .unwrap();
 
         if let MatchResult::Rewrite(rewrite) = rewrite {
-            assert_snapshot!(rewrite.rewritten.content);
+            assert_snapshot!(rewrite.content().unwrap());
         } else {
             panic!("Expected a rewrite");
         }
