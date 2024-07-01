@@ -15,6 +15,7 @@ rust.unused_crate_dependencies = "warn"
 [dependencies]
 tree-sitter = { path = "../../vendor/tree-sitter-facade", package = "tree-sitter-facade-sg" }
 tree-sitter-gritql = { path = "../../vendor/tree-sitter-gritql", optional = true }
+tree-sitter-cpp = { path = "../../resources/language-metavariables/tree-sitter-cpp", optional = true }
 tree-sitter-css = { path = "../../resources/language-metavariables/tree-sitter-css", optional = true }
 tree-sitter-json = { path = "../../resources/language-metavariables/tree-sitter-json", optional = true }
 tree-sitter-solidity = { path = "../../resources/language-metavariables/tree-sitter-solidity", optional = true }
@@ -64,6 +65,7 @@ builtin-parser = [
     "tree-sitter-javascript",
     "tree-sitter-html",
     "tree-sitter-java",
+    "tree-sitter-cpp",
     "tree-sitter-c-sharp",
     "tree-sitter-python",
     "tree-sitter-md",
