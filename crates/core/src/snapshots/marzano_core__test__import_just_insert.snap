@@ -208,6 +208,8 @@ expression: results
             startByte: 9
             endByte: 12
     sourceFile: test-file.tsx
+    content: "import { foo, bar } from 'bar'\nimport { other } from 'other.file'\n"
+    byteRanges: ~
     ranges:
       - start:
           line: 1
@@ -225,6 +227,7 @@ expression: results
     byteRanges:
       - start: 0
         end: 95
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: test-file.tsx

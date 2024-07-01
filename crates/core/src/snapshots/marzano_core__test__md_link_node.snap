@@ -52,6 +52,8 @@ expression: results
             startByte: 0
             endByte: 27
     sourceFile: foo.md
+    content: "[grit](https://app.grit.io)"
+    byteRanges: ~
     ranges:
       - start:
           line: 1
@@ -69,6 +71,7 @@ expression: results
     byteRanges:
       - start: 0
         end: 27
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: foo.md

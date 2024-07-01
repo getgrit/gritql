@@ -30,6 +30,8 @@ expression: results
             startByte: 0
             endByte: 12
     sourceFile: foo.md
+    content: "[text](link)"
+    byteRanges: ~
     ranges:
       - start:
           line: 1
@@ -47,6 +49,7 @@ expression: results
     byteRanges:
       - start: 0
         end: 15
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: foo.md

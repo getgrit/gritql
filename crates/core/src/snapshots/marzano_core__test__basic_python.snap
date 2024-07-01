@@ -41,6 +41,8 @@ expression: results
             startByte: 0
             endByte: 21
     sourceFile: foo.py
+    content: "print(\"hello world!\")\nlog(\"this is python\")"
+    byteRanges: ~
     ranges:
       - start:
           line: 1
@@ -58,6 +60,7 @@ expression: results
     byteRanges:
       - start: 0
         end: 19
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: foo.py

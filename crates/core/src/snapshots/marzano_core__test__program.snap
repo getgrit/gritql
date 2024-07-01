@@ -27,6 +27,8 @@ expression: results
         scopedName: 0_3_$absolute_filename
         ranges: []
     sourceFile: test-file.tsx
+    content: "other_stuff;\nfind_this;\nand_more;\n"
+    byteRanges: ~
     ranges: []
   rewritten:
     messages: []
@@ -36,6 +38,7 @@ expression: results
     byteRanges:
       - start: 13
         end: 30
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: test-file.tsx

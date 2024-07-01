@@ -54,6 +54,7 @@ expression: results
       scopedName: 4_4_$new_names
       ranges: []
   sourceFile: ~/dev/rewriter/packages/sdk/src/stdlib/index.ts
+  content: "import { findConfigs } from './configs';\n// Remember: ./packages/timekeeper/src/__generated__/stdlib.ts\nexport const stdlib = {\n  show,\n  apply,\n  sh,\n};\n\nexport type StdLibFunctions = typeof stdlib;"
   ranges: []
   reason: ~
 - __typename: Rewrite
@@ -109,6 +110,8 @@ expression: results
         scopedName: 4_4_$new_names
         ranges: []
     sourceFile: ~/dev/rewriter/packages/timekeeper/src/__generated__/stdlib.ts
+    content: "export const stdlib = [\n  'foo',\n  'bar',\n  'baz',\n  'qux'\n] as const;\n\nexport type StdLibNamedFunctions = typeof stdlib;"
+    byteRanges: ~
     ranges: []
   rewritten:
     messages: []
@@ -118,6 +121,7 @@ expression: results
     byteRanges:
       - start: 26
         end: 47
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: ~/dev/rewriter/packages/sdk/src/stdlib/index.ts

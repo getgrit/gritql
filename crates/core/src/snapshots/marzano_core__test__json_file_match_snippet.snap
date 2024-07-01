@@ -44,6 +44,8 @@ expression: results
             startByte: 58
             endByte: 63
     sourceFile: foo.package.json
+    content: "\n        {\n          \"not-name\": \"foo\",\n          \"name\": \"foo\"\n        }\n        "
+    byteRanges: ~
     ranges: []
   rewritten:
     messages: []
@@ -53,6 +55,7 @@ expression: results
     byteRanges:
       - start: 58
         end: 63
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: foo.package.json

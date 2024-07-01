@@ -121,7 +121,7 @@ fn match_pattern_libs(
                 execution_result.the_match = Some(ExecutionMatch {
                     ranges: r.original.ranges,
                     variables: r.original.variables,
-                    rewrite: Some(r.rewritten.content),
+                    rewrite: r.rewritten.content,
                     filename: r.rewritten.source_file,
                     new_files: HashMap::new(),
                 })
@@ -137,7 +137,7 @@ fn match_pattern_libs(
                 .as_mut()
                 .unwrap()
                 .new_files
-                .insert(f.rewritten.source_file, f.rewritten.content);
+                .insert(f.rewritten.source_file, f.rewritten.content.unwrap());
         }
     }
     Ok(execution_result)

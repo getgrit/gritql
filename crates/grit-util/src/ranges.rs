@@ -24,7 +24,7 @@ impl Range {
         }
     }
 
-    pub fn from_byte_range(source: &str, byte_range: ByteRange) -> Self {
+    pub fn from_byte_range(source: &str, byte_range: &ByteRange) -> Self {
         let start = Position::from_byte_index(source, byte_range.start);
         let end =
             Position::from_relative_byte_index(start, byte_range.start, source, byte_range.end);

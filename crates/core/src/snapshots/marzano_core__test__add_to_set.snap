@@ -126,6 +126,8 @@ expression: results
             startByte: 43
             endByte: 45
     sourceFile: test-file.tsx
+    content: "foo(1, 11);\nfoo(1, 12);\nfoo(1, 12);\nfoo(2, 21);\nend\n"
+    byteRanges: ~
     ranges:
       - start:
           line: 5
@@ -143,6 +145,7 @@ expression: results
     byteRanges:
       - start: 48
         end: 68
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: test-file.tsx

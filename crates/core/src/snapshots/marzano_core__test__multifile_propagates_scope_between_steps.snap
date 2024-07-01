@@ -63,6 +63,7 @@ expression: results
       scopedName: 3_2_$body
       ranges: []
   sourceFile: file1.tsx
+  content: foo(1)
   ranges: []
   reason: ~
 - __typename: Rewrite
@@ -127,6 +128,8 @@ expression: results
         scopedName: 3_2_$body
         ranges: []
     sourceFile: file2.tsx
+    content: "bar(1)\nbar(3)"
+    byteRanges: ~
     ranges: []
   rewritten:
     messages: []
@@ -136,6 +139,7 @@ expression: results
     byteRanges:
       - start: 0
         end: 6
+    ranges: []
   reason: ~
 - __typename: DoneFile
   relativeFilePath: file1.tsx

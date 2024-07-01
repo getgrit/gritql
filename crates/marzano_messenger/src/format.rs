@@ -129,7 +129,12 @@ pub fn format_result(r: MatchResult) -> Result<()> {
             if let Some(byte_ranges) = &res.rewritten.byte_ranges {
                 let extended_ranges: Vec<ByteRange> = byte_ranges
                     .iter()
-                    .map(|range| get_extended_byte_range(&res.rewritten.content, range))
+                    .map(|range| {
+                        get_extended_byte_range(
+                            res.rewritten.content.as_deref().unwrap_or_default(),
+                            range,
+                        )
+                    })
                     .collect();
                 format_ranges(&res.rewritten.source_file, &extended_ranges);
             }

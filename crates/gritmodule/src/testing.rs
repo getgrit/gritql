@@ -1,3 +1,4 @@
+use marzano_core::api::FileMatchResult;
 use marzano_core::{
     api::{derive_log_level, is_match, AnalysisLogLevel, MatchResult},
     problem::Problem,
@@ -239,13 +240,13 @@ pub fn test_pattern_sample(
             MatchResult::Rewrite(r) => {
                 raw_actual_outputs.push(RichFile {
                     path: r.original.source_file.clone(),
-                    content: r.rewritten.content.clone(),
+                    content: r.content().unwrap_or_default().to_string(),
                 });
             }
             MatchResult::CreateFile(r) => {
                 raw_actual_outputs.push(RichFile {
                     path: r.rewritten.source_file.clone(),
-                    content: r.rewritten.content.clone(),
+                    content: r.content().unwrap_or_default().to_string(),
                 });
             }
             MatchResult::Match(r) => {
