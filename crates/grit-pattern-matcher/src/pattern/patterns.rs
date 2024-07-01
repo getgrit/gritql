@@ -56,6 +56,25 @@ use anyhow::{bail, Result};
 use core::fmt::Debug;
 use grit_util::AnalysisLogs;
 
+pub enum PatternResult {
+    /// The pattern matched
+    Matched,
+    /// The pattern did not match
+    NotMatched,
+    /// The pattern might match, but some error occurred during evaluation
+    Unknown,
+}
+
+impl From<bool> for PatternResult {
+    fn from(item: bool) -> Self {
+        if item {
+            PatternResult::Matched
+        } else {
+            PatternResult::NotMatched
+        }
+    }
+}
+
 pub trait Matcher<Q: QueryContext>: Debug {
     // it is important that any implementors of Pattern
     // do not compute-expensive things in execute
@@ -66,7 +85,7 @@ pub trait Matcher<Q: QueryContext>: Debug {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool>;
+    ) -> Result<PatternResult>;
 
     // for the future:
     // we could speed up computation by filtering on the sort of pattern

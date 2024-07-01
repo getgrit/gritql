@@ -429,3 +429,39 @@ fn avoid_unsafe_hoists() {
     assert_eq!(results.len(), 4);
     assert!(results.iter().any(|r| r.is_match()));
 }
+
+#[test]
+fn hoist_or() {
+    let pattern_src = r#"
+        `console.log($msg)` where {
+            $filename <: includes or { "foo.js", "target.js", "two.js" }
+        }
+        "#;
+    let libs = BTreeMap::new();
+
+    let matching_src = r#"
+        console.log("target.js");
+        "#;
+
+    let pattern = src_to_problem_libs(
+        pattern_src.to_string(),
+        &libs,
+        TargetLanguage::default(),
+        None,
+        None,
+        None,
+        None,
+    )
+    .unwrap()
+    .problem;
+
+    // All together now
+    let test_files = vec![
+        SyntheticFile::new("wrong.js".to_owned(), matching_src.to_owned(), false),
+        SyntheticFile::new("target.js".to_owned(), matching_src.to_owned(), true),
+        SyntheticFile::new("other.js".to_owned(), matching_src.to_owned(), false),
+        SyntheticFile::new("two.js".to_owned(), matching_src.to_owned(), true),
+    ];
+    let results = run_on_test_files(&pattern, &test_files);
+    assert!(results.iter().any(|r| r.is_match()));
+}
