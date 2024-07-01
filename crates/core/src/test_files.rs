@@ -1,11 +1,11 @@
 use marzano_language::target_language::TargetLanguage;
 
+use self::pattern_compiler::src_to_problem_libs;
+use crate::api::FileMatchResult;
 use crate::{
     api::{MatchResult, Rewrite},
     test_utils::{run_on_test_files, SyntheticFile},
 };
-
-use self::pattern_compiler::src_to_problem_libs;
 
 use super::*;
 use std::collections::BTreeMap;
@@ -150,8 +150,8 @@ fn test_absolute_path_resolution() {
     assert!(!results.iter().any(|r| r.is_error()));
     let mut has_rewrite = false;
     for r in results.iter() {
-        if let MatchResult::Rewrite(Rewrite { rewritten, .. }) = r {
-            let content = &rewritten.content;
+        if let MatchResult::Rewrite(r) = r {
+            let content = r.content().unwrap();
             assert!(content.contains("core/file/dir/target.js"));
             has_rewrite = true;
         }

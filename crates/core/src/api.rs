@@ -214,8 +214,8 @@ impl MatchResult {
             | MatchResult::AllDone(_)
             | MatchResult::PatternInfo(_) => None,
             MatchResult::Match(m) => m.content().ok(),
-            MatchResult::RemoveFile(r) => Some(&r.original.content),
-            MatchResult::Rewrite(r) => Some(&r.original.content),
+            MatchResult::RemoveFile(r) => r.original.content.as_deref(),
+            MatchResult::Rewrite(r) => r.original.content.as_deref(),
         }
     }
 
@@ -344,7 +344,7 @@ pub struct Match {
     pub source_file: String,
     /// The full content of the file
     #[serde(default)]
-    pub content: String,
+    pub content: Option<String>,
     #[serde(default)]
     pub ranges: Vec<Range>,
     #[serde(default)]
@@ -389,10 +389,14 @@ impl FileMatchResult for Match {
         "matched"
     }
     fn content(&self) -> Result<&str> {
-        if self.content.is_empty() {
+        let Some(content) = self.content.as_deref() else {
+            bail!("No content in match")
+        };
+
+        if content.is_empty() {
             bail!("No content in match")
         } else {
-            Ok(&self.content)
+            Ok(content)
         }
     }
 }
@@ -405,7 +409,7 @@ pub struct EntireFile {
     #[serde(default)]
     pub variables: Vec<VariableMatch>,
     pub source_file: String,
-    pub content: String,
+    pub content: Option<String>,
     pub byte_ranges: Option<Vec<ByteRange>>,
     #[serde(default)]
     pub ranges: Vec<Range>,
@@ -417,7 +421,7 @@ impl EntireFile {
     fn file_to_entire_file(name: &str, body: &str, byte_range: Option<&Vec<ByteRange>>) -> Self {
         Self {
             source_file: name.to_owned(),
-            content: body.to_owned(),
+            content: Some(body.to_owned()),
             variables: vec![],
             messages: vec![],
             byte_ranges: byte_range.map(|r| r.to_owned()),
@@ -488,7 +492,12 @@ impl FileMatchResult for Rewrite {
         "rewritten"
     }
     fn content(&self) -> Result<&str> {
-        Ok(&self.rewritten.content)
+        self.rewritten.content.as_deref().ok_or_else(|| {
+            anyhow::anyhow!(
+                "No content in rewritten file {}",
+                self.rewritten.source_file
+            )
+        })
     }
 }
 
@@ -588,12 +597,12 @@ impl FileMatchResult for CreateFile {
             Some(ref r) => r,
             None => {
                 let start = Position::first();
-                let end = Position::last(&self.rewritten.content);
+                let end = Position::last(self.rewritten.content.as_deref().unwrap_or_default());
                 self.range = Some(vec![Range::new(
                     start,
                     end,
                     0,
-                    self.rewritten.content.len() as u32,
+                    self.rewritten.content.as_deref().unwrap_or_default().len() as u32,
                 )]);
                 self.ranges()
             }
@@ -603,7 +612,9 @@ impl FileMatchResult for CreateFile {
         "created"
     }
     fn content(&self) -> Result<&str> {
-        Ok(&self.rewritten.content)
+        self.rewritten.content.as_deref().ok_or_else(|| {
+            anyhow::anyhow!("No content in created file {}", self.rewritten.source_file)
+        })
     }
 }
 
@@ -632,7 +643,9 @@ impl FileMatchResult for RemoveFile {
         "removed"
     }
     fn content(&self) -> Result<&str> {
-        Ok(&self.original.content)
+        self.original.content.as_deref().ok_or_else(|| {
+            anyhow::anyhow!("No content in removed file {}", self.original.source_file)
+        })
     }
 }
 
