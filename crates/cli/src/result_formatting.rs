@@ -2,7 +2,6 @@ use anyhow::anyhow;
 use colored::Colorize;
 use console::style;
 use core::fmt;
-use fs_err::read_to_string;
 use log::{debug, error, info, warn};
 use marzano_core::api::{
     AllDone, AnalysisLog, AnalysisLogLevel, CreateFile, DoneFile, FileMatchResult, InputFile,
@@ -401,18 +400,18 @@ impl Messager for TransformedMessenger<'_> {
                 // Write the file contents to the output
                 if let Some(writer) = &mut self.writer {
                     let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
-                    writeln!(writer, "{}", file.rewritten.content)?;
+                    writeln!(writer, "{}", file.content().unwrap_or_default())?;
                 } else {
-                    info!("{}", file.rewritten.content);
+                    info!("{}", file.content().unwrap_or_default());
                 }
             }
             MatchResult::CreateFile(file) => {
                 // Write the file contents to the output
                 if let Some(writer) = &mut self.writer {
                     let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
-                    writeln!(writer, "{}", file.rewritten.content)?;
+                    writeln!(writer, "{}", file.content().unwrap_or_default())?;
                 } else {
-                    info!("{}", file.rewritten.content);
+                    info!("{}", file.content().unwrap_or_default());
                 }
             }
             MatchResult::RemoveFile(file) => {
