@@ -310,26 +310,30 @@ async fn enable_watch_mode(
         .with_timeout(Duration::from_millis(10))
         .with_notify_config(backend_config);
     // select backend via fish operator, here PollWatcher backend
-    let mut debouncer = new_debouncer_opt::<_, notify::PollWatcher>(debouncer_config, tx).unwrap();
+    let mut debouncer = new_debouncer_opt::<_, notify::PollWatcher>(debouncer_config, tx)?;
 
     debouncer.watcher().watch(path, RecursiveMode::Recursive)?;
     log::info!("\n[Watch Mode] Enabled on path: {}", path.display());
 
     let testable_patterns_map = testable_patterns
         .iter()
-        .map(|p| (p.local_name.clone().unwrap(), p.clone()))
+        .map(|p| (p.local_name.as_ref().unwrap(), p.as_ref()))
         .collect::<HashMap<_, _>>();
 
     // event processing
     for result in rx {
         match result {
             Ok(event) => {
-                let modified_file_path = event.first().unwrap().path.clone();
+                let modified_file_path = &event.first().unwrap().path;
 
                 if !modified_file_path.is_file() {
                     continue;
                 }
-                let modified_file_path = modified_file_path.into_os_string().into_string().unwrap();
+                let modified_file_path = modified_file_path
+                    .clone()
+                    .into_os_string()
+                    .into_string()
+                    .unwrap();
 
                 //temporary fix, until notify crate adds support for ignoring paths
                 for path in &ignore_path {
@@ -365,8 +369,11 @@ async fn enable_watch_mode(
                         &modified_patterns,
                     )?;
                     for name in &modified_patterns_dependents_names {
-                        if !patterns_to_test_names.contains(name) {
-                            patterns_to_test.push(testable_patterns_map.get(name).unwrap().clone());
+                        if !deleted_patterns_names.contains(&name)
+                            && !patterns_to_test_names.contains(name)
+                        {
+                            patterns_to_test
+                                .push((*testable_patterns_map.get(name).unwrap()).clone());
                             patterns_to_test_names.push(name.to_owned());
                         }
                     }
@@ -382,7 +389,8 @@ async fn enable_watch_mode(
                         if !deleted_patterns_names.contains(&name)
                             && !patterns_to_test_names.contains(name)
                         {
-                            patterns_to_test.push(testable_patterns_map.get(name).unwrap().clone());
+                            patterns_to_test
+                                .push((*testable_patterns_map.get(name).unwrap()).clone());
                             patterns_to_test_names.push(name.to_owned());
                         }
                     }
@@ -413,9 +421,9 @@ fn get_dependents_of_target_patterns(
     testable_patterns: &Vec<GritPatternTestInfo>,
     target_patterns: &Vec<GritPatternTestInfo>,
 ) -> Result<Vec<String>> {
-    let mut target_patterns_names = <Vec<String>>::new();
+    let mut target_patterns_names = Vec::new();
     for p in target_patterns {
-        target_patterns_names.push(p.local_name.clone().unwrap());
+        target_patterns_names.push(p.local_name.as_ref().unwrap());
     }
     let mut dependents_names = <Vec<String>>::new();
 
@@ -425,9 +433,7 @@ fn get_dependents_of_target_patterns(
         let body = format!("{}()", p.local_name.as_ref().unwrap());
         let lang = PatternLanguage::get_language(&p.body);
         let libs = libs.get_language_directory_or_default(lang)?;
-        let rich_pattern = resolver
-            .make_pattern(&body, p.local_name.to_owned())
-            .unwrap();
+        let rich_pattern = resolver.make_pattern(&body, p.local_name.to_owned())?;
         let src = rich_pattern.body;
         let mut parser = MarzanoGritParser::new()?;
 

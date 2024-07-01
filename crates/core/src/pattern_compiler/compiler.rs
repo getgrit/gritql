@@ -571,7 +571,7 @@ pub fn get_dependents_of_target_patterns_by_traversal_from_src(
     libs: &BTreeMap<String, String>,
     src: &str,
     parser: &mut MarzanoGritParser,
-    target_patterns: &[String],
+    target_patterns: &[&String],
 ) -> Result<Vec<String>> {
     let mut dependents = <Vec<String>>::new();
     let node_like = "nodeLike";
@@ -586,12 +586,12 @@ pub fn get_dependents_of_target_patterns_by_traversal_from_src(
         foreign_functions: foreign_file,
     } = defs_to_filenames(libs, parser, tree.root_node())?;
 
-    let name_to_filename: BTreeMap<String, String> = pattern_file
+    let name_to_filename: BTreeMap<&String, &String> = pattern_file
         .iter()
-        .map(|(k, v)| (k.clone(), (v.clone())))
-        .chain(predicate_file.iter().map(|(k, v)| (k.clone(), (v.clone()))))
-        .chain(function_file.iter().map(|(k, v)| (k.clone(), (v.clone()))))
-        .chain(foreign_file.iter().map(|(k, v)| (k.clone(), (v.clone()))))
+        .map(|(k, v)| (k, (v)))
+        .chain(predicate_file.iter().map(|(k, v)| (k, (v))))
+        .chain(function_file.iter().map(|(k, v)| (k, (v))))
+        .chain(foreign_file.iter().map(|(k, v)| (k, (v))))
         .collect();
 
     let mut traversed_stack = <Vec<String>>::new();
@@ -609,7 +609,7 @@ pub fn get_dependents_of_target_patterns_by_traversal_from_src(
             let name = name.text()?;
             let name = name.trim().to_string();
 
-            if target_patterns.contains(&name) {
+            if target_patterns.contains(&&name) {
                 while let Some(e) = traversed_stack.pop() {
                     dependents.push(e);
                 }

@@ -129,6 +129,11 @@ pub struct GritPatternTestInfo {
     pub config: GritPatternTestConfig,
     pub local_name: Option<String>,
 }
+impl AsRef<GritPatternTestInfo> for GritPatternTestInfo {
+    fn as_ref(&self) -> &GritPatternTestInfo {
+        self
+    }
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct ModuleGritPattern {

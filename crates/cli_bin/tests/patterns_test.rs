@@ -349,7 +349,7 @@ fn patterns_test_watch_mode_case_patterns_changed() -> Result<()> {
     thread::sleep(Duration::from_secs(1));
 
     let content = fs::read_to_string(&test_yaml_path).expect("Unable to read the file");
-    fs::write(&test_yaml_path, content).unwrap();
+    fs::write(&test_yaml_path, content)?;
     thread::sleep(Duration::from_secs(1));
 
     let mut output = Vec::new();
@@ -400,7 +400,7 @@ fn patterns_test_watch_mode_case_no_pattern_to_test() -> Result<()> {
     });
     thread::sleep(Duration::from_secs(1));
 
-    fs::write(&test_yaml_path, "").unwrap();
+    fs::write(&test_yaml_path, "")?;
     thread::sleep(Duration::from_secs(1));
 
     let mut output = Vec::new();
