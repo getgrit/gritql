@@ -116,18 +116,23 @@ pub struct GritSerializedDefinitionConfig {
     pub samples: Option<Vec<GritPatternSample>>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct GritPatternTestConfig {
     pub path: Option<String>,
     pub samples: Option<Vec<GritPatternSample>>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct GritPatternTestInfo {
     pub body: String,
     pub config: GritPatternTestConfig,
     pub local_name: Option<String>,
+}
+impl AsRef<GritPatternTestInfo> for GritPatternTestInfo {
+    fn as_ref(&self) -> &GritPatternTestInfo {
+        self
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
@@ -277,7 +282,7 @@ impl Ord for ResolvedGritDefinition {
 
 pub fn pattern_config_to_model(
     pattern: GritDefinitionConfig,
-    source: &ModuleRepo,
+    source: &Option<ModuleRepo>,
 ) -> Result<ModuleGritPattern> {
     let mut split_name = pattern.name.split('#');
     let repo = split_name.next();
@@ -299,7 +304,7 @@ pub fn pattern_config_to_model(
                 Some(split_repo.collect::<Vec<_>>().join("/"))
             };
             if defined_local_name.is_none() {
-                Some(source.clone())
+                source.clone()
             } else if host.is_none() || full_name.is_none() {
                 None
             } else {

@@ -59,7 +59,7 @@ flate2 = { version = "1.0.17", features = [
   "rust_backend",
 ], default-features = false }
 axoupdater = { version = "0.6.4", default-features = false, features = [
-  "github_releases"
+  "github_releases",
 ] }
 
 opentelemetry-otlp = { version = "0.14.0", optional = true, features = [
@@ -73,6 +73,8 @@ opentelemetry_sdk = { version = "0.21.1", optional = true, features = [
 tracing-opentelemetry = { version = "0.22.0", optional = true, default-features = false }
 
 tracing = { version = "0.1.40", default-features = false, features = [] }
+notify = "6.1.1"
+notify-debouncer-mini = "0.4.1"
 tracing-subscriber = { version = "0.3", default-features = false, optional = true }
 
 fs-err = { version = "2.11.0" }
@@ -106,12 +108,8 @@ workflows_v2 = []
 bundled_workflows = []
 remote_redis = []
 remote_pubsub = []
-remote_workflows = [
-  "dep:grit_cloud_client",
-]
-workflow_server = [
-  "dep:grit_cloud_client",
-]
+remote_workflows = ["dep:grit_cloud_client"]
+workflow_server = ["dep:grit_cloud_client"]
 server = [
   "workflows_v2",
   "external_functions",
@@ -150,7 +148,7 @@ grit_beta = [
   "ai_builtins",
   "workflows_v2",
   "remote_workflows",
-  "workflow_server"
+  "workflow_server",
   # "grit_timing",
 ]
 grit_timing = []

@@ -6,7 +6,7 @@ use assert_cmd::Command;
 use marzano_gritmodule::config::GRIT_GLOBAL_DIR_ENV;
 use tempfile::tempdir;
 
-const BIN_NAME: &str = "marzano";
+pub const BIN_NAME: &str = "marzano";
 
 #[allow(dead_code)]
 pub fn get_test_cmd() -> Result<Command> {

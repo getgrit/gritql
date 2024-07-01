@@ -36,7 +36,7 @@ pub enum PatternCommands {
     Describe(PatternsDescribeArgs),
 }
 
-#[derive(Args, Debug, Serialize)]
+#[derive(Args, Debug, Serialize, Clone)]
 pub struct PatternsTestArgs {
     /// Regex of a specific pattern to test
     #[clap(long = "filter")]
@@ -53,6 +53,9 @@ pub struct PatternsTestArgs {
     /// Update expected test outputs
     #[clap(long = "update")]
     pub update: bool,
+    /// Enable watch mode on .grit dir
+    #[clap(long = "watch")]
+    pub watch: bool,
 }
 
 #[derive(Args, Debug, Serialize)]
