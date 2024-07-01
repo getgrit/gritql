@@ -168,11 +168,7 @@ impl fmt::Display for FormattedResult {
             FormattedResult::Match(m) => {
                 let path_title = m.file_name().bold();
                 writeln!(f, "{}", path_title)?;
-                let source = if m.content.is_empty() {
-                    read_to_string(&m.source_file)
-                } else {
-                    Ok(m.content.clone())
-                };
+                let source = m.content();
                 match source {
                     Err(e) => {
                         writeln!(f, "Could not read file: {}", e)?;

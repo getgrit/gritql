@@ -213,7 +213,7 @@ impl MatchResult {
             | MatchResult::CreateFile(_)
             | MatchResult::AllDone(_)
             | MatchResult::PatternInfo(_) => None,
-            MatchResult::Match(m) => Some(&m.content),
+            MatchResult::Match(m) => m.content().ok(),
             MatchResult::RemoveFile(r) => Some(&r.original.content),
             MatchResult::Rewrite(r) => Some(&r.original.content),
         }
@@ -289,6 +289,7 @@ pub fn is_match(result: &MatchResult) -> bool {
 
 pub trait FileMatchResult {
     fn file_name(&self) -> &str;
+    fn content(&self) -> Result<&str>;
     fn ranges(&mut self) -> &Vec<Range>;
     // A verb representing the action taken on the file
     fn action() -> &'static str;
@@ -387,6 +388,13 @@ impl FileMatchResult for Match {
     fn action() -> &'static str {
         "matched"
     }
+    fn content(&self) -> Result<&str> {
+        if self.content.is_empty() {
+            bail!("No content in match")
+        } else {
+            Ok(&self.content)
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -478,6 +486,9 @@ impl FileMatchResult for Rewrite {
     }
     fn action() -> &'static str {
         "rewritten"
+    }
+    fn content(&self) -> Result<&str> {
+        Ok(&self.rewritten.content)
     }
 }
 
@@ -591,6 +602,9 @@ impl FileMatchResult for CreateFile {
     fn action() -> &'static str {
         "created"
     }
+    fn content(&self) -> Result<&str> {
+        Ok(&self.rewritten.content)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -616,6 +630,9 @@ impl FileMatchResult for RemoveFile {
     }
     fn action() -> &'static str {
         "removed"
+    }
+    fn content(&self) -> Result<&str> {
+        Ok(&self.original.content)
     }
 }
 
