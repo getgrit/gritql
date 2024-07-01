@@ -149,20 +149,10 @@ fn format_diff(expected: &str, actual: &str) -> DiffString {
     DiffString { diff: output }
 }
 
-pub fn extract_original_content(r: &MatchResult) -> Option<String> {
-    match extract_path(r) {
-        Some(p) => match read_to_string(p) {
-            Ok(c) => Some(c),
-            Err(_) => None,
-        },
-        None => None,
-    }
-}
-
 pub fn format_result_diff(r: &MatchResult, src: Option<&str>) -> DiffString {
     let old_content = match src {
         Some(s) => s.to_string(),
-        None => extract_original_content(r).unwrap_or_default(),
+        None => r.extract_original_content().unwrap_or_default().to_string(),
     };
     let default_rewritten = String::new();
     let new_content = match extract_rewritten_content(r) {
