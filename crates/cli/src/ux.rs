@@ -8,10 +8,10 @@ use marzano_core::{
     fs::extract_ranges,
 };
 use marzano_gritmodule::{
-    config::ResolvedGritDefinition, testing::SampleTestResult, utils::extract_path,
+    config::ResolvedGritDefinition, testing::SampleTestResult,
 };
 use similar::{ChangeTag, TextDiff};
-use std::{collections::HashMap, fs::read_to_string};
+use std::{collections::HashMap};
 
 use crate::analyze::{extract_rewritten_content, group_checks};
 
