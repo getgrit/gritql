@@ -63,13 +63,11 @@ impl MatchResult {
 /// Removes leading "./", or the root path if it's provided
 fn normalize_path_in_project<'a>(path: &'a str, root_path: Option<&'a PathBuf>) -> &'a str {
     if let Some(root_path) = root_path {
-        if root_path.ends_with("/") {
-            path.strip_prefix(root_path.to_string_lossy().as_ref())
-                .unwrap_or(path)
-        } else {
-            path.strip_prefix(&format!("{}/", root_path.to_string_lossy()))
-                .unwrap_or(path)
-        }
+        let basic = path
+            .strip_prefix(root_path.to_string_lossy().as_ref())
+            .unwrap_or(path);
+        // Stip the leading / if it's there
+        basic.strip_prefix('/').unwrap_or(basic)
     } else {
         path.strip_prefix("./").unwrap_or(path)
     }
@@ -791,11 +789,13 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_normalize_path_in_project_with_root_no_slash() {
         let path = "/home/user/project/src/main.rs";
         let root_path = PathBuf::from("/home/user/project");
-        normalize_path_in_project(path, Some(&root_path));
+        assert_eq!(
+            normalize_path_in_project(path, Some(&root_path)),
+            "src/main.rs",
+        );
     }
 
     #[test]
