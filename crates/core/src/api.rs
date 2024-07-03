@@ -62,18 +62,12 @@ impl MatchResult {
 /// Make a path look the way provolone expects it to
 /// Removes leading "./", or the root path if it's provided
 fn normalize_path_in_project<'a>(path: &'a str, root_path: Option<&'a PathBuf>) -> &'a str {
-    #[cfg(debug_assertions)]
     if let Some(root_path) = root_path {
-        if !root_path.to_str().unwrap_or_default().ends_with('/') {
-            panic!(
-                "root_path '{}' must end with a slash.",
-                root_path.to_str().unwrap_or_default()
-            );
-        }
-    }
-    if let Some(root_path) = root_path {
-        let root_path = root_path.to_str().unwrap();
-        path.strip_prefix(root_path).unwrap_or(path)
+        let basic = path
+            .strip_prefix(root_path.to_string_lossy().as_ref())
+            .unwrap_or(path);
+        // Stip the leading / if it's there
+        basic.strip_prefix('/').unwrap_or(basic)
     } else {
         path.strip_prefix("./").unwrap_or(path)
     }
@@ -795,11 +789,13 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_normalize_path_in_project_with_root_no_slash() {
         let path = "/home/user/project/src/main.rs";
         let root_path = PathBuf::from("/home/user/project");
-        normalize_path_in_project(path, Some(&root_path));
+        assert_eq!(
+            normalize_path_in_project(path, Some(&root_path)),
+            "src/main.rs",
+        );
     }
 
     #[test]
