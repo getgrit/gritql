@@ -35,7 +35,7 @@ pub struct GritGitHubConfig {
 #[derive(Debug, Deserialize)]
 pub struct GritConfig {
     pub patterns: Vec<GritDefinitionConfig>,
-    pub pattern_files: Option<Vec<PathBuf>>,
+    pub pattern_files: Option<Vec<String>>,
     pub github: Option<GritGitHubConfig>,
 }
 

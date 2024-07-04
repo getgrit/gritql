@@ -30,18 +30,7 @@ pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
 
     let new_config = GritConfig {
         github: serialized.github,
-        pattern_files: serialized.pattern_files.map(|files| {
-            files
-                .iter()
-                .map(|f| {
-                    // if let Some(r) = repo_dir {
-                    //     PathBuf::from(r).join(f)
-                    // } else {
-                    PathBuf::from(f)
-                    // }
-                })
-                .collect()
-        }),
+        pattern_files: serialized.pattern_files,
         patterns: serialized
             .patterns
             .into_iter()
@@ -86,6 +75,7 @@ pub async fn get_patterns_from_yaml(
     );
 
     for pattern_file in config.pattern_files.unwrap() {
+        let pattern_file = PathBuf::from(repo_dir).join(&pattern_file);
         let extension = PatternFileExt::from_path(&pattern_file);
         if extension.is_none() {
             continue;
@@ -102,7 +92,7 @@ pub async fn get_patterns_from_yaml(
         patterns.extend(file_reader.await??);
     }
 
-    return Ok(patterns);
+    Ok(patterns)
 }
 
 pub fn extract_grit_modules(content: &str, path: &str) -> Result<Vec<String>> {

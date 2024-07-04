@@ -535,7 +535,7 @@ async fn get_grit_files_for_module(
         Some(config) => {
             if let Some(module) = module {
                 let repo_root = find_repo_root_from(repo_path).await?;
-                get_patterns_from_yaml(&config, module, &repo_root, &repo_dir).await?
+                get_patterns_from_yaml(&config, module, &repo_root, repo_dir).await?
             } else {
                 vec![]
             }
@@ -947,7 +947,7 @@ mod tests {
         assert_eq!(resolved_patterns.len(), 3);
         assert_eq!(errored_patterns.len(), 0);
 
-        resolved_patterns.sort_by(|a, b| a.language.to_string().cmp(&b.language.to_string()));
+        resolved_patterns.sort_by(|a, b| a.local_name.cmp(&b.local_name));
         assert_yaml_snapshot!(resolved_patterns);
     }
 }
