@@ -28,14 +28,31 @@ pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
         }
     };
 
+    let mut patterns = Vec::new();
+    let mut pattern_files = Vec::new();
+
+    for pattern in serialized.patterns.into_iter() {
+        match pattern {
+            crate::config::GritPatternConfig::File(file) => {
+                pattern_files.push(file);
+            }
+            crate::config::GritPatternConfig::Pattern(p) => {
+                patterns.push(GritDefinitionConfig::from_serialized(
+                    p,
+                    source_path.to_string(),
+                ));
+            }
+        }
+    }
+
     let new_config = GritConfig {
         github: serialized.github,
-        pattern_files: serialized.pattern_files,
-        patterns: serialized
-            .patterns
-            .into_iter()
-            .map(|p| GritDefinitionConfig::from_serialized(p, source_path.to_string()))
-            .collect(),
+        pattern_files: if pattern_files.is_empty() {
+            None
+        } else {
+            Some(pattern_files)
+        },
+        patterns,
     };
 
     Ok(new_config)
@@ -69,7 +86,7 @@ pub async fn get_patterns_from_yaml(
     let mut file_readers = Vec::new();
 
     for pattern_file in config.pattern_files.unwrap() {
-        let pattern_file = PathBuf::from(repo_dir).join(&pattern_file);
+        let pattern_file = PathBuf::from(repo_dir).join(&pattern_file.path);
         let extension = PatternFileExt::from_path(&pattern_file);
         if extension.is_none() {
             continue;
