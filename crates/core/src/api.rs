@@ -500,7 +500,11 @@ impl FileMatchResult for Rewrite {
 pub struct MatchReason {
     pub metadata_json: Option<String>,
     pub source: RewriteSource,
+    /// The name of the pattern that matched, or another programmatic identifier
     pub name: Option<String>,
+    /// A human-readable title for the match
+    pub title: Option<String>,
+    /// A human-readable explanation of the match
     pub explanation: Option<String>,
     pub level: Option<EnforcementLevel>,
 }
