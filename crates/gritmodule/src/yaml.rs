@@ -64,7 +64,8 @@ pub async fn get_patterns_from_yaml(
     root: &Option<String>,
     repo_dir: &str,
 ) -> Result<Vec<ModuleGritPattern>> {
-    let mut config = get_grit_config(&file.content, &extract_relative_file_path(file, root))?;
+    let grit_path = extract_relative_file_path(file, root);
+    let mut config = get_grit_config(&file.content, &grit_path)?;
 
     for pattern in config.patterns.iter_mut() {
         pattern.kind = Some(DefinitionKind::Pattern);
@@ -86,7 +87,9 @@ pub async fn get_patterns_from_yaml(
     let mut file_readers = Vec::new();
 
     for pattern_file in config.pattern_files.unwrap() {
-        let pattern_file = PathBuf::from(repo_dir).join(&pattern_file.path);
+        let pattern_file = PathBuf::from(repo_dir)
+            .join(REPO_CONFIG_DIR_NAME)
+            .join(&pattern_file.file);
         let extension = PatternFileExt::from_path(&pattern_file);
         if extension.is_none() {
             continue;

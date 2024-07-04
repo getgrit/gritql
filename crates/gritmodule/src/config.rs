@@ -35,7 +35,7 @@ pub struct GritGitHubConfig {
 /// Represents a reference to an external pattern file
 #[derive(Debug, Deserialize)]
 pub struct GritPatternFile {
-    pub path: PathBuf,
+    pub file: PathBuf,
 }
 
 /// Pure in-memory representation of the grit config
