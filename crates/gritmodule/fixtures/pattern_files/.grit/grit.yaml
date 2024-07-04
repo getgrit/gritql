@@ -8,5 +8,5 @@ patterns:
 
       `console.error($_)` => .
 pattern_files:
-  - docs/guides/version-5-upgrade.md
+  - docs/guides/version_5_upgrade.md
   - docs/guides/something.md
