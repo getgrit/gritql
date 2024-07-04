@@ -78,7 +78,7 @@ pub struct GritDefinitionConfig {
     pub name: String,
     pub body: Option<String>,
     #[serde(flatten)]
-    pub(crate) meta: GritPatternMetadata,
+    pub meta: GritPatternMetadata,
     #[serde(skip)]
     pub kind: Option<DefinitionKind>,
     pub samples: Option<Vec<GritPatternSample>>,
