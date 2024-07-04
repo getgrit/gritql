@@ -24,6 +24,11 @@ pub async fn read_grit_config(repo_dir: &Path) -> Result<Option<GritConfig>> {
     }
 }
 
+pub async fn parse_grit_config(yaml_config: &str) -> Result<GritConfig> {
+    let config = get_grit_config(yaml_config, ".grit/grit.yaml", &None)?;
+    Ok(config)
+}
+
 #[cfg(test)]
 mod tests {
     use std::{path::PathBuf, str::FromStr};
