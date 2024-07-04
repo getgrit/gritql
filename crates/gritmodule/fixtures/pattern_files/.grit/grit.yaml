@@ -1,5 +1,7 @@
 version: 0.0.1
 patterns:
+  - file: ../docs/guides/version_5_upgrade.md
+  - file: ../docs/guides/something.md
   - name: remove_console_error
     level: error
     body: |
@@ -7,6 +9,3 @@ patterns:
       language js
 
       `console.error($_)` => .
-pattern_files:
-  - docs/guides/version_5_upgrade.md
-  - docs/guides/something.md
