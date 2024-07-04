@@ -68,12 +68,6 @@ pub async fn get_patterns_from_yaml(
     let mut patterns = patterns?;
     let mut file_readers = Vec::new();
 
-    eprintln!(
-        "Reading pattern files: {:?}, root is {:?}",
-        &config.pattern_files.as_ref().unwrap(),
-        root
-    );
-
     for pattern_file in config.pattern_files.unwrap() {
         let pattern_file = PathBuf::from(repo_dir).join(&pattern_file);
         let extension = PatternFileExt::from_path(&pattern_file);
