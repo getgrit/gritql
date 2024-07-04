@@ -934,4 +934,20 @@ mod tests {
         resolved_patterns.sort_by(|a, b| a.language.to_string().cmp(&b.language.to_string()));
         assert_yaml_snapshot!(resolved_patterns);
     }
+
+    #[tokio::test]
+    async fn finds_patterns_from_custom_pattern_files() {
+        let module_repo = ModuleRepo::from_host_repo("github.com", "getgrit/rewriter").unwrap();
+        let repo_dir = "fixtures/pattern_files";
+        let (mut resolved_patterns, errored_patterns) =
+            super::resolve_patterns(&module_repo, repo_dir, None)
+                .await
+                .unwrap();
+
+        assert_eq!(resolved_patterns.len(), 3);
+        assert_eq!(errored_patterns.len(), 0);
+
+        resolved_patterns.sort_by(|a, b| a.language.to_string().cmp(&b.language.to_string()));
+        assert_yaml_snapshot!(resolved_patterns);
+    }
 }
