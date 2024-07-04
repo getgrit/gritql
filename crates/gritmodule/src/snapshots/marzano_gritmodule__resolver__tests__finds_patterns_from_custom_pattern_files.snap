@@ -12,7 +12,7 @@ expression: resolved_patterns
     samples: ~
     path: ".grit/grit.yaml"
     position:
-      line: 3
+      line: 5
       column: 11
     raw: ~
   module:
@@ -136,7 +136,7 @@ expression: resolved_patterns
           startByte: 1220
           endByte: 1262
         output_range: ~
-    path: fixtures/pattern_files/docs/guides/something.md
+    path: ".grit/../docs/guides/something.md"
     position:
       line: 10
       column: 1
@@ -264,7 +264,7 @@ expression: resolved_patterns
           startByte: 1220
           endByte: 1262
         output_range: ~
-    path: fixtures/pattern_files/docs/guides/version_5_upgrade.md
+    path: ".grit/../docs/guides/version_5_upgrade.md"
     position:
       line: 10
       column: 1
