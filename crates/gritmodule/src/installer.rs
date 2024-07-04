@@ -89,7 +89,11 @@ async fn parse_grit_module(
             return Ok(());
         }
     };
-    let referenced_modules = extract_grit_modules(&module_config.content, &module_config.path)?;
+    let referenced_modules = extract_grit_modules(
+        &module_config.content,
+        &module_config.path,
+        &Some(repo_dir.to_owned()),
+    )?;
     for referenced_module in referenced_modules {
         let referenced_module = ModuleRepo::from_repo_str(&referenced_module)?;
         processing_modules.push(referenced_module);

@@ -14,15 +14,14 @@ pub async fn read_grit_config(repo_dir: &Path) -> Result<Option<GritConfig>> {
     match yaml_content {
         None => Ok(None),
         Some(yaml_content) => {
-            let config = get_grit_config(&yaml_content.content, &yaml_content.path)?;
+            let config = get_grit_config(
+                &yaml_content.content,
+                &yaml_content.path,
+                &Some(repo_dir.to_string_lossy().to_string()),
+            )?;
             Ok(Some(config))
         }
     }
-}
-
-pub async fn parse_grit_config(yaml_config: &str) -> Result<GritConfig> {
-    let config = get_grit_config(yaml_config, ".grit/grit.yaml")?;
-    Ok(config)
 }
 
 #[cfg(test)]

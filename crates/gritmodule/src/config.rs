@@ -35,12 +35,14 @@ pub struct GritGitHubConfig {
 #[derive(Debug, Deserialize)]
 pub struct GritConfig {
     pub patterns: Vec<GritDefinitionConfig>,
+    pub pattern_files: Option<Vec<PathBuf>>,
     pub github: Option<GritGitHubConfig>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct SerializedGritConfig {
     pub patterns: Vec<GritSerializedDefinitionConfig>,
+    pub pattern_files: Option<Vec<String>>,
     pub github: Option<GritGitHubConfig>,
 }
 

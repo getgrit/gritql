@@ -1,7 +1,10 @@
 use anyhow::{bail, Result};
 use grit_util::Position;
 use marzano_util::rich_path::RichFile;
-use std::{collections::HashSet, path::Path};
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+};
 use tokio::fs;
 
 use crate::{
@@ -13,7 +16,11 @@ use crate::{
     parser::extract_relative_file_path,
 };
 
-pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
+pub fn get_grit_config(
+    source: &str,
+    source_path: &str,
+    root: &Option<String>,
+) -> Result<GritConfig> {
     let serialized: SerializedGritConfig = match serde_yaml::from_str(source) {
         Ok(config) => config,
         Err(err) => {
@@ -27,6 +34,18 @@ pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
 
     let new_config = GritConfig {
         github: serialized.github,
+        pattern_files: serialized.pattern_files.map(|files| {
+            files
+                .iter()
+                .map(|f| {
+                    if let Some(r) = root {
+                        PathBuf::from(r).join(f)
+                    } else {
+                        PathBuf::from(f)
+                    }
+                })
+                .collect()
+        }),
         patterns: serialized
             .patterns
             .into_iter()
@@ -42,7 +61,7 @@ pub fn get_patterns_from_yaml(
     source_module: &ModuleRepo,
     root: &Option<String>,
 ) -> Result<Vec<ModuleGritPattern>> {
-    let mut config = get_grit_config(&file.content, &extract_relative_file_path(file, root))?;
+    let mut config = get_grit_config(&file.content, &extract_relative_file_path(file, root), root)?;
 
     for pattern in config.patterns.iter_mut() {
         pattern.kind = Some(DefinitionKind::Pattern);
@@ -57,8 +76,12 @@ pub fn get_patterns_from_yaml(
         .collect()
 }
 
-pub fn extract_grit_modules(content: &str, path: &str) -> Result<Vec<String>> {
-    let config = get_grit_config(content, path)?;
+pub fn extract_grit_modules(
+    content: &str,
+    path: &str,
+    root: &Option<String>,
+) -> Result<Vec<String>> {
+    let config = get_grit_config(content, path, root)?;
 
     let mut unique_names: HashSet<String> = HashSet::new();
 
@@ -112,7 +135,7 @@ patterns:
 
       `console.error($_)` => .
     "#;
-        let gritmodules = extract_grit_modules(grit_yaml, ".grit/grit.yaml").unwrap();
+        let gritmodules = extract_grit_modules(grit_yaml, ".grit/grit.yaml", &None).unwrap();
         let gritmodule_set: HashSet<_> = gritmodules.into_iter().collect();
         let expected_set: HashSet<_> = vec![
             "github.com/getgrit/stdlib".to_string(),
@@ -128,7 +151,7 @@ patterns:
     #[test]
     fn invalid_grit_yaml() {
         let grit_yaml = "invalid config";
-        let gritmodules = extract_grit_modules(grit_yaml, ".grit/grit.yaml");
+        let gritmodules = extract_grit_modules(grit_yaml, ".grit/grit.yaml", &None);
         if let Err(e) = gritmodules {
             assert!(e.to_string().contains("Invalid configuration file"));
         } else {
@@ -177,7 +200,7 @@ github:
   - morgante
   - gritagent
     "#;
-        let config = get_grit_config(grit_yaml, ".grit/grit.yaml").unwrap();
+        let config = get_grit_config(grit_yaml, ".grit/grit.yaml", &None).unwrap();
         println!("{:?}", config);
         assert_eq!(config.github.unwrap().reviewers.len(), 2);
     }
