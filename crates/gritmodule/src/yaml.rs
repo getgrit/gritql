@@ -1,7 +1,10 @@
 use anyhow::{bail, Result};
 use grit_util::Position;
 use marzano_util::rich_path::RichFile;
-use std::{collections::HashSet, path::Path};
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+};
 use tokio::fs;
 
 use crate::{
@@ -10,7 +13,7 @@ use crate::{
         ModuleGritPattern, SerializedGritConfig, CONFIG_FILE_NAMES, REPO_CONFIG_DIR_NAME,
     },
     fetcher::ModuleRepo,
-    parser::extract_relative_file_path,
+    parser::{extract_relative_file_path, get_patterns_from_file, PatternFileExt},
 };
 
 pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
@@ -27,6 +30,7 @@ pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
 
     let new_config = GritConfig {
         github: serialized.github,
+        pattern_files: serialized.pattern_files,
         patterns: serialized
             .patterns
             .into_iter()
@@ -37,10 +41,11 @@ pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
     Ok(new_config)
 }
 
-pub fn get_patterns_from_yaml(
+pub async fn get_patterns_from_yaml(
     file: &RichFile,
     source_module: &ModuleRepo,
     root: &Option<String>,
+    repo_dir: &str,
 ) -> Result<Vec<ModuleGritPattern>> {
     let mut config = get_grit_config(&file.content, &extract_relative_file_path(file, root))?;
 
@@ -50,11 +55,38 @@ pub fn get_patterns_from_yaml(
         pattern.position = Some(Position::from_byte_index(&file.content, offset));
     }
 
-    config
+    let patterns = config
         .patterns
         .into_iter()
         .map(|pattern| pattern_config_to_model(pattern, source_module))
-        .collect()
+        .collect();
+
+    if config.pattern_files.is_none() {
+        return patterns;
+    }
+
+    let mut patterns = patterns?;
+    let mut file_readers = Vec::new();
+
+    for pattern_file in config.pattern_files.unwrap() {
+        let pattern_file = PathBuf::from(repo_dir).join(&pattern_file);
+        let extension = PatternFileExt::from_path(&pattern_file);
+        if extension.is_none() {
+            continue;
+        }
+        let extension = extension.unwrap();
+        file_readers.push(tokio::spawn(get_patterns_from_file(
+            pattern_file,
+            Some(source_module.clone()),
+            extension,
+        )));
+    }
+
+    for file_reader in file_readers {
+        patterns.extend(file_reader.await??);
+    }
+
+    Ok(patterns)
 }
 
 pub fn extract_grit_modules(content: &str, path: &str) -> Result<Vec<String>> {
@@ -136,8 +168,8 @@ patterns:
         }
     }
 
-    #[test]
-    fn gets_module_patterns() {
+    #[tokio::test]
+    async fn gets_module_patterns() {
         let grit_yaml = RichFile {
             path: String::new(),
             content: r#"version: 0.0.1
@@ -163,7 +195,9 @@ github:
             .to_string(),
         };
         let repo = Default::default();
-        let patterns = get_patterns_from_yaml(&grit_yaml, &repo, &None).unwrap();
+        let patterns = get_patterns_from_yaml(&grit_yaml, &repo, &None, "getgrit/rewriter")
+            .await
+            .unwrap();
         assert_eq!(patterns.len(), 4);
         assert_yaml_snapshot!(patterns);
     }

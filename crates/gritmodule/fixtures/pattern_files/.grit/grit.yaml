@@ -1,0 +1,12 @@
+version: 0.0.1
+patterns:
+  - name: remove_console_error
+    level: error
+    body: |
+      engine marzano(0.1)
+      language js
+
+      `console.error($_)` => .
+pattern_files:
+  - docs/guides/version_5_upgrade.md
+  - docs/guides/something.md
