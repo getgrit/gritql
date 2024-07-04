@@ -32,17 +32,31 @@ pub struct GritGitHubConfig {
     pub reviewers: Vec<String>,
 }
 
+/// Represents a reference to an external pattern file
 #[derive(Debug, Deserialize)]
+struct GritPatternFile {
+    file: PathBuf,
+}
+
+/// Pure in-memory representation of the grit config
+#[derive(Debug)]
 pub struct GritConfig {
     pub patterns: Vec<GritDefinitionConfig>,
-    pub pattern_files: Option<Vec<String>>,
+    pub pattern_files: Option<Vec<GritPatternFile>>,
     pub github: Option<GritGitHubConfig>,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(untagged)]
+pub enum GritPatternConfig {
+    File(GritPatternFile),
+    Pattern(GritSerializedDefinitionConfig),
+}
+
+/// Compacted / serialized version of the GritConfig
+#[derive(Debug, Deserialize)]
 pub struct SerializedGritConfig {
-    pub patterns: Vec<GritSerializedDefinitionConfig>,
-    pub pattern_files: Option<Vec<String>>,
+    pub patterns: Vec<GritPatternConfig>,
     pub github: Option<GritGitHubConfig>,
 }
 
