@@ -12,8 +12,9 @@ jobs:
     runs-on: namespace-profile-standard-ubuntu22-amd64
     steps:
       - name: clone code
-        uses: namespacelabs/nscloud-checkout-action@v2
-      - run: nsc git-checkout update-submodules --mirror_base_path=${NSC_GIT_MIRROR} --repository_path=${GITHUB_WORKSPACE} --recurse
+        uses: namespacelabs/nscloud-checkout-action@v4
+        with:
+          submodules: recursive
       - name: Install Protoc
         run: sudo apt-get install -y protobuf-compiler
       - run: rustup component add clippy
