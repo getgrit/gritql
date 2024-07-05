@@ -10,11 +10,7 @@ jobs:
   test-rust:
     name: Rust tests (marzano)
     timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [nscloud-ubuntu-22.04-amd64-8x32]
-    runs-on: ${{ matrix.os }}
+    runs-on: namespace-profile-standard-ubuntu22-amd64
     permissions:
       contents: "read"
       id-token: "write"
@@ -25,10 +21,8 @@ jobs:
       BUILD_PLATFORM: amd64
     steps:
       - name: clone code
-        uses: actions/checkout@v3
-        with:
-          submodules: true
-          fetch-depth: 0
+        uses: namespacelabs/nscloud-checkout-action@v2
+      - run: nsc git-checkout update-submodules --mirror_base_path=${NSC_GIT_MIRROR} --repository_path=${GITHUB_WORKSPACE} --recurse
       - name: Install Protoc
         run: sudo apt-get install -y protobuf-compiler
       - name: install Rust
@@ -74,19 +68,14 @@ jobs:
   test-rust-wasm:
     name: Rust wasm
     timeout-minutes: 15
-    strategy:
-      fail-fast: false
-    runs-on:
-      - nscloud-ubuntu-22.04-amd64-8x32
+    runs-on: namespace-profile-standard-ubuntu22-amd64
     permissions:
       contents: "read"
       id-token: "write"
     steps:
       - name: clone code
-        uses: actions/checkout@v3
-        with:
-          submodules: true
-          fetch-depth: 0
+        uses: namespacelabs/nscloud-checkout-action@v2
+      - run: nsc git-checkout update-submodules --mirror_base_path=${NSC_GIT_MIRROR} --repository_path=${GITHUB_WORKSPACE} --recurse
       - name: install Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -102,18 +91,14 @@ jobs:
   test-stdlib:
     name: Test the standard library
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-    runs-on:
-      - nscloud-ubuntu-22.04-amd64-4x16
     permissions:
       contents: "read"
       id-token: "write"
+    runs-on: namespace-profile-standard-ubuntu22-amd64
     steps:
       - name: clone code
-        uses: actions/checkout@v3
-        with:
-          submodules: true
+        uses: namespacelabs/nscloud-checkout-action@v2
+      - run: nsc git-checkout update-submodules --mirror_base_path=${NSC_GIT_MIRROR} --repository_path=${GITHUB_WORKSPACE} --recurse
       - name: install Rust
         uses: actions-rs/toolchain@v1
         with:

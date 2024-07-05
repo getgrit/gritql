@@ -317,7 +317,7 @@ async fn enable_watch_mode(
 
     let testable_patterns_map = testable_patterns
         .iter()
-        .map(|p| (p.local_name.as_ref().unwrap(), p.as_ref()))
+        .map(|p| (p.local_name.as_ref().unwrap(), p))
         .collect::<HashMap<_, _>>();
 
     // event processing

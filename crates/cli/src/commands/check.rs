@@ -287,6 +287,7 @@ pub(crate) async fn run_check(
                         let reason = Some(MatchReason {
                             metadata_json: None,
                             source: RewriteSource::Gritql,
+                            title: result.pattern.title().map(|s| s.to_string()),
                             name: Some(result.pattern.local_name.to_string()),
                             level: Some(result.pattern.level()),
                             explanation: None,

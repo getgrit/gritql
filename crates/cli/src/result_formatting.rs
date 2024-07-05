@@ -5,7 +5,7 @@ use core::fmt;
 use log::{debug, error, info, warn};
 use marzano_core::api::{
     AllDone, AnalysisLog, AnalysisLogLevel, CreateFile, DoneFile, FileMatchResult, InputFile,
-    Match, MatchResult, PatternInfo, RemoveFile, Rewrite,
+    Match, MatchReason, MatchResult, PatternInfo, RemoveFile, Rewrite,
 };
 use marzano_core::constants::DEFAULT_FILE_NAME;
 use marzano_messenger::output_mode::OutputMode;
@@ -137,6 +137,28 @@ pub fn get_human_error(mut log: AnalysisLog, input_pattern: &str) -> String {
     result
 }
 
+/// Print a header for a match, with the path and (maybe) a title/explanation
+pub fn print_file_header(
+    path: &str,
+    reason: &Option<MatchReason>,
+    f: &mut fmt::Formatter<'_>,
+) -> fmt::Result {
+    let path_title = path.bold();
+    if let Some(r) = reason {
+        if let Some(title) = &r.title {
+            writeln!(f, "{}: {}", path_title, title)?;
+        } else {
+            writeln!(f, "{}", path_title)?;
+        }
+        if let Some(explanation) = &r.explanation {
+            writeln!(f, "  {}", explanation.italic())?;
+        }
+    } else {
+        writeln!(f, "{}", path_title)?;
+    }
+    Ok(())
+}
+
 impl fmt::Display for FormattedResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -165,12 +187,12 @@ impl fmt::Display for FormattedResult {
                 Ok(())
             }
             FormattedResult::Match(m) => {
-                let path_title = m.file_name().bold();
-                writeln!(f, "{}", path_title)?;
+                print_file_header(m.file_name(), &m.reason, f)?;
+
                 let source = m.content();
                 match source {
                     Err(e) => {
-                        writeln!(f, "Could not read file: {}", e)?;
+                        writeln!(f, "Could not read flie: {}", e)?;
                         return Ok(());
                     }
                     Ok(source) => {
@@ -232,24 +254,22 @@ impl fmt::Display for FormattedResult {
                         item.original.source_file, item.rewritten.source_file
                     )
                 };
-                let path_title = path_name.bold();
-                writeln!(f, "{}", path_title)?;
+                print_file_header(&path_name, &item.reason, f)?;
+
                 let result: MatchResult = item.clone().into();
                 let diff = format_result_diff(&result, None);
                 write!(f, "{}", diff)?;
                 Ok(())
             }
             FormattedResult::CreateFile(item) => {
-                let path_title = item.file_name().bold();
+                print_file_header(item.file_name(), &item.reason, f)?;
                 let result: MatchResult = item.clone().into();
-                writeln!(f, "{}", path_title)?;
                 let diff = format_result_diff(&result, None);
                 write!(f, "{}", diff)?;
                 Ok(())
             }
             FormattedResult::RemoveFile(item) => {
-                let path_title = item.file_name().bold();
-                writeln!(f, "{}", path_title)?;
+                print_file_header(item.file_name(), &item.reason, f)?;
                 let result: MatchResult = item.clone().into();
                 let diff = format_result_diff(&result, None);
                 write!(f, "{}", diff)?;

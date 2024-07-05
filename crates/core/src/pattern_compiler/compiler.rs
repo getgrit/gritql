@@ -588,10 +588,9 @@ pub fn get_dependents_of_target_patterns_by_traversal_from_src(
 
     let name_to_filename: BTreeMap<&String, &String> = pattern_file
         .iter()
-        .map(|(k, v)| (k, (v)))
-        .chain(predicate_file.iter().map(|(k, v)| (k, (v))))
-        .chain(function_file.iter().map(|(k, v)| (k, (v))))
-        .chain(foreign_file.iter().map(|(k, v)| (k, (v))))
+        .chain(predicate_file.iter())
+        .chain(function_file.iter())
+        .chain(foreign_file.iter())
         .collect();
 
     let mut traversed_stack = <Vec<String>>::new();

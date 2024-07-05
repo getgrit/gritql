@@ -535,7 +535,8 @@ async fn get_grit_files_for_module(
         Some(config) => {
             if let Some(module) = module {
                 let repo_root = find_repo_root_from(repo_path).await?;
-                get_patterns_from_yaml(&config, &Some(module.to_owned()), &repo_root)?
+                get_patterns_from_yaml(&config, &Some(module.to_owned()), &repo_root, repo_dir)
+                    .await?
             } else {
                 vec![]
             }
@@ -586,7 +587,8 @@ async fn resolve_patterns_for_module(
         Some(config) => {
             if let Some(module) = module {
                 let repo_root = find_repo_root_from(repo_path).await?;
-                get_patterns_from_yaml(&config, &Some(module.to_owned()), &repo_root)?
+                get_patterns_from_yaml(&config, &Some(module.to_owned()), &repo_root, repo_dir)
+                    .await?
             } else {
                 vec![]
             }
@@ -932,6 +934,22 @@ mod tests {
         assert_eq!(errored_patterns.len(), 0);
 
         resolved_patterns.sort_by(|a, b| a.language.to_string().cmp(&b.language.to_string()));
+        assert_yaml_snapshot!(resolved_patterns);
+    }
+
+    #[tokio::test]
+    async fn finds_patterns_from_custom_pattern_files() {
+        let module_repo = ModuleRepo::from_host_repo("github.com", "getgrit/rewriter").unwrap();
+        let repo_dir = "fixtures/pattern_files";
+        let (mut resolved_patterns, errored_patterns) =
+            super::resolve_patterns(&module_repo, repo_dir, None)
+                .await
+                .unwrap();
+
+        assert_eq!(resolved_patterns.len(), 3);
+        assert_eq!(errored_patterns.len(), 0);
+
+        resolved_patterns.sort_by(|a, b| a.local_name.cmp(&b.local_name));
         assert_yaml_snapshot!(resolved_patterns);
     }
 }
