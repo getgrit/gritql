@@ -1,17 +1,16 @@
 use std::{
     env, fs,
     io::{BufRead, BufReader},
-    process::{Command, Stdio},
+    process::Stdio,
     sync::mpsc,
     thread,
     time::Duration,
 };
 
 use anyhow::Result;
-use assert_cmd::cargo::CommandCargoExt;
 use insta::assert_snapshot;
 
-use crate::common::{get_fixture, get_test_cmd, BIN_NAME};
+use crate::common::{get_fixture, get_test_cmd, get_test_process_cmd};
 
 mod common;
 
@@ -329,7 +328,7 @@ fn patterns_test_watch_mode_case_patterns_changed() -> Result<()> {
     let temp_dir_path = temp_dir.path().to_owned();
 
     let _cmd_handle = thread::spawn(move || {
-        let mut cmd = Command::cargo_bin(BIN_NAME)
+        let mut cmd = get_test_process_cmd()
             .unwrap()
             .args(&["patterns", "test", "--watch"])
             .current_dir(&temp_dir_path)
@@ -381,7 +380,7 @@ fn patterns_test_watch_mode_case_no_pattern_to_test() -> Result<()> {
     let temp_dir_path = temp_dir.path().to_owned();
 
     let _cmd_handle = thread::spawn(move || {
-        let mut cmd = Command::cargo_bin(BIN_NAME)
+        let mut cmd = get_test_process_cmd()
             .unwrap()
             .args(&["patterns", "test", "--watch"])
             .current_dir(&temp_dir_path)

@@ -1,6 +1,7 @@
-use std::{env, path};
+use std::{env, path, process};
 
 use anyhow::Result;
+use assert_cmd::cargo::CommandCargoExt;
 use assert_cmd::Command;
 
 use marzano_gritmodule::config::GRIT_GLOBAL_DIR_ENV;
@@ -11,6 +12,13 @@ pub const BIN_NAME: &str = "marzano";
 #[allow(dead_code)]
 pub fn get_test_cmd() -> Result<Command> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.env("GRIT_TELEMETRY_DISABLED", "true");
+    Ok(cmd)
+}
+
+#[allow(dead_code)]
+pub fn get_test_process_cmd() -> Result<process::Command> {
+    let mut cmd = process::Command::cargo_bin(BIN_NAME)?;
     cmd.env("GRIT_TELEMETRY_DISABLED", "true");
     Ok(cmd)
 }
