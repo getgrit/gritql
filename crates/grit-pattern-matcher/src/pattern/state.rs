@@ -269,6 +269,17 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         &self.bindings[var.scope].last().unwrap()[var.index].name
     }
 
+    pub fn find_var(&self, name: &str) -> Option<Variable> {
+        for (scope_index, scope) in self.bindings.iter().enumerate() {
+            for (index, content) in scope.last().unwrap().iter().enumerate() {
+                if content.name == name {
+                    return Some(Variable::new(scope_index, index));
+                }
+            }
+        }
+        None
+    }
+
     pub fn trace_var(&self, var: &Variable) -> Variable {
         if let Some(Pattern::Variable(v)) =
             &self.bindings[var.scope].last().unwrap()[var.index].pattern
