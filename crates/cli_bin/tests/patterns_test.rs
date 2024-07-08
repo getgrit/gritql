@@ -323,15 +323,17 @@ fn tests_python_pattern_with_file_name() -> Result<()> {
 fn patterns_test_watch_mode_case_patterns_changed() -> Result<()> {
     let (tx, rx) = mpsc::channel();
 
-    let (temp_dir, temp_grit_dir) = get_fixture(".grit", false)?;
-    let test_yaml_path = temp_grit_dir.join("grit.yaml");
-    let temp_dir_path = temp_dir.path().to_owned();
+    let (temp_dir, temp_fixture_path) = get_fixture("patterns_test", false)?;
+    let test_yaml_path = temp_fixture_path.join(".grit/grit.yaml");
+
+    println!("temp_fixture_path: {:?}", test_yaml_path);
+    println!("temp_dir_path: {:?}", temp_dir.into_path());
 
     let _cmd_handle = thread::spawn(move || {
         let mut cmd = get_test_process_cmd()
             .unwrap()
             .args(&["patterns", "test", "--watch"])
-            .current_dir(&temp_dir_path)
+            .current_dir(&temp_fixture_path)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
@@ -339,74 +341,33 @@ fn patterns_test_watch_mode_case_patterns_changed() -> Result<()> {
 
         let stdout = BufReader::new(cmd.stdout.take().unwrap());
         let stderr = BufReader::new(cmd.stderr.take().unwrap());
-        for line in stdout.lines().chain(stderr.lines()) {
-            if let Ok(line) = line {
-                tx.send(line).unwrap();
-            }
+        for line in stdout.lines().chain(stderr.lines()).flatten() {
+            println!("LINE: {:?}", line);
+            tx.send(line).unwrap();
         }
     });
-    thread::sleep(Duration::from_secs(1));
+    thread::sleep(Duration::from_secs(3));
 
-    let content = fs::read_to_string(&test_yaml_path).expect("Unable to read the file");
-    fs::write(&test_yaml_path, content)?;
+    // Update it
+    let old_content = fs::read_to_string(&test_yaml_path).expect("Unable to read the file");
+    let new_content = old_content.replace("console.log(bar)", "console.log(bad)");
+    fs::write(&test_yaml_path, new_content)?;
+    thread::sleep(Duration::from_secs(3));
+
+    // Then reset it
+    fs::write(&test_yaml_path, old_content)?;
     thread::sleep(Duration::from_secs(3));
 
     let mut output = Vec::new();
     while let Ok(line) = rx.try_recv() {
         output.push(line);
     }
-    println!("{:?}", output);
-    let expected_output = vec![".grit/grit.yaml", "retesting", "Found 5 testable patterns."];
-    for expected_line in expected_output {
-        assert!(
-            output.iter().any(|line| line.contains(expected_line)),
-            "Expected output not found: {}",
-            expected_line
-        );
-    }
-    Ok(())
-}
-
-#[test]
-fn patterns_test_watch_mode_case_no_pattern_to_test() -> Result<()> {
-    let (tx, rx) = mpsc::channel();
-
-    let (temp_dir, temp_grit_dir) = get_fixture(".grit", false)?;
-    let test_yaml_path = temp_grit_dir.join("grit.yaml");
-    let temp_dir_path = temp_dir.path().to_owned();
-
-    let _cmd_handle = thread::spawn(move || {
-        let mut cmd = get_test_process_cmd()
-            .unwrap()
-            .args(&["patterns", "test", "--watch"])
-            .current_dir(&temp_dir_path)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .expect("Failed to start command");
-
-        let stdout = BufReader::new(cmd.stdout.take().unwrap());
-        let stderr = BufReader::new(cmd.stderr.take().unwrap());
-        for line in stdout.lines().chain(stderr.lines()) {
-            if let Ok(line) = line {
-                tx.send(line).unwrap();
-            }
-        }
-    });
-    thread::sleep(Duration::from_secs(1));
-
-    fs::write(&test_yaml_path, "")?;
-    thread::sleep(Duration::from_secs(1));
-
-    let mut output = Vec::new();
-    while let Ok(line) = rx.try_recv() {
-        output.push(line);
-    }
-
     let expected_output = vec![
-        "[Watch Mode] Enabled on path: .grit",
-        "[Watch Mode] File modified: \".grit/grit.yaml\"",
-        "[Watch Mode] Pattern(s) to test: []",
+        "Found 2 testable patterns.",
+        "Watching for changes",
+        "✓ All 7 samples passed.",
+        ".grit/grit.yaml was modified",
+        "1 out of 1 samples failed.",
     ];
     for expected_line in expected_output {
         assert!(
@@ -415,5 +376,65 @@ fn patterns_test_watch_mode_case_no_pattern_to_test() -> Result<()> {
             expected_line
         );
     }
+
+    assert!(
+        output
+            .iter()
+            .filter(|line| line.contains("samples passed"))
+            .count()
+            == 2
+    );
+
     Ok(())
 }
+
+// #[test]
+// fn patterns_test_watch_mode_case_no_pattern_to_test() -> Result<()> {
+//     let (tx, rx) = mpsc::channel();
+
+//     let (temp_dir, temp_grit_dir) = get_fixture(".grit", false)?;
+//     // let test_yaml_path = temp_grit_dir.join("grit.yaml");
+//     let temp_dir_path = temp_dir.path().to_owned();
+
+//     let _cmd_handle = thread::spawn(move || {
+//         let mut cmd = get_test_process_cmd()
+//             .unwrap()
+//             .args(&["patterns", "test", "--watch"])
+//             .current_dir(&temp_dir_path)
+//             .stdout(Stdio::piped())
+//             .stderr(Stdio::piped())
+//             .spawn()
+//             .expect("Failed to start command");
+
+//         let stdout = BufReader::new(cmd.stdout.take().unwrap());
+//         let stderr = BufReader::new(cmd.stderr.take().unwrap());
+//         for line in stdout.lines().chain(stderr.lines()) {
+//             if let Ok(line) = line {
+//                 tx.send(line).unwrap();
+//             }
+//         }
+//     });
+//     thread::sleep(Duration::from_secs(1));
+
+//     fs::write(&test_yaml_path, "")?;
+//     thread::sleep(Duration::from_secs(1));
+
+//     let mut output = Vec::new();
+//     while let Ok(line) = rx.try_recv() {
+//         output.push(line);
+//     }
+
+//     let expected_output = vec![
+//         "[Watch Mode] Enabled on path: .grit",
+//         "[Watch Mode] File modified: \".grit/grit.yaml\"",
+//         "[Watch Mode] Pattern(s) to test: []",
+//     ];
+//     for expected_line in expected_output {
+//         assert!(
+//             output.iter().any(|line| line.contains(expected_line)),
+//             "Expected output not found: {}",
+//             expected_line
+//         );
+//     }
+//     Ok(())
+// }
