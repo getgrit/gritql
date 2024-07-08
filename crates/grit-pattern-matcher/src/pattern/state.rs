@@ -271,6 +271,8 @@ impl<'a, Q: QueryContext> State<'a, Q> {
 
     /// Attempt to find a variable by name in any scope
     /// This is inefficient and should only be used when we haven't pre-allocated a Variable reference
+    ///
+    /// If you have a Variable reference, use `trace_var` instead to find the latest binding
     pub fn find_var(&self, name: &str) -> Option<Variable> {
         for (scope_index, scope) in self.bindings.iter().enumerate().rev() {
             for (index, content) in scope.last().unwrap().iter().enumerate() {
