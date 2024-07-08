@@ -71,7 +71,7 @@ impl PatternFileExt {
                     )
                 })
             }
-            PatternFileExt::Yaml => get_patterns_from_yaml(file, source_module, root, "")
+            PatternFileExt::Yaml => get_patterns_from_yaml(file, source_module.as_ref(), root, "")
                 .await
                 .with_context(|| {
                     format!(

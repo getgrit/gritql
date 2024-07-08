@@ -60,7 +60,7 @@ pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
 
 pub async fn get_patterns_from_yaml(
     file: &RichFile,
-    source_module: &Option<ModuleRepo>,
+    source_module: Option<&ModuleRepo>,
     root: &Option<String>,
     repo_dir: &str,
 ) -> Result<Vec<ModuleGritPattern>> {
@@ -96,11 +96,11 @@ pub async fn get_patterns_from_yaml(
         }
         let extension = extension.unwrap();
         let source_module = source_module.clone();
-        file_readers.push(task::spawn_blocking(move || {
-            tokio::runtime::Runtime::new().unwrap().block_on(async {
-                get_patterns_from_file(pattern_file, source_module, extension).await
-            })
-        }));
+        file_readers.push(tokio::spawn(get_patterns_from_file(
+            pattern_file,
+            source_module.map(|m| m.clone()),
+            extension,
+        )));
     }
 
     for file_reader in file_readers {
