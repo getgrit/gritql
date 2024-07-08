@@ -48,11 +48,6 @@ pub async fn get_marzano_pattern_test_results(
     args: &PatternsTestArgs,
     output: OutputFormat,
 ) -> Result<AggregatedTestResult> {
-    if patterns.is_empty() {
-        bail!("No testable patterns found. To test a pattern, make sure it is defined in .grit/grit.yaml or a .md file in your .grit/patterns directory.");
-    }
-    info!("Found {} testable patterns.", patterns.len());
-
     let resolver = GritModuleResolver::new();
 
     let final_results: DashMap<String, Vec<WrappedResult>> = DashMap::new();
@@ -289,6 +284,11 @@ pub(crate) async fn run_patterns_test(
 
     let testable_patterns = collect_testable_patterns(patterns);
 
+    if testable_patterns.is_empty() {
+        bail!("No testable patterns found. To test a pattern, make sure it is defined in .grit/grit.yaml or a .md file in your .grit/patterns directory.");
+    }
+    info!("Found {} testable patterns.", testable_patterns.len());
+
     let first_result = get_marzano_pattern_test_results(
         testable_patterns.clone(),
         &libs,
@@ -311,6 +311,13 @@ pub(crate) async fn run_patterns_test(
     }
 }
 
+fn print_watch_start(path: &Path) {
+    log::info!(
+        "\nWatching for changes to: {}",
+        format!("{}", path.display()).bold()
+    );
+}
+
 async fn enable_watch_mode(
     testable_patterns: Vec<GritPatternTestInfo>,
     libs: &PatternsDirectory,
@@ -331,10 +338,7 @@ async fn enable_watch_mode(
     let mut debouncer = new_debouncer_opt::<_, notify::PollWatcher>(debouncer_config, tx)?;
 
     debouncer.watcher().watch(path, RecursiveMode::Recursive)?;
-    log::info!(
-        "\nWatching for changes to: {}",
-        format!("{}", path.display()).bold()
-    );
+    print_watch_start(path);
 
     let testable_patterns_map = testable_patterns
         .iter()
@@ -362,13 +366,20 @@ async fn enable_watch_mode(
                         continue;
                     }
                 }
-                log::info!("\n[Watch Mode] File modified: {:?}", modified_file_path);
                 let (modified_patterns, deleted_patterns) =
                     get_modified_and_deleted_patterns(&modified_file_path, &testable_patterns)
                         .await?;
 
                 if modified_patterns.is_empty() && deleted_patterns.is_empty() {
-                    log::info!("[Watch Mode] No patterns changed.\n");
+                    log::error!(
+                        "{}",
+                        format!(
+                            "\nFile {} was modified, but no changed patterns were found.",
+                            modified_file_path.bold().underline()
+                        )
+                        .bold()
+                    );
+                    print_watch_start(path);
                     continue;
                 }
 
@@ -417,23 +428,29 @@ async fn enable_watch_mode(
                     }
                 }
 
-                log::info!(
-                    "[Watch Mode] Pattern(s) to test: {:?}",
-                    patterns_to_test_names
-                );
                 if patterns_to_test_names.is_empty() {
                     continue;
                 }
+                log::info!(
+                    "{}",
+                    format!(
+                        "\nFile {} was modified, retesting {} patterns:",
+                        modified_file_path.bold().underline(),
+                        patterns_to_test_names.len()
+                    )
+                    .bold()
+                );
 
                 let res =
                     get_marzano_pattern_test_results(patterns_to_test, libs, args, output.clone())
                         .await?;
                 match res {
                     AggregatedTestResult::SomeFailed(message) => {
-                        log::error!("[Watch Mode] {}", message);
+                        log::error!("{}", message.to_string().bold().red());
                     }
                     AggregatedTestResult::AllPassed => {}
-                }
+                };
+                print_watch_start(path);
             }
             Err(error) => {
                 log::error!("Error: {error:?}")
