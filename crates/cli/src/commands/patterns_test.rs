@@ -320,7 +320,7 @@ fn print_watch_start(path: &Path) {
 }
 
 async fn test_modified_path(
-    modified_file_path: &PathBuf,
+    modified_file_path: &Path,
     testable_patterns: &Vec<GritPatternTestInfo>,
     testable_patterns_map: &HashMap<&String, &GritPatternTestInfo>,
     libs: &PatternsDirectory,
@@ -332,11 +332,7 @@ async fn test_modified_path(
     if !modified_file_path.is_file() {
         return Ok(());
     }
-    let modified_file_path = modified_file_path
-        .clone()
-        .into_os_string()
-        .into_string()
-        .unwrap();
+    let modified_file_path = modified_file_path.to_string_lossy().to_string();
 
     //temporary fix, until notify crate adds support for ignoring paths
     for path in &ignore_path {
@@ -372,7 +368,7 @@ async fn test_modified_path(
 
     if !modified_patterns.is_empty() {
         let modified_patterns_dependents_names =
-            get_dependents_of_target_patterns(libs, &testable_patterns, &modified_patterns)?;
+            get_dependents_of_target_patterns(libs, testable_patterns, &modified_patterns)?;
         for name in &modified_patterns_dependents_names {
             if !deleted_patterns_names.contains(&name) && !patterns_to_test_names.contains(name) {
                 patterns_to_test.push((*testable_patterns_map.get(name).unwrap()).clone());
@@ -383,7 +379,7 @@ async fn test_modified_path(
 
     if !deleted_patterns.is_empty() {
         let deleted_patterns_dependents_names =
-            get_dependents_of_target_patterns(libs, &testable_patterns, &deleted_patterns)?;
+            get_dependents_of_target_patterns(libs, testable_patterns, &deleted_patterns)?;
         for name in &deleted_patterns_dependents_names {
             if !deleted_patterns_names.contains(&name) && !patterns_to_test_names.contains(name) {
                 patterns_to_test.push((*testable_patterns_map.get(name).unwrap()).clone());
@@ -520,17 +516,17 @@ fn get_dependents_of_target_patterns(
 }
 
 async fn get_modified_and_deleted_patterns(
-    modified_path: &String,
+    modified_path: &str,
     testable_patterns: &Vec<GritPatternTestInfo>,
 ) -> Result<(Vec<GritPatternTestInfo>, Vec<GritPatternTestInfo>)> {
     let path = Path::new(modified_path);
     let file_patterns = collect_from_file(path, &None).await.unwrap_or(vec![]);
     let modified_patterns = get_grit_pattern_test_info(file_patterns);
+    let modified_pattern_names = modified_patterns
+        .iter()
+        .map(|p| p.local_name.as_ref().unwrap())
+        .collect::<Vec<_>>();
 
-    let mut modified_pattern_names = <Vec<&String>>::new();
-    for pattern in &modified_patterns {
-        modified_pattern_names.push(pattern.local_name.as_ref().unwrap());
-    }
     //modified_patterns = patterns which are updated/edited or newly created.
     //deleted_patterns = patterns which are deleted. Only remaining dependents of deleted_patterns should gets tested.
     let mut deleted_patterns = <Vec<GritPatternTestInfo>>::new();
