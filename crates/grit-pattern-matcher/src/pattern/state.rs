@@ -269,8 +269,10 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         &self.bindings[var.scope].last().unwrap()[var.index].name
     }
 
+    /// Attempt to find a variable by name in any scope
+    /// This is inefficient and should only be used when we haven't pre-allocated a Variable reference
     pub fn find_var(&self, name: &str) -> Option<Variable> {
-        for (scope_index, scope) in self.bindings.iter().enumerate() {
+        for (scope_index, scope) in self.bindings.iter().enumerate().rev() {
             for (index, content) in scope.last().unwrap().iter().enumerate() {
                 if content.name == name {
                     return Some(Variable::new(scope_index, index));
