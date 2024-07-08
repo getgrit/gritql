@@ -31,7 +31,7 @@ use super::patterns::PatternsTestArgs;
 
 use anyhow::{anyhow, bail, Context as _, Result};
 use std::collections::HashMap;
-use std::path::PathBuf;
+
 use std::{path::Path, time::Duration};
 
 use marzano_gritmodule::searcher::collect_from_file;
