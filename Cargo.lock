@@ -2233,6 +2233,7 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "fs-err",
+ "futures",
  "git2",
  "grit-util",
  "homedir",

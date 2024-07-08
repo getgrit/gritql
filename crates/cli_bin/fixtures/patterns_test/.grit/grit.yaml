@@ -1,2 +1,10 @@
 version: 0.0.1
-patterns: []
+patterns:
+  - name: simple_js_watch
+    body: |
+      `foo` => `bar`
+    samples:
+      - input: |
+          console.log(foo)
+        output: |
+          console.log(bar)

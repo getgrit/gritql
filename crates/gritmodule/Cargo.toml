@@ -21,6 +21,7 @@ tree-sitter = { path = "../../vendor/tree-sitter-facade", package = "tree-sitter
 serde = { version = "1.0.164", features = ["derive"] }
 serde_yaml = { version = "0.9.25" }
 anyhow = { version = "1.0.70" }
+futures = { version = "0.3.29" }
 rand = { version = "0.8.5" }
 git2 = { version = "0.17.2", default-features = false, features = [
   "vendored-openssl",

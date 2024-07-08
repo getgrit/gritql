@@ -261,7 +261,7 @@ pub(crate) async fn run_plumbing(
 
             let cwd = std::env::current_dir()?;
             let libs = get_grit_files_from(Some(cwd)).await?;
-            get_marzano_pattern_test_results(
+            let res = get_marzano_pattern_test_results(
                 patterns,
                 &libs,
                 &PatternsTestArgs {
@@ -273,7 +273,13 @@ pub(crate) async fn run_plumbing(
                 },
                 parent.into(),
             )
-            .await
+            .await?;
+            match res {
+                super::patterns_test::AggregatedTestResult::SomeFailed(message) => {
+                    Err(anyhow::anyhow!(message))
+                }
+                super::patterns_test::AggregatedTestResult::AllPassed => Ok(()),
+            }
         }
     }
 }

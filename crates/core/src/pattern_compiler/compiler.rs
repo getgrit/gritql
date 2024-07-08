@@ -372,14 +372,14 @@ pub(crate) fn get_definitions(
         foreign_function_definitions,
     })
 }
-struct DefsToFilenames {
-    patterns: BTreeMap<String, String>,
-    predicates: BTreeMap<String, String>,
-    functions: BTreeMap<String, String>,
-    foreign_functions: BTreeMap<String, String>,
+pub(crate) struct DefsToFilenames {
+    pub(crate) patterns: BTreeMap<String, String>,
+    pub(crate) predicates: BTreeMap<String, String>,
+    pub(crate) functions: BTreeMap<String, String>,
+    pub(crate) foreign_functions: BTreeMap<String, String>,
 }
 
-fn defs_to_filenames(
+pub(crate) fn defs_to_filenames(
     libs: &BTreeMap<String, String>,
     parser: &mut MarzanoGritParser,
     root: NodeWithSource,
@@ -564,85 +564,6 @@ fn find_definition_if_exists(
             }
         }
     };
-    Ok(None)
-}
-
-pub fn get_dependents_of_target_patterns_by_traversal_from_src(
-    libs: &BTreeMap<String, String>,
-    src: &str,
-    parser: &mut MarzanoGritParser,
-    target_patterns: &[&String],
-) -> Result<Vec<String>> {
-    let mut dependents = <Vec<String>>::new();
-    let node_like = "nodeLike";
-    let predicate_call = "predicateCall";
-
-    let tree = parser.parse_file(src, Some(Path::new(DEFAULT_FILE_NAME)))?;
-
-    let DefsToFilenames {
-        patterns: pattern_file,
-        predicates: predicate_file,
-        functions: function_file,
-        foreign_functions: foreign_file,
-    } = defs_to_filenames(libs, parser, tree.root_node())?;
-
-    let name_to_filename: BTreeMap<&String, &String> = pattern_file
-        .iter()
-        .chain(predicate_file.iter())
-        .chain(function_file.iter())
-        .chain(foreign_file.iter())
-        .collect();
-
-    let mut traversed_stack = <Vec<String>>::new();
-    let mut stack: Vec<Tree> = vec![tree];
-    while let Some(tree) = stack.pop() {
-        let root = tree.root_node();
-        let cursor = root.walk();
-
-        for n in traverse(cursor, Order::Pre).filter(|n| {
-            n.node.is_named() && (n.node.kind() == node_like || n.node.kind() == predicate_call)
-        }) {
-            let name = n
-                .child_by_field_name("name")
-                .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
-            let name = name.text()?;
-            let name = name.trim().to_string();
-
-            if target_patterns.contains(&&name) {
-                while let Some(e) = traversed_stack.pop() {
-                    dependents.push(e);
-                }
-            }
-            if let Some(file_name) = name_to_filename.get(&name) {
-                if let Some(tree) = find_child_tree_definition(
-                    file_name,
-                    parser,
-                    libs,
-                    &mut traversed_stack,
-                    &name,
-                )? {
-                    stack.push(tree);
-                }
-            }
-        }
-    }
-    Ok(dependents)
-}
-
-fn find_child_tree_definition(
-    file_name: &str,
-    parser: &mut MarzanoGritParser,
-    libs: &BTreeMap<String, String>,
-    traversed_stack: &mut Vec<String>,
-    name: &str,
-) -> Result<Option<Tree>> {
-    if !traversed_stack.contains(&name.to_string()) {
-        if let Some(file_body) = libs.get(file_name) {
-            traversed_stack.push(name.to_owned());
-            let tree = parser.parse_file(file_body, Some(Path::new(file_name)))?;
-            return Ok(Some(tree));
-        }
-    }
     Ok(None)
 }
 
