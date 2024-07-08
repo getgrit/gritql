@@ -37,12 +37,17 @@ use marzano_gritmodule::searcher::collect_from_file;
 use notify::{self, RecursiveMode};
 use notify_debouncer_mini::{new_debouncer_opt, Config};
 
+pub enum AggregatedTestResult {
+    SomeFailed(String),
+    AllPassed,
+}
+
 pub async fn get_marzano_pattern_test_results(
     patterns: Vec<GritPatternTestInfo>,
     libs: &PatternsDirectory,
     args: &PatternsTestArgs,
     output: OutputFormat,
-) -> Result<()> {
+) -> Result<AggregatedTestResult> {
     if patterns.is_empty() {
         bail!("No testable patterns found. To test a pattern, make sure it is defined in .grit/grit.yaml or a .md file in your .grit/patterns directory.");
     }
@@ -201,7 +206,7 @@ pub async fn get_marzano_pattern_test_results(
 
     if args.update {
         update_results(&final_results, patterns)?;
-        return Ok(());
+        return Ok(AggregatedTestResult::AllPassed);
     }
 
     let final_results = final_results.into_read_only();
@@ -213,15 +218,15 @@ pub async fn get_marzano_pattern_test_results(
                 .values()
                 .any(|v| v.iter().any(|r| !r.result.is_pass()))
             {
-                bail!(
+                return Ok(AggregatedTestResult::SomeFailed(format!(
                     "{} out of {} samples failed.",
                     final_results
                         .values()
                         .flatten()
                         .filter(|r| !r.result.is_pass())
                         .count(),
-                    total
-                )
+                    total,
+                )));
             };
             info!("✓ All {} samples passed.", total);
         }
@@ -254,7 +259,7 @@ pub async fn get_marzano_pattern_test_results(
             bail!("Output format not supported for this command");
         }
     }
-    Ok(())
+    Ok(AggregatedTestResult::AllPassed)
 }
 
 pub(crate) async fn run_patterns_test(
@@ -284,13 +289,26 @@ pub(crate) async fn run_patterns_test(
 
     let testable_patterns = collect_testable_patterns(patterns);
 
-    get_marzano_pattern_test_results(testable_patterns.clone(), &libs, &arg, flags.clone().into())
-        .await?;
+    let first_result = get_marzano_pattern_test_results(
+        testable_patterns.clone(),
+        &libs,
+        &arg,
+        flags.clone().into(),
+    )
+    .await?;
 
     if arg.watch {
+        if let AggregatedTestResult::SomeFailed(message) = first_result {
+            println!("{}", message);
+        }
         let _ = enable_watch_mode(testable_patterns, &libs, &arg, flags.into()).await;
+        Ok(())
+    } else {
+        match first_result {
+            AggregatedTestResult::SomeFailed(message) => bail!(message),
+            AggregatedTestResult::AllPassed => Ok(()),
+        }
     }
-    Ok(())
 }
 
 async fn enable_watch_mode(
