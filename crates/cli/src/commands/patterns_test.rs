@@ -2,6 +2,7 @@ use colored::Colorize;
 use dashmap::{DashMap, ReadOnlyView};
 use log::{debug, info};
 
+use marzano_core::analysis::get_dependents_of_target_patterns_by_traversal_from_src;
 use marzano_core::api::MatchResult;
 use marzano_gritmodule::config::{GritPatternSample, GritPatternTestInfo};
 use marzano_gritmodule::formatting::format_rich_files;
@@ -32,7 +33,6 @@ use anyhow::{anyhow, bail, Context as _, Result};
 use std::collections::HashMap;
 use std::{path::Path, time::Duration};
 
-use marzano_core::pattern_compiler::compiler::get_dependents_of_target_patterns_by_traversal_from_src;
 use marzano_gritmodule::searcher::collect_from_file;
 use notify::{self, RecursiveMode};
 use notify_debouncer_mini::{new_debouncer_opt, Config};

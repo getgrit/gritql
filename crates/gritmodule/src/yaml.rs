@@ -73,14 +73,15 @@ pub async fn get_patterns_from_yaml(
         pattern.position = Some(Position::from_byte_index(&file.content, offset));
     }
 
-    let mut patterns = config
+    let patterns: Result<Vec<_>> = config
         .patterns
         .into_iter()
         .map(|pattern| pattern_config_to_model(pattern, source_module))
         .collect();
+    let mut patterns = patterns?;
 
     if config.pattern_files.is_none() {
-        return patterns;
+        return Ok(patterns);
     }
 
     // let mut file_readers = JoinSet::new();

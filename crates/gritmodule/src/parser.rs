@@ -71,13 +71,16 @@ impl PatternFileExt {
                     )
                 })
             }
-            PatternFileExt::Yaml => get_patterns_from_yaml(file, source_module.as_ref(), root, "")
-                .with_context(|| {
-                    format!(
-                        "Failed to parse yaml pattern {}",
-                        extract_relative_file_path(file, root)
-                    )
-                }),
+            PatternFileExt::Yaml => tokio::runtime::Runtime::new()?.block_on(async {
+                get_patterns_from_yaml(file, source_module.as_ref(), root, "")
+                    .await
+                    .with_context(|| {
+                        format!(
+                            "Failed to parse yaml pattern {}",
+                            extract_relative_file_path(file, root)
+                        )
+                    })
+            }),
         }
     }
 
