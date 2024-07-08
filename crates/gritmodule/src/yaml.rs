@@ -5,7 +5,7 @@ use std::{
     collections::HashSet,
     path::{Path, PathBuf},
 };
-use tokio::{fs, task};
+use tokio::{fs, task::JoinSet};
 
 use crate::{
     config::{
@@ -73,7 +73,7 @@ pub async fn get_patterns_from_yaml(
         pattern.position = Some(Position::from_byte_index(&file.content, offset));
     }
 
-    let patterns = config
+    let mut patterns = config
         .patterns
         .into_iter()
         .map(|pattern| pattern_config_to_model(pattern, source_module))
@@ -83,29 +83,27 @@ pub async fn get_patterns_from_yaml(
         return patterns;
     }
 
-    let mut patterns = patterns?;
-    let mut file_readers = Vec::new();
+    // let mut file_readers = JoinSet::new();
 
-    for pattern_file in config.pattern_files.unwrap() {
-        let pattern_file = PathBuf::from(repo_dir)
-            .join(REPO_CONFIG_DIR_NAME)
-            .join(&pattern_file.file);
-        let extension = PatternFileExt::from_path(&pattern_file);
-        if extension.is_none() {
-            continue;
-        }
-        let extension = extension.unwrap();
-        let source_module = source_module.clone();
-        file_readers.push(tokio::spawn(get_patterns_from_file(
-            pattern_file,
-            source_module.map(|m| m.clone()),
-            extension,
-        )));
-    }
+    // for pattern_file in config.pattern_files.unwrap() {
+    //     let pattern_file = PathBuf::from(repo_dir)
+    //         .join(REPO_CONFIG_DIR_NAME)
+    //         .join(&pattern_file.file);
+    //     let extension = PatternFileExt::from_path(&pattern_file);
+    //     if extension.is_none() {
+    //         continue;
+    //     }
+    //     let extension = extension.unwrap();
+    //     let source_module = source_module.clone();
+    //     file_readers.spawn(async move {
+    //         get_patterns_from_file(pattern_file, source_module.cloned(), extension).await
+    //     });
+    // }
 
-    for file_reader in file_readers {
-        patterns.extend(file_reader.await??);
-    }
+    // while let Some(res) = file_readers.join_next().await {
+    //     let this_patterns = res??;
+    //     patterns.extend(this_patterns);
+    // }
 
     Ok(patterns)
 }

@@ -6,6 +6,10 @@ use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::path::Path;
 
+use grit_pattern_matcher::constants::DEFAULT_FILE_NAME;
+
+use crate::pattern_compiler::compiler::{defs_to_filenames, DefsToFilenames};
+
 /// Walks the call tree and returns true if the predicate is true for any node.
 /// This is potentially error-prone, so not entirely recommended
 fn walk_call_tree(
@@ -125,7 +129,7 @@ pub fn get_dependents_of_target_patterns_by_traversal_from_src(
         .collect();
 
     let mut traversed_stack = <Vec<String>>::new();
-    let mut stack: Vec<Tree> = vec![tree];
+    let mut stack: Vec<marzano_language::language::Tree> = vec![tree];
     while let Some(tree) = stack.pop() {
         let root = tree.root_node();
         let cursor = root.walk();
@@ -167,7 +171,7 @@ fn find_child_tree_definition(
     libs: &BTreeMap<String, String>,
     traversed_stack: &mut Vec<String>,
     name: &str,
-) -> Result<Option<Tree>> {
+) -> Result<Option<marzano_language::language::Tree>> {
     if !traversed_stack.contains(&name.to_string()) {
         if let Some(file_body) = libs.get(file_name) {
             traversed_stack.push(name.to_owned());

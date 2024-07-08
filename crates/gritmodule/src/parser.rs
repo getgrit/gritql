@@ -48,7 +48,7 @@ impl PatternFileExt {
         }
     }
 
-    async fn get_patterns(
+    fn get_patterns(
         &self,
         file: &mut RichFile,
         source_module: &Option<ModuleRepo>,
@@ -72,7 +72,6 @@ impl PatternFileExt {
                 })
             }
             PatternFileExt::Yaml => get_patterns_from_yaml(file, source_module.as_ref(), root, "")
-                .await
                 .with_context(|| {
                     format!(
                         "Failed to parse yaml pattern {}",
@@ -103,7 +102,6 @@ pub async fn get_patterns_from_file(
         content,
     };
     ext.get_patterns(&mut file, &source_module, &repo_root)
-        .await
 }
 
 pub fn extract_relative_file_path(file: &RichFile, root: &Option<String>) -> String {

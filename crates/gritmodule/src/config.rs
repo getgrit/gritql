@@ -298,7 +298,7 @@ impl Ord for ResolvedGritDefinition {
 
 pub fn pattern_config_to_model(
     pattern: GritDefinitionConfig,
-    source: &Option<ModuleRepo>,
+    source: Option<&ModuleRepo>,
 ) -> Result<ModuleGritPattern> {
     let mut split_name = pattern.name.split('#');
     let repo = split_name.next();
@@ -320,7 +320,7 @@ pub fn pattern_config_to_model(
                 Some(split_repo.collect::<Vec<_>>().join("/"))
             };
             if defined_local_name.is_none() {
-                source.clone()
+                source.cloned()
             } else if host.is_none() || full_name.is_none() {
                 None
             } else {

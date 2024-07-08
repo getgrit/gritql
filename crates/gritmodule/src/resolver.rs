@@ -535,8 +535,7 @@ async fn get_grit_files_for_module(
         Some(config) => {
             if let Some(module) = module {
                 let repo_root = find_repo_root_from(repo_path).await?;
-                get_patterns_from_yaml(&config, &Some(module.to_owned()), &repo_root, repo_dir)
-                    .await?
+                get_patterns_from_yaml(&config, Some(module), &repo_root, repo_dir)?
             } else {
                 vec![]
             }
@@ -587,8 +586,7 @@ async fn resolve_patterns_for_module(
         Some(config) => {
             if let Some(module) = module {
                 let repo_root = find_repo_root_from(repo_path).await?;
-                get_patterns_from_yaml(&config, &Some(module.to_owned()), &repo_root, repo_dir)
-                    .await?
+                get_patterns_from_yaml(&config, Some(module), &repo_root, repo_dir)?
             } else {
                 vec![]
             }
