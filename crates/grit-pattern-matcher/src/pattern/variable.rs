@@ -9,7 +9,7 @@ use crate::{
     constants::{ABSOLUTE_PATH_INDEX, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX},
     context::{ExecContext, QueryContext},
 };
-use anyhow::{bail, Result};
+use anyhow::{Result};
 use core::fmt::Debug;
 use grit_util::{constants::GRIT_METAVARIABLE_PREFIX, AnalysisLogs, ByteRange, Language};
 use std::{borrow::Cow, collections::BTreeSet};
@@ -49,7 +49,7 @@ impl Variable {
         } else if let Some(resolved) = &content.value {
             Ok(Some(PatternOrResolved::Resolved(resolved)))
         } else {
-            bail!("variable has no pattern or value")
+            Ok(None)
         }
     }
     pub fn get_pattern_or_resolved_mut<'a, 'b, Q: QueryContext>(
@@ -63,7 +63,7 @@ impl Variable {
         } else if let Some(resolved) = &mut content.value {
             Ok(Some(PatternOrResolvedMut::Resolved(resolved)))
         } else {
-            bail!("variable has no pattern or value")
+            Ok(None)
         }
     }
 

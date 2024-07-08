@@ -164,6 +164,15 @@ impl RangeWithoutByte {
     }
 }
 
+impl From<Range> for RangeWithoutByte {
+    fn from(range: Range) -> Self {
+        Self {
+            start: range.start,
+            end: range.end,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(untagged)]
 pub enum UtilRange {
