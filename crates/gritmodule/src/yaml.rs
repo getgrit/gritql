@@ -1,11 +1,12 @@
 use anyhow::{bail, Result};
+use futures::{future::BoxFuture, FutureExt as _};
 use grit_util::Position;
 use marzano_util::rich_path::RichFile;
 use std::{
     collections::HashSet,
     path::{Path, PathBuf},
 };
-use tokio::{fs, task::JoinSet};
+use tokio::fs;
 
 use crate::{
     config::{
@@ -58,55 +59,49 @@ pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
     Ok(new_config)
 }
 
-pub async fn get_patterns_from_yaml(
-    file: &RichFile,
-    source_module: Option<&ModuleRepo>,
-    root: &Option<String>,
-    repo_dir: &str,
-) -> Result<Vec<ModuleGritPattern>> {
-    let grit_path = extract_relative_file_path(file, root);
-    let mut config = get_grit_config(&file.content, &grit_path)?;
+pub fn get_patterns_from_yaml<'a>(
+    file: &'a RichFile,
+    source_module: Option<&'a ModuleRepo>,
+    root: &'a Option<String>,
+    repo_dir: &'a str,
+) -> BoxFuture<'a, Result<Vec<ModuleGritPattern>>> {
+    async move {
+        let grit_path = extract_relative_file_path(file, root);
+        let mut config = get_grit_config(&file.content, &grit_path)?;
 
-    for pattern in config.patterns.iter_mut() {
-        pattern.kind = Some(DefinitionKind::Pattern);
-        let offset = file.content.find(&pattern.name).unwrap_or(0);
-        pattern.position = Some(Position::from_byte_index(&file.content, offset));
-    }
-
-    let patterns: Result<Vec<_>> = config
-        .patterns
-        .into_iter()
-        .map(|pattern| pattern_config_to_model(pattern, source_module))
-        .collect();
-    let mut patterns = patterns?;
-
-    if config.pattern_files.is_none() {
-        return Ok(patterns);
-    }
-
-    let mut file_readers = JoinSet::new();
-
-    for pattern_file in config.pattern_files.unwrap() {
-        let pattern_file = PathBuf::from(repo_dir)
-            .join(REPO_CONFIG_DIR_NAME)
-            .join(&pattern_file.file);
-        let extension = PatternFileExt::from_path(&pattern_file);
-        if extension.is_none() {
-            continue;
+        for pattern in config.patterns.iter_mut() {
+            pattern.kind = Some(DefinitionKind::Pattern);
+            let offset = file.content.find(&pattern.name).unwrap_or(0);
+            pattern.position = Some(Position::from_byte_index(&file.content, offset));
         }
-        let extension = extension.unwrap();
-        let source_module = source_module.cloned();
-        file_readers.spawn(async move {
-            get_patterns_from_file(pattern_file, source_module, extension).await
-        });
-    }
 
-    while let Some(res) = file_readers.join_next().await {
-        let this_patterns = res??;
-        patterns.extend(this_patterns);
-    }
+        let patterns: Result<Vec<_>> = config
+            .patterns
+            .into_iter()
+            .map(|pattern| pattern_config_to_model(pattern, source_module))
+            .collect();
+        let mut patterns = patterns?;
 
-    Ok(patterns)
+        if config.pattern_files.is_none() {
+            return Ok(patterns);
+        }
+
+        for pattern_file in config.pattern_files.unwrap() {
+            let pattern_file = PathBuf::from(repo_dir)
+                .join(REPO_CONFIG_DIR_NAME)
+                .join(&pattern_file.file);
+            let extension = PatternFileExt::from_path(&pattern_file);
+            if extension.is_none() {
+                continue;
+            }
+            let extension = extension.unwrap();
+            let source_module = source_module.cloned();
+            patterns.extend(get_patterns_from_file(pattern_file, source_module, extension).await?);
+        }
+
+        Ok(patterns)
+    }
+    .boxed()
 }
 
 pub fn extract_grit_modules(content: &str, path: &str) -> Result<Vec<String>> {

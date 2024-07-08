@@ -71,14 +71,15 @@ impl PatternFileExt {
                     )
                 })
             }
-            PatternFileExt::Yaml => get_patterns_from_yaml(file, source_module.as_ref(), root, "")
-                .await
-                .with_context(|| {
+            PatternFileExt::Yaml => {
+                let res = get_patterns_from_yaml(file, source_module.as_ref(), root, "").await;
+                res.with_context(|| {
                     format!(
                         "Failed to parse yaml pattern {}",
                         extract_relative_file_path(file, root)
                     )
-                }),
+                })
+            }
         }
     }
 

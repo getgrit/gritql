@@ -31,6 +31,7 @@ use super::patterns::PatternsTestArgs;
 
 use anyhow::{anyhow, bail, Context as _, Result};
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::{path::Path, time::Duration};
 
 use marzano_gritmodule::searcher::collect_from_file;
@@ -318,6 +319,103 @@ fn print_watch_start(path: &Path) {
     );
 }
 
+async fn test_modified_path(
+    modified_file_path: &PathBuf,
+    testable_patterns: &Vec<GritPatternTestInfo>,
+    testable_patterns_map: &HashMap<&String, &GritPatternTestInfo>,
+    libs: &PatternsDirectory,
+    args: &PatternsTestArgs,
+    output: OutputFormat,
+) -> Result<()> {
+    let ignore_path = [".grit/.gritmodules", ".grit/.gitignore", ".log"];
+
+    if !modified_file_path.is_file() {
+        return Ok(());
+    }
+    let modified_file_path = modified_file_path
+        .clone()
+        .into_os_string()
+        .into_string()
+        .unwrap();
+
+    //temporary fix, until notify crate adds support for ignoring paths
+    for path in &ignore_path {
+        if modified_file_path.contains(path) {
+            return Ok(());
+        }
+    }
+    let (modified_patterns, deleted_patterns) =
+        get_modified_and_deleted_patterns(&modified_file_path, &testable_patterns).await?;
+
+    if modified_patterns.is_empty() && deleted_patterns.is_empty() {
+        log::error!(
+            "{}",
+            format!(
+                "\nFile {} was modified, but no changed patterns were found.",
+                modified_file_path.bold().underline()
+            )
+            .bold()
+        );
+        return Ok(());
+    }
+
+    let deleted_patterns_names = deleted_patterns
+        .iter()
+        .map(|p| p.local_name.as_ref().unwrap())
+        .collect::<Vec<_>>();
+
+    let mut patterns_to_test = modified_patterns.clone();
+    let mut patterns_to_test_names = patterns_to_test
+        .iter()
+        .map(|p| p.local_name.clone().unwrap())
+        .collect::<Vec<_>>();
+
+    if !modified_patterns.is_empty() {
+        let modified_patterns_dependents_names =
+            get_dependents_of_target_patterns(libs, &testable_patterns, &modified_patterns)?;
+        for name in &modified_patterns_dependents_names {
+            if !deleted_patterns_names.contains(&name) && !patterns_to_test_names.contains(name) {
+                patterns_to_test.push((*testable_patterns_map.get(name).unwrap()).clone());
+                patterns_to_test_names.push(name.to_owned());
+            }
+        }
+    }
+
+    if !deleted_patterns.is_empty() {
+        let deleted_patterns_dependents_names =
+            get_dependents_of_target_patterns(libs, &testable_patterns, &deleted_patterns)?;
+        for name in &deleted_patterns_dependents_names {
+            if !deleted_patterns_names.contains(&name) && !patterns_to_test_names.contains(name) {
+                patterns_to_test.push((*testable_patterns_map.get(name).unwrap()).clone());
+                patterns_to_test_names.push(name.to_owned());
+            }
+        }
+    }
+
+    if patterns_to_test_names.is_empty() {
+        return Ok(());
+    }
+    log::info!(
+        "{}",
+        format!(
+            "\nFile {} was modified, retesting {} patterns:",
+            modified_file_path.bold().underline(),
+            patterns_to_test_names.len()
+        )
+        .bold()
+    );
+
+    let res =
+        get_marzano_pattern_test_results(patterns_to_test, libs, args, output.clone()).await?;
+    match res {
+        AggregatedTestResult::SomeFailed(message) => {
+            log::error!("{}", message.to_string().bold().red());
+        }
+        AggregatedTestResult::AllPassed => {}
+    };
+    Ok(())
+}
+
 async fn enable_watch_mode(
     testable_patterns: Vec<GritPatternTestInfo>,
     libs: &PatternsDirectory,
@@ -325,7 +423,6 @@ async fn enable_watch_mode(
     output: OutputFormat,
 ) -> Result<()> {
     let path = Path::new(".grit");
-    let ignore_path = [".grit/.gritmodules", ".grit/.gitignore", ".log"];
     // setup debouncer
     let (tx, rx) = std::sync::mpsc::channel();
     // notify backend configuration
@@ -351,105 +448,22 @@ async fn enable_watch_mode(
             Ok(event) => {
                 let modified_file_path = &event.first().unwrap().path;
 
-                if !modified_file_path.is_file() {
-                    continue;
-                }
-                let modified_file_path = modified_file_path
-                    .clone()
-                    .into_os_string()
-                    .into_string()
-                    .unwrap();
-
-                //temporary fix, until notify crate adds support for ignoring paths
-                for path in &ignore_path {
-                    if modified_file_path.contains(path) {
-                        continue;
-                    }
-                }
-                let (modified_patterns, deleted_patterns) =
-                    get_modified_and_deleted_patterns(&modified_file_path, &testable_patterns)
-                        .await?;
-
-                if modified_patterns.is_empty() && deleted_patterns.is_empty() {
-                    log::error!(
-                        "{}",
-                        format!(
-                            "\nFile {} was modified, but no changed patterns were found.",
-                            modified_file_path.bold().underline()
-                        )
-                        .bold()
-                    );
-                    print_watch_start(path);
-                    continue;
-                }
-
-                let deleted_patterns_names = deleted_patterns
-                    .iter()
-                    .map(|p| p.local_name.as_ref().unwrap())
-                    .collect::<Vec<_>>();
-
-                let mut patterns_to_test = modified_patterns.clone();
-                let mut patterns_to_test_names = patterns_to_test
-                    .iter()
-                    .map(|p| p.local_name.clone().unwrap())
-                    .collect::<Vec<_>>();
-
-                if !modified_patterns.is_empty() {
-                    let modified_patterns_dependents_names = get_dependents_of_target_patterns(
-                        libs,
-                        &testable_patterns,
-                        &modified_patterns,
-                    )?;
-                    for name in &modified_patterns_dependents_names {
-                        if !deleted_patterns_names.contains(&name)
-                            && !patterns_to_test_names.contains(name)
-                        {
-                            patterns_to_test
-                                .push((*testable_patterns_map.get(name).unwrap()).clone());
-                            patterns_to_test_names.push(name.to_owned());
-                        }
+                let retest = test_modified_path(
+                    modified_file_path,
+                    &testable_patterns,
+                    &testable_patterns_map,
+                    libs,
+                    args,
+                    output.clone(),
+                )
+                .await;
+                match retest {
+                    Ok(_) => {}
+                    Err(error) => {
+                        log::error!("Error: {error:?}")
                     }
                 }
 
-                if !deleted_patterns.is_empty() {
-                    let deleted_patterns_dependents_names = get_dependents_of_target_patterns(
-                        libs,
-                        &testable_patterns,
-                        &deleted_patterns,
-                    )?;
-                    for name in &deleted_patterns_dependents_names {
-                        if !deleted_patterns_names.contains(&name)
-                            && !patterns_to_test_names.contains(name)
-                        {
-                            patterns_to_test
-                                .push((*testable_patterns_map.get(name).unwrap()).clone());
-                            patterns_to_test_names.push(name.to_owned());
-                        }
-                    }
-                }
-
-                if patterns_to_test_names.is_empty() {
-                    continue;
-                }
-                log::info!(
-                    "{}",
-                    format!(
-                        "\nFile {} was modified, retesting {} patterns:",
-                        modified_file_path.bold().underline(),
-                        patterns_to_test_names.len()
-                    )
-                    .bold()
-                );
-
-                let res =
-                    get_marzano_pattern_test_results(patterns_to_test, libs, args, output.clone())
-                        .await?;
-                match res {
-                    AggregatedTestResult::SomeFailed(message) => {
-                        log::error!("{}", message.to_string().bold().red());
-                    }
-                    AggregatedTestResult::AllPassed => {}
-                };
                 print_watch_start(path);
             }
             Err(error) => {
