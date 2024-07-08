@@ -48,7 +48,7 @@ impl PatternFileExt {
         }
     }
 
-    fn get_patterns(
+    async fn get_patterns(
         &self,
         file: &mut RichFile,
         source_module: &Option<ModuleRepo>,
@@ -71,16 +71,14 @@ impl PatternFileExt {
                     )
                 })
             }
-            PatternFileExt::Yaml => tokio::runtime::Runtime::new()?.block_on(async {
-                get_patterns_from_yaml(file, source_module.as_ref(), root, "")
-                    .await
-                    .with_context(|| {
-                        format!(
-                            "Failed to parse yaml pattern {}",
-                            extract_relative_file_path(file, root)
-                        )
-                    })
-            }),
+            PatternFileExt::Yaml => get_patterns_from_yaml(file, source_module.as_ref(), root, "")
+                .await
+                .with_context(|| {
+                    format!(
+                        "Failed to parse yaml pattern {}",
+                        extract_relative_file_path(file, root)
+                    )
+                }),
         }
     }
 
@@ -105,6 +103,7 @@ pub async fn get_patterns_from_file(
         content,
     };
     ext.get_patterns(&mut file, &source_module, &repo_root)
+        .await
 }
 
 pub fn extract_relative_file_path(file: &RichFile, root: &Option<String>) -> String {

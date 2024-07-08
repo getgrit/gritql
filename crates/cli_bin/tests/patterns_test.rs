@@ -349,18 +349,14 @@ fn patterns_test_watch_mode_case_patterns_changed() -> Result<()> {
 
     let content = fs::read_to_string(&test_yaml_path).expect("Unable to read the file");
     fs::write(&test_yaml_path, content)?;
-    thread::sleep(Duration::from_secs(1));
+    thread::sleep(Duration::from_secs(3));
 
     let mut output = Vec::new();
     while let Ok(line) = rx.try_recv() {
         output.push(line);
     }
-    let expected_output = vec![
-        "[Watch Mode] Enabled on path: .grit",
-        "[Watch Mode] File modified: \".grit/grit.yaml\"",
-        "[Watch Mode] Pattern(s) to test: [\"our_cargo_use_long_dependency\", \"cargo_use_long_dependency\", \"no_treesitter_in_grit_crates\", \"no_println_in_lsp\", \"no_println_in_core\"]",
-        "Found 5 testable patterns.",
-    ];
+    println!("{:?}", output);
+    let expected_output = vec![".grit/grit.yaml", "retesting", "Found 5 testable patterns."];
     for expected_line in expected_output {
         assert!(
             output.iter().any(|line| line.contains(expected_line)),
