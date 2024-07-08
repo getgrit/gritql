@@ -331,7 +331,10 @@ async fn enable_watch_mode(
     let mut debouncer = new_debouncer_opt::<_, notify::PollWatcher>(debouncer_config, tx)?;
 
     debouncer.watcher().watch(path, RecursiveMode::Recursive)?;
-    log::info!("\n[Watch Mode] Enabled on path: {}", path.display());
+    log::info!(
+        "\nWatching for changes to: {}",
+        format!("{}", path.display()).bold()
+    );
 
     let testable_patterns_map = testable_patterns
         .iter()
@@ -422,12 +425,18 @@ async fn enable_watch_mode(
                     continue;
                 }
 
-                let _ =
+                let res =
                     get_marzano_pattern_test_results(patterns_to_test, libs, args, output.clone())
-                        .await;
+                        .await?;
+                match res {
+                    AggregatedTestResult::SomeFailed(message) => {
+                        log::error!("[Watch Mode] {}", message);
+                    }
+                    AggregatedTestResult::AllPassed => {}
+                }
             }
             Err(error) => {
-                log::error!("[Watch Mode] Error: {error:?}")
+                log::error!("Error: {error:?}")
             }
         }
     }
