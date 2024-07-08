@@ -209,8 +209,7 @@ github:
     "#
             .to_string(),
         };
-        let repo = Default::default();
-        let patterns = get_patterns_from_yaml(&grit_yaml, &repo, &None, "getgrit/rewriter")
+        let patterns = get_patterns_from_yaml(&grit_yaml, None, &None, "getgrit/rewriter")
             .await
             .unwrap();
         assert_eq!(patterns.len(), 4);
