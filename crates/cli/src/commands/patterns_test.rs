@@ -345,7 +345,7 @@ async fn test_modified_path(
         }
     }
     let (modified_patterns, deleted_patterns) =
-        get_modified_and_deleted_patterns(&modified_file_path, &testable_patterns).await?;
+        get_modified_and_deleted_patterns(&modified_file_path, testable_patterns).await?;
 
     if modified_patterns.is_empty() && deleted_patterns.is_empty() {
         log::error!(
@@ -393,6 +393,14 @@ async fn test_modified_path(
     }
 
     if patterns_to_test_names.is_empty() {
+        log::error!(
+            "{}",
+            format!(
+                "\nFile {} was modified, but no testable pattern changes were found.",
+                modified_file_path.bold().underline()
+            )
+            .bold()
+        );
         return Ok(());
     }
     log::info!(
