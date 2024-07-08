@@ -9,6 +9,7 @@ use crate::{
     fetcher::ModuleRepo,
     markdown::get_patterns_from_md,
     searcher::find_repo_root_from,
+    yaml::get_patterns_from_yaml,
 };
 use anyhow::{Context, Result};
 use marzano_util::rich_path::RichFile;
@@ -22,6 +23,8 @@ pub enum PatternFileExt {
     Grit,
     #[serde(rename = "markdown")]
     Md,
+    #[serde(rename = "yaml")]
+    Yaml,
 }
 
 impl fmt::Display for PatternFileExt {
@@ -29,6 +32,7 @@ impl fmt::Display for PatternFileExt {
         match self {
             PatternFileExt::Grit => write!(f, "grit"),
             PatternFileExt::Md => write!(f, "md"),
+            PatternFileExt::Yaml => write!(f, "yaml"),
         }
     }
 }
@@ -39,11 +43,12 @@ impl PatternFileExt {
         match ext {
             "grit" => Some(PatternFileExt::Grit),
             "md" => Some(PatternFileExt::Md),
+            "yaml" => Some(PatternFileExt::Yaml),
             _ => None,
         }
     }
 
-    fn get_patterns(
+    async fn get_patterns(
         &self,
         file: &mut RichFile,
         source_module: &Option<ModuleRepo>,
@@ -66,6 +71,14 @@ impl PatternFileExt {
                     )
                 })
             }
+            PatternFileExt::Yaml => get_patterns_from_yaml(file, source_module, root, "")
+                .await
+                .with_context(|| {
+                    format!(
+                        "Failed to parse yaml pattern {}",
+                        extract_relative_file_path(file, root)
+                    )
+                }),
         }
     }
 
@@ -73,6 +86,7 @@ impl PatternFileExt {
         match self {
             PatternFileExt::Grit => "grit",
             PatternFileExt::Md => "md",
+            PatternFileExt::Yaml => "yaml",
         }
     }
 }
@@ -89,6 +103,7 @@ pub async fn get_patterns_from_file(
         content,
     };
     ext.get_patterns(&mut file, &source_module, &repo_root)
+        .await
 }
 
 pub fn extract_relative_file_path(file: &RichFile, root: &Option<String>) -> String {

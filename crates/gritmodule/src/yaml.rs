@@ -5,7 +5,7 @@ use std::{
     collections::HashSet,
     path::{Path, PathBuf},
 };
-use tokio::fs;
+use tokio::{fs, task};
 
 use crate::{
     config::{
@@ -60,7 +60,7 @@ pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
 
 pub async fn get_patterns_from_yaml(
     file: &RichFile,
-    source_module: &ModuleRepo,
+    source_module: &Option<ModuleRepo>,
     root: &Option<String>,
     repo_dir: &str,
 ) -> Result<Vec<ModuleGritPattern>> {
@@ -95,11 +95,12 @@ pub async fn get_patterns_from_yaml(
             continue;
         }
         let extension = extension.unwrap();
-        file_readers.push(tokio::spawn(get_patterns_from_file(
-            pattern_file,
-            Some(source_module.clone()),
-            extension,
-        )));
+        let source_module = source_module.clone();
+        file_readers.push(task::spawn_blocking(move || {
+            tokio::runtime::Runtime::new().unwrap().block_on(async {
+                get_patterns_from_file(pattern_file, source_module, extension).await
+            })
+        }));
     }
 
     for file_reader in file_readers {

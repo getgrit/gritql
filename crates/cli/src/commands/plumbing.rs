@@ -264,9 +264,10 @@ pub(crate) async fn run_plumbing(
             get_marzano_pattern_test_results(
                 patterns,
                 &libs,
-                PatternsTestArgs {
+                &PatternsTestArgs {
                     update: false,
                     verbose: false,
+                    watch: false,
                     filter: None,
                     exclude: vec![],
                 },

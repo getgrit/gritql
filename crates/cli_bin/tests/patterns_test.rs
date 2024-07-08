@@ -1,7 +1,16 @@
+use std::{
+    env, fs,
+    io::{BufRead, BufReader},
+    process::Stdio,
+    sync::mpsc,
+    thread,
+    time::Duration,
+};
+
 use anyhow::Result;
 use insta::assert_snapshot;
 
-use crate::common::{get_fixture, get_test_cmd};
+use crate::common::{get_fixture, get_test_cmd, get_test_process_cmd};
 
 mod common;
 
@@ -307,5 +316,108 @@ fn tests_python_pattern_with_file_name() -> Result<()> {
 
     assert!(output.status.success());
 
+    Ok(())
+}
+
+#[test]
+fn patterns_test_watch_mode_case_patterns_changed() -> Result<()> {
+    let (tx, rx) = mpsc::channel();
+
+    let (temp_dir, temp_grit_dir) = get_fixture(".grit", false)?;
+    let test_yaml_path = temp_grit_dir.join("grit.yaml");
+    let temp_dir_path = temp_dir.path().to_owned();
+
+    let _cmd_handle = thread::spawn(move || {
+        let mut cmd = get_test_process_cmd()
+            .unwrap()
+            .args(&["patterns", "test", "--watch"])
+            .current_dir(&temp_dir_path)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("Failed to start command");
+
+        let stdout = BufReader::new(cmd.stdout.take().unwrap());
+        let stderr = BufReader::new(cmd.stderr.take().unwrap());
+        for line in stdout.lines().chain(stderr.lines()) {
+            if let Ok(line) = line {
+                tx.send(line).unwrap();
+            }
+        }
+    });
+    thread::sleep(Duration::from_secs(1));
+
+    let content = fs::read_to_string(&test_yaml_path).expect("Unable to read the file");
+    fs::write(&test_yaml_path, content)?;
+    thread::sleep(Duration::from_secs(1));
+
+    let mut output = Vec::new();
+    while let Ok(line) = rx.try_recv() {
+        output.push(line);
+    }
+    let expected_output = vec![
+        "[Watch Mode] Enabled on path: .grit",
+        "[Watch Mode] File modified: \".grit/grit.yaml\"",
+        "[Watch Mode] Pattern(s) to test: [\"our_cargo_use_long_dependency\", \"cargo_use_long_dependency\", \"no_treesitter_in_grit_crates\", \"no_println_in_lsp\", \"no_println_in_core\"]",
+        "Found 5 testable patterns.",
+    ];
+    for expected_line in expected_output {
+        assert!(
+            output.iter().any(|line| line.contains(expected_line)),
+            "Expected output not found: {}",
+            expected_line
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn patterns_test_watch_mode_case_no_pattern_to_test() -> Result<()> {
+    let (tx, rx) = mpsc::channel();
+
+    let (temp_dir, temp_grit_dir) = get_fixture(".grit", false)?;
+    let test_yaml_path = temp_grit_dir.join("grit.yaml");
+    let temp_dir_path = temp_dir.path().to_owned();
+
+    let _cmd_handle = thread::spawn(move || {
+        let mut cmd = get_test_process_cmd()
+            .unwrap()
+            .args(&["patterns", "test", "--watch"])
+            .current_dir(&temp_dir_path)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("Failed to start command");
+
+        let stdout = BufReader::new(cmd.stdout.take().unwrap());
+        let stderr = BufReader::new(cmd.stderr.take().unwrap());
+        for line in stdout.lines().chain(stderr.lines()) {
+            if let Ok(line) = line {
+                tx.send(line).unwrap();
+            }
+        }
+    });
+    thread::sleep(Duration::from_secs(1));
+
+    fs::write(&test_yaml_path, "")?;
+    thread::sleep(Duration::from_secs(1));
+
+    let mut output = Vec::new();
+    while let Ok(line) = rx.try_recv() {
+        output.push(line);
+    }
+
+    let expected_output = vec![
+        "[Watch Mode] Enabled on path: .grit",
+        "[Watch Mode] File modified: \".grit/grit.yaml\"",
+        "[Watch Mode] Pattern(s) to test: []",
+    ];
+    for expected_line in expected_output {
+        assert!(
+            output.iter().any(|line| line.contains(expected_line)),
+            "Expected output not found: {}",
+            expected_line
+        );
+    }
     Ok(())
 }
