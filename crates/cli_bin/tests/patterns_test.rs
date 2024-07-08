@@ -320,7 +320,7 @@ fn tests_python_pattern_with_file_name() -> Result<()> {
 }
 
 #[test]
-fn patterns_test_watch_mode_case_patterns_changed() -> Result<()> {
+fn test_watch_mode_changed() -> Result<()> {
     let (tx, rx) = mpsc::channel();
 
     let (temp_dir, temp_fixture_path) = get_fixture("patterns_test", false)?;
@@ -389,7 +389,7 @@ fn patterns_test_watch_mode_case_patterns_changed() -> Result<()> {
 }
 
 #[test]
-fn patterns_test_watch_mode_case_patterns_empty_change() -> Result<()> {
+fn test_watch_mode_deleted() -> Result<()> {
     let (tx, rx) = mpsc::channel();
 
     let (temp_dir, temp_fixture_path) = get_fixture("patterns_test", false)?;
