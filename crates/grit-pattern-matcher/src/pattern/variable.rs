@@ -49,7 +49,7 @@ impl Variable {
         } else if let Some(resolved) = &content.value {
             Ok(Some(PatternOrResolved::Resolved(resolved)))
         } else {
-            bail!("variable has no pattern or value")
+            Ok(None)
         }
     }
     pub fn get_pattern_or_resolved_mut<'a, 'b, Q: QueryContext>(
@@ -63,7 +63,7 @@ impl Variable {
         } else if let Some(resolved) = &mut content.value {
             Ok(Some(PatternOrResolvedMut::Resolved(resolved)))
         } else {
-            bail!("variable has no pattern or value")
+            Ok(None)
         }
     }
 
