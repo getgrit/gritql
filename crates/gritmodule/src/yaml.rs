@@ -84,27 +84,27 @@ pub async fn get_patterns_from_yaml(
         return Ok(patterns);
     }
 
-    // let mut file_readers = JoinSet::new();
+    let mut file_readers = JoinSet::new();
 
-    // for pattern_file in config.pattern_files.unwrap() {
-    //     let pattern_file = PathBuf::from(repo_dir)
-    //         .join(REPO_CONFIG_DIR_NAME)
-    //         .join(&pattern_file.file);
-    //     let extension = PatternFileExt::from_path(&pattern_file);
-    //     if extension.is_none() {
-    //         continue;
-    //     }
-    //     let extension = extension.unwrap();
-    //     let source_module = source_module.clone();
-    //     file_readers.spawn(async move {
-    //         get_patterns_from_file(pattern_file, source_module.cloned(), extension).await
-    //     });
-    // }
+    for pattern_file in config.pattern_files.unwrap() {
+        let pattern_file = PathBuf::from(repo_dir)
+            .join(REPO_CONFIG_DIR_NAME)
+            .join(&pattern_file.file);
+        let extension = PatternFileExt::from_path(&pattern_file);
+        if extension.is_none() {
+            continue;
+        }
+        let extension = extension.unwrap();
+        let source_module = source_module.cloned();
+        file_readers.spawn(async move {
+            get_patterns_from_file(pattern_file, source_module, extension).await
+        });
+    }
 
-    // while let Some(res) = file_readers.join_next().await {
-    //     let this_patterns = res??;
-    //     patterns.extend(this_patterns);
-    // }
+    while let Some(res) = file_readers.join_next().await {
+        let this_patterns = res??;
+        patterns.extend(this_patterns);
+    }
 
     Ok(patterns)
 }
