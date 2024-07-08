@@ -313,8 +313,8 @@ pub(crate) async fn run_patterns_test(
 
 fn print_watch_start(path: &Path) {
     log::info!(
-        "\nWatching for changes to: {}",
-        format!("{}", path.display()).bold()
+        "\nWatching for changes to {}",
+        format!("{}", path.display()).bold().underline()
     );
 }
 
