@@ -5,7 +5,7 @@ use super::{
     State,
 };
 use crate::context::QueryContext;
-use anyhow::{bail, Result};
+use crate::errors::{GritPatternError, GritResult};
 use core::fmt::Debug;
 use grit_util::AnalysisLogs;
 
@@ -38,7 +38,7 @@ impl<Q: QueryContext> Matcher<Q> for If<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let mut state = init_state.clone();
         if self.if_.execute_func(&mut state, context, logs)?.predicator {
             *init_state = state;
@@ -78,11 +78,13 @@ impl<Q: QueryContext> Evaluator<Q> for PrIf<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>> {
+    ) -> GritResult<FuncEvaluation<Q>> {
         let mut state = init_state.clone();
         let condition = self.if_.execute_func(&mut state, context, logs)?;
         if condition.ret_val.is_some() {
-            bail!("Cannot return from within if condition");
+            return Err(GritPatternError::new(
+                "Cannot return from within if condition",
+            ));
         }
         if condition.predicator {
             *init_state = state;

@@ -6,11 +6,11 @@ use super::{
     state::State,
     variable::Variable,
 };
+use crate::errors::{GritPatternError, GritResult};
 use crate::{
     binding::Binding,
     context::{ExecContext, QueryContext},
 };
-use anyhow::{bail, Result};
 use grit_util::AnalysisLogs;
 use std::borrow::Cow;
 
@@ -37,7 +37,11 @@ impl<Q: QueryContext> Accessor<Q> {
         Self { map, key }
     }
 
-    fn get_key<'a>(&'a self, state: &State<'a, Q>, lang: &Q::Language<'a>) -> Result<Cow<'a, str>> {
+    fn get_key<'a>(
+        &'a self,
+        state: &State<'a, Q>,
+        lang: &Q::Language<'a>,
+    ) -> GritResult<Cow<'a, str>> {
         match &self.key {
             AccessorKey::String(s) => Ok(Cow::Borrowed(s)),
             AccessorKey::Variable(v) => v.text(state, lang),
@@ -48,7 +52,7 @@ impl<Q: QueryContext> Accessor<Q> {
         &'a self,
         state: &'b State<'a, Q>,
         lang: &Q::Language<'a>,
-    ) -> Result<Option<PatternOrResolved<'a, 'b, Q>>> {
+    ) -> GritResult<Option<PatternOrResolved<'a, 'b, Q>>> {
         let key = self.get_key(state, lang)?;
         match &self.map {
             AccessorMap::Container(c) => match c.get_pattern_or_resolved(state, lang)? {
@@ -58,9 +62,17 @@ impl<Q: QueryContext> Accessor<Q> {
                 }
                 Some(PatternOrResolved::Resolved(resolved)) => match resolved.get_map() {
                     Some(m) => Ok(m.get(key.as_ref()).map(PatternOrResolved::Resolved)),
-                    None => bail!("left side of an accessor must be a map"),
+                    None => {
+                        return Err(GritPatternError::new(
+                            "left side of an accessor must be a map",
+                        ))
+                    }
                 },
-                Some(_) => bail!("left side of an accessor must be a map"),
+                Some(_) => {
+                    return Err(GritPatternError::new(
+                        "left side of an accessor must be a map",
+                    ))
+                }
             },
             AccessorMap::Map(m) => Ok(m.get(&key).map(PatternOrResolved::Pattern)),
         }
@@ -70,7 +82,7 @@ impl<Q: QueryContext> Accessor<Q> {
         &'a self,
         state: &'b mut State<'a, Q>,
         lang: &Q::Language<'a>,
-    ) -> Result<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
+    ) -> GritResult<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
         let key = self.get_key(state, lang)?;
         match &self.map {
             AccessorMap::Container(c) => match c.get_pattern_or_resolved_mut(state, lang)? {
@@ -80,9 +92,17 @@ impl<Q: QueryContext> Accessor<Q> {
                 }
                 Some(PatternOrResolvedMut::Resolved(resolved)) => match resolved.get_map_mut() {
                     Some(m) => Ok(m.get_mut(key.as_ref()).map(PatternOrResolvedMut::Resolved)),
-                    None => bail!("left side of an accessor must be a map"),
+                    None => {
+                        return Err(GritPatternError::new(
+                            "left side of an accessor must be a map",
+                        ))
+                    }
                 },
-                Some(_) => bail!("left side of an accessor must be a map"),
+                Some(_) => {
+                    return Err(GritPatternError::new(
+                        "left side of an accessor must be a map",
+                    ))
+                }
             },
             AccessorMap::Map(m) => Ok(m.get(&key).map(PatternOrResolvedMut::Pattern)),
         }
@@ -93,7 +113,7 @@ impl<Q: QueryContext> Accessor<Q> {
         state: &mut State<'a, Q>,
         lang: &Q::Language<'a>,
         value: Q::ResolvedPattern<'a>,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         match &self.map {
             AccessorMap::Container(c) => {
                 let key = self.get_key(state, lang)?;
@@ -104,13 +124,17 @@ impl<Q: QueryContext> Accessor<Q> {
                             m.insert(key.to_string(), value);
                             Ok(true)
                         } else {
-                            bail!("accessor can only mutate a resolved map");
+                            return Err(GritPatternError::new(
+                                "accessor can only mutate a resolved map",
+                            ));
                         }
                     }
-                    Some(_) => bail!("accessor can only mutate a resolved map"),
+                    Some(_) => Err(GritPatternError::new(
+                        "accessor can only mutate a resolved map",
+                    )),
                 }
             }
-            AccessorMap::Map(_) => bail!("cannot mutate a map literal"),
+            AccessorMap::Map(_) => Err(GritPatternError::new("cannot mutate a map literal")),
         }
     }
 }
@@ -128,7 +152,7 @@ impl<Q: QueryContext> Matcher<Q> for Accessor<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         match self.get(state, context.language())? {
             Some(PatternOrResolved::Resolved(r)) => {
                 execute_resolved_with_binding(r, binding, state, context.language())
@@ -147,7 +171,7 @@ pub fn execute_resolved_with_binding<'a, Q: QueryContext>(
     binding: &Q::ResolvedPattern<'a>,
     state: &State<'a, Q>,
     language: &Q::Language<'a>,
-) -> Result<bool> {
+) -> GritResult<bool> {
     if let (Some(r), Some(b)) = (r.get_last_binding(), binding.get_last_binding()) {
         Ok(r.is_equivalent_to(b, language))
     } else {

@@ -3,8 +3,8 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
+use crate::errors::GritResult;
 use crate::{constant::Constant, context::QueryContext};
-use anyhow::Result;
 use grit_util::AnalysisLogs;
 
 #[derive(Debug, Clone)]
@@ -31,7 +31,7 @@ impl<Q: QueryContext> Matcher<Q> for Some<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         if let Some(items) = binding.get_list_binding_items() {
             let mut did_match = false;
             let mut cur_state = init_state.clone();

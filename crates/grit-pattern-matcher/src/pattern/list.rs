@@ -5,7 +5,7 @@ use super::{
     state::State,
 };
 use crate::context::QueryContext;
-use anyhow::{anyhow, Result};
+use crate::errors::{GritPatternError, GritResult};
 use core::fmt::Debug;
 use grit_util::AnalysisLogs;
 use std::borrow::Cow;
@@ -39,7 +39,7 @@ impl<Q: QueryContext> Matcher<Q> for List<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         if let Some(items) = binding.get_list_binding_items() {
             let patterns: Vec<_> = items.map(Cow::Owned).collect();
             execute_assoc(&self.patterns, &patterns, state, context, logs)
@@ -58,7 +58,7 @@ fn execute_assoc<'a, Q: QueryContext>(
     current_state: &mut State<'a, Q>,
     context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<bool> {
+) -> GritResult<bool> {
     let mut working_state = current_state.clone();
     match patterns {
         // short circuit for common case
@@ -89,7 +89,9 @@ fn execute_assoc<'a, Q: QueryContext>(
         }
         [Pattern::Dots, head_pattern, tail_patterns @ ..] => {
             if let Pattern::Dots = head_pattern {
-                return Err(anyhow!("Multiple subsequent dots are not allowed."));
+                return Err(GritPatternError::new(
+                    "Multiple subsequent dots are not allowed.",
+                ));
             }
             for index in 0..children.len() {
                 if head_pattern.execute(&children[index], &mut working_state, context, logs)?

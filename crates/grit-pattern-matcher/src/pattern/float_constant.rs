@@ -4,7 +4,7 @@ use super::{
     state::State,
 };
 use crate::context::{ExecContext, QueryContext};
-use anyhow::Result;
+use crate::errors::GritResult;
 use grit_util::AnalysisLogs;
 
 #[derive(Debug, Clone)]
@@ -31,7 +31,7 @@ impl<Q: QueryContext> Matcher<Q> for FloatConstant {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let text = binding.text(&state.files, context.language())?;
         let parsed_double = text.parse::<f64>()?;
         Ok(parsed_double == self.value)

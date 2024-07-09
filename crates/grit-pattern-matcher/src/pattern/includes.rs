@@ -4,7 +4,7 @@ use super::{
     State,
 };
 use crate::context::{ExecContext, QueryContext};
-use anyhow::{Context as _, Result};
+use crate::errors::{GritPatternError, GritResult};
 use core::fmt::Debug;
 use grit_util::AnalysisLogs;
 
@@ -31,7 +31,7 @@ fn execute<'a, Q: QueryContext>(
     state: &mut State<'a, Q>,
     context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<bool> {
+) -> GritResult<bool> {
     match &pattern {
         Pattern::Regex(pattern) => pattern.execute_matching(binding, state, context, logs, false),
         Pattern::Or(pattern) => {
@@ -110,13 +110,21 @@ fn execute<'a, Q: QueryContext>(
         | Pattern::Sequential(_)
         | Pattern::Like(_) => {
             let resolved = Q::ResolvedPattern::from_pattern(pattern, state, context, logs)
-                .context("includes can only be used with patterns that can be resolved")?;
-            let substring = resolved.text(&state.files, context.language()).context(
-                "includes can only be used with patterns that can be resolved to a string",
-            )?;
-            let string = binding.text(&state.files, context.language()).context(
-                "includes can only be used with patterns that can be resolved to a string",
-            )?;
+                .map_err(|err| {
+                    GritPatternError::new(format!(
+                        "{err} \n includes can only be used with patterns that can be resolved"
+                    ))
+                })?;
+            let substring = resolved.text(&state.files, context.language()).map_err(|err| {
+                GritPatternError::new(
+                    format!("{err} \n includes can only be used with patterns that can be resolved to a string")
+                )
+            })?;
+            let string = binding.text(&state.files, context.language()).map_err(|err| {
+                GritPatternError::new(
+                    format!("{err} \n includes can only be used with patterns that can be resolved to a string")
+                )
+            })?;
             if string.contains(&*substring) {
                 Ok(true)
             } else {
@@ -135,7 +143,7 @@ impl<Q: QueryContext> Matcher<Q> for Includes<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         execute(&self.includes, binding, state, context, logs)
     }
 }

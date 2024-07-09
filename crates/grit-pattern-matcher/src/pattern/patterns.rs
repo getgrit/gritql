@@ -47,12 +47,12 @@ use super::{
     within::Within,
     State,
 };
+use crate::errors::{GritPatternError, GritResult};
 use crate::{
     constants::{FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX},
     context::{ExecContext, QueryContext},
     pattern::resolved_pattern::File,
 };
-use anyhow::{bail, Result};
 use core::fmt::Debug;
 use grit_util::AnalysisLogs;
 
@@ -66,7 +66,7 @@ pub trait Matcher<Q: QueryContext>: Debug {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool>;
+    ) -> GritResult<bool>;
 
     // for the future:
     // we could speed up computation by filtering on the sort of pattern
@@ -143,7 +143,7 @@ impl<Q: QueryContext> Pattern<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<String> {
+    ) -> GritResult<String> {
         Ok(
             Q::ResolvedPattern::from_pattern(self, state, context, logs)?
                 .text(&state.files, context.language())?
@@ -156,7 +156,7 @@ impl<Q: QueryContext> Pattern<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<f64> {
+    ) -> GritResult<f64> {
         Q::ResolvedPattern::from_pattern(self, state, context, logs)?
             .float(&state.files, context.language())
     }
@@ -229,7 +229,7 @@ impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         if let Some(file) = binding.get_file() {
             state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[FILENAME_INDEX].value =
                 Some(file.name(&state.files));
@@ -249,13 +249,15 @@ impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
             Pattern::File(file_pattern) => file_pattern.execute(binding, state, context, logs),
             Pattern::Bubble(pattern_call) => pattern_call.execute(binding, state, context, logs),
             Pattern::Limit(limit) => limit.execute(binding, state, context, logs),
-            Pattern::CallBuiltIn(_) => bail!("CallBuiltIn cannot be executed at the moment"),
-            Pattern::CallFunction(_) => {
-                bail!("CallFunction cannot be executed at the moment")
-            }
-            Pattern::CallForeignFunction(_) => {
-                bail!("CallForeignFunction cannot be executed at the moment")
-            }
+            Pattern::CallBuiltIn(_) => Err(GritPatternError::new_matcher(
+                "CallBuiltIn cannot be executed at the moment",
+            )),
+            Pattern::CallFunction(_) => Err(GritPatternError::new_matcher(
+                "CallFunction cannot be executed at the moment",
+            )),
+            Pattern::CallForeignFunction(_) => Err(GritPatternError::new_matcher(
+                "CallForeignFunction cannot be executed at the moment",
+            )),
             Pattern::Assignment(assignment) => assignment.execute(binding, state, context, logs),
             Pattern::Accumulate(accumulate) => accumulate.execute(binding, state, context, logs),
             Pattern::StringConstant(string_constant) => {
@@ -299,7 +301,9 @@ impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
             Pattern::Bottom => Ok(false),
             Pattern::Not(not) => not.execute(binding, state, context, logs),
             Pattern::If(if_) => if_.execute(binding, state, context, logs),
-            Pattern::Dots => bail!("Dots should only be directly within a list pattern."),
+            Pattern::Dots => Err(GritPatternError::new(
+                "Dots should only be directly within a list pattern.",
+            )),
             Pattern::Dynamic(pattern) => pattern.execute(binding, state, context, logs),
             Pattern::Sequential(sequential) => sequential.execute(binding, state, context, logs),
             Pattern::Like(like) => like.execute(binding, state, context, logs),

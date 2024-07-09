@@ -5,11 +5,11 @@ use super::{
     state::State,
     variable::{get_file_name, Variable},
 };
+use crate::errors::{GritPatternError, GritResult};
 use crate::{
     binding::Binding,
     context::{ExecContext, QueryContext},
 };
-use anyhow::Result;
 use grit_util::{AnalysisLogBuilder, AnalysisLogs};
 
 #[derive(Debug, Clone)]
@@ -40,7 +40,7 @@ impl<Q: QueryContext> Log<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let mut message = String::new();
         if let Some(user_message) = &self.message {
             let resolved = Q::ResolvedPattern::from_pattern(user_message, state, context, logs)?;
@@ -81,7 +81,11 @@ impl<Q: QueryContext> Log<Q> {
             }
         }
         log_builder.message(message);
-        logs.push(log_builder.build()?);
+        logs.push(
+            log_builder
+                .build()
+                .map_err(|err| GritPatternError::Builder(err.to_string()))?,
+        );
         Ok(true)
     }
 }
@@ -93,7 +97,7 @@ impl<Q: QueryContext> Matcher<Q> for Log<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         self.add_log(state, context, logs)
     }
 }
@@ -104,7 +108,7 @@ impl<Q: QueryContext> Evaluator<Q> for Log<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>> {
+    ) -> GritResult<FuncEvaluation<Q>> {
         let predicator = self.add_log(state, context, logs)?;
         Ok(FuncEvaluation {
             predicator,
