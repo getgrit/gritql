@@ -5,12 +5,12 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
+use crate::errors::GritResult;
 use crate::pattern::functions::GritCall;
 use crate::{
     context::{ExecContext, QueryContext},
     errors::debug,
 };
-use anyhow::Result;
 use grit_util::AnalysisLogs;
 
 #[derive(Debug, Clone)]
@@ -37,7 +37,7 @@ impl<Q: QueryContext> Evaluator<Q> for Match<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>> {
+    ) -> GritResult<FuncEvaluation<Q>> {
         match &self.val {
             Container::Variable(var) => {
                 let var = state.trace_var(var);

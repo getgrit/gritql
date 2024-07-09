@@ -4,7 +4,7 @@ use super::{
     step::Step,
 };
 use crate::context::QueryContext;
-use anyhow::Result;
+use crate::errors::GritResult;
 use grit_util::AnalysisLogs;
 use std::ops;
 
@@ -18,7 +18,7 @@ impl<Q: QueryContext> Matcher<Q> for Sequential<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         for step in &self.0 {
             if !step.execute(binding, state, context, logs)? {
                 return Ok(false);

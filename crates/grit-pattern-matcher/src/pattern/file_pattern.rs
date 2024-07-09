@@ -3,12 +3,12 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
+use crate::errors::GritResult;
 use crate::{
     constants::{ABSOLUTE_PATH_INDEX, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX, PROGRAM_INDEX},
     context::ExecContext,
 };
 use crate::{context::QueryContext, pattern::resolved_pattern::File};
-use anyhow::Result;
 use grit_util::AnalysisLogs;
 
 #[derive(Debug, Clone)]
@@ -30,7 +30,7 @@ impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let Some(file) = resolved_pattern.get_file() else {
             return Ok(false);
         };

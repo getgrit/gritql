@@ -4,7 +4,7 @@ use super::{
     state::State,
 };
 use crate::context::QueryContext;
-use anyhow::Result;
+use crate::errors::GritResult;
 use grit_util::AnalysisLogs;
 use std::collections::BTreeMap;
 
@@ -36,7 +36,7 @@ impl<Q: QueryContext> Matcher<Q> for GritMap<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let Some(map) = binding.get_map() else {
             return Ok(false);
         };

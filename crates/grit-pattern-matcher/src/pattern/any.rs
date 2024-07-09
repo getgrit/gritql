@@ -5,7 +5,7 @@ use super::{
     State,
 };
 use crate::context::QueryContext;
-use anyhow::Result;
+use crate::errors::GritResult;
 use core::fmt::Debug;
 use grit_util::AnalysisLogs;
 
@@ -36,7 +36,7 @@ impl<Q: QueryContext> Matcher<Q> for Any<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let mut matched = false;
         let mut cur_state = init_state.clone();
         for pattern in &self.patterns {
@@ -78,7 +78,7 @@ impl<Q: QueryContext> Evaluator<Q> for PrAny<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>> {
+    ) -> GritResult<FuncEvaluation<Q>> {
         let mut matched = false;
         let mut cur_state = init_state.clone();
         for predicate in &self.predicates {

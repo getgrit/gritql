@@ -3,11 +3,11 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
+use crate::errors::GritResult;
 use crate::{
     constant::Constant,
     context::{ExecContext, QueryContext},
 };
-use anyhow::Result;
 use grit_util::AnalysisLogs;
 
 #[derive(Debug, Clone)]
@@ -26,7 +26,7 @@ impl<Q: QueryContext> Add<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Q::ResolvedPattern<'a>> {
+    ) -> GritResult<Q::ResolvedPattern<'a>> {
         let res = self.evaluate(state, context, logs)?;
         Ok(Q::ResolvedPattern::from_constant(Constant::Float(res)))
     }
@@ -36,7 +36,7 @@ impl<Q: QueryContext> Add<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<f64> {
+    ) -> GritResult<f64> {
         let lhs = self.lhs.float(state, context, logs)?;
         let rhs = self.rhs.float(state, context, logs)?;
         let res = lhs + rhs;
@@ -57,7 +57,7 @@ impl<Q: QueryContext> Matcher<Q> for Add<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let binding_text = binding.text(&state.files, context.language())?;
         let binding_int = binding_text.parse::<f64>()?;
         let target = self.evaluate(state, context, logs)?;
