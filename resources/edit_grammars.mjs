@@ -118,15 +118,6 @@ const copyMyBuild = async (c, lang, dest) =>
     )
   );
 
-const copyMvScanner = async (lang, dest) =>
-  fs.copyFile(
-    `${METAVARIABLE_GRAMMARS_DIR}/${lang}-metavariable-scanner.cc`,
-    path.join(
-      LANGUAGE_METAVARIABLES_DIR,
-      `tree-sitter-${dest ?? lang}/src/scanner.cc`
-    )
-  );
-
 const treeSitterGenerate = async (dir, buildWasm = true) => {
   const andMaybeBuildWasm = buildWasm ? "&& tree-sitter build-wasm " : "";
   await execPromise(
@@ -340,6 +331,13 @@ async function buildLanguage(language) {
     );
   } else if (language === "yaml") {
     await buildSimpleLanguage(log, language);
+    await fs.copyFile(
+      `${METAVARIABLE_GRAMMARS_DIR}/${lang}-metavariable-scanner.c`,
+      path.join(
+        LANGUAGE_METAVARIABLES_DIR,
+        `tree-sitter-${dest ?? lang}/src/scanner.c`
+      )
+    );
     await copyMyBuild("c", language);
   } else if (language === "hcl") {
     //HCL's mv grammar goes into `make_grammar.js`, not `grammar.js`
