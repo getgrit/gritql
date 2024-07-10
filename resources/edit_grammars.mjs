@@ -101,6 +101,23 @@ const copyMvGrammar = async (lang, dest) => {
   );
 };
 
+/**
+ * Copy in the build.rs file for the language,
+ * if an override is needed
+ * @param {*} c "c" or "cc
+ * @param {*} lang language we are copying from
+ * @param {*} dest optional destination
+ * @returns
+ */
+const copyMyBuild = async (c, lang, dest) =>
+  fs.copyFile(
+    `${METAVARIABLE_GRAMMARS_DIR}/${c}_build.rs`,
+    path.join(
+      LANGUAGE_METAVARIABLES_DIR,
+      `tree-sitter-${dest ?? lang}/bindings/rust/build.rs`
+    )
+  );
+
 const copyMvScanner = async (lang, dest) =>
   fs.copyFile(
     `${METAVARIABLE_GRAMMARS_DIR}/${lang}-metavariable-scanner.cc`,
@@ -160,12 +177,7 @@ async function rsyncGrammars(language) {
       ? `language-submodules/${treeSitterLang}/.`
       : "language-submodules/."
   );
-  const blobsToExclude = [
-    ".git*",
-    "**/*/example",
-    "**/*/test",
-    "**/*/corpus",
-  ];
+  const blobsToExclude = [".git*", "**/*/example", "**/*/test", "**/*/corpus"];
 
   console.log(`Copying ${submodulesDir} to ${mvDir}`);
 
@@ -349,12 +361,10 @@ async function buildLanguage(language) {
     //SQL's wasm build hangs so we skip it
     await treeSitterGenerate(language, false);
     await copyNodeTypes(language);
-    await fs.copyFile(
-      `${METAVARIABLE_GRAMMARS_DIR}/c_build.rs`,
-      `${tsLangDir}/bindings/rust/build.rs`
-    );
+    await copyMyBuild("cc", language);
   } else if (language === "toml") {
     await buildSimpleLanguage(log, language);
+    await copyMyBuild("c", language);
   } else if (language === "php") {
     //php has sub-grammars
     log(`Copying  files`);
