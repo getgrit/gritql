@@ -332,11 +332,8 @@ async function buildLanguage(language) {
   } else if (language === "yaml") {
     await buildSimpleLanguage(log, language);
     await fs.copyFile(
-      `${METAVARIABLE_GRAMMARS_DIR}/${lang}-metavariable-scanner.c`,
-      path.join(
-        LANGUAGE_METAVARIABLES_DIR,
-        `tree-sitter-${dest ?? lang}/src/scanner.c`
-      )
+      `${METAVARIABLE_GRAMMARS_DIR}/${language}-metavariable-scanner.c`,
+      `${tsLangDir}/src/scanner.c`
     );
     await copyMyBuild("c", language);
   } else if (language === "hcl") {
