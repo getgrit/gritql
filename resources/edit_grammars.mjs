@@ -209,19 +209,23 @@ async function buildLanguage(language) {
     );
   }
   //Force cargo.toml to use the correct version of tree-sitter
-  await execPromise(
-    `for cargo in [Cc]argo.toml; do
-    echo "Checking $cargo";
-    if [ -f "$cargo" ]; then
-      if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' -e 's/tree-sitter = ".*"/tree-sitter = "~0.20"/g' "$cargo";
-      else
-        sed -i -e 's/tree-sitter = ".*"/tree-sitter = "~0.20"/g' "$cargo";
-      fi
-    fi;
-  done`,
-    tsLangDir
-  );
+  const cargoFiles = ["Cargo.toml", "cargo.toml"];
+  let didUpdate = false;
+  for (const cargo of cargoFiles) {
+    const cargoPath = path.join(tsLangDir, cargo);
+    if (fs.existsSync(cargoPath)) {
+      let cargoContent = fs.readFileSync(cargoPath, "utf8");
+      cargoContent = cargoContent.replace(
+        /tree-sitter = ".*"/g,
+        'tree-sitter = "~0.20"'
+      );
+      fs.writeFileSync(cargoPath, cargoContent);
+      didUpdate = true;
+    }
+  }
+  if (!didUpdate) {
+    throw new Error("Could not find Cargo.toml to update");
+  }
 
   if (language === "c-sharp") {
     //skip generating c-sharp, tree-sitter hangs on it
