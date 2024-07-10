@@ -192,21 +192,6 @@ where
     }
 }
 
-pub fn display_workflow_outcome(outcome: PackagedWorkflowOutcome) -> Result<()> {
-    match outcome.success {
-        true => {
-            log::info!(
-                "{}",
-                outcome
-                    .message
-                    .unwrap_or("Workflow completed successfully".to_string())
-            );
-            Ok(())
-        }
-        false => anyhow::bail!(outcome.message.unwrap_or("Workflow failed".to_string())),
-    }
-}
-
 #[cfg(feature = "remote_workflows")]
 pub async fn run_remote_workflow(
     workflow_name: String,

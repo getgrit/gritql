@@ -65,8 +65,6 @@ pub(crate) async fn run_apply_migration(
     arg: ApplyMigrationArgs,
     flags: &GlobalFormatFlags,
 ) -> Result<()> {
-    use crate::workflows::display_workflow_outcome;
-
     let input = arg.get_payload()?;
 
     let format = OutputFormat::from(flags);
@@ -94,8 +92,9 @@ pub(crate) async fn run_apply_migration(
     )
     .await?;
 
+    // Note the workflow may have already emitted its own conclusion - this is a fallback
     emitter.finish_workflow(&outcome)?;
     emitter.flush().await?;
 
-    display_workflow_outcome(outcome)
+    Ok(())
 }

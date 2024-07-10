@@ -159,6 +159,28 @@ pub fn print_file_header(
     Ok(())
 }
 
+fn get_pretty_workflow_message(
+    outcome: &marzano_messenger::workflows::PackagedWorkflowOutcome,
+) -> String {
+    match outcome.success {
+        true => {
+            format!(
+                "✅ {}",
+                outcome
+                    .message
+                    .as_deref()
+                    .unwrap_or("Workflow completed successfully")
+            )
+        }
+        false => {
+            format!(
+                "❌ {}",
+                outcome.message.as_deref().unwrap_or("Workflow failed")
+            )
+        }
+    }
+}
+
 impl fmt::Display for FormattedResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -290,6 +312,8 @@ pub struct FormattedMessager<'a> {
     total_rejected: usize,
     total_supressed: usize,
     input_pattern: String,
+
+    workflow_done: bool,
 }
 
 impl<'a> FormattedMessager<'_> {
@@ -307,6 +331,7 @@ impl<'a> FormattedMessager<'_> {
             total_rejected: 0,
             total_supressed: 0,
             input_pattern,
+            workflow_done: false,
         }
     }
 }
@@ -358,6 +383,27 @@ impl Messager for FormattedMessager<'_> {
     }
     fn track_supress(&mut self, _supressed: &MatchResult) -> anyhow::Result<()> {
         self.total_supressed += 1;
+        Ok(())
+    }
+
+    fn finish_workflow(
+        &mut self,
+        outcome: &marzano_messenger::workflows::PackagedWorkflowOutcome,
+    ) -> anyhow::Result<()> {
+        if self.workflow_done {
+            // If we already finished once, short-circuit it
+            return Ok(());
+        }
+
+        if let Some(writer) = &mut self.writer {
+            let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
+            writeln!(writer, "{}", get_pretty_workflow_message(outcome))?;
+        } else {
+            log::info!("{}", get_pretty_workflow_message(outcome));
+        }
+
+        self.workflow_done = true;
+
         Ok(())
     }
 
