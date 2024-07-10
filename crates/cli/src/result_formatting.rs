@@ -159,25 +159,23 @@ pub fn print_file_header(
     Ok(())
 }
 
-pub fn print_workflow_outcome(
+fn get_pretty_workflow_message(
     outcome: &marzano_messenger::workflows::PackagedWorkflowOutcome,
-    f: &mut fmt::Formatter<'_>,
-) -> fmt::Result {
+) -> String {
     match outcome.success {
         true => {
-            writeln!(
-                f,
+            format!(
                 "✅ {}",
                 outcome
                     .message
-                    .unwrap_or("Workflow completed successfully".to_string())
+                    .as_deref()
+                    .unwrap_or("Workflow completed successfully")
             )
         }
         false => {
-            writeln!(
-                f,
+            format!(
                 "❌ {}",
-                outcome.message.unwrap_or("Workflow failed".to_string())
+                outcome.message.as_deref().unwrap_or("Workflow failed")
             )
         }
     }
@@ -315,7 +313,7 @@ pub struct FormattedMessager<'a> {
     total_supressed: usize,
     input_pattern: String,
 
-    workflow_outcome: Option<marzano_messenger::workflows::PackagedWorkflowOutcome>,
+    workflow_done: bool,
 }
 
 impl<'a> FormattedMessager<'_> {
@@ -333,6 +331,7 @@ impl<'a> FormattedMessager<'_> {
             total_rejected: 0,
             total_supressed: 0,
             input_pattern,
+            workflow_done: false,
         }
     }
 }
@@ -391,12 +390,19 @@ impl Messager for FormattedMessager<'_> {
         &mut self,
         outcome: &marzano_messenger::workflows::PackagedWorkflowOutcome,
     ) -> anyhow::Result<()> {
+        if self.workflow_done {
+            // If we already finished once, short-circuit it
+            return Ok(());
+        }
+
         if let Some(writer) = &mut self.writer {
             let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
-            writeln!(writer, "{}", outcome)?;
+            writeln!(writer, "{}", get_pretty_workflow_message(outcome))?;
         } else {
-            info!("{}", outcome);
+            log::info!("{}", get_pretty_workflow_message(outcome));
         }
+
+        self.workflow_done = true;
 
         Ok(())
     }
