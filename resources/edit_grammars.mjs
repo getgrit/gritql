@@ -156,7 +156,9 @@ async function rsyncGrammars(language) {
 
   const submodulesDir = path.join(
     resourceDir,
-    language ? `language-submodules/${treeSitterLang}` : "language-submodules/."
+    language
+      ? `language-submodules/${treeSitterLang}/.`
+      : "language-submodules/."
   );
   const blobsToExclude = [
     ".git*",
@@ -168,7 +170,7 @@ async function rsyncGrammars(language) {
   console.log(`Copying ${submodulesDir} to ${mvDir}`);
 
   await execPromise(
-    `rsync -r -l ${submodulesDir} ${mvDir} --exclude={${blobsToExclude.join(
+    `rsync -r -l ${submodulesDir} "${mvDir}/." --exclude={${blobsToExclude.join(
       ","
     )}}`
   );
