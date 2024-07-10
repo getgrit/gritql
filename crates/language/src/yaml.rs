@@ -156,13 +156,18 @@ mod tests {
 
     #[test]
     fn simple_yaml_metavariable() {
-        let snippet = "- foo: $list";
+        let snippet = "$list";
         let lang = Yaml::new(None);
         let snippets = lang.parse_snippet_contexts(snippet);
         let nodes = nodes_from_indices(&snippets);
+        let mut found_metavar = false;
         for node in &nodes {
-            print_node(&node.node)
+            print_node(&node.node);
+            if node.node.kind_id() == lang.metavariable_sort() {
+                found_metavar = true;
+            }
         }
         assert!(!nodes.is_empty());
+        assert!(found_metavar);
     }
 }
