@@ -213,16 +213,18 @@ async function buildLanguage(language) {
   let didUpdate = false;
   for (const cargo of cargoFiles) {
     const cargoPath = path.join(tsLangDir, cargo);
+    log(`Trying to update ${cargoPath}`);
     try {
-      if (await fs.access(cargoPath)) {
-        let cargoContent = await fs.readFile(cargoPath, "utf8");
-        cargoContent = cargoContent.replace(
-          /tree-sitter = ".*"/g,
-          'tree-sitter = "~0.20"'
-        );
-        await fs.writeFile(cargoPath, cargoContent);
-        didUpdate = true;
-      }
+      await fs.access(cargoPath);
+      let cargoContent = await fs.readFile(cargoPath, "utf8");
+      cargoContent = cargoContent.replace(
+        /tree-sitter = ".*"/g,
+        'tree-sitter = "~0.20"'
+      );
+      await fs.writeFile(cargoPath, cargoContent);
+      log(`Updated ${cargoPath}`);
+      didUpdate = true;
+      break;
     } catch (e) {
       log(`Could not update ${cargoPath}`);
     }
@@ -230,7 +232,6 @@ async function buildLanguage(language) {
   if (!didUpdate) {
     throw new Error("Could not find Cargo.toml to update");
   }
-  log(`Updated Cargo.toml`);
 
   if (language === "c-sharp") {
     //skip generating c-sharp, tree-sitter hangs on it
