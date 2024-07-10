@@ -213,14 +213,18 @@ async function buildLanguage(language) {
   let didUpdate = false;
   for (const cargo of cargoFiles) {
     const cargoPath = path.join(tsLangDir, cargo);
-    if (await fs.exists(cargoPath)) {
-      let cargoContent = await fs.readFile(cargoPath, "utf8");
-      cargoContent = cargoContent.replace(
-        /tree-sitter = ".*"/g,
-        'tree-sitter = "~0.20"'
-      );
-      await fs.writeFile(cargoPath, cargoContent);
-      didUpdate = true;
+    try {
+      if (await fs.access(cargoPath)) {
+        let cargoContent = await fs.readFile(cargoPath, "utf8");
+        cargoContent = cargoContent.replace(
+          /tree-sitter = ".*"/g,
+          'tree-sitter = "~0.20"'
+        );
+        await fs.writeFile(cargoPath, cargoContent);
+        didUpdate = true;
+      }
+    } catch (e) {
+      log(`Could not update ${cargoPath}`);
     }
   }
   if (!didUpdate) {
