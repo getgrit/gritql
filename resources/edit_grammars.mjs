@@ -162,9 +162,9 @@ async function rsyncGrammars(language) {
   );
   const blobsToExclude = [
     ".git*",
-    "tree-sitter-*/example",
-    "tree-sitter-*/test",
-    "tree-sitter-*/corpus",
+    "**/*/example",
+    "**/*/test",
+    "**/*/corpus",
   ];
 
   console.log(`Copying ${submodulesDir} to ${mvDir}`);
