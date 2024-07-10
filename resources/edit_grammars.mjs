@@ -128,7 +128,7 @@ const copyMvScanner = async (lang, dest) =>
   );
 
 const treeSitterGenerate = async (dir, buildWasm = true) => {
-  const andMaybeBuildWasm = buildWasm ? "&& npx tree-sitter build-wasm " : "";
+  const andMaybeBuildWasm = buildWasm ? "&& tree-sitter build-wasm " : "";
   await execPromise(
     `tree-sitter generate ${andMaybeBuildWasm} && echo "Generated grammar for ${dir}"`,
     path.join(LANGUAGE_METAVARIABLES_DIR, `tree-sitter-${dir}`)
@@ -218,7 +218,7 @@ async function buildLanguage(language) {
 
   if (language == "toml") {
     await execPromise(
-      `npm install regexp-util && npx tree-sitter generate`,
+      `npm install regexp-util && tree-sitter generate`,
       tsLangDir
     );
   }
@@ -307,8 +307,8 @@ async function buildLanguage(language) {
       tsLangDir
     );
     // await Promise.all([
-    //   execPromise(`cd ${tsLangDir}/tsx && npx tree-sitter build-wasm`),
-    //   execPromise(`cd ${tsLangDir}/typescript && npx tree-sitter build-wasm`),
+    //   execPromise(`cd ${tsLangDir}/tsx && tree-sitter build-wasm`),
+    //   execPromise(`cd ${tsLangDir}/typescript && tree-sitter build-wasm`),
     // ]);
 
     await copyNodeTypes("typescript/typescript", "typescript");
@@ -328,7 +328,7 @@ async function buildLanguage(language) {
     );
 
     await execPromise(
-      `yarn && yarn prepack && npx tree-sitter build-wasm && echo "Generated grammar for ${language}"`,
+      `yarn && yarn prepack && tree-sitter build-wasm && echo "Generated grammar for ${language}"`,
       tsLangDir
     );
 
@@ -361,7 +361,7 @@ async function buildLanguage(language) {
     //SQL's wasm build hangs so we skip it
     await treeSitterGenerate(language, false);
     await copyNodeTypes(language);
-    await copyMyBuild("cc", language);
+    await copyMyBuild("c", language);
   } else if (language === "toml") {
     await buildSimpleLanguage(log, language);
     await copyMyBuild("c", language);
