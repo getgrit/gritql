@@ -153,4 +153,16 @@ mod tests {
         }
         assert!(!nodes.is_empty());
     }
+
+    #[test]
+    fn simple_yaml_metavariable() {
+        let snippet = "- foo: $list";
+        let lang = Yaml::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        for node in &nodes {
+            print_node(&node.node)
+        }
+        assert!(!nodes.is_empty());
+    }
 }
