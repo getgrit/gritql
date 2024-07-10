@@ -14987,3 +14987,54 @@ fn or_file() {
     })
     .unwrap();
 }
+
+#[test]
+fn cpp_simple() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language cpp
+                |`char* editor = $string_literal;` => `char* editor = "emacs";`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"char* editor = "vim";"#.to_owned(),
+            expected: r#"char* editor = "emacs";"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn cpp_rename_variable_name() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language cpp
+                |`char* $name = $val;` => `char* new_name = $val;`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"char* my_string = "hey";"#.to_owned(),
+            expected: r#"char* new_name = "hey";"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn cpp_change_float_to_double() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language cpp
+                |`int $foo` => `int what`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"int foo"#.to_owned(),
+            expected: r#"int foo"#.to_owned(),
+        }
+    })
+    .unwrap();
+}
