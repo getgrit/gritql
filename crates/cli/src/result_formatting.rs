@@ -159,6 +159,30 @@ pub fn print_file_header(
     Ok(())
 }
 
+pub fn print_workflow_outcome(
+    outcome: &marzano_messenger::workflows::PackagedWorkflowOutcome,
+    f: &mut fmt::Formatter<'_>,
+) -> fmt::Result {
+    match outcome.success {
+        true => {
+            writeln!(
+                f,
+                "✅ {}",
+                outcome
+                    .message
+                    .unwrap_or("Workflow completed successfully".to_string())
+            )
+        }
+        false => {
+            writeln!(
+                f,
+                "❌ {}",
+                outcome.message.unwrap_or("Workflow failed".to_string())
+            )
+        }
+    }
+}
+
 impl fmt::Display for FormattedResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
