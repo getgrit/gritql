@@ -290,6 +290,8 @@ pub struct FormattedMessager<'a> {
     total_rejected: usize,
     total_supressed: usize,
     input_pattern: String,
+
+    workflow_outcome: Option<marzano_messenger::workflows::PackagedWorkflowOutcome>,
 }
 
 impl<'a> FormattedMessager<'_> {
@@ -358,6 +360,20 @@ impl Messager for FormattedMessager<'_> {
     }
     fn track_supress(&mut self, _supressed: &MatchResult) -> anyhow::Result<()> {
         self.total_supressed += 1;
+        Ok(())
+    }
+
+    fn finish_workflow(
+        &mut self,
+        outcome: &marzano_messenger::workflows::PackagedWorkflowOutcome,
+    ) -> anyhow::Result<()> {
+        if let Some(writer) = &mut self.writer {
+            let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
+            writeln!(writer, "{}", outcome)?;
+        } else {
+            info!("{}", outcome);
+        }
+
         Ok(())
     }
 

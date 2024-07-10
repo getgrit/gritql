@@ -260,7 +260,8 @@ pub trait Messager: Send + Sync {
         Ok(())
     }
 
-    // Finish workflow, with a message
+    // Called when a workflow finishes processing, with the outcome
+    // Note that this *may* be called multiple times. The *first* time it is called should be considered the "true" outcome.
     fn finish_workflow(&mut self, _outcome: &PackagedWorkflowOutcome) -> anyhow::Result<()> {
         // do nothing
         Ok(())
