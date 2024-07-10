@@ -3029,6 +3029,15 @@
               },
               "named": false,
               "value": "]"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_b_flw_seq_end"
+              },
+              "named": false,
+              "value": "]"
             }
           ]
         }
@@ -3379,6 +3388,15 @@
               "content": {
                 "type": "SYMBOL",
                 "name": "_br_flw_map_end"
+              },
+              "named": false,
+              "value": "}"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_b_flw_map_end"
               },
               "named": false,
               "value": "}"
@@ -6404,6 +6422,10 @@
     },
     {
       "type": "SYMBOL",
+      "name": "_b_flw_seq_end"
+    },
+    {
+      "type": "SYMBOL",
       "name": "_r_flw_map_bgn"
     },
     {
@@ -6421,6 +6443,10 @@
     {
       "type": "SYMBOL",
       "name": "_br_flw_map_end"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_b_flw_map_end"
     },
     {
       "type": "SYMBOL",
@@ -6704,6 +6730,10 @@
     },
     {
       "type": "SYMBOL",
+      "name": "_err_rec"
+    },
+    {
+      "type": "SYMBOL",
       "name": "grit_metavariable"
     }
   ],
@@ -6738,4 +6768,3 @@
   ],
   "supertypes": []
 }
-

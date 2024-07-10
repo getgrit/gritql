@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tree-sitter-yaml"
+description = "YAML grammar for tree-sitter"
+version = "0.6.1"
+keywords = ["incremental", "parsing", "tree-sitter", "yaml"]
+classifiers = [
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Topic :: Software Development :: Compilers",
+  "Topic :: Text Processing :: Linguistic",
+  "Typing :: Typed"
+]
+requires-python = ">=3.8"
+license.text = "MIT"
+readme = "README.md"
+
+[[project.authors]]
+name = "Ika"
+email = "ikatyang@gmail.com"
+
+[[project.maintainers]]
+name = "Amaan Qureshi"
+email = "amaanq12@gmail.com"
+
+[project.urls]
+Homepage = "https://github.com/tree-sitter-grammars/tree-sitter-yaml"
+
+[project.optional-dependencies]
+core = ["tree-sitter~=0.21"]
+
+[tool.cibuildwheel]
+build = "cp38-*"
+build-frontend = "build"

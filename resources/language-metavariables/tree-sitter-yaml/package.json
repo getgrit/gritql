@@ -1,44 +1,75 @@
 {
-  "name": "tree-sitter-yaml",
-  "version": "0.5.0",
+  "name": "@tree-sitter-grammars/tree-sitter-yaml",
+  "version": "0.6.1",
+  "license": "MIT",
   "description": "YAML grammar for tree-sitter",
-  "keywords": [
-    "parser",
-    "lexer"
-  ],
+  "repository": "github:tree-sitter-grammars/tree-sitter-yaml",
   "main": "bindings/node",
-  "repository": "https://github.com/ikatyang/tree-sitter-yaml",
-  "homepage": "https://github.com/ikatyang/tree-sitter-yaml#readme",
+  "types": "bindings/node",
   "author": {
     "name": "Ika",
     "email": "ikatyang@gmail.com",
     "url": "https://github.com/ikatyang"
   },
-  "license": "MIT",
-  "scripts": {
-    "test": "yarn tree-sitter test",
-    "prepack": "bash ./scripts/update-schema.sh && yarn tree-sitter generate",
-    "release": "standard-version --commit-all",
-    "tree-sitter": "./tree-sitter/target/release/tree-sitter"
-  },
-  "standard-version": {
-    "preset": "angular",
-    "scripts": {
-      "postbump": "rm -r docs && node scripts/generate-playground.js && git add docs"
+  "maintainers": [
+    {
+      "name": "Amaan Qureshi",
+      "email": "amaanq12@gmail.com"
     }
-  },
+  ],
+  "keywords": [
+    "incremental",
+    "parsing",
+    "tree-sitter",
+    "yaml"
+  ],
+  "files": [
+    "grammar.js",
+    "binding.gyp",
+    "prebuilds/**",
+    "bindings/node/*",
+    "queries/*",
+    "src/**",
+    "schema/**"
+  ],
   "dependencies": {
-    "nan": "^2.14.0"
+    "node-addon-api": "^8.0.0",
+    "node-gyp-build": "^4.8.0"
   },
   "devDependencies": {
-    "get-stdin": "^8.0.0",
-    "natural-orderby": "2.0.3",
-    "standard-version": "7.0.0"
+    "prebuildify": "^6.0.1",
+    "tree-sitter-cli": "^0.22.5"
   },
-  "files": [
-    "/src/",
-    "/bindings/node/",
-    "/binding.gyp",
-    "/grammar.js"
+  "peerDependencies": {
+    "tree-sitter": "^0.21.1"
+  },
+  "peerDependenciesMeta": {
+    "tree_sitter": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "build": "tree-sitter generate --no-bindings",
+    "postbuild": "npm run --prefix schema/core build",
+    "test": "tree-sitter test",
+    "install": "node-gyp-build",
+    "prebuildify": "prebuildify --napi --strip"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "tree-sitter": [
+    {
+      "scope": "text.yaml",
+      "file-types": [
+        "yml",
+        "yaml"
+      ],
+      "injection-regex": "^ya?ml$",
+      "highlights": "queries/highlights.scm",
+      "external-files": [
+        "src/schema.core.c"
+      ]
+    }
   ]
 }
