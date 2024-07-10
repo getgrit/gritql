@@ -92,13 +92,13 @@ const copyMvGrammar = async (lang, dest) => {
   if (languagesWithoutMetaVariables.includes(lang)) {
     return;
   }
-  await fs.copyFile(
-    `${METAVARIABLE_GRAMMARS_DIR}/${lang}-metavariable-grammar.js`,
-    path.join(
-      LANGUAGE_METAVARIABLES_DIR,
-      `tree-sitter-${dest ?? lang}/grammar.js`
-    )
+  let from = `${METAVARIABLE_GRAMMARS_DIR}/${lang}-metavariable-grammar.js`;
+  let to = path.join(
+    LANGUAGE_METAVARIABLES_DIR,
+    `tree-sitter-${dest ?? lang}/grammar.js`
   );
+  await fs.copyFile(from, to);
+  console.log(`Copied ${from} to ${to}`);
 };
 
 /**
@@ -115,15 +115,6 @@ const copyMyBuild = async (c, lang, dest) =>
     path.join(
       LANGUAGE_METAVARIABLES_DIR,
       `tree-sitter-${dest ?? lang}/bindings/rust/build.rs`
-    )
-  );
-
-const copyMvScanner = async (lang, dest) =>
-  fs.copyFile(
-    `${METAVARIABLE_GRAMMARS_DIR}/${lang}-metavariable-scanner.cc`,
-    path.join(
-      LANGUAGE_METAVARIABLES_DIR,
-      `tree-sitter-${dest ?? lang}/src/scanner.cc`
     )
   );
 
@@ -339,12 +330,12 @@ async function buildLanguage(language) {
       `${tsLangDir}/bindings/rust/build.rs`
     );
   } else if (language === "yaml") {
-    await copyMvScanner(language);
-    await buildSimpleLanguage(log, language);
     await fs.copyFile(
-      `${METAVARIABLE_GRAMMARS_DIR}/cc_build.rs`,
-      `${tsLangDir}/bindings/rust/build.rs`
+      `${METAVARIABLE_GRAMMARS_DIR}/${language}-metavariable-scanner.c`,
+      `${tsLangDir}/src/scanner.c`
     );
+    await buildSimpleLanguage(log, language);
+    await copyMyBuild("c", language);
   } else if (language === "hcl") {
     //HCL's mv grammar goes into `make_grammar.js`, not `grammar.js`
     await fs.copyFile(

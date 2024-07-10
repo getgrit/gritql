@@ -1,0 +1,32 @@
+A null: null
+# <- @property
+#     ^ @punctuation.delimiter
+#       ^^^^ @constant.builtin
+Also a null: # Empty
+#            ^^^^^^^ @comment
+Not a null: ""
+#           ^^ @string
+Booleans: [ true, True, false, FALSE ]
+#         ^ @punctuation.bracket
+#                                    ^ @punctuation.bracket
+#               ^ @punctuation.delimiter
+#           ^^^^ @boolean
+#                 ^^^^ @boolean
+#                       ^^^^^ @boolean
+#                              ^^^^^ @boolean
+Integers: [ 0, 0o7, 0x3A, -19 ]
+#           ^ @number
+#              ^^^ @number
+#                   ^^^^ @number
+#                         ^^^ @number
+Floats: [ 0., -0.0, .5, +12e03, -2E+05 ]
+#         ^^ @number
+#             ^^^^ @number
+#                   ^^ @number
+#                       ^^^^^^ @number
+#                               ^^^^^^ @number
+Also floats: [ .inf, -.Inf, +.INF, .NAN ]
+#              ^^^^ @number
+#                    ^^^^^ @number
+#                           ^^^^^ @number
+#                                  ^^^^ @number
