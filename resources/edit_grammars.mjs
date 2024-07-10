@@ -209,7 +209,8 @@ async function buildLanguage(language) {
     );
   }
   //Force cargo.toml to use the correct version of tree-sitter
-  await execPromise(`for cargo in ${tsLangDir}/[Cc]argo.toml; do
+  await execPromise(
+    `for cargo in [Cc]argo.toml; do
     echo "Checking $cargo";
     if [ -f "$cargo" ]; then
       if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -218,7 +219,9 @@ async function buildLanguage(language) {
         sed -i -e 's/tree-sitter = ".*"/tree-sitter = "~0.20"/g' "$cargo";
       fi
     fi;
-  done`);
+  done`,
+    tsLangDir
+  );
 
   if (language === "c-sharp") {
     //skip generating c-sharp, tree-sitter hangs on it
