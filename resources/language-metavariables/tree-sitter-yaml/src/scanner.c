@@ -62,9 +62,11 @@ typedef enum {
     COMMENT,
 
     ERR_REC,
+    GRIT_METAVARIABLE,
 } TokenType;
 
 // clang-format on
+#define MU 0xb5
 
 #define SCN_SUCC 1
 #define SCN_STOP 0
@@ -301,6 +303,19 @@ static inline bool is_plain_safe_in_block(int32_t c) { return is_ns_char(c); }
 
 static inline bool is_plain_safe_in_flow(int32_t c) { return is_ns_char(c) && !is_c_flow_indicator(c); }
 
+static inline bool is_letter_or_underscore(int32_t c) {
+  return (c >= 'a' && c <= 'z')
+      || (c >= 'A' && c <= 'Z')
+      || c == '_';
+}
+
+static inline bool is_alphanumeric_or_underscore(int32_t c) {
+  return (c >= 'a' && c <= 'z')
+      || (c >= 'A' && c <= 'Z')
+      || (c >= '0' && c <= '9')
+      || c == '_';
+}
+
 static inline bool is_ns_uri_char(int32_t c) {
     return is_ns_word_char(c) || c == '#' || c == ';' || c == '/' || c == '?' || c == ':' || c == '@' || c == '&' ||
            c == '=' || c == '+' || c == '$' || c == ',' || c == '_' || c == '.' || c == '!' || c == '~' || c == '*' ||
@@ -347,6 +362,37 @@ static char scn_ns_tag_char(Scanner *scanner, TSLexer *lexer) {
     }
     return scn_uri_esc(scanner, lexer);
 }
+
+// I suspect this implementation is not quite right but hope it's close enough for now.
+// in the event that the leading non-whitespace character is µ and a metavariable is
+// potentially valid in this location according to the grammarwe either return a metaveriable
+// or return false. ordinarily a leading µ could be a string scalar, but I figure this is rare
+// enough that for the sake of expediency we go with this approach
+bool scn_grit_metavariable(Scanner *scanner, TSLexer *lexer, TSSymbol result_symbol) {
+  adv(scanner, lexer);
+  if (lexer->lookahead == '.') {
+    adv(scanner, lexer);
+    if (lexer->lookahead == '.') {
+      adv(scanner, lexer);
+      if (lexer->lookahead == '.') {
+        adv(scanner, lexer);
+        mrk_end(scanner, lexer);
+        RET_SYM(result_symbol);
+      }
+    }
+    mrk_end(scanner, lexer);
+    return false;
+  } else if (is_letter_or_underscore(lexer->lookahead)) {
+    adv(scanner, lexer);
+    while (is_alphanumeric_or_underscore(lexer->lookahead)) adv(scanner, lexer);
+    mrk_end(scanner, lexer);
+    RET_SYM(result_symbol);
+  } else {
+    mrk_end(scanner, lexer);
+    return false;
+  }
+}
+
 
 static bool scn_dir_bgn(Scanner *scanner, TSLexer *lexer) {
     adv(scanner, lexer);
@@ -903,6 +949,9 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     }
     if (valid_symbols[R_DIR_RSV_PRM] && is_r) {
         return scn_dir_rsv_prm(scanner, lexer, R_DIR_RSV_PRM);
+    }
+    if (valid_symbols[GRIT_METAVARIABLE] && lexer->lookahead == MU) {
+        return scn_grit_metavariable(scanner, lexer, GRIT_METAVARIABLE);
     }
     if (valid_symbols[BR_BLK_STR_CTN] && is_br && scn_blk_str_cnt(scanner, lexer, BR_BLK_STR_CTN)) {
         return true;
