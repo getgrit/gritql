@@ -168,7 +168,7 @@ async function rsyncGrammars(language) {
   console.log(`Copying ${submodulesDir} to ${mvDir}`);
 
   await execPromise(
-    `rsync -r -l ${submodulesDir} ${LANGUAGE_METAVARIABLES_DIR} --exclude={${blobsToExclude.join(
+    `rsync -r -l ${submodulesDir} ${mvDir} --exclude={${blobsToExclude.join(
       ","
     )}}`
   );
