@@ -341,10 +341,7 @@ async function buildLanguage(language) {
   } else if (language === "yaml") {
     await copyMvScanner(language);
     await buildSimpleLanguage(log, language);
-    await fs.copyFile(
-      `${METAVARIABLE_GRAMMARS_DIR}/cc_build.rs`,
-      `${tsLangDir}/bindings/rust/build.rs`
-    );
+    await copyMyBuild("c", language);
   } else if (language === "hcl") {
     //HCL's mv grammar goes into `make_grammar.js`, not `grammar.js`
     await fs.copyFile(

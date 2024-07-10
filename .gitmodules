@@ -33,7 +33,7 @@
 	url = https://github.com/tree-sitter/tree-sitter-ruby
 [submodule "resources/language-submodules/tree-sitter-yaml"]
 	path = resources/language-submodules/tree-sitter-yaml
-	url = https://github.com/ikatyang/tree-sitter-yaml.git
+	url = https://github.com/tree-sitter-grammars/tree-sitter-yaml.git
 [submodule "resources/language-submodules/tree-sitter-hcl"]
 	path = resources/language-submodules/tree-sitter-hcl
 	url = https://github.com/MichaHoffmann/tree-sitter-hcl
