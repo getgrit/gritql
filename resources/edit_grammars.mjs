@@ -92,13 +92,13 @@ const copyMvGrammar = async (lang, dest) => {
   if (languagesWithoutMetaVariables.includes(lang)) {
     return;
   }
-  await fs.copyFile(
-    `${METAVARIABLE_GRAMMARS_DIR}/${lang}-metavariable-grammar.js`,
-    path.join(
-      LANGUAGE_METAVARIABLES_DIR,
-      `tree-sitter-${dest ?? lang}/grammar.js`
-    )
+  let from = `${METAVARIABLE_GRAMMARS_DIR}/${lang}-metavariable-grammar.js`;
+  let to = path.join(
+    LANGUAGE_METAVARIABLES_DIR,
+    `tree-sitter-${dest ?? lang}/grammar.js`
   );
+  await fs.copyFile(from, to);
+  console.log(`Copied ${from} to ${to}`);
 };
 
 /**
@@ -339,7 +339,6 @@ async function buildLanguage(language) {
       `${tsLangDir}/bindings/rust/build.rs`
     );
   } else if (language === "yaml") {
-    await copyMvScanner(language);
     await buildSimpleLanguage(log, language);
     await copyMyBuild("c", language);
   } else if (language === "hcl") {
