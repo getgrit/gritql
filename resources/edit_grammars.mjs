@@ -121,8 +121,8 @@ const treeSitterGenerate = async (dir, buildWasm = true) => {
 const copyNodeTypes = async (lang, dest) =>
   fs.copyFile(
     path.join(
-      resourceDir,
-      `language-submodules/tree-sitter-${lang}/src/node-types.json`
+      LANGUAGE_METAVARIABLES_DIR,
+      `tree-sitter-${lang}/src/node-types.json`
     ),
     path.join(resourceDir, `node-types/${dest ?? lang}-node-types.json`)
   );
@@ -130,8 +130,7 @@ const copyNodeTypes = async (lang, dest) =>
 const copyWasmParser = async (lang, prefix) =>
   fs.rename(
     path.join(
-      resourceDir,
-      "language-submodules",
+      LANGUAGE_METAVARIABLES_DIR,
       `${prefix ?? "tree-sitter-"}${lang}/tree-sitter-${lang}.wasm`
     ),
     path.join(
@@ -184,7 +183,6 @@ async function buildSimpleLanguage(log, language) {
   await copyMvGrammar(language);
   log(`Running tree-sitter generate`);
   await treeSitterGenerate(language);
-  process.exit();
   log(`Copying output node types`);
   await copyNodeTypes(language);
   log(`Copying wasm parser`);
