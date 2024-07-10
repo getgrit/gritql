@@ -210,6 +210,7 @@ async function buildLanguage(language) {
   }
   //Force cargo.toml to use the correct version of tree-sitter
   await execPromise(`for cargo in ${tsLangDir}/[Cc]argo.toml; do
+    echo "Checking $cargo";
     if [ -f "$cargo" ]; then
       if [[ "$OSTYPE" == "darwin"* ]]; then
         sed -i '' -e 's/tree-sitter = ".*"/tree-sitter = "~0.20"/g' "$cargo";
