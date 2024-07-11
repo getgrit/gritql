@@ -22,7 +22,7 @@ pub struct ApplyMigrationArgs {
         help_heading = "Workflow options",
         help = "JSON input parameter to pass to the workflow"
     )]
-    input: Option<String>,
+    pub(crate) input: Option<String>,
     #[clap(
         long,
         help_heading = "Workflow options",
@@ -31,7 +31,7 @@ pub struct ApplyMigrationArgs {
     pub(crate) remote: bool,
     /// Print verbose output
     #[clap(long)]
-    verbose: bool,
+    pub(crate) verbose: bool,
 }
 
 impl ApplyMigrationArgs {

@@ -75,6 +75,9 @@ where
         (server_addr, handle, shutdown_tx)
     };
 
+    println!("I DID GET HERE!");
+    log::info!("WHAT IS GOING ON?");
+
     let root = std::env::var(ENV_GRIT_WORKSPACE_ROOT).unwrap_or_else(|_| {
         repo.as_ref().and_then(|r| r.root().ok()).map_or_else(
             || cwd.to_string_lossy().into_owned(),

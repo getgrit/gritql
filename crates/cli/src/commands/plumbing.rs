@@ -10,6 +10,7 @@ use marzano_gritmodule::searcher::find_grit_modules_dir;
 use marzano_gritmodule::utils::is_pattern_name;
 use marzano_messenger::emit::ApplyDetails;
 use serde::{Deserialize, Serialize};
+use std::env::current_dir;
 use std::io::{stdin, Read};
 use std::path::Path;
 use std::path::PathBuf;
@@ -20,6 +21,7 @@ use crate::lister::list_applyables;
 use crate::resolver::{get_grit_files_from, resolve_from, Source};
 
 use super::super::analytics::AnalyticsArgs;
+use super::apply_migration::ApplyMigrationArgs;
 use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
 use super::check::{run_check, CheckArg};
 use super::filters::SharedFilterArgs;
@@ -91,6 +93,14 @@ pub enum PlumbingArgs {
     Test {
         #[command(flatten)]
         shared_args: SharedPlumbingArgs,
+    },
+    /// Run a workflow
+    #[cfg(feature = "workflows_v2")]
+    Run {
+        #[command(flatten)]
+        shared_args: SharedPlumbingArgs,
+        /// Workflow definition file
+        definition: String,
     },
 }
 
@@ -280,6 +290,34 @@ pub(crate) async fn run_plumbing(
                 }
                 super::patterns_test::AggregatedTestResult::AllPassed => Ok(()),
             }
+        }
+        #[cfg(feature = "workflows_v2")]
+        PlumbingArgs::Run {
+            shared_args,
+            definition,
+        } => {
+            let current_dir = current_dir()?;
+
+            let custom_workflow = marzano_gritmodule::searcher::find_workflow_file_from(
+                current_dir.clone(),
+                &definition,
+            )
+            .await
+            .unwrap();
+
+            println!("custom_workflow: {:?}", custom_workflow);
+            super::apply_migration::run_apply_migration(
+                custom_workflow,
+                vec![current_dir],
+                None,
+                ApplyMigrationArgs {
+                    input: None,
+                    remote: false,
+                    verbose: true,
+                },
+                &parent,
+            )
+            .await
         }
     }
 }
