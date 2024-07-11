@@ -6331,6 +6331,41 @@ fn inline_list_length() {
 }
 
 #[test]
+fn test_delete_hanging_comma() {
+    run_test_expected(TestArgExpected {
+        pattern: r#"
+            |language python
+            |
+            |`TaskMetadata($args)` => `TaskMetadata($args)`
+            |"#
+        .trim_margin()
+        .unwrap(),
+        source: r#"
+            |TaskMetadata(
+            |    name="TestTask",
+            |    description="This is a test task.",
+            |    type="TestType",
+            |    ,
+            |    reference="https://example.com/test",
+            |)
+            |"#
+        .trim_margin()
+        .unwrap(),
+        expected: r#"
+            |TaskMetadata(
+            |    name="TestTask",
+            |    description="This is a test task.",
+            |    type="TestType",
+            |    reference="https://example.com/test",
+            |)
+            |"#
+        .trim_margin()
+        .unwrap(),
+    })
+    .unwrap();
+}
+
+#[test]
 fn string_length() {
     run_test_expected({
         TestArgExpected {
