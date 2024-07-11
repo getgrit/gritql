@@ -21,7 +21,6 @@ use crate::lister::list_applyables;
 use crate::resolver::{get_grit_files_from, resolve_from, Source};
 
 use super::super::analytics::AnalyticsArgs;
-use super::apply_migration::ApplyMigrationArgs;
 use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
 use super::check::{run_check, CheckArg};
 use super::filters::SharedFilterArgs;
@@ -311,7 +310,7 @@ pub(crate) async fn run_plumbing(
                 custom_workflow,
                 vec![current_dir],
                 None,
-                ApplyMigrationArgs {
+                super::apply_migration::ApplyMigrationArgs {
                     input: Some(buffer),
                     remote: false,
                     verbose: true,
