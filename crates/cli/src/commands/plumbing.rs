@@ -296,6 +296,8 @@ pub(crate) async fn run_plumbing(
             shared_args,
             definition,
         } => {
+            let buffer = read_input(&shared_args)?;
+
             let current_dir = current_dir()?;
 
             let custom_workflow = marzano_gritmodule::searcher::find_workflow_file_from(
@@ -305,13 +307,12 @@ pub(crate) async fn run_plumbing(
             .await
             .unwrap();
 
-            println!("custom_workflow: {:?}", custom_workflow);
             super::apply_migration::run_apply_migration(
                 custom_workflow,
                 vec![current_dir],
                 None,
                 ApplyMigrationArgs {
-                    input: None,
+                    input: Some(buffer),
                     remote: false,
                     verbose: true,
                 },
