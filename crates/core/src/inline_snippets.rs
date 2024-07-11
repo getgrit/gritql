@@ -353,6 +353,7 @@ fn delete_hanging_comma(
         if Some(&index) != next_comma {
             result.push(c);
         } else {
+            next_comma = to_delete.next();
             // Keep track of ranges we need to expand into, since we deleted code in the range
             // This isn't perfect, but it's good enough for tracking cell boundaries
             for (range, ..) in replacement_ranges.iter_mut().rev() {
@@ -362,7 +363,6 @@ fn delete_hanging_comma(
                 }
             }
             ranges_updates = update_range_shifts(index + offset, &ranges_updates, &ranges);
-            next_comma = to_delete.next();
         }
     }
 
