@@ -234,12 +234,28 @@ pub(crate) fn inline_sorted_snippets_with_offset(
         }
     }
 
+    let mut trailing_comma_lines = vec![];
+
     for (range, snippet) in replacements {
         let range = adjust_range(&range.effective_range(), offset, &code)?;
         if range.start > code.len() || range.end > code.len() {
             bail!("Range {:?} is out of bounds for code:\n{}\n", range, code);
         }
-        code.replace_range(range, snippet);
+        code.replace_range(range.clone(), snippet);
+
+        // Check if the replacement results in any lines containing just a single comma
+        let line_start = code[..range.start].rfind('\n').map_or(0, |pos| pos + 1);
+        let line_end = code[range.start..].find('\n').map_or(code.len(), |pos| range.start + pos);
+
+        let line_content = code[line_start..line_end].trim();
+        if line_content == "," {
+            trailing_comma_lines.push(line_start..line_end+1);
+        }
+    }
+
+    // Remove lines with a trailing comma
+    for range in trailing_comma_lines {
+        code.replace_range(range, "");
     }
 
     Ok((code, output_ranges, original_ranges))

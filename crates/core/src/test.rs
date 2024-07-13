@@ -12014,6 +12014,104 @@ fn trailing_comma_import_from_python_with_alias() {
     .unwrap();
 }
 
+// refer https://github.com/getgrit/gritql/issues/416
+#[test]
+fn trailing_comma_after_argument_removal() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                language python
+                `TaskMetadata($args)` where {
+                        $args <: any {
+                            contains `n_samples=$_` as $ns_kwarg where {
+                                $ns_kwarg <: `n_samples = $ns_val` => .
+                            },
+                            contains `avg_character_length=$_` as $avg_kwarg where {
+                                $avg_kwarg <: `avg_character_length = $avg_val` => `stats=GeneralDescriptiveStats(n_samples=$ns_val, avg_character_length=$avg_val)`
+                            },
+                        },
+                    }
+                "#.to_owned(),
+            source: r#"
+                from pydantic import BaseModel
+
+
+                class TaskMetadata(BaseModel):
+                    n_samples: dict[str, int]
+                    avg_character_length: dict[str, float]
+
+
+                if __name__ == "__main__":
+                    TaskMetadata(
+                        name="TbilisiCityHallBitextMining",
+                        dataset={
+                            "path": "jupyterjazz/tbilisi-city-hall-titles",
+                            "revision": "798bb599140565cca2dab8473035fa167e5ee602",
+                        },
+                        description="Parallel news titles from the Tbilisi City Hall website (https://tbilisi.gov.ge/).",
+                        type="BitextMining",
+                        category="s2s",
+                        eval_splits=[_EVAL_SPLIT],
+                        eval_langs=_EVAL_LANGS,
+                        main_score="f1",
+                        domains=["News"],
+                        text_creation="created",
+                        n_samples={_EVAL_SPLIT: 1820},
+                        reference="https://huggingface.co/datasets/jupyterjazz/tbilisi-city-hall-titles",
+                        date=("2024-05-02", "2024-05-03"),
+                        form=["written"],
+                        task_subtypes=[],
+                        license="Not specified",
+                        socioeconomic_status="mixed",
+                        annotations_creators="derived",
+                        dialect=[],
+                        bibtex_citation="",
+                        avg_character_length={_EVAL_SPLIT: 78},
+                    )
+            "#
+                .to_owned(),
+            expected: r#"
+                from pydantic import BaseModel
+
+
+                class TaskMetadata(BaseModel):
+                    n_samples: dict[str, int]
+                    avg_character_length: dict[str, float]
+
+
+                if __name__ == "__main__":
+                    TaskMetadata(
+                        name="TbilisiCityHallBitextMining",
+                        dataset={
+                            "path": "jupyterjazz/tbilisi-city-hall-titles",
+                            "revision": "798bb599140565cca2dab8473035fa167e5ee602",
+                        },
+                        description="Parallel news titles from the Tbilisi City Hall website (https://tbilisi.gov.ge/).",
+                        type="BitextMining",
+                        category="s2s",
+                        eval_splits=[_EVAL_SPLIT],
+                        eval_langs=_EVAL_LANGS,
+                        main_score="f1",
+                        domains=["News"],
+                        text_creation="created",
+                        reference="https://huggingface.co/datasets/jupyterjazz/tbilisi-city-hall-titles",
+                        date=("2024-05-02", "2024-05-03"),
+                        form=["written"],
+                        task_subtypes=[],
+                        license="Not specified",
+                        socioeconomic_status="mixed",
+                        annotations_creators="derived",
+                        dialect=[],
+                        bibtex_citation="",
+                        stats=GeneralDescriptiveStats(n_samples={_EVAL_SPLIT: 1820}, avg_character_length={_EVAL_SPLIT: 78}),
+                    )
+            "#
+                .to_owned(),
+        }
+    })
+    .unwrap();
+}
+
 #[test]
 fn python_orphaned_from_imports() {
     run_test_expected({
