@@ -253,7 +253,7 @@ pub(crate) fn inline_sorted_snippets_with_offset(
         }
     }
 
-    // Remove lines with a trailing comma
+    // Remove lines containing a trailing comma
     for range in trailing_comma_lines {
         code.replace_range(range, "");
     }
