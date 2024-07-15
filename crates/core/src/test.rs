@@ -12094,6 +12094,7 @@ fn trailing_comma_after_argument_removal() {
                         main_score="f1",
                         domains=["News"],
                         text_creation="created",
+
                         reference="https://huggingface.co/datasets/jupyterjazz/tbilisi-city-hall-titles",
                         date=("2024-05-02", "2024-05-03"),
                         form=["written"],
