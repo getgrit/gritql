@@ -92,7 +92,7 @@ impl<Q: QueryContext> ListIndex<Q> {
                     }
                 }
                 Some(s) => {
-                    return Err(GritPatternError::new(format!(
+                    Err(GritPatternError::new(format!(
                         "left side of a listIndex must be a list but got {:?}",
                         s
                     )))
@@ -127,13 +127,13 @@ impl<Q: QueryContext> ListIndex<Q> {
                             .get_list_item_at_mut(index)
                             .map(PatternOrResolvedMut::Resolved))
                     } else {
-                        return Err(GritPatternError::new(
+                        Err(GritPatternError::new(
                             "left side of a listIndex must be a list",
-                        ));
+                        ))
                     }
                 }
                 Some(s) => {
-                    return Err(GritPatternError::new(format!(
+                    Err(GritPatternError::new(format!(
                         "left side of a listIndex must be a list but got {:?}",
                         s
                     )))
@@ -157,13 +157,13 @@ impl<Q: QueryContext> ListIndex<Q> {
                     resolved.set_list_item_at_mut(index, value)
                 }
                 Some(_) => {
-                    return Err(GritPatternError::new(
+                    Err(GritPatternError::new(
                         "accessor can only mutate a resolved list",
                     ))
                 }
             },
             ListOrContainer::List(_) => {
-                return Err(GritPatternError::new("cannot mutate a list literal"))
+                Err(GritPatternError::new("cannot mutate a list literal"))
             }
         }
     }

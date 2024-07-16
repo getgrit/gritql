@@ -63,13 +63,13 @@ impl<Q: QueryContext> Accessor<Q> {
                 Some(PatternOrResolved::Resolved(resolved)) => match resolved.get_map() {
                     Some(m) => Ok(m.get(key.as_ref()).map(PatternOrResolved::Resolved)),
                     None => {
-                        return Err(GritPatternError::new(
+                        Err(GritPatternError::new(
                             "left side of an accessor must be a map",
                         ))
                     }
                 },
                 Some(_) => {
-                    return Err(GritPatternError::new(
+                    Err(GritPatternError::new(
                         "left side of an accessor must be a map",
                     ))
                 }
@@ -93,13 +93,13 @@ impl<Q: QueryContext> Accessor<Q> {
                 Some(PatternOrResolvedMut::Resolved(resolved)) => match resolved.get_map_mut() {
                     Some(m) => Ok(m.get_mut(key.as_ref()).map(PatternOrResolvedMut::Resolved)),
                     None => {
-                        return Err(GritPatternError::new(
+                        Err(GritPatternError::new(
                             "left side of an accessor must be a map",
                         ))
                     }
                 },
                 Some(_) => {
-                    return Err(GritPatternError::new(
+                    Err(GritPatternError::new(
                         "left side of an accessor must be a map",
                     ))
                 }
@@ -124,9 +124,9 @@ impl<Q: QueryContext> Accessor<Q> {
                             m.insert(key.to_string(), value);
                             Ok(true)
                         } else {
-                            return Err(GritPatternError::new(
+                            Err(GritPatternError::new(
                                 "accessor can only mutate a resolved map",
-                            ));
+                            ))
                         }
                     }
                     Some(_) => Err(GritPatternError::new(

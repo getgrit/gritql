@@ -55,10 +55,10 @@ impl<Q: QueryContext> Matcher<Q> for Accumulate<Q> {
                 base.extend(append, &mut state.effects, context.language())?;
                 Ok(true)
             } else {
-                return Err(GritPatternError::new(format!(
+                Err(GritPatternError::new(format!(
                     "Variable {} is not bound",
                     state.bindings[var.scope].last().unwrap()[var.index].name
-                )));
+                )))
             }
         } else {
             let resolved = if !self.left.execute(context_node, state, context, logs)? {
@@ -120,15 +120,15 @@ impl<Q: QueryContext> Evaluator<Q> for Accumulate<Q> {
                     ret_val: None,
                 })
             } else {
-                return Err(GritPatternError::new(format!(
+                Err(GritPatternError::new(format!(
                     "Variable {} is not bound",
                     state.bindings[var.scope].last().unwrap()[var.index].name
-                )));
+                )))
             }
         } else {
-            return Err(GritPatternError::new(
+            Err(GritPatternError::new(
                 "Insert side-conditions must have variable on left-hand side",
-            ));
+            ))
         }
     }
 }
