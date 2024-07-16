@@ -18,6 +18,7 @@ use itertools::Itertools;
 use rand::prelude::SliceRandom;
 use rand::Rng;
 use std::collections::BTreeMap;
+use grit_pattern_matcher::errors::GritResult;
 
 // todo we can probably use a macro to generate a function that takes a vec and
 // and calls the input function with the vec args unpacked.
@@ -31,7 +32,7 @@ pub type CallableFn = dyn for<'a> Fn(
         &'a MarzanoContext<'a>,
         &mut State<'a, MarzanoQueryContext>,
         &mut AnalysisLogs,
-    ) -> Result<MarzanoResolvedPattern<'a>>
+    ) -> GritResult<MarzanoResolvedPattern<'a>>
     + Send
     + Sync;
 
@@ -48,7 +49,7 @@ impl BuiltInFunction {
         context: &'a MarzanoContext<'a>,
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
-    ) -> Result<MarzanoResolvedPattern<'a>> {
+    ) -> GritResult<MarzanoResolvedPattern<'a>> {
         (self.func)(args, context, state, logs)
     }
 
@@ -76,7 +77,7 @@ impl BuiltIns {
         context: &'a MarzanoContext<'a>,
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
-    ) -> Result<MarzanoResolvedPattern<'a>> {
+    ) -> GritResult<MarzanoResolvedPattern<'a>> {
         self.0[call.index].call(&call.args, context, state, logs)
     }
 

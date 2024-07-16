@@ -81,7 +81,7 @@ impl GritPatternError {
         Self::Matcher(reason.into())
     }
 
-    pub(crate) fn new(reason: impl Into<String>) -> Self {
+    pub fn new(reason: impl Into<String>) -> Self {
         Self::Generic(reason.into())
     }
 }
