@@ -944,7 +944,7 @@ mod tests {
                 .await
                 .unwrap();
 
-        assert_eq!(resolved_patterns.len(), 3);
+        assert_eq!(resolved_patterns.len(), 4);
         assert_eq!(errored_patterns.len(), 0);
 
         resolved_patterns.sort_by(|a, b| a.local_name.cmp(&b.local_name));
