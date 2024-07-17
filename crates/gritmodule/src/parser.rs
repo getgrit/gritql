@@ -7,7 +7,7 @@ use crate::{
     config::{ModuleGritPattern, REPO_CONFIG_DIR_NAME},
     dot_grit::get_patterns_from_grit,
     fetcher::ModuleRepo,
-    markdown::get_patterns_from_md,
+    markdown::{get_patterns_from_md, GritDefinitionOverrides},
     searcher::find_repo_root_from,
     yaml::get_patterns_from_yaml,
 };
@@ -63,14 +63,18 @@ impl PatternFileExt {
                     )
                 })
             }
-            PatternFileExt::Md => {
-                get_patterns_from_md(file, source_module, root).with_context(|| {
-                    format!(
-                        "Failed to parse markdown pattern {}",
-                        extract_relative_file_path(file, root)
-                    )
-                })
-            }
+            PatternFileExt::Md => get_patterns_from_md(
+                file,
+                source_module,
+                root,
+                GritDefinitionOverrides::default(),
+            )
+            .with_context(|| {
+                format!(
+                    "Failed to parse markdown pattern {}",
+                    extract_relative_file_path(file, root)
+                )
+            }),
             PatternFileExt::Yaml => {
                 let res = get_patterns_from_yaml(file, source_module.as_ref(), root, "").await;
                 res.with_context(|| {
