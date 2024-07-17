@@ -57,8 +57,6 @@ impl AllApp {
     fn from_supported_app(app: SupportedApp) -> Self {
         match app {
             SupportedApp::Marzano => AllApp::Marzano,
-            SupportedApp::Cli => AllApp::Cli,
-            SupportedApp::Timekeeper => AllApp::Timekeeper,
             #[cfg(feature = "workflows_v2")]
             SupportedApp::WorkflowRunner => AllApp::WorkflowRunner,
             SupportedApp::Gouda => AllApp::Gouda,
@@ -69,9 +67,7 @@ impl AllApp {
 // Allowed modern apps
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, clap::ValueEnum)]
 pub enum SupportedApp {
-    Timekeeper,
     Marzano,
-    Cli,
     Gouda,
     #[cfg(feature = "workflows_v2")]
     WorkflowRunner,
@@ -85,9 +81,7 @@ impl SupportedApp {
 
     pub fn get_base_name(&self) -> String {
         match self {
-            SupportedApp::Timekeeper => "timekeeper".to_string(),
             SupportedApp::Marzano => "marzano".to_string(),
-            SupportedApp::Cli => "cli".to_string(),
             SupportedApp::Gouda => "gouda".to_string(),
             #[cfg(feature = "workflows_v2")]
             SupportedApp::WorkflowRunner => "workflow_runner".to_string(),
@@ -96,9 +90,7 @@ impl SupportedApp {
 
     fn get_env_name(&self) -> String {
         match self {
-            SupportedApp::Timekeeper => "GRIT_TIMEKEEPER_PATH".to_string(),
             SupportedApp::Marzano => "GRIT_MARZANO_PATH".to_string(),
-            SupportedApp::Cli => "GRIT_CLI_PATH".to_string(),
             SupportedApp::Gouda => "GRIT_GOUDA_PATH".to_string(),
             #[cfg(feature = "workflows_v2")]
             SupportedApp::WorkflowRunner => "GRIT_WORKFLOW_RUNNER".to_string(),
@@ -106,17 +98,11 @@ impl SupportedApp {
     }
 
     fn get_bin_name(&self) -> String {
-        match self {
-            SupportedApp::Timekeeper => "temporalite".to_string(),
-            _ => format!("{}-{}", self.get_base_name(), get_client_os()),
-        }
+        format!("{}-{}", self.get_base_name(), get_client_os())
     }
 
     fn get_fallback_bin_name(&self) -> String {
-        match self {
-            SupportedApp::Timekeeper => "temporalite".to_string(),
-            _ => self.get_base_name().to_string(),
-        }
+        self.get_base_name().to_string()
     }
 
     fn get_file_name(&self, os: &str, arch: &str) -> String {
@@ -127,8 +113,6 @@ impl SupportedApp {
     pub fn from_all_app(app: AllApp) -> Option<Self> {
         match app {
             AllApp::Marzano => Some(SupportedApp::Marzano),
-            AllApp::Cli => Some(SupportedApp::Cli),
-            AllApp::Timekeeper => Some(SupportedApp::Timekeeper),
             AllApp::Gouda => Some(SupportedApp::Gouda),
             #[cfg(feature = "workflows_v2")]
             AllApp::WorkflowRunner => Some(SupportedApp::WorkflowRunner),
@@ -238,8 +222,6 @@ impl Updater {
     pub fn get_apps() -> Vec<SupportedApp> {
         vec![
             SupportedApp::Marzano,
-            SupportedApp::Cli,
-            SupportedApp::Timekeeper,
             SupportedApp::Gouda,
             #[cfg(feature = "workflows_v2")]
             SupportedApp::WorkflowRunner,
@@ -844,13 +826,11 @@ mod tests {
     #[tokio::test]
     async fn test_filenames() -> Result<()> {
         let marzano = SupportedApp::Marzano;
-        let cli = SupportedApp::Cli;
 
         assert_eq!(
             marzano.get_file_name("macos", "arm64"),
             "marzano-macos-arm64"
         );
-        assert_eq!(cli.get_file_name("macos", "arm64"), "cli-macos-arm64");
 
         Ok(())
     }
@@ -886,13 +866,13 @@ mod tests {
         assert_eq!(marzano_version, "0.1.0-alpha.1689744085325");
 
         // Get the release date of the cli binary
-        let cli_release_date = updater._get_app_release_date(SupportedApp::Cli)?;
+        let marzano_release_date = updater._get_app_release_date(SupportedApp::Marzano)?;
         assert_eq!(
-            cli_release_date,
+            marzano_release_date,
             DateTime::<Utc>::from_naive_utc_and_offset(
-                NaiveDate::from_ymd_opt(2023, 7, 12)
+                NaiveDate::from_ymd_opt(2023, 7, 19)
                     .unwrap()
-                    .and_hms_opt(5, 2, 9)
+                    .and_hms_milli_opt(5, 21, 25, 325)
                     .unwrap(),
                 Utc
             ),
