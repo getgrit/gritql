@@ -68,10 +68,14 @@ pub fn get_patterns_from_md(
     let src = &file.content;
 
     let path = Path::new(&file.path);
-    let name = path
-        .file_stem()
-        .and_then(|stem| stem.to_str())
-        .unwrap_or_else(|| file.path.trim_end_matches(".md"));
+    let name = overrides.name.as_deref().unwrap_or_else(|| {
+        path.file_stem()
+            .and_then(|stem| stem.to_str())
+            .unwrap_or_else(|| file.path.trim_end_matches(".md"))
+    });
+    if !is_pattern_name(name) {
+        bail!("Invalid pattern name: '{}'. Grit patterns must match the regex /^[A-Za-z_][A-Za-z0-9_]*$/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", name);
+    }
 
     let relative_path = extract_relative_file_path(file, root);
 
@@ -731,6 +735,37 @@ language js
         assert_eq!(patterns.len(), 1);
         println!("{:?}", patterns);
         assert_eq!(patterns[0].config.meta.level, Some(EnforcementLevel::Error));
+    }
+
+    #[test]
+    fn test_with_override() {
+        let module = Default::default();
+        let mut rich_file = RichFile {
+            path: "my-weird-pattern.md".to_string(),
+            content: r#"# This file name is illegal
+
+```grit
+engine marzano(0.1)
+language js
+
+`console.log($_)` => .
+```
+
+"#
+            .to_string(),
+        };
+        let patterns = get_patterns_from_md(
+            &mut rich_file,
+            &module,
+            &None,
+            GritDefinitionOverrides {
+                name: Some("ok_name".to_owned()),
+            },
+        )
+        .unwrap();
+        assert_eq!(patterns.len(), 1);
+        println!("{:?}", patterns);
+        assert_eq!(patterns[0].local_name, "ok_name");
     }
 
     #[test]
