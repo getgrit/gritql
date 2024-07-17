@@ -12,7 +12,7 @@ expression: resolved_patterns
     samples: ~
     path: ".grit/grit.yaml"
     position:
-      line: 5
+      line: 7
       column: 11
     raw: ~
   module:
@@ -23,6 +23,32 @@ expression: resolved_patterns
     providerName: github.com/getgrit/rewriter
   localName: remove_console_error
   body: "engine marzano(0.1)\nlanguage js\n\n`console.error($_)` => .\n"
+  kind: pattern
+  language: js
+  visibility: public
+- config:
+    name: renamed_pattern
+    body: "\n`foo` => `bar`\n\n"
+    level: info
+    title: This pattern has a different name in the config.
+    description: It still works though!
+    tags: ~
+    samples: []
+    path: ".grit/../docs/guides/new-name.md"
+    position:
+      line: 6
+      column: 1
+    raw:
+      format: markdown
+      content: "# This pattern has a different name in the config.\n\nIt still works though!\n\n```grit\n\n`foo` => `bar`\n\n```\n"
+  module:
+    type: Module
+    host: github.com
+    fullName: getgrit/rewriter
+    remote: "https://github.com/getgrit/rewriter.git"
+    providerName: github.com/getgrit/rewriter
+  localName: renamed_pattern
+  body: "\n`foo` => `bar`\n\n"
   kind: pattern
   language: js
   visibility: public

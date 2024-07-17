@@ -13,12 +13,12 @@ use std::{env, fmt, io::ErrorKind, str::FromStr};
 use tokio::{fs, io::AsyncWriteExt};
 use tracing::instrument;
 
-use crate::fetcher::GritModuleFetcher;
 use crate::installer::install_default_stdlib;
 use crate::resolver::fetch_modules;
 use crate::searcher::{
     find_git_dir_from, find_global_grit_dir, find_global_grit_modules_dir, find_grit_dir_from,
 };
+use crate::{fetcher::GritModuleFetcher, markdown::GritDefinitionOverrides};
 use crate::{
     fetcher::{FetcherType, ModuleRepo},
     parser::PatternFileExt,
@@ -36,6 +36,8 @@ pub struct GritGitHubConfig {
 #[derive(Debug, Deserialize)]
 pub struct GritPatternFile {
     pub file: PathBuf,
+    #[serde(flatten)]
+    pub overrides: GritDefinitionOverrides,
 }
 
 /// Pure in-memory representation of the grit config

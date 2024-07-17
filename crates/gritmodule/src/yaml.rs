@@ -87,16 +87,24 @@ pub fn get_patterns_from_yaml<'a>(
         }
 
         for pattern_file in config.pattern_files.unwrap() {
-            let pattern_file = PathBuf::from(repo_dir)
+            let pattern_file_path = PathBuf::from(repo_dir)
                 .join(REPO_CONFIG_DIR_NAME)
                 .join(&pattern_file.file);
-            let extension = PatternFileExt::from_path(&pattern_file);
+            let extension = PatternFileExt::from_path(&pattern_file_path);
             if extension.is_none() {
                 continue;
             }
             let extension = extension.unwrap();
             let source_module = source_module.cloned();
-            patterns.extend(get_patterns_from_file(pattern_file, source_module, extension).await?);
+            patterns.extend(
+                get_patterns_from_file(
+                    pattern_file_path,
+                    source_module,
+                    extension,
+                    pattern_file.overrides,
+                )
+                .await?,
+            );
         }
 
         Ok(patterns)

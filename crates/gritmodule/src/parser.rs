@@ -7,7 +7,7 @@ use crate::{
     config::{ModuleGritPattern, REPO_CONFIG_DIR_NAME},
     dot_grit::get_patterns_from_grit,
     fetcher::ModuleRepo,
-    markdown::get_patterns_from_md,
+    markdown::{get_patterns_from_md, GritDefinitionOverrides},
     searcher::find_repo_root_from,
     yaml::get_patterns_from_yaml,
 };
@@ -53,6 +53,7 @@ impl PatternFileExt {
         file: &mut RichFile,
         source_module: &Option<ModuleRepo>,
         root: &Option<String>,
+        overrides: GritDefinitionOverrides,
     ) -> Result<Vec<ModuleGritPattern>, anyhow::Error> {
         match self {
             PatternFileExt::Grit => {
@@ -63,14 +64,13 @@ impl PatternFileExt {
                     )
                 })
             }
-            PatternFileExt::Md => {
-                get_patterns_from_md(file, source_module, root).with_context(|| {
+            PatternFileExt::Md => get_patterns_from_md(file, source_module, root, overrides)
+                .with_context(|| {
                     format!(
                         "Failed to parse markdown pattern {}",
                         extract_relative_file_path(file, root)
                     )
-                })
-            }
+                }),
             PatternFileExt::Yaml => {
                 let res = get_patterns_from_yaml(file, source_module.as_ref(), root, "").await;
                 res.with_context(|| {
@@ -96,6 +96,7 @@ pub async fn get_patterns_from_file(
     path: PathBuf,
     source_module: Option<ModuleRepo>,
     ext: PatternFileExt,
+    overrides: GritDefinitionOverrides,
 ) -> Result<Vec<ModuleGritPattern>> {
     let repo_root = find_repo_root_from(path.clone()).await?;
     let content = fs::read_to_string(&path).await?;
@@ -103,7 +104,7 @@ pub async fn get_patterns_from_file(
         path: path.to_string_lossy().to_string(),
         content,
     };
-    ext.get_patterns(&mut file, &source_module, &repo_root)
+    ext.get_patterns(&mut file, &source_module, &repo_root, overrides)
         .await
 }
 

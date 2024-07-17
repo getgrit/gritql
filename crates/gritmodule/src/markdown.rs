@@ -15,6 +15,7 @@ use marzano_language::language::MarzanoLanguage as _;
 use marzano_util::cursor_wrapper::CursorWrapper;
 use marzano_util::node_with_source::NodeWithSource;
 use marzano_util::rich_path::RichFile;
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Seek, Write};
 use std::path::Path;
 use tokio::io::SeekFrom;
@@ -47,10 +48,17 @@ pub fn make_md_parser() -> Result<Parser> {
     Ok(parser)
 }
 
+/// Allow overriding fields when constructing a pattern from a file
+#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
+pub struct GritDefinitionOverrides {
+    pub name: Option<String>,
+}
+
 pub fn get_patterns_from_md(
     file: &mut RichFile,
     source_module: &Option<ModuleRepo>,
     root: &Option<String>,
+    overrides: GritDefinitionOverrides,
 ) -> Result<Vec<ModuleGritPattern>> {
     // Tree sitter has weird problems if we are missing a newline at the end of the file
     if !file.content.ends_with('\n') {
@@ -60,10 +68,11 @@ pub fn get_patterns_from_md(
     let src = &file.content;
 
     let path = Path::new(&file.path);
-    let name = path
-        .file_stem()
-        .and_then(|stem| stem.to_str())
-        .unwrap_or_else(|| file.path.trim_end_matches(".md"));
+    let name = overrides.name.as_deref().unwrap_or_else(|| {
+        path.file_stem()
+            .and_then(|stem| stem.to_str())
+            .unwrap_or_else(|| file.path.trim_end_matches(".md"))
+    });
     if !is_pattern_name(name) {
         bail!("Invalid pattern name: '{}'. Grit patterns must match the regex /^[A-Za-z_][A-Za-z0-9_]*$/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", name);
     }
@@ -246,6 +255,7 @@ pub fn get_body_from_md_content(content: &str) -> Result<String> {
         },
         &None,
         &None,
+        GritDefinitionOverrides::default(),
     )?;
 
     if let Some(pattern) = patterns.first() {
@@ -340,7 +350,13 @@ function isTruthy(x) {
 }
 ```
 "#.to_string()};
-        let patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
+        let patterns = get_patterns_from_md(
+            &mut rich_file,
+            &module,
+            &None,
+            GritDefinitionOverrides::default(),
+        )
+        .unwrap();
         assert_eq!(patterns.len(), 1);
         println!("{:?}", patterns);
         assert_yaml_snapshot!(patterns);
@@ -407,7 +423,13 @@ function isTruthy(x) {
 }
 ```
 "#.to_string()};
-        let patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
+        let patterns = get_patterns_from_md(
+            &mut rich_file,
+            &module,
+            &None,
+            GritDefinitionOverrides::default(),
+        )
+        .unwrap();
         assert_eq!(patterns.len(), 1);
         println!("{:?}", patterns);
         assert_eq!(patterns[0].config.samples.as_ref().unwrap().len(), 3);
@@ -496,7 +518,13 @@ function isTruthy(x) {
 "#
             .to_string(),
         };
-        let patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
+        let patterns = get_patterns_from_md(
+            &mut rich_file,
+            &module,
+            &None,
+            GritDefinitionOverrides::default(),
+        )
+        .unwrap();
         assert_eq!(patterns.len(), 2);
         println!("{:?}", patterns);
         assert_yaml_snapshot!(patterns);
@@ -657,7 +685,13 @@ jobs:
 "#
             .to_string(),
         };
-        let patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
+        let patterns = get_patterns_from_md(
+            &mut rich_file,
+            &module,
+            &None,
+            GritDefinitionOverrides::default(),
+        )
+        .unwrap();
         assert_eq!(patterns.len(), 1);
         println!("{:?}", patterns);
         let sample_input = &patterns[0].config.samples.as_ref().unwrap()[0].input;
@@ -691,10 +725,47 @@ language js
 "#
             .to_string(),
         };
-        let patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
+        let patterns = get_patterns_from_md(
+            &mut rich_file,
+            &module,
+            &None,
+            GritDefinitionOverrides::default(),
+        )
+        .unwrap();
         assert_eq!(patterns.len(), 1);
         println!("{:?}", patterns);
         assert_eq!(patterns[0].config.meta.level, Some(EnforcementLevel::Error));
+    }
+
+    #[test]
+    fn test_with_override() {
+        let module = Default::default();
+        let mut rich_file = RichFile {
+            path: "my-weird-pattern.md".to_string(),
+            content: r#"# This file name is illegal
+
+```grit
+engine marzano(0.1)
+language js
+
+`console.log($_)` => .
+```
+
+"#
+            .to_string(),
+        };
+        let patterns = get_patterns_from_md(
+            &mut rich_file,
+            &module,
+            &None,
+            GritDefinitionOverrides {
+                name: Some("ok_name".to_owned()),
+            },
+        )
+        .unwrap();
+        assert_eq!(patterns.len(), 1);
+        println!("{:?}", patterns);
+        assert_eq!(patterns[0].local_name, "ok_name");
     }
 
     #[test]
@@ -781,7 +852,13 @@ while (val !== null) {
 ```
 "#.to_string(),
         };
-        let patterns = get_patterns_from_md(&mut rich_file, &module, &None).unwrap();
+        let patterns = get_patterns_from_md(
+            &mut rich_file,
+            &module,
+            &None,
+            GritDefinitionOverrides::default(),
+        )
+        .unwrap();
         assert_eq!(patterns.len(), 1);
         assert_yaml_snapshot!(patterns);
     }
@@ -818,7 +895,13 @@ multifile {
 }
 ```
 "#.to_string(),};
-        let patterns = get_patterns_from_md(&mut rich_file, &Some(module), &None).unwrap();
+        let patterns = get_patterns_from_md(
+            &mut rich_file,
+            &Some(module),
+            &None,
+            GritDefinitionOverrides::default(),
+        )
+        .unwrap();
         assert_eq!(patterns.len(), 1);
         assert_yaml_snapshot!(patterns);
     }
@@ -875,7 +958,13 @@ $$ LANGUAGE plpgsql;
 "#
             .to_string(),
         };
-        let patterns = get_patterns_from_md(&mut rich_file, &Some(module), &None).unwrap();
+        let patterns = get_patterns_from_md(
+            &mut rich_file,
+            &Some(module),
+            &None,
+            GritDefinitionOverrides::default(),
+        )
+        .unwrap();
         assert_eq!(patterns.len(), 1);
         assert_yaml_snapshot!(patterns);
 

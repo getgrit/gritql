@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use tokio::fs;
 
+use crate::markdown::GritDefinitionOverrides;
 use crate::{
     config::{
         ModuleGritPattern, GRIT_GLOBAL_DIR_ENV, GRIT_MODULE_DIR, REPO_CONFIG_DIR_NAME,
@@ -25,7 +26,13 @@ pub async fn collect_from_file(
             path.to_string_lossy()
         )
     })?;
-    get_patterns_from_file(path.to_path_buf(), source_module.clone(), ext).await
+    get_patterns_from_file(
+        path.to_path_buf(),
+        source_module.clone(),
+        ext,
+        GritDefinitionOverrides::default(),
+    )
+    .await
 }
 
 pub async fn collect_patterns(
@@ -65,6 +72,7 @@ pub async fn collect_patterns(
                         path.to_path_buf(),
                         source_module.clone(),
                         ext,
+                        GritDefinitionOverrides::default(),
                     )));
                 }
             }

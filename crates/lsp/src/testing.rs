@@ -2,7 +2,7 @@ use anyhow::{anyhow, bail, Context, Result};
 use grit_util::Position;
 use marzano_core::{api::MatchResult, pattern_compiler::src_to_problem_libs};
 use marzano_gritmodule::{
-    markdown::get_patterns_from_md,
+    markdown::{get_patterns_from_md, GritDefinitionOverrides},
     resolver::get_grit_files,
     testing::{get_sample_name, test_pattern_sample, GritTestResultState},
 };
@@ -73,7 +73,12 @@ pub async fn maybe_test_pattern(
     } else {
         None
     };
-    let found_patterns = get_patterns_from_md(&mut rich_file, &Some(module_repo), &root)?;
+    let found_patterns = get_patterns_from_md(
+        &mut rich_file,
+        &Some(module_repo),
+        &root,
+        GritDefinitionOverrides::default(),
+    )?;
 
     let our_pattern = match found_patterns.first() {
         Some(pattern) => pattern,
