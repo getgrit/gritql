@@ -100,6 +100,7 @@ pub async fn get_patterns_from_file(
     path: PathBuf,
     source_module: Option<ModuleRepo>,
     ext: PatternFileExt,
+    overides: GritDefinitionOverrides,
 ) -> Result<Vec<ModuleGritPattern>> {
     let repo_root = find_repo_root_from(path.clone()).await?;
     let content = fs::read_to_string(&path).await?;
