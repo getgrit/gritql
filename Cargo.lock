@@ -1804,6 +1804,7 @@ dependencies = [
  "linked-hash-map",
  "pest",
  "pest_derive",
+ "regex",
  "serde",
  "similar",
  "yaml-rust",

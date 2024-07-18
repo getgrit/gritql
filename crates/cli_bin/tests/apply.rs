@@ -1708,7 +1708,11 @@ fn output_jsonl() -> Result<()> {
     );
 
     let content = fs_err::read_to_string(dir.join("output.jsonl"))?;
-    assert_snapshot!(content);
+    insta::with_settings!({filters => vec![
+        (r"\b[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}\b", "[UUID]"),
+    ]}, {
+        assert_snapshot!(content);
+    });
 
     let line_count = content.lines().count();
     assert_eq!(line_count, 3);
