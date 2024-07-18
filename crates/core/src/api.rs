@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::to_string_pretty;
 use std::path::PathBuf;
 use std::{fmt, str::FromStr, vec};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
@@ -343,6 +344,8 @@ pub struct Match {
     pub ranges: Vec<Range>,
     #[serde(default)]
     pub reason: Option<MatchReason>,
+    #[serde(default)]
+    pub id: Uuid,
 }
 
 impl From<EntireFile> for Match {
@@ -354,6 +357,7 @@ impl From<EntireFile> for Match {
             ranges: file_match.ranges,
             reason: None,
             content: file_match.content,
+            id: Uuid::new_v4(),
         }
     }
 }
@@ -456,6 +460,8 @@ pub struct Rewrite {
     pub rewritten: EntireFile,
     #[serde(default)]
     pub reason: Option<MatchReason>,
+    #[serde(default)]
+    pub id: Uuid,
 }
 
 impl From<Rewrite> for MatchResult {
@@ -558,6 +564,7 @@ impl Rewrite {
             original,
             rewritten,
             reason,
+            id: Uuid::new_v4(),
         }
     }
 }
@@ -568,6 +575,8 @@ pub struct CreateFile {
     pub rewritten: EntireFile,
     range: Option<Vec<Range>>,
     pub reason: Option<MatchReason>,
+    #[serde(default)]
+    pub id: Uuid,
 }
 
 impl From<CreateFile> for MatchResult {
@@ -582,6 +591,7 @@ impl CreateFile {
             rewritten: EntireFile::file_to_entire_file(name, body, None),
             range: None,
             reason: None,
+            id: Uuid::new_v4(),
         }
     }
 }
@@ -622,6 +632,8 @@ pub struct RemoveFile {
     pub original: EntireFile,
     #[serde(default)]
     pub reason: Option<MatchReason>,
+    #[serde(default)]
+    pub id: Uuid,
 }
 
 impl From<RemoveFile> for MatchResult {
