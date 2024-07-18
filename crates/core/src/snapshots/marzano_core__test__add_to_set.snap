@@ -147,6 +147,7 @@ expression: results
         end: 68
     ranges: []
   reason: ~
+  id: e85d7dd6-f904-487d-886b-5d8b8f97d930
 - __typename: DoneFile
   relativeFilePath: test-file.tsx
 - __typename: AnalysisLog
