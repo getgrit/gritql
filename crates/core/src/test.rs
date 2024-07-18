@@ -2352,6 +2352,38 @@ fn python_easy_sub() {
 }
 
 #[test]
+fn python_type_context() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |engine marzano(0.1)
+                |language python
+                |
+                |`def matching_method($_) -> $type:
+                | $body` where {
+                |    $type <: `List` => `List[str]`
+                |}
+                |}"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+            |def matching_method(bob) -> List:
+            |  print("ok")
+            |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+            |def matching_method(bob) -> List[str]:
+            |  print("ok")
+            |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn predicate_maybe() {
     run_test_expected({
         TestArgExpected {
