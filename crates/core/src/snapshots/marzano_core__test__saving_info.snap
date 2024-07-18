@@ -262,7 +262,7 @@ expression: results
         end: 18
     ranges: []
   reason: ~
-  id: 574550d2-27e2-4bbf-a9d7-349c1ad9841c
+  id: [UUID]
 - __typename: DoneFile
   relativeFilePath: test-file.tsx
 - __typename: AnalysisLog

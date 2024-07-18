@@ -148,7 +148,7 @@ expression: results
         end: 27
     ranges: []
   reason: ~
-  id: f3fceeac-e794-400d-a751-ac0ce7ffe2ba
+  id: [UUID]
 - __typename: Rewrite
   original:
     messages: []
@@ -295,7 +295,7 @@ expression: results
         end: 34
     ranges: []
   reason: ~
-  id: ae665794-6b9e-4879-846b-f36e2dd71ad7
+  id: [UUID]
 - __typename: DoneFile
   relativeFilePath: file1.tsx
 - __typename: DoneFile

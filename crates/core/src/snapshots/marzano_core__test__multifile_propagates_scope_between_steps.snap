@@ -66,7 +66,7 @@ expression: results
   content: foo(1)
   ranges: []
   reason: ~
-  id: 5a1d2081-64f2-4d85-adc6-82b96513be74
+  id: [UUID]
 - __typename: Rewrite
   original:
     messages: []
@@ -142,7 +142,7 @@ expression: results
         end: 6
     ranges: []
   reason: ~
-  id: 0d33377a-ba30-4374-9953-8b81cd95c98a
+  id: [UUID]
 - __typename: DoneFile
   relativeFilePath: file1.tsx
 - __typename: DoneFile

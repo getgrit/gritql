@@ -62,6 +62,6 @@ expression: results
         end: 19
     ranges: []
   reason: ~
-  id: 360ca51a-75f5-4983-9c0c-65f495d8a457
+  id: [UUID]
 - __typename: DoneFile
   relativeFilePath: foo.py
