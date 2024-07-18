@@ -20,7 +20,7 @@ use rayon::iter::ParallelIterator;
 use regex::Regex;
 use std::sync::Once;
 
-use crate::common::{get_fixture, get_fixtures_root, run_init_cmd};
+use crate::common::{get_fixture, get_fixtures_root, run_init_cmd, INSTA_FILTERS};
 
 mod common;
 
@@ -1708,9 +1708,7 @@ fn output_jsonl() -> Result<()> {
     );
 
     let content = fs_err::read_to_string(dir.join("output.jsonl"))?;
-    insta::with_settings!({filters => vec![
-        (r"\b[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}\b", "[UUID]"),
-    ]}, {
+    insta::with_settings!({filters => INSTA_FILTERS.to_vec()}, {
         assert_snapshot!(content);
     });
 
