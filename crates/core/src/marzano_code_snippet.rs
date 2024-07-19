@@ -8,6 +8,7 @@ use grit_pattern_matcher::{
     context::ExecContext,
     pattern::{CodeSnippet, DynamicPattern, Matcher, Pattern, PatternName, ResolvedPattern, State},
 };
+use grit_pattern_matcher::errors::GritResult;
 use grit_util::AnalysisLogs;
 use marzano_language::language::SortId;
 
@@ -56,7 +57,7 @@ impl Matcher<MarzanoQueryContext> for MarzanoCodeSnippet {
         state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let Some(binding) = resolved.get_last_binding() else {
             return Ok(resolved.text(&state.files, context.language())?.trim() == self.source);
         };

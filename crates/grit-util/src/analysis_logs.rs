@@ -5,7 +5,7 @@ use std::ops;
 use std::path::PathBuf;
 
 // TypedBuilder offers type safe builds at compile time.
-// unfortunatly it's a consuming builder, I don't believe it's
+// unfortunately it's a consuming builder, I don't believe it's
 // possible to make a non consuming typed-builder.
 #[derive(Builder, Clone, Debug, Default)]
 pub struct AnalysisLog {

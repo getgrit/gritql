@@ -3,12 +3,12 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
+use crate::errors::{GritPatternError, GritResult};
 use crate::{
     binding::Binding,
     context::{ExecContext, QueryContext},
     errors::debug,
 };
-use anyhow::{bail, Result};
 use grit_util::{AnalysisLogs, AstNode};
 
 #[derive(Debug, Clone)]
@@ -26,10 +26,12 @@ impl<Q: QueryContext> Before<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Q::ResolvedPattern<'a>> {
+    ) -> GritResult<Q::ResolvedPattern<'a>> {
         let binding = Q::Binding::from_pattern(&self.before, state, context, logs)?;
         let Some(node) = binding.as_node() else {
-            bail!("cannot get the node before this binding")
+            return Err(GritPatternError::new(
+                "cannot get the node before this binding",
+            ));
         };
 
         if let Some(prev) = node.previous_named_node() {
@@ -59,7 +61,7 @@ impl<Q: QueryContext> Matcher<Q> for Before<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let Some(binding) = binding.get_last_binding() else {
             return Ok(true);
         };

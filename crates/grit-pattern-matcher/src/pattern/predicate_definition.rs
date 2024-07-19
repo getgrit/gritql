@@ -2,7 +2,7 @@ use super::{
     functions::Evaluator, patterns::Pattern, predicates::Predicate, variable::Variable, State,
 };
 use crate::context::QueryContext;
-use anyhow::Result;
+use crate::errors::GritResult;
 use grit_util::AnalysisLogs;
 
 #[derive(Clone, Debug)]
@@ -38,7 +38,7 @@ impl<Q: QueryContext> PredicateDefinition<Q> {
         context: &'a Q::ExecContext<'a>,
         args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         state.reset_vars(self.scope, args);
         let res = self.predicate.execute_func(state, context, logs)?;
         Ok(res.predicator)

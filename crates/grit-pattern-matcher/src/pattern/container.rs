@@ -3,7 +3,7 @@ use super::{
     CallBuiltIn,
 };
 use crate::context::QueryContext;
-use anyhow::{bail, Result};
+use crate::errors::{GritPatternError, GritResult};
 
 /// A `Container` represents anything which "contains" a reference to a Pattern.
 ///
@@ -39,7 +39,7 @@ impl<Q: QueryContext> Container<Q> {
         state: &mut State<'a, Q>,
         lang: &Q::Language<'a>,
         value: Q::ResolvedPattern<'a>,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         match self {
             Container::Variable(v) => {
                 let var = state.trace_var(v);
@@ -55,10 +55,10 @@ impl<Q: QueryContext> Container<Q> {
             }
             Container::Accessor(a) => a.set_resolved(state, lang, value),
             Container::ListIndex(l) => l.set_resolved(state, lang, value),
-            Container::FunctionCall(f) => bail!(
+            Container::FunctionCall(f) => Err(GritPatternError::new(format!(
                 "You cannot assign to the result of a function call: {:?}",
                 f
-            ),
+            ))),
         }
     }
 
@@ -66,14 +66,15 @@ impl<Q: QueryContext> Container<Q> {
         &'a self,
         state: &'b State<'a, Q>,
         lang: &Q::Language<'a>,
-    ) -> Result<Option<PatternOrResolved<'a, 'b, Q>>> {
+    ) -> GritResult<Option<PatternOrResolved<'a, 'b, Q>>> {
         match self {
             Container::Variable(v) => v.get_pattern_or_resolved(state),
             Container::Accessor(a) => a.get(state, lang),
             Container::ListIndex(a) => a.get(state, lang),
-            Container::FunctionCall(f) => {
-                bail!("You cannot get the value of a function call: {:?}", f)
-            }
+            Container::FunctionCall(f) => Err(GritPatternError::new(format!(
+                "You cannot get the value of a function call: {:?}",
+                f
+            ))),
         }
     }
 
@@ -81,14 +82,15 @@ impl<Q: QueryContext> Container<Q> {
         &'a self,
         state: &'b mut State<'a, Q>,
         lang: &Q::Language<'a>,
-    ) -> Result<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
+    ) -> GritResult<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
         match self {
             Container::Variable(v) => v.get_pattern_or_resolved_mut(state),
             Container::Accessor(a) => a.get_mut(state, lang),
             Container::ListIndex(l) => l.get_mut(state, lang),
-            Container::FunctionCall(f) => {
-                bail!("You cannot get the value of a function call: {:?}", f)
-            }
+            Container::FunctionCall(f) => Err(GritPatternError::new(format!(
+                "You cannot get the value of a function call: {:?}",
+                f
+            ))),
         }
     }
 }

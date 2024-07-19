@@ -6,7 +6,7 @@ use super::{
     variable::Variable,
 };
 use crate::context::QueryContext;
-use anyhow::Result;
+use crate::errors::GritResult;
 use grit_util::AnalysisLogs;
 
 pub trait FunctionDefinition<Q: QueryContext> {
@@ -16,7 +16,7 @@ pub trait FunctionDefinition<Q: QueryContext> {
         context: &'a Q::ExecContext<'a>,
         args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>>;
+    ) -> GritResult<FuncEvaluation<Q>>;
 }
 
 #[derive(Clone, Debug)]
@@ -53,7 +53,7 @@ impl<Q: QueryContext> FunctionDefinition<Q> for GritFunctionDefinition<Q> {
         context: &'a Q::ExecContext<'a>,
         args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>> {
+    ) -> GritResult<FuncEvaluation<Q>> {
         state.reset_vars(self.scope, args);
         self.function.execute_func(state, context, logs)
     }

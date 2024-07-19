@@ -30,6 +30,7 @@ use marzano_util::{
     runtime::ExecutionContext,
 };
 use std::{borrow::Cow, path::PathBuf};
+use grit_pattern_matcher::errors::GritResult;
 
 pub struct MarzanoContext<'a> {
     pub pattern_definitions: &'a Vec<PatternDefinition<MarzanoQueryContext>>,
@@ -115,7 +116,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
         context: &'a Self,
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
-    ) -> Result<MarzanoResolvedPattern<'a>> {
+    ) -> GritResult<MarzanoResolvedPattern<'a>> {
         self.built_ins.call(call, context, state, logs)
     }
 

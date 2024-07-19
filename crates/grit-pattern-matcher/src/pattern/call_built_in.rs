@@ -4,7 +4,7 @@ use super::{
     State,
 };
 use crate::context::{ExecContext, QueryContext};
-use anyhow::Result;
+use crate::errors::GritResult;
 use grit_util::AnalysisLogs;
 
 // todo we can probably use a macro to generate a function that takes a vec and
@@ -28,7 +28,7 @@ impl<Q: QueryContext> GritCall<Q> for CallBuiltIn<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Q::ResolvedPattern<'a>> {
+    ) -> GritResult<Q::ResolvedPattern<'a>> {
         context.call_built_in(self, context, state, logs)
     }
 }

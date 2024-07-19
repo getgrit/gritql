@@ -23,6 +23,7 @@ use std::{
     collections::{BTreeMap, HashMap},
     path::Path,
 };
+use grit_pattern_matcher::errors::{GritPatternError, GritResult};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum MarzanoResolvedPattern<'a> {
@@ -352,7 +353,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
+    ) -> GritResult<Self> {
         let mut parts = Vec::new();
         for part in &snippet.parts {
             match part {
@@ -368,10 +369,9 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                     } else if let Some(pattern) = content.pattern {
                         Self::from_pattern(pattern, state, context, logs)?
                     } else {
-                        bail!(
-                            "cannot create resolved snippet from unresolved variable {}",
-                            name
-                        )
+                        return Err(GritPatternError::new(
+                            format!("cannot create resolved snippet from unresolved variable {name}")
+                        ))
                     };
                     let value = value.to_snippets()?;
                     parts.extend(value);
@@ -386,7 +386,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
+    ) -> GritResult<Self> {
         match pattern {
             DynamicPattern::Variable(var) => {
                 let content = &state.bindings[var.scope].last().unwrap()[var.index];
@@ -397,10 +397,10 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 } else if let Some(pattern) = content.pattern {
                     Self::from_pattern(pattern, state, context, logs)
                 } else {
-                    bail!(
-                        "cannot create resolved snippet from unresolved variable {}",
-                        name
-                    )
+                    Err(GritPatternError::new(
+                        format!("cannot create resolved snippet from unresolved variable {name}"),
+                        
+                    ))
                 }
             }
             DynamicPattern::Accessor(accessor) => {
@@ -428,7 +428,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
+    ) -> GritResult<Self> {
         match accessor.get(state, context.language())? {
             Some(PatternOrResolved::Pattern(pattern)) => {
                 Self::from_pattern(pattern, state, context, logs)
@@ -444,7 +444,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
+    ) -> GritResult<Self> {
         match index.get(state, context.language())? {
             Some(PatternOrResolved::Pattern(pattern)) => {
                 Self::from_pattern(pattern, state, context, logs)
@@ -460,7 +460,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
+    ) -> GritResult<Self> {
         match pattern {
             Pattern::Dynamic(pattern) => Self::from_dynamic_pattern(pattern, state, context, logs),
             Pattern::CodeSnippet(MarzanoCodeSnippet {
@@ -485,9 +485,10 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 } else if let Some(pattern) = content.pattern {
                     Self::from_pattern(pattern, state, context, logs)
                 } else {
-                    bail!(
-                        "cannot create resolved snippet from unresolved variable {}",
-                        name
+                    Err(
+                        GritPatternError::new(
+                        format!("cannot create resolved snippet from unresolved variable {name}")    
+                        )
                     )
                 }
             }
@@ -495,7 +496,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 .patterns
                 .iter()
                 .map(|pattern| Self::from_pattern(pattern, state, context, logs))
-                .collect::<Result<Vector<_>>>()
+                .collect::<GritResult<Vector<_>>>()
                 .map(Self::List),
             Pattern::ListIndex(index) => Self::from_list_index(index, state, context, logs),
             Pattern::Map(map) => map
@@ -507,7 +508,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                         Self::from_pattern(value, state, context, logs)?,
                     ))
                 })
-                .collect::<Result<BTreeMap<_, _>>>()
+                .collect::<GritResult<BTreeMap<_, _>>>()
                 .map(Self::Map),
             Pattern::Accessor(accessor) => Self::from_accessor(accessor, state, context, logs),
             Pattern::File(file_pattern) => {
@@ -562,7 +563,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             | Pattern::Every(_)
             | Pattern::Dots
             | Pattern::Like(_)
-            | Pattern::Sequential(_) => Err(anyhow!(format!(
+            | Pattern::Sequential(_) => Err(GritPatternError::new(format!(
                 "cannot make resolved pattern from arbitrary pattern {}",
                 pattern.name()
             ))),

@@ -6,7 +6,7 @@ use super::{
     State,
 };
 use crate::context::{ExecContext, QueryContext};
-use anyhow::Result;
+use crate::errors::GritResult;
 use grit_util::AnalysisLogs;
 
 #[derive(Debug, Clone)]
@@ -34,7 +34,7 @@ impl<Q: QueryContext> Matcher<Q> for Assignment<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let resolved = ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
         self.container
             .set_resolved(state, context.language(), resolved)?;
@@ -48,7 +48,7 @@ impl<Q: QueryContext> Evaluator<Q> for Assignment<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>> {
+    ) -> GritResult<FuncEvaluation<Q>> {
         let resolved: Q::ResolvedPattern<'_> =
             ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
         self.container

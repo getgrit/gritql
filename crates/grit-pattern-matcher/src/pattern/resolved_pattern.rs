@@ -5,8 +5,8 @@ use super::{
     patterns::Pattern,
     state::{FilePtr, FileRegistry, State},
 };
+use crate::errors::GritResult;
 use crate::{binding::Binding, constant::Constant, context::QueryContext, effects::Effect};
-use anyhow::Result;
 use grit_util::{AnalysisLogs, ByteRange, CodeRange, Range};
 use im::Vector;
 use itertools::Itertools;
@@ -53,42 +53,42 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self>;
+    ) -> GritResult<Self>;
 
     fn from_dynamic_pattern(
         pattern: &'a DynamicPattern<Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self>;
+    ) -> GritResult<Self>;
 
     fn from_accessor(
         accessor: &'a Accessor<Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self>;
+    ) -> GritResult<Self>;
 
     fn from_list_index(
         index: &'a ListIndex<Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self>;
+    ) -> GritResult<Self>;
 
     fn from_pattern(
         pattern: &'a Pattern<Q>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self>;
+    ) -> GritResult<Self>;
 
     fn from_patterns(
         patterns: &'a [Option<Pattern<Q>>],
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Vec<Option<Self>>> {
+    ) -> GritResult<Vec<Option<Self>>> {
         patterns
             .iter()
             .map(|p| match p {
@@ -107,9 +107,9 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
         with: Q::ResolvedPattern<'a>,
         effects: &mut Vector<Effect<'a, Q>>,
         language: &Q::Language<'a>,
-    ) -> Result<()>;
+    ) -> GritResult<()>;
 
-    fn float(&self, state: &FileRegistry<'a, Q>, language: &Q::Language<'a>) -> Result<f64>;
+    fn float(&self, state: &FileRegistry<'a, Q>, language: &Q::Language<'a>) -> GritResult<f64>;
 
     fn get_bindings(&self) -> Option<impl Iterator<Item = Q::Binding<'a>>>;
 
@@ -139,7 +139,7 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
 
     fn is_list(&self) -> bool;
 
-    fn is_truthy(&self, state: &mut State<'a, Q>, language: &Q::Language<'a>) -> Result<bool>;
+    fn is_truthy(&self, state: &mut State<'a, Q>, language: &Q::Language<'a>) -> GritResult<bool>;
 
     fn linearized_text(
         &self,
@@ -149,7 +149,7 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
         memo: &mut HashMap<CodeRange, Option<String>>,
         should_pad_snippet: bool,
         logs: &mut AnalysisLogs,
-    ) -> Result<Cow<'a, str>>;
+    ) -> GritResult<Cow<'a, str>>;
 
     fn matches_undefined(&self) -> bool;
 
@@ -160,17 +160,20 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
         binding: &Q::Binding<'a>,
         is_first: bool,
         language: &Q::Language<'a>,
-    ) -> Result<()>;
+    ) -> GritResult<()>;
 
     fn position(&self, language: &Q::Language<'a>) -> Option<Range>;
 
-    fn push_binding(&mut self, binding: Q::Binding<'a>) -> Result<()>;
+    fn push_binding(&mut self, binding: Q::Binding<'a>) -> GritResult<()>;
 
-    fn set_list_item_at_mut(&mut self, index: isize, value: Self) -> Result<bool>;
+    fn set_list_item_at_mut(&mut self, index: isize, value: Self) -> GritResult<bool>;
 
     // should we instead return an Option?
-    fn text(&self, state: &FileRegistry<'a, Q>, language: &Q::Language<'a>)
-        -> Result<Cow<'a, str>>;
+    fn text(
+        &self,
+        state: &FileRegistry<'a, Q>,
+        language: &Q::Language<'a>,
+    ) -> GritResult<Cow<'a, str>>;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -194,7 +197,7 @@ impl<'a, Q: QueryContext> ResolvedSnippet<'a, Q> {
         &self,
         state: &FileRegistry<'a, Q>,
         language: &Q::Language<'a>,
-    ) -> Result<usize> {
+    ) -> GritResult<usize> {
         let text = self.text(state, language)?;
         let len = text.len();
         let trim_len = text.trim_end_matches(' ').len();
@@ -205,7 +208,7 @@ impl<'a, Q: QueryContext> ResolvedSnippet<'a, Q> {
         &self,
         state: &FileRegistry<'a, Q>,
         language: &Q::Language<'a>,
-    ) -> Result<Cow<'a, str>> {
+    ) -> GritResult<Cow<'a, str>> {
         match self {
             ResolvedSnippet::Text(text) => Ok(text.clone()),
             ResolvedSnippet::Binding(binding) => {
@@ -225,7 +228,7 @@ impl<'a, Q: QueryContext> ResolvedSnippet<'a, Q> {
         memo: &mut HashMap<CodeRange, Option<String>>,
         distributed_indent: Option<usize>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Cow<str>> {
+    ) -> GritResult<Cow<str>> {
         let res = match self {
             Self::Text(text) => {
                 if let Some(indent) = distributed_indent {
@@ -246,7 +249,11 @@ impl<'a, Q: QueryContext> ResolvedSnippet<'a, Q> {
         res
     }
 
-    pub fn is_truthy(&self, state: &mut State<'a, Q>, language: &Q::Language<'a>) -> Result<bool> {
+    pub fn is_truthy(
+        &self,
+        state: &mut State<'a, Q>,
+        language: &Q::Language<'a>,
+    ) -> GritResult<bool> {
         let truthiness = match self {
             Self::Binding(b) => b.is_truthy(),
             Self::Text(t) => !t.is_empty(),
@@ -270,7 +277,7 @@ impl<'a, Q: QueryContext> LazyBuiltIn<'a, Q> {
         memo: &mut HashMap<CodeRange, Option<String>>,
         distributed_indent: Option<usize>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Cow<str>> {
+    ) -> GritResult<Cow<str>> {
         match self {
             LazyBuiltIn::Join(join) => {
                 join.linearized_text(language, effects, files, memo, distributed_indent, logs)
@@ -282,7 +289,7 @@ impl<'a, Q: QueryContext> LazyBuiltIn<'a, Q> {
         &self,
         state: &FileRegistry<'a, Q>,
         language: &Q::Language<'a>,
-    ) -> Result<Cow<'a, str>> {
+    ) -> GritResult<Cow<'a, str>> {
         match self {
             LazyBuiltIn::Join(join) => join.text(state, language),
         }
@@ -314,7 +321,7 @@ impl<'a, Q: QueryContext> JoinFn<'a, Q> {
         memo: &mut HashMap<CodeRange, Option<String>>,
         distributed_indent: Option<usize>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Cow<str>> {
+    ) -> GritResult<Cow<str>> {
         let res = self
             .list
             .iter()
@@ -328,7 +335,7 @@ impl<'a, Q: QueryContext> JoinFn<'a, Q> {
                     logs,
                 )
             })
-            .collect::<Result<Vec<_>>>()?
+            .collect::<GritResult<Vec<_>>>()?
             .join(&self.separator);
         if let Some(padding) = distributed_indent {
             Ok(pad_text(&res, padding).into())
@@ -341,12 +348,12 @@ impl<'a, Q: QueryContext> JoinFn<'a, Q> {
         &self,
         state: &FileRegistry<'a, Q>,
         language: &Q::Language<'a>,
-    ) -> Result<Cow<'a, str>> {
+    ) -> GritResult<Cow<'a, str>> {
         Ok(self
             .list
             .iter()
             .map(|pattern| pattern.text(state, language))
-            .collect::<Result<Vec<_>>>()?
+            .collect::<GritResult<Vec<_>>>()?
             .join(&self.separator)
             .into())
     }
@@ -376,7 +383,7 @@ pub trait File<'a, Q: QueryContext> {
         &self,
         files: &FileRegistry<'a, Q>,
         language: &Q::Language<'a>,
-    ) -> Result<Q::ResolvedPattern<'a>>;
+    ) -> GritResult<Q::ResolvedPattern<'a>>;
 
     fn body(&self, files: &FileRegistry<'a, Q>) -> Q::ResolvedPattern<'a>;
 
