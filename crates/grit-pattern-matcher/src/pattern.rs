@@ -98,6 +98,7 @@ pub use multiply::Multiply;
 pub use not::{Not, PrNot};
 pub use or::{Or, PrOr};
 pub use pattern_definition::PatternDefinition;
+pub use patterns::WalkablePattern;
 pub use patterns::{CodeSnippet, Matcher, Pattern, PatternName};
 pub use predicate_definition::PredicateDefinition;
 pub use predicate_return::PrReturn;

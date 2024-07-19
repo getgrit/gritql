@@ -74,6 +74,11 @@ pub trait Matcher<Q: QueryContext>: Debug {
     // fn sort(&self) -> SortFormula;
 }
 
+/// Allows traversing a pattern tree
+pub trait WalkablePattern<Q: QueryContext> {
+    fn children(&self) -> Vec<&Pattern<Q>>;
+}
+
 pub trait PatternName {
     fn name(&self) -> &'static str;
 }
@@ -218,6 +223,28 @@ impl<Q: QueryContext> PatternName for Pattern<Q> {
             Pattern::Dynamic(dynamic_pattern) => dynamic_pattern.name(),
             Pattern::Sequential(sequential) => sequential.name(),
             Pattern::Like(like) => like.name(),
+        }
+    }
+}
+
+use itertools::Itertools;
+impl<Q: QueryContext> WalkablePattern<Q> for Pattern<Q> {
+    fn children(&self) -> Vec<&Pattern<Q>> {
+        match self {
+            Pattern::Includes(includes) => vec![&includes.includes],
+            Pattern::Sequential(sequential) => sequential.iter().map(|p| &p.pattern).collect_vec(),
+            Pattern::File(file) => vec![&file.name, &file.body],
+            Pattern::And(and) => and.patterns.iter().collect_vec(),
+            Pattern::Or(or) => or.patterns.iter().collect_vec(),
+            Pattern::Contains(contains) => contains
+                .until
+                .as_ref()
+                .into_iter()
+                .chain(std::iter::once(&contains.contains))
+                .collect(),
+            Pattern::Bubble(bubble) => bubble.children(),
+            Pattern::Where(where_) => vec![&where_.pattern, &where_.condition],
+            _ => vec![],
         }
     }
 }

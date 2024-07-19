@@ -6,7 +6,9 @@ use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::path::Path;
 
-use grit_pattern_matcher::constants::DEFAULT_FILE_NAME;
+use grit_pattern_matcher::pattern::WalkablePattern;
+
+use grit_pattern_matcher::{constants::DEFAULT_FILE_NAME, context::QueryContext, pattern::Pattern};
 
 use crate::pattern_compiler::compiler::{defs_to_filenames, DefsToFilenames};
 
@@ -182,8 +184,24 @@ fn find_child_tree_definition(
     Ok(None)
 }
 
+fn has_rewrite<Q: QueryContext>(current_pattern: &Pattern<Q>) -> bool {
+    if matches!(current_pattern, Pattern::Rewrite(_)) {
+        return true;
+    }
+    for child in current_pattern.children() {
+        if has_rewrite(child) {
+            return true;
+        }
+    }
+    false
+}
+
 #[cfg(test)]
 mod tests {
+    use marzano_language::{python::Python, target_language::TargetLanguage};
+
+    use crate::pattern_compiler::src_to_problem_libs;
+
     use super::*;
     use std::collections::BTreeMap;
 
@@ -249,5 +267,29 @@ mod tests {
             .unwrap();
         let decided = is_async(&parsed.root_node(), &libs, &mut parser).unwrap();
         assert!(decided);
+    }
+
+    #[test]
+    fn test_is_rewrite() {
+        let pattern_src = r#"
+            `console.log` => `console.error`
+        "#
+        .to_string();
+        let libs = BTreeMap::new();
+        let problem = src_to_problem_libs(
+            pattern_src.to_string(),
+            &libs,
+            TargetLanguage::default(),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .problem;
+
+        println!("problem: {:?}", problem);
+
+        assert!(has_rewrite(&problem.pattern));
     }
 }
