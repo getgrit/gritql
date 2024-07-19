@@ -52,6 +52,7 @@ expression: results
     byteRanges: []
     ranges: []
   reason: ~
+  id: [UUID]
 - __typename: DoneFile
   relativeFilePath: test-file.tsx
 - __typename: AnalysisLog

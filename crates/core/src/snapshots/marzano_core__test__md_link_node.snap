@@ -73,5 +73,6 @@ expression: results
         end: 27
     ranges: []
   reason: ~
+  id: [UUID]
 - __typename: DoneFile
   relativeFilePath: foo.md

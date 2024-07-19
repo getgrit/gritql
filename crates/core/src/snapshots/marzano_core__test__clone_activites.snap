@@ -57,6 +57,7 @@ expression: results
   content: "import { findConfigs } from './configs';\n// Remember: ./packages/timekeeper/src/__generated__/stdlib.ts\nexport const stdlib = {\n  show,\n  apply,\n  sh,\n};\n\nexport type StdLibFunctions = typeof stdlib;"
   ranges: []
   reason: ~
+  id: [UUID]
 - __typename: Rewrite
   original:
     messages: []
@@ -123,6 +124,7 @@ expression: results
         end: 47
     ranges: []
   reason: ~
+  id: [UUID]
 - __typename: DoneFile
   relativeFilePath: ~/dev/rewriter/packages/sdk/src/stdlib/index.ts
 - __typename: DoneFile

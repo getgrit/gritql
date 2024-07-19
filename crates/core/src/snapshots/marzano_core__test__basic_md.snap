@@ -51,5 +51,6 @@ expression: results
         end: 15
     ranges: []
   reason: ~
+  id: [UUID]
 - __typename: DoneFile
   relativeFilePath: foo.md

@@ -66,6 +66,7 @@ expression: results
   content: foo(1)
   ranges: []
   reason: ~
+  id: [UUID]
 - __typename: Rewrite
   original:
     messages: []
@@ -141,6 +142,7 @@ expression: results
         end: 6
     ranges: []
   reason: ~
+  id: [UUID]
 - __typename: DoneFile
   relativeFilePath: file1.tsx
 - __typename: DoneFile

@@ -2,7 +2,7 @@ use crate::pattern_compiler::src_to_problem_libs;
 use anyhow::{anyhow, Context, Result};
 use api::MatchResult;
 use grit_util::{Range, VariableMatch};
-use insta::{assert_debug_snapshot, assert_snapshot, assert_yaml_snapshot};
+use insta::{assert_debug_snapshot, assert_snapshot};
 use lazy_static::lazy_static;
 use marzano_auth::env::ENV_VAR_GRIT_API_URL;
 use marzano_auth::testing::get_testing_auth_info;
@@ -39,6 +39,16 @@ impl ExecutionResult {
     pub fn is_none(&self) -> bool {
         self.the_match.is_none()
     }
+}
+
+macro_rules! assert_grit_snapshot {
+    ($value:expr) => {{
+        insta::with_settings!({filters => vec![
+            (r"\b[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}\b", "[UUID]"),
+        ]}, {
+            insta::assert_yaml_snapshot!($value);
+        });
+    }};
 }
 
 // todo: remove after migrating tests
@@ -3361,7 +3371,7 @@ fn should_log_variable() {
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results =
         pattern.execute_file(&RichFile::new(file.to_owned(), source.to_owned()), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -3384,7 +3394,7 @@ fn rewrite_dot() {
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results =
         pattern.execute_file(&RichFile::new(file.to_owned(), source.to_owned()), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -3411,7 +3421,7 @@ fn test_simple_log() {
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -3439,7 +3449,7 @@ fn test_variable_message_log() {
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -3468,7 +3478,7 @@ fn test_shorthand_log() {
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -3496,7 +3506,7 @@ fn test_before_each_file() {
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -3525,7 +3535,7 @@ fn test_after_each_file() {
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -3558,7 +3568,7 @@ fn test_before_and_after_each_file() {
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4084,7 +4094,7 @@ fn test_file_rename() {
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4114,7 +4124,7 @@ fn test_json_file_match_snippet() {
     let json_lang: TargetLanguage = PatternLanguage::Json.try_into().unwrap();
     let pattern = src_to_problem(pattern, json_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4138,7 +4148,7 @@ fn test_basic_python() {
     let language: TargetLanguage = PatternLanguage::Python.try_into().unwrap();
     let pattern = src_to_problem(pattern, language).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4168,7 +4178,7 @@ fn test_json_file_match_string() {
     let json_lang: TargetLanguage = PatternLanguage::Json.try_into().unwrap();
     let pattern = src_to_problem(pattern, json_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4245,7 +4255,7 @@ fn test_saving_info() {
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4276,7 +4286,7 @@ fn test_assoc_matcher() {
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4325,7 +4335,7 @@ fn add_to_set() {
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let pattern = src_to_problem(pattern.to_owned(), js_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4368,7 +4378,7 @@ fn add_to_set_via_pattern() {
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let pattern = src_to_problem(pattern.to_owned(), js_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4520,7 +4530,7 @@ fn test_import_none() {
     .unwrap();
 
     let results = execute(pattern, source);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4548,7 +4558,7 @@ fn rewrite_or_bubble_pattern_argument() {
         "#;
 
     let results = execute(pattern.into(), source.into());
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4576,7 +4586,7 @@ fn test_import_just_insert() {
     .unwrap();
 
     let results = execute(pattern, source);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4672,7 +4682,7 @@ fn test_import_all_already_there() {
     .unwrap();
 
     let results = execute(pattern, source);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4708,7 +4718,7 @@ fn test_import_multiple() {
     .unwrap();
 
     let results = execute(pattern, source);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4820,7 +4830,7 @@ multifile {
         &context,
     );
 
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4852,7 +4862,7 @@ fn test_filename() {
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4885,7 +4895,7 @@ fn test_program() {
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4949,7 +4959,7 @@ fn test_filename_autoset() {
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -4974,7 +4984,7 @@ fn test_program_autoset() {
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -8337,7 +8347,7 @@ multifile {
         &context,
     );
 
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -8361,7 +8371,7 @@ multifile {
         &context,
     );
 
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -8569,7 +8579,7 @@ fn test_basic_md() {
     let language: TargetLanguage = PatternLanguage::MarkdownInline.try_into().unwrap();
     let pattern = src_to_problem(pattern, language).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -8589,7 +8599,7 @@ fn md_link_metavariable() {
     let language: TargetLanguage = PatternLanguage::MarkdownInline.try_into().unwrap();
     let pattern = src_to_problem(pattern, language).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -8609,7 +8619,7 @@ fn md_link_node() {
     let language: TargetLanguage = PatternLanguage::MarkdownInline.try_into().unwrap();
     let pattern = src_to_problem(pattern, language).unwrap();
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), source), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -8630,7 +8640,7 @@ fn code_span() {
     let pattern = src_to_problem(pattern, language).unwrap();
     let results =
         pattern.execute_file(&RichFile::new(file.to_owned(), source.to_owned()), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]
@@ -11555,7 +11565,7 @@ fn some_every_errors_on_invalid_rewrite() {
     let pattern = src_to_problem(pattern, js_lang).unwrap();
     let results =
         pattern.execute_file(&RichFile::new(file.to_owned(), source.to_owned()), &context);
-    assert_yaml_snapshot!(results);
+    assert_grit_snapshot!(results);
 }
 
 #[test]

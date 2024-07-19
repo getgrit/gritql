@@ -57,5 +57,6 @@ expression: results
         end: 63
     ranges: []
   reason: ~
+  id: [UUID]
 - __typename: DoneFile
   relativeFilePath: foo.package.json

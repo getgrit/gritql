@@ -20,7 +20,7 @@ use rayon::iter::ParallelIterator;
 use regex::Regex;
 use std::sync::Once;
 
-use crate::common::{get_fixture, get_fixtures_root, run_init_cmd};
+use crate::common::{get_fixture, get_fixtures_root, run_init_cmd, INSTA_FILTERS};
 
 mod common;
 
@@ -1708,7 +1708,9 @@ fn output_jsonl() -> Result<()> {
     );
 
     let content = fs_err::read_to_string(dir.join("output.jsonl"))?;
-    assert_snapshot!(content);
+    insta::with_settings!({filters => INSTA_FILTERS.to_vec()}, {
+        assert_snapshot!(content);
+    });
 
     let line_count = content.lines().count();
     assert_eq!(line_count, 3);

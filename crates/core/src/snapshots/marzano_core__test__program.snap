@@ -40,5 +40,6 @@ expression: results
         end: 30
     ranges: []
   reason: ~
+  id: [UUID]
 - __typename: DoneFile
   relativeFilePath: test-file.tsx

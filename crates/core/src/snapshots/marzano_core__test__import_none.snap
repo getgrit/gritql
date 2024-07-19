@@ -153,5 +153,6 @@ expression: results
       startByte: 9
       endByte: 12
   reason: ~
+  id: [UUID]
 - __typename: DoneFile
   relativeFilePath: test-file.tsx

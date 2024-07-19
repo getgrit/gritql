@@ -1804,6 +1804,7 @@ dependencies = [
  "linked-hash-map",
  "pest",
  "pest_derive",
+ "regex",
  "serde",
  "similar",
  "yaml-rust",
@@ -2216,6 +2217,7 @@ dependencies = [
  "tracing-opentelemetry",
  "tree-sitter-facade-sg",
  "trim-margin",
+ "uuid",
  "walkdir",
 ]
 

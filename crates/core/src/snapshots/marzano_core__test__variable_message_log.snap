@@ -54,6 +54,7 @@ expression: results
       startByte: 0
       endByte: 13
   reason: ~
+  id: [UUID]
 - __typename: DoneFile
   relativeFilePath: test-file.tsx
 - __typename: AnalysisLog
