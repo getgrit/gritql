@@ -12,12 +12,12 @@ use grit_pattern_matcher::{
         ResolvedSnippet, State,
     },
 };
-use grit_util::{AnalysisLogs, Language};
+use grit_util::{AnalysisLogs, CodeRange, Language};
 use im::Vector;
 use itertools::Itertools;
 use rand::prelude::SliceRandom;
 use rand::Rng;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 // todo we can probably use a macro to generate a function that takes a vec and
 // and calls the input function with the vec args unpacked.
@@ -246,7 +246,17 @@ fn text_fn<'a>(
     let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
 
     let s = match args.first() {
-        Some(Some(resolved_pattern)) => resolved_pattern.text(&state.files, context.language())?,
+        Some(Some(resolved_pattern)) => {
+            let mut memo: HashMap<CodeRange, Option<String>> = HashMap::new();
+            resolved_pattern.linearized_text(
+                context.language(),
+                &state.effects,
+                &state.files,
+                &mut memo,
+                false,
+                logs,
+            )?
+        }
         _ => return Err(anyhow!("text takes 1 argument")),
     };
     Ok(ResolvedPattern::from_string(s.to_string()))
