@@ -72,18 +72,21 @@ pub trait ExecContext<'a, Q: QueryContext> {
 /// This is useful for static analysis of patterns without running the query engine.
 #[derive(Debug)]
 pub struct StaticDefinitions<'a, Q: QueryContext> {
-    pub pattern_definitions: &'a [PatternDefinition<Q>],
-    pub predicate_definitions: &'a [PredicateDefinition<Q>],
+    pattern_definitions: &'a [PatternDefinition<Q>],
+    predicate_definitions: &'a [PredicateDefinition<Q>],
+    function_definitions: &'a [GritFunctionDefinition<Q>],
 }
 
 impl<'a, Q: QueryContext> StaticDefinitions<'a, Q> {
     pub fn new(
         pattern_definitions: &'a [PatternDefinition<Q>],
         predicate_definitions: &'a [PredicateDefinition<Q>],
+        function_definitions: &'a [GritFunctionDefinition<Q>],
     ) -> Self {
         StaticDefinitions {
             pattern_definitions,
             predicate_definitions,
+            function_definitions,
         }
     }
 
@@ -94,6 +97,10 @@ impl<'a, Q: QueryContext> StaticDefinitions<'a, Q> {
     pub fn get_predicate(&self, index: usize) -> Option<&PredicateDefinition<Q>> {
         self.predicate_definitions.get(index)
     }
+
+    pub fn get_function(&self, index: usize) -> Option<&GritFunctionDefinition<Q>> {
+        self.function_definitions.get(index)
+    }
 }
 
 impl<'a, Q: QueryContext> Default for StaticDefinitions<'a, Q> {
@@ -101,6 +108,7 @@ impl<'a, Q: QueryContext> Default for StaticDefinitions<'a, Q> {
         Self {
             pattern_definitions: &[],
             predicate_definitions: &[],
+            function_definitions: &[],
         }
     }
 }

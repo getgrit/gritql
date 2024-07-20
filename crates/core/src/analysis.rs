@@ -457,4 +457,42 @@ mod tests {
 
         assert!(has_rewrite(&problem.pattern, &problem.definitions()));
     }
+
+    #[test]
+    fn test_is_rewrite_with_function_call() {
+        let pattern_src = r#"
+            pattern pattern_with_rewrite() {
+                `me` => `console.error(me)`
+            }
+
+            function more_indirection_is_good() {
+                $program <: contains pattern_with_rewrite()
+            }
+
+            predicate predicate_with_function_call() {
+                $foo = more_indirection_is_good()
+            }
+
+            `you` where {
+                predicate_with_function_call()
+            }
+        "#
+        .to_string();
+        let libs = BTreeMap::new();
+        let problem = src_to_problem_libs(
+            pattern_src.to_string(),
+            &libs,
+            TargetLanguage::default(),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .problem;
+
+        println!("problem: {:?}", problem);
+
+        assert!(has_rewrite(&problem.pattern, &problem.definitions()));
+    }
 }

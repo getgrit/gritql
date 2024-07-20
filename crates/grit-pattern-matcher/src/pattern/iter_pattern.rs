@@ -131,7 +131,14 @@ impl<Q: QueryContext> Container<Q> {
             Container::Variable(_) => vec![],
             Container::Accessor(a) => a.children(definitions),
             Container::ListIndex(l) => l.children(definitions),
-            Container::FunctionCall(f) => args_children(&f.args, definitions),
+            Container::FunctionCall(f) => {
+                let mut base = args_children(&f.args, definitions);
+                let def = definitions.get_function(f.index);
+                if let Some(def) = def {
+                    base.push(PatternOrPredicate::Predicate(&def.function));
+                }
+                base
+            }
         }
     }
 }

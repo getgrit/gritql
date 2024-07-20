@@ -68,7 +68,11 @@ impl Problem {
     }
 
     pub fn definitions(&self) -> StaticDefinitions<'_, MarzanoQueryContext> {
-        StaticDefinitions::new(&self.pattern_definitions, &self.predicate_definitions)
+        StaticDefinitions::new(
+            &self.pattern_definitions,
+            &self.predicate_definitions,
+            &self.function_definitions,
+        )
     }
 }
 
