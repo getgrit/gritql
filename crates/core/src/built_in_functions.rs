@@ -85,6 +85,7 @@ impl BuiltIns {
         built_ins: &BuiltIns,
         index: usize,
         lang: &impl Language,
+        name: &str,
     ) -> Result<CallBuiltIn<MarzanoQueryContext>> {
         let params = &built_ins.0[index].params;
         let mut pattern_params = Vec::with_capacity(args.len());
@@ -94,7 +95,7 @@ impl BuiltIns {
                 None => pattern_params.push(None),
             }
         }
-        Ok(CallBuiltIn::new(index, pattern_params))
+        Ok(CallBuiltIn::new(index, name, pattern_params))
     }
 
     /// Add an anonymous built-in, used for callbacks

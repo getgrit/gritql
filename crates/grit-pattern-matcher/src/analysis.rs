@@ -26,15 +26,6 @@ pub fn has_rewrite<Q: QueryContext>(
         ) {
             return true;
         }
-        use crate::pattern::PatternName;
-        match pattern {
-            PatternOrPredicate::Pattern(p) => {
-                println!("pattern {}", p.name());
-            }
-            PatternOrPredicate::Predicate(p) => {
-                println!("predicate {}", p.name());
-            }
-        }
     }
     false
 }

@@ -50,6 +50,7 @@ impl<'a, Q: QueryContext> PatternOrPredicateIterator<'a, Q> {
 pub enum PatternOrPredicate<'a, Q: QueryContext> {
     Pattern(&'a Pattern<Q>),
     Predicate(&'a Predicate<Q>),
+    DynamicPattern(&'a DynamicPattern<Q>),
 }
 
 impl<'a, Q: QueryContext> PatternOrPredicate<'a, Q> {
@@ -57,6 +58,7 @@ impl<'a, Q: QueryContext> PatternOrPredicate<'a, Q> {
         match self {
             PatternOrPredicate::Pattern(p) => p.children(definitions),
             PatternOrPredicate::Predicate(p) => p.children(definitions),
+            PatternOrPredicate::DynamicPattern(p) => p.children(definitions),
         }
     }
 }
@@ -333,9 +335,10 @@ impl<Q: QueryContext> Pattern<Q> {
             }
             Pattern::Variable(_) => Vec::new(),
             Pattern::Rewrite(r) => {
-                let mut res = r.right.children(definitions);
-                res.push(PatternOrPredicate::Pattern(&r.left));
-                res
+                vec![
+                    PatternOrPredicate::Pattern(&r.left),
+                    PatternOrPredicate::DynamicPattern(&r.right),
+                ]
             }
             Pattern::Log(l) => l.message.iter().map(PatternOrPredicate::Pattern).collect(),
             Pattern::Range(_) => Vec::new(),

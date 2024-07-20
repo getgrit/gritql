@@ -289,6 +289,7 @@ impl PatternBuilder {
         let predicate_match = Predicate::Match(Box::new(Match::new(
             Container::FunctionCall(Box::new(CallBuiltIn::new(
                 index,
+                &format!("match_{}", index),
                 vec![Some(grit_pattern_matcher::pattern::Pattern::Variable(
                     match_var,
                 ))],

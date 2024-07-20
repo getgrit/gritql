@@ -13,12 +13,17 @@ use grit_util::AnalysisLogs;
 #[derive(Debug, Clone)]
 pub struct CallBuiltIn<Q: QueryContext> {
     pub index: usize,
+    pub name: String,
     pub args: Vec<Option<Pattern<Q>>>,
 }
 
 impl<Q: QueryContext> CallBuiltIn<Q> {
-    pub fn new(index: usize, args: Vec<Option<Pattern<Q>>>) -> Self {
-        Self { index, args }
+    pub fn new(index: usize, name: &str, args: Vec<Option<Pattern<Q>>>) -> Self {
+        Self {
+            index,
+            name: name.to_string(),
+            args,
+        }
     }
 }
 

@@ -6,9 +6,17 @@ use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::path::Path;
 
-use grit_pattern_matcher::constants::DEFAULT_FILE_NAME;
+use grit_pattern_matcher::{
+    constants::DEFAULT_FILE_NAME,
+    context::StaticDefinitions,
+    pattern::{DynamicPattern, Pattern, PatternOrPredicate},
+};
 
-use crate::pattern_compiler::compiler::{defs_to_filenames, DefsToFilenames};
+use crate::{
+    marzano_context::MarzanoContext,
+    pattern_compiler::compiler::{defs_to_filenames, DefsToFilenames},
+    problem::MarzanoQueryContext,
+};
 
 /// Walks the call tree and returns true if the predicate is true for any node.
 /// This is potentially error-prone, so not entirely recommended
@@ -180,6 +188,41 @@ fn find_child_tree_definition(
         }
     }
     Ok(None)
+}
+
+fn uses_named_function(
+    root: &Pattern<MarzanoQueryContext>,
+    definitions: &StaticDefinitions<MarzanoQueryContext>,
+    function_name: &str,
+) -> bool {
+    for pattern in root.iter(definitions) {
+        if let PatternOrPredicate::Pattern(grit_pattern_matcher::pattern::Pattern::CallBuiltIn(
+            call,
+        )) = pattern
+        {
+            if call.name == function_name {
+                return true;
+            }
+        }
+        if let PatternOrPredicate::DynamicPattern(DynamicPattern::CallBuiltIn(call)) = pattern {
+            if call.name == function_name {
+                return true;
+            }
+        }
+        // use grit_pattern_matcher::pattern::PatternName;
+        // match pattern {
+        //     PatternOrPredicate::Pattern(p) => {
+        //         println!("pattern {}", p.name());
+        //     }
+        //     PatternOrPredicate::Predicate(p) => {
+        //         println!("predicate {}", p.name());
+        //     }
+        //     PatternOrPredicate::DynamicPattern(p) => {
+        //         println!("dynamic pattern {}", p.name());
+        //     }
+        // }
+    }
+    false
 }
 
 #[cfg(test)]
@@ -497,5 +540,39 @@ mod tests {
         println!("problem: {:?}", problem);
 
         assert!(has_rewrite(&problem.pattern, &problem.definitions()));
+        assert!(!uses_named_function(
+            &problem.pattern,
+            &problem.definitions(),
+            "text",
+        ));
+    }
+
+    #[test]
+    fn test_uses_text_fn() {
+        let pattern_src = r#"
+             `me` => text(`$program`)
+        "#
+        .to_string();
+        let libs = BTreeMap::new();
+        let problem = src_to_problem_libs(
+            pattern_src.to_string(),
+            &libs,
+            TargetLanguage::default(),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .problem;
+
+        println!("problem: {:?}", problem);
+
+        assert!(has_rewrite(&problem.pattern, &problem.definitions()));
+        assert!(uses_named_function(
+            &problem.pattern,
+            &problem.definitions(),
+            "text",
+        ));
     }
 }

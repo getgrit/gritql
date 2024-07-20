@@ -100,6 +100,7 @@ impl NodeCompiler for CallCompiler {
                 context.compilation.built_ins,
                 index,
                 lang,
+                kind,
             )?)))
         } else if let Some(info) = context.compilation.function_definition_info.get(kind) {
             let args = match_args_to_params(kind, args, &collect_params(&info.parameters), lang)?;
