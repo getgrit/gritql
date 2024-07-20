@@ -1,6 +1,6 @@
 use crate::{
-    context::QueryContext,
-    pattern::{Pattern, PatternDefinition, PatternOrPredicate, Predicate},
+    context::{QueryContext, StaticDefinitions},
+    pattern::{Pattern, PatternOrPredicate, Predicate},
 };
 
 /// Determine if a provided pattern has a rewrite anywhere inside of it
@@ -8,7 +8,7 @@ use crate::{
 /// Note this does not yet walk inside predicates and function calls
 pub fn has_rewrite<Q: QueryContext>(
     current_pattern: &Pattern<Q>,
-    definitions: &[PatternDefinition<Q>],
+    definitions: &StaticDefinitions<Q>,
 ) -> bool {
     for pattern in current_pattern.iter(definitions) {
         if matches!(pattern, PatternOrPredicate::Pattern(Pattern::Rewrite(_))) {
@@ -26,14 +26,6 @@ pub fn has_rewrite<Q: QueryContext>(
         ) {
             return true;
         }
-        // match pattern {
-        //     PatternOrPredicate::Pattern(p) => {
-        //         println!("Check {}", p.name());
-        //     }
-        //     PatternOrPredicate::Predicate(p) => {
-        //         println!("Check {}", p.name());
-        //     }
-        // }
     }
     false
 }

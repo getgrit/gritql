@@ -12,7 +12,7 @@ use crate::{
 use anyhow::{bail, Result};
 use grit_pattern_matcher::{
     constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
-    context::QueryContext,
+    context::{QueryContext, StaticDefinitions},
     file_owners::FileOwners,
     pattern::{
         FilePtr, FileRegistry, GritFunctionDefinition, Matcher, Pattern, PatternDefinition,
@@ -65,6 +65,14 @@ pub struct Problem {
 impl Problem {
     pub fn compiled_vars(&self) -> Vec<VariableMatch> {
         self.variables.compiled_vars(&self.tree.source)
+    }
+
+    pub fn definitions(&self) -> StaticDefinitions<'_, MarzanoQueryContext> {
+        StaticDefinitions::new(
+            &self.pattern_definitions,
+            &self.predicate_definitions,
+            &self.function_definitions,
+        )
     }
 }
 

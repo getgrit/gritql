@@ -34,3 +34,4 @@ variables:
 sourceFile: "`function () { $body }`"
 parsedPattern: "[..]"
 valid: true
+usesAi: false

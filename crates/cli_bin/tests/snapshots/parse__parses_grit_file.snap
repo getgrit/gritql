@@ -34,3 +34,4 @@ variables:
 sourceFile: "language js\n\n`console.log($msg)`\n"
 parsedPattern: "[..]"
 valid: true
+usesAi: false
