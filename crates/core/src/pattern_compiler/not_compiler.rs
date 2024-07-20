@@ -23,7 +23,7 @@ impl NodeCompiler for NotCompiler {
             .ok_or_else(|| anyhow!("missing pattern of patternNot"))?;
         let range = pattern.range();
         let pattern = PatternCompiler::from_node(&pattern, context)?;
-        if pattern.iter().any(|p| {
+        if pattern.iter(&[]).any(|p| {
             matches!(
                 p,
                 PatternOrPredicate::Pattern(Pattern::Rewrite(_))
@@ -59,7 +59,7 @@ impl NodeCompiler for PrNotCompiler {
             .ok_or_else(|| anyhow!("predicateNot missing predicate"))?;
         let range = not.range();
         let not = PredicateCompiler::from_node(&not, context)?;
-        if not.iter().any(|p| {
+        if not.iter(&[]).any(|p| {
             matches!(
                 p,
                 PatternOrPredicate::Pattern(Pattern::Rewrite(_))

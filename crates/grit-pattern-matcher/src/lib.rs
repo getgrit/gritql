@@ -4,6 +4,7 @@
 //! GritQL engine. There's the [`pattern::Matcher`] trait that's implemented by
 //! the patterns, which implements the matching logic.
 
+pub mod analysis;
 pub mod binding;
 pub mod constant;
 pub mod constants;
@@ -13,3 +14,5 @@ pub mod errors;
 pub mod file_owners;
 pub mod intervals;
 pub mod pattern;
+
+pub use analysis::has_rewrite;

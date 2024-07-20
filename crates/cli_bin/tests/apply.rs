@@ -2659,6 +2659,43 @@ fn tty_behavior() -> Result<()> {
     Ok(())
 }
 
+/// If there's no rewrite, the warning can be skipped.
+#[test]
+fn no_search_warning() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("yaml_padding", true)?;
+
+    // Init an empty git repo
+    let mut git_init_cmd = Command::new("git");
+    git_init_cmd.arg("init").current_dir(dir.clone());
+    let output = git_init_cmd.output()?;
+    assert!(output.status.success(), "Git init failed");
+
+    // from the tempdir as cwd, run marzano apply
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(dir.clone());
+    apply_cmd
+        .arg("apply")
+        .arg("--language=yaml")
+        .arg("`stuff: good`")
+        .arg("file.yaml");
+
+    let output = apply_cmd.output()?;
+    let stdout = String::from_utf8(output.stdout)?;
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stdout: {:?}", stdout);
+    println!("stderr: {:?}", stderr);
+
+    // Expect it to fail
+    assert!(output.status.success(), "Command should have passed");
+
+    assert!(!stderr.contains("Untracked changes detected."));
+
+    assert!(stdout.contains("stuff: good"));
+    assert!(stdout.contains("Processed 1 files and found 1 matches"));
+
+    Ok(())
+}
+
 #[test]
 fn apply_stdin() -> Result<()> {
     let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;

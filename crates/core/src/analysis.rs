@@ -184,6 +184,11 @@ fn find_child_tree_definition(
 
 #[cfg(test)]
 mod tests {
+    use grit_pattern_matcher::has_rewrite;
+    use marzano_language::target_language::TargetLanguage;
+
+    use crate::pattern_compiler::src_to_problem_libs;
+
     use super::*;
     use std::collections::BTreeMap;
 
@@ -249,5 +254,143 @@ mod tests {
             .unwrap();
         let decided = is_async(&parsed.root_node(), &libs, &mut parser).unwrap();
         assert!(decided);
+    }
+
+    #[test]
+    fn test_is_rewrite() {
+        let pattern_src = r#"
+            `console.log` => `console.error`
+        "#
+        .to_string();
+        let libs = BTreeMap::new();
+        let problem = src_to_problem_libs(
+            pattern_src.to_string(),
+            &libs,
+            TargetLanguage::default(),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .problem;
+
+        println!("problem: {:?}", problem);
+
+        assert!(has_rewrite(&problem.pattern, &[]));
+    }
+
+    #[test]
+    fn test_is_not_rewrite() {
+        let pattern_src = r#"
+            `console.log($msg)` where {
+                $msg <: not contains `foo`
+            }
+        "#
+        .to_string();
+        let libs = BTreeMap::new();
+        let problem = src_to_problem_libs(
+            pattern_src.to_string(),
+            &libs,
+            TargetLanguage::default(),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .problem;
+
+        println!("problem: {:?}", problem);
+
+        assert!(!has_rewrite(&problem.pattern, &[]));
+    }
+
+    #[test]
+    fn test_is_rewrite_with_pattern_call() {
+        let pattern_src = r#"
+            pattern pattern_with_rewrite() {
+                `console.log($msg)` => `console.error($msg)`
+            }
+            pattern_with_rewrite()
+        "#
+        .to_string();
+        let libs = BTreeMap::new();
+        let problem = src_to_problem_libs(
+            pattern_src.to_string(),
+            &libs,
+            TargetLanguage::default(),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .problem;
+
+        println!("problem: {:?}", problem);
+
+        assert!(has_rewrite(&problem.pattern, &problem.pattern_definitions));
+    }
+
+    #[test]
+    fn test_is_rewrite_with_yaml() {
+        let pattern_src = r#"
+            language yaml
+
+            or {
+            `- $item` where {
+                $item => `nice: car
+            second: detail`
+            }
+            }
+        "#
+        .to_string();
+        let libs = BTreeMap::new();
+        let problem = src_to_problem_libs(
+            pattern_src.to_string(),
+            &libs,
+            TargetLanguage::default(),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .problem;
+
+        println!("problem: {:?}", problem);
+
+        assert!(has_rewrite(&problem.pattern, &problem.pattern_definitions));
+    }
+
+    #[test]
+    fn test_is_rewrite_with_insert() {
+        let pattern_src = r#"
+            language yaml
+
+            or {
+            `- $item` where {
+                $item += `good stuff`
+            }
+            }
+        "#
+        .to_string();
+        let libs = BTreeMap::new();
+        let problem = src_to_problem_libs(
+            pattern_src.to_string(),
+            &libs,
+            TargetLanguage::default(),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .problem;
+
+        println!("problem: {:?}", problem);
+
+        assert!(has_rewrite(&problem.pattern, &problem.pattern_definitions));
     }
 }
