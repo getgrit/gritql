@@ -286,7 +286,14 @@ impl<Q: QueryContext> Pattern<Q> {
             }
             Pattern::Limit(l) => l.pattern.children(definitions),
             Pattern::CallBuiltIn(c) => args_children(&c.args, definitions),
-            Pattern::CallFunction(c) => args_children(&c.args, definitions),
+            Pattern::CallFunction(c) => {
+                let mut children = args_children(&c.args, definitions);
+                let def = definitions.get_function(c.index);
+                if let Some(def) = def {
+                    children.extend(def.function.children(definitions));
+                }
+                children
+            }
             Pattern::CallForeignFunction(c) => args_children(&c.args, definitions),
             Pattern::Assignment(a) => vec![PatternOrPredicate::Pattern(&a.pattern)],
             Pattern::Accumulate(a) => vec![

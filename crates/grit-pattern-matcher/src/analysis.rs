@@ -26,14 +26,15 @@ pub fn has_rewrite<Q: QueryContext>(
         ) {
             return true;
         }
-        // match pattern {
-        //     PatternOrPredicate::Pattern(p) => {
-        //         println!("Check {}", p.name());
-        //     }
-        //     PatternOrPredicate::Predicate(p) => {
-        //         println!("Check {}", p.name());
-        //     }
-        // }
+        use crate::pattern::PatternName;
+        match pattern {
+            PatternOrPredicate::Pattern(p) => {
+                println!("pattern {}", p.name());
+            }
+            PatternOrPredicate::Predicate(p) => {
+                println!("predicate {}", p.name());
+            }
+        }
     }
     false
 }

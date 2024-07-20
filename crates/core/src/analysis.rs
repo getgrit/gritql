@@ -462,11 +462,14 @@ mod tests {
     fn test_is_rewrite_with_function_call() {
         let pattern_src = r#"
             pattern pattern_with_rewrite() {
-                `me` => `console.error(me)`
-            }
+                    `me` => `console.error(me)`
+                }
 
             function more_indirection_is_good() {
-                $program <: contains pattern_with_rewrite()
+                if ($program <: contains pattern_with_rewrite()) {
+                    return `console.error($program)`
+                },
+                return `console.error($program)`
             }
 
             predicate predicate_with_function_call() {
