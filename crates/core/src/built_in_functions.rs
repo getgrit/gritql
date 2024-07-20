@@ -144,7 +144,7 @@ impl BuiltIns {
             BuiltInFunction::new("capitalize", vec!["string"], Box::new(capitalize_fn)),
             BuiltInFunction::new("lowercase", vec!["string"], Box::new(lowercase_fn)),
             BuiltInFunction::new("uppercase", vec!["string"], Box::new(uppercase_fn)),
-            BuiltInFunction::new("text", vec!["string"], Box::new(text_fn)),
+            BuiltInFunction::new("text", vec!["string", "linearize"], Box::new(text_fn)),
             BuiltInFunction::new("trim", vec!["string", "trim_chars"], Box::new(trim_fn)),
             BuiltInFunction::new("join", vec!["list", "separator"], Box::new(join_fn)),
             BuiltInFunction::new("distinct", vec!["list"], Box::new(distinct_fn)),
@@ -245,21 +245,33 @@ fn text_fn<'a>(
 ) -> Result<MarzanoResolvedPattern<'a>> {
     let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
 
-    let s = match args.first() {
-        Some(Some(resolved_pattern)) => {
-            let mut memo: HashMap<CodeRange, Option<String>> = HashMap::new();
-            resolved_pattern.linearized_text(
-                context.language(),
-                &state.effects,
-                &state.files,
-                &mut memo,
-                false,
-                logs,
-            )?
-        }
-        _ => return Err(anyhow!("text takes 1 argument")),
+    let Some(Some(resolved_pattern)) = args.first() else {
+        return Err(anyhow!("text takes 1 argument"));
     };
-    Ok(ResolvedPattern::from_string(s.to_string()))
+    let should_linearize = args.get(1);
+    println!("should_linearize: {:?}", should_linearize);
+    let should_linearize = match args.get(1) {
+        Some(Some(resolved_pattern)) => true,
+        _ => false,
+    };
+    println!("should_linearize: {:?}", should_linearize);
+    if !should_linearize {
+        return Ok(ResolvedPattern::from_string(
+            resolved_pattern.text(&state.files, context.language())?,
+        ));
+    }
+    todo!("Not implemented");
+    // let mut memo: HashMap<CodeRange, Option<String>> = HashMap::new();
+    // let effects: Vec<_> = state.effects.clone().into_iter().collect();
+    // let s = resolved_pattern.linearized_text(
+    //     context.language(),
+    //     &effects,
+    //     &state.files,
+    //     &mut memo,
+    //     false,
+    //     logs,
+    // )?;
+    // Ok(ResolvedPattern::from_string(s.to_string()))
 }
 
 fn trim_fn<'a>(
