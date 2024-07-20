@@ -364,6 +364,37 @@ mod tests {
     }
 
     #[test]
+    fn test_is_rewrite_with_yaml() {
+        let pattern_src = r#"
+            language yaml
+
+            or {
+            `- $item` where {
+                $item => `nice: car
+            second: detail`
+            }
+            }
+        "#
+        .to_string();
+        let libs = BTreeMap::new();
+        let problem = src_to_problem_libs(
+            pattern_src.to_string(),
+            &libs,
+            TargetLanguage::default(),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .problem;
+
+        println!("problem: {:?}", problem);
+
+        assert!(has_rewrite(&problem.pattern, &problem.definitions()));
+    }
+
+    #[test]
     fn test_is_rewrite_with_insert() {
         let pattern_src = r#"
             language yaml
