@@ -1,7 +1,6 @@
 use super::{
     accessor::Accessor, container::Container, dynamic_snippet::DynamicPattern,
     list_index::ListIndex, patterns::Pattern, predicates::Predicate, regex::RegexLike,
-    PatternDefinition,
 };
 use crate::{
     context::{QueryContext, StaticDefinitions},

@@ -1,6 +1,6 @@
 use crate::{
     context::{QueryContext, StaticDefinitions},
-    pattern::{Pattern, PatternDefinition, PatternOrPredicate, Predicate},
+    pattern::{Pattern, PatternOrPredicate, Predicate},
 };
 
 /// Determine if a provided pattern has a rewrite anywhere inside of it

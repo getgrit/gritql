@@ -3,7 +3,7 @@ use crate::{
     problem::MarzanoQueryContext,
 };
 use anyhow::{anyhow, Result};
-use grit_pattern_matcher::pattern::PatternDefinition;
+
 use grit_pattern_matcher::{
     binding::Binding,
     pattern::{

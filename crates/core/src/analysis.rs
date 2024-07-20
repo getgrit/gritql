@@ -13,7 +13,6 @@ use grit_pattern_matcher::{
 };
 
 use crate::{
-    marzano_context::MarzanoContext,
     pattern_compiler::compiler::{defs_to_filenames, DefsToFilenames},
     problem::MarzanoQueryContext,
 };

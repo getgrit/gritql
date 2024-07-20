@@ -1,7 +1,6 @@
 use super::{
     iter_pattern::PatternOrPredicate,
     patterns::{Matcher, PatternName},
-    PatternDefinition,
 };
 use crate::context::{QueryContext, StaticDefinitions};
 
