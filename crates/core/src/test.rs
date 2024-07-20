@@ -6541,6 +6541,43 @@ fn even_more_linearized_test() {
 }
 
 #[test]
+fn linearized_text_fn() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |function go_to_the_zoo($a) js {
+                |    return $a.text.replaceAll("baz", "bars").replaceAll("zoo", "alexandria")
+                |}
+                |
+                |program() where {
+                |    $program <: contains bubble `foo($a)` => `zoo($a)`,
+                |    $current_text = text($program, true),
+                |    $final_text = go_to_the_zoo($current_text),
+                |    $program => $final_text
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |foo(bar(baz))
+                |foo(blo, fly)
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |alexandria(bar(bars))
+                |alexandria(blo, fly)
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn matching_var_snippet_work() {
     run_test_expected({
         TestArgExpected {

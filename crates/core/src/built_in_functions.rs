@@ -248,30 +248,25 @@ fn text_fn<'a>(
     let Some(Some(resolved_pattern)) = args.first() else {
         return Err(anyhow!("text takes 1 argument"));
     };
-    let should_linearize = args.get(1);
-    println!("should_linearize: {:?}", should_linearize);
     let should_linearize = match args.get(1) {
-        Some(Some(resolved_pattern)) => true,
+        Some(Some(resolved_pattern)) => resolved_pattern.is_truthy(state, context.language())?,
         _ => false,
     };
-    println!("should_linearize: {:?}", should_linearize);
     if !should_linearize {
-        return Ok(ResolvedPattern::from_string(
-            resolved_pattern.text(&state.files, context.language())?,
-        ));
+        let text = resolved_pattern.text(&state.files, context.language())?;
+        return Ok(ResolvedPattern::from_string(text.to_string()));
     }
-    todo!("Not implemented");
-    // let mut memo: HashMap<CodeRange, Option<String>> = HashMap::new();
-    // let effects: Vec<_> = state.effects.clone().into_iter().collect();
-    // let s = resolved_pattern.linearized_text(
-    //     context.language(),
-    //     &effects,
-    //     &state.files,
-    //     &mut memo,
-    //     false,
-    //     logs,
-    // )?;
-    // Ok(ResolvedPattern::from_string(s.to_string()))
+    let mut memo: HashMap<CodeRange, Option<String>> = HashMap::new();
+    let effects: Vec<_> = state.effects.clone().into_iter().collect();
+    let s = resolved_pattern.linearized_text(
+        context.language(),
+        &effects,
+        &state.files,
+        &mut memo,
+        false,
+        logs,
+    )?;
+    Ok(ResolvedPattern::from_string(s.to_string()))
 }
 
 fn trim_fn<'a>(
