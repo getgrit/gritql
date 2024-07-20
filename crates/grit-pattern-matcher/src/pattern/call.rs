@@ -45,7 +45,7 @@ impl<Q: QueryContext> Matcher<Q> for Call<Q> {
 
 #[derive(Debug, Clone)]
 pub struct PrCall<Q: QueryContext> {
-    index: usize,
+    pub(crate) index: usize,
     pub args: Vec<Option<Pattern<Q>>>,
 }
 

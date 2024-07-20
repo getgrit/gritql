@@ -74,7 +74,14 @@ impl<Q: QueryContext> Predicate<Q> {
         definitions: &'a StaticDefinitions<Q>,
     ) -> Vec<PatternOrPredicate<'a, Q>> {
         match self {
-            Predicate::Call(call) => args_children(&call.args, definitions),
+            Predicate::Call(call) => {
+                let mut base = args_children(&call.args, definitions);
+                let def = definitions.get_predicate(call.index);
+                if let Some(def) = def {
+                    base.push(PatternOrPredicate::Predicate(&def.predicate));
+                }
+                base
+            }
             Predicate::Not(not) => vec![PatternOrPredicate::Predicate(&not.predicate)],
             Predicate::If(if_) => vec![
                 PatternOrPredicate::Predicate(&if_.if_),
