@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::path::Path;
 
-use grit_pattern_matcher::{constants::DEFAULT_FILE_NAME};
+use grit_pattern_matcher::constants::DEFAULT_FILE_NAME;
 
 use crate::pattern_compiler::compiler::{defs_to_filenames, DefsToFilenames};
 
@@ -185,7 +185,7 @@ fn find_child_tree_definition(
 #[cfg(test)]
 mod tests {
     use grit_pattern_matcher::has_rewrite;
-    use marzano_language::{target_language::TargetLanguage};
+    use marzano_language::target_language::TargetLanguage;
 
     use crate::pattern_compiler::src_to_problem_libs;
 
@@ -313,6 +313,67 @@ mod tests {
                 `console.log($msg)` => `console.error($msg)`
             }
             pattern_with_rewrite()
+        "#
+        .to_string();
+        let libs = BTreeMap::new();
+        let problem = src_to_problem_libs(
+            pattern_src.to_string(),
+            &libs,
+            TargetLanguage::default(),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .problem;
+
+        println!("problem: {:?}", problem);
+
+        assert!(has_rewrite(&problem.pattern, &problem.pattern_definitions));
+    }
+
+    #[test]
+    fn test_is_rewrite_with_yaml() {
+        let pattern_src = r#"
+            language yaml
+
+            or {
+            `- $item` where {
+                $item => `nice: car
+            second: detail`
+            }
+            }
+        "#
+        .to_string();
+        let libs = BTreeMap::new();
+        let problem = src_to_problem_libs(
+            pattern_src.to_string(),
+            &libs,
+            TargetLanguage::default(),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .problem;
+
+        println!("problem: {:?}", problem);
+
+        assert!(has_rewrite(&problem.pattern, &problem.pattern_definitions));
+    }
+
+    #[test]
+    fn test_is_rewrite_with_insert() {
+        let pattern_src = r#"
+            language yaml
+
+            or {
+            `- $item` where {
+                $item += `good stuff`
+            }
+            }
         "#
         .to_string();
         let libs = BTreeMap::new();

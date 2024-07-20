@@ -1,7 +1,6 @@
-
 use crate::{
     context::QueryContext,
-    pattern::{Pattern, PatternDefinition, PatternOrPredicate},
+    pattern::{Pattern, PatternDefinition, PatternOrPredicate, Predicate},
 };
 
 /// Determine if a provided pattern has a rewrite anywhere inside of it
@@ -15,11 +14,25 @@ pub fn has_rewrite<Q: QueryContext>(
         if matches!(pattern, PatternOrPredicate::Pattern(Pattern::Rewrite(_))) {
             return true;
         }
+        if matches!(
+            pattern,
+            PatternOrPredicate::Predicate(Predicate::Rewrite(_))
+        ) {
+            return true;
+        }
+        if matches!(
+            pattern,
+            PatternOrPredicate::Predicate(Predicate::Accumulate(_))
+        ) {
+            return true;
+        }
         // match pattern {
         //     PatternOrPredicate::Pattern(p) => {
         //         println!("Check {}", p.name());
         //     }
-        //     PatternOrPredicate::Predicate(_) => {}
+        //     PatternOrPredicate::Predicate(p) => {
+        //         println!("Check {}", p.name());
+        //     }
         // }
     }
     false
