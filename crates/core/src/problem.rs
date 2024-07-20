@@ -56,7 +56,7 @@ pub struct Problem {
     pub hash: [u8; 32],
     pub name: Option<String>,
     pub(crate) variables: VariableLocations,
-    pub(crate) pattern_definitions: Vec<PatternDefinition<MarzanoQueryContext>>,
+    pub pattern_definitions: Vec<PatternDefinition<MarzanoQueryContext>>,
     pub(crate) predicate_definitions: Vec<PredicateDefinition<MarzanoQueryContext>>,
     pub(crate) function_definitions: Vec<GritFunctionDefinition<MarzanoQueryContext>>,
     pub(crate) foreign_function_definitions: Vec<ForeignFunctionDefinition>,

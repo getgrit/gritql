@@ -38,6 +38,7 @@ grit-util = { path = "../grit-util" }
 marzano-core = { path = "../core", features = [
   "non_wasm",
 ], default-features = false }
+grit-pattern-matcher = { path = "../grit-pattern-matcher" }
 marzano-gritmodule = { path = "../gritmodule" }
 marzano-language = { path = "../language", features = ["finder"] }
 marzano-lsp = { path = "../lsp" }

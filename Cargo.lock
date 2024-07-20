@@ -2150,6 +2150,7 @@ dependencies = [
  "fs-err",
  "futures-util",
  "git2",
+ "grit-pattern-matcher",
  "grit-util",
  "grit_cache",
  "grit_cloud_client",

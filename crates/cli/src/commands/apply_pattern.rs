@@ -13,6 +13,7 @@ use tracing::span;
 #[allow(unused_imports)]
 use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 
+use grit_pattern_matcher::has_rewrite;
 use grit_util::Position;
 use indicatif::MultiProgress;
 use marzano_core::api::{AllDone, AllDoneReason, AnalysisLog, MatchResult};
@@ -336,24 +337,6 @@ pub(crate) async fn run_apply_pattern(
         #[cfg(feature = "grit_tracing")]
         stdlib_download_span.exit();
 
-        let warn_uncommitted =
-            !arg.dry_run && !arg.force && has_uncommitted_changes(cwd.clone()).await;
-        if warn_uncommitted {
-            let term = console::Term::stderr();
-            if !term.is_term() {
-                bail!("Error: Untracked changes detected. Grit will not proceed with rewriting files in non-TTY environments unless '--force' is used. Please commit all changes or use '--force' to override this safety check.");
-            }
-
-            let proceed = flushable_unwrap!(emitter, Confirm::new()
-                .with_prompt("Your working tree currently has untracked changes and Grit will rewrite files in place. Do you want to proceed?")
-                .default(false)
-                .interact_opt());
-
-            if proceed != Some(true) {
-                return Ok(());
-            }
-        }
-
         #[cfg(feature = "grit_tracing")]
         let grit_file_discovery = span!(tracing::Level::INFO, "grit_file_discovery",).entered();
 
@@ -545,6 +528,23 @@ pub(crate) async fn run_apply_pattern(
         emitter
             .emit(&MatchResult::AnalysisLog(warn.into()), min_level)
             .unwrap();
+    }
+
+    let warn_uncommitted = !arg.dry_run && !arg.force && has_uncommitted_changes(cwd.clone()).await;
+    if warn_uncommitted && has_rewrite(&compiled.pattern, &compiled.pattern_definitions) {
+        let term = console::Term::stderr();
+        if !term.is_term() {
+            bail!("Error: Untracked changes detected. Grit will not proceed with rewriting files in non-TTY environments unless '--force' is used. Please commit all changes or use '--force' to override this safety check.");
+        }
+
+        let proceed = flushable_unwrap!(emitter, Confirm::new()
+                .with_prompt("Your working tree currently has untracked changes and Grit will rewrite files in place. Do you want to proceed?")
+                .default(false)
+                .interact_opt());
+
+        if proceed != Some(true) {
+            return Ok(());
+        }
     }
 
     let processed = AtomicI32::new(0);
