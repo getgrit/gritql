@@ -309,17 +309,13 @@ mod tests {
     #[test]
     fn test_is_rewrite_with_pattern_call() {
         let pattern_src = r#"
+            pattern pattern_with_rewrite() {
+                `console.log($msg)` => `console.error($msg)`
+            }
             pattern_with_rewrite()
         "#
         .to_string();
         let mut libs = BTreeMap::new();
-        libs.insert(
-            "foo.grit".to_string(),
-            "pattern pattern_with_rewrite() {
-                `console.log($msg)` => `console.error($msg)`
-            }"
-            .to_string(),
-        );
         let problem = src_to_problem_libs(
             pattern_src.to_string(),
             &libs,
