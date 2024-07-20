@@ -121,12 +121,15 @@ pub async fn parse_input_files_internal(
                 .iter()
                 .map(|w| MatchResult::AnalysisLog(w.clone().into()));
 
+            let uses_ai = marzano_core::analysis::uses_ai(&c.problem.pattern, &c.problem.definitions());
+
             let pinfo = PatternInfo {
                 messages: vec![],
                 variables: c.problem.compiled_vars(),
                 source_file: pattern,
                 parsed_pattern,
                 valid: true,
+                uses_ai
             };
             let pinfo = MatchResult::PatternInfo(pinfo);
             results.push(pinfo);

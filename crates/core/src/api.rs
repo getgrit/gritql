@@ -298,6 +298,7 @@ pub struct PatternInfo {
     pub source_file: String,
     pub parsed_pattern: String,
     pub valid: bool,
+    pub uses_ai: bool,
 }
 
 impl PatternInfo {
@@ -310,12 +311,16 @@ impl PatternInfo {
             &grit_node_types,
         ))
         .unwrap();
+
+        let uses_ai = crate::analysis::uses_ai(&compiled.pattern, &compiled.definitions());
+
         Self {
             messages: vec![],
             variables: compiled.compiled_vars(),
             source_file,
             parsed_pattern,
             valid: true,
+            uses_ai,
         }
     }
 }

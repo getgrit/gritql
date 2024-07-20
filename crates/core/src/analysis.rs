@@ -209,25 +209,20 @@ fn uses_named_function(
                 return true;
             }
         }
-        // use grit_pattern_matcher::pattern::PatternName;
-        // match pattern {
-        //     PatternOrPredicate::Pattern(p) => {
-        //         println!("pattern {}", p.name());
-        //     }
-        //     PatternOrPredicate::Predicate(p) => {
-        //         println!("predicate {}", p.name());
-        //     }
-        //     PatternOrPredicate::DynamicPattern(p) => {
-        //         println!("dynamic pattern {}", p.name());
-        //     }
-        // }
     }
     false
 }
 
+pub fn uses_ai(
+    root: &Pattern<MarzanoQueryContext>,
+    definitions: &StaticDefinitions<MarzanoQueryContext>,
+) -> bool {
+    uses_named_function(root, definitions, "llm_chat")
+}
+
 #[cfg(test)]
 mod tests {
-    use grit_pattern_matcher::{context::StaticDefinitions, has_rewrite};
+    use grit_pattern_matcher::has_rewrite;
     use marzano_language::target_language::TargetLanguage;
 
     use crate::pattern_compiler::src_to_problem_libs;
