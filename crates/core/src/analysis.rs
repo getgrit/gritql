@@ -315,7 +315,7 @@ mod tests {
             pattern_with_rewrite()
         "#
         .to_string();
-        let mut libs = BTreeMap::new();
+        let libs = BTreeMap::new();
         let problem = src_to_problem_libs(
             pattern_src.to_string(),
             &libs,

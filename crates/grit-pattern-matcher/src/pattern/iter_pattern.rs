@@ -1,6 +1,7 @@
 use super::{
     accessor::Accessor, container::Container, dynamic_snippet::DynamicPattern,
     list_index::ListIndex, patterns::Pattern, predicates::Predicate, regex::RegexLike,
+    PatternDefinition,
 };
 use crate::{
     context::QueryContext,
@@ -13,6 +14,7 @@ use crate::{
 
 pub struct PatternOrPredicateIterator<'a, Q: QueryContext> {
     patterns: Vec<PatternOrPredicate<'a, Q>>,
+    definitions: &'a [PatternDefinition<Q>],
 }
 
 impl<'a, Q: QueryContext> Iterator for PatternOrPredicateIterator<'a, Q> {
@@ -20,7 +22,7 @@ impl<'a, Q: QueryContext> Iterator for PatternOrPredicateIterator<'a, Q> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(pattern) = self.patterns.pop() {
-            self.patterns.extend(pattern.children());
+            self.patterns.extend(pattern.children(self.definitions));
             Some(pattern)
         } else {
             None
@@ -29,14 +31,19 @@ impl<'a, Q: QueryContext> Iterator for PatternOrPredicateIterator<'a, Q> {
 }
 
 impl<'a, Q: QueryContext> PatternOrPredicateIterator<'a, Q> {
-    fn from_pattern(pattern: &'a Pattern<Q>) -> Self {
+    fn from_pattern(pattern: &'a Pattern<Q>, definitions: &'a [PatternDefinition<Q>]) -> Self {
         Self {
             patterns: vec![PatternOrPredicate::Pattern(pattern)],
+            definitions,
         }
     }
-    fn from_predicate(predicate: &'a Predicate<Q>) -> Self {
+    fn from_predicate(
+        predicate: &'a Predicate<Q>,
+        definitions: &'a [PatternDefinition<Q>],
+    ) -> Self {
         Self {
             patterns: vec![PatternOrPredicate::Predicate(predicate)],
+            definitions,
         }
     }
 }
@@ -49,22 +56,28 @@ pub enum PatternOrPredicate<'a, Q: QueryContext> {
 }
 
 impl<'a, Q: QueryContext> PatternOrPredicate<'a, Q> {
-    fn children(&self) -> Vec<PatternOrPredicate<'a, Q>> {
+    fn children(&self, definitions: &'a [PatternDefinition<Q>]) -> Vec<PatternOrPredicate<'a, Q>> {
         match self {
-            PatternOrPredicate::Pattern(p) => p.children(),
-            PatternOrPredicate::Predicate(p) => p.children(),
+            PatternOrPredicate::Pattern(p) => p.children(definitions),
+            PatternOrPredicate::Predicate(p) => p.children(definitions),
         }
     }
 }
 
 impl<Q: QueryContext> Predicate<Q> {
-    pub fn iter(&self) -> PatternOrPredicateIterator<Q> {
-        PatternOrPredicateIterator::from_predicate(self)
+    pub fn iter<'a>(
+        &'a self,
+        definitions: &'a [PatternDefinition<Q>],
+    ) -> PatternOrPredicateIterator<'a, Q> {
+        PatternOrPredicateIterator::from_predicate(self, definitions)
     }
 
-    fn children(&self) -> Vec<PatternOrPredicate<Q>> {
+    fn children<'a>(
+        &'a self,
+        definitions: &'a [PatternDefinition<Q>],
+    ) -> Vec<PatternOrPredicate<'a, Q>> {
         match self {
-            Predicate::Call(call) => args_children(&call.args),
+            Predicate::Call(call) => args_children(&call.args, definitions),
             Predicate::Not(not) => vec![PatternOrPredicate::Predicate(&not.predicate)],
             Predicate::If(if_) => vec![
                 PatternOrPredicate::Predicate(&if_.if_),
@@ -73,12 +86,12 @@ impl<Q: QueryContext> Predicate<Q> {
             ],
             Predicate::True => vec![],
             Predicate::False => vec![],
-            Predicate::Or(or) => predicates_children(&or.predicates),
+            Predicate::Or(or) => predicates_children(&or.predicates, definitions),
             Predicate::Maybe(m) => vec![PatternOrPredicate::Predicate(&m.predicate)],
-            Predicate::And(and) => predicates_children(&and.predicates),
-            Predicate::Any(any) => predicates_children(&any.predicates),
+            Predicate::And(and) => predicates_children(&and.predicates, definitions),
+            Predicate::Any(any) => predicates_children(&any.predicates, definitions),
             Predicate::Rewrite(rewrite) => {
-                let mut res = rewrite.right.children();
+                let mut res = rewrite.right.children(definitions);
                 res.push(PatternOrPredicate::Pattern(&rewrite.left));
                 res
             }
@@ -106,20 +119,26 @@ impl<Q: QueryContext> Predicate<Q> {
 }
 
 impl<Q: QueryContext> Container<Q> {
-    fn children(&self) -> Vec<PatternOrPredicate<Q>> {
+    fn children<'a>(
+        &'a self,
+        definitions: &'a [PatternDefinition<Q>],
+    ) -> Vec<PatternOrPredicate<'a, Q>> {
         match self {
             Container::Variable(_) => vec![],
-            Container::Accessor(a) => a.children(),
-            Container::ListIndex(l) => l.children(),
-            Container::FunctionCall(f) => args_children(&f.args),
+            Container::Accessor(a) => a.children(definitions),
+            Container::ListIndex(l) => l.children(definitions),
+            Container::FunctionCall(f) => args_children(&f.args, definitions),
         }
     }
 }
 
 impl<Q: QueryContext> Accessor<Q> {
-    fn children(&self) -> Vec<PatternOrPredicate<Q>> {
+    fn children<'a>(
+        &'a self,
+        definitions: &'a [PatternDefinition<Q>],
+    ) -> Vec<PatternOrPredicate<'a, Q>> {
         match &self.map {
-            super::accessor::AccessorMap::Container(c) => c.children(),
+            super::accessor::AccessorMap::Container(c) => c.children(definitions),
             super::accessor::AccessorMap::Map(m) => m
                 .elements
                 .values()
@@ -130,33 +149,45 @@ impl<Q: QueryContext> Accessor<Q> {
 }
 
 impl<Q: QueryContext> DynamicPattern<Q> {
-    fn children(&self) -> Vec<PatternOrPredicate<Q>> {
+    fn children<'a>(
+        &'a self,
+        definitions: &'a [PatternDefinition<Q>],
+    ) -> Vec<PatternOrPredicate<'a, Q>> {
         match &self {
             super::dynamic_snippet::DynamicPattern::Variable(_) => Vec::new(),
-            super::dynamic_snippet::DynamicPattern::Accessor(a) => a.children(),
-            super::dynamic_snippet::DynamicPattern::ListIndex(l) => l.children(),
+            super::dynamic_snippet::DynamicPattern::Accessor(a) => a.children(definitions),
+            super::dynamic_snippet::DynamicPattern::ListIndex(l) => l.children(definitions),
             super::dynamic_snippet::DynamicPattern::Snippet(_) => Vec::new(),
-            super::dynamic_snippet::DynamicPattern::List(l) => {
-                l.elements.iter().flat_map(|d| d.children()).collect()
+            super::dynamic_snippet::DynamicPattern::List(l) => l
+                .elements
+                .iter()
+                .flat_map(|d| d.children(definitions))
+                .collect(),
+            super::dynamic_snippet::DynamicPattern::CallBuiltIn(c) => {
+                args_children(&c.args, definitions)
             }
-            super::dynamic_snippet::DynamicPattern::CallBuiltIn(c) => args_children(&c.args),
-            super::dynamic_snippet::DynamicPattern::CallFunction(c) => args_children(&c.args),
+            super::dynamic_snippet::DynamicPattern::CallFunction(c) => {
+                args_children(&c.args, definitions)
+            }
             super::dynamic_snippet::DynamicPattern::CallForeignFunction(c) => {
-                args_children(&c.args)
+                args_children(&c.args, definitions)
             }
         }
     }
 }
 
 impl<Q: QueryContext> ListIndex<Q> {
-    fn children(&self) -> Vec<PatternOrPredicate<Q>> {
+    fn children<'a>(
+        &'a self,
+        definitions: &'a [PatternDefinition<Q>],
+    ) -> Vec<PatternOrPredicate<'a, Q>> {
         let mut v = Vec::new();
         let list = match &self.list {
-            ListOrContainer::Container(c) => c.children(),
-            ListOrContainer::List(l) => patterns_children(&l.patterns),
+            ListOrContainer::Container(c) => c.children(definitions),
+            ListOrContainer::List(l) => patterns_children(&l.patterns, definitions),
         };
         let index = match &self.index {
-            ContainerOrIndex::Container(c) => c.children(),
+            ContainerOrIndex::Container(c) => c.children(definitions),
             ContainerOrIndex::Index(_) => Vec::new(),
         };
         v.extend(list);
@@ -165,17 +196,26 @@ impl<Q: QueryContext> ListIndex<Q> {
     }
 }
 
-fn args_children<Q: QueryContext>(args: &[Option<Pattern<Q>>]) -> Vec<PatternOrPredicate<Q>> {
+fn args_children<'a, Q: QueryContext>(
+    args: &'a [Option<Pattern<Q>>],
+    definitions: &'a [PatternDefinition<Q>],
+) -> Vec<PatternOrPredicate<'a, Q>> {
     args.iter()
         .flat_map(|p| p.as_ref().map(PatternOrPredicate::Pattern))
         .collect()
 }
 
-fn patterns_children<Q: QueryContext>(patterns: &[Pattern<Q>]) -> Vec<PatternOrPredicate<Q>> {
+fn patterns_children<'a, Q: QueryContext>(
+    patterns: &'a [Pattern<Q>],
+    definitions: &'a [PatternDefinition<Q>],
+) -> Vec<PatternOrPredicate<'a, Q>> {
     patterns.iter().map(PatternOrPredicate::Pattern).collect()
 }
 
-fn predicates_children<Q: QueryContext>(predicates: &[Predicate<Q>]) -> Vec<PatternOrPredicate<Q>> {
+fn predicates_children<'a, Q: QueryContext>(
+    predicates: &'a [Predicate<Q>],
+    definitions: &'a [PatternDefinition<Q>],
+) -> Vec<PatternOrPredicate<'a, Q>> {
     predicates
         .iter()
         .map(PatternOrPredicate::Predicate)
@@ -183,56 +223,62 @@ fn predicates_children<Q: QueryContext>(predicates: &[Predicate<Q>]) -> Vec<Patt
 }
 
 impl<Q: QueryContext> Pattern<Q> {
-    pub fn iter(&self) -> PatternOrPredicateIterator<Q> {
-        PatternOrPredicateIterator::from_pattern(self)
+    pub fn iter<'a>(
+        &'a self,
+        definitions: &'a [PatternDefinition<Q>],
+    ) -> PatternOrPredicateIterator<'a, Q> {
+        PatternOrPredicateIterator::from_pattern(self, definitions)
     }
 
-    fn children(&self) -> Vec<PatternOrPredicate<Q>> {
+    fn children<'a>(
+        &'a self,
+        definitions: &'a [PatternDefinition<Q>],
+    ) -> Vec<PatternOrPredicate<'a, Q>> {
         match self {
-            Pattern::AstNode(a) => a.children(),
-            Pattern::List(l) => patterns_children(&l.patterns),
-            Pattern::ListIndex(l) => l.children(),
+            Pattern::AstNode(a) => a.children(definitions),
+            Pattern::List(l) => patterns_children(&l.patterns, definitions),
+            Pattern::ListIndex(l) => l.children(definitions),
             Pattern::Map(m) => m
                 .elements
                 .values()
                 .map(PatternOrPredicate::Pattern)
                 .collect(),
-            Pattern::Accessor(a) => a.children(),
-            Pattern::Call(c) => args_children(&c.args),
+            Pattern::Accessor(a) => a.children(definitions),
+            Pattern::Call(c) => args_children(&c.args, definitions),
             Pattern::Regex(r) => {
                 if let RegexLike::Pattern(p) = &r.regex {
-                    p.children()
+                    p.children(definitions)
                 } else {
                     Vec::new()
                 }
             }
             Pattern::File(f) => {
                 let mut v = Vec::new();
-                let n = f.name.children();
-                let b = f.body.children();
+                let n = f.name.children(definitions);
+                let b = f.body.children(definitions);
                 v.extend(n);
                 v.extend(b);
                 v
             }
-            Pattern::Files(f) => f.pattern.children(),
+            Pattern::Files(f) => f.pattern.children(definitions),
             Pattern::Bubble(b) => {
-                let mut children = args_children(&b.args);
-                children.extend(b.pattern_def.pattern.children());
+                let mut children = args_children(&b.args, definitions);
+                children.extend(b.pattern_def.pattern.children(definitions));
                 children
             }
-            Pattern::Limit(l) => l.pattern.children(),
-            Pattern::CallBuiltIn(c) => args_children(&c.args),
-            Pattern::CallFunction(c) => args_children(&c.args),
-            Pattern::CallForeignFunction(c) => args_children(&c.args),
+            Pattern::Limit(l) => l.pattern.children(definitions),
+            Pattern::CallBuiltIn(c) => args_children(&c.args, definitions),
+            Pattern::CallFunction(c) => args_children(&c.args, definitions),
+            Pattern::CallForeignFunction(c) => args_children(&c.args, definitions),
             Pattern::Assignment(a) => vec![PatternOrPredicate::Pattern(&a.pattern)],
             Pattern::Accumulate(a) => vec![
                 PatternOrPredicate::Pattern(&a.left),
                 PatternOrPredicate::Pattern(&a.right),
             ],
-            Pattern::And(a) => patterns_children(&a.patterns),
-            Pattern::Or(o) => patterns_children(&o.patterns),
+            Pattern::And(a) => patterns_children(&a.patterns, definitions),
+            Pattern::Or(o) => patterns_children(&o.patterns, definitions),
             Pattern::Maybe(m) => vec![PatternOrPredicate::Pattern(&m.pattern)],
-            Pattern::Any(a) => patterns_children(&a.patterns),
+            Pattern::Any(a) => patterns_children(&a.patterns, definitions),
             Pattern::Not(n) => vec![PatternOrPredicate::Pattern(&n.pattern)],
             Pattern::If(i) => vec![
                 PatternOrPredicate::Predicate(&i.if_),
@@ -248,13 +294,13 @@ impl<Q: QueryContext> Pattern<Q> {
             Pattern::IntConstant(_) => Vec::new(),
             Pattern::FloatConstant(_) => Vec::new(),
             Pattern::BooleanConstant(_) => Vec::new(),
-            Pattern::Dynamic(d) => d.children(),
+            Pattern::Dynamic(d) => d.children(definitions),
             Pattern::CodeSnippet(c) => {
                 let mut v = Vec::new();
                 let p = c.patterns().map(|p| PatternOrPredicate::Pattern(p));
                 let d = c
                     .dynamic_snippet()
-                    .map(|d| d.children())
+                    .map(|d| d.children(definitions))
                     .unwrap_or(Vec::new());
                 v.extend(p);
                 v.extend(d);
@@ -262,7 +308,7 @@ impl<Q: QueryContext> Pattern<Q> {
             }
             Pattern::Variable(_) => Vec::new(),
             Pattern::Rewrite(r) => {
-                let mut res = r.right.children();
+                let mut res = r.right.children(definitions);
                 res.push(PatternOrPredicate::Pattern(&r.left));
                 res
             }

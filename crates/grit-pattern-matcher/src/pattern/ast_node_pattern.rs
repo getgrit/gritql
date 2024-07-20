@@ -1,6 +1,7 @@
 use super::{
     iter_pattern::PatternOrPredicate,
     patterns::{Matcher, PatternName},
+    PatternDefinition,
 };
 use crate::context::QueryContext;
 
@@ -12,7 +13,10 @@ pub trait AstNodePattern<Q: QueryContext>:
     /// Trivia is useful for being able to re-print an AST, but not all parsers support collecting it.
     const INCLUDES_TRIVIA: bool;
 
-    fn children(&self) -> Vec<PatternOrPredicate<Q>>;
+    fn children<'a>(
+        &'a self,
+        definitions: &'a [PatternDefinition<Q>],
+    ) -> Vec<PatternOrPredicate<'a, Q>>;
 
     fn matches_kind_of(&self, node: &Q::Node<'_>) -> bool;
 }
