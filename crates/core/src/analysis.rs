@@ -277,7 +277,7 @@ mod tests {
 
         println!("problem: {:?}", problem);
 
-        assert!(has_rewrite(&problem.pattern));
+        assert!(has_rewrite(&problem.pattern, &[]));
     }
 
     #[test]
@@ -303,7 +303,7 @@ mod tests {
 
         println!("problem: {:?}", problem);
 
-        assert!(!has_rewrite(&problem.pattern));
+        assert!(!has_rewrite(&problem.pattern, &[]));
     }
 
     #[test]
@@ -330,6 +330,6 @@ mod tests {
 
         println!("problem: {:?}", problem);
 
-        assert!(has_rewrite(&problem.pattern));
+        assert!(has_rewrite(&problem.pattern, &problem.pattern_definitions));
     }
 }

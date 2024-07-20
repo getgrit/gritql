@@ -244,7 +244,12 @@ impl<Q: QueryContext> Pattern<Q> {
                 .map(PatternOrPredicate::Pattern)
                 .collect(),
             Pattern::Accessor(a) => a.children(definitions),
-            Pattern::Call(c) => args_children(&c.args, definitions),
+            Pattern::Call(c) => {
+                let mut base = args_children(&c.args, definitions);
+                let def = &definitions[c.index];
+                base.push(PatternOrPredicate::Pattern(&def.pattern));
+                base
+            }
             Pattern::Regex(r) => {
                 if let RegexLike::Pattern(p) = &r.regex {
                     p.children(definitions)
