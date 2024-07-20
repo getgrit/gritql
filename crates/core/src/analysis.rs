@@ -184,18 +184,6 @@ fn find_child_tree_definition(
     Ok(None)
 }
 
-fn has_rewrite<Q: QueryContext>(current_pattern: &Pattern<Q>) -> bool {
-    if matches!(current_pattern, Pattern::Rewrite(_)) {
-        return true;
-    }
-    for child in current_pattern.children() {
-        if has_rewrite(child) {
-            return true;
-        }
-    }
-    false
-}
-
 #[cfg(test)]
 mod tests {
     use marzano_language::{python::Python, target_language::TargetLanguage};

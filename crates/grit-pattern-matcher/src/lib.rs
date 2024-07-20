@@ -15,4 +15,4 @@ pub mod file_owners;
 pub mod intervals;
 pub mod pattern;
 
-pub use analysis::WalkablePattern;
+pub use analysis::has_rewrite;
