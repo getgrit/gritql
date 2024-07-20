@@ -67,3 +67,4 @@ variables:
 sourceFile: "or { bubble `function ($args) { $body }`, bubble `($args) => { $body }` }"
 parsedPattern: "[..]"
 valid: true
+usesAi: false

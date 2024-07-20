@@ -23,3 +23,4 @@ variables:
 sourceFile: "engine marzano(0.1)\nlanguage js\n\nfunction adder() js {\n  console.log(\"We are in JavaScript now!\");\n  return 10 % 3\n}\n\n`x` => adder()"
 parsedPattern: "[..]"
 valid: true
+usesAi: false
