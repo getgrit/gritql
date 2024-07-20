@@ -3,7 +3,7 @@ use super::{
     patterns::{Matcher, PatternName},
     PatternDefinition,
 };
-use crate::context::QueryContext;
+use crate::context::{QueryContext, StaticDefinitions};
 
 /// Type of pattern that matches against an individual (non-leaf) AST node.
 pub trait AstNodePattern<Q: QueryContext>:
@@ -15,7 +15,7 @@ pub trait AstNodePattern<Q: QueryContext>:
 
     fn children<'a>(
         &'a self,
-        definitions: &'a [PatternDefinition<Q>],
+        definitions: &'a StaticDefinitions<Q>,
     ) -> Vec<PatternOrPredicate<'a, Q>>;
 
     fn matches_kind_of(&self, node: &Q::Node<'_>) -> bool;

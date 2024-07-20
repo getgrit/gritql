@@ -32,7 +32,7 @@ impl AstNodePattern<MarzanoQueryContext> for ASTNode {
 
     fn children<'a>(
         &'a self,
-        _definitions: &'a [PatternDefinition<MarzanoQueryContext>],
+        _definitions: &'a grit_pattern_matcher::context::StaticDefinitions<MarzanoQueryContext>,
     ) -> Vec<PatternOrPredicate<'a, MarzanoQueryContext>> {
         self.args
             .iter()

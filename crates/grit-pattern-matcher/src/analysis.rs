@@ -1,5 +1,5 @@
 use crate::{
-    context::QueryContext,
+    context::{QueryContext, StaticDefinitions},
     pattern::{Pattern, PatternDefinition, PatternOrPredicate, Predicate},
 };
 
@@ -8,7 +8,7 @@ use crate::{
 /// Note this does not yet walk inside predicates and function calls
 pub fn has_rewrite<Q: QueryContext>(
     current_pattern: &Pattern<Q>,
-    definitions: &[PatternDefinition<Q>],
+    definitions: &StaticDefinitions<Q>,
 ) -> bool {
     for pattern in current_pattern.iter(definitions) {
         if matches!(pattern, PatternOrPredicate::Pattern(Pattern::Rewrite(_))) {

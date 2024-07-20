@@ -67,3 +67,40 @@ pub trait ExecContext<'a, Q: QueryContext> {
 
     fn name(&self) -> Option<&str>;
 }
+
+/// Static information used for a pattern
+/// This is useful for static analysis of patterns without running the query engine.
+#[derive(Debug)]
+pub struct StaticDefinitions<'a, Q: QueryContext> {
+    pub pattern_definitions: &'a [PatternDefinition<Q>],
+    pub predicate_definitions: &'a [PredicateDefinition<Q>],
+}
+
+impl<'a, Q: QueryContext> StaticDefinitions<'a, Q> {
+    pub fn new(
+        pattern_definitions: &'a [PatternDefinition<Q>],
+        predicate_definitions: &'a [PredicateDefinition<Q>],
+    ) -> Self {
+        StaticDefinitions {
+            pattern_definitions,
+            predicate_definitions,
+        }
+    }
+
+    pub fn get_pattern(&self, index: usize) -> Option<&PatternDefinition<Q>> {
+        self.pattern_definitions.get(index)
+    }
+
+    pub fn get_predicate(&self, index: usize) -> Option<&PredicateDefinition<Q>> {
+        self.predicate_definitions.get(index)
+    }
+}
+
+impl<'a, Q: QueryContext> Default for StaticDefinitions<'a, Q> {
+    fn default() -> Self {
+        Self {
+            pattern_definitions: &[],
+            predicate_definitions: &[],
+        }
+    }
+}

@@ -184,7 +184,7 @@ fn find_child_tree_definition(
 
 #[cfg(test)]
 mod tests {
-    use grit_pattern_matcher::has_rewrite;
+    use grit_pattern_matcher::{context::StaticDefinitions, has_rewrite};
     use marzano_language::target_language::TargetLanguage;
 
     use crate::pattern_compiler::src_to_problem_libs;
@@ -277,7 +277,7 @@ mod tests {
 
         println!("problem: {:?}", problem);
 
-        assert!(has_rewrite(&problem.pattern, &[]));
+        assert!(has_rewrite(&problem.pattern, &problem.definitions()));
     }
 
     #[test]
@@ -303,7 +303,7 @@ mod tests {
 
         println!("problem: {:?}", problem);
 
-        assert!(!has_rewrite(&problem.pattern, &[]));
+        assert!(!has_rewrite(&problem.pattern, &problem.definitions()));
     }
 
     #[test]
@@ -330,20 +330,19 @@ mod tests {
 
         println!("problem: {:?}", problem);
 
-        assert!(has_rewrite(&problem.pattern, &problem.pattern_definitions));
+        assert!(has_rewrite(&problem.pattern, &problem.definitions()));
     }
 
     #[test]
-    fn test_is_rewrite_with_yaml() {
+    fn test_is_not_rewrite_with_pattern_call() {
         let pattern_src = r#"
-            language yaml
-
-            or {
-            `- $item` where {
-                $item => `nice: car
-            second: detail`
+            pattern pattern_with_rewrite() {
+                `console.log($msg)` => `console.error($msg)`
             }
+            pattern pattern_without_rewrite() {
+                `console.log($msg)`
             }
+            pattern_without_rewrite()
         "#
         .to_string();
         let libs = BTreeMap::new();
@@ -361,7 +360,7 @@ mod tests {
 
         println!("problem: {:?}", problem);
 
-        assert!(has_rewrite(&problem.pattern, &problem.pattern_definitions));
+        assert!(!has_rewrite(&problem.pattern, &problem.definitions()));
     }
 
     #[test]
@@ -391,6 +390,40 @@ mod tests {
 
         println!("problem: {:?}", problem);
 
-        assert!(has_rewrite(&problem.pattern, &problem.pattern_definitions));
+        assert!(has_rewrite(&problem.pattern, &problem.definitions()));
+    }
+
+    #[test]
+    fn test_is_rewrite_with_predicate() {
+        let pattern_src = r#"
+            pattern pattern_with_rewrite() {
+                `me` => `console.error(me)`
+            }
+
+            predicate predicate_with_rewrite() {
+                $program <: contains pattern_with_rewrite()
+            }
+
+            `you` where {
+                predicate_with_rewrite()
+            }
+        "#
+        .to_string();
+        let libs = BTreeMap::new();
+        let problem = src_to_problem_libs(
+            pattern_src.to_string(),
+            &libs,
+            TargetLanguage::default(),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .problem;
+
+        println!("problem: {:?}", problem);
+
+        assert!(has_rewrite(&problem.pattern, &problem.definitions()));
     }
 }

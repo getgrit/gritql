@@ -4,7 +4,7 @@ use super::{
     PatternDefinition,
 };
 use crate::{
-    context::QueryContext,
+    context::{QueryContext, StaticDefinitions},
     pattern::{
         ast_node_pattern::AstNodePattern,
         list_index::{ContainerOrIndex, ListOrContainer},
@@ -14,7 +14,7 @@ use crate::{
 
 pub struct PatternOrPredicateIterator<'a, Q: QueryContext> {
     patterns: Vec<PatternOrPredicate<'a, Q>>,
-    definitions: &'a [PatternDefinition<Q>],
+    definitions: &'a StaticDefinitions<'a, Q>,
 }
 
 impl<'a, Q: QueryContext> Iterator for PatternOrPredicateIterator<'a, Q> {
@@ -31,16 +31,13 @@ impl<'a, Q: QueryContext> Iterator for PatternOrPredicateIterator<'a, Q> {
 }
 
 impl<'a, Q: QueryContext> PatternOrPredicateIterator<'a, Q> {
-    fn from_pattern(pattern: &'a Pattern<Q>, definitions: &'a [PatternDefinition<Q>]) -> Self {
+    fn from_pattern(pattern: &'a Pattern<Q>, definitions: &'a StaticDefinitions<Q>) -> Self {
         Self {
             patterns: vec![PatternOrPredicate::Pattern(pattern)],
             definitions,
         }
     }
-    fn from_predicate(
-        predicate: &'a Predicate<Q>,
-        definitions: &'a [PatternDefinition<Q>],
-    ) -> Self {
+    fn from_predicate(predicate: &'a Predicate<Q>, definitions: &'a StaticDefinitions<Q>) -> Self {
         Self {
             patterns: vec![PatternOrPredicate::Predicate(predicate)],
             definitions,
@@ -56,7 +53,7 @@ pub enum PatternOrPredicate<'a, Q: QueryContext> {
 }
 
 impl<'a, Q: QueryContext> PatternOrPredicate<'a, Q> {
-    fn children(&self, definitions: &'a [PatternDefinition<Q>]) -> Vec<PatternOrPredicate<'a, Q>> {
+    fn children(&self, definitions: &'a StaticDefinitions<Q>) -> Vec<PatternOrPredicate<'a, Q>> {
         match self {
             PatternOrPredicate::Pattern(p) => p.children(definitions),
             PatternOrPredicate::Predicate(p) => p.children(definitions),
@@ -67,14 +64,14 @@ impl<'a, Q: QueryContext> PatternOrPredicate<'a, Q> {
 impl<Q: QueryContext> Predicate<Q> {
     pub fn iter<'a>(
         &'a self,
-        definitions: &'a [PatternDefinition<Q>],
+        definitions: &'a StaticDefinitions<Q>,
     ) -> PatternOrPredicateIterator<'a, Q> {
         PatternOrPredicateIterator::from_predicate(self, definitions)
     }
 
     fn children<'a>(
         &'a self,
-        definitions: &'a [PatternDefinition<Q>],
+        definitions: &'a StaticDefinitions<Q>,
     ) -> Vec<PatternOrPredicate<'a, Q>> {
         match self {
             Predicate::Call(call) => args_children(&call.args, definitions),
@@ -121,7 +118,7 @@ impl<Q: QueryContext> Predicate<Q> {
 impl<Q: QueryContext> Container<Q> {
     fn children<'a>(
         &'a self,
-        definitions: &'a [PatternDefinition<Q>],
+        definitions: &'a StaticDefinitions<Q>,
     ) -> Vec<PatternOrPredicate<'a, Q>> {
         match self {
             Container::Variable(_) => vec![],
@@ -135,7 +132,7 @@ impl<Q: QueryContext> Container<Q> {
 impl<Q: QueryContext> Accessor<Q> {
     fn children<'a>(
         &'a self,
-        definitions: &'a [PatternDefinition<Q>],
+        definitions: &'a StaticDefinitions<Q>,
     ) -> Vec<PatternOrPredicate<'a, Q>> {
         match &self.map {
             super::accessor::AccessorMap::Container(c) => c.children(definitions),
@@ -151,7 +148,7 @@ impl<Q: QueryContext> Accessor<Q> {
 impl<Q: QueryContext> DynamicPattern<Q> {
     fn children<'a>(
         &'a self,
-        definitions: &'a [PatternDefinition<Q>],
+        definitions: &'a StaticDefinitions<Q>,
     ) -> Vec<PatternOrPredicate<'a, Q>> {
         match &self {
             super::dynamic_snippet::DynamicPattern::Variable(_) => Vec::new(),
@@ -179,7 +176,7 @@ impl<Q: QueryContext> DynamicPattern<Q> {
 impl<Q: QueryContext> ListIndex<Q> {
     fn children<'a>(
         &'a self,
-        definitions: &'a [PatternDefinition<Q>],
+        definitions: &'a StaticDefinitions<Q>,
     ) -> Vec<PatternOrPredicate<'a, Q>> {
         let mut v = Vec::new();
         let list = match &self.list {
@@ -198,7 +195,7 @@ impl<Q: QueryContext> ListIndex<Q> {
 
 fn args_children<'a, Q: QueryContext>(
     args: &'a [Option<Pattern<Q>>],
-    _definitions: &'a [PatternDefinition<Q>],
+    _definitions: &'a StaticDefinitions<Q>,
 ) -> Vec<PatternOrPredicate<'a, Q>> {
     args.iter()
         .flat_map(|p| p.as_ref().map(PatternOrPredicate::Pattern))
@@ -207,14 +204,14 @@ fn args_children<'a, Q: QueryContext>(
 
 fn patterns_children<'a, Q: QueryContext>(
     patterns: &'a [Pattern<Q>],
-    _definitions: &'a [PatternDefinition<Q>],
+    _definitions: &'a StaticDefinitions<Q>,
 ) -> Vec<PatternOrPredicate<'a, Q>> {
     patterns.iter().map(PatternOrPredicate::Pattern).collect()
 }
 
 fn predicates_children<'a, Q: QueryContext>(
     predicates: &'a [Predicate<Q>],
-    _definitions: &'a [PatternDefinition<Q>],
+    _definitions: &'a StaticDefinitions<Q>,
 ) -> Vec<PatternOrPredicate<'a, Q>> {
     predicates
         .iter()
@@ -225,14 +222,14 @@ fn predicates_children<'a, Q: QueryContext>(
 impl<Q: QueryContext> Pattern<Q> {
     pub fn iter<'a>(
         &'a self,
-        definitions: &'a [PatternDefinition<Q>],
+        definitions: &'a StaticDefinitions<Q>,
     ) -> PatternOrPredicateIterator<'a, Q> {
         PatternOrPredicateIterator::from_pattern(self, definitions)
     }
 
     fn children<'a>(
         &'a self,
-        definitions: &'a [PatternDefinition<Q>],
+        definitions: &'a StaticDefinitions<Q>,
     ) -> Vec<PatternOrPredicate<'a, Q>> {
         match self {
             Pattern::AstNode(a) => a.children(definitions),
@@ -246,7 +243,7 @@ impl<Q: QueryContext> Pattern<Q> {
             Pattern::Accessor(a) => a.children(definitions),
             Pattern::Call(c) => {
                 let mut base = args_children(&c.args, definitions);
-                let def = definitions.get(c.index);
+                let def = definitions.get_pattern(c.index);
                 if let Some(def) = def {
                     base.push(PatternOrPredicate::Pattern(&def.pattern));
                 }
