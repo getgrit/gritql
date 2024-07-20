@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::path::Path;
 
-use grit_pattern_matcher::{constants::DEFAULT_FILE_NAME, context::QueryContext, pattern::Pattern};
+use grit_pattern_matcher::{constants::DEFAULT_FILE_NAME};
 
 use crate::pattern_compiler::compiler::{defs_to_filenames, DefsToFilenames};
 
@@ -185,7 +185,7 @@ fn find_child_tree_definition(
 #[cfg(test)]
 mod tests {
     use grit_pattern_matcher::has_rewrite;
-    use marzano_language::{python::Python, target_language::TargetLanguage};
+    use marzano_language::{target_language::TargetLanguage};
 
     use crate::pattern_compiler::src_to_problem_libs;
 

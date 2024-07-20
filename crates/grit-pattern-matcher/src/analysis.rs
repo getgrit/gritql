@@ -1,4 +1,4 @@
-use crate::pattern::PatternName;
+
 use crate::{
     context::QueryContext,
     pattern::{Pattern, PatternDefinition, PatternOrPredicate},

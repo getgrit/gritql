@@ -198,7 +198,7 @@ impl<Q: QueryContext> ListIndex<Q> {
 
 fn args_children<'a, Q: QueryContext>(
     args: &'a [Option<Pattern<Q>>],
-    definitions: &'a [PatternDefinition<Q>],
+    _definitions: &'a [PatternDefinition<Q>],
 ) -> Vec<PatternOrPredicate<'a, Q>> {
     args.iter()
         .flat_map(|p| p.as_ref().map(PatternOrPredicate::Pattern))
@@ -207,14 +207,14 @@ fn args_children<'a, Q: QueryContext>(
 
 fn patterns_children<'a, Q: QueryContext>(
     patterns: &'a [Pattern<Q>],
-    definitions: &'a [PatternDefinition<Q>],
+    _definitions: &'a [PatternDefinition<Q>],
 ) -> Vec<PatternOrPredicate<'a, Q>> {
     patterns.iter().map(PatternOrPredicate::Pattern).collect()
 }
 
 fn predicates_children<'a, Q: QueryContext>(
     predicates: &'a [Predicate<Q>],
-    definitions: &'a [PatternDefinition<Q>],
+    _definitions: &'a [PatternDefinition<Q>],
 ) -> Vec<PatternOrPredicate<'a, Q>> {
     predicates
         .iter()
@@ -246,8 +246,10 @@ impl<Q: QueryContext> Pattern<Q> {
             Pattern::Accessor(a) => a.children(definitions),
             Pattern::Call(c) => {
                 let mut base = args_children(&c.args, definitions);
-                let def = &definitions[c.index];
-                base.push(PatternOrPredicate::Pattern(&def.pattern));
+                let def = definitions.get(c.index);
+                if let Some(def) = def {
+                    base.push(PatternOrPredicate::Pattern(&def.pattern));
+                }
                 base
             }
             Pattern::Regex(r) => {
