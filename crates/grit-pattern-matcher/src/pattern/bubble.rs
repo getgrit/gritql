@@ -2,7 +2,7 @@ use super::{
     patterns::{Matcher, Pattern, PatternName},
     PatternDefinition, State,
 };
-use crate::{context::QueryContext, WalkablePattern};
+use crate::context::QueryContext;
 use anyhow::Result;
 use grit_util::AnalysisLogs;
 
@@ -10,14 +10,6 @@ use grit_util::AnalysisLogs;
 pub struct Bubble<Q: QueryContext> {
     pub pattern_def: PatternDefinition<Q>,
     pub args: Vec<Option<Pattern<Q>>>,
-}
-
-impl<Q: QueryContext> WalkablePattern<Q> for Bubble<Q> {
-    fn children(&self) -> Vec<&dyn WalkablePattern<Q>> {
-        let mut children = vec![&self.pattern_def.pattern];
-        children.extend(self.args.iter().flat_map(|arg| arg.as_ref()));
-        children
-    }
 }
 
 impl<Q: QueryContext> Bubble<Q> {

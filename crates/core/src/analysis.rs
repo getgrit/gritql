@@ -6,8 +6,6 @@ use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::path::Path;
 
-use grit_pattern_matcher::pattern::WalkablePattern;
-
 use grit_pattern_matcher::{constants::DEFAULT_FILE_NAME, context::QueryContext, pattern::Pattern};
 
 use crate::pattern_compiler::compiler::{defs_to_filenames, DefsToFilenames};
@@ -186,6 +184,7 @@ fn find_child_tree_definition(
 
 #[cfg(test)]
 mod tests {
+    use grit_pattern_matcher::has_rewrite;
     use marzano_language::{python::Python, target_language::TargetLanguage};
 
     use crate::pattern_compiler::src_to_problem_libs;
@@ -264,6 +263,63 @@ mod tests {
         "#
         .to_string();
         let libs = BTreeMap::new();
+        let problem = src_to_problem_libs(
+            pattern_src.to_string(),
+            &libs,
+            TargetLanguage::default(),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .problem;
+
+        println!("problem: {:?}", problem);
+
+        assert!(has_rewrite(&problem.pattern));
+    }
+
+    #[test]
+    fn test_is_not_rewrite() {
+        let pattern_src = r#"
+            `console.log($msg)` where {
+                $msg <: not contains `foo`
+            }
+        "#
+        .to_string();
+        let libs = BTreeMap::new();
+        let problem = src_to_problem_libs(
+            pattern_src.to_string(),
+            &libs,
+            TargetLanguage::default(),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .problem;
+
+        println!("problem: {:?}", problem);
+
+        assert!(!has_rewrite(&problem.pattern));
+    }
+
+    #[test]
+    fn test_is_rewrite_with_pattern_call() {
+        let pattern_src = r#"
+            pattern_with_rewrite()
+        "#
+        .to_string();
+        let mut libs = BTreeMap::new();
+        libs.insert(
+            "foo.grit".to_string(),
+            "pattern pattern_with_rewrite() {
+                `console.log($msg)` => `console.error($msg)`
+            }"
+            .to_string(),
+        );
         let problem = src_to_problem_libs(
             pattern_src.to_string(),
             &libs,
