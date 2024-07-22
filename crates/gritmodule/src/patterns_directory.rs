@@ -119,7 +119,7 @@ impl PatternsDirectory {
         }
     }
 
-    pub fn get_language_directory(&self, lang: PatternLanguage) -> &BTreeMap<String, String> {
+    fn get_language_directory(&self, lang: PatternLanguage) -> &BTreeMap<String, String> {
         match lang {
             PatternLanguage::JavaScript => &self.java_script,
             PatternLanguage::TypeScript => &self.type_script,
@@ -176,12 +176,6 @@ impl PatternsDirectory {
         self.get_language_and_universal_directory(language)
     }
 
-    fn get_language_directory_from_name(&self, name: &str) -> Option<&BTreeMap<String, String>> {
-        self.pattern_to_language
-            .get(name)
-            .map(|l| self.get_language_directory(*l))
-    }
-
     // imo we should check if name matches [a-z][a-z0-9]*
     // as currently a pattern with no language header and an invalid pattern are
     // both treated as js patterns when the latter should be a not found error
@@ -196,8 +190,11 @@ impl PatternsDirectory {
     }
 
     pub fn get(&self, name: &str) -> Option<&String> {
-        self.get_language_directory_from_name(name)
-            .and_then(|d| d.get(name))
+        self.pattern_to_language
+            .get(name)
+            .map(|l| self.get_language_and_universal_directory(*l).ok())
+            .flatten()
+            .and_then(|d| d.get(name).)
     }
 
     // do we want to do an overriding insert?

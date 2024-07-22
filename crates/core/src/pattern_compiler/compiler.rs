@@ -497,6 +497,13 @@ pub(crate) fn filter_libs(
     let mut filtered: BTreeMap<String, String> = BTreeMap::new();
     // gross but necessary due to running these patterns befor and after each file
 
+    println!(
+        "Starting filtering with {} and {} libs, with autowrap: {}",
+        src,
+        libs.len(),
+        will_autowrap
+    );
+
     let mut stack: Vec<Tree> = if will_autowrap {
         let before_each_file = "before_each_file()";
         let before_tree =
@@ -545,6 +552,9 @@ pub(crate) fn filter_libs(
             }
         }
     }
+
+    println!("Filtered to {:?} libs", filtered.len());
+
     Ok(filtered.into_iter().collect_vec())
 }
 
