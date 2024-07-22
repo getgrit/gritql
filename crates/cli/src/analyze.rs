@@ -49,7 +49,8 @@ impl<'b> RichPattern<'b> {
     ) -> Result<CompilationResult> {
         let lang = language.unwrap_or_default();
         #[cfg(not(feature = "ai_builtins"))]
-        let injected_builtins: Option<BuiltIns> = None;
+        let injected_builtins: Option<BuiltIns> =
+            marzano_core::built_in_functions::get_ai_placeholder_functions();
         #[cfg(feature = "ai_builtins")]
         let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
 
