@@ -73,8 +73,10 @@ impl Problem {
             &self.predicate_definitions,
             &self.function_definitions,
         );
-        // We use the first 3 indexes for auto-wrap stuff
-        defs.skippable_indexes = vec![0, 1, 2];
+        // We use the first 3 indexes for auto-wrap stuff in production
+        if self.pattern_definitions.len() > 10 {
+            defs.skippable_indexes = vec![0, 1, 2];
+        }
         defs
     }
 }
