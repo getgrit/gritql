@@ -181,7 +181,6 @@ impl PatternsDirectory {
     // imo we should check if name matches [a-z][a-z0-9]*
     // as currently a pattern with no language header and an invalid pattern are
     // both treated as js patterns when the latter should be a not found error
-    #[deprecated = "use get_language_directory_or_default instead"]
     pub fn get_pattern_libraries(&self, root_pattern: &str) -> Result<LanguageLibrary> {
         let language = self
             .pattern_to_language
@@ -203,10 +202,8 @@ impl PatternsDirectory {
             if let Some(pattern) = dir.get(name) {
                 return Some(pattern);
             }
-        } else if let Some(universal_dir) = self.get_universal() {
-            if let Some(pattern) = universal_dir.get(name) {
-                return Some(pattern);
-            }
+        } else if let Some(pattern) = self.get_universal().get(name) {
+            return Some(pattern);
         }
         None
     }
