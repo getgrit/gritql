@@ -74,7 +74,7 @@ impl Problem {
             &self.function_definitions,
         );
         // We use the first 3 indexes for auto-wrap stuff in production
-        if self.pattern_definitions.len() > 10 {
+        if self.pattern_definitions.len() >= 3 {
             defs.skippable_indexes = vec![0, 1, 2];
         }
         defs

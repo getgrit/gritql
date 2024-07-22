@@ -501,15 +501,15 @@ pub fn get_ai_placeholder_functions() -> Option<BuiltIns> {
             BuiltInFunction::new(
                 "llm_chat",
                 vec!["model", "messages", "pattern"],
-                Box::new(ai_fn_placholder),
+                Box::new(ai_fn_placeholder),
             ),
-            BuiltInFunction::new("embedding", vec!["target"], Box::new(ai_fn_placholder)),
+            BuiltInFunction::new("embedding", vec!["target"], Box::new(ai_fn_placeholder)),
         ]
         .into(),
     )
 }
 
-fn ai_fn_placholder<'a>(
+fn ai_fn_placeholder<'a>(
     _args: &'a [Option<Pattern<MarzanoQueryContext>>],
     _context: &'a MarzanoContext<'a>,
     _state: &mut State<'a, MarzanoQueryContext>,
