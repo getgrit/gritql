@@ -68,11 +68,14 @@ impl Problem {
     }
 
     pub fn definitions(&self) -> StaticDefinitions<'_, MarzanoQueryContext> {
-        StaticDefinitions::new(
+        let mut defs = StaticDefinitions::new(
             &self.pattern_definitions,
             &self.predicate_definitions,
             &self.function_definitions,
-        )
+        );
+        // We use the first 3 indexes for auto-wrap stuff
+        defs.skippable_indexes = vec![0, 1, 2];
+        defs
     }
 }
 

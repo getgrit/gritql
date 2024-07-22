@@ -75,6 +75,8 @@ pub struct StaticDefinitions<'a, Q: QueryContext> {
     pattern_definitions: &'a [PatternDefinition<Q>],
     predicate_definitions: &'a [PredicateDefinition<Q>],
     function_definitions: &'a [GritFunctionDefinition<Q>],
+    /// Pattern indexes we should skip during analysis (before_each_file / after_each_file)
+    pub skippable_indexes: Vec<usize>,
 }
 
 impl<'a, Q: QueryContext> StaticDefinitions<'a, Q> {
@@ -87,10 +89,14 @@ impl<'a, Q: QueryContext> StaticDefinitions<'a, Q> {
             pattern_definitions,
             predicate_definitions,
             function_definitions,
+            skippable_indexes: vec![],
         }
     }
 
     pub fn get_pattern(&self, index: usize) -> Option<&PatternDefinition<Q>> {
+        if self.skippable_indexes.contains(&index) {
+            return None;
+        }
         self.pattern_definitions.get(index)
     }
 
@@ -109,6 +115,7 @@ impl<'a, Q: QueryContext> Default for StaticDefinitions<'a, Q> {
             pattern_definitions: &[],
             predicate_definitions: &[],
             function_definitions: &[],
+            skippable_indexes: vec![],
         }
     }
 }
