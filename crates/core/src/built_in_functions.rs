@@ -510,10 +510,10 @@ pub fn get_ai_placeholder_functions() -> Option<BuiltIns> {
 }
 
 fn ai_fn_placholder<'a>(
-    args: &'a [Option<Pattern<MarzanoQueryContext>>],
-    context: &'a MarzanoContext<'a>,
-    state: &mut State<'a, MarzanoQueryContext>,
-    logs: &mut AnalysisLogs,
+    _args: &'a [Option<Pattern<MarzanoQueryContext>>],
+    _context: &'a MarzanoContext<'a>,
+    _state: &mut State<'a, MarzanoQueryContext>,
+    _logs: &mut AnalysisLogs,
 ) -> Result<MarzanoResolvedPattern<'a>> {
     bail!("AI features are not supported in your GritQL distribution. Please upgrade to the Enterprise version to use AI features.")
 }
