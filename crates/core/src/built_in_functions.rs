@@ -494,3 +494,26 @@ fn length_fn<'a>(
         None => Err(anyhow!("length argument must be a list or string")),
     }
 }
+
+pub fn get_ai_placeholder_functions() -> Option<BuiltIns> {
+    Some(
+        vec![
+            BuiltInFunction::new(
+                "llm_chat",
+                vec!["model", "messages", "pattern"],
+                Box::new(ai_fn_placeholder),
+            ),
+            BuiltInFunction::new("embedding", vec!["target"], Box::new(ai_fn_placeholder)),
+        ]
+        .into(),
+    )
+}
+
+fn ai_fn_placeholder<'a>(
+    _args: &'a [Option<Pattern<MarzanoQueryContext>>],
+    _context: &'a MarzanoContext<'a>,
+    _state: &mut State<'a, MarzanoQueryContext>,
+    _logs: &mut AnalysisLogs,
+) -> Result<MarzanoResolvedPattern<'a>> {
+    bail!("AI features are not supported in your GritQL distribution. Please upgrade to the Enterprise version to use AI features.")
+}

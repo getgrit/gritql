@@ -495,8 +495,8 @@ pub(crate) fn filter_libs(
         foreign_functions: foreign_file,
     } = defs_to_filenames(libs, parser, tree.root_node())?;
     let mut filtered: BTreeMap<String, String> = BTreeMap::new();
-    // gross but necessary due to running these patterns befor and after each file
 
+    // gross but necessary due to running these patterns befor and after each file
     let mut stack: Vec<Tree> = if will_autowrap {
         let before_each_file = "before_each_file()";
         let before_tree =
@@ -545,6 +545,7 @@ pub(crate) fn filter_libs(
             }
         }
     }
+
     Ok(filtered.into_iter().collect_vec())
 }
 

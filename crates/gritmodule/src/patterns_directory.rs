@@ -119,7 +119,7 @@ impl PatternsDirectory {
         }
     }
 
-    pub fn get_language_directory(&self, lang: PatternLanguage) -> &BTreeMap<String, String> {
+    fn get_language_directory(&self, lang: PatternLanguage) -> &BTreeMap<String, String> {
         match lang {
             PatternLanguage::JavaScript => &self.java_script,
             PatternLanguage::TypeScript => &self.type_script,
@@ -147,6 +147,10 @@ impl PatternsDirectory {
         }
     }
 
+    fn get_universal(&self) -> &BTreeMap<String, String> {
+        self.get_language_directory(PatternLanguage::Universal)
+    }
+
     #[tracing::instrument]
     fn get_language_and_universal_directory(
         &self,
@@ -157,9 +161,7 @@ impl PatternsDirectory {
         };
         let lang_library = self.get_language_directory(language);
         let mut lang_library = lang_library.to_owned();
-        let universal = self
-            .get_language_directory(PatternLanguage::Universal)
-            .to_owned();
+        let universal = self.get_universal().to_owned();
         let count = lang_library.len() + universal.len();
         lang_library.extend(universal);
         if count != lang_library.len() {
@@ -176,12 +178,6 @@ impl PatternsDirectory {
         self.get_language_and_universal_directory(language)
     }
 
-    fn get_language_directory_from_name(&self, name: &str) -> Option<&BTreeMap<String, String>> {
-        self.pattern_to_language
-            .get(name)
-            .map(|l| self.get_language_directory(*l))
-    }
-
     // imo we should check if name matches [a-z][a-z0-9]*
     // as currently a pattern with no language header and an invalid pattern are
     // both treated as js patterns when the latter should be a not found error
@@ -195,9 +191,21 @@ impl PatternsDirectory {
         Ok(LanguageLibrary::new(language, library))
     }
 
+    fn get_language_directory_from_name(&self, name: &str) -> Option<&BTreeMap<String, String>> {
+        self.pattern_to_language
+            .get(name)
+            .map(|l| self.get_language_directory(*l))
+    }
+
     pub fn get(&self, name: &str) -> Option<&String> {
-        self.get_language_directory_from_name(name)
-            .and_then(|d| d.get(name))
+        if let Some(dir) = self.get_language_directory_from_name(name) {
+            if let Some(pattern) = dir.get(name) {
+                return Some(pattern);
+            }
+        } else if let Some(pattern) = self.get_universal().get(name) {
+            return Some(pattern);
+        }
+        None
     }
 
     // do we want to do an overriding insert?
