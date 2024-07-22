@@ -126,7 +126,7 @@ pub fn check_intersection(range1: &Range, range2: &Range) -> bool {
 
 pub(crate) fn get_ai_built_in_functions_for_feature() -> Option<BuiltIns> {
     #[cfg(not(feature = "ai_builtins"))]
-    return None;
+    return marzano_core::built_in_functions::get_ai_placeholder_functions();
     #[cfg(feature = "ai_builtins")]
     return Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
 }
