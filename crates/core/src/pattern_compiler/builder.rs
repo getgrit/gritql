@@ -38,6 +38,7 @@ use marzano_language::{
 };
 
 use std::{collections::BTreeMap, path::Path, vec};
+use grit_pattern_matcher::errors::GritResult;
 
 pub type CallbackMatchFn = dyn for<'a> Fn(
         &<problem::MarzanoQueryContext as grit_pattern_matcher::context::QueryContext>::ResolvedPattern<'a>,

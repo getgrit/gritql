@@ -417,8 +417,8 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             DynamicPattern::Snippet(snippet) => {
                 Self::from_dynamic_snippet(snippet, state, context, logs)
             }
-            DynamicPattern::CallBuiltIn(built_in) => built_in.call(state, context, logs),
-            DynamicPattern::CallFunction(func) => func.call(state, context, logs),
+            DynamicPattern::CallBuiltIn(built_in) => built_in.call(state, context, logs).into(),
+            DynamicPattern::CallFunction(func) => func.call(state, context, logs).into(),
             DynamicPattern::CallForeignFunction(func) => func.call(state, context, logs),
         }
     }
@@ -467,8 +467,8 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 dynamic_snippet: Some(pattern),
                 ..
             }) => Self::from_dynamic_pattern(pattern, state, context, logs),
-            Pattern::CallBuiltIn(built_in) => built_in.call(state, context, logs),
-            Pattern::CallFunction(func) => func.call(state, context, logs),
+            Pattern::CallBuiltIn(built_in) => built_in.call(state, context, logs).into(),
+            Pattern::CallFunction(func) => func.call(state, context, logs).into(),
             Pattern::CallForeignFunction(func) => func.call(state, context, logs),
             Pattern::StringConstant(string) => Ok(Self::Snippets(vector![ResolvedSnippet::Text(
                 (&string.text).into(),
@@ -524,13 +524,13 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                     body,
                 }))))
             }
-            Pattern::Add(add_pattern) => add_pattern.call(state, context, logs),
-            Pattern::Subtract(subtract_pattern) => subtract_pattern.call(state, context, logs),
-            Pattern::Multiply(multiply_pattern) => multiply_pattern.call(state, context, logs),
-            Pattern::Divide(divide_pattern) => divide_pattern.call(state, context, logs),
-            Pattern::Modulo(modulo_pattern) => modulo_pattern.call(state, context, logs),
-            Pattern::Before(before) => before.prev_pattern(state, context, logs),
-            Pattern::After(after) => after.next_pattern(state, context, logs),
+            Pattern::Add(add_pattern) => add_pattern.call(state, context, logs).into(),
+            Pattern::Subtract(subtract_pattern) => subtract_pattern.call(state, context, logs).into(),
+            Pattern::Multiply(multiply_pattern) => multiply_pattern.call(state, context, logs).into(),
+            Pattern::Divide(divide_pattern) => divide_pattern.call(state, context, logs).into(),
+            Pattern::Modulo(modulo_pattern) => modulo_pattern.call(state, context, logs).into(),
+            Pattern::Before(before) => before.prev_pattern(state, context, logs).into(),
+            Pattern::After(after) => after.next_pattern(state, context, logs).into(),
             Pattern::AstNode(_)
             | Pattern::CodeSnippet(_)
             | Pattern::Call(_)

@@ -3,6 +3,7 @@ use crate::{
     paths::resolve, problem::MarzanoQueryContext,
 };
 use anyhow::{anyhow, bail, Result};
+use grit_pattern_matcher::errors::GritResult;
 use grit_pattern_matcher::{
     binding::Binding,
     constant::Constant,
