@@ -18,6 +18,7 @@ use itertools::Itertools;
 use rand::prelude::SliceRandom;
 use rand::Rng;
 use std::collections::BTreeMap;
+use grit_pattern_matcher::errors::GritResult;
 
 // todo we can probably use a macro to generate a function that takes a vec and
 // and calls the input function with the vec args unpacked.

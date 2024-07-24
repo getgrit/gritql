@@ -26,9 +26,9 @@ pub trait Binding<'a, Q: QueryContext>: Clone + std::fmt::Debug + PartialEq + Si
         if let Some(binding) = resolved.get_last_binding() {
             Ok(binding.clone())
         } else {
-            return Err(GritPatternError::new(
+            Err(GritPatternError::new(
                 "cannot create binding from pattern without binding",
-            ));
+            ))
         }
     }
 

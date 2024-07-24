@@ -42,3 +42,4 @@ mod test;
 mod test_files;
 #[cfg(any(test, feature = "test_utils"))]
 pub mod test_utils;
+mod error;
