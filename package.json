@@ -6,9 +6,7 @@
   "license": "MIT",
   "private": true,
   "dependencies": {},
-  "devDependencies": {
-    "@getgrit/bridge": "*"
-  },
+  "devDependencies": {},
   "scripts": {
     "test:wasm": "cd wasm-bindings && wasm-pack test --node",
     "test:watch": "nodemon --ext rs --exec \"cargo test --exclude grit-wasm-bindings\"",
