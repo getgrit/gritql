@@ -1,0 +1,10 @@
+language rust
+
+`fn execute(
+    $_
+) -> Result<$res> {
+    $body
+}` where {
+  $res <: `bool` => `PatternResult`,
+  $body => ai_transform($body, "Rewrite this body so that it returns PatternResult::True or PatternResult::False, or PatternResult::Unknown if there's an error")
+}

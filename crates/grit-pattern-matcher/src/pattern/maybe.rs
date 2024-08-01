@@ -8,14 +8,28 @@ use crate::context::QueryContext;
 use anyhow::Result;
 use grit_util::AnalysisLogs;
 
+/// Maybe is used to indicate patterns where we *might* might match
+/// In default operation, it will evaluate all pattern but return true no matter what.
+///
+/// In strict mode, it will evaluate the pattern but return true only if pattern *might* match
+/// There are 3 possible outcomes when evaluating subpatterns in strict mode:
+/// 1. Pattern definitely matches -> maybe matches
+/// 2. Pattern definitely does not match -> maybe does not match
+/// 3. Pattern hits an error or unresolved variable/binding during evaluation -> maybe matches
 #[derive(Debug, Clone)]
 pub struct Maybe<Q: QueryContext> {
     pub pattern: Pattern<Q>,
+
+    /// If true, we should exclude cases where the pattern is definite
+    strict: bool,
 }
 
 impl<Q: QueryContext> Maybe<Q> {
     pub fn new(pattern: Pattern<Q>) -> Self {
-        Self { pattern }
+        Self {
+            pattern,
+            strict: false,
+        }
     }
 }
 

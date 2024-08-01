@@ -1,7 +1,7 @@
 use super::{
     container::{Container, PatternOrResolved, PatternOrResolvedMut},
     map::GritMap,
-    patterns::{Matcher, Pattern, PatternName},
+    patterns::{Matcher, Pattern, PatternName, PatternResult},
     resolved_pattern::ResolvedPattern,
     state::State,
     variable::Variable,
@@ -128,16 +128,25 @@ impl<Q: QueryContext> Matcher<Q> for Accessor<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> Result<PatternResult> {
         match self.get(state, context.language())? {
             Some(PatternOrResolved::Resolved(r)) => {
-                execute_resolved_with_binding(r, binding, state, context.language())
+                match execute_resolved_with_binding(r, binding, state, context.language()) {
+                    Ok(result) => result,
+                    Err(_) => PatternResult::Unknown,
+                }
             }
             Some(PatternOrResolved::ResolvedBinding(r)) => {
-                execute_resolved_with_binding(&r, binding, state, context.language())
+                match execute_resolved_with_binding(&r, binding, state, context.language()) {
+                    Ok(result) => result,
+                    Err(_) => PatternResult::Unknown,
+                }
             }
-            Some(PatternOrResolved::Pattern(p)) => p.execute(binding, state, context, logs),
-            None => Ok(binding.matches_false_or_undefined()),
+            Some(PatternOrResolved::Pattern(p)) => match p.execute(binding, state, context, logs) {
+                Ok(result) => result,
+                Err(_) => PatternResult::Unknown,
+            },
+            None => PatternResult::False,
         }
     }
 }
@@ -147,10 +156,11 @@ pub fn execute_resolved_with_binding<'a, Q: QueryContext>(
     binding: &Q::ResolvedPattern<'a>,
     state: &State<'a, Q>,
     language: &Q::Language<'a>,
-) -> Result<bool> {
+) -> Result<PatternResult> {
     if let (Some(r), Some(b)) = (r.get_last_binding(), binding.get_last_binding()) {
-        Ok(r.is_equivalent_to(b, language))
+        Ok(r.is_equivalent_to(b, language).into())
     } else {
-        Ok(r.text(&state.files, language)? == binding.text(&state.files, language)?)
+        let status = r.text(&state.files, language)? == binding.text(&state.files, language)?;
+        Ok(status.into())
     }
 }
