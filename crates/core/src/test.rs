@@ -2263,6 +2263,49 @@ fn yaml_match_list() {
 }
 
 #[test]
+fn yaml_metavariable_in_flow() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                 |language yaml
+                 |`{ key: $data }`"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                 |---
+                 |something: { key: 10 }"#
+                .trim_margin()
+                .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn yaml_metavariable_in_flow_rewrite() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                 |language yaml
+                 |`{ key: $data }` => `{ key: 10 }`"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                 |---
+                 |something: { key: 5 }"#
+                .trim_margin()
+                .unwrap(),
+            expected: r#"
+                 |---
+                 |something: { key: 10 }"#
+                .trim_margin()
+                .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn undefined_assignment() {
     run_test_expected({
         TestArgExpected {

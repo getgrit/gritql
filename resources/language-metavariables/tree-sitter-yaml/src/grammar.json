@@ -3270,8 +3270,12 @@
           "value": "{"
         },
         {
-          "type": "SYMBOL",
-          "name": "_flw_map_tal"
+          "type": "FIELD",
+          "name": "items",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_flw_map_tal"
+          }
         }
       ]
     },
@@ -3288,8 +3292,12 @@
           "value": "{"
         },
         {
-          "type": "SYMBOL",
-          "name": "_flw_map_tal"
+          "type": "FIELD",
+          "name": "items",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_flw_map_tal"
+          }
         }
       ]
     },
@@ -3306,8 +3314,12 @@
           "value": "{"
         },
         {
-          "type": "SYMBOL",
-          "name": "_sgl_flw_map_tal"
+          "type": "FIELD",
+          "name": "items",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_sgl_flw_map_tal"
+          }
         }
       ]
     },
@@ -3324,8 +3336,12 @@
           "value": "{"
         },
         {
-          "type": "SYMBOL",
-          "name": "_sgl_flw_map_tal"
+          "type": "FIELD",
+          "name": "items",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_sgl_flw_map_tal"
+          }
         }
       ]
     },
@@ -3342,8 +3358,12 @@
           "value": "{"
         },
         {
-          "type": "SYMBOL",
-          "name": "_sgl_flw_map_tal"
+          "type": "FIELD",
+          "name": "items",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_sgl_flw_map_tal"
+          }
         }
       ]
     },
@@ -5924,6 +5944,10 @@
           },
           "named": true,
           "value": "string_scalar"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "grit_metavariable"
         }
       ]
     },

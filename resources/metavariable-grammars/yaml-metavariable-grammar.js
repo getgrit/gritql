@@ -703,12 +703,13 @@ module.exports = grammar({
     _b_sgl_flw_map_val: ($) =>
       choice($._b_sgl_flw_map, seq($._b_sgl_prp, $._r_sgl_flw_map)),
 
-    _r_flw_map: ($) => seq($._r_flw_map_bgn, $._flw_map_tal),
-    _br_flw_map: ($) => seq($._br_flw_map_bgn, $._flw_map_tal),
+    _r_flw_map: ($) => 
+      seq($._r_flw_map_bgn, field("items", $._flw_map_tal)),
+    _br_flw_map: ($) => seq($._br_flw_map_bgn, field("items", $._flw_map_tal)),
 
-    _r_sgl_flw_map: ($) => seq($._r_flw_map_bgn, $._sgl_flw_map_tal),
-    _br_sgl_flw_map: ($) => seq($._br_flw_map_bgn, $._sgl_flw_map_tal),
-    _b_sgl_flw_map: ($) => seq($._b_flw_map_bgn, $._sgl_flw_map_tal),
+    _r_sgl_flw_map: ($) => seq($._r_flw_map_bgn, field("items", $._sgl_flw_map_tal)),
+    _br_sgl_flw_map: ($) => seq($._br_flw_map_bgn, field("items", $._sgl_flw_map_tal)),
+    _b_sgl_flw_map: ($) => seq($._b_flw_map_bgn, field("items", $._sgl_flw_map_tal)),
 
     _flw_map_tal: ($) =>
       seq(
@@ -1103,7 +1104,8 @@ module.exports = grammar({
         $._r_sgl_pln_bol_flw,
         $._r_sgl_pln_int_flw,
         $._r_sgl_pln_flt_flw,
-        $._r_sgl_pln_str_flw
+        $._r_sgl_pln_str_flw,
+        $.grit_metavariable
       ),
     _hidden_br_sgl_pln_flw: ($) =>
       choice(

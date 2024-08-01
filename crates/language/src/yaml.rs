@@ -170,4 +170,34 @@ mod tests {
         assert!(!nodes.is_empty());
         assert!(found_metavar);
     }
+
+    fn find_metavar_rec(node: &tree_sitter::Node, metavariable_id: u16) -> bool {
+        if node.kind_id() == metavariable_id {
+            return true;
+        }
+        for child in node.children(&mut node.walk()) {
+            if find_metavar_rec(&child, metavariable_id) {
+                return true;
+            }
+        }
+        false
+    }
+
+    #[test]
+    fn flow_yaml_metavariable() {
+        let snippet = "{ hello: $value }";
+        let lang = Yaml::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        let mut found_metavar = false;
+        for node in &nodes {
+            print_node(&node.node);
+            if find_metavar_rec(&node.node, lang.metavariable_sort()) {
+                found_metavar = true;
+            }
+        }
+        assert!(!nodes.is_empty());
+        assert!(found_metavar);
+    }
+
 }
