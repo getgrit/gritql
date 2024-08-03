@@ -4,6 +4,9 @@ on:
   pull_request:
     types:
       - opened
+```
+<required_end>
+      - opened
       - edited
       - synchronize
 
