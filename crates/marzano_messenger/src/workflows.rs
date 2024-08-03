@@ -5,11 +5,36 @@ use serde::{Deserialize, Serialize};
 
 use crate::emit::Messager;
 
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub enum OutcomeKind {
+    #[serde(rename = "success")]
+    Success,
+    #[serde(rename = "failure")]
+    Failure,
+    #[serde(rename = "skipped")]
+    Skipped,
+}
+
 #[derive(Deserialize, Serialize, Debug)]
 pub struct PackagedWorkflowOutcome {
     pub message: Option<String>,
+    pub outcome: Option<OutcomeKind>,
     pub success: bool,
     pub data: Option<serde_json::Value>,
+}
+
+impl PackagedWorkflowOutcome {
+    pub fn outcome(&self) -> OutcomeKind {
+        if let Some(outcome) = self.outcome.as_ref() {
+            return outcome.clone();
+        }
+
+        if self.success {
+            OutcomeKind::Success
+        } else {
+            OutcomeKind::Failure
+        }
+    }
 }
 
 /// Handle workflow-related messages
