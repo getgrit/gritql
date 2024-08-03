@@ -176,6 +176,7 @@ where
             emitter,
             PackagedWorkflowOutcome {
                 message: None,
+                outcome: None,
                 success: true,
                 data: None,
             },
@@ -185,6 +186,7 @@ where
             emitter,
             PackagedWorkflowOutcome {
                 message: None,
+                outcome: None,
                 success: false,
                 data: None,
             },

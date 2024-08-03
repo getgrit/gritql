@@ -162,13 +162,13 @@ pub fn print_file_header(
 fn get_pretty_workflow_message(
     outcome: &marzano_messenger::workflows::PackagedWorkflowOutcome,
 ) -> String {
-    let outcome = match outcome.outcome {
+    let emoji = match outcome.get_outcome() {
         marzano_messenger::workflows::OutcomeKind::Success => "✅",
         marzano_messenger::workflows::OutcomeKind::Failure => "❌",
         marzano_messenger::workflows::OutcomeKind::Skipped => "⚪️",
     };
     let message = outcome.message.as_deref().unwrap_or("Workflow finished");
-    format!("{} {}", outcome, message)
+    format!("{} {}", emoji, message)
 }
 
 impl fmt::Display for FormattedResult {

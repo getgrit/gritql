@@ -24,7 +24,7 @@ pub struct PackagedWorkflowOutcome {
 }
 
 impl PackagedWorkflowOutcome {
-    pub fn outcome(&self) -> OutcomeKind {
+    pub fn get_outcome(&self) -> OutcomeKind {
         if let Some(outcome) = self.outcome.as_ref() {
             return outcome.clone();
         }
