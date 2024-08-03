@@ -11,11 +11,12 @@ use grit_util::{AnalysisLogs, AstNode};
 #[derive(Debug, Clone)]
 pub struct Within<Q: QueryContext> {
     pub pattern: Pattern<Q>,
+    pub until: Option<Pattern<Q>>,
 }
 
 impl<Q: QueryContext> Within<Q> {
-    pub fn new(pattern: Pattern<Q>) -> Self {
-        Self { pattern }
+    pub fn new(pattern: Pattern<Q>, until: Option<Pattern<Q>>) -> Self {
+        Self { pattern, until }
     }
 }
 
@@ -60,6 +61,17 @@ impl<Q: QueryContext> Matcher<Q> for Within<Q> {
                 did_match = true;
             } else {
                 cur_state = state;
+            }
+
+            if let Some(until) = &self.until {
+                if until.execute(
+                    &ResolvedPattern::from_node_binding(n),
+                    &mut cur_state,
+                    context,
+                    logs,
+                )? {
+                    break;
+                }
             }
         }
         if did_match {
