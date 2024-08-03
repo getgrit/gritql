@@ -166,10 +166,7 @@ fn get_pretty_workflow_message(
         true => {
             format!(
                 "✅ {}",
-                outcome
-                    .message
-                    .as_deref()
-                    .unwrap_or("Workflow completed successfully")
+                outcome.message.as_deref().unwrap_or("Workflow finished")
             )
         }
         false => {
