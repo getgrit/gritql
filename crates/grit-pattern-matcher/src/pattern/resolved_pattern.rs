@@ -32,7 +32,7 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
 
     fn from_list_parts(parts: impl Iterator<Item = Self>) -> Self;
 
-    fn from_node_binding(node: Q::Node<'a>) -> Self {
+    fn from_node_binding(node: &Q::Node<'a>) -> Self {
         Self::from_binding(Binding::from_node(node))
     }
 

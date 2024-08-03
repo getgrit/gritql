@@ -53,7 +53,7 @@ impl<Q: QueryContext> Matcher<Q> for Within<Q> {
         for n in node.ancestors() {
             let state = cur_state.clone();
             if self.pattern.execute(
-                &ResolvedPattern::from_node_binding(n),
+                &ResolvedPattern::from_node_binding(&n),
                 &mut cur_state,
                 context,
                 logs,
@@ -65,7 +65,7 @@ impl<Q: QueryContext> Matcher<Q> for Within<Q> {
 
             if let Some(until) = &self.until {
                 if until.execute(
-                    &ResolvedPattern::from_node_binding(n),
+                    &ResolvedPattern::from_node_binding(&n),
                     &mut cur_state,
                     context,
                     logs,
