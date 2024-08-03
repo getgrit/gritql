@@ -175,7 +175,8 @@ where
         Ok((
             emitter,
             PackagedWorkflowOutcome {
-                message: Some("Workflow completed successfully".to_string()),
+                message: None,
+                outcome: None,
                 success: true,
                 data: None,
             },
@@ -184,7 +185,8 @@ where
         Ok((
             emitter,
             PackagedWorkflowOutcome {
-                message: Some("Workflow failed".to_string()),
+                message: None,
+                outcome: None,
                 success: false,
                 data: None,
             },
