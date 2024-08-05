@@ -5,6 +5,7 @@ pub(crate) mod apply_pattern;
 pub(crate) mod auth;
 pub(crate) mod auth_login;
 pub(crate) mod auth_logout;
+pub(crate) mod auth_refresh;
 pub(crate) mod auth_token;
 
 pub(crate) mod doctor;
@@ -106,6 +107,7 @@ use self::{
     apply::run_apply,
     auth_login::run_login,
     auth_logout::run_logout,
+    auth_refresh::run_refresh_auth,
     auth_token::run_get_token,
     check::run_check,
     doctor::run_doctor,
@@ -177,6 +179,7 @@ impl fmt::Display for Commands {
                 AuthCommands::Login(_) => write!(f, "auth login"),
                 AuthCommands::Logout(_) => write!(f, "auth logout"),
                 AuthCommands::GetToken(_) => write!(f, "auth get-token"),
+                AuthCommands::Refresh(_) => write!(f, "auth refresh"),
             },
             Commands::Install(_) => write!(f, "install"),
             Commands::Init(_) => write!(f, "init"),
@@ -366,6 +369,7 @@ async fn run_command() -> Result<()> {
             AuthCommands::Login(arg) => run_login(arg).await,
             AuthCommands::Logout(arg) => run_logout(arg).await,
             AuthCommands::GetToken(arg) => run_get_token(arg).await,
+            AuthCommands::Refresh(arg) => run_refresh_auth(arg).await,
         },
         Commands::Lsp(arg) => run_lsp(arg).await,
         Commands::Install(arg) => run_install(arg).await,

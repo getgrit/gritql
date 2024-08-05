@@ -141,8 +141,6 @@ impl AuthSession {
                     ));
                 }
                 AuthTokenResponse::Success(success) => {
-                    println!("Auth token response: {:?}", success);
-
                     self.token_response = Some(success);
 
                     break;

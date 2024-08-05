@@ -5,7 +5,6 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::Colorize;
 use futures_util::StreamExt;
 use log::info;
-use marzano_auth::auth0::AuthTokenResponseSuccess;
 use marzano_auth::info::AuthInfo;
 use marzano_gritmodule::config::REPO_CONFIG_DIR_NAME;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
@@ -467,7 +466,11 @@ impl Updater {
             return Some(auth);
         }
         if let Some(token) = &self.access_token {
-            return Some(AuthInfo::new(token.to_string()));
+            let mut info = AuthInfo::new(token.to_string());
+            if let Some(refresh_token) = &self.refresh_token {
+                info.refresh_token = Some(refresh_token.to_string());
+            }
+            return Some(info);
         }
         None
     }
@@ -478,19 +481,20 @@ impl Updater {
         };
         let refreshed_auth = marzano_auth::auth0::refresh_token(&auth).await?;
         self.save_token(&refreshed_auth).await?;
-        println!("Refreshed auth");
         Ok(refreshed_auth)
     }
 
-    pub fn get_valid_auth(&self) -> Result<AuthInfo> {
+    /// Get a valid auth token, refreshing if necessary
+    pub async fn get_valid_auth(&mut self) -> Result<AuthInfo> {
         let auth = self.get_auth();
-        if let Some(auth) = auth {
-            if auth.is_expired()? {
-                bail!("Auth token expired");
-            }
-            return Ok(auth);
+        let Some(auth) = auth else {
+            bail!("Not authenticated");
+        };
+        if auth.is_expired()? {
+            let refreshed = self.refresh_auth().await?;
+            return Ok(refreshed);
         }
-        bail!("Not authenticated");
+        Ok(auth)
     }
 
     async fn download_artifact(&self, app: SupportedApp, artifact_url: String) -> Result<PathBuf> {

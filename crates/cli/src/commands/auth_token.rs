@@ -10,19 +10,17 @@ use crate::updater::Updater;
 pub struct GetTokenArgs {}
 
 pub(crate) async fn run_get_token(_arg: GetTokenArgs) -> Result<()> {
-    let mut updater = Updater::from_current_bin().await?;
-
-    updater.refresh_auth().await?;
+    let updater = Updater::from_current_bin().await?;
 
     let auth = updater.get_auth();
     match auth {
         Some(auth) => {
-            // if auth.is_expired()? {
-            //     bail!(
-            //         "Auth token expired: {}. Run grit auth login to refresh.",
-            //         auth.get_expiry()?
-            //     );
-            // }
+            if auth.is_expired()? {
+                bail!(
+                    "Auth token expired: {}. Run grit auth refresh to refresh.",
+                    auth.get_expiry()?
+                );
+            }
             info!("{}", auth.access_token);
         }
         None => {
