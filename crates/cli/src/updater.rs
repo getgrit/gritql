@@ -488,7 +488,7 @@ impl Updater {
     pub async fn get_valid_auth(&mut self) -> Result<AuthInfo> {
         let auth = self.get_auth();
         let Some(auth) = auth else {
-            bail!("Not authenticated");
+            bail!("Not authenticated, please run `grit auth login` to authenticate.");
         };
         if auth.is_expired()? {
             let refreshed = self.refresh_auth().await?;
