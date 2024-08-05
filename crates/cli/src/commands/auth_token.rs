@@ -17,7 +17,7 @@ pub(crate) async fn run_get_token(_arg: GetTokenArgs) -> Result<()> {
         Some(auth) => {
             if auth.is_expired()? {
                 bail!(
-                    "Auth token expired: {}. Run grit auth login to refresh.",
+                    "Auth token expired: {}. Run grit auth refresh to refresh.",
                     auth.get_expiry()?
                 );
             }

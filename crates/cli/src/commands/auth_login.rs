@@ -28,11 +28,13 @@ pub(crate) async fn run_login(_arg: LoginArgs) -> Result<()> {
     // Wait for the user to complete the login process
     session.poll().await?;
 
-    updater.save_token(session.token()?).await?;
+    let token = session.token()?;
+
+    updater.save_token(&token).await?;
 
     log::info!("You are now logged in!");
 
-    debug!("Token is: {}", session.token()?);
+    debug!("Token is: {:?}", token.access_token);
 
     Ok(())
 }

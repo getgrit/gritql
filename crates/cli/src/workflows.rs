@@ -103,7 +103,7 @@ where
         );
     }
 
-    let auth = updater.get_valid_auth().map_err(|_| {
+    let auth = updater.get_valid_auth().await.map_err(|_| {
         anyhow::anyhow!(
             "No valid authentication token found, please run {}",
             style("grit auth login").bold().red()
@@ -205,7 +205,7 @@ pub async fn run_remote_workflow(
     use marzano_gritmodule::fetcher::ModuleRepo;
     use std::time::Duration;
 
-    let updater = Updater::from_current_bin().await?;
+    let mut updater = Updater::from_current_bin().await?;
     let cwd = std::env::current_dir()?;
 
     let pb = ProgressBar::with_draw_target(Some(0), ProgressDrawTarget::stderr());
@@ -215,7 +215,7 @@ pub async fn run_remote_workflow(
     pb.set_message("Authenticating with Grit Cloud");
     pb.enable_steady_tick(Duration::from_millis(60));
 
-    let auth = updater.get_valid_auth()?;
+    let auth = updater.get_valid_auth().await?;
 
     pb.set_message("Launching workflow on Grit Cloud");
 
