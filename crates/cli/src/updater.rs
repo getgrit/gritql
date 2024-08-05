@@ -472,6 +472,16 @@ impl Updater {
         None
     }
 
+    pub async fn refresh_auth(&mut self) -> Result<AuthInfo> {
+        let Some(auth) = self.get_auth() else {
+            bail!("Not authenticated");
+        };
+        let refreshed_auth = marzano_auth::auth0::refresh_token(&auth).await?;
+        self.save_token(&refreshed_auth).await?;
+        println!("Refreshed auth");
+        Ok(refreshed_auth)
+    }
+
     pub fn get_valid_auth(&self) -> Result<AuthInfo> {
         let auth = self.get_auth();
         if let Some(auth) = auth {

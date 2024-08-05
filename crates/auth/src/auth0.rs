@@ -141,7 +141,10 @@ impl AuthSession {
                     ));
                 }
                 AuthTokenResponse::Success(success) => {
+                    println!("Auth token response: {:?}", success);
+
                     self.token_response = Some(success);
+
                     break;
                 }
             }
@@ -174,4 +177,40 @@ pub async fn start_auth() -> Result<AuthSession> {
     let body = res.json::<AuthCodeResponse>().await?;
 
     Ok(AuthSession::new(body))
+}
+
+/// Refreshes an AuthInfo using the refresh token.
+pub async fn refresh_token(auth_info: &AuthInfo) -> Result<AuthInfo> {
+    if auth_info.refresh_token.is_none() {
+        return Err(anyhow::anyhow!("No refresh token available"));
+    }
+
+    let client = reqwest::Client::new();
+
+    let params = [
+        ("grant_type", "refresh_token"),
+        ("client_id", AUTH0_CLI_CLIENT_ID.as_str()),
+        ("refresh_token", auth_info.refresh_token.as_ref().unwrap()),
+    ];
+
+    let res = client
+        .post(format!(
+            "https://{}/oauth/token",
+            AUTH0_TENANT_DOMAIN.as_str(),
+        ))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .form(&params)
+        .send()
+        .await?;
+
+    let body = res.json::<AuthTokenResponseSuccess>().await?;
+
+    let mut info = AuthInfo::from(body);
+
+    // If the new response doesn't include a refresh token, use the old one
+    if info.refresh_token.is_none() {
+        info.refresh_token = auth_info.refresh_token.clone();
+    }
+
+    Ok(info)
 }
