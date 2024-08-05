@@ -4,6 +4,7 @@ use axoupdater::{AxoUpdater, ReleaseSource, ReleaseSourceType, Version};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::Colorize;
 use futures_util::StreamExt;
+use indicatif::ProgressBar;
 use log::info;
 use marzano_auth::info::AuthInfo;
 use marzano_gritmodule::config::REPO_CONFIG_DIR_NAME;
@@ -479,8 +480,13 @@ impl Updater {
         let Some(auth) = self.get_auth() else {
             bail!("Not authenticated");
         };
+
+        let pg = ProgressBar::new_spinner();
+        pg.set_message("Refreshing auth...");
         let refreshed_auth = marzano_auth::auth0::refresh_token(&auth).await?;
         self.save_token(&refreshed_auth).await?;
+
+        pg.finish_and_clear();
         Ok(refreshed_auth)
     }
 
