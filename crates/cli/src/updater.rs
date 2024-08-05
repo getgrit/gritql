@@ -440,7 +440,7 @@ impl Updater {
     }
 
     /// Save a new auth token to the manifest
-    pub async fn save_token(&mut self, auth: AuthInfo) -> Result<()> {
+    pub async fn save_token(&mut self, auth: &AuthInfo) -> Result<()> {
         self.access_token = Some(auth.access_token.clone());
         if auth.refresh_token.is_some() {
             self.refresh_token = auth.refresh_token.clone();

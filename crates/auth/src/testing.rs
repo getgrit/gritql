@@ -38,6 +38,7 @@ fn get_existing_token() -> Result<AuthInfo> {
     let existing_token = get_config_var("API_TESTING_TOKEN")?;
     let info = AuthInfo {
         access_token: existing_token,
+        refresh_token: None,
     };
 
     if info.is_expired()? {
@@ -72,6 +73,7 @@ fn get_new_tokens() -> Result<AuthInfo> {
 
     Ok(AuthInfo {
         access_token: body.access_token,
+        refresh_token: None,
     })
 }
 

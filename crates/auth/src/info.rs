@@ -34,7 +34,10 @@ struct AuthInfoPayload {
 
 impl AuthInfo {
     pub fn new(access_token: String) -> Self {
-        Self { access_token }
+        Self {
+            access_token,
+            refresh_token: None,
+        }
     }
 
     fn get_payload(&self) -> Result<AuthInfoPayload> {

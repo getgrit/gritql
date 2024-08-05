@@ -6,6 +6,8 @@ use serde::Serialize;
 use std::time::Instant;
 use tokio::time::{interval, Duration};
 
+use crate::info::AuthInfo;
+
 lazy_static! {
     pub static ref AUTH0_API_AUDIENCE: String = String::from("https://api2.grit.io");
 
@@ -84,9 +86,9 @@ impl AuthSession {
         &self.init_request.verification_uri_complete
     }
 
-    pub fn token(&self) -> Result<&str> {
-        match &self.token_response {
-            Some(token) => Ok(token.access_token.as_str()),
+    pub fn token(self) -> Result<AuthInfo> {
+        match self.token_response {
+            Some(token) => Ok(AuthInfo::from(token)),
             None => Err(anyhow::anyhow!(
                 "No Grit token available, please run grit auth login"
             )),
