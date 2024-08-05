@@ -49,9 +49,9 @@ struct AuthTokenResponsePending {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[allow(dead_code)]
 pub struct AuthTokenResponseSuccess {
-    pub access_token: String,
+    pub(crate) access_token: String,
     /// The refresh token, which can be used to obtain new access tokens using the same authorization grant
-    refresh_token: Option<String>,
+    pub(crate) refresh_token: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]

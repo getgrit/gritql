@@ -6,6 +6,16 @@ use marzano_util::base64::decode_to_string;
 #[derive(Clone, Debug)]
 pub struct AuthInfo {
     pub access_token: String,
+    pub refresh_token: Option<String>,
+}
+
+impl From<crate::auth0::AuthTokenResponseSuccess> for AuthInfo {
+    fn from(auth: crate::auth0::AuthTokenResponseSuccess) -> Self {
+        Self {
+            access_token: auth.access_token,
+            refresh_token: auth.refresh_token,
+        }
+    }
 }
 
 #[derive(serde::Deserialize, Debug)]

@@ -5,6 +5,7 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::Colorize;
 use futures_util::StreamExt;
 use log::info;
+use marzano_auth::auth0::AuthTokenResponseSuccess;
 use marzano_auth::info::AuthInfo;
 use marzano_gritmodule::config::REPO_CONFIG_DIR_NAME;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
@@ -142,6 +143,7 @@ struct Manifest {
     last_checked_update: Option<NaiveDateTime>,
     installation_id: Option<Uuid>,
     access_token: Option<String>,
+    refresh_token: Option<String>,
 }
 
 async fn read_manifest(manifest_path: &PathBuf) -> Result<Manifest> {
@@ -167,6 +169,7 @@ pub struct Updater {
     last_checked_update: Option<NaiveDateTime>,
     pub installation_id: Uuid,
     access_token: Option<String>,
+    refresh_token: Option<String>,
 }
 
 impl Updater {
@@ -197,6 +200,7 @@ impl Updater {
                 last_checked_update: manifest.last_checked_update,
                 installation_id: manifest.installation_id.unwrap_or_else(Uuid::new_v4),
                 access_token: manifest.access_token,
+                refresh_token: manifest.refresh_token,
             });
         }
 
@@ -214,6 +218,7 @@ impl Updater {
             last_checked_update: None,
             installation_id: Uuid::new_v4(),
             access_token: None,
+            refresh_token: None,
         };
         Ok(updater)
     }
@@ -427,6 +432,7 @@ impl Updater {
             last_checked_update: self.last_checked_update,
             installation_id: Some(self.installation_id),
             access_token: self.access_token.clone(),
+            refresh_token: self.refresh_token.clone(),
         };
         let manifest_string = serde_json::to_string_pretty(&manifest)?;
         manifest_file.write_all(manifest_string.as_bytes()).await?;
@@ -434,8 +440,11 @@ impl Updater {
     }
 
     /// Save a new auth token to the manifest
-    pub async fn save_token(&mut self, token: &str) -> Result<()> {
-        self.access_token = Some(token.to_string());
+    pub async fn save_token(&mut self, auth: AuthInfo) -> Result<()> {
+        self.access_token = Some(auth.access_token.clone());
+        if auth.refresh_token.is_some() {
+            self.refresh_token = auth.refresh_token.clone();
+        }
         self.dump().await?;
         Ok(())
     }
@@ -446,6 +455,7 @@ impl Updater {
             bail!("You are not authenticated.");
         }
         self.access_token = None;
+        self.refresh_token = None;
         self.dump().await?;
         Ok(())
     }
