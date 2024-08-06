@@ -1,5 +1,5 @@
 ---
-source: apps/marzano/cli/tests/apply.rs
+source: crates/cli_bin/tests/apply.rs
 expression: content
 ---
 [1mbig.ts[0m
@@ -71,5 +71,4 @@ expression: content
    118  [2m[0m[1;34m  return res.allout;[0m[2m[0m
    119  [2m[0m[1;34m}[0m[2m;[0m
 
-Processed 1 files and found 1 matches
-
+Processed 1 files and found 10 matches
