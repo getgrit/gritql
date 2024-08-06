@@ -15,4 +15,4 @@ expression: sorted_content
 ./small.ts:13:10 - matched
 ./small.ts:4:15 - matched
 ./small.ts:6:17 - matched
-Processed 2 files and found 2 matches
+Processed 2 files and found 13 matches

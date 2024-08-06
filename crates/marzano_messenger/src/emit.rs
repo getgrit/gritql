@@ -20,6 +20,7 @@ use crate::{format::format_result, workflows::PackagedWorkflowOutcome, SimpleLog
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct ApplyDetails {
+    /// How many matches were found total (total match range count)
     pub matched: i32,
     pub rewritten: i32,
     pub named_pattern: Option<String>,
@@ -110,7 +111,9 @@ pub trait Messager: Send + Sync {
     ) -> anyhow::Result<bool> {
         for r in execution_result {
             if is_match(&r) {
-                details.matched += 1;
+                if let Some(ranges) = r.get_ranges() {
+                    details.matched += ranges.len() as i32;
+                }
             }
             if let MatchResult::Rewrite(_) = r {
                 details.rewritten += 1;
