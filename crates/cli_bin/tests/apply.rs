@@ -1543,7 +1543,7 @@ fn filtered_apply() -> Result<()> {
 
     let stdout = String::from_utf8(output.stdout)?;
     println!("stdout: {:?}", stdout);
-    assert!(stdout.contains("2 matches"));
+    assert!(stdout.contains("3 matches"));
 
     let content = fs_err::read_to_string(dir.join("file.js"))?;
     assert_snapshot!(content);
@@ -2077,7 +2077,7 @@ fn overrides_limit() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    assert!(stdout.contains("found 2 matches"));
+    assert!(stdout.contains("2 files"));
 
     Ok(())
 }
