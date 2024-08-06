@@ -112,7 +112,7 @@ pub trait Messager: Send + Sync {
         for r in execution_result {
             if is_match(&r) {
                 if let Some(ranges) = r.get_ranges() {
-                    details.matched += ranges.len();
+                    details.matched += ranges.len() as i32;
                 }
             }
             if let MatchResult::Rewrite(_) = r {
