@@ -214,6 +214,10 @@ impl MatchResult {
         }
     }
 
+    pub fn get_ranges(&self) -> Option<&Vec<Range>> {
+        fs::extract_ranges(self)
+    }
+
     /// Given a MatchResult, create a MatchResult::Rewrite that suppresses the match.
     /// Returns None if it has any issues.
     pub fn get_rewrite_to_suppress<'a>(
@@ -698,7 +702,9 @@ pub struct Message {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub struct AllDone {
+    /// How many files have been processed
     pub processed: i32,
+    /// How many matches were found
     pub found: i32,
     pub reason: AllDoneReason,
 }
