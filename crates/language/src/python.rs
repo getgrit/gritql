@@ -66,6 +66,7 @@ impl Language for Python {
 
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
         &[
+            ("\ndef GRIT_FUNCTION() ->", "\n  pass"),
             ("", ""),
             ("{ ", " }"),
             ("", "\ndef GRIT_FUNCTION():\n    return;"),
