@@ -63,6 +63,6 @@ impl WorkflowMessenger for TestingMessenger {
         &mut self,
         message: &crate::workflows::WorkflowMatchResult,
     ) -> anyhow::Result<()> {
-        self.emit(&message.result, &crate::emit::VisibilityLevels::Debug)
+        self.emit(&message.result )
     }
 }

@@ -301,7 +301,7 @@ pub(crate) async fn run_check(
                 let rewrite_with_reason = rewrite_with_reason.as_ref();
                 let message = rewrite_with_reason.unwrap_or(&result.result);
                 emitter
-                    .emit(message, &VisibilityLevels::Supplemental)
+                    .emit(message )
                     .unwrap();
             }
         }
@@ -312,7 +312,7 @@ pub(crate) async fn run_check(
             reason: AllDoneReason::AllMatchesFound,
         });
         emitter
-            .emit(&all_done, &VisibilityLevels::Supplemental)
+            .emit(&all_done )
             .unwrap();
 
         emitter.flush().await?;

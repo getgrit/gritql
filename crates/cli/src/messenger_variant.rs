@@ -162,7 +162,7 @@ impl<'a> WorkflowMessenger for MessengerVariant<'a> {
             | MessengerVariant::Transformed(_)
             | MessengerVariant::JsonLine(_) => {
                 // For local emitters,, we will also apply rewrites
-                self.emit(&message.result, &level)?;
+                self.emit(&message.result )?;
                 self.apply_rewrite(&message.result, &level)?;
                 Ok(())
             }
