@@ -300,6 +300,27 @@ fn delete_hanging_comma(
     replacements: &mut [(EffectRange, String)],
     offset: usize,
 ) -> Result<(String, Vec<ReplacementInfo>)> {
+    // Handle the case when after applying replacements, a single comma
+    // gets left behind on a single line
+    let mut temp_code = code.to_string();
+    for (range, snippet) in replacements.iter_mut() {
+        let adjusted_range = adjust_range(&range.effective_range(), offset, &temp_code)?;
+        if adjusted_range.start > temp_code.len() || adjusted_range.end > temp_code.len() {
+            bail!("Range {:?} is out of bounds for code:\n{}\n", adjusted_range, temp_code);
+        }
+
+        temp_code.replace_range(adjusted_range.clone(), snippet);
+
+        let line_start = temp_code[..adjusted_range.start].rfind('\n').map_or(0, |pos| pos + 1);
+        let line_end = temp_code[adjusted_range.start..].find('\n').map_or(temp_code.len(), |pos| adjusted_range.start + pos);
+        let line_content = temp_code[line_start..line_end].trim();
+        
+        if line_content == "," {
+            // inclusion of "," index in replacements
+            range.range.end += 1;
+        }
+    }
+
     let deletion_ranges = replacements
         .iter()
         .filter_map(|r| {
