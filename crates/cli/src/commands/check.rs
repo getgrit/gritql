@@ -25,7 +25,7 @@ use std::{
 };
 use tokio::try_join;
 
-use marzano_messenger::emit::{Messager, VisibilityLevels};
+use marzano_messenger::emit::Messager;
 
 #[cfg(feature = "server")]
 use cli_server::check::CheckMessenger;

@@ -2,7 +2,7 @@ use anyhow::Result;
 use marzano_core::api::MatchResult;
 
 use crate::{
-    emit::{FlushableMessenger, Messager},
+    emit::{FlushableMessenger, Messager, VisibilityLevels},
     workflows::WorkflowMessenger,
 };
 
@@ -34,6 +34,10 @@ impl Default for TestingMessenger {
 }
 
 impl Messager for TestingMessenger {
+    fn get_min_level(&self) -> VisibilityLevels {
+        VisibilityLevels::Debug
+    }
+
     fn raw_emit(&mut self, _message: &MatchResult) -> Result<()> {
         self.message_count += 1;
         Ok(())

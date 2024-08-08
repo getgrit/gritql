@@ -163,7 +163,7 @@ impl<'a> WorkflowMessenger for MessengerVariant<'a> {
             | MessengerVariant::JsonLine(_) => {
                 // For local emitters,, we will also apply rewrites
                 self.emit(&message.result)?;
-                self.apply_rewrite(&message.result, &level)?;
+                self.apply_rewrite(&message.result)?;
                 Ok(())
             }
             #[cfg(feature = "remote_redis")]

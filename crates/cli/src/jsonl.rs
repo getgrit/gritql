@@ -6,7 +6,10 @@ use std::{
 use anyhow::anyhow;
 use marzano_core::{api::MatchResult, compact_api::compact};
 
-use marzano_messenger::{emit::Messager, output_mode::OutputMode};
+use marzano_messenger::{
+    emit::{Messager, VisibilityLevels},
+    output_mode::OutputMode,
+};
 
 pub struct JSONLineMessenger<'a> {
     writer: Arc<Mutex<Box<dyn Write + Send + 'a>>>,

@@ -133,7 +133,7 @@ macro_rules! emit_error {
                     range: None,
                     source: None,
                 });
-                $emitter.emit(&log, $min_level).unwrap();
+                $emitter.emit(&log).unwrap();
                 return $emitter;
             }
         }
@@ -240,7 +240,6 @@ where
                             vec![log, done_file],
                             details,
                             arg.dry_run,
-                            min_level,
                             arg.format,
                             &mut interactive,
                             None,
@@ -312,7 +311,6 @@ where
                     message,
                     details,
                     arg.dry_run,
-                    min_level,
                     arg.format,
                     &mut interactive,
                     pg,
