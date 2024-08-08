@@ -255,6 +255,7 @@ pub(crate) async fn run_apply_pattern(
         interactive,
         Some(&pattern),
         root_path.as_ref(),
+        *min_level,
     )
     .await?;
 
@@ -380,7 +381,7 @@ pub(crate) async fn run_apply_pattern(
                             range: None,
                             source: None,
                         });
-                        emitter.emit(&log, min_level).unwrap();
+                        emitter.emit(&log).unwrap();
                         emitter.flush().await?;
                         if format.is_always_ok().0 {
                             return Ok(());
@@ -463,7 +464,7 @@ pub(crate) async fn run_apply_pattern(
             found: 0,
             reason: AllDoneReason::NoInputPaths,
         });
-        emitter.emit(&all_done, min_level).unwrap();
+        emitter.emit(&all_done).unwrap();
         emitter.flush().await?;
 
         return Ok(());
@@ -511,7 +512,7 @@ pub(crate) async fn run_apply_pattern(
                 },
             };
             emitter
-                .emit(&MatchResult::AnalysisLog(log.clone()), min_level)
+                .emit(&MatchResult::AnalysisLog(log.clone()))
                 .unwrap();
             emitter.flush().await?;
             match format.is_always_ok() {
@@ -526,7 +527,7 @@ pub(crate) async fn run_apply_pattern(
     };
     for warn in compilation_warnings.clone().into_iter() {
         emitter
-            .emit(&MatchResult::AnalysisLog(warn.into()), min_level)
+            .emit(&MatchResult::AnalysisLog(warn.into()))
             .unwrap();
     }
 
@@ -568,7 +569,7 @@ pub(crate) async fn run_apply_pattern(
         reason: AllDoneReason::AllMatchesFound,
     });
 
-    emitter.emit(&all_done, min_level).unwrap();
+    emitter.emit(&all_done).unwrap();
 
     emitter.flush().await?;
 

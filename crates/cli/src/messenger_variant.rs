@@ -39,6 +39,20 @@ pub enum MessengerVariant<'a> {
 }
 
 impl<'a> Messager for MessengerVariant<'a> {
+    fn get_min_level(&self) -> VisibilityLevels {
+        match self {
+            MessengerVariant::Formatted(m) => m.get_min_level(),
+            MessengerVariant::Transformed(m) => m.get_min_level(),
+            MessengerVariant::JsonLine(m) => m.get_min_level(),
+            #[cfg(feature = "remote_redis")]
+            MessengerVariant::Redis(m) => m.get_min_level(),
+            #[cfg(feature = "remote_pubsub")]
+            MessengerVariant::GooglePubSub(m) => m.get_min_level(),
+            #[cfg(feature = "server")]
+            MessengerVariant::Combined(m) => m.get_min_level(),
+        }
+    }
+
     fn raw_emit(&mut self, message: &marzano_core::api::MatchResult) -> anyhow::Result<()> {
         match self {
             MessengerVariant::Formatted(m) => m.raw_emit(message),
@@ -140,16 +154,13 @@ impl<'a> WorkflowMessenger for MessengerVariant<'a> {
         &mut self,
         message: &marzano_messenger::workflows::WorkflowMatchResult,
     ) -> anyhow::Result<()> {
-        // This is meant to match what we do in the CLI server
-        let level = VisibilityLevels::Debug;
-
         match self {
             MessengerVariant::Formatted(_)
             | MessengerVariant::Transformed(_)
             | MessengerVariant::JsonLine(_) => {
                 // For local emitters,, we will also apply rewrites
-                self.emit(&message.result, &level)?;
-                self.apply_rewrite(&message.result, &level)?;
+                self.emit(&message.result)?;
+                self.apply_rewrite(&message.result)?;
                 Ok(())
             }
             #[cfg(feature = "remote_redis")]
@@ -237,6 +248,7 @@ pub async fn create_emitter<'a>(
     interactive: bool,
     pattern: Option<&str>,
     _root_path: Option<&PathBuf>,
+    min_level: VisibilityLevels,
 ) -> Result<MessengerVariant<'a>> {
     let writer: Option<Box<dyn Write + Send>> = if let Some(output_file) = output_file {
         let file = fs_err::File::create(output_file)?;
@@ -252,6 +264,7 @@ pub async fn create_emitter<'a>(
             mode,
             interactive,
             pattern.unwrap_or_default().to_string(),
+            min_level,
         )
         .into(),
         OutputFormat::Json => {
@@ -259,8 +272,11 @@ pub async fn create_emitter<'a>(
         }
         OutputFormat::Transformed => TransformedMessenger::new(writer).into(),
         OutputFormat::Jsonl => {
-            let jsonl =
-                JSONLineMessenger::new(writer.unwrap_or_else(|| Box::new(io::stdout())), mode);
+            let jsonl = JSONLineMessenger::new(
+                writer.unwrap_or_else(|| Box::new(io::stdout())),
+                mode,
+                min_level,
+            );
             jsonl.into()
         }
         #[cfg(feature = "remote_redis")]

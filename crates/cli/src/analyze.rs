@@ -133,7 +133,7 @@ macro_rules! emit_error {
                     range: None,
                     source: None,
                 });
-                $emitter.emit(&log, $min_level).unwrap();
+                $emitter.emit(&log).unwrap();
                 return $emitter;
             }
         }
@@ -189,7 +189,6 @@ where
     let cache_ref = &cache;
 
     let mut interactive = arg.interactive;
-    let min_level = &arg.visibility;
 
     let (found_count, disk_paths) = match my_input {
         ApplyInput::Disk(ref my_input) => {
@@ -240,7 +239,6 @@ where
                             vec![log, done_file],
                             details,
                             arg.dry_run,
-                            min_level,
                             arg.format,
                             &mut interactive,
                             None,
@@ -312,7 +310,6 @@ where
                     message,
                     details,
                     arg.dry_run,
-                    min_level,
                     arg.format,
                     &mut interactive,
                     pg,

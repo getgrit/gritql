@@ -16,7 +16,7 @@ use std::{
 };
 
 use crate::ux::{format_result_diff, indent};
-use marzano_messenger::emit::Messager;
+use marzano_messenger::emit::{Messager, VisibilityLevels};
 
 #[derive(Debug)]
 pub enum FormattedResult {
@@ -302,7 +302,7 @@ pub struct FormattedMessager<'a> {
     total_rejected: usize,
     total_supressed: usize,
     input_pattern: String,
-
+    min_level: VisibilityLevels,
     workflow_done: bool,
 }
 
@@ -312,6 +312,7 @@ impl<'a> FormattedMessager<'_> {
         mode: OutputMode,
         interactive: bool,
         input_pattern: String,
+        min_level: VisibilityLevels,
     ) -> FormattedMessager<'a> {
         FormattedMessager {
             writer: writer.map(|w| Arc::new(Mutex::new(w))),
@@ -321,12 +322,17 @@ impl<'a> FormattedMessager<'_> {
             total_rejected: 0,
             total_supressed: 0,
             input_pattern,
+            min_level,
             workflow_done: false,
         }
     }
 }
 
 impl Messager for FormattedMessager<'_> {
+    fn get_min_level(&self) -> VisibilityLevels {
+        self.min_level
+    }
+
     fn raw_emit(&mut self, message: &MatchResult) -> anyhow::Result<()> {
         if self.interactive && !(self.mode == OutputMode::None) {
             if let MatchResult::AllDone(item) = message {
@@ -441,6 +447,10 @@ impl<'a> TransformedMessenger<'_> {
 }
 
 impl Messager for TransformedMessenger<'_> {
+    fn get_min_level(&self) -> VisibilityLevels {
+        VisibilityLevels::Primary
+    }
+
     fn raw_emit(&mut self, message: &MatchResult) -> anyhow::Result<()> {
         match message {
             MatchResult::PatternInfo(_)

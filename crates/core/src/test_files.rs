@@ -3,7 +3,7 @@ use marzano_language::target_language::TargetLanguage;
 use self::pattern_compiler::src_to_problem_libs;
 use crate::api::FileMatchResult;
 use crate::{
-    api::{MatchResult},
+    api::MatchResult,
     test_utils::{run_on_test_files, SyntheticFile},
 };
 

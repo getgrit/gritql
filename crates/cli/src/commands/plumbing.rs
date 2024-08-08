@@ -8,7 +8,7 @@ use marzano_gritmodule::fetcher::KeepFetcherKind;
 use marzano_gritmodule::patterns_directory::PatternsDirectory;
 use marzano_gritmodule::searcher::find_grit_modules_dir;
 use marzano_gritmodule::utils::is_pattern_name;
-use marzano_messenger::emit::ApplyDetails;
+use marzano_messenger::emit::{ApplyDetails, VisibilityLevels};
 use serde::{Deserialize, Serialize};
 use std::env::current_dir;
 use std::io::{stdin, Read};
@@ -316,6 +316,7 @@ pub(crate) async fn run_plumbing(
                     verbose: true,
                 },
                 &parent,
+                VisibilityLevels::default(),
             )
             .await
         }
