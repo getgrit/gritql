@@ -251,6 +251,7 @@ pub async fn create_emitter<'a>(
     interactive: bool,
     pattern: Option<&str>,
     _root_path: Option<&PathBuf>,
+    min_level: VisibilityLevels,
 ) -> Result<MessengerVariant<'a>> {
     let writer: Option<Box<dyn Write + Send>> = if let Some(output_file) = output_file {
         let file = fs_err::File::create(output_file)?;
@@ -259,8 +260,6 @@ pub async fn create_emitter<'a>(
     } else {
         None
     };
-
-    let min_level = &arg.visibility;
 
     let emitter: MessengerVariant = match format {
         OutputFormat::Standard => FormattedMessager::new(

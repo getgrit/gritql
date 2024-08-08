@@ -65,6 +65,8 @@ pub(crate) async fn run_apply_migration(
     arg: ApplyMigrationArgs,
     flags: &GlobalFormatFlags,
 ) -> Result<()> {
+    use marzano_messenger::emit::VisibilityLevels;
+
     let input = arg.get_payload()?;
 
     let format = OutputFormat::from(flags);
@@ -75,6 +77,7 @@ pub(crate) async fn run_apply_migration(
         false,
         None,
         None,
+        VisibilityLevels::default(),
     )
     .await?;
 

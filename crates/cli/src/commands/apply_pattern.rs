@@ -255,6 +255,7 @@ pub(crate) async fn run_apply_pattern(
         interactive,
         Some(&pattern),
         root_path.as_ref(),
+        *min_level,
     )
     .await?;
 
