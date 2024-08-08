@@ -189,7 +189,6 @@ where
     let cache_ref = &cache;
 
     let mut interactive = arg.interactive;
-    let min_level = &arg.visibility;
 
     let (found_count, disk_paths) = match my_input {
         ApplyInput::Disk(ref my_input) => {

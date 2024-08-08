@@ -14,21 +14,26 @@ use marzano_messenger::{
 pub struct JSONLineMessenger<'a> {
     writer: Arc<Mutex<Box<dyn Write + Send + 'a>>>,
     mode: OutputMode,
+    min_level: VisibilityLevels,
 }
 
 impl<'a> JSONLineMessenger<'a> {
-    pub fn new<W: Write + Send + 'static>(writer: W, mode: OutputMode) -> Self {
+    pub fn new<W: Write + Send + 'static>(
+        writer: W,
+        mode: OutputMode,
+        min_level: VisibilityLevels,
+    ) -> Self {
         Self {
             writer: Arc::new(Mutex::new(Box::new(writer))),
             mode,
+            min_level,
         }
     }
 }
 
 impl<'a> Messager for JSONLineMessenger<'a> {
     fn get_min_level(&self) -> VisibilityLevels {
-        // You'll need to decide on a default level or store it in the struct
-        VisibilityLevels::Supplemental
+        self.min_level
     }
 
     fn raw_emit(&mut self, item: &MatchResult) -> anyhow::Result<()> {

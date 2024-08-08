@@ -260,12 +260,15 @@ pub async fn create_emitter<'a>(
         None
     };
 
+    let min_level = &arg.visibility;
+
     let emitter: MessengerVariant = match format {
         OutputFormat::Standard => FormattedMessager::new(
             writer,
             mode,
             interactive,
             pattern.unwrap_or_default().to_string(),
+            min_level,
         )
         .into(),
         OutputFormat::Json => {
@@ -273,8 +276,11 @@ pub async fn create_emitter<'a>(
         }
         OutputFormat::Transformed => TransformedMessenger::new(writer).into(),
         OutputFormat::Jsonl => {
-            let jsonl =
-                JSONLineMessenger::new(writer.unwrap_or_else(|| Box::new(io::stdout())), mode);
+            let jsonl = JSONLineMessenger::new(
+                writer.unwrap_or_else(|| Box::new(io::stdout())),
+                mode,
+                min_level,
+            );
             jsonl.into()
         }
         #[cfg(feature = "remote_redis")]

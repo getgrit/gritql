@@ -302,7 +302,7 @@ pub struct FormattedMessager<'a> {
     total_rejected: usize,
     total_supressed: usize,
     input_pattern: String,
-
+    min_level: VisibilityLevels,
     workflow_done: bool,
 }
 
@@ -312,6 +312,7 @@ impl<'a> FormattedMessager<'_> {
         mode: OutputMode,
         interactive: bool,
         input_pattern: String,
+        min_level: VisibilityLevels,
     ) -> FormattedMessager<'a> {
         FormattedMessager {
             writer: writer.map(|w| Arc::new(Mutex::new(w))),
@@ -321,6 +322,7 @@ impl<'a> FormattedMessager<'_> {
             total_rejected: 0,
             total_supressed: 0,
             input_pattern,
+            min_level,
             workflow_done: false,
         }
     }
@@ -328,8 +330,7 @@ impl<'a> FormattedMessager<'_> {
 
 impl Messager for FormattedMessager<'_> {
     fn get_min_level(&self) -> VisibilityLevels {
-        // You'll need to decide on a default level or store it in the struct
-        VisibilityLevels::Supplemental
+        self.min_level
     }
 
     fn raw_emit(&mut self, message: &MatchResult) -> anyhow::Result<()> {
@@ -447,8 +448,7 @@ impl<'a> TransformedMessenger<'_> {
 
 impl Messager for TransformedMessenger<'_> {
     fn get_min_level(&self) -> VisibilityLevels {
-        // You'll need to decide on a default level or store it in the struct
-        VisibilityLevels::Supplemental
+        VisibilityLevels::Primary
     }
 
     fn raw_emit(&mut self, message: &MatchResult) -> anyhow::Result<()> {
