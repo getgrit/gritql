@@ -58,7 +58,7 @@ pub(crate) async fn run_parse(
 
     if let Some(body) = pattern_body {
         let result = parse_one_pattern(body, None).await?;
-        emitter.emit(&result )?;
+        emitter.emit(&result)?;
     }
 
     for path in parse_input.paths {
@@ -75,7 +75,7 @@ pub(crate) async fn run_parse(
             };
             MatchResult::InputFile(input_file)
         };
-        emitter.emit(&match_result )?;
+        emitter.emit(&match_result)?;
     }
 
     Ok(())

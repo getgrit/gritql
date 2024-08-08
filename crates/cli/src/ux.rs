@@ -7,11 +7,9 @@ use marzano_core::{
     api::{EnforcementLevel, MatchResult},
     fs::extract_ranges,
 };
-use marzano_gritmodule::{
-    config::ResolvedGritDefinition, testing::SampleTestResult,
-};
+use marzano_gritmodule::{config::ResolvedGritDefinition, testing::SampleTestResult};
 use similar::{ChangeTag, TextDiff};
-use std::{collections::HashMap};
+use std::collections::HashMap;
 
 use crate::analyze::{extract_rewritten_content, group_checks};
 

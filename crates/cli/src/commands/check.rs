@@ -300,9 +300,7 @@ pub(crate) async fn run_check(
                 };
                 let rewrite_with_reason = rewrite_with_reason.as_ref();
                 let message = rewrite_with_reason.unwrap_or(&result.result);
-                emitter
-                    .emit(message )
-                    .unwrap();
+                emitter.emit(message).unwrap();
             }
         }
         let safe_total_file_count = std::cmp::min(total_file_count, i32::MAX as usize) as i32;
@@ -311,9 +309,7 @@ pub(crate) async fn run_check(
             found: 0,
             reason: AllDoneReason::AllMatchesFound,
         });
-        emitter
-            .emit(&all_done )
-            .unwrap();
+        emitter.emit(&all_done).unwrap();
 
         emitter.flush().await?;
 

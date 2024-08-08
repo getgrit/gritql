@@ -3,7 +3,7 @@ use marzano_core::api::MatchResult;
 
 use crate::{
     emit::{FlushableMessenger, Messager},
-    workflows::{WorkflowMessenger},
+    workflows::WorkflowMessenger,
 };
 
 /// A testing messenger that doesn't actually send messages anywhere.
@@ -63,6 +63,6 @@ impl WorkflowMessenger for TestingMessenger {
         &mut self,
         message: &crate::workflows::WorkflowMatchResult,
     ) -> anyhow::Result<()> {
-        self.emit(&message.result )
+        self.emit(&message.result)
     }
 }
