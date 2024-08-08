@@ -81,6 +81,7 @@ pub(crate) async fn run_apply(
                 ranges,
                 args.apply_migration_args,
                 flags,
+                args.apply_pattern_args.visibility,
             )
             .await;
         }

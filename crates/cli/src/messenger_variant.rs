@@ -154,9 +154,6 @@ impl<'a> WorkflowMessenger for MessengerVariant<'a> {
         &mut self,
         message: &marzano_messenger::workflows::WorkflowMatchResult,
     ) -> anyhow::Result<()> {
-        // This is meant to match what we do in the CLI server
-        let level = VisibilityLevels::Debug;
-
         match self {
             MessengerVariant::Formatted(_)
             | MessengerVariant::Transformed(_)

@@ -64,9 +64,8 @@ pub(crate) async fn run_apply_migration(
     ranges: Option<Vec<marzano_util::diff::FileDiff>>,
     arg: ApplyMigrationArgs,
     flags: &GlobalFormatFlags,
+    min_level: marzano_messenger::emit::VisibilityLevels,
 ) -> Result<()> {
-    use marzano_messenger::emit::VisibilityLevels;
-
     let input = arg.get_payload()?;
 
     let format = OutputFormat::from(flags);
@@ -77,7 +76,7 @@ pub(crate) async fn run_apply_migration(
         false,
         None,
         None,
-        VisibilityLevels::default(),
+        min_level,
     )
     .await?;
 
