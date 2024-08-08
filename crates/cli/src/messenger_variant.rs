@@ -39,6 +39,20 @@ pub enum MessengerVariant<'a> {
 }
 
 impl<'a> Messager for MessengerVariant<'a> {
+    fn get_min_level(&self) -> VisibilityLevels {
+        match self {
+            MessengerVariant::Formatted(m) => m.get_min_level(),
+            MessengerVariant::Transformed(m) => m.get_min_level(),
+            MessengerVariant::JsonLine(m) => m.get_min_level(),
+            #[cfg(feature = "remote_redis")]
+            MessengerVariant::Redis(m) => m.get_min_level(),
+            #[cfg(feature = "remote_pubsub")]
+            MessengerVariant::GooglePubSub(m) => m.get_min_level(),
+            #[cfg(feature = "server")]
+            MessengerVariant::Combined(m) => m.get_min_level(),
+        }
+    }
+
     fn raw_emit(&mut self, message: &marzano_core::api::MatchResult) -> anyhow::Result<()> {
         match self {
             MessengerVariant::Formatted(m) => m.raw_emit(message),

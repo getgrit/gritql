@@ -188,7 +188,7 @@ impl fmt::Display for FormattedResult {
                         print_all_done(r, f)?;
                     }
                     MatchResult::Match(r) => print_file_ranges(&mut r.clone(), f)?,
-                    MatchResult::Rewrite(r) => print_file_ranges(&mut r.clone(), f)?,
+                    MatchResult::Rewritten(r) => print_file_ranges(&mut r.clone(), f)?,
                     MatchResult::CreateFile(r) => print_file_ranges(&mut r.clone(), f)?,
                     MatchResult::RemoveFile(r) => print_file_ranges(&mut r.clone(), f)?,
                 }
@@ -257,7 +257,7 @@ impl fmt::Display for FormattedResult {
             }
             FormattedResult::AllDone(item) => print_all_done(item, f),
             FormattedResult::DoneFile(_) => Ok(()),
-            FormattedResult::Rewrite(item) => {
+            FormattedResult::Rewritten(item) => {
                 let path_name = if item.original.source_file == item.rewritten.source_file {
                     item.file_name().to_string()
                 } else {
@@ -327,6 +327,11 @@ impl<'a> FormattedMessager<'_> {
 }
 
 impl Messager for FormattedMessager<'_> {
+    fn get_min_level(&self) -> VisibilityLevels {
+        // You'll need to decide on a default level or store it in the struct
+        VisibilityLevels::Supplemental
+    }
+
     fn raw_emit(&mut self, message: &MatchResult) -> anyhow::Result<()> {
         if self.interactive && !(self.mode == OutputMode::None) {
             if let MatchResult::AllDone(item) = message {
@@ -441,6 +446,11 @@ impl<'a> TransformedMessenger<'_> {
 }
 
 impl Messager for TransformedMessenger<'_> {
+    fn get_min_level(&self) -> VisibilityLevels {
+        // You'll need to decide on a default level or store it in the struct
+        VisibilityLevels::Supplemental
+    }
+
     fn raw_emit(&mut self, message: &MatchResult) -> anyhow::Result<()> {
         match message {
             MatchResult::PatternInfo(_)
@@ -452,7 +462,7 @@ impl Messager for TransformedMessenger<'_> {
             MatchResult::Match(message) => {
                 info!("Matched file {}", message.file_name());
             }
-            MatchResult::Rewrite(file) => {
+            MatchResult::Rewritten(file) => {
                 // Write the file contents to the output
                 if let Some(writer) = &mut self.writer {
                     let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;

@@ -27,20 +27,18 @@ pub struct ApplyDetails {
 }
 
 pub trait Messager: Send + Sync {
+    fn get_min_level(&self) -> VisibilityLevels;
+
     // Write a message to the output
-    fn emit(&mut self, message: &MatchResult, min_level: &VisibilityLevels) -> anyhow::Result<()> {
-        if get_visibility(message) >= *min_level {
+    fn emit(&mut self, message: &MatchResult) -> anyhow::Result<()> {
+        if get_visibility(message) >= self.get_min_level() {
             self.raw_emit(message)
         } else {
             Ok(())
         }
     }
 
-    fn apply_rewrite(
-        &mut self,
-        result: &MatchResult,
-        min_level: &VisibilityLevels,
-    ) -> anyhow::Result<()> {
+    fn apply_rewrite(&mut self, result: &MatchResult) -> anyhow::Result<()> {
         if let Err(e) = apply_rewrite(result) {
             let err_string = format!("Failed to apply rewrite: {}", e);
             let err_log = if let Some(file_name) = result.file_name() {
@@ -49,7 +47,7 @@ pub trait Messager: Send + Sync {
                 AnalysisLog::floating_error(err_string)
             };
 
-            self.emit(&MatchResult::AnalysisLog(err_log), min_level)
+            self.emit(&MatchResult::AnalysisLog(err_log))
         } else {
             Ok(())
         }
@@ -65,7 +63,6 @@ pub trait Messager: Send + Sync {
         execution_result: Vec<MatchResult>,
         details: &mut ApplyDetails,
         dry_run: bool,
-        min_level: &VisibilityLevels,
         should_format: bool,
         interactive: &mut bool,
         pg: Option<&ProgressBar>,
@@ -77,7 +74,6 @@ pub trait Messager: Send + Sync {
             execution_result,
             details,
             dry_run,
-            min_level,
             should_format,
             interactive,
             pg,
@@ -88,7 +84,7 @@ pub trait Messager: Send + Sync {
             Ok(val) => val,
             Err(err) => {
                 let err_log = AnalysisLog::new_error(err.to_string(), "unknown");
-                self.emit(&MatchResult::AnalysisLog(err_log), min_level)
+                self.emit(&MatchResult::AnalysisLog(err_log))
                     .expect("Failed to emit error log");
                 true
             }
@@ -101,7 +97,6 @@ pub trait Messager: Send + Sync {
         execution_result: Vec<MatchResult>,
         details: &mut ApplyDetails,
         dry_run: bool,
-        min_level: &VisibilityLevels,
         should_format: bool,
         interactive: &mut bool,
         pg: Option<&ProgressBar>,
@@ -150,7 +145,7 @@ pub trait Messager: Send + Sync {
                 }
             }
 
-            self.emit(&r, min_level)?;
+            self.emit(&r)?;
 
             if !dry_run {
                 if is_match(&r) {
@@ -218,7 +213,7 @@ pub trait Messager: Send + Sync {
                                         details.named_pattern.as_deref(),
                                     )
                                     .ok_or(anyhow::anyhow!("Failed to suppress rewrite"))?;
-                                self.apply_rewrite(&suppress_rewrite, min_level)?;
+                                self.apply_rewrite(&suppress_rewrite)?;
                                 continue;
                             }
                             "a" => {
@@ -236,7 +231,7 @@ pub trait Messager: Send + Sync {
                         self.track_accept(&r)?;
                     }
                 }
-                self.apply_rewrite(&r, min_level)?;
+                self.apply_rewrite(&r)?;
                 if should_format {
                     format_result(r)?;
                 }

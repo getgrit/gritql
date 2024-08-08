@@ -23,6 +23,11 @@ impl<'a> JSONLineMessenger<'a> {
 }
 
 impl<'a> Messager for JSONLineMessenger<'a> {
+    fn get_min_level(&self) -> VisibilityLevels {
+        // You'll need to decide on a default level or store it in the struct
+        VisibilityLevels::Supplemental
+    }
+
     fn raw_emit(&mut self, item: &MatchResult) -> anyhow::Result<()> {
         let mut writer = self
             .writer
