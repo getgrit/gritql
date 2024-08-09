@@ -4,8 +4,7 @@ use super::{
     State,
 };
 use crate::context::{ExecContext, QueryContext};
-use crate::errors::GritResult;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 // todo we can probably use a macro to generate a function that takes a vec and
 // and calls the input function with the vec args unpacked.

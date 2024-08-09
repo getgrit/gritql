@@ -23,21 +23,21 @@ impl NodeCompiler for RegexCompiler {
         }
         let regex_node = node
             .child_by_field_name("regex")
-            .ok_or_else(|| anyhow!("malformed regex, check the parser"))?;
+            .ok_or_else(|| GritPatternError::new("malformed regex, check the parser"))?;
 
         let regex = if regex_node.node.kind() == "regex" {
             let regex = regex_node.text()?.trim().to_string();
             let regex = regex
                 .strip_prefix("r\"")
-                .ok_or_else(|| anyhow!("invalid regex prefix"))?
+                .ok_or_else(|| GritPatternError::new("invalid regex prefix"))?
                 .strip_suffix('\"')
-                .ok_or_else(|| anyhow!("invalid regex postfix"))?;
+                .ok_or_else(|| GritPatternError::new("invalid regex postfix"))?;
 
             RegexLike::Regex(regex.to_string())
         } else {
             let back_tick_node = regex_node
                 .child_by_field_name("snippet")
-                .ok_or_else(|| anyhow!("malformed regex, check the parser"))?;
+                .ok_or_else(|| GritPatternError::new("malformed regex, check the parser"))?;
             let regex = regex_node.text()?.trim().to_string();
             if !context
                 .compilation

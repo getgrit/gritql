@@ -5,9 +5,11 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::errors::{GritPatternError, GritResult};
 use crate::{context::ExecContext, context::QueryContext, effects::Effect};
-use grit_util::{AnalysisLogs, EffectKind};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, EffectKind,
+};
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]

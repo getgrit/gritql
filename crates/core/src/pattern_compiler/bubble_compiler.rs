@@ -8,10 +8,10 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::pattern::{Bubble, Pattern, PatternDefinition};
-use grit_util::{AstNode, ByteRange};
+use grit_util::{error::GritResult, AstNode, ByteRange};
 use itertools::Itertools;
 use marzano_util::node_with_source::NodeWithSource;
-use std::{collections::BTreeMap, str::Utf8Error};
+use std::collections::BTreeMap;
 
 pub(crate) struct BubbleCompiler;
 
@@ -32,7 +32,7 @@ impl NodeCompiler for BubbleCompiler {
         let parameters: Vec<_> = node
             .named_children_by_field_name("variables")
             .map(|n| Ok((n.text()?.trim().to_string(), n.byte_range())))
-            .collect::<Result<Vec<(String, ByteRange)>, Utf8Error>>()?;
+            .collect::<GritResult<Vec<(String, ByteRange)>>>()?;
         if parameters.iter().unique_by(|n| &n.0).count() != parameters.len() {
             bail!("bubble parameters must be unique, but had a repeated name in its parameters.")
         }
@@ -40,7 +40,7 @@ impl NodeCompiler for BubbleCompiler {
 
         let body = node
             .child_by_field_name("pattern")
-            .ok_or_else(|| anyhow!("missing body of patternDefinition"))?;
+            .ok_or_else(|| GritPatternError::new("missing body of patternDefinition"))?;
         let body = PatternCompiler::from_node(&body, &mut local_context)?;
 
         let args = parameters

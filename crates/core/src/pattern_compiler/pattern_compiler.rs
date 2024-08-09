@@ -485,20 +485,18 @@ fn text_to_var(
         .compilation
         .lang
         .snippet_metavariable_to_grit_metavariable(name)
-        .ok_or_else(|| anyhow!("metavariable |{}| not found in snippet", name))?;
+        .ok_or_else(|| GritPatternError::new(format!("metavariable |{}| not found in snippet", name)))?;
     match name {
         GritMetaValue::Dots => Ok(SnippetValues::Dots),
         GritMetaValue::Underscore => Ok(SnippetValues::Underscore),
         GritMetaValue::Variable(name) => {
             let range = *range_map.get(&range).ok_or_else(|| {
-                anyhow!(
-                    "{} not found in map {:?}",
+                GritPatternError::new("{} not found in map {:?}",
                     range.abbreviated_debug(),
                     range_map
                         .keys()
                         .map(|k| k.abbreviated_debug())
-                        .collect::<Vec<_>>()
-                )
+                        .collect::<Vec<_>>())
             })?;
             let var = register_variable(&name, range + context_range.start, context)?;
             Ok(SnippetValues::Variable(var))

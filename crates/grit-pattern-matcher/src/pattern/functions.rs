@@ -3,10 +3,12 @@ use super::{
     patterns::{Pattern, PatternName},
     state::State,
 };
-use crate::errors::{GritPatternError, GritResult};
 use crate::{context::ExecContext, context::QueryContext};
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 
 #[derive(Debug, Clone)]
 pub struct FuncEvaluation<'a, Q: QueryContext> {

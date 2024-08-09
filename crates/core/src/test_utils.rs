@@ -1,6 +1,6 @@
 use std::{borrow::Cow, collections::BTreeMap, sync::mpsc};
 
-use anyhow::Result;
+use grit_util::error::GritResult;
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::{
     cache::NullCache,
@@ -30,7 +30,7 @@ impl SyntheticFile {
 }
 
 impl TryIntoInputFile for SyntheticFile {
-    fn try_into_cow(&self) -> Result<Cow<RichFile>> {
+    fn try_into_cow(&self) -> GritResult<Cow<RichFile>> {
         if !self.can_read {
             panic!("Tried to read file that should not be read: {}", self.path);
         }

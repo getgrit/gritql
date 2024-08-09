@@ -38,7 +38,7 @@ pub fn get_patterns_from_grit(
 
             let name_node = pattern_definition
                 .child_by_field_name("name")
-                .ok_or_else(|| anyhow!("missing name of patternDefinition"))?;
+                .ok_or_else(|| GritPatternError::new("missing name of patternDefinition"))?;
             let name = name_node.text()?;
             let name = name.trim();
             let plain_body = pattern_definition.text()?;

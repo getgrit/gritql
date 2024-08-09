@@ -5,12 +5,14 @@ use super::{
     state::State,
     variable::{get_file_name, Variable},
 };
-use crate::errors::{GritPatternError, GritResult};
 use crate::{
     binding::Binding,
     context::{ExecContext, QueryContext},
 };
-use grit_util::{AnalysisLogBuilder, AnalysisLogs};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogBuilder, AnalysisLogs,
+};
 
 #[derive(Debug, Clone)]
 pub struct VariableInfo {

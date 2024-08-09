@@ -67,7 +67,7 @@ fn empty_paths_array() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    let line = stdout.lines().next().ok_or_else(|| anyhow!("No output"))?;
+    let line = stdout.lines().next().ok_or_else(|| GritPatternError::new("No output"))?;
     let v: serde_json::Value = serde_json::from_str(line)?;
 
     let all_done_found = v
@@ -106,7 +106,7 @@ fn empty_or_returns_error() -> Result<()> {
     );
 
     let stdout = String::from_utf8(output.stdout)?;
-    let line = stdout.lines().next().ok_or_else(|| anyhow!("No output"))?;
+    let line = stdout.lines().next().ok_or_else(|| GritPatternError::new("No output"))?;
     let v: serde_json::Value = serde_json::from_str(line)?;
 
     let analysis_log_found = v
@@ -145,7 +145,7 @@ fn error_returns_gritfile_path() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    let line = stdout.lines().next().ok_or_else(|| anyhow!("No output"))?;
+    let line = stdout.lines().next().ok_or_else(|| GritPatternError::new("No output"))?;
     let v: serde_json::Value = serde_json::from_str(line)?;
 
     let analysis_log_found = v

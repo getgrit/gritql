@@ -3,10 +3,9 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::errors::GritResult;
 use crate::{binding::Binding, context::QueryContext};
 use core::fmt::Debug;
-use grit_util::{AnalysisLogs, AstNode};
+use grit_util::{error::GritResult, AnalysisLogs, AstNode};
 
 #[derive(Debug, Clone)]
 pub struct Within<Q: QueryContext> {

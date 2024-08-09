@@ -44,7 +44,7 @@ impl MarzanoGritParser {
         self.parser
             .parse(source, None)?
             .map(|tree| Tree::new(tree, source))
-            .ok_or_else(|| anyhow!("parse error"))
+            .ok_or_else(|| GritPatternError::new("parse error"))
     }
 }
 

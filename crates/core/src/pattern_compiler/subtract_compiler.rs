@@ -19,12 +19,12 @@ impl NodeCompiler for SubtractCompiler {
     ) -> Result<Self::TargetPattern> {
         let left = node
             .child_by_field_name("left")
-            .ok_or_else(|| anyhow!("missing left of subtract"))?;
+            .ok_or_else(|| GritPatternError::new("missing left of subtract"))?;
         let left = PatternCompiler::from_node(&left, context)?;
 
         let right = node
             .child_by_field_name("right")
-            .ok_or_else(|| anyhow!("missing right of subtract"))?;
+            .ok_or_else(|| GritPatternError::new("missing right of subtract"))?;
         let right = PatternCompiler::from_node(&right, context)?;
 
         Ok(Subtract::new(left, right))

@@ -23,7 +23,7 @@ impl NodeCompiler for LikeCompiler {
             .unwrap_or(Result::Ok(Pattern::FloatConstant(FloatConstant::new(0.9))))?;
         let like = node
             .child_by_field_name("example")
-            .ok_or_else(|| anyhow!("missing field example of patternLike"))?;
+            .ok_or_else(|| GritPatternError::new("missing field example of patternLike"))?;
         let like = PatternCompiler::from_node_with_rhs(&like, context, true)?;
         Ok(Like::new(like, threshold))
     }

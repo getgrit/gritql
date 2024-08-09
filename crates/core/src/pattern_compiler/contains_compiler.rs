@@ -19,7 +19,7 @@ impl NodeCompiler for ContainsCompiler {
     ) -> Result<Self::TargetPattern> {
         let contains = node
             .child_by_field_name("contains")
-            .ok_or_else(|| anyhow!("missing contains of patternContains"))?;
+            .ok_or_else(|| GritPatternError::new("missing contains of patternContains"))?;
         let contains = PatternCompiler::from_node(&contains, context)?;
         let until = node
             .child_by_field_name("until")

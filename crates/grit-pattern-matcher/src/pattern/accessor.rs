@@ -6,12 +6,14 @@ use super::{
     state::State,
     variable::Variable,
 };
-use crate::errors::{GritPatternError, GritResult};
 use crate::{
     binding::Binding,
     context::{ExecContext, QueryContext},
 };
-use grit_util::AnalysisLogs;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]
@@ -62,17 +64,13 @@ impl<Q: QueryContext> Accessor<Q> {
                 }
                 Some(PatternOrResolved::Resolved(resolved)) => match resolved.get_map() {
                     Some(m) => Ok(m.get(key.as_ref()).map(PatternOrResolved::Resolved)),
-                    None => {
-                        Err(GritPatternError::new(
-                            "left side of an accessor must be a map",
-                        ))
-                    }
-                },
-                Some(_) => {
-                    Err(GritPatternError::new(
+                    None => Err(GritPatternError::new(
                         "left side of an accessor must be a map",
-                    ))
-                }
+                    )),
+                },
+                Some(_) => Err(GritPatternError::new(
+                    "left side of an accessor must be a map",
+                )),
             },
             AccessorMap::Map(m) => Ok(m.get(&key).map(PatternOrResolved::Pattern)),
         }
@@ -92,17 +90,13 @@ impl<Q: QueryContext> Accessor<Q> {
                 }
                 Some(PatternOrResolvedMut::Resolved(resolved)) => match resolved.get_map_mut() {
                     Some(m) => Ok(m.get_mut(key.as_ref()).map(PatternOrResolvedMut::Resolved)),
-                    None => {
-                        Err(GritPatternError::new(
-                            "left side of an accessor must be a map",
-                        ))
-                    }
-                },
-                Some(_) => {
-                    Err(GritPatternError::new(
+                    None => Err(GritPatternError::new(
                         "left side of an accessor must be a map",
-                    ))
-                }
+                    )),
+                },
+                Some(_) => Err(GritPatternError::new(
+                    "left side of an accessor must be a map",
+                )),
             },
             AccessorMap::Map(m) => Ok(m.get(&key).map(PatternOrResolvedMut::Pattern)),
         }

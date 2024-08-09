@@ -6,12 +6,14 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::errors::{GritPatternError, GritResult};
 use crate::{
     binding::Binding,
     context::{ExecContext, QueryContext},
 };
-use grit_util::AnalysisLogs;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 
 #[derive(Debug, Clone)]
 pub enum ListOrContainer<Q: QueryContext> {
@@ -91,12 +93,10 @@ impl<Q: QueryContext> ListIndex<Q> {
                         ));
                     }
                 }
-                Some(s) => {
-                    Err(GritPatternError::new(format!(
-                        "left side of a listIndex must be a list but got {:?}",
-                        s
-                    )))
-                }
+                Some(s) => Err(GritPatternError::new(format!(
+                    "left side of a listIndex must be a list but got {:?}",
+                    s
+                ))),
             },
             ListOrContainer::List(l) => Ok(l.get(index).map(PatternOrResolved::Pattern)),
         }
@@ -132,12 +132,10 @@ impl<Q: QueryContext> ListIndex<Q> {
                         ))
                     }
                 }
-                Some(s) => {
-                    Err(GritPatternError::new(format!(
-                        "left side of a listIndex must be a list but got {:?}",
-                        s
-                    )))
-                }
+                Some(s) => Err(GritPatternError::new(format!(
+                    "left side of a listIndex must be a list but got {:?}",
+                    s
+                ))),
             },
             ListOrContainer::List(l) => Ok(l.get(index).map(PatternOrResolvedMut::Pattern)),
         }
@@ -156,15 +154,11 @@ impl<Q: QueryContext> ListIndex<Q> {
                 Some(PatternOrResolvedMut::Resolved(resolved)) => {
                     resolved.set_list_item_at_mut(index, value)
                 }
-                Some(_) => {
-                    Err(GritPatternError::new(
-                        "accessor can only mutate a resolved list",
-                    ))
-                }
+                Some(_) => Err(GritPatternError::new(
+                    "accessor can only mutate a resolved list",
+                )),
             },
-            ListOrContainer::List(_) => {
-                Err(GritPatternError::new("cannot mutate a list literal"))
-            }
+            ListOrContainer::List(_) => Err(GritPatternError::new("cannot mutate a list literal")),
         }
     }
 }

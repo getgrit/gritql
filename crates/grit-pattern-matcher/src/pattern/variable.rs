@@ -4,14 +4,15 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::errors::GritResult;
 use crate::{
     binding::Binding,
     constants::{ABSOLUTE_PATH_INDEX, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX},
     context::{ExecContext, QueryContext},
 };
 use core::fmt::Debug;
-use grit_util::{constants::GRIT_METAVARIABLE_PREFIX, AnalysisLogs, ByteRange, Language};
+use grit_util::{
+    constants::GRIT_METAVARIABLE_PREFIX, error::GritResult, AnalysisLogs, ByteRange, Language,
+};
 use std::{borrow::Cow, collections::BTreeSet};
 
 #[derive(Clone, Debug, Copy)]
@@ -123,7 +124,7 @@ impl Variable {
                     }));
                 } else {
                     return Ok(Some(
-                        resolved_pattern.text(language)?
+                        resolved_pattern.text(&state.files, language)?
                             == var_side_resolve_pattern.text(&state.files, language)?,
                     ));
                 }

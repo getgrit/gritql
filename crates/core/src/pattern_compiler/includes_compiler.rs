@@ -19,7 +19,7 @@ impl NodeCompiler for IncludesCompiler {
     ) -> Result<Self::TargetPattern> {
         let includes = node
             .child_by_field_name("includes")
-            .ok_or_else(|| anyhow!("missing includes of patternIncludes"))?;
+            .ok_or_else(|| GritPatternError::new("missing includes of patternIncludes"))?;
         let includes = PatternCompiler::from_node(&includes, context)?;
         Ok(Includes::new(includes))
     }

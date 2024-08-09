@@ -142,7 +142,7 @@ impl GritServerManager {
                 client
                     .show_message(MessageType::ERROR, "error getting document")
                     .await;
-                return Err(anyhow!("Could not find document for uri {}", uri));
+                return Err(GritPatternError::new(format!("Could not find document for uri {}", uri)));
             }
         };
         match doc {
@@ -151,7 +151,7 @@ impl GritServerManager {
                 client
                     .show_message(MessageType::ERROR, "document not found")
                     .await;
-                Err(anyhow!("Could not find document for uri {}", uri))
+                Err(GritPatternError::new(format!("Could not find document for uri {}", uri)))
             }
         }
     }

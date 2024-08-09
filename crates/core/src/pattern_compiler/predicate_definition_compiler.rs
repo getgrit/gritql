@@ -20,7 +20,7 @@ impl NodeCompiler for PredicateDefinitionCompiler {
     ) -> Result<Self::TargetPattern> {
         let name = node
             .child_by_field_name("name")
-            .ok_or_else(|| anyhow!("missing name of pattern definition"))?;
+            .ok_or_else(|| GritPatternError::new("missing name of pattern definition"))?;
         let name = name.text()?;
         let name = name.trim();
         let mut local_vars = BTreeMap::new();
@@ -32,14 +32,14 @@ impl NodeCompiler for PredicateDefinitionCompiler {
                 .compilation
                 .predicate_definition_info
                 .get(name)
-                .ok_or_else(|| anyhow!("cannot get info for pattern {}", name))?
+                .ok_or_else(|| GritPatternError::new(format!("cannot get info for pattern {}", name)))?
                 .parameters,
             &mut local_context,
         )?;
 
         let body = node
             .child_by_field_name("body")
-            .ok_or_else(|| anyhow!("missing body of pattern definition"))?;
+            .ok_or_else(|| GritPatternError::new("missing body of pattern definition"))?;
         let body = PrAndCompiler::from_node(&body, &mut local_context)?;
         let predicate_def = PredicateDefinition::new(
             name.to_owned(),

@@ -191,7 +191,7 @@ fn test_rewrite(dir: &str, pattern: &str, test: &str) -> Result<()> {
     let (result, expected) = test_setup(dir, pattern, test)?;
     assert!(result.is_some(), "PATTERN failed to match");
     let result = result.the_match.unwrap();
-    let expected = expected.ok_or_else(|| anyhow!("expected result not found"))?;
+    let expected = expected.ok_or_else(|| GritPatternError::new("expected result not found"))?;
     assert!(result.rewrite.is_some(), "rewrite not found");
     let rewrite = result.rewrite.unwrap();
     if rewrite.trim() != expected.trim() {
@@ -311,15 +311,12 @@ fn test_setup(dir: &str, pattern: &str, test: &str) -> Result<(ExecutionResult, 
     let lang = TargetLanguage::from_extension(
         Path::new(test)
             .extension()
-            .ok_or_else(|| anyhow!("test parameter {} must have an extension", test))?
+            .ok_or_else(|| GritPatternError::new(format!("test parameter {} must have an extension", test)))?
             .to_str()
-            .ok_or_else(|| anyhow!("test parameter {} is malformed path", test))?,
+            .ok_or_else(|| GritPatternError::new(format!("test parameter {} is malformed path", test)))?,
     )
     .ok_or_else(|| {
-        anyhow!(
-            "test parameter {} extension didn't correspond to any supported language",
-            test
-        )
+        GritPatternError::new(format!("test parameter {} extension didn't correspond to any supported language", test))
     })?;
     let pattern = fs_err::read_to_string(pattern)?;
     let input = fs_err::read_to_string(input)?;
@@ -353,10 +350,10 @@ fn run_test_expected_libs(arg: TestArgExpectedWithLibs) -> Result<()> {
 fn validate_execution_result(result: ExecutionResult, expected: String) -> Result<()> {
     let result = result
         .the_match
-        .ok_or_else(|| anyhow!("pattern failed to MATCH"))?;
+        .ok_or_else(|| GritPatternError::new("pattern failed to MATCH"))?;
     let rewrite = result
         .rewrite
-        .ok_or_else(|| anyhow!("found a match but no rewrite"))?;
+        .ok_or_else(|| GritPatternError::new("found a match but no rewrite"))?;
     let rewrite = rewrite
         .lines()
         .map(|line| line.trim_end())

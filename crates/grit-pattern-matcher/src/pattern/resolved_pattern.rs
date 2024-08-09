@@ -5,9 +5,8 @@ use super::{
     patterns::Pattern,
     state::{FilePtr, FileRegistry, State},
 };
-use crate::errors::GritResult;
 use crate::{binding::Binding, constant::Constant, context::QueryContext, effects::Effect};
-use grit_util::{AnalysisLogs, ByteRange, CodeRange, Range};
+use grit_util::{error::GritResult, AnalysisLogs, ByteRange, CodeRange, Range};
 use im::Vector;
 use itertools::Itertools;
 use std::{

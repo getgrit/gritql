@@ -4,13 +4,15 @@ use super::{
     variable::Variable,
     State,
 };
-use crate::errors::{GritPatternError, GritResult};
 use crate::{
     binding::Binding,
     context::{ExecContext, QueryContext},
 };
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 use regex::Regex;
 
 #[derive(Debug, Clone)]

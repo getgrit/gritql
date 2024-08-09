@@ -53,7 +53,7 @@ impl NodeCompiler for PredicateCompiler {
             "booleanConstant" => match node.text()?.trim() {
                 "true" => Ok(Predicate::True),
                 "false" => Ok(Predicate::False),
-                _ => Err(anyhow!("invalid booleanConstant")),
+                _ => Err(GritPatternError::new("invalid booleanConstant")),
             },
             "predicateAssignment" => Ok(Predicate::Assignment(Box::new(
                 AssignmentCompiler::from_node(node, context)?,

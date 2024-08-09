@@ -3,8 +3,8 @@ use super::{
     State,
 };
 use crate::context::QueryContext;
-use crate::errors::{GritPatternError, GritResult};
 use core::fmt::Debug;
+use grit_util::error::{GritPatternError, GritResult};
 use grit_util::AnalysisLogs;
 
 #[allow(dead_code)]

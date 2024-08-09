@@ -8,7 +8,7 @@ pub fn uri_to_file_path(uri: &str) -> Result<PathBuf> {
     let url = Url::parse(uri)?;
     match url.to_file_path() {
         Ok(path) => Ok(path),
-        Err(_) => Err(anyhow!("Unable to find file corresponding to uri {}", uri)),
+        Err(_) => Err(GritPatternError::new(format!("Unable to find file corresponding to uri {}", uri))),
     }
 }
 

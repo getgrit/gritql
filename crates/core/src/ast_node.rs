@@ -6,6 +6,7 @@ use anyhow::{anyhow, Result};
 
 use grit_pattern_matcher::{
     binding::Binding,
+    errors::GritResult,
     pattern::{
         AstLeafNodePattern, AstNodePattern, Matcher, Pattern, PatternName, PatternOrPredicate,
         ResolvedPattern, State,
@@ -58,7 +59,7 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
         init_state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let Some(binding) = binding.get_last_binding() else {
             return Ok(false);
         };
@@ -140,7 +141,7 @@ impl AstLeafNode {
     pub fn new<'a>(sort: SortId, text: &str, language: &impl MarzanoLanguage<'a>) -> Result<Self> {
         let equivalence_class = language
             .get_equivalence_class(sort, text)
-            .map_err(|e| anyhow!(e))?;
+            .map_err(|e| GritPatternError::new(e))?;
         let text = text.trim();
         Ok(Self {
             sort,
@@ -169,7 +170,7 @@ impl Matcher<MarzanoQueryContext> for AstLeafNode {
         _state: &mut State<'a, MarzanoQueryContext>,
         _context: &'a MarzanoContext<'a>,
         _logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let Some(node) = binding.get_last_binding().and_then(Binding::singleton) else {
             return Ok(false);
         };

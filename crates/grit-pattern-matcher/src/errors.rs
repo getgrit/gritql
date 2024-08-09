@@ -2,11 +2,10 @@ use crate::{
     context::QueryContext,
     pattern::{get_file_name, State},
 };
-use grit_util::{AnalysisLogBuilder, AnalysisLogs};
-use regex::Error as RegexError;
-use std::io;
-use std::num::{ParseFloatError, ParseIntError};
-use thiserror::Error;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogBuilder, AnalysisLogs,
+};
 
 pub fn debug<'a, Q: QueryContext>(
     analysis_logs: &mut AnalysisLogs,
@@ -51,39 +50,3 @@ pub fn warning<'a, Q: QueryContext>(
     }
     Ok(())
 }
-
-#[derive(Error, Debug)]
-pub enum GritPatternError {
-    #[error("Matcher: {0}")]
-    Matcher(String),
-
-    #[error(transparent)]
-    Io(#[from] io::Error),
-
-    #[error(transparent)]
-    ParseFloat(#[from] ParseFloatError),
-
-    #[error(transparent)]
-    ParseInt(#[from] ParseIntError),
-
-    #[error(transparent)]
-    Regex(#[from] RegexError),
-
-    #[error("[Builder] {0}")]
-    Builder(String),
-
-    #[error("{0}")]
-    Generic(String),
-}
-
-impl GritPatternError {
-    pub(crate) fn new_matcher(reason: impl Into<String>) -> Self {
-        Self::Matcher(reason.into())
-    }
-
-    pub fn new(reason: impl Into<String>) -> Self {
-        Self::Generic(reason.into())
-    }
-}
-
-pub type GritResult<R> = Result<R, GritPatternError>;

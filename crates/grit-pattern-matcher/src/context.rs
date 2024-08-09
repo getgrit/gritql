@@ -1,4 +1,3 @@
-use crate::errors::GritResult;
 use crate::{
     binding::Binding,
     file_owners::FileOwners,
@@ -7,7 +6,7 @@ use crate::{
         Pattern, PatternDefinition, PredicateDefinition, ResolvedPattern, State,
     },
 };
-use grit_util::{AnalysisLogs, Ast, AstNode, Language};
+use grit_util::{error::GritResult, AnalysisLogs, Ast, AstNode, Language};
 
 /// Contains various kinds of context about the query being executed.
 pub trait QueryContext: Clone + std::fmt::Debug + Sized + 'static {

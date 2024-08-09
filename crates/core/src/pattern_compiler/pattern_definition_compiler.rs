@@ -21,7 +21,7 @@ impl NodeCompiler for PatternDefinitionCompiler {
         // TODO: make sure pattern definitions are only allowed at the top level
         let name = node
             .child_by_field_name("name")
-            .ok_or_else(|| anyhow!("missing name of patternDefinition"))?;
+            .ok_or_else(|| GritPatternError::new("missing name of patternDefinition"))?;
         let name = name.text()?;
         let name = name.trim();
         let mut local_vars = BTreeMap::new();
@@ -33,14 +33,14 @@ impl NodeCompiler for PatternDefinitionCompiler {
                 .compilation
                 .pattern_definition_info
                 .get(name)
-                .ok_or_else(|| anyhow!("cannot get info for pattern {name}"))?
+                .ok_or_else(|| GritPatternError::new("cannot get info for pattern {name}"))?
                 .parameters,
             &mut context,
         )?;
 
         let body = node
             .child_by_field_name("body")
-            .ok_or_else(|| anyhow!("missing body of patternDefinition"))?;
+            .ok_or_else(|| GritPatternError::new("missing body of patternDefinition"))?;
         let body = AndCompiler::from_node(&body, &mut context)?;
         let pattern_def = PatternDefinition::new(
             name.to_owned(),

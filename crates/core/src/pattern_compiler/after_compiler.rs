@@ -19,7 +19,7 @@ impl NodeCompiler for AfterCompiler {
     ) -> Result<Self::TargetPattern> {
         let pattern = node
             .child_by_field_name("pattern")
-            .ok_or_else(|| anyhow!("missing pattern of patternAfter"))?;
+            .ok_or_else(|| GritPatternError::new("missing pattern of patternAfter"))?;
         let pattern = PatternCompiler::from_node(&pattern, context)?;
         Ok(After::new(pattern))
     }

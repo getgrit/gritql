@@ -21,7 +21,8 @@ use grit_pattern_matcher::{
     },
 };
 use grit_util::{
-    traverse, AnalysisLogs, Ast, AstNode, ByteRange, FileRange, Order, Range, VariableMatch,
+    error::GritResult, traverse, AnalysisLogs, Ast, AstNode, ByteRange, FileRange, Order, Range,
+    VariableMatch,
 };
 use itertools::Itertools;
 use marzano_language::{
@@ -32,7 +33,6 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     ffi::OsStr,
     path::Path,
-    str::Utf8Error,
     vec,
 };
 
@@ -96,13 +96,13 @@ fn insert_definition_index(
 ) -> Result<()> {
     let name = definition
         .child_by_field_name("name")
-        .ok_or_else(|| anyhow!("missing name of patternDefinition"))?;
+        .ok_or_else(|| GritPatternError::new("missing name of patternDefinition"))?;
     let name = name.text()?;
     let name = name.trim();
     let parameters: Vec<_> = definition
         .named_children_by_field_name("args")
         .map(|n| Ok((n.text()?.trim().to_string(), n.byte_range())))
-        .collect::<Result<Vec<(String, ByteRange)>, Utf8Error>>()?;
+        .collect::<GritResult<Vec<(String, ByteRange)>>>()?;
     let duplicates = get_duplicates(&parameters);
     if !duplicates.is_empty() {
         bail!(
@@ -395,7 +395,7 @@ pub(crate) fn defs_to_filenames(
             if let Some(pattern_definition) = definition.child_by_field_name("pattern") {
                 let name = pattern_definition
                     .child_by_field_name("name")
-                    .ok_or_else(|| anyhow!("missing name of pattern definition"))?;
+                    .ok_or_else(|| GritPatternError::new("missing name of pattern definition"))?;
                 let name = name.text()?;
                 let name = name.trim();
                 // todo check for duplicates?
@@ -403,7 +403,7 @@ pub(crate) fn defs_to_filenames(
             } else if let Some(predicate_definition) = definition.child_by_field_name("predicate") {
                 let name = predicate_definition
                     .child_by_field_name("name")
-                    .ok_or_else(|| anyhow!("missing name of pattern definition"))?;
+                    .ok_or_else(|| GritPatternError::new("missing name of pattern definition"))?;
                 let name = name.text()?;
                 let name = name.trim();
                 // todo check for duplicates?
@@ -411,21 +411,19 @@ pub(crate) fn defs_to_filenames(
             } else if let Some(function_definition) = definition.child_by_field_name("function") {
                 let name = function_definition
                     .child_by_field_name("name")
-                    .ok_or_else(|| anyhow!("missing name of function definition"))?;
+                    .ok_or_else(|| GritPatternError::new("missing name of function definition"))?;
                 let name = name.text()?;
                 let name = name.trim();
                 functions.insert(name.to_owned(), file.to_owned());
             } else if let Some(foreign_definition) = definition.child_by_field_name("foreign") {
                 let name = foreign_definition
                     .child_by_field_name("name")
-                    .ok_or_else(|| anyhow!("missing name of function definition"))?;
+                    .ok_or_else(|| GritPatternError::new("missing name of function definition"))?;
                 let name = name.text()?;
                 let name = name.trim();
                 foreign_functions.insert(name.to_owned(), file.to_owned());
             } else {
-                return Err(anyhow!(
-                    "definition must be either a pattern, a predicate or a function"
-                ));
+                return Err(GritPatternError::new("definition must be either a pattern, a predicate or a function"));
             }
         }
         if node.child_by_field_name("pattern").is_some() {
@@ -438,7 +436,7 @@ pub(crate) fn defs_to_filenames(
         if let Some(pattern_definition) = definition.child_by_field_name("pattern") {
             let name = pattern_definition
                 .child_by_field_name("name")
-                .ok_or_else(|| anyhow!("missing name of pattern definition"))?;
+                .ok_or_else(|| GritPatternError::new("missing name of pattern definition"))?;
             let name = name.text()?;
             let name = name.trim();
             // todo check for duplicates?
@@ -446,7 +444,7 @@ pub(crate) fn defs_to_filenames(
         } else if let Some(predicate_definition) = definition.child_by_field_name("predicate") {
             let name = predicate_definition
                 .child_by_field_name("name")
-                .ok_or_else(|| anyhow!("missing name of pattern definition"))?;
+                .ok_or_else(|| GritPatternError::new("missing name of pattern definition"))?;
             let name = name.text()?;
             let name = name.trim();
             // todo check for duplicates?
@@ -454,21 +452,19 @@ pub(crate) fn defs_to_filenames(
         } else if let Some(function_definition) = definition.child_by_field_name("function") {
             let name = function_definition
                 .child_by_field_name("name")
-                .ok_or_else(|| anyhow!("missing name of function definition"))?;
+                .ok_or_else(|| GritPatternError::new("missing name of function definition"))?;
             let name = name.text()?;
             let name = name.trim();
             functions.remove(name);
         } else if let Some(foreign_definition) = definition.child_by_field_name("foreign") {
             let name = foreign_definition
                 .child_by_field_name("name")
-                .ok_or_else(|| anyhow!("missing name of function definition"))?;
+                .ok_or_else(|| GritPatternError::new("missing name of function definition"))?;
             let name = name.text()?;
             let name = name.trim();
             foreign_functions.remove(name);
         } else {
-            return Err(anyhow!(
-                "definition must be either a pattern, a predicate or a function"
-            ));
+            return Err(GritPatternError::new("definition must be either a pattern, a predicate or a function"));
         }
     }
     Ok(DefsToFilenames {
@@ -517,7 +513,7 @@ pub(crate) fn filter_libs(
         }) {
             let name = n
                 .child_by_field_name("name")
-                .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
+                .ok_or_else(|| GritPatternError::new("missing name of nodeLike"))?;
             let name = name.text()?;
             let name = name.trim();
             if n.node.kind() == node_like {

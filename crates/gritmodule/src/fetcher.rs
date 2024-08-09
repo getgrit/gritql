@@ -19,7 +19,7 @@ lazy_static! {
 fn parse_remote(remote: &str) -> Result<(String, String)> {
     let captures = GIT_REMOTE_REGEX
         .captures(remote)
-        .ok_or_else(|| anyhow!("Invalid remote format: could not parse url"))?;
+        .ok_or_else(|| GritPatternError::new("Invalid remote format: could not parse url"))?;
 
     let host = if let Some(matched) = captures.name("git_at") {
         matched.as_str().split('@').last().map(String::from)
@@ -55,8 +55,8 @@ fn parse_remote(remote: &str) -> Result<(String, String)> {
         bail!("Invalid remote format: missing repo")
     };
 
-    let host = host.ok_or_else(|| anyhow!("Missing host"))?;
-    let repo = repo.ok_or_else(|| anyhow!("Missing repo"))?;
+    let host = host.ok_or_else(|| GritPatternError::new("Missing host"))?;
+    let repo = repo.ok_or_else(|| GritPatternError::new("Missing repo"))?;
 
     Ok((host, repo))
 }
@@ -93,7 +93,7 @@ impl LocalRepo {
             .path()
             .parent()
             .map(|p| p.to_path_buf())
-            .ok_or_else(|| anyhow!("Failed to get repo root"))
+            .ok_or_else(|| GritPatternError::new("Failed to get repo root"))
     }
 
     /// Return the current branch, if any
@@ -180,12 +180,12 @@ impl ModuleRepo {
     pub fn from_repo_str(repo: &str) -> Result<Self> {
         let slash_pos = repo
             .find('/')
-            .ok_or_else(|| anyhow!("Invalid format. Missing slash in repo string"))?;
+            .ok_or_else(|| GritPatternError::new("Invalid format. Missing slash in repo string"))?;
         let host = &repo[0..slash_pos];
         let full_name = &repo[slash_pos + 1..];
 
         if host.is_empty() || full_name.is_empty() {
-            return Err(anyhow!("Invalid format. Host or full name is empty"));
+            return Err(GritPatternError::new("Invalid format. Host or full name is empty"));
         }
 
         Self::from_host_repo(host, full_name)

@@ -40,7 +40,7 @@ impl<'a> Messager for JSONLineMessenger<'a> {
         let mut writer = self
             .writer
             .lock()
-            .map_err(|_| anyhow!("JSONLineMessenger lock poisoned"))?;
+            .map_err(|_| GritPatternError::new("JSONLineMessenger lock poisoned"))?;
         match self.mode {
             OutputMode::None => {
                 // do nothing

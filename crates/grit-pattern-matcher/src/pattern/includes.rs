@@ -4,9 +4,11 @@ use super::{
     State,
 };
 use crate::context::{ExecContext, QueryContext};
-use crate::errors::{GritPatternError, GritResult};
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 
 #[derive(Debug, Clone)]
 pub struct Includes<Q: QueryContext> {

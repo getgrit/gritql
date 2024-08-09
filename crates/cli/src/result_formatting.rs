@@ -357,7 +357,7 @@ impl Messager for FormattedMessager<'_> {
                 if let Some(formatted) = formatted {
                     if let Some(writer) = &mut self.writer {
                         let mut writer =
-                            writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
+                            writer.lock().map_err(|_| GritPatternError::new("Output lock poisoned"))?;
                         writeln!(writer, "{}", formatted)?;
                     } else {
                         info!("{}", formatted);
@@ -392,7 +392,7 @@ impl Messager for FormattedMessager<'_> {
         }
 
         if let Some(writer) = &mut self.writer {
-            let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
+            let mut writer = writer.lock().map_err(|_| GritPatternError::new("Output lock poisoned"))?;
             writeln!(writer, "{}", get_pretty_workflow_message(outcome))?;
         } else {
             log::info!("{}", get_pretty_workflow_message(outcome));
@@ -405,7 +405,7 @@ impl Messager for FormattedMessager<'_> {
 
     fn emit_log(&mut self, log: &marzano_messenger::SimpleLogMessage) -> anyhow::Result<()> {
         if let Some(writer) = &mut self.writer {
-            let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
+            let mut writer = writer.lock().map_err(|_| GritPatternError::new("Output lock poisoned"))?;
             writeln!(writer, "[{:?}] {}", log.level, log.message)?;
         } else {
             match log.level {
@@ -465,7 +465,7 @@ impl Messager for TransformedMessenger<'_> {
             MatchResult::Rewrite(file) => {
                 // Write the file contents to the output
                 if let Some(writer) = &mut self.writer {
-                    let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
+                    let mut writer = writer.lock().map_err(|_| GritPatternError::new("Output lock poisoned"))?;
                     writeln!(writer, "{}", file.content().unwrap_or_default())?;
                 } else {
                     info!("{}", file.content().unwrap_or_default());
@@ -474,7 +474,7 @@ impl Messager for TransformedMessenger<'_> {
             MatchResult::CreateFile(file) => {
                 // Write the file contents to the output
                 if let Some(writer) = &mut self.writer {
-                    let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
+                    let mut writer = writer.lock().map_err(|_| GritPatternError::new("Output lock poisoned"))?;
                     writeln!(writer, "{}", file.content().unwrap_or_default())?;
                 } else {
                     info!("{}", file.content().unwrap_or_default());

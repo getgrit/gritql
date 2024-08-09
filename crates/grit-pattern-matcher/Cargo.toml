@@ -15,7 +15,6 @@ publish = true
 rust.unused_crate_dependencies = "warn"
 
 [dependencies]
-thiserror = { version = "1.0.61" }
 elsa = { version = "1.9.0" }
 getrandom = { version = "0.2.11", optional = true }
 grit-util = { path = "../grit-util", version = "0.3.0" }

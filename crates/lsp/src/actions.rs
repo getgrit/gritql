@@ -82,7 +82,7 @@ fn make_suppress_action(
     let language = language_id_to_pattern_language(&document.language_id)
         .unwrap_or(PatternLanguage::JavaScript);
     let target_language =
-        TargetLanguage::try_from(language).map_err(|_| anyhow!("Invalid language"))?;
+        TargetLanguage::try_from(language).map_err(|_| GritPatternError::new("Invalid language"))?;
     let insert_text = make_suppress_comment(Some(local_name), &target_language);
     let whitespace = document
         .text

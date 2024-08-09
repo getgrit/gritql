@@ -3,12 +3,11 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::errors::GritResult;
 use crate::{
     constant::Constant,
     context::{ExecContext, QueryContext},
 };
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct Modulo<Q: QueryContext> {

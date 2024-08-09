@@ -1,5 +1,4 @@
 use super::{patterns::Pattern, variable::Variable, variable_content::VariableContent};
-use crate::errors::{GritPatternError, GritResult};
 use crate::{
     binding::Binding,
     constants::MATCH_VAR,
@@ -9,7 +8,10 @@ use crate::{
     intervals::{earliest_deadline_sort, get_top_level_intervals_in_range, Interval},
     pattern::resolved_pattern::ResolvedPattern,
 };
-use grit_util::{AnalysisLogs, CodeRange, Range, VariableMatch};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, CodeRange, Range, VariableMatch,
+};
 use im::{vector, Vector};
 use rand::SeedableRng;
 use std::ops::Range as StdRange;

@@ -1,9 +1,10 @@
+use grit_util::error::{GritPatternError, GritResult};
+
 use super::{
     accessor::Accessor, list_index::ListIndex, patterns::Pattern, state::State, variable::Variable,
     CallBuiltIn,
 };
 use crate::context::QueryContext;
-use crate::errors::{GritPatternError, GritResult};
 
 /// A `Container` represents anything which "contains" a reference to a Pattern.
 ///

@@ -5,13 +5,12 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::errors::GritResult;
 use crate::pattern::functions::GritCall;
 use crate::{
     context::{ExecContext, QueryContext},
     errors::debug,
 };
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct Match<Q: QueryContext> {

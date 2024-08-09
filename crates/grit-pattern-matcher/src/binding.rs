@@ -1,11 +1,13 @@
-use crate::errors::{GritPatternError, GritResult};
 use crate::{
     constant::Constant,
     context::QueryContext,
     effects::Effect,
     pattern::{FileRegistry, Pattern, ResolvedPattern, State},
 };
-use grit_util::{AnalysisLogs, ByteRange, CodeRange, Range};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, ByteRange, CodeRange, Range,
+};
 use std::path::Path;
 use std::{borrow::Cow, collections::HashMap};
 

@@ -5,9 +5,8 @@ use super::{
     State,
 };
 use crate::context::QueryContext;
-use crate::errors::GritResult;
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct Where<Q: QueryContext> {

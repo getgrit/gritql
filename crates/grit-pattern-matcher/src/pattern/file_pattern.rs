@@ -3,13 +3,12 @@ use super::{
     resolved_pattern::ResolvedPattern,
     state::State,
 };
-use crate::errors::GritResult;
 use crate::{
     constants::{ABSOLUTE_PATH_INDEX, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX, PROGRAM_INDEX},
     context::ExecContext,
 };
 use crate::{context::QueryContext, pattern::resolved_pattern::File};
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct FilePattern<Q: QueryContext> {

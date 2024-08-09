@@ -1,6 +1,8 @@
 use crate::language::{fields_for_nodes, Field, MarzanoLanguage, NodeTypes, SortId, TSLanguage};
-use anyhow::{anyhow, Result};
-use grit_util::{traverse, Language, Order};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    traverse, Language, Order,
+};
 use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
 use std::sync::OnceLock;
 use tree_sitter::{Node, Parser, Range};
@@ -131,12 +133,17 @@ pub(crate) fn get_vue_ranges(
     file: &str,
     parent_node_kind: &str,
     name_array: Option<&[&str]>,
-) -> Result<Vec<Range>> {
+) -> GritResult<Vec<Range>> {
     let vue = Vue::new(None);
-    let mut parser = Parser::new()?;
+    let mut parser = Parser::new().map_err(|e| GritPatternError::new(e.to_string()))?;
     let text = file.as_bytes();
-    parser.set_language(vue.get_ts_language())?;
-    let tree = parser.parse(file, None)?.ok_or(anyhow!("missing tree"))?;
+    parser
+        .set_language(vue.get_ts_language())
+        .map_err(|e| GritPatternError::new(e.to_string()))?;
+    let tree = parser
+        .parse(file, None)
+        .map_err(|e| GritPatternError::new(e.to_string()))?
+        .ok_or(GritPatternError::new("missing tree"))?;
     let cursor = tree.walk();
     let mut ranges = Vec::new();
     for n in traverse(CursorWrapper::new(cursor, file), Order::Pre) {

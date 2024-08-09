@@ -5,8 +5,7 @@ use super::{
     state::State,
 };
 use crate::context::QueryContext;
-use crate::errors::GritResult;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct Maybe<Q: QueryContext> {

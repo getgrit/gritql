@@ -19,7 +19,7 @@ impl NodeCompiler for MaybeCompiler {
     ) -> Result<Self::TargetPattern> {
         let pattern = node
             .child_by_field_name("pattern")
-            .ok_or_else(|| anyhow!("missing pattern of patternMaybe"))?;
+            .ok_or_else(|| GritPatternError::new("missing pattern of patternMaybe"))?;
         let pattern = PatternCompiler::from_node(&pattern, context)?;
         Ok(Maybe::new(pattern))
     }
@@ -37,7 +37,7 @@ impl NodeCompiler for PrMaybeCompiler {
     ) -> Result<Self::TargetPattern> {
         let predicate = node
             .child_by_field_name("predicate")
-            .ok_or_else(|| anyhow!("missing predicate of predicateMaybe"))?;
+            .ok_or_else(|| GritPatternError::new("missing predicate of predicateMaybe"))?;
         let predicate = PredicateCompiler::from_node(&predicate, context)?;
         Ok(PrMaybe::new(predicate))
     }

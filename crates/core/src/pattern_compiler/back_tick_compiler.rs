@@ -23,9 +23,9 @@ impl NodeCompiler for BackTickCompiler {
         range.adjust_columns(1, -1);
         let content = source
             .strip_prefix('`')
-            .ok_or_else(|| anyhow!("Unable to extract content from snippet: {source}"))?
+            .ok_or_else(|| GritPatternError::new("Unable to extract content from snippet: {source}"))?
             .strip_suffix('`')
-            .ok_or_else(|| anyhow!("Unable to extract content from snippet: {source}"))?;
+            .ok_or_else(|| GritPatternError::new("Unable to extract content from snippet: {source}"))?;
         parse_snippet_content(content, range.into(), context, is_rhs)
     }
 }
@@ -49,9 +49,9 @@ impl NodeCompiler for RawBackTickCompiler {
         range.adjust_columns(4, -1);
         let content = source
             .strip_prefix("raw`")
-            .ok_or_else(|| anyhow!("Unable to extract content from raw snippet: {}", source))?
+            .ok_or_else(|| GritPatternError::new(format!("Unable to extract content from raw snippet: {}", source)))?
             .strip_suffix('`')
-            .ok_or_else(|| anyhow!("Unable to extract content from raw snippet: {}", source))?;
+            .ok_or_else(|| GritPatternError::new(format!("Unable to extract content from raw snippet: {}", source)))?;
         parse_snippet_content(content, range.into(), context, is_rhs)
     }
 }

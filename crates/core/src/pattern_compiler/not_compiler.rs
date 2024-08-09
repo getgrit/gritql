@@ -23,7 +23,7 @@ impl NodeCompiler for NotCompiler {
     ) -> Result<Self::TargetPattern> {
         let pattern = node
             .child_by_field_name("pattern")
-            .ok_or_else(|| anyhow!("missing pattern of patternNot"))?;
+            .ok_or_else(|| GritPatternError::new("missing pattern of patternNot"))?;
         let range = pattern.range();
         let pattern = PatternCompiler::from_node(&pattern, context)?;
         if pattern.iter(&StaticDefinitions::default()).any(|p| {
@@ -59,7 +59,7 @@ impl NodeCompiler for PrNotCompiler {
     ) -> Result<Self::TargetPattern> {
         let not = node
             .child_by_field_name("predicate")
-            .ok_or_else(|| anyhow!("predicateNot missing predicate"))?;
+            .ok_or_else(|| GritPatternError::new("predicateNot missing predicate"))?;
         let range = not.range();
         let not = PredicateCompiler::from_node(&not, context)?;
         if not.iter(&StaticDefinitions::default()).any(|p| {

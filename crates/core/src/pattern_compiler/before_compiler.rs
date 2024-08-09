@@ -19,7 +19,7 @@ impl NodeCompiler for BeforeCompiler {
     ) -> Result<Self::TargetPattern> {
         let pattern = node
             .child_by_field_name("pattern")
-            .ok_or_else(|| anyhow!("missing pattern of patternBefore"))?;
+            .ok_or_else(|| GritPatternError::new("missing pattern of patternBefore"))?;
         let pattern = PatternCompiler::from_node(&pattern, context)?;
         Ok(Before::new(pattern))
     }

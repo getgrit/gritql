@@ -6,10 +6,9 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::errors::GritResult;
 use crate::{binding::Binding, context::QueryContext};
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct Or<Q: QueryContext> {

@@ -130,11 +130,11 @@ pub async fn get_marzano_pattern_test_results(
                     if e.to_string().contains("No pattern found") {
                         Ok(None)
                     } else {
-                        Err(anyhow!(format!(
+                        Err(GritPatternError::new(format!(format, (
                             "Failed to compile pattern {}: {}",
                             pattern.local_name.clone().unwrap_or(pattern.body.clone()),
                             e,
-                        )))
+                        ))))
                     }
                 }
             }

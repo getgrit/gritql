@@ -19,7 +19,7 @@ use grit_pattern_matcher::{
         PredicateDefinition, ResolvedPattern, State,
     },
 };
-use grit_util::{AnalysisLogs, Ast, FileOrigin, InputRanges, MatchRanges};
+use grit_util::{error::GritResult, AnalysisLogs, Ast, FileOrigin, InputRanges, MatchRanges};
 use im::vector;
 use marzano_language::{
     language::{MarzanoLanguage, Tree},
@@ -115,7 +115,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
         context: &'a Self,
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
-    ) -> Result<MarzanoResolvedPattern<'a>> {
+    ) -> GritResult<MarzanoResolvedPattern<'a>> {
         self.built_ins.call(call, context, state, logs)
     }
 
@@ -124,7 +124,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
         file: &MarzanoFile<'a>,
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
-    ) -> anyhow::Result<bool> {
+    ) -> GritResult<bool> {
         match file {
             MarzanoFile::Resolved(_) => {
                 // Assume the file is already loaded
@@ -177,7 +177,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
         binding: &MarzanoResolvedPattern<'a>,
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let mut parser = self.language().get_parser();
 
         let mut files = if let Some(files) = binding.get_file_pointers() {
@@ -291,10 +291,10 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                         logs,
                     )?
                     .ok_or_else(|| {
-                        anyhow!(
+                        GritPatternError::new(format!(
                             "failed to construct new file for file {}",
                             new_filename.to_string_lossy()
-                        )
+                        ))
                     })?;
 
                     self.files().push(rewritten_file);
@@ -339,9 +339,9 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 logs,
             )?
             .ok_or_else(|| {
-                anyhow!(
+                GritPatternError::new(
                     "failed to construct new file for file {}",
-                    name.to_string_lossy()
+                    name.to_string_lossy(),
                 )
             })?;
             self.files().push(owned_file);

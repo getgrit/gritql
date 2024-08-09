@@ -135,11 +135,8 @@ pub(crate) async fn run_plumbing(
         } => {
             let buffer = read_input(&shared_args)?;
             let input: PlumbingApplyInput = serde_json::from_str::<PlumbingApplyInput>(&buffer).map_err(|e| {
-                anyhow!(
-                    "Failed to parse input JSON: {}. Ensure that input matches schema \
-                    {{ pattern_body: string; pattern_libs: {{ [string]: string }}; paths: string[]; }}",
-                    e
-                )
+                GritPatternError::new(format!("Failed to parse input JSON: {}. Ensure that input matches schema \
+                    {{ pattern_body: string; pattern_libs: {{ [string]: string }}; paths: string[]; }}", e))
             })?;
             let grit_files = if input.paths.is_empty() {
                 PatternsDirectory::new()
@@ -173,11 +170,8 @@ pub(crate) async fn run_plumbing(
         PlumbingArgs::Parse { shared_args } => {
             let buffer = read_input(&shared_args)?;
             let input = serde_json::from_str::<ParseInput>(&buffer).map_err(|e| {
-                anyhow!(
-                    "Failed to parse input JSON: {}. Ensure that input matches schema \
-                    {{ pattern_body: string; paths: string[]; }}",
-                    e
-                )
+                GritPatternError::new(format!("Failed to parse input JSON: {}. Ensure that input matches schema \
+                    {{ pattern_body: string; paths: string[]; }}", e))
             })?;
             let pattern_body = input.pattern_body.clone();
             run_parse(input.into(), parent, Some(pattern_body)).await
@@ -203,11 +197,8 @@ pub(crate) async fn run_plumbing(
         PlumbingArgs::Check { args, shared_args } => {
             let buffer = read_input(&shared_args)?;
             let input = serde_json::from_str::<PlumbingCheckInput>(&buffer).map_err(|e| {
-                anyhow!(
-                    "Failed to parse input JSON: {}. Ensure that input matches schema \
-                    {{ paths: string[]; }}",
-                    e
-                )
+                GritPatternError::new(format!("Failed to parse input JSON: {}. Ensure that input matches schema \
+                    {{ paths: string[]; }}", e))
             })?;
             if input.paths.is_empty() {
                 return Ok(());
@@ -230,11 +221,8 @@ pub(crate) async fn run_plumbing(
             let buffer = read_input(&shared_args)?;
             let input =
                 serde_json::from_str::<PlumbingPatternsListInput>(&buffer).map_err(|e| {
-                    anyhow!(
-                        "Failed to parse input JSON: {}. Ensure that input matches schema \
-                    {{ grit_dir: string; }}",
-                        e
-                    )
+                    GritPatternError::new(format!("Failed to parse input JSON: {}. Ensure that input matches schema \
+                    {{ grit_dir: string; }}", e))
                 })?;
             let grit_parent = match input.grit_dir.parent() {
                 Some(parent) => parent,
@@ -261,11 +249,8 @@ pub(crate) async fn run_plumbing(
             let buffer = read_input(&shared_args)?;
             let patterns =
                 serde_json::from_str::<Vec<GritPatternTestInfo>>(&buffer).map_err(|e| {
-                    anyhow!(
-                        "Failed to parse input JSON: {}. Ensure that input has correct schema. This command is
-                        compatible with the output of `grit patterns list` --json`",
-                        e
-                    )
+                    GritPatternError::new(format!("Failed to parse input JSON: {}. Ensure that input has correct schema. This command is
+                        compatible with the output of `grit patterns list` --json`", e))
                 })?;
 
             let cwd = std::env::current_dir()?;

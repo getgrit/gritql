@@ -25,7 +25,7 @@ fn gets_json_output() -> Result<()> {
     );
 
     let stdout = String::from_utf8(output.stdout)?;
-    let line = stdout.lines().next().ok_or_else(|| anyhow!("No output"))?;
+    let line = stdout.lines().next().ok_or_else(|| GritPatternError::new("No output"))?;
     let v: serde_json::Value = serde_json::from_str(line)?;
 
     assert_yaml_snapshot!(v);

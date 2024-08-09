@@ -35,7 +35,7 @@ fn walk_call_tree(
         }
         let name = n
             .child_by_field_name("name")
-            .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
+            .ok_or_else(|| GritPatternError::new("missing name of nodeLike"))?;
         let name = name.text()?;
         let name = OsStr::new(name.trim());
         let maybe_call = libs
@@ -79,7 +79,7 @@ pub fn is_async(
         }
         let name = n
             .child_by_field_name("name")
-            .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
+            .ok_or_else(|| GritPatternError::new("missing name of nodeLike"))?;
         let name = name.text()?;
         Ok(name == "llm_chat")
     })
@@ -94,7 +94,7 @@ pub fn defines_itself(root: &NodeWithSource, root_name: &str) -> Result<bool> {
         }
         let name = n
             .child_by_field_name("name")
-            .ok_or_else(|| anyhow!("missing name of patternDefinition"))?;
+            .ok_or_else(|| GritPatternError::new("missing name of patternDefinition"))?;
         let name = name.text()?;
         let name = name.trim();
         if name == root_name {
@@ -146,7 +146,7 @@ pub fn get_dependents_of_target_patterns_by_traversal_from_src(
         }) {
             let name = n
                 .child_by_field_name("name")
-                .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
+                .ok_or_else(|| GritPatternError::new("missing name of nodeLike"))?;
             let name = name.text()?;
             let name = name.trim().to_string();
 

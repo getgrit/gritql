@@ -1431,7 +1431,6 @@ dependencies = [
  "itertools 0.10.5",
  "rand",
  "regex",
- "thiserror",
 ]
 
 [[package]]
@@ -1444,6 +1443,7 @@ dependencies = [
  "once_cell",
  "regex",
  "serde",
+ "thiserror",
 ]
 
 [[package]]

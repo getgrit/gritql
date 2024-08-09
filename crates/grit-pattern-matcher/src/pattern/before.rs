@@ -3,13 +3,15 @@ use super::{
     resolved_pattern::ResolvedPattern,
     State,
 };
-use crate::errors::{GritPatternError, GritResult};
 use crate::{
     binding::Binding,
     context::{ExecContext, QueryContext},
     errors::debug,
 };
-use grit_util::{AnalysisLogs, AstNode};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, AstNode,
+};
 
 #[derive(Debug, Clone)]
 pub struct Before<Q: QueryContext> {

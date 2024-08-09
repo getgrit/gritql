@@ -106,7 +106,7 @@ pub async fn maybe_test_pattern(
 
     let pattern_libs = grit_files
         .get_language_directory_or_default(Some(language))
-        .map_err(|e| anyhow!(e))?;
+        .map_err(|e| GritPatternError::new(e))?;
 
     send_run_state(client, test_run_id.clone(), RunGritTestState::Started).await?;
 

@@ -6,10 +6,12 @@ use super::{
     variable_content::VariableContent,
     State,
 };
-use crate::errors::{GritPatternError, GritResult};
 use crate::{context::QueryContext, effects::Effect};
 use core::fmt::Debug;
-use grit_util::{AnalysisLogs, EffectKind};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, EffectKind,
+};
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]

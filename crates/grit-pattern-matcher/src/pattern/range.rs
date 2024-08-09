@@ -4,8 +4,10 @@ use super::{
     state::State,
 };
 use crate::context::{ExecContext, QueryContext};
-use crate::errors::{GritPatternError, GritResult};
-use grit_util::{AnalysisLogs, UtilRange};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, UtilRange,
+};
 
 #[derive(Debug, Clone)]
 pub struct Point {

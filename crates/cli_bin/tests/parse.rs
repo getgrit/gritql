@@ -31,7 +31,7 @@ fn returns_input_file() -> Result<()> {
     let line = stdout
         .lines()
         .next_back()
-        .ok_or_else(|| anyhow!("No output"))?;
+        .ok_or_else(|| GritPatternError::new("No output"))?;
     let v: serde_json::Value = serde_json::from_str(line)?;
 
     let found_input_file = v
@@ -77,7 +77,7 @@ fn returns_input_file_when_pattern_has_syntax_error() -> Result<()> {
     let line = stdout
         .lines()
         .next_back()
-        .ok_or_else(|| anyhow!("No output"))?;
+        .ok_or_else(|| GritPatternError::new("No output"))?;
     let v: serde_json::Value = serde_json::from_str(line)?;
 
     let found_input_file = v
@@ -288,7 +288,7 @@ fn no_extraneous_ranges_for_multiple_metavariables_in_snippet() -> Result<()> {
     let deserialized: serde_json::Value = serde_json::from_str(&stdout)?;
     let variables = deserialized
         .get("variables")
-        .ok_or_else(|| anyhow!("No variables"))?;
+        .ok_or_else(|| GritPatternError::new("No variables"))?;
     let variables = variables.as_array().unwrap();
     let bar = variables
         .iter()
@@ -342,7 +342,7 @@ fn no_extraneous_ranges_for_multiple_metavariables_in_snippet_with_rewrite() -> 
     let deserialized: serde_json::Value = serde_json::from_str(&stdout)?;
     let variables = deserialized
         .get("variables")
-        .ok_or_else(|| anyhow!("No variables"))?;
+        .ok_or_else(|| GritPatternError::new("No variables"))?;
     let variables = variables.as_array().unwrap();
 
     let description = variables

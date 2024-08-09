@@ -5,9 +5,11 @@ use super::{
     patterns::{Pattern, PatternName},
     State,
 };
-use crate::errors::{GritPatternError, GritResult};
 use crate::{context::ExecContext, context::QueryContext};
-use grit_util::AnalysisLogs;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 
 #[derive(Clone, Debug)]
 pub struct Call<Q: QueryContext> {

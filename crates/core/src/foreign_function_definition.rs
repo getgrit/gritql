@@ -11,12 +11,14 @@ use grit_pattern_matcher::{
         ResolvedPattern, State, Variable,
     },
 };
-use grit_util::AnalysisLogs;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 #[cfg(feature = "external_functions")]
 use marzano_externals::function::ExternalFunction;
 use marzano_language::foreign_language::ForeignLanguage;
 use std::borrow::Cow;
-use grit_pattern_matcher::errors::{GritPatternError, GritResult};
 
 #[derive(Debug, Clone)]
 pub struct ForeignFunctionDefinition {
@@ -62,7 +64,7 @@ impl FunctionDefinition<MarzanoQueryContext> for ForeignFunctionDefinition {
         context: &'a MarzanoContext<'a>,
         args: &'a [Option<Pattern<MarzanoQueryContext>>],
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<MarzanoQueryContext>> {
+    ) -> GritResult<FuncEvaluation<MarzanoQueryContext>> {
         let param_names = self
             .params
             .iter()
@@ -132,7 +134,9 @@ impl GritCall<MarzanoQueryContext> for CallForeignFunction<MarzanoQueryContext> 
             .ret_val
         {
             Some(pattern) => Ok(pattern),
-            None =>Err(GritPatternError::new("Function call did not return a value")),
+            None => Err(GritPatternError::new(
+                "Function call did not return a value",
+            )),
         }
     }
 }

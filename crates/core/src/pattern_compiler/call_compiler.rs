@@ -25,7 +25,7 @@ impl NodeCompiler for CallCompiler {
     ) -> Result<Pattern<MarzanoQueryContext>> {
         let sort = node
             .child_by_field_name("name")
-            .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
+            .ok_or_else(|| GritPatternError::new("missing name of nodeLike"))?;
         let kind = sort.text()?;
         let kind = kind.trim();
         let lang = context.compilation.lang;
@@ -65,7 +65,7 @@ impl NodeCompiler for CallCompiler {
         }
         let mut args = named_args_to_hash_map(named_args, context)?;
         if args.len() != named_args_count {
-            return Err(anyhow!("duplicate named args for invocation of {}", kind));
+            return Err(GritPatternError::new(format!("duplicate named args for invocation of {}", kind)));
         }
         if kind == "file" {
             for arg in &args {
@@ -90,10 +90,10 @@ impl NodeCompiler for CallCompiler {
             .position(|b| b.name == kind)
         {
             if !is_rhs {
-                return Err(anyhow!(format!(
+                return Err(GritPatternError::new(format!(format, (
                     "built-in {} can only be used on the right hand side of a rewrite",
                     kind
-                )));
+                ))));
             }
             Ok(Pattern::CallBuiltIn(Box::new(BuiltIns::call_from_args(
                 args,
@@ -122,10 +122,7 @@ impl NodeCompiler for CallCompiler {
                 .pattern_definition_info
                 .get(kind)
                 .ok_or_else(|| {
-                    anyhow!(
-                        "pattern definition not found: {}. Try running grit init.",
-                        kind
-                    )
+                    GritPatternError::new(format!("pattern definition not found: {}. Try running grit init.", kind))
                 })?;
             let args = match_args_to_params(kind, args, &collect_params(&info.parameters), lang)?;
             Ok(Pattern::Call(Box::new(Call::new(
@@ -148,7 +145,7 @@ impl NodeCompiler for PrCallCompiler {
     ) -> Result<Self::TargetPattern> {
         let name = node
             .child_by_field_name("name")
-            .ok_or_else(|| anyhow!("missing pattern, predicate, or sort name"))?;
+            .ok_or_else(|| GritPatternError::new("missing pattern, predicate, or sort name"))?;
         let name = name.text()?;
         let name = name.trim();
         let named_args_count = node.named_children_by_field_name("named_args").count();
@@ -166,7 +163,7 @@ impl NodeCompiler for PrCallCompiler {
             node_to_args_pairs(named_args, context.compilation.lang, name, &expected_params)?;
         let args = named_args_to_hash_map(named_args, context)?;
         if args.len() != named_args_count {
-            return Err(anyhow!("duplicate named args for invocation of {name}"));
+            return Err(GritPatternError::new("duplicate named args for invocation of {name}"));
         }
 
         let args = match_args_to_params(name, args, &params, context.compilation.lang)?;
@@ -239,20 +236,20 @@ fn node_to_args_pairs<'a>(
                         None => None,
                     })
                     .ok_or_else(|| if let Some(exp) = expected_params {
-                        anyhow!("Too many params for {}: expected maximum {}", kind, exp.len())
+                        GritPatternError::new("Too many params for {}: expected maximum {}", kind, exp.len())
                     } else {
-                        anyhow!("Variable {} in params is missing a prefix. Try prepending an attribute name: for example, instead of `ensure_import_from(js\"'package'\")`, try `ensure_import_from(source=js\"'package'\")`", name)
+                        GritPatternError::new(format!("Variable {} in params is missing a prefix. Try prepending an attribute name: for example, instead of `ensure_import_from(js\"'package'\")`, try `ensure_import_from(source=js\"'package'\")`", name))
                     })?;
                 Ok((name.to_owned(), var))
             } else {
                 let name = node
                     .child_by_field_name("name")
-                    .ok_or_else(|| anyhow!("missing name of named arg"))?;
+                    .ok_or_else(|| GritPatternError::new("missing name of named arg"))?;
                 let name = name.text()?;
                 let name = name.trim();
                 let pattern = node
                     .child_by_field_name("pattern")
-                    .ok_or_else(|| anyhow!("missing pattern of named arg"))?;
+                    .ok_or_else(|| GritPatternError::new("missing pattern of named arg"))?;
                 Ok((name.to_owned(), pattern))
             }
         })

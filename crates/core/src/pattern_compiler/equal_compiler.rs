@@ -19,18 +19,16 @@ impl NodeCompiler for EqualCompiler {
     ) -> Result<Self::TargetPattern> {
         let variable = node
             .child_by_field_name("left")
-            .ok_or_else(|| anyhow!("missing lhs of predicateEqual"))?;
+            .ok_or_else(|| GritPatternError::new("missing lhs of predicateEqual"))?;
         let variable = PatternCompiler::from_node_with_rhs(&variable, context, true)?;
         let pattern = node
             .child_by_field_name("right")
-            .ok_or_else(|| anyhow!("missing rhs of predicateEqual"))?;
+            .ok_or_else(|| GritPatternError::new("missing rhs of predicateEqual"))?;
         let pattern = PatternCompiler::from_node_with_rhs(&pattern, context, true)?;
         if let Pattern::Variable(var) = variable {
             Ok(Equal::new(var, pattern))
         } else {
-            Err(anyhow!(
-                "predicateEqual must have a variable as first argument",
-            ))
+            Err(GritPatternError::new("predicateEqual must have a variable as first argument"))
         }
     }
 }

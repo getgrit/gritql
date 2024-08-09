@@ -32,7 +32,7 @@ impl NodeCompiler for CodeSnippetCompiler {
     ) -> Result<Self::TargetPattern> {
         let snippet = node
             .child_by_field_name("source")
-            .ok_or_else(|| anyhow!("missing content of codeSnippet"))?;
+            .ok_or_else(|| GritPatternError::new("missing content of codeSnippet"))?;
         match snippet.node.kind().as_ref() {
             "backtickSnippet" => BackTickCompiler::from_node_with_rhs(&snippet, context, is_rhs),
             "rawBacktickSnippet" => {
@@ -58,21 +58,21 @@ impl NodeCompiler for LanguageSpecificSnippetCompiler {
     ) -> Result<Self::TargetPattern> {
         let lang_node = node
             .child_by_field_name("language")
-            .ok_or_else(|| anyhow!("missing language of languageSpecificSnippet"))?;
+            .ok_or_else(|| GritPatternError::new("missing language of languageSpecificSnippet"))?;
         let lang_name = lang_node.text()?.trim().to_string();
         let _snippet_lang = TargetLanguage::from_string(&lang_name, None)
-            .ok_or_else(|| anyhow!("invalid language: {lang_name}"))?;
+            .ok_or_else(|| GritPatternError::new("invalid language: {lang_name}"))?;
         let snippet_node = node
             .child_by_field_name("snippet")
-            .ok_or_else(|| anyhow!("missing snippet of languageSpecificSnippet"))?;
+            .ok_or_else(|| GritPatternError::new("missing snippet of languageSpecificSnippet"))?;
         let source = snippet_node.text()?.to_string();
         let mut range = node.range();
         range.adjust_columns(1, -1);
         let content = source
             .strip_prefix('"')
-            .ok_or_else(|| anyhow!("Unable to extract content from raw snippet: {source}"))?
+            .ok_or_else(|| GritPatternError::new("Unable to extract content from raw snippet: {source}"))?
             .strip_suffix('"')
-            .ok_or_else(|| anyhow!("Unable to extract content from raw snippet: {source}"))?;
+            .ok_or_else(|| GritPatternError::new("Unable to extract content from raw snippet: {source}"))?;
 
         parse_snippet_content(content, range.into(), context, is_rhs)
     }

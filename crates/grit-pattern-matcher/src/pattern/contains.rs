@@ -3,14 +3,13 @@ use super::{
     resolved_pattern::{LazyBuiltIn, ResolvedPattern, ResolvedSnippet},
     State,
 };
-use crate::errors::GritResult;
 use crate::{
     binding::Binding, constants::PROGRAM_INDEX, context::QueryContext,
     pattern::resolved_pattern::File,
 };
 use crate::{constants::GLOBAL_VARS_SCOPE_INDEX, context::ExecContext};
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 use grit_util::{AstCursor, AstNode};
 
 #[derive(Debug, Clone)]

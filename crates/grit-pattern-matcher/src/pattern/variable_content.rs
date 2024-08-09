@@ -1,5 +1,6 @@
+use grit_util::error::{GritPatternError, GritResult};
+
 use super::{resolved_pattern::ResolvedPattern, state::State, variable::Variable};
-use crate::errors::{GritPatternError, GritResult};
 use crate::{context::QueryContext, pattern::patterns::Pattern};
 use std::borrow::Cow;
 

@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use grit_util::error::{GritPatternError, GritResult};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, cmp::Ordering, path::PathBuf};
 
@@ -81,40 +81,42 @@ pub trait FileName {
 }
 
 pub trait TryIntoInputFile {
-    fn try_into_cow(&self) -> Result<Cow<RichFile>>;
+    fn try_into_cow(&self) -> GritResult<Cow<RichFile>>;
 }
 
 // there must be a better way right?
 impl TryIntoInputFile for &(RichFile, [u8; 32]) {
-    fn try_into_cow(&self) -> Result<Cow<RichFile>> {
+    fn try_into_cow(&self) -> GritResult<Cow<RichFile>> {
         Ok(Cow::Borrowed(&self.0))
     }
 }
 
 impl TryIntoInputFile for &RichFile {
-    fn try_into_cow(&self) -> Result<Cow<RichFile>> {
+    fn try_into_cow(&self) -> GritResult<Cow<RichFile>> {
         Ok(Cow::Borrowed(self))
     }
 }
 
 impl TryIntoInputFile for RichFile {
-    fn try_into_cow(&self) -> Result<Cow<RichFile>> {
+    fn try_into_cow(&self) -> GritResult<Cow<RichFile>> {
         Ok(Cow::Borrowed(self))
     }
 }
 
 impl TryIntoInputFile for PathBuf {
-    fn try_into_cow(&self) -> Result<Cow<RichFile>> {
+    fn try_into_cow(&self) -> GritResult<Cow<RichFile>> {
         let name = self.to_string_lossy().to_string();
-        let content = fs_err::read_to_string(self).map_err(|e| anyhow!(e))?;
+        let content =
+            fs_err::read_to_string(self).map_err(|e| GritPatternError::new(e.to_string()))?;
         Ok(Cow::Owned(RichFile::new(name, content)))
     }
 }
 
 impl TryIntoInputFile for &RichPath {
-    fn try_into_cow(&self) -> Result<Cow<RichFile>> {
+    fn try_into_cow(&self) -> GritResult<Cow<RichFile>> {
         let name = self.path.to_string_lossy().to_string();
-        let content = fs_err::read_to_string(&self.path).map_err(|e| anyhow!(e))?;
+        let content =
+            fs_err::read_to_string(&self.path).map_err(|e| GritPatternError::new(e.to_string()))?;
         Ok(Cow::Owned(RichFile::new(name, content)))
     }
 }

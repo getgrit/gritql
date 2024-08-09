@@ -1,5 +1,5 @@
 use anyhow::Result;
-use grit_util::ByteRange;
+use grit_util::{error::GritResult, ByteRange};
 use serde_json::json;
 
 /// A source map is used when the code we are parsing is embedded inside a larger file.
@@ -41,7 +41,7 @@ impl EmbeddedSourceMap {
     pub fn clone_with_edits<'a>(
         &self,
         adjustments: impl Iterator<Item = &'a (std::ops::Range<usize>, usize)>,
-    ) -> Result<EmbeddedSourceMap> {
+    ) -> GritResult<EmbeddedSourceMap> {
         let mut new_map = self.clone();
 
         println!("New adjustment cycle!");

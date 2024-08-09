@@ -47,14 +47,16 @@ use super::{
     within::Within,
     State,
 };
-use crate::errors::{GritPatternError, GritResult};
 use crate::{
     constants::{FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX},
     context::{ExecContext, QueryContext},
     pattern::resolved_pattern::File,
 };
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 
 pub trait Matcher<Q: QueryContext>: Debug {
     // it is important that any implementors of Pattern

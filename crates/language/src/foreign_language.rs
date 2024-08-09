@@ -23,7 +23,7 @@ impl TryFrom<&str> for ForeignLanguage {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
             "js" => Ok(Self::JavaScript),
-            lang => Err(anyhow!("Foreign language {} is unsupported", lang)),
+            lang => Err(GritPatternError::new(format!("Foreign language {} is unsupported", lang))),
         }
     }
 }

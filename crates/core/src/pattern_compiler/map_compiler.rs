@@ -24,12 +24,12 @@ impl NodeCompiler for MapCompiler {
         for element in children {
             let key = element
                 .child_by_field_name("key")
-                .ok_or_else(|| anyhow!("key not found in map element"))?
+                .ok_or_else(|| GritPatternError::new("key not found in map element"))?
                 .text()?
                 .to_string();
             let value = element
                 .child_by_field_name("value")
-                .ok_or_else(|| anyhow!("value not found in map element"))?;
+                .ok_or_else(|| GritPatternError::new("value not found in map element"))?;
             let pattern = PatternCompiler::from_node_with_rhs(&value, context, is_rhs)?;
             elements.insert(key, pattern);
         }

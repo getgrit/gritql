@@ -5,9 +5,11 @@ use super::{
     state::State,
 };
 use crate::context::QueryContext;
-use crate::errors::{GritPatternError, GritResult};
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]

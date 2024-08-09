@@ -1,6 +1,6 @@
 use super::cursor_wrapper::CursorWrapper;
-use grit_util::{AstCursor, AstNode, ByteRange, CodeRange, Position, Range};
-use std::{borrow::Cow, ptr, str::Utf8Error};
+use grit_util::{error::GritResult, AstCursor, AstNode, ByteRange, CodeRange, Position, Range};
+use std::{borrow::Cow, ptr};
 use tree_sitter::Node;
 
 /// A TreeSitter node, including a reference to the source code from which it
@@ -127,8 +127,8 @@ impl<'a> AstNode for NodeWithSource<'a> {
             .map(|sibling| Self::new(sibling, self.source))
     }
 
-    fn text(&self) -> Result<Cow<str>, Utf8Error> {
-        self.node.utf8_text(self.source.as_bytes())
+    fn text(&self) -> GritResult<Cow<str>> {
+        Ok(self.node.utf8_text(self.source.as_bytes())?)
     }
 
     fn byte_range(&self) -> ByteRange {

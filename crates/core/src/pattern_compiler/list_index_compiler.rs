@@ -20,7 +20,7 @@ impl NodeCompiler for ListIndexCompiler {
     ) -> Result<Self::TargetPattern> {
         let list = node
             .child_by_field_name("list")
-            .ok_or_else(|| anyhow!("missing list of listIndex"))?;
+            .ok_or_else(|| GritPatternError::new("missing list of listIndex"))?;
         let list = if list.node.kind() == "list" {
             ListOrContainer::List(ListCompiler::from_node(&list, context)?)
         } else {
@@ -29,14 +29,14 @@ impl NodeCompiler for ListIndexCompiler {
 
         let index_node = node
             .child_by_field_name("index")
-            .ok_or_else(|| anyhow!("missing index of listIndex"))?;
+            .ok_or_else(|| GritPatternError::new("missing index of listIndex"))?;
 
         let index = if index_node.node.kind() == "signedIntConstant" {
             ContainerOrIndex::Index(
                 index_node
                     .text()?
                     .parse::<isize>()
-                    .map_err(|_| anyhow!("list index must be an integer"))?,
+                    .map_err(|_| GritPatternError::new("list index must be an integer"))?,
             )
         } else {
             ContainerOrIndex::Container(ContainerCompiler::from_node(&index_node, context)?)

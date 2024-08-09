@@ -19,7 +19,7 @@ impl NodeCompiler for SomeCompiler {
     ) -> Result<Self::TargetPattern> {
         let within = node
             .child_by_field_name("pattern")
-            .ok_or_else(|| anyhow!("missing pattern of pattern some"))?;
+            .ok_or_else(|| GritPatternError::new("missing pattern of pattern some"))?;
         let within = PatternCompiler::from_node(&within, context)?;
         Ok(Some::new(within))
     }

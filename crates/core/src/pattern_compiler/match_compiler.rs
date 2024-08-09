@@ -19,11 +19,11 @@ impl NodeCompiler for MatchCompiler {
     ) -> Result<Self::TargetPattern> {
         let value = node
             .child_by_field_name("left")
-            .ok_or_else(|| anyhow!("missing lhs of predicateMatch"))?;
+            .ok_or_else(|| GritPatternError::new("missing lhs of predicateMatch"))?;
         let value = ContainerCompiler::from_node(&value, context)?;
         let pattern = node
             .child_by_field_name("right")
-            .ok_or_else(|| anyhow!("missing rhs of predicateMatch"))?;
+            .ok_or_else(|| GritPatternError::new("missing rhs of predicateMatch"))?;
         let pattern = Some(PatternCompiler::from_node(&pattern, context)?);
         Ok(Match::new(value, pattern))
     }

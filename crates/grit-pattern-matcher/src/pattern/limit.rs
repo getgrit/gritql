@@ -2,9 +2,8 @@ use super::{
     patterns::{Matcher, Pattern, PatternName},
     state::State,
 };
-use crate::errors::GritResult;
 use crate::{context::ExecContext, context::QueryContext};
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
