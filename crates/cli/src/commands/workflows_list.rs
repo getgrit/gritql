@@ -16,7 +16,7 @@ pub async fn run_list_workflows(
     parent: &GlobalFormatFlags,
 ) -> Result<()> {
     if parent.json || parent.jsonl {
-        bail!("JSON output not supported for workflows");
+        return Err(GritPatternError::new("JSON output not supported for workflows"));
     }
     let (_resolved, curr_repo) = resolve_from_cwd(&Source::All).await?;
 

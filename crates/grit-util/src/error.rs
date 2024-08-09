@@ -2,6 +2,7 @@ use regex::Error as RegexError;
 use std::io;
 use std::num::{ParseFloatError, ParseIntError};
 use std::str::Utf8Error;
+use std::string::FromUtf8Error;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -23,6 +24,9 @@ pub enum GritPatternError {
 
     #[error(transparent)]
     Utf8(#[from] Utf8Error),
+
+    #[error(transparent)]
+    FromUtf8(#[from] FromUtf8Error),
 
     #[error("[Builder] {0}")]
     Builder(String),

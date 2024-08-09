@@ -21,11 +21,9 @@ pub async fn install_default_stdlib(
                     installed_modules.insert(stdlib.provider_name);
                 }
                 Err(err) => {
-                    bail!(
-                        "Failed to fetch standard library grit module {}: {}",
+                    return Err(GritPatternError::new("Failed to fetch standard library grit module {}: {}",
                         stdlib.full_name,
-                        err.to_string()
-                    )
+                        err.to_string()))
                 }
             }
         }
@@ -55,11 +53,9 @@ pub async fn install_grit_modules(
         let repo_dir = match fetcher.fetch_grit_module(&module) {
             Ok(repo_dir) => repo_dir,
             Err(err) => {
-                bail!(
-                    "Failed to fetch grit module {}: {}",
+                return Err(GritPatternError::new("Failed to fetch grit module {}: {}",
                     module.full_name,
-                    err.to_string()
-                )
+                    err.to_string()))
             }
         };
         parse_grit_module(

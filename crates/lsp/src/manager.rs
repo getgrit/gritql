@@ -43,7 +43,7 @@ impl GritServerManager {
     pub async fn drop_document(&self, uri: DocumentKey) -> Result<()> {
         let cmd = DocumentAction::Drop { uri };
         if self.documents.send(cmd).await.is_err() {
-            bail!("Could not send document action to document manager");
+            return Err(GritPatternError::new("Could not send document action to document manager"));
         };
         Ok(())
     }
@@ -62,7 +62,7 @@ impl GritServerManager {
         let cmd = DocumentAction::Get { uri, resp: resp_tx };
 
         if self.documents.send(cmd).await.is_err() {
-            bail!("Could not send document action to document manager");
+            return Err(GritPatternError::new("Could not send document action to document manager"));
         };
 
         let res = resp_rx.await?;
@@ -170,7 +170,7 @@ impl GritServerManager {
                         format!("error getting documents: {}", e),
                     )
                     .await;
-                bail!("Could not send document action to document manager");
+                return Err(GritPatternError::new("Could not send document action to document manager"));
             }
         };
 
@@ -183,7 +183,7 @@ impl GritServerManager {
                         format!("error getting documents: {}", e),
                     )
                     .await;
-                bail!("Could not get documents from document manager");
+                return Err(GritPatternError::new("Could not get documents from document manager"));
             }
         }
     }

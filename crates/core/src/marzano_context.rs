@@ -310,12 +310,12 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
             .and_then(|binding| binding[NEW_FILES_INDEX].value.as_ref())
             .and_then(ResolvedPattern::get_list_items)
         else {
-            bail!("Expected a list of files")
+            return Err(GritPatternError::new("Expected a list of files"))
         };
 
         for f in new_files {
             let Some(file) = f.get_file() else {
-                bail!("Expected a list of files")
+                return Err(GritPatternError::new("Expected a list of files"))
             };
 
             let name: PathBuf = file

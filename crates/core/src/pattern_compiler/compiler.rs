@@ -105,19 +105,17 @@ fn insert_definition_index(
         .collect::<GritResult<Vec<(String, ByteRange)>>>()?;
     let duplicates = get_duplicates(&parameters);
     if !duplicates.is_empty() {
-        bail!(
-            "Pattern parameters must be unique,
+        return Err(GritPatternError::new("Pattern parameters must be unique,
             but {} had repeated parameters {:?}.",
             name,
-            duplicates
-        )
+            duplicates))
     }
     let info = DefinitionInfo {
         index: *index,
         parameters,
     };
     match indices.insert(name.to_owned(), info) {
-        Some(_) => bail!("cannot have repeated definition of pattern {}", name),
+        Some(_) => return Err(GritPatternError::new(format!("cannot have repeated definition of pattern {}", name))),
         None => {
             *index += 1;
             Ok(())
@@ -151,7 +149,7 @@ fn node_to_definition_info(
                 foreign_function_index,
             )?;
         } else {
-            bail!("definition must be either a pattern, a predicate or a function");
+            return Err(GritPatternError::new("definition must be either a pattern, a predicate or a function"));
         }
     }
     Ok(())
@@ -204,14 +202,11 @@ pub(crate) fn get_definition_info(
                     parameters: vec![],
                 };
                 match pattern_indices.insert(name.to_owned(), info) {
-                    Some(_) => bail!("cannot have repeated definition of pattern {}", name),
+                    Some(_) => return Err(GritPatternError::new(format!("cannot have repeated definition of pattern {}", name))),
                     None => pattern_index += 1,
                 };
             } else {
-                bail!(
-                    "failed to get pattern name from definition in file {}",
-                    file
-                )
+                return Err(GritPatternError::new(format!("failed to get pattern name from definition in file {}", file)))
             }
         }
     }
@@ -266,7 +261,7 @@ fn node_to_definitions(
                 context,
             )?);
         } else {
-            bail!("definition must be either a pattern, a predicate or a function");
+            return Err(GritPatternError::new("definition must be either a pattern, a predicate or a function"));
         }
     }
     Ok(())
@@ -333,7 +328,7 @@ pub(crate) fn get_definitions(
             let (scope_index, mut local_context) = create_scope!(node_context, local_vars);
             let path = Path::new(file);
             let Some(name) = path.file_stem().and_then(OsStr::to_str) else {
-                bail!("failed to get pattern name from definition in file {file}");
+                return Err(GritPatternError::new("failed to get pattern name from definition in file {file}"));
             };
 
             let body = PatternCompiler::from_node(&bare_pattern, &mut local_context)?;

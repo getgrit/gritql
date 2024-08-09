@@ -64,7 +64,7 @@ impl NodeCompiler for PredicateCompiler {
             "predicateReturn" => Ok(Predicate::Return(Box::new(
                 PredicateReturnCompiler::from_node(node, context)?,
             ))),
-            _ => bail!("unknown predicate kind: {}", kind),
+            _ => return Err(GritPatternError::new(format!("unknown predicate kind: {}", kind))),
         }
     }
 }

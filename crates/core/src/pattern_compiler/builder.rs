@@ -92,7 +92,7 @@ impl PatternBuilder {
     ) -> Result<Self> {
         if src == "." {
             let error = ". never matches and should not be used as a pattern. Did you mean to run 'grit apply <pattern> .'?";
-            bail!(error);
+            return Err(GritPatternError::new(error));
         }
         let src_tree = grit_parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
 
@@ -162,7 +162,7 @@ impl PatternBuilder {
         If you have written a pattern definition in the form `pattern myPattern() {{ }}`,
         try calling it by adding `myPattern()` to the end of your file.
         Check out the docs at https://docs.grit.io for help with writing patterns.";
-            bail!("{}", long_message);
+            return Err(GritPatternError::new(format!("{}", long_message)));
         };
 
         Ok(Self {

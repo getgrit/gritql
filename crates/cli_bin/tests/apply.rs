@@ -2143,12 +2143,12 @@ fn run_simultaneous_apply_ops() -> Result<()> {
             println!("stderr({}): {:?}", file, stderr);
 
             if !output.status.success() {
-                bail!("Command didn't finish successfully");
+                return Err(GritPatternError::new("Command didn't finish successfully"));
             }
 
             let test = fs_err::read_to_string(fixture_dir.join(&file))?;
             if !test.contains("const did_it_get_touched = true;") {
-                bail!("File {} was not mutated", file);
+                return Err(GritPatternError::new(format!("File {} was not mutated", file)));
             }
 
             Ok(())

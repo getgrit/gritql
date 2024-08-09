@@ -57,7 +57,7 @@ pub async fn collect_patterns(
                 {
                     continue;
                 } else {
-                    bail!("Error walking patterns dir: {}", e);
+                    return Err(GritPatternError::new(format!("Error walking patterns dir: {}", e)));
                 }
             }
             Ok(entry) => {
@@ -266,7 +266,7 @@ pub async fn find_grit_modules_dir(dir: PathBuf) -> Result<PathBuf> {
             return Ok(grit_modules_dir);
         }
     }
-    bail!("Unable to find .gritmodules directory")
+    return Err(GritPatternError::new("Unable to find .gritmodules directory"))
 }
 
 pub async fn find_global_grit_dir() -> Result<PathBuf> {

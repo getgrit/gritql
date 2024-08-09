@@ -309,7 +309,7 @@ impl NodeCompiler for PatternCompiler {
             "stringConstant" => Ok(Pattern::StringConstant(
                 StringConstantCompiler::from_node_with_rhs(node, context, is_rhs)?,
             )),
-            _ => bail!("unknown pattern kind: {}", kind),
+            _ => return Err(GritPatternError::new(format!("unknown pattern kind: {}", kind))),
         }
     }
 }
@@ -389,7 +389,7 @@ fn metavariable_descendent<Q: QueryContext>(
         if context.compilation.lang.is_metavariable(&node) {
             let name = node.text()?;
             if is_reserved_metavariable(name.trim(), Some(context.compilation.lang)) && !is_rhs {
-                bail!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", name.trim_start_matches(context.compilation.lang.metavariable_prefix_substitute()));
+                return Err(GritPatternError::new("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", name.trim_start_matches(context.compilation.lang.metavariable_prefix_substitute())));
             }
             let range = node.byte_range();
             return text_to_var(&name, range, context_range, range_map, context)

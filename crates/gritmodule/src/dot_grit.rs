@@ -49,7 +49,7 @@ pub fn get_patterns_from_grit(
                 "predicateDefinition" => Some(DefinitionKind::Predicate),
                 "functionDefinition" => Some(DefinitionKind::Function),
                 "foreignFunctionDefinition" => Some(DefinitionKind::Function),
-                _ => bail!("Bug in Grit, unhandled definition kind"),
+                _ => return Err(GritPatternError::new("Bug in Grit, unhandled definition kind")),
             };
 
             let body = match language {

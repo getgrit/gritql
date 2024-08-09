@@ -19,7 +19,7 @@ impl NodeCompiler for RegexCompiler {
         is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         if is_rhs {
-            bail!("regex patterns are not allowed on the right-hand side of a rule")
+            return Err(GritPatternError::new("regex patterns are not allowed on the right-hand side of a rule"))
         }
         let regex_node = node
             .child_by_field_name("regex")

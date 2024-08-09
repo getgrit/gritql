@@ -235,11 +235,10 @@ pub(crate) async fn run_plumbing(
             if resolved.is_empty() {
                 let existing = find_grit_modules_dir(grit_parent.to_path_buf()).await?;
                 if !existing.exists() {
-                    bail!(
-                    "No grit modules found in {}. Run `grit init` to initialize a grit project.",
-                    grit_parent.to_string_lossy());
+                    return Err(GritPatternError::new("No grit modules found in {}. Run `grit init` to initialize a grit project.",
+                    grit_parent.to_string_lossy()));
                 } else {
-                    bail!("No patterns found.");
+                    return Err(GritPatternError::new("No patterns found."));
                 }
             }
 

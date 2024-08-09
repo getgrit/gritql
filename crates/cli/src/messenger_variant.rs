@@ -268,7 +268,7 @@ pub async fn create_emitter<'a>(
         )
         .into(),
         OutputFormat::Json => {
-            bail!("JSON output is not supported for apply_pattern");
+            return Err(GritPatternError::new("JSON output is not supported for apply_pattern"));
         }
         OutputFormat::Transformed => TransformedMessenger::new(writer).into(),
         OutputFormat::Jsonl => {

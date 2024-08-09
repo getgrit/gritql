@@ -29,7 +29,7 @@ impl NodeCompiler for AssignmentCompiler {
             .ok_or_else(|| GritPatternError::new("missing container of assignment"))?;
         let var_text = container.text()?;
         if is_reserved_metavariable(&var_text, None::<&TargetLanguage>) {
-            bail!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", var_text.trim_start_matches(GRIT_METAVARIABLE_PREFIX));
+            return Err(GritPatternError::new("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", var_text.trim_start_matches(GRIT_METAVARIABLE_PREFIX)));
         }
         let variable = ContainerCompiler::from_node(&container, context)?;
         Ok(Assignment::new(variable, pattern))

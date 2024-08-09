@@ -60,7 +60,7 @@ impl GritServer {
         let body = match serde_json::from_str::<[String; 1]>(&format!("[\"{}\"]", &body)) {
             Ok(body) => body[0].to_string(),
             Err(e) => {
-                bail!("Invalid body: {}", e);
+                return Err(GritPatternError::new(format!("Invalid body: {}", e)));
             }
         };
         let document = match self.manager.must_get_document(&self.client, uri).await {

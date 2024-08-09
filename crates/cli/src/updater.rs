@@ -236,10 +236,8 @@ impl Updater {
     async fn _from_manifest(manifest_path: PathBuf) -> Result<Self> {
         match manifest_path.parent() {
             Some(path) => Updater::from_install_path(path.into()).await,
-            None => bail!(
-                "Could not get install path as parent of manifest: {}",
-                manifest_path.display()
-            ),
+            None => return Err(GritPatternError::new("Could not get install path as parent of manifest: {}",
+                manifest_path.display())),
         }
     }
 
@@ -452,7 +450,7 @@ impl Updater {
     /// Delete the auth token from the manifest, if present
     pub async fn delete_token(&mut self) -> Result<()> {
         if self.access_token.is_none() {
-            bail!("You are not authenticated.");
+            return Err(GritPatternError::new("You are not authenticated."));
         }
         self.access_token = None;
         self.refresh_token = None;
@@ -478,7 +476,7 @@ impl Updater {
 
     pub async fn refresh_auth(&mut self) -> Result<AuthInfo> {
         let Some(auth) = self.get_auth() else {
-            bail!("Not authenticated");
+            return Err(GritPatternError::new("Not authenticated"));
         };
 
         let pg = ProgressBar::new_spinner();
@@ -494,7 +492,7 @@ impl Updater {
     pub async fn get_valid_auth(&mut self) -> Result<AuthInfo> {
         let auth = self.get_auth();
         let Some(auth) = auth else {
-            bail!("Not authenticated, please run `grit auth login` to authenticate.");
+            return Err(GritPatternError::new("Not authenticated, please run `grit auth login` to authenticate."));
         };
         if auth.is_expired()? {
             let refreshed = self.refresh_auth().await?;
@@ -515,7 +513,7 @@ impl Updater {
                 }
             }
             Err(e) => {
-                bail!("Failed to download artifact: {:?}", e);
+                return Err(GritPatternError::new(format!("Failed to download artifact: {:?}", e)));
             }
         }
 
@@ -542,7 +540,7 @@ impl Updater {
             .await?;
 
         if !output.status.success() {
-            bail!("Failed to unpack files: {:?}", output);
+            return Err(GritPatternError::new(format!("Failed to unpack files: {:?}", output)));
         }
 
         let target_path = self.get_app_bin(&app)?;
@@ -553,7 +551,7 @@ impl Updater {
             if let Err(e) =
                 async_fs::rename(unpacked_dir.join(app.get_fallback_bin_name()), &target_path).await
             {
-                bail!("Failed to move files: {:?}", e);
+                return Err(GritPatternError::new(format!("Failed to move files: {:?}", e)));
             }
         }
 
@@ -566,11 +564,9 @@ impl Updater {
             let mut perms = target_file.metadata()?.permissions();
             perms.set_mode(0o744);
             if let Err(e) = target_file.set_permissions(perms) {
-                bail!(
-                    "Failed to make {} executable: {:?}",
+                return Err(GritPatternError::new("Failed to make {} executable: {:?}",
                     target_path.display(),
-                    e
-                );
+                    e));
             }
 
             info!("Successfully made {} executable", target_path.display());
@@ -634,11 +630,9 @@ impl Updater {
         if bin_path.exists() {
             return Ok(bin_path);
         }
-        bail!(
-            "Please set the {} environment variable to the path of the {} binary",
+        return Err(GritPatternError::new("Please set the {} environment variable to the path of the {} binary",
             app.get_env_name(),
-            app
-        );
+            app));
     }
 
     pub async fn sync_manifest_version(&mut self, app: SupportedApp) -> Result<Option<String>> {
@@ -727,7 +721,7 @@ async fn get_release_url(
             .expect("Download URL should be a string");
         artifact_url
     } else {
-        bail!("Could not find artifact download URL");
+        return Err(GritPatternError::new("Could not find artifact download URL"));
     };
 
     let latest_release_info_url = if let Some(artifact_data) = json_data["data"]
@@ -741,7 +735,7 @@ async fn get_release_url(
             .expect("Release info URL should be a string");
         artifact_url
     } else {
-        bail!("Could not find release info URL");
+        return Err(GritPatternError::new("Could not find release info URL"));
     };
 
     Ok((
@@ -822,13 +816,13 @@ async fn fetch_manifest(relative_url: &str, app: SupportedApp) -> Result<AppMani
     {
         version.as_str().unwrap().to_string()
     } else {
-        bail!("Could not find version");
+        return Err(GritPatternError::new("Could not find version"));
     };
 
     let release = if let Some(id) = json_data["data"].get("id") {
         id.as_str().unwrap().to_string()
     } else {
-        bail!("Could not find release");
+        return Err(GritPatternError::new("Could not find release"));
     };
 
     Ok(AppManifest {

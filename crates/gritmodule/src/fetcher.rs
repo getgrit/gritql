@@ -31,7 +31,7 @@ fn parse_remote(remote: &str) -> Result<(String, String)> {
             .and_then(|s| s.split('@').last())
             .map(String::from)
     } else {
-        bail!("Invalid remote format: missing host")
+        return Err(GritPatternError::new("Invalid remote format: missing host"))
     };
 
     let repo = if captures.name("git_at").is_some() {
@@ -52,7 +52,7 @@ fn parse_remote(remote: &str) -> Result<(String, String)> {
                 .replace(".git", ""),
         )
     } else {
-        bail!("Invalid remote format: missing repo")
+        return Err(GritPatternError::new("Invalid remote format: missing repo"))
     };
 
     let host = host.ok_or_else(|| GritPatternError::new("Missing host"))?;
@@ -253,7 +253,7 @@ fn clone_repo<'a>(
         Ok(_) => {}
         Err(e) => {
             if !target_dir.exists() {
-                bail!("Failed to clone repo {}: {}", repo.full_name, e.to_string())
+                return Err(GritPatternError::new("Failed to clone repo {}: {}", repo.full_name, e.to_string()))
             }
         }
     };

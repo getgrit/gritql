@@ -21,10 +21,8 @@ impl ListCompiler {
         match kind.as_ref() {
             "assocNode" => {
                 if !context_field.multiple() {
-                    bail!(
-                        "Field {} does not accept list patterns",
-                        context_field.name()
-                    )
+                    return Err(GritPatternError::new("Field {} does not accept list patterns",
+                        context_field.name()))
                 }
                 Ok(Pattern::List(Box::new(Self::from_node_with_rhs(
                     node, context, is_rhs,

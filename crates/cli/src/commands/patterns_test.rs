@@ -252,7 +252,7 @@ pub async fn get_marzano_pattern_test_results(
             log::info!("{}", serde_json::to_string(&test_report)?);
         }
         _ => {
-            bail!("Output format not supported for this command");
+            return Err(GritPatternError::new("Output format not supported for this command"));
         }
     }
     Ok(AggregatedTestResult::AllPassed)
@@ -286,7 +286,7 @@ pub(crate) async fn run_patterns_test(
     let testable_patterns = collect_testable_patterns(patterns);
 
     if testable_patterns.is_empty() {
-        bail!("No testable patterns found. To test a pattern, make sure it is defined in .grit/grit.yaml or a .md file in your .grit/patterns directory.");
+        return Err(GritPatternError::new("No testable patterns found. To test a pattern, make sure it is defined in .grit/grit.yaml or a .md file in your .grit/patterns directory."));
     }
     info!("Found {} testable patterns.", testable_patterns.len());
 
@@ -306,7 +306,7 @@ pub(crate) async fn run_patterns_test(
         Ok(())
     } else {
         match first_result {
-            AggregatedTestResult::SomeFailed(message) => bail!(message),
+            AggregatedTestResult::SomeFailed(message) => return Err(GritPatternError::new(message)),
             AggregatedTestResult::AllPassed => Ok(()),
         }
     }

@@ -54,7 +54,7 @@ pub(crate) async fn run_apply_migration(
     _paths: Vec<PathBuf>,
     _arg: ApplyMigrationArgs,
 ) -> Result<()> {
-    bail!("Packaged workflows are currently not available through the CLI. You can run this migration through the Grit App at https://app.grit.io.");
+    return Err(GritPatternError::new("Packaged workflows are currently not available through the CLI. You can run this migration through the Grit App at https://app.grit.io."));
 }
 
 #[cfg(feature = "workflows_v2")]

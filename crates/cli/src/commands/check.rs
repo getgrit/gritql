@@ -81,7 +81,7 @@ pub(crate) async fn run_check(
     root_path: Option<PathBuf>,
 ) -> Result<()> {
     if format.json && arg.github_actions {
-        bail!("--github-actions is not compatible with --json");
+        return Err(GritPatternError::new("--github-actions is not compatible with --json"));
     }
 
     let context = Updater::from_current_bin().await?.get_context()?;
@@ -142,7 +142,7 @@ pub(crate) async fn run_check(
             match rich_pattern.compile(&grit_files, lang, filter_range.clone(), None) {
                 Ok(c) => Ok((p.local_name.clone(), c.problem)),
                 Err(e) => {
-                    bail!("Unable to compile pattern {}:\n{}", p.local_name, e);
+                    return Err(GritPatternError::new("Unable to compile pattern {}:\n{}", p.local_name, e));
                 }
             }
         })
@@ -216,7 +216,7 @@ pub(crate) async fn run_check(
         let match_results = result.value();
         let pattern = match body_to_pattern.get(body) {
             Some(p) => p,
-            None => bail!("Unable to find pattern for body {}", body),
+            None => return Err(GritPatternError::new(format!("Unable to find pattern for body {}", body))),
         };
         let relevant_results = match_results
             .par_iter()
@@ -394,7 +394,7 @@ pub(crate) async fn run_check(
         match manager.join() {
             Ok(_) => {}
             Err(e) => {
-                bail!("Error joining cache manager: {:?}", e);
+                return Err(GritPatternError::new(format!("Error joining cache manager: {:?}", e)));
             }
         }
     }
@@ -411,7 +411,7 @@ pub(crate) async fn run_check(
         info!("{}", msg);
         // Make sure we fail if there are rewrites
         if files > 0 && !arg.github_actions {
-            bail!(GoodError::new());
+            return Err(GritPatternError::new(GoodError::new()));
         }
         Ok(())
     }

@@ -101,7 +101,7 @@ pub async fn maybe_test_pattern(
     let language = our_pattern.language(&mut parser).unwrap_or_default();
     let body = match our_pattern.config.body.as_ref() {
         Some(body) => body,
-        None => bail!("Pattern {} has no body", our_pattern.local_name),
+        None => return Err(GritPatternError::new("Pattern {} has no body", our_pattern.local_name)),
     };
 
     let pattern_libs = grit_files

@@ -491,7 +491,7 @@ async fn resolve_namespace_import(
                                             "Unable to resolve pattern {} required by namespace import",
                                             local_name
                                         );
-                                            bail!(error);
+                                            return Err(GritPatternError::new(error));
                                         }
                                     },
                                 }
@@ -501,7 +501,7 @@ async fn resolve_namespace_import(
                                     "Unable to resolve pattern {} required by namespace import",
                                     local_name
                                 );
-                                bail!(error);
+                                return Err(GritPatternError::new(error));
                             }
                         };
                         our_patterns.push(resolved.clone());
@@ -513,7 +513,7 @@ async fn resolve_namespace_import(
                     "Unable to resolve namespace import of module {}",
                     current_module.provider_name
                 );
-                bail!(error);
+                return Err(GritPatternError::new(error));
             }
         }
     }

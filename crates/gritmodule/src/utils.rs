@@ -24,7 +24,7 @@ pub fn extract_path(result: &MatchResult) -> Option<&String> {
 
 pub fn remove_dir_all_safe(dir: &Path) -> Result<()> {
     if current_exe()?.starts_with(canonicalize(dir)?) {
-        bail!("Fatal error: refusing to remove the directory containing the current executable")
+        return Err(GritPatternError::new("Fatal error: refusing to remove the directory containing the current executable"))
     }
     fs_err::remove_dir_all(dir)?;
     Ok(())

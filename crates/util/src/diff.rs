@@ -1,5 +1,7 @@
-use anyhow::{bail, Result};
-use grit_util::{Position, RangeWithoutByte};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    Position, RangeWithoutByte,
+};
 use serde::Serialize;
 use std::{path::PathBuf, str::FromStr};
 
@@ -24,7 +26,7 @@ pub struct FileDiff {
 /// Extract the line numbers from a hunk part
 /// Note this does *NOT* necessarily correspond to the actual line numbers in the file, since context can be included in the hunks
 /// But we are choosing to treat this as good enough for now
-fn parse_hunk_part(range_part: &str) -> Result<RangeWithoutByte> {
+fn parse_hunk_part(range_part: &str) -> GritResult<RangeWithoutByte> {
     let range_parts: Vec<&str> = range_part.split(',').collect();
     if let Ok(line_num) = u32::from_str(range_parts[0].trim_start_matches(['+', '-'])) {
         return Ok(RangeWithoutByte {
@@ -41,10 +43,10 @@ fn parse_hunk_part(range_part: &str) -> Result<RangeWithoutByte> {
             },
         });
     }
-    Err(anyhow::anyhow!("Failed to parse hunk part"))
+    Err(GritPatternError::new("Failed to parse hunk part"))
 }
 
-fn parse_hunk(hunk_str: &str) -> Result<RangePair> {
+fn parse_hunk(hunk_str: &str) -> GritResult<RangePair> {
     let mut parts = hunk_str.split_whitespace();
     let before_range = parse_hunk_part(parts.nth(1).unwrap_or(""))?;
     // Note nth mutates the iterator, so after range is the next element
@@ -67,7 +69,7 @@ fn parse_hunk(hunk_str: &str) -> Result<RangePair> {
 ///
 /// The output *ignores* all context lines, so the same underlying change will be represented the same way regardless
 /// of how many context lines are included
-pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
+pub fn parse_modified_ranges(diff: &str) -> GritResult<Vec<FileDiff>> {
     let mut results = Vec::new();
     let lines = diff.lines();
 
@@ -120,7 +122,9 @@ pub fn parse_modified_ranges(diff: &str) -> Result<Vec<FileDiff>> {
                     Some(new_file_name)
                 };
             } else {
-                bail!("Encountered new file path without a current file diff");
+                return Err(GritPatternError::new(
+                    "Encountered new file path without a current file diff",
+                ));
             };
         } else if line.starts_with("@@ ") {
             insert_range_if_found(&mut current_range_pair, &mut results, has_context)?;
@@ -223,7 +227,7 @@ fn insert_range_if_found(
     current_range_pair: &mut Option<RangePair>,
     results: &mut [FileDiff],
     has_context: bool,
-) -> Result<()> {
+) -> GritResult<()> {
     if let Some(mut range) = current_range_pair.take() {
         // Deleted lines with no context are shifted by one
         if range.after.is_empty() && !has_context {
@@ -233,13 +237,15 @@ fn insert_range_if_found(
         if let Some(file_diff) = results.last_mut() {
             file_diff.ranges.push(range);
         } else {
-            bail!("Encountered hunk without a current file diff");
+            return Err(GritPatternError::new(
+                "Encountered hunk without a current file diff",
+            ));
         }
     }
     Ok(())
 }
 
-pub fn run_git_diff(path: &PathBuf) -> Result<String> {
+pub fn run_git_diff(path: &PathBuf) -> GritResult<String> {
     let output = std::process::Command::new("git")
         .arg("diff")
         .arg("HEAD")

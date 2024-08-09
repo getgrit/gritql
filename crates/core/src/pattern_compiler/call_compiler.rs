@@ -70,7 +70,7 @@ impl NodeCompiler for CallCompiler {
         if kind == "file" {
             for arg in &args {
                 if arg.0 != "$name" && arg.0 != "$body" {
-                    bail!("file pattern can only have $name and $body as named args");
+                    return Err(GritPatternError::new("file pattern can only have $name and $body as named args"));
                 }
             }
             let name = args
@@ -154,7 +154,7 @@ impl NodeCompiler for PrCallCompiler {
         } else if let Some(info) = context.compilation.function_definition_info.get(name) {
             info
         } else {
-            bail!("predicate or function definition not found: {name}. Try running grit init.");
+            return Err(GritPatternError::new("predicate or function definition not found: {name}. Try running grit init."));
         };
         let params = collect_params(&info.parameters);
         let expected_params = Some(params.clone());
@@ -183,13 +183,11 @@ fn match_args_to_params(
 ) -> Result<Vec<Option<Pattern<MarzanoQueryContext>>>> {
     for (arg, _) in args.iter() {
         if !params.contains(arg) {
-            bail!(
-                format!("attempting to call pattern {name}, with invalid parameter {arg}. Valid parameters are: ") +
+            return Err(GritPatternError::new(format!("attempting to call pattern {name}, with invalid parameter {arg}. Valid parameters are: ") +
                 &params
                     .iter()
                     .map(|p| p.strip_prefix(language.metavariable_prefix()).unwrap_or(p))
-                    .join(", ")
-            )
+                    .join(", ")))
         }
     }
     Ok(params.iter().map(|param| args.remove(param)).collect())

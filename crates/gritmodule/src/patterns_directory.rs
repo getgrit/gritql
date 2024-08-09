@@ -157,7 +157,7 @@ impl PatternsDirectory {
         language: PatternLanguage,
     ) -> Result<BTreeMap<String, String>> {
         if matches!(language, PatternLanguage::Universal) {
-            bail!("cannot directly execute universal pattern")
+            return Err(GritPatternError::new("cannot directly execute universal pattern"))
         };
         let lang_library = self.get_language_directory(language);
         let mut lang_library = lang_library.to_owned();
@@ -165,7 +165,7 @@ impl PatternsDirectory {
         let count = lang_library.len() + universal.len();
         lang_library.extend(universal);
         if count != lang_library.len() {
-            bail!("language specific {} library and universal library have patterns with the same name", language.language_name())
+            return Err(GritPatternError::new("language specific {} library and universal library have patterns with the same name", language.language_name()))
         }
         Ok(lang_library)
     }

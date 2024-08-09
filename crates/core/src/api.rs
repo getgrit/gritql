@@ -117,7 +117,7 @@ impl MatchResult {
         file: &Vector<&FileOwner<Tree>>,
     ) -> Result<Option<MatchResult>> {
         if file.is_empty() {
-            bail!("cannot have file with no versions")
+            return Err(GritPatternError::new("cannot have file with no versions"))
         } else if file.len() == 1 {
             let file = file.last().unwrap();
             if file.new {
@@ -397,11 +397,11 @@ impl FileMatchResult for Match {
     }
     fn content(&self) -> Result<&str> {
         let Some(content) = self.content.as_deref() else {
-            bail!("No content in match")
+            return Err(GritPatternError::new("No content in match"))
         };
 
         if content.is_empty() {
-            bail!("No content in match")
+            return Err(GritPatternError::new("No content in match"))
         } else {
             Ok(content)
         }
@@ -542,7 +542,7 @@ impl FromStr for EnforcementLevel {
             "info" => Ok(EnforcementLevel::Info),
             "warn" => Ok(EnforcementLevel::Warn),
             "error" => Ok(EnforcementLevel::Error),
-            _ => bail!("'{}' is not a valid level", s),
+            _ => return Err(GritPatternError::new(format!("'{}' is not a valid level", s))),
         }
     }
 }

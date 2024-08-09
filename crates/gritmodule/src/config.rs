@@ -308,7 +308,7 @@ pub fn pattern_config_to_model(
     let local_name = defined_local_name.unwrap_or(&pattern.name).to_string();
 
     if !is_pattern_name(&local_name) && local_name != NAMESPACE_IMPORT_INDICATOR {
-        bail!("Invalid pattern name: {}. Grit patterns must match the regex /[\\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", local_name);
+        return Err(GritPatternError::new(format!("Invalid pattern name: {}. Grit patterns must match the regex /[\\^#A-Za-z_][A-Za-z0-9_]*/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", local_name)));
     }
 
     let module: Option<ModuleRepo> = match repo {
@@ -463,11 +463,9 @@ pub async fn init_global_grit_modules<T: FetcherType>(
         let location = match fetcher.fetch_grit_module(module) {
             Ok(loc) => loc,
             Err(err) => {
-                bail!(
-                    "Failed to fetch remote grit module {}: {}",
+                return Err(GritPatternError::new("Failed to fetch remote grit module {}: {}",
                     module.full_name,
-                    err.to_string()
-                )
+                    err.to_string()))
             }
         };
         fetch_modules::<T>(

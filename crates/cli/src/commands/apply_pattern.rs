@@ -269,7 +269,7 @@ pub(crate) async fn run_apply_pattern(
     }
     #[cfg(not(feature = "ai_querygen"))]
     if arg.ai {
-        bail!("Natural language processing is not enabled in this build");
+        return Err(GritPatternError::new("Natural language processing is not enabled in this build"));
     }
 
     // Get the current directory
@@ -439,7 +439,7 @@ pub(crate) async fn run_apply_pattern(
         } = my_input;
 
         if paths.len() != 1 {
-            bail!("Only one path can be provided as the virtual file name for --stdin");
+            return Err(GritPatternError::new("Only one path can be provided as the virtual file name for --stdin"));
         }
 
         let first_path = paths.first().ok_or(anyhow::anyhow!(
@@ -517,11 +517,11 @@ pub(crate) async fn run_apply_pattern(
             emitter.flush().await?;
             match format.is_always_ok() {
                 (true, _) => return Ok(()),
-                (false, false) => bail!(GoodError::new()),
-                (false, true) => bail!(GoodError::new_with_message(get_human_error(
+                (false, false) => return Err(GritPatternError::new(GoodError::new())),
+                (false, true) => return Err(GritPatternError::new(GoodError::new_with_message(get_human_error(
                     log,
                     final_input.pattern_body(),
-                ))),
+                )))),
             }
         }
     };
@@ -535,7 +535,7 @@ pub(crate) async fn run_apply_pattern(
     if warn_uncommitted && has_rewrite(&compiled.pattern, &compiled.definitions()) {
         let term = console::Term::stderr();
         if !term.is_term() {
-            bail!("Error: Untracked changes detected. Grit will not proceed with rewriting files in non-TTY environments unless '--force' is used. Please commit all changes or use '--force' to override this safety check.");
+            return Err(GritPatternError::new("Error: Untracked changes detected. Grit will not proceed with rewriting files in non-TTY environments unless '--force' is used. Please commit all changes or use '--force' to override this safety check."));
         }
 
         let proceed = flushable_unwrap!(emitter, Confirm::new()
@@ -576,8 +576,8 @@ pub(crate) async fn run_apply_pattern(
     match emitter.get_fatal_error() {
         Some(e) => match format.is_always_ok() {
             (true, _) => return Ok(()),
-            (false, false) => bail!(GoodError::new()),
-            (false, true) => bail!(GoodError::new_with_message(e.message.clone())),
+            (false, false) => return Err(GritPatternError::new(GoodError::new())),
+            (false, true) => return Err(GritPatternError::new(GoodError::new_with_message(e.message.clone()))),
         },
         None => Ok(()),
     }

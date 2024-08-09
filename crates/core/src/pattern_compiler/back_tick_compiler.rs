@@ -41,7 +41,7 @@ impl NodeCompiler for RawBackTickCompiler {
         is_rhs: bool,
     ) -> Result<Self::TargetPattern> {
         if !is_rhs {
-            bail!("raw snippets are only allowed on the right hand side of a rule");
+            return Err(GritPatternError::new("raw snippets are only allowed on the right hand side of a rule"));
         }
         let source = node.text()?.to_string();
         let mut range = node.range();

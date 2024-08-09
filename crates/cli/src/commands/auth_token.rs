@@ -16,15 +16,13 @@ pub(crate) async fn run_get_token(_arg: GetTokenArgs) -> Result<()> {
     match auth {
         Some(auth) => {
             if auth.is_expired()? {
-                bail!(
-                    "Auth token expired: {}. Run grit auth refresh to refresh.",
-                    auth.get_expiry()?
-                );
+                return Err(GritPatternError::new("Auth token expired: {}. Run grit auth refresh to refresh.",
+                    auth.get_expiry()));
             }
             info!("{}", auth.access_token);
         }
         None => {
-            bail!("You are not authenticated. Run grit auth login to authenticate.");
+            return Err(GritPatternError::new("You are not authenticated. Run grit auth login to authenticate."));
         }
     }
 

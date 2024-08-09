@@ -34,7 +34,7 @@ impl NodeCompiler for BubbleCompiler {
             .map(|n| Ok((n.text()?.trim().to_string(), n.byte_range())))
             .collect::<GritResult<Vec<(String, ByteRange)>>>()?;
         if parameters.iter().unique_by(|n| &n.0).count() != parameters.len() {
-            bail!("bubble parameters must be unique, but had a repeated name in its parameters.")
+            return Err(GritPatternError::new("bubble parameters must be unique, but had a repeated name in its parameters."))
         }
         let params = get_variables(&parameters, &mut local_context)?;
 

@@ -1,6 +1,8 @@
 use crate::language::Tree;
-use anyhow::{anyhow, bail, Result};
-use grit_util::{traverse, AnalysisLogBuilder, AnalysisLogs, Ast, AstNode, Order};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    traverse, AnalysisLogBuilder, AnalysisLogs, Ast, AstNode, Order,
+};
 use regex::Regex;
 use std::path::Path;
 use tree_sitter::Parser as TSParser;
@@ -11,7 +13,7 @@ pub struct MarzanoGritParser {
 
 impl MarzanoGritParser {
     #[cfg(feature = "grit-parser")]
-    pub fn new() -> Result<Self> {
+    pub fn new() -> GritResult<Self> {
         let mut parser = TSParser::new().unwrap();
         parser
             .set_language(&tree_sitter_gritql::language().into())
@@ -21,34 +23,37 @@ impl MarzanoGritParser {
 
     #[cfg(not(feature = "grit-parser"))]
     pub fn new() -> Result<Self> {
-        bail!("enable grit-parser feature flag to make a grit parser")
+        return Err(GritPatternError::new(
+            "enable grit-parser feature flag to make a grit parser",
+        ));
     }
 
     pub fn from_initialized_ts_parser(parser: TSParser) -> Self {
         Self { parser }
     }
 
-    pub fn parse_file(&mut self, source: &str, path: Option<&Path>) -> Result<Tree> {
+    pub fn parse_file(&mut self, source: &str, path: Option<&Path>) -> GritResult<Tree> {
         let tree = self.parse(source)?;
 
         let parse_errors = grit_parsing_errors(&tree, path)?;
         if !parse_errors.is_empty() {
             let error = parse_errors[0].clone();
-            bail!(error);
+            return Err(GritPatternError::new(error.message));
         }
 
         Ok(tree)
     }
 
-    pub fn parse(&mut self, source: &str) -> Result<Tree> {
+    pub fn parse(&mut self, source: &str) -> GritResult<Tree> {
         self.parser
-            .parse(source, None)?
+            .parse(source, None)
+            .map_err(|e| GritPatternError::new(e.to_string()))?
             .map(|tree| Tree::new(tree, source))
             .ok_or_else(|| GritPatternError::new("parse error"))
     }
 }
 
-fn grit_parsing_errors(tree: &Tree, path: Option<&Path>) -> Result<AnalysisLogs> {
+fn grit_parsing_errors(tree: &Tree, path: Option<&Path>) -> GritResult<AnalysisLogs> {
     let mut errors = vec![];
     let mut log_builder = AnalysisLogBuilder::default();
     let level: u16 = if path
@@ -98,7 +103,8 @@ fn grit_parsing_errors(tree: &Tree, path: Option<&Path>) -> Result<AnalysisLogs>
                 .clone()
                 .message(message)
                 .position(position)
-                .build()?;
+                .build()
+                .map_err(|e| GritPatternError::new(e.to_string()))?;
             errors.push(log);
         }
     }

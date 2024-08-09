@@ -40,7 +40,7 @@ pub(crate) async fn run_parse(
     pattern_body: Option<String>,
 ) -> Result<()> {
     if !parent.jsonl {
-        bail!("Only JSONL output is supported for parse command");
+        return Err(GritPatternError::new("Only JSONL output is supported for parse command"));
     }
 
     let visibility = VisibilityLevels::Hidden;

@@ -74,7 +74,7 @@ pub fn get_patterns_from_md(
             .unwrap_or_else(|| file.path.trim_end_matches(".md"))
     });
     if !is_pattern_name(name) {
-        bail!("Invalid pattern name: '{}'. Grit patterns must match the regex /^[A-Za-z_][A-Za-z0-9_]*$/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", name);
+        return Err(GritPatternError::new(format!("Invalid pattern name: '{}'. Grit patterns must match the regex /^[A-Za-z_][A-Za-z0-9_]*$/. For more info, consult the docs at https://docs.grit.io/guides/patterns#pattern-definitions.", name)));
     }
 
     let relative_path = extract_relative_file_path(file, root);
@@ -186,14 +186,12 @@ pub fn get_patterns_from_md(
     }
 
     if patterns.is_empty() {
-        bail!(
-            r#"No grit body found in markdown file. Try adding a fenced code block with the language set to grit, for example:
+        return Err(GritPatternError::new(r#"No grit body found in markdown file. Try adding a fenced code block with the language set to grit, for example:
 ```grit
 engine marzano(0.1)
 language js
 js"hello world"
-```"#
-        );
+```"#));
     }
 
     // Markdown patterns have a default level of info
@@ -222,7 +220,7 @@ js"hello world"
             let src_tree = grit_parser
                 .parse(&p.body)?;
             if defines_itself(&src_tree.root_node(), name)? {
-                bail!("Pattern {} attempts to define itself - this is not allowed. Tip: Markdown patterns use the file name as their pattern name.", name);
+                return Err(GritPatternError::new(format!("Pattern {} attempts to define itself - this is not allowed. Tip: Markdown patterns use the file name as their pattern name.", name)));
             };
             Ok(ModuleGritPattern {
                 config: GritDefinitionConfig {
@@ -264,13 +262,13 @@ pub fn get_body_from_md_content(content: &str) -> Result<String> {
         }
     }
 
-    bail!("No grit body found in markdown file. Try adding a fenced code block with the language set to grit, for example:
+    return Err(GritPatternError::new("No grit body found in markdown file. Try adding a fenced code block with the language set to grit, for example:
 ```grit
 engine marzano(0.1)
 language js
 
 js\"hello world\"
-```");
+```"));
 }
 
 /// Give an sample, and a byte offset, replaces the sample in the markdown file and returns the new byte offset
@@ -281,7 +279,7 @@ pub fn replace_sample_in_md_file(
     offset: isize,
 ) -> Result<isize> {
     let Some(range) = &sample.output_range else {
-        bail!("Sample does not have an output range, cannot replace in file");
+        return Err(GritPatternError::new("Sample does not have an output range, cannot replace in file"));
     };
 
     let byte_range =

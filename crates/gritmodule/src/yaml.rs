@@ -21,11 +21,9 @@ pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
     let serialized: SerializedGritConfig = match serde_yaml::from_str(source) {
         Ok(config) => config,
         Err(err) => {
-            bail!(
-                "Invalid configuration file '{}': {}",
+            return Err(GritPatternError::new("Invalid configuration file '{}': {}",
                 source_path,
-                err.to_string()
-            )
+                err.to_string()))
         }
     };
 

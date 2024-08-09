@@ -376,7 +376,7 @@ impl Problem {
         _cache: &impl GritCache,
     ) -> Result<()> {
         if self.is_multifile {
-            bail!("Streaming is not supported for multifile patterns");
+            return Err(GritPatternError::new("Streaming is not supported for multifile patterns"));
         }
 
         #[cfg(feature = "grit_tracing")]

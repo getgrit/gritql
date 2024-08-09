@@ -28,7 +28,7 @@ impl NodeCompiler for ContainerCompiler {
             "listIndex" => Ok(Container::ListIndex(Box::new(
                 ListIndexCompiler::from_node(node, context)?,
             ))),
-            s => bail!("Invalid kind for container: {}", s),
+            s => return Err(GritPatternError::new(format!("Invalid kind for container: {}", s))),
         }
     }
 }

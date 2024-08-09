@@ -41,7 +41,7 @@ impl NodeCompiler for CodeSnippetCompiler {
             "languageSpecificSnippet" => {
                 LanguageSpecificSnippetCompiler::from_node_with_rhs(&snippet, context, is_rhs)
             }
-            _ => bail!("invalid code snippet kind: {}", snippet.node.kind()),
+            _ => return Err(GritPatternError::new("invalid code snippet kind: {}", snippet.node.kind())),
         }
     }
 }
@@ -125,7 +125,7 @@ pub(crate) fn dynamic_snippet_from_source(
             let variable = register_variable(&var, range, context)?;
             parts.push(DynamicSnippetPart::Variable(variable));
         } else {
-            bail!("Could not find variable {var} in this context, for snippet {source}");
+            return Err(GritPatternError::new("Could not find variable {var} in this context, for snippet {source}"));
         }
         last = byte_range.end;
     }
@@ -159,7 +159,7 @@ pub(crate) fn parse_snippet_content(
                 dynamic_snippet_from_source(source, range, context).map(DynamicPattern::Snippet)?,
             ))
         } else {
-            bail!("bracketed metavariables are only allowed on the rhs of a snippet");
+            return Err(GritPatternError::new("bracketed metavariables are only allowed on the rhs of a snippet"));
         }
     } else {
         if context
