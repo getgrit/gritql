@@ -5,7 +5,7 @@ use crate::{info::AuthInfo, testing::get_testing_auth_info};
 pub static ENV_VAR_GRIT_LOCAL_SERVER: &str = "GRIT_LOCAL_SERVER";
 pub static ENV_VAR_GRIT_AUTH_TOKEN: &str = "GRIT_AUTH_TOKEN";
 pub static ENV_VAR_GRIT_API_URL: &str = "GRIT_API_URL";
-pub static DEFAULT_GRIT_API_URL: &str = "https://api-gateway-prod-6et7uue.uc.gateway.dev";
+pub static DEFAULT_GRIT_API_URL: &str = "https://api2.grit.io";
 pub static ENV_VAR_GRAPHQL_API_URL: &str = "GRAPHQL_API_URL";
 pub static DEFAULT_GRAPHQL_API_URL: &str = "https://grit-prod-central.hasura.app/v1";
 pub static ENV_VAR_GRIT_APP_URL: &str = "GRIT_APP_URL";
