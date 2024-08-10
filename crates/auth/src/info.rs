@@ -1,6 +1,7 @@
-use anyhow::Result;
 use chrono::DateTime;
 use chrono::Utc;
+use grit_util::error::GritPatternError;
+use grit_util::error::GritResult;
 use marzano_util::base64::decode_to_string;
 
 #[derive(Clone, Debug)]
@@ -40,35 +41,40 @@ impl AuthInfo {
         }
     }
 
-    fn get_payload(&self) -> Result<AuthInfoPayload> {
-        let basics = self.access_token.split('.').nth(1).ok_or(anyhow::anyhow!(
-            "Invalid token format, expected 3 parts separated by '.'"
-        ))?;
+    fn get_payload(&self) -> GritResult<AuthInfoPayload> {
+        let basics = self
+            .access_token
+            .split('.')
+            .nth(1)
+            .ok_or(GritPatternError::new(
+                "Invalid token format, expected 3 parts separated by '.'",
+            ))?;
         let raw = decode_to_string(basics.as_bytes())?;
 
-        let payload: AuthInfoPayload = serde_json::from_str(&raw)?;
+        let payload: AuthInfoPayload =
+            serde_json::from_str(&raw).map_err(|e| GritPatternError::new(e.to_string()))?;
 
         Ok(payload)
     }
 
-    pub fn get_expiry(&self) -> Result<DateTime<Utc>> {
+    pub fn get_expiry(&self) -> GritResult<DateTime<Utc>> {
         let payload = self.get_payload()?;
         let expiry = DateTime::<Utc>::from_timestamp(payload.exp as i64, 0)
-            .ok_or(anyhow::anyhow!("Invalid timestamp"))?;
+            .ok_or(GritPatternError::new("Invalid timestamp"))?;
         Ok(expiry)
     }
 
-    pub fn get_user_name(&self) -> Result<Option<String>> {
+    pub fn get_user_name(&self) -> GritResult<Option<String>> {
         let payload = self.get_payload()?;
         Ok(payload.hasura_claims.and_then(|c| c.nickname))
     }
 
-    pub fn get_user_id(&self) -> Result<String> {
+    pub fn get_user_id(&self) -> GritResult<String> {
         let payload = self.get_payload()?;
         Ok(payload.sub)
     }
 
-    pub fn is_expired(&self) -> Result<bool> {
+    pub fn is_expired(&self) -> GritResult<bool> {
         let expiry = self.get_expiry()?;
         Ok(expiry < Utc::now())
     }

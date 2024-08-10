@@ -3,9 +3,11 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::problem::MarzanoQueryContext;
-use anyhow::{anyhow, Result};
 use grit_pattern_matcher::pattern::GritMap;
-use grit_util::AstNode;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AstNode,
+};
 use marzano_util::node_with_source::NodeWithSource;
 use std::collections::BTreeMap;
 
@@ -18,7 +20,7 @@ impl NodeCompiler for MapCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let children = node.named_children_by_field_name("elements");
         let mut elements = BTreeMap::new();
         for element in children {

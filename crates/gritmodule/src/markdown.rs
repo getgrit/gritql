@@ -5,8 +5,8 @@ use crate::{
     parser::extract_relative_file_path,
     utils::is_pattern_name,
 };
-use anyhow::{bail, Context, Result};
 use fs_err::OpenOptions;
+use grit_util::error::{GritPatternError, GritResult};
 use grit_util::{traverse, Ast, Order, Position};
 use marzano_core::analysis::defines_itself;
 use marzano_core::api::EnforcementLevel;
@@ -21,8 +21,9 @@ use std::path::Path;
 use tokio::io::SeekFrom;
 use tree_sitter::Parser;
 
-fn parse_metadata(yaml_content: &str) -> Result<GritPatternMetadata> {
-    let result = serde_yaml::from_str::<GritPatternMetadata>(yaml_content)?;
+fn parse_metadata(yaml_content: &str) -> GritResult<GritPatternMetadata> {
+    let result = serde_yaml::from_str::<GritPatternMetadata>(yaml_content)
+        .map_err(|e| GritPatternError::new(e.to_string()))?;
     Ok(result)
 }
 
@@ -39,12 +40,12 @@ struct MarkdownBody {
     open_sample: Option<GritPatternSample>,
 }
 
-pub fn make_md_parser() -> Result<Parser> {
+pub fn make_md_parser() -> GritResult<Parser> {
     let mut parser = Parser::new().unwrap();
     let language = marzano_language::markdown_block::MarkdownBlock::new(None);
     parser
         .set_language(language.get_ts_language())
-        .with_context(|| "Failed to load markdown grammar")?;
+        .map_err(|_| GritPatternError::new("Failed to load markdown grammar"))?;
     Ok(parser)
 }
 
@@ -59,7 +60,7 @@ pub fn get_patterns_from_md(
     source_module: &Option<ModuleRepo>,
     root: &Option<String>,
     overrides: GritDefinitionOverrides,
-) -> Result<Vec<ModuleGritPattern>> {
+) -> GritResult<Vec<ModuleGritPattern>> {
     // Tree sitter has weird problems if we are missing a newline at the end of the file
     if !file.content.ends_with('\n') {
         file.content.push('\n');
@@ -82,8 +83,9 @@ pub fn get_patterns_from_md(
     let mut parser = make_md_parser()?;
 
     let src_tree = parser
-        .parse(src, None)?
-        .context("No valid Markdown tree found")?;
+        .parse(src, None)
+        .map_err(|e| GritPatternError::new(e.to_string()))?
+        .ok_or_else(|| GritPatternError::new("No valid Markdown tree found"))?;
     let root_node = NodeWithSource::new(src_tree.root_node(), src);
 
     let cursor = CursorWrapper::new(root_node.node.walk(), root_node.source);
@@ -186,12 +188,14 @@ pub fn get_patterns_from_md(
     }
 
     if patterns.is_empty() {
-        return Err(GritPatternError::new(r#"No grit body found in markdown file. Try adding a fenced code block with the language set to grit, for example:
+        return Err(GritPatternError::new(
+            r#"No grit body found in markdown file. Try adding a fenced code block with the language set to grit, for example:
 ```grit
 engine marzano(0.1)
 language js
 js"hello world"
-```"#));
+```"#,
+        ));
     }
 
     // Markdown patterns have a default level of info
@@ -241,11 +245,11 @@ js"hello world"
                 ..Default::default()
             })
         })
-        .collect::<Result<Vec<_>>>()?;
+        .collect::<GritResult<Vec<_>>>()?;
     Ok(patterns)
 }
 
-pub fn get_body_from_md_content(content: &str) -> Result<String> {
+pub fn get_body_from_md_content(content: &str) -> GritResult<String> {
     let patterns = get_patterns_from_md(
         &mut RichFile {
             path: "test.md".to_string(),
@@ -277,9 +281,11 @@ pub fn replace_sample_in_md_file(
     sample: &GritPatternSample,
     file_path: &String,
     offset: isize,
-) -> Result<isize> {
+) -> GritResult<isize> {
     let Some(range) = &sample.output_range else {
-        return Err(GritPatternError::new("Sample does not have an output range, cannot replace in file"));
+        return Err(GritPatternError::new(
+            "Sample does not have an output range, cannot replace in file",
+        ));
     };
 
     let byte_range =
@@ -289,7 +295,9 @@ pub fn replace_sample_in_md_file(
         .read(true)
         .write(true)
         .open(file_path)
-        .with_context(|| format!("Failed to open file for writing: {}", file_path))?;
+        .map_err(|_| {
+            GritPatternError::new(format!("Failed to open file for writing: {}", file_path))
+        })?;
 
     let mut content = String::new();
     file.read_to_string(&mut content)?;

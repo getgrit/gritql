@@ -2,7 +2,6 @@ use crate::{
     marzano_context::MarzanoContext, marzano_resolved_pattern::MarzanoResolvedPattern,
     paths::resolve, problem::MarzanoQueryContext,
 };
-use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
     binding::Binding,
     constant::Constant,
@@ -89,7 +88,7 @@ impl BuiltIns {
         index: usize,
         lang: &impl Language,
         name: &str,
-    ) -> Result<CallBuiltIn<MarzanoQueryContext>> {
+    ) -> GritResult<CallBuiltIn<MarzanoQueryContext>> {
         let params = &built_ins.0[index].params;
         let mut pattern_params = Vec::with_capacity(args.len());
         for param in params.iter() {
@@ -116,7 +115,7 @@ impl BuiltIns {
         self.0.push(built_in);
     }
 
-    pub fn extend_builtins(&mut self, other: BuiltIns) -> Result<()> {
+    pub fn extend_builtins(&mut self, other: BuiltIns) -> GritResult<()> {
         let self_name = self.0.iter().map(|b| &b.name).collect_vec();
         let other_name = other.0.iter().map(|b| &b.name).collect_vec();
         let repeats = self_name
@@ -128,7 +127,10 @@ impl BuiltIns {
                 .iter()
                 .fold("".to_string(), |a, n| format!("{}{}, ", a, n));
             let repeated_names = repeated_names.strip_suffix(", ").unwrap();
-            Err(GritPatternError::new(format!("failed to extend builtins as collections had repeated definitions for: {}", repeated_names)))
+            Err(GritPatternError::new(format!(
+                "failed to extend builtins as collections had repeated definitions for: {}",
+                repeated_names
+            )))
         } else {
             self.0.extend(other.0);
             Ok(())

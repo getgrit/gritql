@@ -2,7 +2,6 @@ use crate::{
     marzano_binding::MarzanoBinding, marzano_code_snippet::MarzanoCodeSnippet,
     marzano_context::MarzanoContext, paths::absolutize, problem::MarzanoQueryContext,
 };
-use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
     binding::Binding,
     constant::Constant,

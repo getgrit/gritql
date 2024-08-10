@@ -1,5 +1,7 @@
-use anyhow::Context;
-use grit_util::{Position, Range};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    Position, Range,
+};
 use log::info;
 use marzano_core::api::EnforcementLevel;
 use marzano_language::{grit_parser::MarzanoGritParser, target_language::PatternLanguage};
@@ -24,7 +26,7 @@ use crate::{
     parser::PatternFileExt,
     utils::is_pattern_name,
 };
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 
 #[derive(Debug, Deserialize)]
 pub struct GritGitHubConfig {
@@ -301,7 +303,7 @@ impl Ord for ResolvedGritDefinition {
 pub fn pattern_config_to_model(
     pattern: GritDefinitionConfig,
     source: Option<&ModuleRepo>,
-) -> Result<ModuleGritPattern> {
+) -> GritResult<ModuleGritPattern> {
     let mut split_name = pattern.name.split('#');
     let repo = split_name.next();
     let defined_local_name = split_name.next();
@@ -391,7 +393,7 @@ impl fmt::Display for ConfigSource {
 pub async fn init_config_from_path<T: FetcherType>(
     cwd: PathBuf,
     create_local: bool,
-) -> Result<ConfigSource> {
+) -> GritResult<ConfigSource> {
     let existing_config = find_grit_dir_from(cwd.clone()).await;
     let config_path = match existing_config {
         Some(config) => PathBuf::from_str(&config).unwrap(),
@@ -406,10 +408,12 @@ pub async fn init_config_from_path<T: FetcherType>(
                 }
             };
             let git_path = PathBuf::from_str(&git_dir).unwrap();
-            let repo_root = git_path.parent().context(format!(
-                "Unable to find repo root dir as parent of {}",
-                git_dir
-            ))?;
+            let repo_root = git_path.parent().ok_or_else(|| {
+                GritPatternError::new(format!(
+                    "Unable to find repo root dir as parent of {}",
+                    git_dir
+                ))
+            })?;
             let grit_dir = repo_root.join(REPO_CONFIG_DIR_NAME);
             let default_config = r#"version: 0.0.1
 patterns:
@@ -441,10 +445,12 @@ patterns:
         }
     }
 
-    let grit_parent = PathBuf::from(config_path.parent().context(format!(
-        "Unable to find parent of .grit directory at {}",
-        config_path.display()
-    ))?);
+    let grit_parent = PathBuf::from(config_path.parent().ok_or_else(|| {
+        GritPatternError::new(format!(
+            "Unable to find parent of .grit directory at {}",
+            config_path.display()
+        ))
+    })?);
     let parent_str = &grit_parent.to_string_lossy().to_string();
     let repo = ModuleRepo::from_dir(&config_path).await;
     fetch_modules::<T>(&repo, parent_str, None).await?;
@@ -453,7 +459,7 @@ patterns:
 
 pub async fn init_global_grit_modules<T: FetcherType>(
     from_module: Option<&ModuleRepo>,
-) -> Result<ConfigSource> {
+) -> GritResult<ConfigSource> {
     let global_grit_modules_dir = find_global_grit_modules_dir().await?;
 
     let token = env::var("GRIT_PROVIDER_TOKEN").ok();
@@ -463,9 +469,11 @@ pub async fn init_global_grit_modules<T: FetcherType>(
         let location = match fetcher.fetch_grit_module(module) {
             Ok(loc) => loc,
             Err(err) => {
-                return Err(GritPatternError::new("Failed to fetch remote grit module {}: {}",
+                return Err(GritPatternError::new(
+                    "Failed to fetch remote grit module {}: {}",
                     module.full_name,
-                    err.to_string()))
+                    err.to_string(),
+                ))
             }
         };
         fetch_modules::<T>(

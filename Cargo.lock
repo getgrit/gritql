@@ -2120,6 +2120,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "grit-util",
  "lazy_static",
  "log",
  "marzano-util",
@@ -2228,6 +2229,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "extism",
+ "grit-util",
  "serde_json",
 ]
 

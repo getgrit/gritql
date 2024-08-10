@@ -1,5 +1,5 @@
 use regex::Error as RegexError;
-use std::io;
+use std::io::{self};
 use std::num::{ParseFloatError, ParseIntError};
 use std::str::Utf8Error;
 use std::string::FromUtf8Error;

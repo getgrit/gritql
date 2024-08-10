@@ -24,6 +24,7 @@ tokio = { version = "1", features = ["full"] }
 log = { version = "0.4.19" }
 chrono = { version = "0.4.26" }
 marzano-util = { path = "../util" }
+grit-util = { path = "../grit-util" }
 
 [features]
 test-utils = []

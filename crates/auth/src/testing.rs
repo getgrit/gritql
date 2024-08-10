@@ -1,4 +1,4 @@
-use anyhow::Result;
+use grit_util::error::{GritPatternError, GritResult};
 use std::env;
 
 use lazy_static::lazy_static;
@@ -12,7 +12,7 @@ use crate::{
 /// Attempts to read a variable, first from the environment, then from Doppler.
 ///
 /// If neither source has the variable, an error is returned.
-pub fn get_config_var(var_name: &str) -> Result<String> {
+pub fn get_config_var(var_name: &str) -> GritResult<String> {
     if let Ok(value) = env::var(var_name) {
         return Ok(value);
     }
@@ -27,14 +27,14 @@ pub fn get_config_var(var_name: &str) -> Result<String> {
             let value = String::from_utf8_lossy(&output.stdout).trim().to_string();
             Ok(value)
         }
-        _ => Err(anyhow::anyhow!(
+        _ => Err(GritPatternError::new(format!(
             "Variable {} not found in environment or Doppler",
             var_name
-        )),
+        ))),
     }
 }
 
-fn get_existing_token() -> Result<AuthInfo> {
+fn get_existing_token() -> GritResult<AuthInfo> {
     let existing_token = get_config_var("API_TESTING_TOKEN")?;
     let info = AuthInfo {
         access_token: existing_token,
@@ -42,13 +42,13 @@ fn get_existing_token() -> Result<AuthInfo> {
     };
 
     if info.is_expired()? {
-        return Err(anyhow::anyhow!("existing token is expired"));
+        return Err(GritPatternError::new("existing token is expired"));
     }
 
     Ok(info)
 }
 
-fn get_new_tokens() -> Result<AuthInfo> {
+fn get_new_tokens() -> GritResult<AuthInfo> {
     // Exchange client tokens for a test token
     let client_id = get_config_var("API_TESTING_CLIENT_ID")?;
     let client_secret = get_config_var("API_TESTING_CLIENT_SECRET")?;
@@ -67,9 +67,12 @@ fn get_new_tokens() -> Result<AuthInfo> {
             "audience": AUTH0_API_AUDIENCE.as_str(),
             "grant_type": "client_credentials",
         }))
-        .send()?;
+        .send()
+        .map_err(|e| GritPatternError::new(e.to_string()))?;
 
-    let body = res.json::<AuthTokenResponseSuccess>()?;
+    let body = res
+        .json::<AuthTokenResponseSuccess>()
+        .map_err(|e| GritPatternError::new(e.to_string()))?;
 
     Ok(AuthInfo {
         access_token: body.access_token,
@@ -77,14 +80,14 @@ fn get_new_tokens() -> Result<AuthInfo> {
     })
 }
 
-pub fn get_testing_auth_info() -> Result<AuthInfo> {
+pub fn get_testing_auth_info() -> GritResult<AuthInfo> {
     let info = get_existing_token().or_else(|_| get_new_tokens())?;
 
     Ok(info)
 }
 
 lazy_static! {
-    pub static ref TEST_AUTH_INFO: Result<AuthInfo> = get_testing_auth_info();
+    pub static ref TEST_AUTH_INFO: GritResult<AuthInfo> = get_testing_auth_info();
 }
 
 #[cfg(test)]
@@ -93,7 +96,7 @@ mod tests {
 
     #[test]
     #[ignore = "eats up auth tokens, only enable when explicitly testing"]
-    fn test_token_refresh() -> Result<()> {
+    fn test_token_refresh() -> GritResult<()> {
         let auth_info = get_testing_auth_info().unwrap();
         assert!(!auth_info.is_expired()?);
         Ok(())
@@ -101,7 +104,7 @@ mod tests {
 
     #[test]
     #[ignore = "tokens not used in open source tests"]
-    fn test_uses_existing_token() -> Result<()> {
+    fn test_uses_existing_token() -> GritResult<()> {
         let existing_info = get_existing_token().unwrap();
         let auth_info = TEST_AUTH_INFO.as_ref().unwrap();
         println!("auth_info: {}", auth_info);

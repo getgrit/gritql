@@ -17,7 +17,6 @@ use crate::{
     variables::variable_from_name,
 };
 use crate::{built_in_functions::CallableFn, pattern_compiler::compiler::DefinitionOutput};
-use anyhow::{bail, Result};
 use grit_pattern_matcher::pattern::State;
 use grit_pattern_matcher::{
     constant::Constant,
@@ -31,21 +30,23 @@ use grit_pattern_matcher::{
         VariableSourceLocations, Where,
     },
 };
-use grit_util::{AnalysisLogs, Ast, FileRange};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, Ast, FileRange,
+};
 
 use marzano_language::{
     self, grit_parser::MarzanoGritParser, language::Tree, target_language::TargetLanguage,
 };
 
 use std::{collections::BTreeMap, path::Path, vec};
-use grit_pattern_matcher::errors::GritResult;
 
 pub type CallbackMatchFn = dyn for<'a> Fn(
         &<problem::MarzanoQueryContext as grit_pattern_matcher::context::QueryContext>::ResolvedPattern<'a>,
         &'a MarzanoContext<'a>,
         &mut State<'a, MarzanoQueryContext>,
         &mut AnalysisLogs,
-    ) -> Result<bool>
+    ) -> GritResult<bool>
     + Send
     + Sync;
 
@@ -89,7 +90,7 @@ impl PatternBuilder {
         name: Option<String>,
         grit_parser: &mut MarzanoGritParser,
         custom_built_ins: Option<BuiltIns>,
-    ) -> Result<Self> {
+    ) -> GritResult<Self> {
         if src == "." {
             let error = ". never matches and should not be used as a pattern. Did you mean to run 'grit apply <pattern> .'?";
             return Err(GritPatternError::new(error));
@@ -203,7 +204,7 @@ impl PatternBuilder {
         mut self,
         file_ranges: Option<Vec<FileRange>>,
         injected_limit: Option<usize>,
-    ) -> Result<Self> {
+    ) -> GritResult<Self> {
         let compilation = CompilationContext {
             file: DEFAULT_FILE_NAME,
             built_ins: &self.built_ins,
@@ -318,7 +319,7 @@ impl PatternBuilder {
         file_ranges: Option<Vec<FileRange>>,
         injected_limit: Option<usize>,
         auto_wrap: bool,
-    ) -> Result<CompilationResult> {
+    ) -> GritResult<CompilationResult> {
         let target_builder = if auto_wrap {
             self.auto_wrap(file_ranges, injected_limit)?
         } else {

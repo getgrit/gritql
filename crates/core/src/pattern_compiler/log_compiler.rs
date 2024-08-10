@@ -3,9 +3,11 @@ use super::{
     pattern_compiler::PatternCompiler, variable_compiler::VariableCompiler,
 };
 use crate::problem::MarzanoQueryContext;
-use anyhow::Result;
 use grit_pattern_matcher::pattern::{Log, VariableInfo};
-use grit_util::AstNode;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AstNode,
+};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct LogCompiler;
@@ -17,7 +19,7 @@ impl NodeCompiler for LogCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let message = node.child_by_field_name("message");
         let message = if let Some(message) = message {
             Some(PatternCompiler::from_node(&message, context)?)
@@ -29,7 +31,7 @@ impl NodeCompiler for LogCompiler {
             .map(|n| {
                 let name = n.text()?;
                 let variable = VariableCompiler::from_node(&n, context)?;
-                Ok::<_, anyhow::Error>(VariableInfo::new(name.to_string(), variable))
+                Ok::<_, GritPatternError>(VariableInfo::new(name.to_string(), variable))
             })
             .transpose()?;
 

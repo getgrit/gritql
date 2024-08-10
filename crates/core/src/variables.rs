@@ -1,23 +1,22 @@
 use crate::pattern_compiler::compiler::NodeCompilationContext;
-use anyhow::Result;
 use grit_pattern_matcher::{
     constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
     pattern::{Variable, VariableSourceLocations},
 };
-use grit_util::ByteRange;
+use grit_util::{error::GritResult, ByteRange};
 use std::collections::BTreeSet;
 
 pub(crate) fn variable_from_name(
     name: &str,
     context: &mut NodeCompilationContext,
-) -> Result<Variable> {
+) -> GritResult<Variable> {
     register_variable_optional_range(name, None, context)
 }
 
 pub(crate) fn get_variables(
     params: &[(String, ByteRange)],
     context: &mut NodeCompilationContext,
-) -> Result<Vec<(String, Variable)>> {
+) -> GritResult<Vec<(String, Variable)>> {
     params
         .iter()
         .map(|(name, range)| {
@@ -31,7 +30,7 @@ pub(crate) fn register_variable(
     name: &str,
     range: ByteRange,
     context: &mut NodeCompilationContext,
-) -> Result<Variable> {
+) -> GritResult<Variable> {
     register_variable_optional_range(
         name,
         Some(FileLocation {
@@ -51,7 +50,7 @@ fn register_variable_optional_range(
     name: &str,
     location: Option<FileLocation>,
     context: &mut NodeCompilationContext,
-) -> Result<Variable> {
+) -> GritResult<Variable> {
     let NodeCompilationContext {
         vars,
         vars_array,

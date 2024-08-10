@@ -1,5 +1,7 @@
-use anyhow::{anyhow, Result};
-use grit_util::{traverse, Ast, AstNode, Order};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    traverse, Ast, AstNode, Order,
+};
 use marzano_language::grit_parser::MarzanoGritParser;
 use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
 use std::collections::BTreeMap;
@@ -23,8 +25,8 @@ fn walk_call_tree(
     node: &NodeWithSource,
     libs: &BTreeMap<String, String>,
     grit_parser: &mut MarzanoGritParser,
-    predicate: &dyn Fn(&NodeWithSource) -> Result<bool>,
-) -> Result<bool> {
+    predicate: &dyn Fn(&NodeWithSource) -> GritResult<bool>,
+) -> GritResult<bool> {
     let cursor = node.walk();
     for n in traverse(cursor, Order::Pre) {
         if predicate(&n)? {
@@ -53,7 +55,7 @@ pub fn is_multifile(
     root: &NodeWithSource,
     libs: &BTreeMap<String, String>,
     grit_parser: &mut MarzanoGritParser,
-) -> Result<bool> {
+) -> GritResult<bool> {
     walk_call_tree(root, libs, grit_parser, &|n| Ok(n.node.kind() == "files"))
 }
 
@@ -61,7 +63,7 @@ pub fn has_limit(
     root: &NodeWithSource,
     libs: &BTreeMap<String, String>,
     grit_parser: &mut MarzanoGritParser,
-) -> Result<bool> {
+) -> GritResult<bool> {
     walk_call_tree(root, libs, grit_parser, &|n| {
         Ok(n.node.kind() == "patternLimit")
     })
@@ -72,7 +74,7 @@ pub fn is_async(
     root: &NodeWithSource,
     libs: &BTreeMap<String, String>,
     grit_parser: &mut MarzanoGritParser,
-) -> Result<bool> {
+) -> GritResult<bool> {
     walk_call_tree(root, libs, grit_parser, &|n| {
         if n.node.kind() != "nodeLike" {
             return Ok(false);
@@ -86,7 +88,7 @@ pub fn is_async(
 }
 
 /// Return true if the pattern attempts to define itself
-pub fn defines_itself(root: &NodeWithSource, root_name: &str) -> Result<bool> {
+pub fn defines_itself(root: &NodeWithSource, root_name: &str) -> GritResult<bool> {
     let cursor = root.node.walk();
     for n in traverse(CursorWrapper::new(cursor, root.source), Order::Pre) {
         if n.node.kind() != "patternDefinition" {
@@ -114,7 +116,7 @@ pub fn get_dependents_of_target_patterns_by_traversal_from_src(
     src: &str,
     parser: &mut MarzanoGritParser,
     target_patterns: &[&String],
-) -> Result<Vec<String>> {
+) -> GritResult<Vec<String>> {
     let mut dependents = <Vec<String>>::new();
     let node_like = "nodeLike";
     let predicate_call = "predicateCall";
@@ -178,7 +180,7 @@ fn find_child_tree_definition(
     libs: &BTreeMap<String, String>,
     traversed_stack: &mut Vec<String>,
     name: &str,
-) -> Result<Option<marzano_language::language::Tree>> {
+) -> GritResult<Option<marzano_language::language::Tree>> {
     if !traversed_stack.contains(&name.to_string()) {
         if let Some(file_body) = libs.get(file_name) {
             traversed_stack.push(name.to_owned());

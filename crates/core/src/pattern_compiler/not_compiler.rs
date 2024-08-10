@@ -3,12 +3,14 @@ use super::{
     pattern_compiler::PatternCompiler, predicate_compiler::PredicateCompiler,
 };
 use crate::problem::MarzanoQueryContext;
-use anyhow::{anyhow, Result};
 use grit_pattern_matcher::{
     context::StaticDefinitions,
     pattern::{Not, Pattern, PatternOrPredicate, PrNot, Predicate},
 };
-use grit_util::AnalysisLogBuilder;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogBuilder,
+};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct NotCompiler;
@@ -20,7 +22,7 @@ impl NodeCompiler for NotCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let pattern = node
             .child_by_field_name("pattern")
             .ok_or_else(|| GritPatternError::new("missing pattern of patternNot"))?;
@@ -40,7 +42,8 @@ impl NodeCompiler for NotCompiler {
                 .position(range.start)
                 .range(range)
                 .message("Warning: rewrites inside of a not will never be applied")
-                .build()?;
+                .build()
+                .map_err(|e| GritPatternError::new(e.to_string()))?;
             context.logs.push(log);
         }
         Ok(Not::new(pattern))
@@ -56,7 +59,7 @@ impl NodeCompiler for PrNotCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let not = node
             .child_by_field_name("predicate")
             .ok_or_else(|| GritPatternError::new("predicateNot missing predicate"))?;
@@ -76,7 +79,8 @@ impl NodeCompiler for PrNotCompiler {
                 .position(range.start)
                 .range(range)
                 .message("Warning: rewrites inside of a not will never be applied")
-                .build()?;
+                .build()
+                .map_err(|e| GritPatternError::new(e.to_string()))?;
             context.logs.push(log);
         }
         Ok(PrNot::new(not))

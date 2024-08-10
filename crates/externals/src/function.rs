@@ -1,5 +1,5 @@
-use anyhow::Result;
 use extism::{Manifest, Plugin, Wasm};
+use grit_util::error::{GritPatternError, GritResult};
 
 pub struct ExternalFunction {
     plugin: Plugin,
@@ -7,18 +7,24 @@ pub struct ExternalFunction {
 }
 
 impl ExternalFunction {
-    pub fn new_js(js_function_body: &[u8], param_names: Vec<String>) -> Result<Self> {
+    pub fn new_js(js_function_body: &[u8], param_names: Vec<String>) -> GritResult<Self> {
         let sandbox = include_bytes!("./static/sandbox.wasm");
         let eval_sandbox = Wasm::data(sandbox.to_vec());
         let manifest = Manifest::new([eval_sandbox]);
         // Currently the JS PDK requires WASI to be enabled; this is not really secure
-        let mut plugin = Plugin::new(manifest, [], true)?;
+        let mut plugin =
+            Plugin::new(manifest, [], true).map_err(|e| GritPatternError::new(e.to_string()))?;
 
-        plugin.call("register_function", js_function_body)?;
-        plugin.call(
-            "register_parameter_names",
-            serde_json::to_vec(&param_names)?,
-        )?;
+        plugin
+            .call("register_function", js_function_body)
+            .map_err(|e| GritPatternError::new(e.to_string()))?;
+        plugin
+            .call(
+                "register_parameter_names",
+                serde_json::to_vec(&param_names)
+                    .map_err(|e| GritPatternError::new(e.to_string()))?,
+            )
+            .map_err(|e| GritPatternError::new(e.to_string()))?;
 
         Ok(Self {
             plugin,
@@ -26,9 +32,13 @@ impl ExternalFunction {
         })
     }
 
-    pub fn call(&mut self, input_bindings: &[&str]) -> Result<Vec<u8>> {
-        let serialized = serde_json::to_vec(input_bindings)?;
-        let data: &[u8] = self.plugin.call(&self.name, serialized)?;
+    pub fn call(&mut self, input_bindings: &[&str]) -> GritResult<Vec<u8>> {
+        let serialized =
+            serde_json::to_vec(input_bindings).map_err(|e| GritPatternError::new(e.to_string()))?;
+        let data: &[u8] = self
+            .plugin
+            .call(&self.name, serialized)
+            .map_err(|e| GritPatternError::new(e.to_string()))?;
         Ok(data.to_vec())
     }
 }
@@ -38,7 +48,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_js_say_hello() -> Result<()> {
+    fn test_js_say_hello() -> GritResult<()> {
         let js_script = include_bytes!("../fixtures/js/say_hello.js");
 
         let mut plugin = ExternalFunction::new_js(
@@ -55,7 +65,7 @@ mod tests {
     }
 
     #[test]
-    fn test_js_say_hello_string() -> Result<()> {
+    fn test_js_say_hello_string() -> GritResult<()> {
         let js_script = include_bytes!("../fixtures/js/say_hello.js");
 
         let mut plugin = ExternalFunction::new_js(
@@ -74,7 +84,7 @@ mod tests {
 
     #[test]
     #[ignore = "This currently fails, it seems we can't call the same function twice"]
-    fn test_js_say_hello_twice() -> Result<()> {
+    fn test_js_say_hello_twice() -> GritResult<()> {
         let js_script = include_bytes!("../fixtures/js/say_hello.js");
 
         let mut plugin = ExternalFunction::new_js(

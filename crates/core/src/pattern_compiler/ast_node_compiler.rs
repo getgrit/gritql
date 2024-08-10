@@ -3,7 +3,7 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::ast_node::ASTNode;
-use anyhow::{anyhow, Result};
+use grit_util::error::{GritPatternError, GritResult};
 use itertools::Itertools;
 use marzano_language::language::{FieldId, MarzanoLanguage, NodeTypes, SortId};
 use marzano_util::node_with_source::NodeWithSource;
@@ -24,20 +24,24 @@ impl AstNodeCompiler {
         sort: SortId,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> Result<ASTNode> {
+    ) -> GritResult<ASTNode> {
         let mut args = Vec::new();
         if context.compilation.lang.is_comment_sort(sort) {
             match named_args.len().cmp(&1) {
                 Ordering::Equal => {
                     let (name, node) = named_args.remove(0);
                     if name != "content" {
-                        return Err(GritPatternError::new("unknown field name {name} for comment node"));
+                        return Err(GritPatternError::new(
+                            "unknown field name {name} for comment node",
+                        ));
                     }
                     let pattern = PatternCompiler::from_node(&node, context)?;
                     args.push((COMMENT_CONTENT_FIELD_ID, false, pattern));
                 }
                 Ordering::Greater => {
-                    return Err(GritPatternError::new("comment node has more than one field"));
+                    return Err(GritPatternError::new(
+                        "comment node has more than one field",
+                    ));
                 }
                 Ordering::Less => { /* continue */ }
             }
@@ -72,10 +76,10 @@ impl AstNodeCompiler {
                         .node_kind_for_id(sort)
                         .unwrap()
                         .to_string();
-                    GritPatternError::new("invalid field `{}` for node `{}`, valid fields are: {}",
-                        name,
-                        node_sort,
-                        node_field_names)
+                    GritPatternError::new(format!(
+                        "invalid field `{}` for node `{}`, valid fields are: {}",
+                        name, node_sort, node_field_names,
+                    ))
                 })?;
 
             let field = node_fields.iter().find(|f| f.id() == id).ok_or_else(|| {
@@ -86,10 +90,10 @@ impl AstNodeCompiler {
                     .node_kind_for_id(sort)
                     .unwrap()
                     .to_string();
-                GritPatternError::new("invalid field `{}` for node `{}`, valid fields are: {}",
-                    name,
-                    node_sort,
-                    node_field_names)
+                GritPatternError::new(format!(
+                    "invalid field `{}` for node `{}`, valid fields are: {}",
+                    name, node_sort, node_field_names,
+                ))
             })?;
 
             let pattern = ListCompiler::from_node_in_context(&node, field, context, is_rhs)?;

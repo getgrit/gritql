@@ -1,6 +1,8 @@
-use anyhow::{bail, Result};
 use futures::{future::BoxFuture, FutureExt as _};
-use grit_util::Position;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    Position,
+};
 use marzano_util::rich_path::RichFile;
 use std::{
     collections::HashSet,
@@ -17,13 +19,15 @@ use crate::{
     parser::{extract_relative_file_path, get_patterns_from_file, PatternFileExt},
 };
 
-pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
+pub fn get_grit_config(source: &str, source_path: &str) -> GritResult<GritConfig> {
     let serialized: SerializedGritConfig = match serde_yaml::from_str(source) {
         Ok(config) => config,
         Err(err) => {
-            return Err(GritPatternError::new("Invalid configuration file '{}': {}",
+            return Err(GritPatternError::new(format!(
+                "Invalid configuration file '{}': {}",
                 source_path,
-                err.to_string()))
+                err.to_string(),
+            )))
         }
     };
 
@@ -62,7 +66,7 @@ pub fn get_patterns_from_yaml<'a>(
     source_module: Option<&'a ModuleRepo>,
     root: &'a Option<String>,
     repo_dir: &'a str,
-) -> BoxFuture<'a, Result<Vec<ModuleGritPattern>>> {
+) -> BoxFuture<'a, GritResult<Vec<ModuleGritPattern>>> {
     async move {
         let grit_path = extract_relative_file_path(file, root);
         let mut config = get_grit_config(&file.content, &grit_path)?;
@@ -73,7 +77,7 @@ pub fn get_patterns_from_yaml<'a>(
             pattern.position = Some(Position::from_byte_index(&file.content, offset));
         }
 
-        let patterns: Result<Vec<_>> = config
+        let patterns: GritResult<Vec<_>> = config
             .patterns
             .into_iter()
             .map(|pattern| pattern_config_to_model(pattern, source_module))
@@ -110,7 +114,7 @@ pub fn get_patterns_from_yaml<'a>(
     .boxed()
 }
 
-pub fn extract_grit_modules(content: &str, path: &str) -> Result<Vec<String>> {
+pub fn extract_grit_modules(content: &str, path: &str) -> GritResult<Vec<String>> {
     let config = get_grit_config(content, path)?;
 
     let mut unique_names: HashSet<String> = HashSet::new();

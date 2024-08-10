@@ -23,6 +23,7 @@ use crate::{
     yaml::{get_patterns_from_yaml, read_grit_yaml},
 };
 use anyhow::{bail, Context, Result};
+use grit_util::error::{GritPatternError, GritResult};
 use homedir::get_my_home;
 use marzano_language::{grit_parser::MarzanoGritParser, target_language::PatternLanguage};
 use tokio::{fs, join};
@@ -30,7 +31,7 @@ use tokio::{fs, join};
 pub async fn find_local_patterns(
     module: &ModuleRepo,
     grit_parent_dir: &str,
-) -> Result<Vec<ResolvedGritDefinition>> {
+) -> GritResult<Vec<ResolvedGritDefinition>> {
     let mut resolved_patterns = HashMap::new();
     let mut errored_patterns = HashMap::new();
     resolve_patterns_for_module(
@@ -47,7 +48,7 @@ pub async fn find_local_patterns(
         .collect())
 }
 
-pub async fn find_user_patterns() -> Result<Vec<ResolvedGritDefinition>> {
+pub async fn find_user_patterns() -> GritResult<Vec<ResolvedGritDefinition>> {
     let mut resolved_patterns: HashMap<String, HashMap<String, ResolvedGritDefinition>> =
         HashMap::new();
     let mut errored_patterns = HashMap::new();
@@ -94,7 +95,7 @@ pub async fn fetch_modules<T: FetcherType>(
     module: &ModuleRepo,
     grit_parent_dir: &str,
     override_grit_dir: Option<PathBuf>,
-) -> Result<()> {
+) -> GritResult<()> {
     let as_path = PathBuf::from_str(grit_parent_dir).unwrap();
     let grit_dir = override_grit_dir.unwrap_or_else(|| as_path.join(REPO_CONFIG_DIR_NAME));
 
@@ -220,7 +221,7 @@ pub async fn get_grit_files(
     module: &ModuleRepo,
     grit_parent_dir: &str,
     must_process: Option<Vec<ModuleRepo>>,
-) -> Result<PatternsDirectory> {
+) -> GritResult<PatternsDirectory> {
     let mut processing_modules: Vec<ModuleRepo> = must_process.unwrap_or_default();
     let mut processed_modules: HashSet<String> = HashSet::new();
     let mut grit_files: PatternsDirectory = PatternsDirectory::new();
@@ -269,7 +270,7 @@ pub async fn resolve_patterns(
     module: &ModuleRepo,
     grit_parent_dir: &str,
     must_process: Option<Vec<ModuleRepo>>,
-) -> Result<(Vec<ResolvedGritDefinition>, HashMap<String, String>)> {
+) -> GritResult<(Vec<ResolvedGritDefinition>, HashMap<String, String>)> {
     let mut resolved_patterns: HashMap<String, HashMap<String, ResolvedGritDefinition>> =
         HashMap::new();
     let mut errored_patterns: HashMap<String, String> = HashMap::new();
@@ -445,7 +446,7 @@ async fn resolve_namespace_import(
     remote_references: &HashMap<String, HashMap<String, Vec<ModuleGritPattern>>>,
     resolved_patterns: &HashMap<String, HashMap<String, ResolvedGritDefinition>>,
     our_patterns: &mut Vec<ResolvedGritDefinition>,
-) -> Result<()> {
+) -> GritResult<()> {
     let mut stack = Vec::new();
     stack.push(namespace_imported.clone());
 
@@ -529,7 +530,7 @@ async fn get_grit_files_for_module(
     repo_dir: &str,
     grit_files: &mut PatternsDirectory,
     processing_modules: &mut Vec<ModuleRepo>,
-) -> Result<()> {
+) -> GritResult<()> {
     let repo_path = PathBuf::from_str(repo_dir).unwrap();
     let yaml_patterns = match read_grit_yaml(&repo_path).await {
         Some(config) => {
@@ -579,7 +580,7 @@ async fn resolve_patterns_for_module(
     resolved_patterns: &mut HashMap<String, HashMap<String, ResolvedGritDefinition>>,
     errored_patterns: &mut HashMap<String, String>,
     processing_modules: &mut Vec<ModuleRepo>,
-) -> Result<HashMap<String, Vec<ModuleGritPattern>>> {
+) -> GritResult<HashMap<String, Vec<ModuleGritPattern>>> {
     let mut module_patterns: HashMap<String, Vec<ModuleGritPattern>> = HashMap::new();
     let repo_path = PathBuf::from_str(repo_dir).unwrap();
     let yaml_patterns = match read_grit_yaml(&repo_path).await {
@@ -723,7 +724,7 @@ fn merge_local_with_remote(
 pub async fn get_grit_files_from_known_grit_dir(
     config_path: &Path,
     must_process: Vec<ModuleRepo>,
-) -> Result<PatternsDirectory> {
+) -> GritResult<PatternsDirectory> {
     let mut stdlib_modules = get_stdlib_modules();
     stdlib_modules.extend(must_process);
 
@@ -741,7 +742,7 @@ pub async fn get_grit_files_from_known_grit_dir(
 pub async fn find_and_resolve_grit_dir(
     cwd: Option<PathBuf>,
     global_dir: Option<PathBuf>,
-) -> Result<PatternsDirectory> {
+) -> GritResult<PatternsDirectory> {
     let existing_config = if let Some(cwd) = cwd {
         find_grit_dir_from(cwd).await
     } else {

@@ -6,9 +6,11 @@ use crate::{
     problem::MarzanoQueryContext,
     variables::{get_variables, register_variable},
 };
-use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::pattern::{Bubble, Pattern, PatternDefinition};
-use grit_util::{error::GritResult, AstNode, ByteRange};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AstNode, ByteRange,
+};
 use itertools::Itertools;
 use marzano_util::node_with_source::NodeWithSource;
 use std::collections::BTreeMap;
@@ -22,7 +24,7 @@ impl NodeCompiler for BubbleCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let mut local_vars = BTreeMap::new();
         let (local_scope_index, mut local_context) = create_scope!(context, local_vars);
 
@@ -34,7 +36,9 @@ impl NodeCompiler for BubbleCompiler {
             .map(|n| Ok((n.text()?.trim().to_string(), n.byte_range())))
             .collect::<GritResult<Vec<(String, ByteRange)>>>()?;
         if parameters.iter().unique_by(|n| &n.0).count() != parameters.len() {
-            return Err(GritPatternError::new("bubble parameters must be unique, but had a repeated name in its parameters."))
+            return Err(GritPatternError::new(
+                "bubble parameters must be unique, but had a repeated name in its parameters.",
+            ));
         }
         let params = get_variables(&parameters, &mut local_context)?;
 
@@ -49,7 +53,7 @@ impl NodeCompiler for BubbleCompiler {
                 let v = Pattern::Variable(register_variable(name, *range, context)?);
                 Ok(v)
             })
-            .collect::<Result<Vec<Pattern<MarzanoQueryContext>>>>()?;
+            .collect::<GritResult<Vec<Pattern<MarzanoQueryContext>>>>()?;
 
         let pattern_def = PatternDefinition::new(
             "<bubble>".to_string(),

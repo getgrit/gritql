@@ -3,8 +3,8 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::problem::MarzanoQueryContext;
-use anyhow::{anyhow, Result};
 use grit_pattern_matcher::pattern::Includes;
+use grit_util::error::{GritPatternError, GritResult};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct IncludesCompiler;
@@ -16,7 +16,7 @@ impl NodeCompiler for IncludesCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let includes = node
             .child_by_field_name("includes")
             .ok_or_else(|| GritPatternError::new("missing includes of patternIncludes"))?;

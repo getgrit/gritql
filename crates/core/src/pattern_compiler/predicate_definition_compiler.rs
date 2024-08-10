@@ -2,9 +2,11 @@ use super::{
     and_compiler::PrAndCompiler, compiler::NodeCompilationContext, node_compiler::NodeCompiler,
 };
 use crate::{problem::MarzanoQueryContext, variables::get_variables};
-use anyhow::{anyhow, Result};
 use grit_pattern_matcher::pattern::PredicateDefinition;
-use grit_util::AstNode;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AstNode,
+};
 use marzano_util::node_with_source::NodeWithSource;
 use std::collections::BTreeMap;
 
@@ -17,7 +19,7 @@ impl NodeCompiler for PredicateDefinitionCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let name = node
             .child_by_field_name("name")
             .ok_or_else(|| GritPatternError::new("missing name of pattern definition"))?;
@@ -32,7 +34,9 @@ impl NodeCompiler for PredicateDefinitionCompiler {
                 .compilation
                 .predicate_definition_info
                 .get(name)
-                .ok_or_else(|| GritPatternError::new(format!("cannot get info for pattern {}", name)))?
+                .ok_or_else(|| {
+                    GritPatternError::new(format!("cannot get info for pattern {}", name))
+                })?
                 .parameters,
             &mut local_context,
         )?;

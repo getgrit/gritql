@@ -6,9 +6,11 @@ use crate::{
     foreign_function_definition::ForeignFunctionDefinition, problem::MarzanoQueryContext,
     variables::get_variables,
 };
-use anyhow::{anyhow, Result};
 use grit_pattern_matcher::pattern::GritFunctionDefinition;
-use grit_util::AstNode;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AstNode,
+};
 use marzano_util::node_with_source::NodeWithSource;
 use std::collections::BTreeMap;
 
@@ -21,7 +23,7 @@ impl NodeCompiler for GritFunctionDefinitionCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let name = node
             .child_by_field_name("name")
             .ok_or_else(|| GritPatternError::new("missing name of function definition"))?;
@@ -35,7 +37,9 @@ impl NodeCompiler for GritFunctionDefinitionCompiler {
                 .compilation
                 .function_definition_info
                 .get(name)
-                .ok_or_else(|| GritPatternError::new(format!("cannot get info for function {}", name)))?
+                .ok_or_else(|| {
+                    GritPatternError::new(format!("cannot get info for function {}", name))
+                })?
                 .parameters,
             &mut local_context,
         )?;
@@ -64,7 +68,7 @@ impl NodeCompiler for ForeignFunctionDefinitionCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let name = node
             .child_by_field_name("name")
             .ok_or_else(|| GritPatternError::new("missing name of function definition"))?;
@@ -77,7 +81,9 @@ impl NodeCompiler for ForeignFunctionDefinitionCompiler {
                 .compilation
                 .foreign_function_definition_info
                 .get(name)
-                .ok_or_else(|| GritPatternError::new(format!("cannot get info for function {}", name)))?
+                .ok_or_else(|| {
+                    GritPatternError::new(format!("cannot get info for function {}", name))
+                })?
                 .parameters,
             &mut local_context,
         )?;
@@ -87,9 +93,9 @@ impl NodeCompiler for ForeignFunctionDefinitionCompiler {
             .child_by_field_name("code")
             .ok_or_else(|| GritPatternError::new("missing code of foreign function body"))?;
         let foreign_language = ForeignLanguageCompiler::from_node(
-            &node
-                .child_by_field_name("language")
-                .ok_or_else(|| GritPatternError::new("missing language of foreign function definition"))?,
+            &node.child_by_field_name("language").ok_or_else(|| {
+                GritPatternError::new("missing language of foreign function definition")
+            })?,
             context,
         )?;
         let function_definition = ForeignFunctionDefinition::new(

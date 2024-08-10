@@ -1,6 +1,6 @@
 use std::{env::current_exe, fs::canonicalize, path::Path};
 
-use anyhow::{bail, Result};
+use grit_util::error::{GritPatternError, GritResult};
 use marzano_core::api::MatchResult;
 use marzano_language::target_language::PatternLanguage;
 use regex::Regex;
@@ -22,9 +22,11 @@ pub fn extract_path(result: &MatchResult) -> Option<&String> {
     }
 }
 
-pub fn remove_dir_all_safe(dir: &Path) -> Result<()> {
+pub fn remove_dir_all_safe(dir: &Path) -> GritResult<()> {
     if current_exe()?.starts_with(canonicalize(dir)?) {
-        return Err(GritPatternError::new("Fatal error: refusing to remove the directory containing the current executable"))
+        return Err(GritPatternError::new(
+            "Fatal error: refusing to remove the directory containing the current executable",
+        ));
     }
     fs_err::remove_dir_all(dir)?;
     Ok(())

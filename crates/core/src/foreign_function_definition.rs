@@ -2,7 +2,6 @@ use crate::{
     marzano_context::MarzanoContext, marzano_resolved_pattern::MarzanoResolvedPattern,
     problem::MarzanoQueryContext,
 };
-use anyhow::{bail, Result};
 use grit_pattern_matcher::{
     constant::Constant,
     context::ExecContext,
@@ -54,7 +53,9 @@ impl FunctionDefinition<MarzanoQueryContext> for ForeignFunctionDefinition {
         _args: &'a [Option<Pattern<MarzanoQueryContext>>],
         _logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation<MarzanoQueryContext>> {
-        return Err(GritPatternError::new("External functions are not enabled in your environment"))
+        return Err(GritPatternError::new(
+            "External functions are not enabled in your environment",
+        ));
     }
 
     #[cfg(feature = "external_functions_common")]
@@ -78,9 +79,18 @@ impl FunctionDefinition<MarzanoQueryContext> for ForeignFunctionDefinition {
             match r {
                 Some(r) => match r.text(&state.files, context.language()) {
                     Ok(t) => cow_resolved.push(t),
-                    Err(e) => return Err(GritPatternError::new(format!("failed to get text from resolved pattern: {}", e))),
+                    Err(e) => {
+                        return Err(GritPatternError::new(format!(
+                            "failed to get text from resolved pattern: {}",
+                            e
+                        )))
+                    }
                 },
-                None => return Err(GritPatternError::new("Foreign function references unbound variable")),
+                None => {
+                    return Err(GritPatternError::new(
+                        "Foreign function references unbound variable",
+                    ))
+                }
             }
         }
 
@@ -99,14 +109,19 @@ impl FunctionDefinition<MarzanoQueryContext> for ForeignFunctionDefinition {
         let mut function = ExternalFunction::new_js(&self.code, param_names)?;
 
         #[cfg(feature = "external_functions")]
-        let result = function
-            .call(&resolved_str)
-            .or_else(|e| return Err(GritPatternError::new("failed to call function {}: {}", self.name, e)))?;
+        let result = function.call(&resolved_str).or_else(|e| {
+            return Err(GritPatternError::new(format!(
+                "failed to call function {}: {}",
+                self.name, e
+            )));
+        })?;
         // END embedded version
 
         let string = String::from_utf8(result).or_else(|_| {
-            return Err(GritPatternError::new("function {} returned did not return a UTF-8 string",
-                self.name))
+            return Err(GritPatternError::new(format!(
+                "function {} returned did not return a UTF-8 string",
+                self.name,
+            )));
         })?;
 
         Ok(FuncEvaluation {

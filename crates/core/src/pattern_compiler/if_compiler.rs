@@ -3,8 +3,8 @@ use super::{
     pattern_compiler::PatternCompiler, predicate_compiler::PredicateCompiler,
 };
 use crate::problem::MarzanoQueryContext;
-use anyhow::{anyhow, Result};
 use grit_pattern_matcher::pattern::{If, PrIf};
+use grit_util::error::{GritPatternError, GritResult};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct IfCompiler;
@@ -16,7 +16,7 @@ impl NodeCompiler for IfCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let if_ = node
             .child_by_field_name("if")
             .ok_or_else(|| GritPatternError::new("missing condition of if"))?;
@@ -42,7 +42,7 @@ impl NodeCompiler for PrIfCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let if_ = node
             .child_by_field_name("if")
             .ok_or_else(|| GritPatternError::new("missing condition of if"))?;

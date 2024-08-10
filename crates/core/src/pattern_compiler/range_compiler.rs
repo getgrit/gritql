@@ -1,7 +1,6 @@
 use super::{compiler::NodeCompilationContext, node_compiler::NodeCompiler};
-use anyhow::Result;
 use grit_pattern_matcher::pattern::{Point, Range};
-use grit_util::AstNode;
+use grit_util::{error::GritResult, AstNode};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct RangeCompiler;
@@ -13,7 +12,7 @@ impl NodeCompiler for RangeCompiler {
         node: &NodeWithSource,
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let start_line = node_to_int(node, "start_line")?;
         let start_column = node_to_int(node, "start_column")?;
         let end_line = node_to_int(node, "end_line")?;
@@ -25,7 +24,7 @@ impl NodeCompiler for RangeCompiler {
     }
 }
 
-fn node_to_int(node: &NodeWithSource, field: &str) -> Result<Option<u32>> {
+fn node_to_int(node: &NodeWithSource, field: &str) -> GritResult<Option<u32>> {
     node.child_by_field_name(field)
         .map(|n| Ok(n.text()?.parse::<u32>()?))
         .transpose()

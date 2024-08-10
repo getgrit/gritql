@@ -18,3 +18,4 @@ rust.unused_crate_dependencies = "warn"
 anyhow = { version = "1.0.70" }
 extism = { version = "^1.0.0-rc7" }
 serde_json = { version = "1.0.96" }
+grit-util = { path = "../grit-util" }

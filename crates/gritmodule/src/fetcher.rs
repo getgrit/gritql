@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
-use anyhow::{anyhow, bail, Result};
 use git2::Repository;
+use grit_util::error::{GritPatternError, GritResult};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
@@ -16,7 +16,7 @@ lazy_static! {
             .unwrap();
 }
 
-fn parse_remote(remote: &str) -> Result<(String, String)> {
+fn parse_remote(remote: &str) -> GritResult<(String, String)> {
     let captures = GIT_REMOTE_REGEX
         .captures(remote)
         .ok_or_else(|| GritPatternError::new("Invalid remote format: could not parse url"))?;
@@ -31,7 +31,7 @@ fn parse_remote(remote: &str) -> Result<(String, String)> {
             .and_then(|s| s.split('@').last())
             .map(String::from)
     } else {
-        return Err(GritPatternError::new("Invalid remote format: missing host"))
+        return Err(GritPatternError::new("Invalid remote format: missing host"));
     };
 
     let repo = if captures.name("git_at").is_some() {
@@ -52,7 +52,7 @@ fn parse_remote(remote: &str) -> Result<(String, String)> {
                 .replace(".git", ""),
         )
     } else {
-        return Err(GritPatternError::new("Invalid remote format: missing repo"))
+        return Err(GritPatternError::new("Invalid remote format: missing repo"));
     };
 
     let host = host.ok_or_else(|| GritPatternError::new("Missing host"))?;
@@ -61,7 +61,7 @@ fn parse_remote(remote: &str) -> Result<(String, String)> {
     Ok((host, repo))
 }
 
-pub fn inject_token(remote: &str, token: &str) -> Result<String> {
+pub fn inject_token(remote: &str, token: &str) -> GritResult<String> {
     let (host, repo) = parse_remote(remote)?;
     let remote = format!("https://x-access-token:{}@{}/{}", token, host, repo);
     Ok(remote)
@@ -88,7 +88,7 @@ impl LocalRepo {
     }
 
     /// Return the repo root path, on the filesystem
-    pub fn root(&self) -> Result<PathBuf> {
+    pub fn root(&self) -> GritResult<PathBuf> {
         self.repo
             .path()
             .parent()
@@ -166,7 +166,7 @@ impl PartialEq for ModuleRepo {
 }
 
 impl ModuleRepo {
-    pub fn from_host_repo(host: &str, repo: &str) -> Result<Self> {
+    pub fn from_host_repo(host: &str, repo: &str) -> GritResult<Self> {
         let remote = format!("https://{}/{}.git", host, repo);
         let provider_name = format!("{}/{}", host, repo);
         Ok(Self {
@@ -177,7 +177,7 @@ impl ModuleRepo {
         })
     }
 
-    pub fn from_repo_str(repo: &str) -> Result<Self> {
+    pub fn from_repo_str(repo: &str) -> GritResult<Self> {
         let slash_pos = repo
             .find('/')
             .ok_or_else(|| GritPatternError::new("Invalid format. Missing slash in repo string"))?;
@@ -185,13 +185,15 @@ impl ModuleRepo {
         let full_name = &repo[slash_pos + 1..];
 
         if host.is_empty() || full_name.is_empty() {
-            return Err(GritPatternError::new("Invalid format. Host or full name is empty"));
+            return Err(GritPatternError::new(
+                "Invalid format. Host or full name is empty",
+            ));
         }
 
         Self::from_host_repo(host, full_name)
     }
 
-    pub fn from_remote(remote: &str) -> Result<Self> {
+    pub fn from_remote(remote: &str) -> GritResult<Self> {
         let (host, repo) = parse_remote(remote)?;
         let provider_name = format!("{}/{}", host, repo);
 
@@ -234,7 +236,7 @@ fn clone_repo<'a>(
     token: &Option<String>,
     target_dir: &'a PathBuf,
     strategy: CloneExistingStrategy,
-) -> Result<&'a PathBuf> {
+) -> GritResult<&'a PathBuf> {
     if target_dir.exists() {
         match strategy {
             CloneExistingStrategy::Preserve => return Ok(target_dir),
@@ -253,7 +255,11 @@ fn clone_repo<'a>(
         Ok(_) => {}
         Err(e) => {
             if !target_dir.exists() {
-                return Err(GritPatternError::new("Failed to clone repo {}: {}", repo.full_name, e.to_string()))
+                return Err(GritPatternError::new(format!(
+                    "Failed to clone repo {}: {}",
+                    repo.full_name,
+                    e.to_string(),
+                )));
             }
         }
     };
@@ -263,11 +269,11 @@ fn clone_repo<'a>(
 
 pub trait GritModuleFetcher: Send + Sync {
     fn clone_dir(&self) -> &PathBuf;
-    fn fetch_grit_module(&self, repo: &ModuleRepo) -> Result<String>;
-    fn prep_grit_modules(&self) -> Result<()>;
+    fn fetch_grit_module(&self, repo: &ModuleRepo) -> GritResult<String>;
+    fn prep_grit_modules(&self) -> GritResult<()>;
 }
 
-fn reset_grit_modules(grit_modules_path: &Path) -> Result<()> {
+fn reset_grit_modules(grit_modules_path: &Path) -> GritResult<()> {
     if grit_modules_path.exists() {
         remove_dir_all_safe(grit_modules_path)?;
     }
@@ -310,7 +316,11 @@ impl CleanFetcher {
         Self { clone_dir, token }
     }
 
-    fn clone_repo<'a>(&self, repo: &ModuleRepo, target_dir: &'a PathBuf) -> Result<&'a PathBuf> {
+    fn clone_repo<'a>(
+        &self,
+        repo: &ModuleRepo,
+        target_dir: &'a PathBuf,
+    ) -> GritResult<&'a PathBuf> {
         clone_repo(repo, &self.token, target_dir, CloneExistingStrategy::Clean)
     }
 
@@ -324,13 +334,13 @@ impl GritModuleFetcher for CleanFetcher {
         &self.clone_dir
     }
 
-    fn fetch_grit_module(&self, repo: &ModuleRepo) -> Result<String> {
+    fn fetch_grit_module(&self, repo: &ModuleRepo) -> GritResult<String> {
         let target_dir = self.get_grit_module_dir(repo);
         self.clone_repo(repo, &target_dir)?;
         Ok(target_dir.to_str().unwrap().to_string())
     }
 
-    fn prep_grit_modules(&self) -> Result<()> {
+    fn prep_grit_modules(&self) -> GritResult<()> {
         // Reset this dir
         reset_grit_modules(&self.clone_dir)?;
         // Also find any sibling .gritmodules dirs and reset them
@@ -352,7 +362,11 @@ impl KeepFetcher {
         Self { clone_dir, token }
     }
 
-    fn clone_repo<'a>(&self, repo: &ModuleRepo, target_dir: &'a PathBuf) -> Result<&'a PathBuf> {
+    fn clone_repo<'a>(
+        &self,
+        repo: &ModuleRepo,
+        target_dir: &'a PathBuf,
+    ) -> GritResult<&'a PathBuf> {
         clone_repo(
             repo,
             &self.token,
@@ -371,13 +385,13 @@ impl GritModuleFetcher for KeepFetcher {
         &self.clone_dir
     }
 
-    fn fetch_grit_module(&self, repo: &ModuleRepo) -> Result<String> {
+    fn fetch_grit_module(&self, repo: &ModuleRepo) -> GritResult<String> {
         let target_dir = self.get_grit_module_dir(repo);
         self.clone_repo(repo, &target_dir)?;
         Ok(target_dir.to_str().unwrap().to_string())
     }
 
-    fn prep_grit_modules(&self) -> Result<()> {
+    fn prep_grit_modules(&self) -> GritResult<()> {
         let _ = fs_err::create_dir_all(&self.clone_dir);
         Ok(())
     }

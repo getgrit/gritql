@@ -1,5 +1,7 @@
-use anyhow::Result;
-use grit_util::{error::GritResult, ByteRange};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    ByteRange,
+};
 use serde_json::json;
 
 /// A source map is used when the code we are parsing is embedded inside a larger file.
@@ -79,7 +81,7 @@ impl EmbeddedSourceMap {
         Ok(new_map)
     }
 
-    pub fn fill_with_inner(&self, new_inner_source: &str) -> Result<String> {
+    pub fn fill_with_inner(&self, new_inner_source: &str) -> GritResult<String> {
         let mut outer_source = self.outer_source.clone();
 
         println!("inner output: {}", new_inner_source);
@@ -93,12 +95,15 @@ impl EmbeddedSourceMap {
                 section.inner_range_end - section.inner_end_trim,
             );
 
-            let replacement_code = new_inner_source.get(start..end).ok_or(anyhow::anyhow!(
-                "Section range {}-{} is out of bounds inside {}",
-                start,
-                end,
-                new_inner_source.len()
-            ))?;
+            let replacement_code =
+                new_inner_source
+                    .get(start..end)
+                    .ok_or(GritPatternError::new(format!(
+                        "Section range {}-{} is out of bounds inside {}",
+                        start,
+                        end,
+                        new_inner_source.len(),
+                    )))?;
 
             let json = section.as_json(replacement_code);
 

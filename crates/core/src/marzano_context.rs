@@ -8,7 +8,6 @@ use crate::{
     problem::MarzanoQueryContext,
     text_unparser::apply_effects,
 };
-use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
     binding::Binding,
     constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
@@ -19,7 +18,10 @@ use grit_pattern_matcher::{
         PredicateDefinition, ResolvedPattern, State,
     },
 };
-use grit_util::{error::GritResult, AnalysisLogs, Ast, FileOrigin, InputRanges, MatchRanges};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, Ast, FileOrigin, InputRanges, MatchRanges,
+};
 use im::vector;
 use marzano_language::{
     language::{MarzanoLanguage, Tree},
@@ -310,12 +312,12 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
             .and_then(|binding| binding[NEW_FILES_INDEX].value.as_ref())
             .and_then(ResolvedPattern::get_list_items)
         else {
-            return Err(GritPatternError::new("Expected a list of files"))
+            return Err(GritPatternError::new("Expected a list of files"));
         };
 
         for f in new_files {
             let Some(file) = f.get_file() else {
-                return Err(GritPatternError::new("Expected a list of files"))
+                return Err(GritPatternError::new("Expected a list of files"));
             };
 
             let name: PathBuf = file
@@ -339,10 +341,10 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
                 logs,
             )?
             .ok_or_else(|| {
-                GritPatternError::new(
+                GritPatternError::new(format!(
                     "failed to construct new file for file {}",
                     name.to_string_lossy(),
-                )
+                ))
             })?;
             self.files().push(owned_file);
             let _ = state.files.push_new_file(self.files().last().unwrap());

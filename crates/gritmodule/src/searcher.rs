@@ -1,4 +1,6 @@
 use anyhow::{bail, Context, Result};
+use grit_util::error::GritPatternError;
+use grit_util::error::GritResult;
 use ignore::Walk;
 use std::borrow::Cow;
 use std::path::Path;
@@ -19,7 +21,7 @@ use crate::{
 pub async fn collect_from_file(
     path: &Path,
     source_module: &Option<ModuleRepo>,
-) -> Result<Vec<ModuleGritPattern>> {
+) -> GritResult<Vec<ModuleGritPattern>> {
     let ext = PatternFileExt::from_path(path).ok_or_else(|| {
         anyhow::anyhow!(
             "File does not have a Grit extension: {}",
@@ -39,7 +41,7 @@ pub async fn collect_patterns(
     grit_parent_dir: &str,
     source_module: &Option<ModuleRepo>,
     ext: PatternFileExt,
-) -> Result<Vec<ModuleGritPattern>> {
+) -> GritResult<Vec<ModuleGritPattern>> {
     let mut all_patterns = Vec::new();
 
     let patterns_path = Path::new(grit_parent_dir)
@@ -57,7 +59,10 @@ pub async fn collect_patterns(
                 {
                     continue;
                 } else {
-                    return Err(GritPatternError::new(format!("Error walking patterns dir: {}", e)));
+                    return Err(GritPatternError::new(format!(
+                        "Error walking patterns dir: {}",
+                        e
+                    )));
                 }
             }
             Ok(entry) => {
@@ -118,7 +123,7 @@ async fn search(
     }
 }
 
-async fn fetch_remote_workflow(workflow_path_or_name: &str) -> Result<WorkflowInfo> {
+async fn fetch_remote_workflow(workflow_path_or_name: &str) -> GritResult<WorkflowInfo> {
     let temp_dir = tempfile::tempdir()?;
     // Note: into_path is important here to prevent the temp_dir from being dropped
     let temp_file_path = temp_dir.into_path().join("downloaded_workflow.ts");
@@ -202,7 +207,7 @@ impl WorkflowInfo {
     }
 }
 
-pub async fn find_local_workflow_files(dir: PathBuf) -> Result<Vec<WorkflowInfo>> {
+pub async fn find_local_workflow_files(dir: PathBuf) -> GritResult<Vec<WorkflowInfo>> {
     let grit_dir = find_grit_dir_from(dir.clone()).await;
     if grit_dir.is_none() {
         return Ok(vec![]);
@@ -238,7 +243,7 @@ pub async fn find_git_dir_from(dir: PathBuf) -> Option<String> {
     search(dir, &[".git".to_string()], None).await
 }
 
-pub async fn find_repo_root_from(dir: PathBuf) -> Result<Option<String>> {
+pub async fn find_repo_root_from(dir: PathBuf) -> GritResult<Option<String>> {
     let git_dir = find_git_dir_from(dir).await;
     if let Some(git_dir) = git_dir {
         let git_path = PathBuf::from_str(&git_dir).unwrap();
@@ -257,7 +262,7 @@ pub async fn find_repo_root_from(dir: PathBuf) -> Result<Option<String>> {
     }
 }
 
-pub async fn find_grit_modules_dir(dir: PathBuf) -> Result<PathBuf> {
+pub async fn find_grit_modules_dir(dir: PathBuf) -> GritResult<PathBuf> {
     let grit_dir = find_grit_dir_from(dir).await;
     if let Some(grit_dir) = grit_dir {
         let grit_dir = PathBuf::from(grit_dir);
@@ -266,10 +271,12 @@ pub async fn find_grit_modules_dir(dir: PathBuf) -> Result<PathBuf> {
             return Ok(grit_modules_dir);
         }
     }
-    return Err(GritPatternError::new("Unable to find .gritmodules directory"))
+    return Err(GritPatternError::new(
+        "Unable to find .gritmodules directory",
+    ));
 }
 
-pub async fn find_global_grit_dir() -> Result<PathBuf> {
+pub async fn find_global_grit_dir() -> GritResult<PathBuf> {
     let global_grit_dir = std::env::var(GRIT_GLOBAL_DIR_ENV);
     if let Ok(global_grit_dir) = global_grit_dir {
         return Ok(PathBuf::from(global_grit_dir));
@@ -285,7 +292,7 @@ pub async fn find_global_grit_dir() -> Result<PathBuf> {
     Ok(grit_dir)
 }
 
-pub async fn find_global_grit_modules_dir() -> Result<PathBuf> {
+pub async fn find_global_grit_modules_dir() -> GritResult<PathBuf> {
     Ok(find_global_grit_dir().await?.join(GRIT_MODULE_DIR))
 }
 

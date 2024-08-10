@@ -3,9 +3,11 @@ use super::{
     node_compiler::NodeCompiler, variable_compiler::VariableCompiler,
 };
 use crate::problem::MarzanoQueryContext;
-use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::pattern::{RegexLike, RegexPattern};
-use grit_util::{AnalysisLogBuilder, AstNode, Language};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogBuilder, AstNode, Language,
+};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct RegexCompiler;
@@ -17,9 +19,11 @@ impl NodeCompiler for RegexCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         if is_rhs {
-            return Err(GritPatternError::new("regex patterns are not allowed on the right-hand side of a rule"))
+            return Err(GritPatternError::new(
+                "regex patterns are not allowed on the right-hand side of a rule",
+            ));
         }
         let regex_node = node
             .child_by_field_name("regex")
@@ -50,9 +54,9 @@ impl NodeCompiler for RegexCompiler {
                     "r\"{}\"",
                     regex
                         .strip_prefix("r`")
-                        .ok_or_else(|| anyhow!("invalid regex prefix"))?
+                        .ok_or_else(|| GritPatternError::new("invalid regex prefix"))?
                         .strip_suffix('`')
-                        .ok_or_else(|| anyhow!("invalid regex postfix"))?
+                        .ok_or_else(|| GritPatternError::new("invalid regex postfix"))?
                 );
                 let log = AnalysisLogBuilder::default()
                 .level(441_u16)
@@ -62,7 +66,8 @@ impl NodeCompiler for RegexCompiler {
                 .range(range)
                 .message(
                     format!("Warning: unnecessary use of metavariable snippet syntax without metavariables. Replace {regex} with {alternative}"))
-                .build()?;
+                .build()
+                .map_err(|e| GritPatternError::new(&e.to_string()))?;
                 context.logs.push(log);
             }
             let pattern = BackTickCompiler::from_node_with_rhs(&back_tick_node, context, is_rhs)?;

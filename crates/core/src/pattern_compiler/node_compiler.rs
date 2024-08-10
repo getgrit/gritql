@@ -1,5 +1,5 @@
 use super::compiler::NodeCompilationContext;
-use anyhow::Result;
+use grit_util::error::GritResult;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) trait NodeCompiler {
@@ -8,7 +8,7 @@ pub(crate) trait NodeCompiler {
     fn from_node(
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         Self::from_node_with_rhs(node, context, false)
     }
 
@@ -16,5 +16,5 @@ pub(crate) trait NodeCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> Result<Self::TargetPattern>;
+    ) -> GritResult<Self::TargetPattern>;
 }

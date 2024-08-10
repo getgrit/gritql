@@ -1,6 +1,5 @@
 use super::{compiler::NodeCompilationContext, node_compiler::NodeCompiler};
-use anyhow::Result;
-use grit_util::AstNode;
+use grit_util::{error::GritResult, AstNode};
 use marzano_language::foreign_language::ForeignLanguage;
 use marzano_util::node_with_source::NodeWithSource;
 
@@ -13,7 +12,7 @@ impl NodeCompiler for ForeignLanguageCompiler {
         node: &NodeWithSource,
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         node.text()?.try_into()
     }
 }

@@ -2,17 +2,18 @@ use crate::{
     marzano_context::MarzanoContext, marzano_resolved_pattern::MarzanoResolvedPattern,
     problem::MarzanoQueryContext,
 };
-use anyhow::{anyhow, Result};
 
 use grit_pattern_matcher::{
     binding::Binding,
-    errors::GritResult,
     pattern::{
         AstLeafNodePattern, AstNodePattern, Matcher, Pattern, PatternName, PatternOrPredicate,
         ResolvedPattern, State,
     },
 };
-use grit_util::{AnalysisLogs, AstNode, Language};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, AstNode, Language,
+};
 use marzano_language::language::{FieldId, LeafEquivalenceClass, MarzanoLanguage, SortId};
 use marzano_util::node_with_source::NodeWithSource;
 
@@ -138,7 +139,11 @@ pub struct AstLeafNode {
 }
 
 impl AstLeafNode {
-    pub fn new<'a>(sort: SortId, text: &str, language: &impl MarzanoLanguage<'a>) -> Result<Self> {
+    pub fn new<'a>(
+        sort: SortId,
+        text: &str,
+        language: &impl MarzanoLanguage<'a>,
+    ) -> GritResult<Self> {
         let equivalence_class = language
             .get_equivalence_class(sort, text)
             .map_err(|e| GritPatternError::new(e))?;

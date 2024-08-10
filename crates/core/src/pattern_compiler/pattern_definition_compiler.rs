@@ -2,9 +2,11 @@ use super::{
     and_compiler::AndCompiler, compiler::NodeCompilationContext, node_compiler::NodeCompiler,
 };
 use crate::{problem::MarzanoQueryContext, variables::get_variables};
-use anyhow::{anyhow, Result};
 use grit_pattern_matcher::pattern::PatternDefinition;
-use grit_util::AstNode;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AstNode,
+};
 use marzano_util::node_with_source::NodeWithSource;
 use std::collections::BTreeMap;
 
@@ -17,7 +19,7 @@ impl NodeCompiler for PatternDefinitionCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         // TODO: make sure pattern definitions are only allowed at the top level
         let name = node
             .child_by_field_name("name")

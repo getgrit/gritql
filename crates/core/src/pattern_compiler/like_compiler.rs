@@ -3,8 +3,8 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::problem::MarzanoQueryContext;
-use anyhow::{anyhow, Result};
 use grit_pattern_matcher::pattern::{FloatConstant, Like, Pattern};
+use grit_util::error::{GritPatternError, GritResult};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct LikeCompiler;
@@ -16,7 +16,7 @@ impl NodeCompiler for LikeCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let threshold = node
             .child_by_field_name("threshold")
             .map(|n| PatternCompiler::from_node_with_rhs(&n, context, true))

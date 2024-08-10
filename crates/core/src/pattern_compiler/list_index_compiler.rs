@@ -3,9 +3,11 @@ use super::{
     list_compiler::ListCompiler, node_compiler::NodeCompiler,
 };
 use crate::problem::MarzanoQueryContext;
-use anyhow::{anyhow, Result};
 use grit_pattern_matcher::pattern::{ContainerOrIndex, ListIndex, ListOrContainer};
-use grit_util::AstNode;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AstNode,
+};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct ListIndexCompiler;
@@ -17,7 +19,7 @@ impl NodeCompiler for ListIndexCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let list = node
             .child_by_field_name("list")
             .ok_or_else(|| GritPatternError::new("missing list of listIndex"))?;

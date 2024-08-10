@@ -1,7 +1,6 @@
 use crate::{optimizer::hoist_files::extract_filename_pattern, variables::variable_from_name};
 
 use super::compiler::{DefinitionInfo, NodeCompilationContext};
-use anyhow::Result;
 use grit_pattern_matcher::{
     constants::{GRIT_RANGE_VAR, MATCH_VAR},
     context::QueryContext,
@@ -11,7 +10,7 @@ use grit_pattern_matcher::{
         StringConstant, Variable, Where,
     },
 };
-use grit_util::FileRange;
+use grit_util::{error::GritResult, FileRange};
 use log::debug;
 use std::collections::BTreeMap;
 
@@ -22,7 +21,7 @@ pub(super) fn auto_wrap_pattern<Q: QueryContext>(
     file_ranges: Option<Vec<FileRange>>,
     context: &mut NodeCompilationContext,
     injected_limit: Option<usize>,
-) -> Result<Pattern<Q>> {
+) -> GritResult<Pattern<Q>> {
     let is_sequential = is_sequential(&pattern, pattern_definitions);
     let should_wrap_in_sequential = !is_sequential;
     let should_wrap_in_contains = should_autowrap(&pattern, pattern_definitions);
@@ -375,7 +374,7 @@ fn wrap_pattern_in_range<Q: QueryContext>(
     pattern: Pattern<Q>,
     ranges: Vec<FileRange>,
     context: &mut NodeCompilationContext,
-) -> Result<Pattern<Q>> {
+) -> GritResult<Pattern<Q>> {
     let var = variable_from_name(var_name, context)?;
     let mut predicates = Vec::new();
     for file_range in ranges {
@@ -416,7 +415,7 @@ fn wrap_pattern_in_contains<Q: QueryContext>(
     var_name: &str,
     pattern: Pattern<Q>,
     context: &mut NodeCompilationContext,
-) -> Result<Pattern<Q>> {
+) -> GritResult<Pattern<Q>> {
     let var = variable_from_name(var_name, context)?;
     let pattern = Pattern::Where(Box::new(Where::new(
         Pattern::Variable(var),
@@ -454,7 +453,7 @@ fn wrap_pattern_in_contains<Q: QueryContext>(
 ///   }
 /// }
 /// ```
-fn wrap_pattern_in_file<Q: QueryContext>(pattern: Pattern<Q>) -> Result<Pattern<Q>> {
+fn wrap_pattern_in_file<Q: QueryContext>(pattern: Pattern<Q>) -> GritResult<Pattern<Q>> {
     let filename_pattern = extract_filename_pattern(&pattern)?.unwrap_or_else(|| {
         debug!("Optimization skipped: no filename pattern found, wrapping in top pattern");
         Pattern::Top
@@ -467,7 +466,7 @@ fn wrap_pattern_in_file<Q: QueryContext>(pattern: Pattern<Q>) -> Result<Pattern<
 pub(crate) fn wrap_pattern_in_before_and_after_each_file<Q: QueryContext>(
     pattern: Pattern<Q>,
     pattern_definition_info: &BTreeMap<String, DefinitionInfo>,
-) -> Result<Pattern<Q>> {
+) -> GritResult<Pattern<Q>> {
     let before_each_file = "before_each_file";
     let after_each_file = "after_each_file";
     let mut all_steps = vec![];

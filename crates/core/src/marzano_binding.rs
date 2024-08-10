@@ -3,7 +3,6 @@ use crate::problem::MarzanoQueryContext;
 use crate::smart_insert::calculate_padding;
 use crate::suppress::is_suppress_comment;
 use crate::{equivalence::are_equivalent, inline_snippets::ReplacementInfo};
-use anyhow::{anyhow, Result};
 use grit_pattern_matcher::{
     binding::Binding,
     constant::Constant,
@@ -43,7 +42,9 @@ impl PartialEq for MarzanoBinding<'_> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Empty(_, _), Self::Empty(_, _)) => true,
-            (Self::Node(n1), Self::Node(n2)) => n1.text() == n2.text(),
+            (Self::Node(n1), Self::Node(n2)) => {
+                n1.text().is_ok_and(|t1| n2.text().is_ok_and(|t2| t1 == t2))
+            }
             (Self::String(src1, r1), Self::String(src2, r2)) => {
                 src1[r1.start..r1.end] == src2[r2.start..r2.end]
             }
@@ -565,7 +566,8 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
                             language.get_ts_language().field_name_for_id(*field).unwrap(),
                             node.node.kind()
                         ))
-                        .build()?;
+                        .build()
+                        .map_err(|e| GritPatternError::new(e.to_string()))?;
                 logs.push(log);
             }
             Self::String(_, _) | Self::FileName(_) | Self::Node(_) | Self::ConstantRef(_) => {}
