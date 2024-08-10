@@ -106,9 +106,8 @@ pub trait Messager: Send + Sync {
     ) -> anyhow::Result<bool> {
         for r in execution_result {
             if is_match(&r) {
-                if let Some(ranges) = r.get_ranges() {
-                    details.matched += ranges.len() as i32;
-                }
+                let count = r.get_ranges().map(|ranges| ranges.len()).unwrap_or(0);
+                details.matched += count.max(1) as i32;
             }
             if let MatchResult::Rewrite(_) = r {
                 details.rewritten += 1;

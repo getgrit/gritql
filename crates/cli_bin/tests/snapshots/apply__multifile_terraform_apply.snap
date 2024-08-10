@@ -9,4 +9,4 @@ expression: "String::from_utf8(output.stdout)?"
      }
     
 
-Processed 1 files and found 0 matches
+Processed 1 files and found 1 matches
