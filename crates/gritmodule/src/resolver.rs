@@ -22,7 +22,6 @@ use crate::{
     searcher::{collect_patterns, find_repo_root_from},
     yaml::{get_patterns_from_yaml, read_grit_yaml},
 };
-use anyhow::{bail, Context, Result};
 use grit_util::error::{GritPatternError, GritResult};
 use homedir::get_my_home;
 use marzano_language::{grit_parser::MarzanoGritParser, target_language::PatternLanguage};
@@ -609,8 +608,18 @@ async fn resolve_patterns_for_module(
     let md_patterns = collect_patterns(repo_dir, module, PatternFileExt::Md);
     let grit_patterns = collect_patterns(repo_dir, module, PatternFileExt::Grit);
     let (md_patterns, grit_patterns) = join!(md_patterns, grit_patterns);
-    let md_patterns = md_patterns.context("Unable to resolve Markdown patterns")?;
-    let grit_patterns = grit_patterns.context("Unable to resolve .grit patterns")?;
+    let md_patterns = md_patterns.map_err(|e| {
+        GritPatternError::new(format!(
+            "Unable to resolve Markdown patterns: {}",
+            e.to_string()
+        ))
+    })?;
+    let grit_patterns = grit_patterns.map_err(|e| {
+        GritPatternError::new(format!(
+            "Unable to resolve .grit patterns: {}",
+            e.to_string()
+        ))
+    })?;
     let patterns = yaml_patterns
         .into_iter()
         .chain(md_patterns)
@@ -728,10 +737,12 @@ pub async fn get_grit_files_from_known_grit_dir(
     let mut stdlib_modules = get_stdlib_modules();
     stdlib_modules.extend(must_process);
 
-    let grit_parent = PathBuf::from(config_path.parent().context(format!(
-        "Unable to find parent of .grit directory at {}",
-        config_path.to_string_lossy()
-    ))?);
+    let grit_parent = PathBuf::from(config_path.parent().ok_or_else(|| {
+        GritPatternError::new(format!(
+            "Unable to find parent of .grit directory at {}",
+            config_path.to_string_lossy()
+        ))
+    })?);
     let parent_str = &grit_parent.to_string_lossy().to_string();
     let repo = ModuleRepo::from_dir(config_path).await;
     get_grit_files(&repo, parent_str, Some(stdlib_modules)).await

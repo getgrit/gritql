@@ -1,4 +1,3 @@
-use anyhow::{bail, Context, Result};
 use grit_util::error::GritPatternError;
 use grit_util::error::GritResult;
 use ignore::Walk;
@@ -23,10 +22,10 @@ pub async fn collect_from_file(
     source_module: &Option<ModuleRepo>,
 ) -> GritResult<Vec<ModuleGritPattern>> {
     let ext = PatternFileExt::from_path(path).ok_or_else(|| {
-        anyhow::anyhow!(
+        GritPatternError::new(format!(
             "File does not have a Grit extension: {}",
             path.to_string_lossy()
-        )
+        ))
     })?;
     get_patterns_from_file(
         path.to_path_buf(),
@@ -85,7 +84,10 @@ pub async fn collect_patterns(
     }
 
     for file_reader in file_readers {
-        let patterns = file_reader.await??;
+        let patterns = file_reader
+            .await
+            .map_err(|e| GritPatternError::new(e.to_string()))?
+            .map_err(|e| GritPatternError::new(e.to_string()))?;
         all_patterns.extend(patterns);
     }
 
@@ -127,8 +129,13 @@ async fn fetch_remote_workflow(workflow_path_or_name: &str) -> GritResult<Workfl
     let temp_dir = tempfile::tempdir()?;
     // Note: into_path is important here to prevent the temp_dir from being dropped
     let temp_file_path = temp_dir.into_path().join("downloaded_workflow.ts");
-    let response = reqwest::get(workflow_path_or_name).await?;
-    let content = response.text().await?;
+    let response = reqwest::get(workflow_path_or_name)
+        .await
+        .map_err(|e| GritPatternError::new(e.to_string()))?;
+    let content = response
+        .text()
+        .await
+        .map_err(|e| GritPatternError::new(e.to_string()))?;
     fs_err::write(&temp_file_path, content)?;
     Ok(WorkflowInfo {
         path: temp_file_path,
@@ -250,10 +257,12 @@ pub async fn find_repo_root_from(dir: PathBuf) -> GritResult<Option<String>> {
         Ok(Some(
             git_path
                 .parent()
-                .context(format!(
-                    "Unable to find repo root dir as parent of {}",
-                    git_dir
-                ))?
+                .ok_or_else(|| {
+                    GritPatternError::new(format!(
+                        "Unable to find repo root dir as parent of {}",
+                        git_dir
+                    ))
+                })?
                 .to_string_lossy()
                 .to_string(),
         ))
@@ -285,9 +294,9 @@ pub async fn find_global_grit_dir() -> GritResult<PathBuf> {
     let current_bin = std::env::current_exe()?;
     let grit_dir = current_bin
         .parent()
-        .context("Unable to find global grit dir")?
+        .ok_or_else(|| GritPatternError::new("Unable to find global grit dir"))?
         .parent()
-        .context("Unable to find global grit dir")?
+        .ok_or_else(|| GritPatternError::new("Unable to find global grit dir"))?
         .join(REPO_CONFIG_DIR_NAME);
     Ok(grit_dir)
 }

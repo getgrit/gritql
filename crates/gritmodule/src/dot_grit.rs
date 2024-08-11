@@ -6,8 +6,10 @@ use crate::{
     fetcher::ModuleRepo,
     parser::extract_relative_file_path,
 };
-use anyhow::{anyhow, bail, Result};
-use grit_util::{Ast, AstNode, Position};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    Ast, AstNode, Position,
+};
 use marzano_language::{grit_parser::MarzanoGritParser, target_language::PatternLanguage};
 use marzano_util::rich_path::RichFile;
 use std::collections::HashMap;
@@ -16,7 +18,7 @@ pub fn get_patterns_from_grit(
     file: &RichFile,
     source_module: &Option<ModuleRepo>,
     root: &Option<String>,
-) -> Result<Vec<ModuleGritPattern>> {
+) -> GritResult<Vec<ModuleGritPattern>> {
     let mut parser = MarzanoGritParser::new()?;
     let tree = parser.parse(&file.content)?;
     let root_node = tree.root_node();
@@ -49,7 +51,11 @@ pub fn get_patterns_from_grit(
                 "predicateDefinition" => Some(DefinitionKind::Predicate),
                 "functionDefinition" => Some(DefinitionKind::Function),
                 "foreignFunctionDefinition" => Some(DefinitionKind::Function),
-                _ => return Err(GritPatternError::new("Bug in Grit, unhandled definition kind")),
+                _ => {
+                    return Err(GritPatternError::new(
+                        "Bug in Grit, unhandled definition kind",
+                    ))
+                }
             };
 
             let body = match language {

@@ -1,16 +1,17 @@
 use std::{collections::HashSet, path::PathBuf, str::FromStr};
 
+use grit_util::error::{GritPatternError, GritResult};
+
 use crate::{
     config::DEFAULT_STDLIBS,
     fetcher::{GritModuleFetcher, ModuleRepo},
     yaml::{extract_grit_modules, read_grit_yaml},
 };
-use anyhow::{bail, Result};
 
 pub async fn install_default_stdlib(
     fetcher: &dyn GritModuleFetcher,
     pre_installed: Option<HashSet<String>>,
-) -> Result<HashSet<String>> {
+) -> GritResult<HashSet<String>> {
     let mut installed_modules = pre_installed.unwrap_or_default();
 
     for stdlib in DEFAULT_STDLIBS {
@@ -21,9 +22,11 @@ pub async fn install_default_stdlib(
                     installed_modules.insert(stdlib.provider_name);
                 }
                 Err(err) => {
-                    return Err(GritPatternError::new("Failed to fetch standard library grit module {}: {}",
+                    return Err(GritPatternError::new(format!(
+                        "Failed to fetch standard library grit module {}: {}",
                         stdlib.full_name,
-                        err.to_string()))
+                        err.to_string(),
+                    )))
                 }
             }
         }
@@ -35,7 +38,7 @@ pub async fn install_grit_modules(
     fetcher: &dyn GritModuleFetcher,
     curr_repo: &ModuleRepo,
     curr_repo_dir: &str,
-) -> Result<HashSet<String>> {
+) -> GritResult<HashSet<String>> {
     let mut installed_modules: HashSet<String> = HashSet::new();
     let mut processing_modules: Vec<ModuleRepo> = Vec::new();
     parse_grit_module(
@@ -53,9 +56,11 @@ pub async fn install_grit_modules(
         let repo_dir = match fetcher.fetch_grit_module(&module) {
             Ok(repo_dir) => repo_dir,
             Err(err) => {
-                return Err(GritPatternError::new("Failed to fetch grit module {}: {}",
+                return Err(GritPatternError::new(format!(
+                    "Failed to fetch grit module {}: {}",
                     module.full_name,
-                    err.to_string()))
+                    err.to_string(),
+                )))
             }
         };
         parse_grit_module(
@@ -77,7 +82,7 @@ async fn parse_grit_module(
     processing_modules: &mut Vec<ModuleRepo>,
     module: &ModuleRepo,
     repo_dir: &str,
-) -> Result<()> {
+) -> GritResult<()> {
     installed_modules.insert(module.provider_name.clone());
     let module_config = match read_grit_yaml(&PathBuf::from_str(repo_dir).unwrap()).await {
         Some(config) => config,

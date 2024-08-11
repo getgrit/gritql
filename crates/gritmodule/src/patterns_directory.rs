@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, mem};
 
-use anyhow::{bail, Result};
+use grit_util::error::{GritPatternError, GritResult};
 use marzano_language::target_language::PatternLanguage;
 
 #[derive(Debug)]
@@ -155,9 +155,11 @@ impl PatternsDirectory {
     fn get_language_and_universal_directory(
         &self,
         language: PatternLanguage,
-    ) -> Result<BTreeMap<String, String>> {
+    ) -> GritResult<BTreeMap<String, String>> {
         if matches!(language, PatternLanguage::Universal) {
-            return Err(GritPatternError::new("cannot directly execute universal pattern"))
+            return Err(GritPatternError::new(
+                "cannot directly execute universal pattern",
+            ));
         };
         let lang_library = self.get_language_directory(language);
         let mut lang_library = lang_library.to_owned();
@@ -165,7 +167,7 @@ impl PatternsDirectory {
         let count = lang_library.len() + universal.len();
         lang_library.extend(universal);
         if count != lang_library.len() {
-            return Err(GritPatternError::new("language specific {} library and universal library have patterns with the same name", language.language_name()))
+            return Err(GritPatternError::new(format!("language specific {} library and universal library have patterns with the same name", language.language_name())));
         }
         Ok(lang_library)
     }
@@ -173,7 +175,7 @@ impl PatternsDirectory {
     pub fn get_language_directory_or_default(
         &self,
         lang: Option<PatternLanguage>,
-    ) -> Result<BTreeMap<String, String>> {
+    ) -> GritResult<BTreeMap<String, String>> {
         let language = lang.unwrap_or_default();
         self.get_language_and_universal_directory(language)
     }
@@ -181,7 +183,7 @@ impl PatternsDirectory {
     // imo we should check if name matches [a-z][a-z0-9]*
     // as currently a pattern with no language header and an invalid pattern are
     // both treated as js patterns when the latter should be a not found error
-    pub fn get_pattern_libraries(&self, root_pattern: &str) -> Result<LanguageLibrary> {
+    pub fn get_pattern_libraries(&self, root_pattern: &str) -> GritResult<LanguageLibrary> {
         let language = self
             .pattern_to_language
             .get(&format!("{}.grit", root_pattern))

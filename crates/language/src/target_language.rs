@@ -26,17 +26,17 @@ use crate::{
     vue::Vue,
     yaml::Yaml,
 };
-use anyhow::Result;
 use clap::ValueEnum;
-use grit_util::{Ast, AstNode, ByteRange, CodeRange, Language, Parser, SnippetTree};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    Ast, AstNode, ByteRange, CodeRange, Language, Parser, SnippetTree,
+};
 use marzano_util::node_with_source::NodeWithSource;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::hash::Hash;
 
-#[cfg(feature = "finder")]
-use anyhow::Error;
 #[cfg(feature = "finder")]
 use ignore::{types::TypesBuilder, Walk, WalkBuilder};
 #[cfg(feature = "finder")]
@@ -281,7 +281,7 @@ impl PatternLanguage {
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub fn to_target_with_ts_lang(self, lang: TSLanguage) -> Result<TargetLanguage> {
+    pub fn to_target_with_ts_lang(self, lang: TSLanguage) -> GritResult<TargetLanguage> {
         match self {
             PatternLanguage::JavaScript => {
                 Ok(TargetLanguage::JavaScript(JavaScript::new(Some(lang))))
@@ -313,14 +313,14 @@ impl PatternLanguage {
             PatternLanguage::Toml => Ok(TargetLanguage::Toml(Toml::new(Some(lang)))),
             PatternLanguage::Php => Ok(TargetLanguage::Php(Php::new(Some(lang)))),
             PatternLanguage::PhpOnly => Ok(TargetLanguage::PhpOnly(PhpOnly::new(Some(lang)))),
-            PatternLanguage::Universal => Err(anyhow::anyhow!(
-                "Cannot convert universal to TSLang".to_string()
+            PatternLanguage::Universal => Err(GritPatternError::new(
+                "Cannot convert universal to TSLang".to_string(),
             )),
         }
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn to_target_with_ts_lang(self, _lang: TSLanguage) -> Result<TargetLanguage> {
+    pub fn to_target_with_ts_lang(self, _lang: TSLanguage) -> GritResult<TargetLanguage> {
         unreachable!()
     }
 }
@@ -329,7 +329,7 @@ impl PatternLanguage {
 pub fn expand_paths(
     start_paths: &[PathBuf],
     target_languages: Option<&[PatternLanguage]>,
-) -> Result<Walk, Error> {
+) -> GritResult<Walk> {
     use ignore::overrides::OverrideBuilder;
 
     let mut file_types = TypesBuilder::new();
@@ -360,13 +360,21 @@ pub fn expand_paths(
     }
 
     let mut file_walker = WalkBuilder::new(start_paths[0].clone());
-    file_walker.types(file_types.build()?);
+    file_walker.types(
+        file_types
+            .build()
+            .map_err(|e| GritPatternError::new(e.to_string()))?,
+    );
     for path in start_paths.iter().skip(1) {
         file_walker.add(path);
     }
-    file_walker.add_custom_ignore_filename(PathBuf::from_str(".gritignore")?);
+    file_walker.add_custom_ignore_filename(PathBuf::from_str(".gritignore").unwrap());
 
-    let grit = OverrideBuilder::new(".").add("!**/.grit/**")?.build()?;
+    let grit = OverrideBuilder::new(".")
+        .add("!**/.grit/**")
+        .map_err(|e| GritPatternError::new(e.to_string()))?
+        .build()
+        .map_err(|e| GritPatternError::new(e.to_string()))?;
     file_walker.overrides(grit);
 
     let final_walker = file_walker.standard_filters(true).hidden(false).build();
@@ -610,12 +618,12 @@ macro_rules! generate_target_language {
         // when built to wasm the language must be initialized with a parser at least once
         // before it can be created without a parser.
         impl TryFrom<PatternLanguage> for TargetLanguage {
-            type Error = anyhow::Error;
-            fn try_from(lang: PatternLanguage) -> Result<Self> {
+            type Error = GritPatternError;
+            fn try_from(lang: PatternLanguage) -> GritResult<Self> {
                 match lang {
                     $(PatternLanguage::$language => Ok(Self::$language($language::new(None)))),+,
                     PatternLanguage::Universal => Err(
-                        anyhow::anyhow!("cannot instantiate Universal as a target language".to_string())
+                        GritPatternError::new("cannot instantiate Universal as a target language".to_string())
                     )
                 }
             }

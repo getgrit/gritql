@@ -1,4 +1,5 @@
 use anyhow::Context;
+use grit_util::error::{GritPatternError, GritResult};
 use grit_util::Language;
 use grit_util::{Ast, Position};
 use marzano_core::pattern_compiler::PatternBuilder;
@@ -73,7 +74,7 @@ pub async fn parse_input_files_internal(
     contents: Vec<String>,
     lib_paths: Vec<String>,
     lib_contents: Vec<String>,
-) -> anyhow::Result<Vec<MatchResult>> {
+) -> GritResult<Vec<MatchResult>> {
     console_error_panic_hook::set_once();
     // TODO remove this line once initialize_tree_sitter function works
     let _ = web_tree_sitter_sg::TreeSitter::init().await;
@@ -175,7 +176,7 @@ async fn match_pattern_internal(
     llm_api_base: String,
     // LLM API bearer token
     llm_api_bearer_token: String,
-) -> anyhow::Result<Vec<MatchResult>> {
+) -> GritResult<Vec<MatchResult>> {
     // TODO remove this line once initialize_tree_sitter function works
     let _ = web_tree_sitter_sg::TreeSitter::init().await;
     let mut pure_parser = setup_grit_parser().await?;
@@ -246,20 +247,17 @@ async fn match_pattern_internal(
     Ok(results)
 }
 
-fn error_to_log(e: anyhow::Error) -> MatchResult {
-    match e.downcast::<grit_util::AnalysisLog>() {
-        Ok(al) => MatchResult::AnalysisLog(AnalysisLog::from(al)),
-        Err(er) => MatchResult::AnalysisLog(AnalysisLog {
-            level: 200,
-            message: er.to_string(),
-            position: Position::first(),
-            file: "PlaygroundPattern".to_string(),
-            engine_id: "marzano".to_string(),
-            syntax_tree: None,
-            range: None,
-            source: None,
-        }),
-    }
+fn error_to_log(e: GritPatternError) -> MatchResult {
+    MatchResult::AnalysisLog(AnalysisLog {
+        level: 200,
+        message: e.to_string(),
+        position: Position::first(),
+        file: "PlaygroundPattern".to_string(),
+        engine_id: "marzano".to_string(),
+        syntax_tree: None,
+        range: None,
+        source: None,
+    })
 }
 
 #[wasm_bindgen(js_name = matchPattern)]
@@ -307,7 +305,7 @@ async fn get_parsed_pattern(
     lib_paths: Vec<String>,
     lib_contents: Vec<String>,
     parser: &mut MarzanoGritParser,
-) -> anyhow::Result<ParsedPattern> {
+) -> GritResult<ParsedPattern> {
     let libs = lib_paths.into_iter().zip(lib_contents).collect();
     let tree = parser.parse_file(pattern, None)?;
     let lang = get_language_for_tree(&tree).await?;
@@ -323,14 +321,16 @@ fn get_parser_path() -> String {
     "/wasm_parsers".to_string()
 }
 
-async fn setup_language_parser(lang: PatternLanguage) -> anyhow::Result<TSParser> {
-    let mut parser = TSParser::new()?;
+async fn setup_language_parser(lang: PatternLanguage) -> GritResult<TSParser> {
+    let mut parser = TSParser::new().map_err(|e| GritPatternError::new(e.to_string()))?;
     let lang = get_cached_lang(&lang).await?;
-    parser.set_language(lang)?;
+    parser
+        .set_language(lang)
+        .map_err(|e| GritPatternError::new(e.to_string()))?;
     Ok(parser)
 }
 
-async fn get_cached_lang(lang: &PatternLanguage) -> anyhow::Result<&'static TSLanguage> {
+async fn get_cached_lang(lang: &PatternLanguage) -> GritResult<&'static TSLanguage> {
     let lang_store = get_lang_store(lang)?;
     if let Some(lang) = lang_store.get() {
         Ok(lang)
@@ -339,12 +339,12 @@ async fn get_cached_lang(lang: &PatternLanguage) -> anyhow::Result<&'static TSLa
         let _language_already_set = lang_store.set(get_lang(&path).await?);
         Ok(lang_store
             .get()
-            .ok_or_else(|| anyhow::anyhow!("Failed to get language"))?)
+            .ok_or_else(|| GritPatternError::new("Failed to get language"))?)
     }
 }
 
-async fn setup_grit_parser() -> anyhow::Result<MarzanoGritParser> {
-    let mut parser = TSParser::new()?;
+async fn setup_grit_parser() -> GritResult<MarzanoGritParser> {
+    let mut parser = TSParser::new().map_err(|e| GritPatternError::new(e.to_string()))?;
     let lang_path = format!("{}{}", get_parser_path(), "/tree-sitter-gritql.wasm");
     let lang = if let Some(lang) = GRIT_LANGUAGE.get() {
         lang
@@ -357,13 +357,15 @@ async fn setup_grit_parser() -> anyhow::Result<MarzanoGritParser> {
         ));
         GRIT_LANGUAGE
             .get()
-            .ok_or_else(|| anyhow::anyhow!("Failed to setup GRIT_LANGUAGE"))?
+            .ok_or_else(|| GritPatternError::new("Failed to setup GRIT_LANGUAGE"))?
     };
-    parser.set_language(lang)?;
+    parser
+        .set_language(lang)
+        .map_err(|e| GritPatternError::new(e.to_string()))?;
     Ok(MarzanoGritParser::from_initialized_ts_parser(parser))
 }
 
-async fn get_language_for_tree(tree: &Tree) -> anyhow::Result<TargetLanguage> {
+async fn get_language_for_tree(tree: &Tree) -> GritResult<TargetLanguage> {
     let lang = PatternLanguage::from_tree(tree).unwrap_or_default();
     if lang.is_initialized() {
         Ok(TargetLanguage::try_from(lang)?)
@@ -385,7 +387,7 @@ async fn get_language_for_tree(tree: &Tree) -> anyhow::Result<TargetLanguage> {
     }
 }
 
-fn pattern_language_to_path(lang: &PatternLanguage) -> anyhow::Result<String> {
+fn pattern_language_to_path(lang: &PatternLanguage) -> GritResult<String> {
     let wasm_file = match lang {
         PatternLanguage::JavaScript => Ok("/tree-sitter-javascript.wasm"),
         PatternLanguage::TypeScript => Ok("/tree-sitter-typescript.wasm"),
@@ -394,7 +396,9 @@ fn pattern_language_to_path(lang: &PatternLanguage) -> anyhow::Result<String> {
         PatternLanguage::Css => Ok("/tree-sitter-css.wasm"),
         PatternLanguage::Json => Ok("/tree-sitter-json.wasm"),
         PatternLanguage::Java => Ok("/tree-sitter-java.wasm"),
-        PatternLanguage::CSharp => Err(anyhow::anyhow!("CSharp wasm is not currently supported")),
+        PatternLanguage::CSharp => Err(GritPatternError::new(
+            "CSharp wasm is not currently supported",
+        )),
         PatternLanguage::Python => Ok("/tree-sitter-python.wasm"),
         PatternLanguage::MarkdownBlock => Ok("/tree-sitter-markdown-block.wasm"), // def wrong
         PatternLanguage::MarkdownInline => Ok("/tree-sitter-markdown_inline.wasm"), // def wrong
@@ -409,14 +413,16 @@ fn pattern_language_to_path(lang: &PatternLanguage) -> anyhow::Result<String> {
         PatternLanguage::Toml => Ok("/tree-sitter-toml.wasm"),
         PatternLanguage::Php => Ok("/tree-sitter-php.wasm"),
         PatternLanguage::PhpOnly => Ok("/tree-sitter-php_only.wasm"),
-        PatternLanguage::Universal => Err(anyhow::anyhow!("Universal does not have a parser")),
+        PatternLanguage::Universal => {
+            Err(GritPatternError::new("Universal does not have a parser"))
+        }
     }?;
     let final_file = format!("{}{}", get_parser_path(), wasm_file);
     Ok(final_file)
 }
 
 #[cfg(target_arch = "wasm32")]
-async fn get_lang(parser_path: &str) -> anyhow::Result<TSLanguage> {
+async fn get_lang(parser_path: &str) -> GritResult<TSLanguage> {
     let lang = web_tree_sitter_sg::Language::load_path(parser_path)
         .await
         .map_err(tree_sitter::LanguageError::from)?;
@@ -424,12 +430,12 @@ async fn get_lang(parser_path: &str) -> anyhow::Result<TSLanguage> {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-async fn get_lang(_path: &str) -> anyhow::Result<TSLanguage> {
+async fn get_lang(_path: &str) -> GritResult<TSLanguage> {
     unreachable!()
 }
 
 #[cfg(target_arch = "wasm32")]
-fn get_lang_store(language: &PatternLanguage) -> anyhow::Result<&'static OnceLock<TSLanguage>> {
+fn get_lang_store(language: &PatternLanguage) -> GritResult<&'static OnceLock<TSLanguage>> {
     match language {
         PatternLanguage::JavaScript => Ok(&JAVASCRIPT_LANGUAGE),
         PatternLanguage::TypeScript => Ok(&TYPESCRIPT_LANGUAGE),
@@ -453,12 +459,14 @@ fn get_lang_store(language: &PatternLanguage) -> anyhow::Result<&'static OnceLoc
         PatternLanguage::Toml => Ok(&TOML_LANGUAGE),
         PatternLanguage::Php => Ok(&PHP_LANGUAGE),
         PatternLanguage::PhpOnly => Ok(&PHP_ONLY_LANGUAGE),
-        PatternLanguage::Universal => Err(anyhow::anyhow!("Universal does not have a parser")),
+        PatternLanguage::Universal => {
+            Err(GritPatternError::new("Universal does not have a parser"))
+        }
     }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn get_lang_store(_language: &PatternLanguage) -> anyhow::Result<&'static OnceLock<TSLanguage>> {
+fn get_lang_store(_language: &PatternLanguage) -> GritResult<&'static OnceLock<TSLanguage>> {
     unreachable!()
 }
 

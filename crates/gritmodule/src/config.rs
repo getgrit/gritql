@@ -26,7 +26,6 @@ use crate::{
     parser::PatternFileExt,
     utils::is_pattern_name,
 };
-use anyhow::{bail, Context, Result};
 
 #[derive(Debug, Deserialize)]
 pub struct GritGitHubConfig {
@@ -469,11 +468,11 @@ pub async fn init_global_grit_modules<T: FetcherType>(
         let location = match fetcher.fetch_grit_module(module) {
             Ok(loc) => loc,
             Err(err) => {
-                return Err(GritPatternError::new(
+                return Err(GritPatternError::new(format!(
                     "Failed to fetch remote grit module {}: {}",
                     module.full_name,
                     err.to_string(),
-                ))
+                )))
             }
         };
         fetch_modules::<T>(
@@ -483,7 +482,7 @@ pub async fn init_global_grit_modules<T: FetcherType>(
                 fetcher
                     .clone_dir()
                     .parent()
-                    .context("Unable to find global grit dir")?
+                    .ok_or_else(|| GritPatternError::new("Unable to find global grit dir"))?
                     .to_path_buf(),
             ),
         )
