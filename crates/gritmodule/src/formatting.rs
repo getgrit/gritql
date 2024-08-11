@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use grit_util::error::{GritPatternError, GritResult};
 use log::{debug, info};
 use marzano_language::target_language::PatternLanguage;
 use marzano_util::rich_path::RichFile;
@@ -12,7 +12,7 @@ use tokio::{
 pub async fn format_rich_files(
     language: &PatternLanguage,
     files: Vec<RichFile>,
-) -> Result<Vec<RichFile>> {
+) -> GritResult<Vec<RichFile>> {
     let tempdir = TempDir::new()?;
     let mut target_file_paths = Vec::with_capacity(files.len());
 
@@ -31,23 +31,23 @@ pub async fn format_rich_files(
             .truncate(true)
             .open(&new_file_path)
             .await
-            .with_context(|| {
-                format!(
-                    "Failed to create file {} in tempdir {}",
+            .map_err(|e| {
+                GritPatternError::new(format!(
+                    "Failed to create file {} in tempdir {}: {}",
                     file.path,
-                    tempdir.path().display()
-                )
+                    tempdir.path().display(),
+                    e.to_string()
+                ))
             })?;
 
-        f.write_all(file.content.as_bytes())
-            .await
-            .with_context(|| {
-                format!(
-                    "Failed to write file {} to tempdir {}",
-                    file.path,
-                    tempdir.path().display()
-                )
-            })?;
+        f.write_all(file.content.as_bytes()).await.map_err(|e| {
+            GritPatternError::new(format!(
+                "Failed to write file {} to tempdir {}: {}",
+                file.path,
+                tempdir.path().display(),
+                e.to_string()
+            ))
+        })?;
 
         target_file_paths.push(new_file_path);
     }
@@ -69,7 +69,7 @@ pub async fn format_rich_files(
     Ok(formatted_files)
 }
 
-async fn format_temp_dir(dir: &TempDir, languages: Vec<&PatternLanguage>) -> Result<()> {
+async fn format_temp_dir(dir: &TempDir, languages: Vec<&PatternLanguage>) -> GritResult<()> {
     if languages.contains(&&PatternLanguage::Java) {
         let mut cmd = Command::new("google-java-format");
         cmd.current_dir(dir);

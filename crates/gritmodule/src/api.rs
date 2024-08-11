@@ -2,14 +2,14 @@
 /// This module exposes functions that should be callable anywhere, including from the bridge
 use std::path::Path;
 
-use anyhow::Result;
+use grit_util::error::GritResult;
 
 use crate::{
     config::GritConfig,
     yaml::{get_grit_config, read_grit_yaml},
 };
 
-pub async fn read_grit_config(repo_dir: &Path) -> Result<Option<GritConfig>> {
+pub async fn read_grit_config(repo_dir: &Path) -> GritResult<Option<GritConfig>> {
     let yaml_content = read_grit_yaml(repo_dir).await;
     match yaml_content {
         None => Ok(None),
@@ -20,7 +20,7 @@ pub async fn read_grit_config(repo_dir: &Path) -> Result<Option<GritConfig>> {
     }
 }
 
-pub async fn parse_grit_config(yaml_config: &str) -> Result<GritConfig> {
+pub async fn parse_grit_config(yaml_config: &str) -> GritResult<GritConfig> {
     let config = get_grit_config(yaml_config, ".grit/grit.yaml")?;
     Ok(config)
 }

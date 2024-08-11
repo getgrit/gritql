@@ -1,8 +1,8 @@
-use anyhow::{Context, Result};
+use anyhow::Context;
 use enum_dispatch::enum_dispatch;
 use grit_util::{
-    traverse, AnalysisLogBuilder, AnalysisLogs, Ast, AstNode, CodeRange, EffectRange, FileOrigin,
-    Language, Order, Parser, SnippetTree,
+    error::GritResult, traverse, AnalysisLogBuilder, AnalysisLogs, Ast, AstNode, CodeRange,
+    EffectRange, FileOrigin, Language, Order, Parser, SnippetTree,
 };
 use itertools::Itertools;
 use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
@@ -505,7 +505,7 @@ fn file_parsing_error(
     file_name: &Path,
     body: &str,
     is_new: bool,
-) -> Result<AnalysisLogs> {
+) -> GritResult<AnalysisLogs> {
     let mut errors = vec![];
     let cursor = tree.walk();
     let mut log_builder = AnalysisLogBuilder::default();

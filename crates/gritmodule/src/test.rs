@@ -1,8 +1,8 @@
-use anyhow::Result;
+use grit_util::error::GritResult;
 use tempfile::TempDir;
 use tokio::fs;
 
-pub async fn initialize_grit(dir: &TempDir, config: &str) -> Result<()> {
+pub async fn initialize_grit(dir: &TempDir, config: &str) -> GritResult<()> {
     let grit_dir = dir.path().join(".grit");
     let yml_path = grit_dir.join("grit.yml");
 
