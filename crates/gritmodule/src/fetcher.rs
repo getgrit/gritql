@@ -111,7 +111,7 @@ impl LocalRepo {
                         }
                     }
                 } else {
-                    log::error!("Head is not a branch");
+                    log::debug!("Head is not a branch");
                     None
                 }
             }
