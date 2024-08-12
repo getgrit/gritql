@@ -124,6 +124,20 @@ impl LocalRepo {
 
     /// Return the remote url for the repo, if any is set
     pub fn remote(&self) -> Option<String> {
+        // First, try to get the upstream of the current branch
+        if let Some(branch) = self.branch() {
+            if let Ok(upstream) = self.repo.branch_upstream_remote(&branch) {
+                if let Some(upstream) = upstream.as_str() {
+                    if let Ok(remote) = self.repo.find_remote(upstream) {
+                        if let Some(url) = remote.unwrap().url() {
+                            return Some(url.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        // If upstream not found, fall back to the first remote listed
         let remote = match self.repo.remotes() {
             Ok(remotes) => match remotes.get(0) {
                 Some(r) => {
@@ -145,6 +159,7 @@ impl LocalRepo {
             },
             Err(_) => return Default::default(),
         };
+
         Some(remote)
     }
 }
@@ -518,6 +533,50 @@ mod tests {
         };
 
         assert_eq!(module_repo, expected_repo);
+    }
+
+    #[tokio::test]
+    async fn module_repo_from_dir_with_two_origins() {
+        let dir = tempdir().unwrap().into_path();
+
+        // Clone the repository using the git command
+        let remote = "https://github.com/getgrit/stdlib.git";
+        let output = std::process::Command::new("git")
+            .arg("clone")
+            .arg(remote)
+            .arg(&dir)
+            .output()
+            .expect("Failed to execute git clone command");
+
+        if !output.status.success() {
+            panic!(
+                "Git clone failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+
+        // Add a second origin
+        let output2 = std::process::Command::new("git")
+            .arg("remote")
+            .arg("add")
+            .arg("alpha")
+            .arg("https://github.com/custodian-sample-org/alpha-shop.git")
+            .current_dir(&dir)
+            .output()
+            .expect("Failed to execute git remote add command");
+
+        if !output2.status.success() {
+            panic!(
+                "Git remote add failed: {}",
+                String::from_utf8_lossy(&output2.stderr)
+            );
+        }
+
+        println!("temp_dir: {:?}", dir);
+
+        let repo = LocalRepo::from_dir(&dir).await.unwrap();
+
+        assert_eq!(repo.remote().unwrap(), remote);
     }
 
     #[test]
