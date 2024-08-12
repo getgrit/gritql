@@ -3,13 +3,11 @@ use super::{
     node_compiler::NodeCompiler, pattern_compiler::PatternCompiler,
 };
 use crate::{built_in_functions::BuiltIns, problem::MarzanoQueryContext};
+use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::pattern::{
     Call, CallForeignFunction, CallFunction, FilePattern, Pattern, PrCall,
 };
-use grit_util::{
-    error::{GritPatternError, GritResult},
-    AstNode, ByteRange, Language,
-};
+use grit_util::{AstNode, ByteRange, Language};
 use itertools::Itertools;
 use marzano_language::language::MarzanoLanguage;
 use marzano_util::node_with_source::NodeWithSource;
@@ -24,10 +22,10 @@ impl NodeCompiler for CallCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> GritResult<Pattern<MarzanoQueryContext>> {
+    ) -> Result<Pattern<MarzanoQueryContext>> {
         let sort = node
             .child_by_field_name("name")
-            .ok_or_else(|| GritPatternError::new("missing name of nodeLike"))?;
+            .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
         let kind = sort.text()?;
         let kind = kind.trim();
         let lang = context.compilation.lang;
@@ -67,17 +65,12 @@ impl NodeCompiler for CallCompiler {
         }
         let mut args = named_args_to_hash_map(named_args, context)?;
         if args.len() != named_args_count {
-            return Err(GritPatternError::new(format!(
-                "duplicate named args for invocation of {}",
-                kind
-            )));
+            return Err(anyhow!("duplicate named args for invocation of {}", kind));
         }
         if kind == "file" {
             for arg in &args {
                 if arg.0 != "$name" && arg.0 != "$body" {
-                    return Err(GritPatternError::new(
-                        "file pattern can only have $name and $body as named args",
-                    ));
+                    bail!("file pattern can only have $name and $body as named args");
                 }
             }
             let name = args
@@ -97,7 +90,7 @@ impl NodeCompiler for CallCompiler {
             .position(|b| b.name == kind)
         {
             if !is_rhs {
-                return Err(GritPatternError::new(format!(
+                return Err(anyhow!(format!(
                     "built-in {} can only be used on the right hand side of a rewrite",
                     kind
                 )));
@@ -129,10 +122,10 @@ impl NodeCompiler for CallCompiler {
                 .pattern_definition_info
                 .get(kind)
                 .ok_or_else(|| {
-                    GritPatternError::new(format!(
+                    anyhow!(
                         "pattern definition not found: {}. Try running grit init.",
                         kind
-                    ))
+                    )
                 })?;
             let args = match_args_to_params(kind, args, &collect_params(&info.parameters), lang)?;
             Ok(Pattern::Call(Box::new(Call::new(
@@ -152,10 +145,10 @@ impl NodeCompiler for PrCallCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> GritResult<Self::TargetPattern> {
+    ) -> Result<Self::TargetPattern> {
         let name = node
             .child_by_field_name("name")
-            .ok_or_else(|| GritPatternError::new("missing pattern, predicate, or sort name"))?;
+            .ok_or_else(|| anyhow!("missing pattern, predicate, or sort name"))?;
         let name = name.text()?;
         let name = name.trim();
         let named_args_count = node.named_children_by_field_name("named_args").count();
@@ -164,9 +157,7 @@ impl NodeCompiler for PrCallCompiler {
         } else if let Some(info) = context.compilation.function_definition_info.get(name) {
             info
         } else {
-            return Err(GritPatternError::new(
-                "predicate or function definition not found: {name}. Try running grit init.",
-            ));
+            bail!("predicate or function definition not found: {name}. Try running grit init.");
         };
         let params = collect_params(&info.parameters);
         let expected_params = Some(params.clone());
@@ -175,9 +166,7 @@ impl NodeCompiler for PrCallCompiler {
             node_to_args_pairs(named_args, context.compilation.lang, name, &expected_params)?;
         let args = named_args_to_hash_map(named_args, context)?;
         if args.len() != named_args_count {
-            return Err(GritPatternError::new(
-                "duplicate named args for invocation of {name}",
-            ));
+            return Err(anyhow!("duplicate named args for invocation of {name}"));
         }
 
         let args = match_args_to_params(name, args, &params, context.compilation.lang)?;
@@ -194,14 +183,16 @@ fn match_args_to_params(
     mut args: BTreeMap<String, Pattern<MarzanoQueryContext>>,
     params: &[String],
     language: &impl Language,
-) -> GritResult<Vec<Option<Pattern<MarzanoQueryContext>>>> {
+) -> Result<Vec<Option<Pattern<MarzanoQueryContext>>>> {
     for (arg, _) in args.iter() {
         if !params.contains(arg) {
-            return Err(GritPatternError::new(format!("attempting to call pattern {name}, with invalid parameter {arg}. Valid parameters are: ") +
+            bail!(
+                format!("attempting to call pattern {name}, with invalid parameter {arg}. Valid parameters are: ") +
                 &params
                     .iter()
                     .map(|p| p.strip_prefix(language.metavariable_prefix()).unwrap_or(p))
-                    .join(", ")));
+                    .join(", ")
+            )
         }
     }
     Ok(params.iter().map(|param| args.remove(param)).collect())
@@ -210,7 +201,7 @@ fn match_args_to_params(
 fn named_args_to_hash_map(
     named_args: Vec<(String, NodeWithSource)>,
     context: &mut NodeCompilationContext,
-) -> GritResult<BTreeMap<String, Pattern<MarzanoQueryContext>>> {
+) -> Result<BTreeMap<String, Pattern<MarzanoQueryContext>>> {
     let mut args = BTreeMap::new();
     for (name, node) in named_args {
         let pattern = PatternCompiler::from_node_with_rhs(&node, context, true)?;
@@ -227,7 +218,7 @@ fn node_to_args_pairs<'a>(
     lang: &impl Language,
     kind: &str,
     expected_params: &'a Option<Vec<String>>,
-) -> GritResult<Vec<(String, NodeWithSource<'a>)>> {
+) -> Result<Vec<(String, NodeWithSource<'a>)>> {
     named_args
         .enumerate()
         .map(|(i, node)| {
@@ -248,20 +239,20 @@ fn node_to_args_pairs<'a>(
                         None => None,
                     })
                     .ok_or_else(|| if let Some(exp) = expected_params {
-                        GritPatternError::new(format!("Too many params for {}: expected maximum {}", kind, exp.len()))
+                        anyhow!("Too many params for {}: expected maximum {}", kind, exp.len())
                     } else {
-                        GritPatternError::new(format!("Variable {} in params is missing a prefix. Try prepending an attribute name: for example, instead of `ensure_import_from(js\"'package'\")`, try `ensure_import_from(source=js\"'package'\")`", name))
+                        anyhow!("Variable {} in params is missing a prefix. Try prepending an attribute name: for example, instead of `ensure_import_from(js\"'package'\")`, try `ensure_import_from(source=js\"'package'\")`", name)
                     })?;
                 Ok((name.to_owned(), var))
             } else {
                 let name = node
                     .child_by_field_name("name")
-                    .ok_or_else(|| GritPatternError::new("missing name of named arg"))?;
+                    .ok_or_else(|| anyhow!("missing name of named arg"))?;
                 let name = name.text()?;
                 let name = name.trim();
                 let pattern = node
                     .child_by_field_name("pattern")
-                    .ok_or_else(|| GritPatternError::new("missing pattern of named arg"))?;
+                    .ok_or_else(|| anyhow!("missing pattern of named arg"))?;
                 Ok((name.to_owned(), pattern))
             }
         })

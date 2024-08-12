@@ -1,18 +1,18 @@
+use anyhow::Result;
 use grit_pattern_matcher::{
     context::QueryContext,
     pattern::{And, Any, Bubble, Contains, Includes, Or, Pattern, Predicate, Where},
 };
-use grit_util::error::GritResult;
 
 trait FilenamePatternExtractor<Q: QueryContext> {
-    fn extract_filename_pattern(&self) -> GritResult<Option<Pattern<Q>>>;
+    fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>>;
 }
 
 /// Given a pattern, construct a new pattern that reflects any filename predicates found
 /// If analysis cannot be done reliably, returns None
 pub fn extract_filename_pattern<Q: QueryContext>(
     pattern: &Pattern<Q>,
-) -> GritResult<Option<Pattern<Q>>> {
+) -> Result<Option<Pattern<Q>>> {
     match pattern {
         // Once we hit a leaf node that is *not* matched against the filename, we can't go any further
         Pattern::Variable(_)
@@ -135,25 +135,25 @@ pub fn extract_filename_pattern<Q: QueryContext>(
 }
 
 impl<Q: QueryContext> FilenamePatternExtractor<Q> for Bubble<Q> {
-    fn extract_filename_pattern(&self) -> GritResult<Option<Pattern<Q>>> {
+    fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>> {
         extract_filename_pattern(&self.pattern_def.pattern)
     }
 }
 
 impl<Q: QueryContext> FilenamePatternExtractor<Q> for Contains<Q> {
-    fn extract_filename_pattern(&self) -> GritResult<Option<Pattern<Q>>> {
+    fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>> {
         extract_filename_pattern(&self.contains)
     }
 }
 
 impl<Q: QueryContext> FilenamePatternExtractor<Q> for Includes<Q> {
-    fn extract_filename_pattern(&self) -> GritResult<Option<Pattern<Q>>> {
+    fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>> {
         extract_filename_pattern(&self.includes)
     }
 }
 
 impl<Q: QueryContext> FilenamePatternExtractor<Q> for Where<Q> {
-    fn extract_filename_pattern(&self) -> GritResult<Option<Pattern<Q>>> {
+    fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>> {
         let pattern = extract_filename_pattern(&self.pattern)?.unwrap_or(Pattern::Top);
         let predicate_pattern = self
             .side_condition
@@ -169,7 +169,7 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Where<Q> {
 /// Given a list of patterns, extract the filename patterns from each of them
 fn extract_filename_patterns_from_patterns<Q: QueryContext>(
     predicates: &[Pattern<Q>],
-) -> GritResult<Option<Vec<Pattern<Q>>>> {
+) -> Result<Option<Vec<Pattern<Q>>>> {
     let mut patterns = vec![];
     for p in predicates {
         let pattern = extract_filename_pattern(p)?;
@@ -185,7 +185,7 @@ fn extract_filename_patterns_from_patterns<Q: QueryContext>(
 /// Given a list of predicates, extract the filename patterns from each of them
 fn extract_patterns_from_predicates<Q: QueryContext>(
     predicates: &[Predicate<Q>],
-) -> GritResult<Option<Vec<Pattern<Q>>>> {
+) -> Result<Option<Vec<Pattern<Q>>>> {
     let mut patterns = vec![];
     for p in predicates {
         let pattern = p.extract_filename_pattern()?;
@@ -199,7 +199,7 @@ fn extract_patterns_from_predicates<Q: QueryContext>(
 }
 
 impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
-    fn extract_filename_pattern(&self) -> GritResult<Option<Pattern<Q>>> {
+    fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>> {
         match self {
             Predicate::And(target) => {
                 let Some(patterns) = extract_patterns_from_predicates(&target.predicates)? else {
@@ -290,7 +290,7 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
 // This is not a great implementation, but it's a start.
 // I think a better approach will actually be to introduce a Pattern::FailOpen idea where if any errors are encountered when resolving
 // a pattern, we can just assume it's true. This will allow us to hoist more patterns without worrying about unbound variables.
-fn is_safe_to_hoist<Q: QueryContext>(pattern: &Pattern<Q>) -> GritResult<bool> {
+fn is_safe_to_hoist<Q: QueryContext>(pattern: &Pattern<Q>) -> Result<bool> {
     match pattern {
         Pattern::Includes(inc) => is_safe_to_hoist(&inc.includes),
         Pattern::StringConstant(_) => Ok(true),

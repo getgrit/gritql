@@ -2,6 +2,7 @@ use crate::{
     marzano_context::MarzanoContext, marzano_resolved_pattern::MarzanoResolvedPattern,
     paths::resolve, problem::MarzanoQueryContext,
 };
+use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
     binding::Binding,
     constant::Constant,
@@ -11,10 +12,7 @@ use grit_pattern_matcher::{
         ResolvedSnippet, State,
     },
 };
-use grit_util::{
-    error::{GritPatternError, GritResult},
-    AnalysisLogs, CodeRange, Language,
-};
+use grit_util::{AnalysisLogs, CodeRange, Language};
 use im::Vector;
 use itertools::Itertools;
 use rand::prelude::SliceRandom;
@@ -33,7 +31,7 @@ pub type CallableFn = dyn for<'a> Fn(
         &'a MarzanoContext<'a>,
         &mut State<'a, MarzanoQueryContext>,
         &mut AnalysisLogs,
-    ) -> GritResult<MarzanoResolvedPattern<'a>>
+    ) -> Result<MarzanoResolvedPattern<'a>>
     + Send
     + Sync;
 
@@ -50,7 +48,7 @@ impl BuiltInFunction {
         context: &'a MarzanoContext<'a>,
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
-    ) -> GritResult<MarzanoResolvedPattern<'a>> {
+    ) -> Result<MarzanoResolvedPattern<'a>> {
         (self.func)(args, context, state, logs)
     }
 
@@ -78,7 +76,7 @@ impl BuiltIns {
         context: &'a MarzanoContext<'a>,
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
-    ) -> GritResult<MarzanoResolvedPattern<'a>> {
+    ) -> Result<MarzanoResolvedPattern<'a>> {
         self.0[call.index].call(&call.args, context, state, logs)
     }
 
@@ -88,7 +86,7 @@ impl BuiltIns {
         index: usize,
         lang: &impl Language,
         name: &str,
-    ) -> GritResult<CallBuiltIn<MarzanoQueryContext>> {
+    ) -> Result<CallBuiltIn<MarzanoQueryContext>> {
         let params = &built_ins.0[index].params;
         let mut pattern_params = Vec::with_capacity(args.len());
         for param in params.iter() {
@@ -115,7 +113,7 @@ impl BuiltIns {
         self.0.push(built_in);
     }
 
-    pub fn extend_builtins(&mut self, other: BuiltIns) -> GritResult<()> {
+    pub fn extend_builtins(&mut self, other: BuiltIns) -> Result<()> {
         let self_name = self.0.iter().map(|b| &b.name).collect_vec();
         let other_name = other.0.iter().map(|b| &b.name).collect_vec();
         let repeats = self_name
@@ -127,10 +125,10 @@ impl BuiltIns {
                 .iter()
                 .fold("".to_string(), |a, n| format!("{}{}, ", a, n));
             let repeated_names = repeated_names.strip_suffix(", ").unwrap();
-            Err(GritPatternError::new(format!(
+            Err(anyhow!(
                 "failed to extend builtins as collections had repeated definitions for: {}",
                 repeated_names
-            )))
+            ))
         } else {
             self.0.extend(other.0);
             Ok(())
@@ -172,18 +170,14 @@ fn resolve_path_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> GritResult<MarzanoResolvedPattern<'a>> {
+) -> Result<MarzanoResolvedPattern<'a>> {
     let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
 
     let current_file = get_absolute_file_name(state, context.language())?;
 
     let target_path = match &args[0] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files, context.language())?,
-        None => {
-            return Err(GritPatternError::new(
-                "No path argument provided for resolve function",
-            ))
-        }
+        None => return Err(anyhow!("No path argument provided for resolve function")),
     };
 
     let resolved_path = resolve(target_path, current_file.into())?;
@@ -204,16 +198,12 @@ fn capitalize_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> GritResult<MarzanoResolvedPattern<'a>> {
+) -> Result<MarzanoResolvedPattern<'a>> {
     let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
 
     let s = match &args[0] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files, context.language())?,
-        None => {
-            return Err(GritPatternError::new(
-                "No argument provided for capitalize function",
-            ))
-        }
+        None => return Err(anyhow!("No argument provided for capitalize function")),
     };
     Ok(ResolvedPattern::from_string(capitalize(&s)))
 }
@@ -223,12 +213,12 @@ fn lowercase_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> GritResult<MarzanoResolvedPattern<'a>> {
+) -> Result<MarzanoResolvedPattern<'a>> {
     let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
 
     let s = match &args[0] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files, context.language())?,
-        None => return Err(GritPatternError::new("lowercase takes 1 argument")),
+        None => return Err(anyhow!("lowercase takes 1 argument")),
     };
     Ok(ResolvedPattern::from_string(s.to_lowercase()))
 }
@@ -238,12 +228,12 @@ fn uppercase_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> GritResult<MarzanoResolvedPattern<'a>> {
+) -> Result<MarzanoResolvedPattern<'a>> {
     let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
 
     let s = match &args[0] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files, context.language())?,
-        None => return Err(GritPatternError::new("uppercase takes 1 argument")),
+        None => return Err(anyhow!("uppercase takes 1 argument")),
     };
     Ok(ResolvedPattern::from_string(s.to_uppercase()))
 }
@@ -253,11 +243,11 @@ fn text_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> GritResult<MarzanoResolvedPattern<'a>> {
+) -> Result<MarzanoResolvedPattern<'a>> {
     let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
 
     let Some(Some(resolved_pattern)) = args.first() else {
-        return Err(GritPatternError::new("text takes 1 argument"));
+        return Err(anyhow!("text takes 1 argument"));
     };
     let should_linearize = match args.get(1) {
         Some(Some(resolved_pattern)) => resolved_pattern.is_truthy(state, context.language())?,
@@ -285,25 +275,17 @@ fn trim_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> GritResult<MarzanoResolvedPattern<'a>> {
+) -> Result<MarzanoResolvedPattern<'a>> {
     let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
 
     let trim_chars = match &args[1] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files, context.language())?,
-        None => {
-            return Err(GritPatternError::new(
-                "trim takes 2 arguments: string and trim_chars",
-            ))
-        }
+        None => return Err(anyhow!("trim takes 2 arguments: string and trim_chars")),
     };
 
     let s = match &args[0] {
         Some(resolved_pattern) => resolved_pattern.text(&state.files, context.language())?,
-        None => {
-            return Err(GritPatternError::new(
-                "trim takes 2 arguments: string and trim_chars",
-            ))
-        }
+        None => return Err(anyhow!("trim takes 2 arguments: string and trim_chars")),
     };
 
     let trim_chars = trim_chars.chars().collect::<Vec<char>>();
@@ -317,18 +299,18 @@ fn split_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> GritResult<MarzanoResolvedPattern<'a>> {
+) -> Result<MarzanoResolvedPattern<'a>> {
     let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
 
     let string = if let Some(string) = &args[0] {
         string.text(&state.files, context.language())?
     } else {
-        return Err(GritPatternError::new("split requires parameter string"));
+        bail!("split requires parameter string")
     };
     let separator = if let Some(separator) = &args[1] {
         separator.text(&state.files, context.language())?
     } else {
-        return Err(GritPatternError::new("split requires parameter separator"));
+        bail!("split requires parameter separator")
     };
     let separator = separator.as_ref();
     let parts = string.split(separator).map(|s| {
@@ -342,7 +324,7 @@ fn random_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> GritResult<MarzanoResolvedPattern<'a>> {
+) -> Result<MarzanoResolvedPattern<'a>> {
     let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
 
     match args.as_slice() {
@@ -356,20 +338,16 @@ fn random_fn<'a>(
             Ok(ResolvedPattern::from_constant(Constant::Integer(value)))
         }
         [Some(_), None] => {
-            return Err(GritPatternError::new(
-                "If you provide a start argument to random(), you must provide an end argument",
-            ))
+            bail!("If you provide a start argument to random(), you must provide an end argument")
         }
         [None, Some(_)] => {
-            return Err(GritPatternError::new(
-                "If you provide an end argument to random(), you must provide a start argument",
-            ))
+            bail!("If you provide an end argument to random(), you must provide a start argument")
         }
         [None, None] => {
             let value = state.get_rng().gen::<f64>();
             Ok(ResolvedPattern::from_constant(Constant::Float(value)))
         }
-        _ => return Err(GritPatternError::new("random() takes 0 or 2 arguments")),
+        _ => bail!("random() takes 0 or 2 arguments"),
     }
 }
 
@@ -378,17 +356,13 @@ fn join_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> GritResult<MarzanoResolvedPattern<'a>> {
+) -> Result<MarzanoResolvedPattern<'a>> {
     let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
 
     let separator = &args[1];
     let separator = match separator {
         Some(resolved_pattern) => resolved_pattern.text(&state.files, context.language())?,
-        None => {
-            return Err(GritPatternError::new(
-                "trim takes 2 arguments: list and separator",
-            ))
-        }
+        None => return Err(anyhow!("trim takes 2 arguments: list and separator")),
     };
 
     let join = match &args[0] {
@@ -398,16 +372,10 @@ fn join_fn<'a>(
             } else if let Some(items) = list_binding.get_list_binding_items() {
                 JoinFn::from_patterns(items, separator.to_string())
             } else {
-                return Err(GritPatternError::new(
-                    "join takes a list as the first argument",
-                ));
+                bail!("join takes a list as the first argument")
             }
         }
-        None => {
-            return Err(GritPatternError::new(
-                "join takes a list as the first argument",
-            ))
-        }
+        None => bail!("join takes a list as the first argument"),
     };
     let snippet = ResolvedSnippet::LazyFn(Box::new(LazyBuiltIn::Join(join)));
     Ok(ResolvedPattern::from_resolved_snippet(snippet))
@@ -418,7 +386,7 @@ fn distinct_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> GritResult<MarzanoResolvedPattern<'a>> {
+) -> Result<MarzanoResolvedPattern<'a>> {
     let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
 
     let list = args.into_iter().next().unwrap();
@@ -444,16 +412,12 @@ fn distinct_fn<'a>(
                     }
                     Ok(MarzanoResolvedPattern::List(unique_list))
                 } else {
-                    return Err(GritPatternError::new(
-                        "distinct takes a list as the first argument",
-                    ));
+                    bail!("distinct takes a list as the first argument")
                 }
             }
             None => Ok(MarzanoResolvedPattern::Binding(binding)),
         },
-        _ => Err(GritPatternError::new(
-            "distinct takes a list as the first argument",
-        )),
+        _ => Err(anyhow!("distinct takes a list as the first argument")),
     }
 }
 
@@ -463,15 +427,15 @@ fn shuffle_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> GritResult<MarzanoResolvedPattern<'a>> {
+) -> Result<MarzanoResolvedPattern<'a>> {
     let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
 
     let list = args
         .into_iter()
         .next()
-        .ok_or(GritPatternError::new("shuffle requires one argument"))?
-        .ok_or(GritPatternError::new(
-            "shuffle requires a non-null list as the first argument",
+        .ok_or(anyhow!("shuffle requires one argument"))?
+        .ok_or(anyhow!(
+            "shuffle requires a non-null list as the first argument"
         ))?;
 
     let mut shuffled_list: Vec<_> = if let Some(items) = list.get_list_items() {
@@ -479,9 +443,7 @@ fn shuffle_fn<'a>(
     } else if let Some(items) = list.get_list_binding_items() {
         items.collect()
     } else {
-        return Err(GritPatternError::new(
-            "shuffle takes a list as the first argument",
-        ));
+        bail!("shuffle takes a list as the first argument");
     };
 
     shuffled_list.shuffle(state.get_rng());
@@ -495,7 +457,7 @@ fn length_fn<'a>(
     context: &'a MarzanoContext<'a>,
     state: &mut State<'a, MarzanoQueryContext>,
     logs: &mut AnalysisLogs,
-) -> GritResult<MarzanoResolvedPattern<'a>> {
+) -> Result<MarzanoResolvedPattern<'a>> {
     let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
 
     let list = args.into_iter().next().unwrap();
@@ -517,9 +479,7 @@ fn length_fn<'a>(
                     length as i64,
                 )))
             }
-            None => Err(GritPatternError::new(
-                "length argument must be a list or string",
-            )),
+            None => Err(anyhow!("length argument must be a list or string")),
         },
         Some(resolved_pattern) => {
             if let Ok(text) = resolved_pattern.text(&state.files, context.language()) {
@@ -528,14 +488,10 @@ fn length_fn<'a>(
                     length as i64,
                 )))
             } else {
-                Err(GritPatternError::new(
-                    "length argument must be a list or string",
-                ))
+                Err(anyhow!("length argument must be a list or string"))
             }
         }
-        None => Err(GritPatternError::new(
-            "length argument must be a list or string",
-        )),
+        None => Err(anyhow!("length argument must be a list or string")),
     }
 }
 
@@ -558,6 +514,6 @@ fn ai_fn_placeholder<'a>(
     _context: &'a MarzanoContext<'a>,
     _state: &mut State<'a, MarzanoQueryContext>,
     _logs: &mut AnalysisLogs,
-) -> GritResult<MarzanoResolvedPattern<'a>> {
-    Err(GritPatternError::new(format!("AI features are not supported in your GritQL distribution. Please upgrade to the Enterprise version to use AI features.")))
+) -> Result<MarzanoResolvedPattern<'a>> {
+    bail!("AI features are not supported in your GritQL distribution. Please upgrade to the Enterprise version to use AI features.")
 }

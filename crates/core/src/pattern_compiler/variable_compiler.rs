@@ -1,7 +1,8 @@
 use super::{compiler::NodeCompilationContext, node_compiler::NodeCompiler};
 use crate::variables::register_variable;
+use anyhow::Result;
 use grit_pattern_matcher::pattern::Variable;
-use grit_util::{error::GritResult, AstNode};
+use grit_util::AstNode;
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct VariableCompiler;
@@ -13,7 +14,7 @@ impl NodeCompiler for VariableCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> GritResult<Self::TargetPattern> {
+    ) -> Result<Self::TargetPattern> {
         let name = node.text()?;
         let name = name.trim();
         let range = node.byte_range();

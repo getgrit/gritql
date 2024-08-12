@@ -3,11 +3,9 @@ use super::compiler::NodeCompilationContext;
 use super::pattern_compiler::PatternCompiler;
 use super::NodeCompiler;
 use crate::problem::MarzanoQueryContext;
+use anyhow::Result;
 use grit_pattern_matcher::pattern::{Pattern, Step};
-use grit_util::{
-    error::{GritPatternError, GritResult},
-    AnalysisLogBuilder,
-};
+use grit_util::AnalysisLogBuilder;
 use marzano_util::node_with_source::NodeWithSource;
 
 const SEQUENTIAL_WARNING: &str = "Warning: sequential matches at the top of the file. If a pattern matched outside of a sequential, but no longer matches, it is likely because naked patterns are automatically wrapped with `contains bubble <pattern>`";
@@ -21,7 +19,7 @@ impl NodeCompiler for StepCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> GritResult<Self::TargetPattern> {
+    ) -> Result<Self::TargetPattern> {
         let pattern = PatternCompiler::from_node(node, context)?;
         match pattern {
             Pattern::File(_)
@@ -84,8 +82,7 @@ impl NodeCompiler for StepCompiler {
                     .position(range.start)
                     .range(range)
                     .message(SEQUENTIAL_WARNING)
-                    .build()
-                    .map_err(|e| GritPatternError::new(e.to_string()))?;
+                    .build()?;
                 context.logs.push(log);
             }
             Pattern::Sequential(ref s) => {
@@ -108,8 +105,7 @@ impl NodeCompiler for StepCompiler {
                             .position(range.start)
                             .range(range)
                             .message(SEQUENTIAL_WARNING)
-                            .build()
-                            .map_err(|e| GritPatternError::new(e.to_string()))?;
+                            .build()?;
                         context.logs.push(log);
                         break;
                     }

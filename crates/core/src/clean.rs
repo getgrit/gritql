@@ -1,4 +1,5 @@
-use grit_util::{error::GritResult, traverse, AstNode, Language, Order, Replacement};
+use anyhow::Result;
+use grit_util::{traverse, AstNode, Language, Order, Replacement};
 use itertools::Itertools;
 
 pub fn merge_ranges(ranges: Vec<Replacement>) -> Vec<Replacement> {
@@ -31,7 +32,7 @@ pub fn merge_ranges(ranges: Vec<Replacement>) -> Vec<Replacement> {
 pub(crate) fn replace_cleaned_ranges(
     replacement_ranges: Vec<Replacement>,
     src: &str,
-) -> GritResult<Option<String>> {
+) -> Result<Option<String>> {
     if replacement_ranges.is_empty() {
         return Ok(None);
     }

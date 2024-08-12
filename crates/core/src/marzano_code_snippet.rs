@@ -2,12 +2,13 @@ use crate::{
     marzano_context::MarzanoContext, marzano_resolved_pattern::MarzanoResolvedPattern,
     problem::MarzanoQueryContext,
 };
+use anyhow::Result;
 use grit_pattern_matcher::{
     binding::Binding,
     context::ExecContext,
     pattern::{CodeSnippet, DynamicPattern, Matcher, Pattern, PatternName, ResolvedPattern, State},
 };
-use grit_util::{error::GritResult, AnalysisLogs};
+use grit_util::AnalysisLogs;
 use marzano_language::language::SortId;
 
 #[derive(Debug, Clone)]
@@ -55,7 +56,7 @@ impl Matcher<MarzanoQueryContext> for MarzanoCodeSnippet {
         state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> GritResult<bool> {
+    ) -> Result<bool> {
         let Some(binding) = resolved.get_last_binding() else {
             return Ok(resolved.text(&state.files, context.language())?.trim() == self.source);
         };

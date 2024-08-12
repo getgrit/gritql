@@ -1,7 +1,5 @@
-use grit_util::{
-    error::{GritPatternError, GritResult},
-    EffectRange, Language,
-};
+use anyhow::{anyhow, bail, Result};
+use grit_util::{EffectRange, Language};
 use itertools::Itertools;
 use std::{cell::RefCell, collections::HashSet, ops::Range, rc::Rc};
 
@@ -88,19 +86,19 @@ fn pad_snippet(
     context: &str,
     range_start: usize,
     snippet: &str,
-) -> GritResult<String> {
+) -> Result<String> {
     // Find last new-line character before range
     let newline_index = context
         .get(0..range_start)
-        .ok_or(GritPatternError::new(
-            "Slice range does not align with character boundaries: This is probably a bug in Grit.",
+        .ok_or(anyhow!(
+            "Slice range does not align with character boundaries: This is probably a bug in Grit."
         ))?
         .rfind('\n');
     // Collect all leading whitespace, starting after the '\n' character
     let mut chars = context
         .get(newline_index.map(|n| n + 1).unwrap_or_default()..range_start)
-        .ok_or(GritPatternError::new(
-            "Slice range does not align with character boundaries: This is probably a bug in Grit.",
+        .ok_or(anyhow!(
+            "Slice range does not align with character boundaries: This is probably a bug in Grit."
         ))?
         .chars()
         .peekable();
@@ -127,20 +125,16 @@ pub(crate) fn inline_sorted_snippets_with_offset(
     offset: usize,
     replacements: &mut Vec<(EffectRange, String)>,
     should_pad_snippet: bool,
-) -> GritResult<(String, Vec<Range<usize>>, Vec<ReplacementInfo>)> {
+) -> Result<(String, Vec<Range<usize>>, Vec<ReplacementInfo>)> {
     if !is_sorted_descending(replacements) {
-        return Err(GritPatternError::new(
-            "Replacements must be in descending order.",
-        ));
+        bail!("Replacements must be in descending order.");
     }
 
     filter_out_nested(replacements);
     sort_range_start(replacements);
 
     if has_overlapping_ranges(replacements) {
-        return Err(GritPatternError::new(
-            "Ranges must not be partially overlapping. They must be either disjoint or nested.",
-        ));
+        bail!("Ranges must not be partially overlapping. They must be either disjoint or nested.");
     }
     // this could probably be integrated with the following loop
     // top level snippets are not already padded, so we need to pad again here
@@ -159,13 +153,13 @@ pub(crate) fn inline_sorted_snippets_with_offset(
         let old_content = old.unwrap();
         let preceding_newline = code
             .get(0..range.range.start)
-            .ok_or(GritPatternError::new(
+            .ok_or(anyhow!(
                 "Slice range does not align with character boundaries: This is probably a bug in Grit."
             ))?
             .rfind('\n');
         let subsequent_newline = code
             .get(range.range.end..)
-            .ok_or(GritPatternError::new(
+            .ok_or(anyhow!(
                 "Slice range does not align with character boundaries: This is probably a bug in Grit."
             ))?
             .find('\n')
@@ -199,32 +193,42 @@ pub(crate) fn inline_sorted_snippets_with_offset(
         let mut offset: isize = 0;
         for (range, len) in replacements.iter().map(|(r, s)| (r, s.len())).rev() {
             let range = range.effective_range();
-            let start = range.start.checked_add_signed(offset).ok_or_else(|| {
-                GritPatternError::new(format!("offset {} overflows start {}", offset, range.start))
-            })?;
+            let start = range
+                .start
+                .checked_add_signed(offset)
+                .ok_or_else(|| anyhow!("offset {} overflows start {}", offset, range.start))?;
             let end = start + len;
             // offset = offset + len - (range.end - range.start)
             offset = offset
                 .checked_add_unsigned(len)
                 .ok_or_else(|| {
-                    GritPatternError::new(format!(
+                    anyhow!(
                         "{} + {} - ({} - {}) overflowed",
-                        offset, len, range.end, range.start,
-                    ))
+                        offset,
+                        len,
+                        range.end,
+                        range.start
+                    )
                 })?
                 .checked_add_unsigned(range.start)
                 .ok_or_else(|| {
-                    GritPatternError::new(format!(
+                    anyhow!(
                         "{} + {} - ({} - {}) overflowed",
-                        offset, len, range.end, range.start,
-                    ))
+                        offset,
+                        len,
+                        range.end,
+                        range.start
+                    )
                 })?
                 .checked_sub_unsigned(range.end)
                 .ok_or_else(|| {
-                    GritPatternError::new(format!(
+                    anyhow!(
                         "{} + {} - ({} - {}) overflowed",
-                        offset, len, range.end, range.start,
-                    ))
+                        offset,
+                        len,
+                        range.end,
+                        range.start
+                    )
                 })?;
             output_ranges.push(start..end);
         }
@@ -233,10 +237,7 @@ pub(crate) fn inline_sorted_snippets_with_offset(
     for (range, snippet) in replacements {
         let range = adjust_range(&range.effective_range(), offset, &code)?;
         if range.start > code.len() || range.end > code.len() {
-            return Err(GritPatternError::new(format!(
-                "Range {:?} is out of bounds for code:\n{}\n",
-                range, code,
-            )));
+            bail!("Range {:?} is out of bounds for code:\n{}\n", range, code);
         }
         code.replace_range(range, snippet);
     }
@@ -244,23 +245,19 @@ pub(crate) fn inline_sorted_snippets_with_offset(
     Ok((code, output_ranges, original_ranges))
 }
 
-fn adjust_range(range: &Range<usize>, offset: usize, code: &str) -> GritResult<Range<usize>> {
+fn adjust_range(range: &Range<usize>, offset: usize, code: &str) -> Result<Range<usize>> {
     if range.start < offset || range.end < offset {
-        return Err(GritPatternError::new(
-            "offset must not be greater than the range.",
-        ));
+        bail!("offset must not be greater than the range.");
     }
     if !code.is_char_boundary(range.start - offset) || !code.is_char_boundary(range.end - offset) {
-        return Err(GritPatternError::new("Offset range does not align with character boundaries: This is probably a bug in Grit."));
+        bail!("Offset range does not align with character boundaries: This is probably a bug in Grit.");
     }
     Ok((range.start - offset)..(range.end - offset))
 }
 
-fn adjust_index(index: usize, offset: usize) -> GritResult<usize> {
+fn adjust_index(index: usize, offset: usize) -> Result<usize> {
     if index < offset {
-        return Err(GritPatternError::new(
-            "offset must not be greater than the index.",
-        ));
+        bail!("offset must not be greater than the index.");
     }
     Ok(index - offset)
 }
@@ -302,7 +299,7 @@ fn delete_hanging_comma(
     code: &str,
     replacements: &mut [(EffectRange, String)],
     offset: usize,
-) -> GritResult<(String, Vec<ReplacementInfo>)> {
+) -> Result<(String, Vec<ReplacementInfo>)> {
     let deletion_ranges = replacements
         .iter()
         .filter_map(|r| {
@@ -312,7 +309,7 @@ fn delete_hanging_comma(
                 None
             }
         })
-        .collect::<GritResult<Vec<Range<usize>>>>()?;
+        .collect::<Result<Vec<Range<usize>>>>()?;
 
     // we reverse because in the event of multiple insertions we only want to delete
     // a comma for the first insertion, the unique at the end stably removes duplicates
@@ -332,7 +329,7 @@ fn delete_hanging_comma(
                 None
             }
         })
-        .collect::<GritResult<Vec<(usize, Rc<RefCell<&mut String>>)>>>()?
+        .collect::<Result<Vec<(usize, Rc<RefCell<&mut String>>)>>>()?
         .into_iter()
         .unique_by(|x| x.0)
         .collect::<Vec<(usize, Rc<RefCell<&mut String>>)>>();

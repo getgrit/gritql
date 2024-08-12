@@ -3,11 +3,9 @@ use super::{
     pattern_compiler::PatternCompiler, variable_compiler::VariableCompiler,
 };
 use crate::{problem::MarzanoQueryContext, split_snippet::split_snippet};
+use anyhow::{anyhow, Result};
 use grit_pattern_matcher::pattern::{Container, Match, Pattern, Predicate, Where};
-use grit_util::{
-    error::{GritPatternError, GritResult},
-    traverse, AnalysisLogBuilder, AstNode, Language, Order,
-};
+use grit_util::{traverse, AnalysisLogBuilder, AstNode, Language, Order};
 use marzano_util::{cursor_wrapper::CursorWrapper, node_with_source::NodeWithSource};
 
 pub(crate) struct AsCompiler;
@@ -20,14 +18,14 @@ impl NodeCompiler for AsCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> GritResult<Self::TargetPattern> {
+    ) -> Result<Self::TargetPattern> {
         let pattern = node
             .child_by_field_name("pattern")
-            .ok_or_else(|| GritPatternError::new("missing pattern of patternWhere"))?;
+            .ok_or_else(|| anyhow!("missing pattern of patternWhere"))?;
 
         let variable = node
             .child_by_field_name("variable")
-            .ok_or_else(|| GritPatternError::new("missing variable of patternWhere"))?;
+            .ok_or_else(|| anyhow!("missing variable of patternWhere"))?;
 
         let name = variable.text()?;
         let name = name.trim();
@@ -46,8 +44,7 @@ impl NodeCompiler for AsCompiler {
                 .message(format!(
                     "Warning: it is usually incorrect to redefine a variable {name} using as"
                 ))
-                .build()
-                .map_err(|e| GritPatternError::new(e.to_string()))?;
+                .build()?;
             context.logs.push(log);
         }
 
@@ -67,7 +64,7 @@ fn pattern_repeated_variable(
     pattern: &NodeWithSource,
     name: &str,
     lang: &impl Language,
-) -> GritResult<bool> {
+) -> Result<bool> {
     let cursor = pattern.node.walk();
     let cursor = traverse(CursorWrapper::new(cursor, pattern.source), Order::Pre);
     Ok(cursor
@@ -80,7 +77,7 @@ fn pattern_repeated_variable(
                 Ok(is_variables_in_snippet(name, &s, lang))
             }
         })
-        .collect::<GritResult<Vec<bool>>>()?
+        .collect::<Result<Vec<bool>>>()?
         .into_iter()
         .any(|b| b))
 }

@@ -1,6 +1,7 @@
 use crate::paths::absolutize;
+use anyhow::Result;
 use grit_pattern_matcher::file_owners::FileOwner;
-use grit_util::{error::GritResult, AnalysisLogs, FileOrigin, MatchRanges};
+use grit_util::{AnalysisLogs, FileOrigin, MatchRanges};
 use marzano_language::{
     language::{MarzanoLanguage, Tree},
     sourcemap::EmbeddedSourceMap,
@@ -18,7 +19,7 @@ impl FileOwnerCompiler {
         new_map: Option<EmbeddedSourceMap>,
         language: &impl MarzanoLanguage<'a>,
         logs: &mut AnalysisLogs,
-    ) -> GritResult<Option<FileOwner<Tree>>> {
+    ) -> Result<Option<FileOwner<Tree>>> {
         let name = name.into();
         let new = !old_tree.is_fresh();
 

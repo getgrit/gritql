@@ -4,8 +4,8 @@ use super::{
 };
 use crate::marzano_code_snippet::MarzanoCodeSnippet;
 use crate::problem::MarzanoQueryContext;
+use anyhow::{anyhow, Result};
 use grit_pattern_matcher::pattern::{Accumulate, DynamicPattern, Pattern};
-use grit_util::error::{GritPatternError, GritResult};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct AccumulateCompiler;
@@ -17,14 +17,14 @@ impl NodeCompiler for AccumulateCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> GritResult<Self::TargetPattern> {
+    ) -> Result<Self::TargetPattern> {
         let left_node = node
             .child_by_field_name("left")
-            .ok_or_else(|| GritPatternError::new("missing variable of patternAccumulateString"))?;
+            .ok_or_else(|| anyhow!("missing variable of patternAccumulateString"))?;
         let left = PatternCompiler::from_node(&left_node, context)?;
         let right_node = node
             .child_by_field_name("right")
-            .ok_or_else(|| GritPatternError::new("missing pattern of patternAccumulateString"))?;
+            .ok_or_else(|| anyhow!("missing pattern of patternAccumulateString"))?;
         let right = PatternCompiler::from_node_with_rhs(&right_node, context, true)?;
         let dynamic_right = match right.clone() {
             Pattern::Dynamic(r) => Some(r),

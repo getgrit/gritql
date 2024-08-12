@@ -47,6 +47,7 @@ use crate::{
     ast_node::{ASTNode, AstLeafNode},
     variables::register_variable,
 };
+use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
     context::QueryContext,
     pattern::{
@@ -54,10 +55,7 @@ use grit_pattern_matcher::{
         Pattern, RegexLike, RegexPattern, Variable,
     },
 };
-use grit_util::{
-    error::{GritPatternError, GritResult},
-    traverse, AstCursor, AstNode, ByteRange, GritMetaValue, Language, Order,
-};
+use grit_util::{traverse, AstCursor, AstNode, ByteRange, GritMetaValue, Language, Order};
 use marzano_language::language::{Field, MarzanoLanguage, NodeTypes};
 use marzano_util::node_with_source::NodeWithSource;
 use regex::Match as RegexMatch;
@@ -78,7 +76,7 @@ impl PatternCompiler {
         context_range: ByteRange,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> GritResult<Pattern<MarzanoQueryContext>> {
+    ) -> Result<Pattern<MarzanoQueryContext>> {
         let snippet_start = node.node.start_byte() as usize;
         let ranges = metavariable_ranges(&node, context.compilation.lang);
         let range_map = metavariable_range_mapping(ranges, snippet_start);
@@ -89,7 +87,7 @@ impl PatternCompiler {
             range_map: &HashMap<ByteRange, ByteRange>,
             context: &mut NodeCompilationContext,
             is_rhs: bool,
-        ) -> GritResult<Pattern<MarzanoQueryContext>> {
+        ) -> Result<Pattern<MarzanoQueryContext>> {
             let sort = node.node.kind_id();
             // probably safe to assume node is named, but just in case
             // maybe doesn't even matter, but is what I expect,
@@ -146,7 +144,7 @@ impl PatternCompiler {
                         let mut nodes_list = node
                             .named_children_by_field_id(field_id)
                             .map(|n| node_to_astnode(n, context_range, range_map, context, is_rhs))
-                            .collect::<GritResult<Vec<Pattern<MarzanoQueryContext>>>>()?;
+                            .collect::<Result<Vec<Pattern<MarzanoQueryContext>>>>()?;
                         if !field.multiple() {
                             return Ok((
                                 field_id,
@@ -172,7 +170,7 @@ impl PatternCompiler {
                             Pattern::List(Box::new(List::new(nodes_list))),
                         ))
                     })
-                    .collect::<GritResult<Vec<(u16, bool, Pattern<MarzanoQueryContext>)>>>()?;
+                    .collect::<Result<Vec<(u16, bool, Pattern<MarzanoQueryContext>)>>>()?;
             Ok(Pattern::AstNode(Box::new(ASTNode { sort, args })))
         }
         node_to_astnode(node, context_range, &range_map, context, is_rhs)
@@ -186,7 +184,7 @@ impl NodeCompiler for PatternCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> GritResult<Self::TargetPattern> {
+    ) -> Result<Self::TargetPattern> {
         let kind = node.node.kind();
         match kind.as_ref() {
             "mulOperation" => Ok(Pattern::Multiply(Box::new(
@@ -311,12 +309,7 @@ impl NodeCompiler for PatternCompiler {
             "stringConstant" => Ok(Pattern::StringConstant(
                 StringConstantCompiler::from_node_with_rhs(node, context, is_rhs)?,
             )),
-            _ => {
-                return Err(GritPatternError::new(format!(
-                    "unknown pattern kind: {}",
-                    kind
-                )))
-            }
+            _ => bail!("unknown pattern kind: {}", kind),
         }
     }
 }
@@ -338,7 +331,7 @@ fn implicit_metavariable_regex<Q: QueryContext>(
     context_range: ByteRange,
     range_map: &HashMap<ByteRange, ByteRange>,
     context: &mut NodeCompilationContext,
-) -> GritResult<Option<RegexPattern<Q>>> {
+) -> Result<Option<RegexPattern<Q>>> {
     let range = node.range();
     let offset = range.start_byte;
     let mut last = if cfg!(target_arch = "wasm32") {
@@ -389,14 +382,14 @@ fn metavariable_descendent<Q: QueryContext>(
     range_map: &HashMap<ByteRange, ByteRange>,
     context: &mut NodeCompilationContext,
     is_rhs: bool,
-) -> GritResult<Option<Pattern<Q>>> {
+) -> Result<Option<Pattern<Q>>> {
     let mut cursor = node.walk();
     loop {
         let node = cursor.node();
         if context.compilation.lang.is_metavariable(&node) {
             let name = node.text()?;
             if is_reserved_metavariable(name.trim(), Some(context.compilation.lang)) && !is_rhs {
-                return Err(GritPatternError::new(format!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", name.trim_start_matches(context.compilation.lang.metavariable_prefix_substitute()))));
+                bail!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", name.trim_start_matches(context.compilation.lang.metavariable_prefix_substitute()));
             }
             let range = node.byte_range();
             return text_to_var(&name, range, context_range, range_map, context)
@@ -487,27 +480,25 @@ fn text_to_var(
     context_range: ByteRange,
     range_map: &HashMap<ByteRange, ByteRange>,
     context: &mut NodeCompilationContext,
-) -> GritResult<SnippetValues> {
+) -> Result<SnippetValues> {
     let name = context
         .compilation
         .lang
         .snippet_metavariable_to_grit_metavariable(name)
-        .ok_or_else(|| {
-            GritPatternError::new(format!("metavariable |{}| not found in snippet", name))
-        })?;
+        .ok_or_else(|| anyhow!("metavariable |{}| not found in snippet", name))?;
     match name {
         GritMetaValue::Dots => Ok(SnippetValues::Dots),
         GritMetaValue::Underscore => Ok(SnippetValues::Underscore),
         GritMetaValue::Variable(name) => {
             let range = *range_map.get(&range).ok_or_else(|| {
-                GritPatternError::new(format!(
+                anyhow!(
                     "{} not found in map {:?}",
                     range.abbreviated_debug(),
                     range_map
                         .keys()
                         .map(|k| k.abbreviated_debug())
-                        .collect::<Vec<_>>(),
-                ))
+                        .collect::<Vec<_>>()
+                )
             })?;
             let var = register_variable(&name, range + context_range.start, context)?;
             Ok(SnippetValues::Variable(var))

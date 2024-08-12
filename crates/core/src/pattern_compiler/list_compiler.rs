@@ -3,8 +3,8 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::problem::MarzanoQueryContext;
+use anyhow::{bail, Result};
 use grit_pattern_matcher::pattern::{List, Pattern};
-use grit_util::error::{GritPatternError, GritResult};
 use marzano_language::language::Field;
 use marzano_util::node_with_source::NodeWithSource;
 
@@ -16,15 +16,15 @@ impl ListCompiler {
         context_field: &Field,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> GritResult<Pattern<MarzanoQueryContext>> {
+    ) -> Result<Pattern<MarzanoQueryContext>> {
         let kind = node.node.kind();
         match kind.as_ref() {
             "assocNode" => {
                 if !context_field.multiple() {
-                    return Err(GritPatternError::new(format!(
+                    bail!(
                         "Field {} does not accept list patterns",
-                        context_field.name(),
-                    )));
+                        context_field.name()
+                    )
                 }
                 Ok(Pattern::List(Box::new(Self::from_node_with_rhs(
                     node, context, is_rhs,
@@ -42,11 +42,11 @@ impl NodeCompiler for ListCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> GritResult<Self::TargetPattern> {
+    ) -> Result<Self::TargetPattern> {
         let patterns = node
             .named_children_by_field_name("patterns")
             .map(|pattern| PatternCompiler::from_node_with_rhs(&pattern, context, is_rhs))
-            .collect::<GritResult<Vec<_>>>()?;
+            .collect::<Result<Vec<_>>>()?;
         Ok(List::new(patterns))
     }
 }

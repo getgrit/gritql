@@ -19,10 +19,7 @@ pub fn are_equivalent(node1: &NodeWithSource, node2: &NodeWithSource) -> bool {
     // If the source is identical, we consider the nodes equivalent.
     // This covers most cases of constant nodes.
     // We may want a more precise check here eventually, but this is a good start.
-    if node1
-        .text()
-        .is_ok_and(|text1| node2.text().is_ok_and(|text2| text1 == text2))
-    {
+    if node1.text() == node2.text() {
         return true;
     }
 

@@ -43,7 +43,9 @@ pub fn parse_input_file<'a>(
 ) -> Result<InputFile> {
     use anyhow::anyhow;
 
-    Err(GritPatternError::new("enable grit-parser feature flag to parse a grit file"))
+    Err(anyhow!(
+        "enable grit-parser feature flag to parse a grit file"
+    ))
 }
 
 #[cfg(test)]
