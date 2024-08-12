@@ -110,20 +110,16 @@ impl FunctionDefinition<MarzanoQueryContext> for ForeignFunctionDefinition {
         })?;
 
         #[cfg(feature = "external_functions")]
-        let result = function.call(&resolved_str).or_else(|e| {
-            Err(GritPatternError::new(format!(
+        let result = function.call(&resolved_str).map_err(|e| GritPatternError::new(format!(
                 "failed to call function {}: {}",
                 self.name, e
-            )))
-        })?;
+            )))?;
         // END embedded version
 
-        let string = String::from_utf8(result).or_else(|_| {
-            Err(GritPatternError::new(format!(
+        let string = String::from_utf8(result).map_err(|_| GritPatternError::new(format!(
                 "function {} returned did not return a UTF-8 string",
                 self.name,
-            )))
-        })?;
+            )))?;
 
         Ok(FuncEvaluation {
             predicator: true,
