@@ -2,7 +2,6 @@ use crate::{
     marzano_context::MarzanoContext, marzano_resolved_pattern::MarzanoResolvedPattern,
     problem::MarzanoQueryContext,
 };
-use anyhow::{bail, Result};
 use grit_pattern_matcher::{
     constant::Constant,
     context::ExecContext,
@@ -11,7 +10,10 @@ use grit_pattern_matcher::{
         ResolvedPattern, State, Variable,
     },
 };
-use grit_util::AnalysisLogs;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 #[cfg(feature = "external_functions")]
 use marzano_externals::function::ExternalFunction;
 use marzano_language::foreign_language::ForeignLanguage;
@@ -51,7 +53,9 @@ impl FunctionDefinition<MarzanoQueryContext> for ForeignFunctionDefinition {
         _args: &'a [Option<Pattern<MarzanoQueryContext>>],
         _logs: &mut AnalysisLogs,
     ) -> Result<FuncEvaluation<MarzanoQueryContext>> {
-        bail!("External functions are not enabled in your environment")
+        return Err(GritPatternError::new(
+            "External functions are not enabled in your environment",
+        ));
     }
 
     #[cfg(feature = "external_functions_common")]
@@ -61,7 +65,7 @@ impl FunctionDefinition<MarzanoQueryContext> for ForeignFunctionDefinition {
         context: &'a MarzanoContext<'a>,
         args: &'a [Option<Pattern<MarzanoQueryContext>>],
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<MarzanoQueryContext>> {
+    ) -> GritResult<FuncEvaluation<MarzanoQueryContext>> {
         let param_names = self
             .params
             .iter()
@@ -75,9 +79,18 @@ impl FunctionDefinition<MarzanoQueryContext> for ForeignFunctionDefinition {
             match r {
                 Some(r) => match r.text(&state.files, context.language()) {
                     Ok(t) => cow_resolved.push(t),
-                    Err(e) => bail!("failed to get text from resolved pattern: {}", e),
+                    Err(e) => {
+                        return Err(GritPatternError::new(format!(
+                            "failed to get text from resolved pattern: {}",
+                            e
+                        )))
+                    }
                 },
-                None => bail!("Foreign function references unbound variable"),
+                None => {
+                    return Err(GritPatternError::new(
+                        "Foreign function references unbound variable",
+                    ))
+                }
             }
         }
 
@@ -96,16 +109,19 @@ impl FunctionDefinition<MarzanoQueryContext> for ForeignFunctionDefinition {
         let mut function = ExternalFunction::new_js(&self.code, param_names)?;
 
         #[cfg(feature = "external_functions")]
-        let result = function
-            .call(&resolved_str)
-            .or_else(|e| bail!("failed to call function {}: {}", self.name, e))?;
+        let result = function.call(&resolved_str).or_else(|e| {
+            return Err(GritPatternError::new(format!(
+                "failed to call function {}: {}",
+                self.name, e
+            )));
+        })?;
         // END embedded version
 
         let string = String::from_utf8(result).or_else(|_| {
-            bail!(
+            return Err(GritPatternError::new(format!(
                 "function {} returned did not return a UTF-8 string",
-                self.name
-            )
+                self.name,
+            )));
         })?;
 
         Ok(FuncEvaluation {
@@ -123,7 +139,7 @@ impl GritCall<MarzanoQueryContext> for CallForeignFunction<MarzanoQueryContext> 
         state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<MarzanoResolvedPattern<'a>> {
+    ) -> GritResult<MarzanoResolvedPattern<'a>> {
         let function_definition = &context.foreign_function_definitions()[self.index];
 
         match function_definition
@@ -131,7 +147,9 @@ impl GritCall<MarzanoQueryContext> for CallForeignFunction<MarzanoQueryContext> 
             .ret_val
         {
             Some(pattern) => Ok(pattern),
-            None => bail!("Function call did not return a value"),
+            None => Err(GritPatternError::new(
+                "Function call did not return a value",
+            )),
         }
     }
 }

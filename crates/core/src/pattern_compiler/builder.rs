@@ -17,7 +17,6 @@ use crate::{
     variables::variable_from_name,
 };
 use crate::{built_in_functions::CallableFn, pattern_compiler::compiler::DefinitionOutput};
-use anyhow::{bail, Result};
 use grit_pattern_matcher::pattern::State;
 use grit_pattern_matcher::{
     constant::Constant,
@@ -31,7 +30,10 @@ use grit_pattern_matcher::{
         VariableSourceLocations, Where,
     },
 };
-use grit_util::{AnalysisLogs, Ast, FileRange};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, Ast, FileRange,
+};
 
 use marzano_language::{
     self, grit_parser::MarzanoGritParser, language::Tree, target_language::TargetLanguage,
@@ -44,7 +46,7 @@ pub type CallbackMatchFn = dyn for<'a> Fn(
         &'a MarzanoContext<'a>,
         &mut State<'a, MarzanoQueryContext>,
         &mut AnalysisLogs,
-    ) -> Result<bool>
+    ) -> GritResult<bool>
     + Send
     + Sync;
 
@@ -88,10 +90,10 @@ impl PatternBuilder {
         name: Option<String>,
         grit_parser: &mut MarzanoGritParser,
         custom_built_ins: Option<BuiltIns>,
-    ) -> Result<Self> {
+    ) -> GritResult<Self> {
         if src == "." {
             let error = ". never matches and should not be used as a pattern. Did you mean to run 'grit apply <pattern> .'?";
-            bail!(error);
+            return Err(GritPatternError::new(error));
         }
         let src_tree = grit_parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
 
@@ -161,7 +163,7 @@ impl PatternBuilder {
         If you have written a pattern definition in the form `pattern myPattern() {{ }}`,
         try calling it by adding `myPattern()` to the end of your file.
         Check out the docs at https://docs.grit.io for help with writing patterns.";
-            bail!("{}", long_message);
+            return Err(GritPatternError::new(format!("{}", long_message)));
         };
 
         Ok(Self {
@@ -202,7 +204,7 @@ impl PatternBuilder {
         mut self,
         file_ranges: Option<Vec<FileRange>>,
         injected_limit: Option<usize>,
-    ) -> Result<Self> {
+    ) -> GritResult<Self> {
         let compilation = CompilationContext {
             file: DEFAULT_FILE_NAME,
             built_ins: &self.built_ins,
@@ -317,7 +319,7 @@ impl PatternBuilder {
         file_ranges: Option<Vec<FileRange>>,
         injected_limit: Option<usize>,
         auto_wrap: bool,
-    ) -> Result<CompilationResult> {
+    ) -> GritResult<CompilationResult> {
         let target_builder = if auto_wrap {
             self.auto_wrap(file_ranges, injected_limit)?
         } else {

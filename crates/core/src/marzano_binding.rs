@@ -3,7 +3,6 @@ use crate::problem::MarzanoQueryContext;
 use crate::smart_insert::calculate_padding;
 use crate::suppress::is_suppress_comment;
 use crate::{equivalence::are_equivalent, inline_snippets::ReplacementInfo};
-use anyhow::{anyhow, Result};
 use grit_pattern_matcher::{
     binding::Binding,
     constant::Constant,
@@ -11,6 +10,7 @@ use grit_pattern_matcher::{
     effects::Effect,
     pattern::{get_top_level_effects, FileRegistry, ResolvedPattern},
 };
+use grit_util::error::{GritPatternError, GritResult};
 use grit_util::{
     AnalysisLogBuilder, AnalysisLogs, AstNode, ByteRange, CodeRange, EffectKind, EffectRange,
     Language, Position, Range,
@@ -42,7 +42,9 @@ impl PartialEq for MarzanoBinding<'_> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Empty(_, _), Self::Empty(_, _)) => true,
-            (Self::Node(n1), Self::Node(n2)) => n1.text() == n2.text(),
+            (Self::Node(n1), Self::Node(n2)) => {
+                n1.text().is_ok_and(|t1| n2.text().is_ok_and(|t2| t1 == t2))
+            }
             (Self::String(src1, r1), Self::String(src2, r2)) => {
                 src1[r1.start..r1.end] == src2[r2.start..r2.end]
             }
@@ -63,7 +65,7 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
     range: CodeRange,
     distributed_indent: Option<usize>,
     logs: &mut AnalysisLogs,
-) -> Result<(Cow<'a, str>, Vec<StdRange<usize>>, Vec<ReplacementInfo>)> {
+) -> GritResult<(Cow<'a, str>, Vec<StdRange<usize>>, Vec<ReplacementInfo>)> {
     let effects1 = get_top_level_effects(effects, memo, &range, language, logs)?;
 
     let effects1 = effects1
@@ -118,14 +120,14 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
             }
             Ok((binding, res, effect.kind))
         })
-        .collect::<Result<Vec<_>>>()?;
+        .collect::<GritResult<Vec<_>>>()?;
 
     let mut replacements: Vec<(EffectRange, String)> = effects1
         .iter()
         .map(|(b, s, k)| {
             let range = b
                 .range(language)
-                .ok_or_else(|| anyhow!("binding has no position"))?;
+                .ok_or_else(|| GritPatternError::new("binding has no position"))?;
             match k {
                 EffectKind::Insert => Ok((
                     EffectRange::new(EffectKind::Insert, range.start..range.end),
@@ -137,7 +139,7 @@ pub(crate) fn linearize_binding<'a, Q: QueryContext>(
                 )),
             }
         })
-        .collect::<Result<Vec<_>>>()?;
+        .collect::<GritResult<Vec<_>>>()?;
 
     let skip_padding_ranges = language.get_skip_padding_ranges(source);
     // we need to update the ranges of the replacements to account for padding discrepency
@@ -402,8 +404,8 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         memo: &mut HashMap<CodeRange, Option<String>>,
         distributed_indent: Option<usize>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Cow<'a, str>> {
-        let res: Result<Cow<'a, str>> = match self {
+    ) -> GritResult<Cow<'a, str>> {
+        let res: GritResult<Cow<'a, str>> = match self {
             Self::Empty(_, _) => Ok(Cow::Borrowed("")),
             Self::Node(node) => linearize_binding(
                 language,
@@ -446,7 +448,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         res
     }
 
-    fn text(&self, language: &TargetLanguage) -> Result<Cow<str>> {
+    fn text(&self, language: &TargetLanguage) -> GritResult<Cow<str>> {
         match self {
             Self::Empty(_, _) => Ok("".into()),
             Self::Node(node) => Ok(node.text()?),
@@ -550,7 +552,7 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
         &self,
         language: &TargetLanguage,
         logs: &mut AnalysisLogs,
-    ) -> Result<()> {
+    ) -> GritResult<()> {
         match self {
             Self::Empty(node, field) | Self::List(node, field) => {
                 let range = node.range();
@@ -564,7 +566,8 @@ impl<'a> Binding<'a, MarzanoQueryContext> for MarzanoBinding<'a> {
                             language.get_ts_language().field_name_for_id(*field).unwrap(),
                             node.node.kind()
                         ))
-                        .build()?;
+                        .build()
+                        .map_err(|e| GritPatternError::new(e.to_string()))?;
                 logs.push(log);
             }
             Self::String(_, _) | Self::FileName(_) | Self::Node(_) | Self::ConstantRef(_) => {}

@@ -13,7 +13,6 @@ use crate::{
     foreign_function_definition::ForeignFunctionDefinition,
     problem::{MarzanoQueryContext, Problem},
 };
-use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
     constants::DEFAULT_FILE_NAME,
     pattern::{
@@ -21,6 +20,7 @@ use grit_pattern_matcher::{
     },
 };
 use grit_util::{
+    error::{GritPatternError, GritResult},
     traverse, AnalysisLogs, Ast, AstNode, ByteRange, FileRange, Order, Range, VariableMatch,
 };
 use itertools::Itertools;
@@ -32,7 +32,6 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     ffi::OsStr,
     path::Path,
-    str::Utf8Error,
     vec,
 };
 
@@ -93,31 +92,35 @@ fn insert_definition_index(
     indices: &mut BTreeMap<String, DefinitionInfo>,
     definition: NodeWithSource,
     index: &mut usize,
-) -> Result<()> {
+) -> GritResult<()> {
     let name = definition
         .child_by_field_name("name")
-        .ok_or_else(|| anyhow!("missing name of patternDefinition"))?;
+        .ok_or_else(|| GritPatternError::new("missing name of patternDefinition"))?;
     let name = name.text()?;
     let name = name.trim();
     let parameters: Vec<_> = definition
         .named_children_by_field_name("args")
         .map(|n| Ok((n.text()?.trim().to_string(), n.byte_range())))
-        .collect::<Result<Vec<(String, ByteRange)>, Utf8Error>>()?;
+        .collect::<GritResult<Vec<(String, ByteRange)>>>()?;
     let duplicates = get_duplicates(&parameters);
     if !duplicates.is_empty() {
-        bail!(
+        return Err(GritPatternError::new(format!(
             "Pattern parameters must be unique,
             but {} had repeated parameters {:?}.",
-            name,
-            duplicates
-        )
+            name, duplicates,
+        )));
     }
     let info = DefinitionInfo {
         index: *index,
         parameters,
     };
     match indices.insert(name.to_owned(), info) {
-        Some(_) => bail!("cannot have repeated definition of pattern {}", name),
+        Some(_) => {
+            return Err(GritPatternError::new(format!(
+                "cannot have repeated definition of pattern {}",
+                name
+            )))
+        }
         None => {
             *index += 1;
             Ok(())
@@ -136,7 +139,7 @@ fn node_to_definition_info(
     function_index: &mut usize,
     foreign_function_indices: &mut BTreeMap<String, DefinitionInfo>,
     foreign_function_index: &mut usize,
-) -> Result<()> {
+) -> GritResult<()> {
     for definition in node.named_children_by_field_name("definitions") {
         if let Some(pattern_definition) = definition.child_by_field_name("pattern") {
             insert_definition_index(pattern_indices, pattern_definition, pattern_index)?;
@@ -151,7 +154,9 @@ fn node_to_definition_info(
                 foreign_function_index,
             )?;
         } else {
-            bail!("definition must be either a pattern, a predicate or a function");
+            return Err(GritPatternError::new(
+                "definition must be either a pattern, a predicate or a function",
+            ));
         }
     }
     Ok(())
@@ -173,7 +178,7 @@ pub(crate) fn get_definition_info(
     libs: &[(String, String)],
     root: &NodeWithSource,
     parser: &mut MarzanoGritParser,
-) -> Result<DefinitionInfoKinds> {
+) -> GritResult<DefinitionInfoKinds> {
     let mut pattern_indices: BTreeMap<String, DefinitionInfo> = BTreeMap::new();
     let mut pattern_index = 0;
     let mut predicate_indices: BTreeMap<String, DefinitionInfo> = BTreeMap::new();
@@ -204,14 +209,19 @@ pub(crate) fn get_definition_info(
                     parameters: vec![],
                 };
                 match pattern_indices.insert(name.to_owned(), info) {
-                    Some(_) => bail!("cannot have repeated definition of pattern {}", name),
+                    Some(_) => {
+                        return Err(GritPatternError::new(format!(
+                            "cannot have repeated definition of pattern {}",
+                            name
+                        )))
+                    }
                     None => pattern_index += 1,
                 };
             } else {
-                bail!(
+                return Err(GritPatternError::new(format!(
                     "failed to get pattern name from definition in file {}",
                     file
-                )
+                )));
             }
         }
     }
@@ -241,7 +251,7 @@ fn node_to_definitions(
     predicate_definitions: &mut Vec<PredicateDefinition<MarzanoQueryContext>>,
     function_definitions: &mut Vec<GritFunctionDefinition<MarzanoQueryContext>>,
     foreign_function_definitions: &mut Vec<ForeignFunctionDefinition>,
-) -> Result<()> {
+) -> GritResult<()> {
     for definition in node.named_children_by_field_name("definitions") {
         if let Some(pattern_definition) = definition.child_by_field_name("pattern") {
             // todo check for duplicate names
@@ -266,7 +276,9 @@ fn node_to_definitions(
                 context,
             )?);
         } else {
-            bail!("definition must be either a pattern, a predicate or a function");
+            return Err(GritPatternError::new(
+                "definition must be either a pattern, a predicate or a function",
+            ));
         }
     }
     Ok(())
@@ -287,7 +299,7 @@ pub(crate) fn get_definitions(
     context: &CompilationContext,
     global_vars: &mut BTreeMap<String, usize>,
     logs: &mut AnalysisLogs,
-) -> Result<DefinitionOutput> {
+) -> GritResult<DefinitionOutput> {
     let mut pattern_definitions = vec![];
     let mut predicate_definitions = vec![];
     let mut function_definitions = vec![];
@@ -333,7 +345,9 @@ pub(crate) fn get_definitions(
             let (scope_index, mut local_context) = create_scope!(node_context, local_vars);
             let path = Path::new(file);
             let Some(name) = path.file_stem().and_then(OsStr::to_str) else {
-                bail!("failed to get pattern name from definition in file {file}");
+                return Err(GritPatternError::new(
+                    "failed to get pattern name from definition in file {file}",
+                ));
             };
 
             let body = PatternCompiler::from_node(&bare_pattern, &mut local_context)?;
@@ -383,7 +397,7 @@ pub(crate) fn defs_to_filenames(
     libs: &BTreeMap<String, String>,
     parser: &mut MarzanoGritParser,
     root: NodeWithSource,
-) -> Result<DefsToFilenames> {
+) -> GritResult<DefsToFilenames> {
     let mut patterns = BTreeMap::new();
     let mut predicates = BTreeMap::new();
     let mut functions = BTreeMap::new();
@@ -395,7 +409,7 @@ pub(crate) fn defs_to_filenames(
             if let Some(pattern_definition) = definition.child_by_field_name("pattern") {
                 let name = pattern_definition
                     .child_by_field_name("name")
-                    .ok_or_else(|| anyhow!("missing name of pattern definition"))?;
+                    .ok_or_else(|| GritPatternError::new("missing name of pattern definition"))?;
                 let name = name.text()?;
                 let name = name.trim();
                 // todo check for duplicates?
@@ -403,7 +417,7 @@ pub(crate) fn defs_to_filenames(
             } else if let Some(predicate_definition) = definition.child_by_field_name("predicate") {
                 let name = predicate_definition
                     .child_by_field_name("name")
-                    .ok_or_else(|| anyhow!("missing name of pattern definition"))?;
+                    .ok_or_else(|| GritPatternError::new("missing name of pattern definition"))?;
                 let name = name.text()?;
                 let name = name.trim();
                 // todo check for duplicates?
@@ -411,20 +425,20 @@ pub(crate) fn defs_to_filenames(
             } else if let Some(function_definition) = definition.child_by_field_name("function") {
                 let name = function_definition
                     .child_by_field_name("name")
-                    .ok_or_else(|| anyhow!("missing name of function definition"))?;
+                    .ok_or_else(|| GritPatternError::new("missing name of function definition"))?;
                 let name = name.text()?;
                 let name = name.trim();
                 functions.insert(name.to_owned(), file.to_owned());
             } else if let Some(foreign_definition) = definition.child_by_field_name("foreign") {
                 let name = foreign_definition
                     .child_by_field_name("name")
-                    .ok_or_else(|| anyhow!("missing name of function definition"))?;
+                    .ok_or_else(|| GritPatternError::new("missing name of function definition"))?;
                 let name = name.text()?;
                 let name = name.trim();
                 foreign_functions.insert(name.to_owned(), file.to_owned());
             } else {
-                return Err(anyhow!(
-                    "definition must be either a pattern, a predicate or a function"
+                return Err(GritPatternError::new(
+                    "definition must be either a pattern, a predicate or a function",
                 ));
             }
         }
@@ -438,7 +452,7 @@ pub(crate) fn defs_to_filenames(
         if let Some(pattern_definition) = definition.child_by_field_name("pattern") {
             let name = pattern_definition
                 .child_by_field_name("name")
-                .ok_or_else(|| anyhow!("missing name of pattern definition"))?;
+                .ok_or_else(|| GritPatternError::new("missing name of pattern definition"))?;
             let name = name.text()?;
             let name = name.trim();
             // todo check for duplicates?
@@ -446,7 +460,7 @@ pub(crate) fn defs_to_filenames(
         } else if let Some(predicate_definition) = definition.child_by_field_name("predicate") {
             let name = predicate_definition
                 .child_by_field_name("name")
-                .ok_or_else(|| anyhow!("missing name of pattern definition"))?;
+                .ok_or_else(|| GritPatternError::new("missing name of pattern definition"))?;
             let name = name.text()?;
             let name = name.trim();
             // todo check for duplicates?
@@ -454,20 +468,20 @@ pub(crate) fn defs_to_filenames(
         } else if let Some(function_definition) = definition.child_by_field_name("function") {
             let name = function_definition
                 .child_by_field_name("name")
-                .ok_or_else(|| anyhow!("missing name of function definition"))?;
+                .ok_or_else(|| GritPatternError::new("missing name of function definition"))?;
             let name = name.text()?;
             let name = name.trim();
             functions.remove(name);
         } else if let Some(foreign_definition) = definition.child_by_field_name("foreign") {
             let name = foreign_definition
                 .child_by_field_name("name")
-                .ok_or_else(|| anyhow!("missing name of function definition"))?;
+                .ok_or_else(|| GritPatternError::new("missing name of function definition"))?;
             let name = name.text()?;
             let name = name.trim();
             foreign_functions.remove(name);
         } else {
-            return Err(anyhow!(
-                "definition must be either a pattern, a predicate or a function"
+            return Err(GritPatternError::new(
+                "definition must be either a pattern, a predicate or a function",
             ));
         }
     }
@@ -484,7 +498,7 @@ pub(crate) fn filter_libs(
     src: &str,
     parser: &mut MarzanoGritParser,
     will_autowrap: bool,
-) -> Result<Vec<(String, String)>> {
+) -> GritResult<Vec<(String, String)>> {
     let node_like = "nodeLike";
     let predicate_call = "predicateCall";
     let tree = parser.parse_file(src, Some(Path::new(DEFAULT_FILE_NAME)))?;
@@ -517,7 +531,7 @@ pub(crate) fn filter_libs(
         }) {
             let name = n
                 .child_by_field_name("name")
-                .ok_or_else(|| anyhow!("missing name of nodeLike"))?;
+                .ok_or_else(|| GritPatternError::new("missing name of nodeLike"))?;
             let name = name.text()?;
             let name = name.trim();
             if n.node.kind() == node_like {
@@ -555,7 +569,7 @@ fn find_definition_if_exists(
     libs: &BTreeMap<String, String>,
     filtered: &mut BTreeMap<String, String>,
     name: &str,
-) -> Result<Option<Tree>> {
+) -> GritResult<Option<Tree>> {
     if let Some(file_name) = files.get(name) {
         if !filtered.contains_key(file_name) {
             if let Some(file_body) = libs.get(file_name) {
@@ -588,7 +602,7 @@ pub fn src_to_problem_libs(
     file_ranges: Option<Vec<FileRange>>,
     custom_built_ins: Option<BuiltIns>,
     injected_limit: Option<usize>,
-) -> Result<CompilationResult> {
+) -> GritResult<CompilationResult> {
     let mut parser = MarzanoGritParser::new()?;
     let src_tree = parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
     let lang = TargetLanguage::from_tree(&src_tree).unwrap_or(default_lang);
@@ -597,7 +611,7 @@ pub fn src_to_problem_libs(
 }
 
 /// Only use this for testing
-pub fn src_to_problem(src: String, default_lang: TargetLanguage) -> Result<Problem> {
+pub fn src_to_problem(src: String, default_lang: TargetLanguage) -> GritResult<Problem> {
     let mut parser = MarzanoGritParser::new()?;
     let src_tree = parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
     let lang = TargetLanguage::from_tree(&src_tree).unwrap_or(default_lang);

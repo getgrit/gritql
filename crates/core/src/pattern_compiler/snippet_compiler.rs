@@ -8,12 +8,14 @@ use crate::{
     variables::register_variable,
 };
 use crate::{pattern_compiler::compiler::NodeCompilationContext, split_snippet::split_snippet};
-use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
     constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
     pattern::{DynamicPattern, DynamicSnippet, DynamicSnippetPart, Pattern, Variable},
 };
-use grit_util::{AstNode, ByteRange, Language};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AstNode, ByteRange, Language,
+};
 use marzano_language::{
     language::{nodes_from_indices, MarzanoLanguage, SortId},
     target_language::TargetLanguage,
@@ -29,10 +31,10 @@ impl NodeCompiler for CodeSnippetCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let snippet = node
             .child_by_field_name("source")
-            .ok_or_else(|| anyhow!("missing content of codeSnippet"))?;
+            .ok_or_else(|| GritPatternError::new("missing content of codeSnippet"))?;
         match snippet.node.kind().as_ref() {
             "backtickSnippet" => BackTickCompiler::from_node_with_rhs(&snippet, context, is_rhs),
             "rawBacktickSnippet" => {
@@ -41,7 +43,12 @@ impl NodeCompiler for CodeSnippetCompiler {
             "languageSpecificSnippet" => {
                 LanguageSpecificSnippetCompiler::from_node_with_rhs(&snippet, context, is_rhs)
             }
-            _ => bail!("invalid code snippet kind: {}", snippet.node.kind()),
+            _ => {
+                return Err(GritPatternError::new(format!(
+                    "invalid code snippet kind: {}",
+                    snippet.node.kind(),
+                )))
+            }
         }
     }
 }
@@ -55,24 +62,28 @@ impl NodeCompiler for LanguageSpecificSnippetCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let lang_node = node
             .child_by_field_name("language")
-            .ok_or_else(|| anyhow!("missing language of languageSpecificSnippet"))?;
+            .ok_or_else(|| GritPatternError::new("missing language of languageSpecificSnippet"))?;
         let lang_name = lang_node.text()?.trim().to_string();
         let _snippet_lang = TargetLanguage::from_string(&lang_name, None)
-            .ok_or_else(|| anyhow!("invalid language: {lang_name}"))?;
+            .ok_or_else(|| GritPatternError::new("invalid language: {lang_name}"))?;
         let snippet_node = node
             .child_by_field_name("snippet")
-            .ok_or_else(|| anyhow!("missing snippet of languageSpecificSnippet"))?;
+            .ok_or_else(|| GritPatternError::new("missing snippet of languageSpecificSnippet"))?;
         let source = snippet_node.text()?.to_string();
         let mut range = node.range();
         range.adjust_columns(1, -1);
         let content = source
             .strip_prefix('"')
-            .ok_or_else(|| anyhow!("Unable to extract content from raw snippet: {source}"))?
+            .ok_or_else(|| {
+                GritPatternError::new("Unable to extract content from raw snippet: {source}")
+            })?
             .strip_suffix('"')
-            .ok_or_else(|| anyhow!("Unable to extract content from raw snippet: {source}"))?;
+            .ok_or_else(|| {
+                GritPatternError::new("Unable to extract content from raw snippet: {source}")
+            })?;
 
         parse_snippet_content(content, range.into(), context, is_rhs)
     }
@@ -82,7 +93,7 @@ pub(crate) fn dynamic_snippet_from_source(
     raw_source: &str,
     source_range: ByteRange,
     context: &mut NodeCompilationContext,
-) -> Result<DynamicSnippet> {
+) -> GritResult<DynamicSnippet> {
     let source_string = raw_source
         .replace("\\n", "\n")
         .replace("\\$", "$")
@@ -125,7 +136,9 @@ pub(crate) fn dynamic_snippet_from_source(
             let variable = register_variable(&var, range, context)?;
             parts.push(DynamicSnippetPart::Variable(variable));
         } else {
-            bail!("Could not find variable {var} in this context, for snippet {source}");
+            return Err(GritPatternError::new(
+                "Could not find variable {var} in this context, for snippet {source}",
+            ));
         }
         last = byte_range.end;
     }
@@ -138,7 +151,7 @@ pub(crate) fn parse_snippet_content(
     range: ByteRange,
     context: &mut NodeCompilationContext,
     is_rhs: bool,
-) -> Result<Pattern<MarzanoQueryContext>> {
+) -> GritResult<Pattern<MarzanoQueryContext>> {
     // we check for CURLY_VAR_REGEX in the content, and if found
     // compile into a DynamicPattern, rather than a CodeSnippet.
     // This is because the syntax should only ever be necessary
@@ -159,7 +172,9 @@ pub(crate) fn parse_snippet_content(
                 dynamic_snippet_from_source(source, range, context).map(DynamicPattern::Snippet)?,
             ))
         } else {
-            bail!("bracketed metavariables are only allowed on the rhs of a snippet");
+            return Err(GritPatternError::new(
+                "bracketed metavariables are only allowed on the rhs of a snippet",
+            ));
         }
     } else {
         if context
@@ -196,7 +211,7 @@ pub(crate) fn parse_snippet_content(
                     PatternCompiler::from_snippet_node(node, range, context, is_rhs)?,
                 ))
             })
-            .collect::<Result<Vec<(SortId, Pattern<MarzanoQueryContext>)>>>()?;
+            .collect::<GritResult<Vec<(SortId, Pattern<MarzanoQueryContext>)>>>()?;
         let dynamic_snippet = dynamic_snippet_from_source(source, range, context)
             .map_or(None, |s| Some(DynamicPattern::Snippet(s)));
         Ok(Pattern::CodeSnippet(MarzanoCodeSnippet::new(

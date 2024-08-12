@@ -8,9 +8,11 @@ use super::{
     rewrite_compiler::RewriteCompiler,
 };
 use crate::problem::MarzanoQueryContext;
-use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::pattern::Predicate;
-use grit_util::AstNode;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AstNode,
+};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct PredicateCompiler;
@@ -22,7 +24,7 @@ impl NodeCompiler for PredicateCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let kind = node.node.kind();
         match kind.as_ref() {
             "predicateNot" => Ok(Predicate::Not(Box::new(PrNotCompiler::from_node(
@@ -53,7 +55,7 @@ impl NodeCompiler for PredicateCompiler {
             "booleanConstant" => match node.text()?.trim() {
                 "true" => Ok(Predicate::True),
                 "false" => Ok(Predicate::False),
-                _ => Err(anyhow!("invalid booleanConstant")),
+                _ => Err(GritPatternError::new("invalid booleanConstant")),
             },
             "predicateAssignment" => Ok(Predicate::Assignment(Box::new(
                 AssignmentCompiler::from_node(node, context)?,
@@ -64,7 +66,12 @@ impl NodeCompiler for PredicateCompiler {
             "predicateReturn" => Ok(Predicate::Return(Box::new(
                 PredicateReturnCompiler::from_node(node, context)?,
             ))),
-            _ => bail!("unknown predicate kind: {}", kind),
+            _ => {
+                return Err(GritPatternError::new(format!(
+                    "unknown predicate kind: {}",
+                    kind
+                )))
+            }
         }
     }
 }

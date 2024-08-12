@@ -3,9 +3,12 @@ use super::{
     node_compiler::NodeCompiler, pattern_compiler::PatternCompiler,
 };
 use crate::problem::MarzanoQueryContext;
-use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::pattern::{is_reserved_metavariable, Assignment};
-use grit_util::{constants::GRIT_METAVARIABLE_PREFIX, AstNode};
+use grit_util::{
+    constants::GRIT_METAVARIABLE_PREFIX,
+    error::{GritPatternError, GritResult},
+    AstNode,
+};
 use marzano_language::target_language::TargetLanguage;
 use marzano_util::node_with_source::NodeWithSource;
 
@@ -18,18 +21,18 @@ impl NodeCompiler for AssignmentCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let pattern = node
             .child_by_field_name("pattern")
-            .ok_or_else(|| anyhow!("missing pattern of assignment"))?;
+            .ok_or_else(|| GritPatternError::new("missing pattern of assignment"))?;
         let pattern = PatternCompiler::from_node_with_rhs(&pattern, context, true)?;
 
         let container = node
             .child_by_field_name("container")
-            .ok_or_else(|| anyhow!("missing container of assignment"))?;
+            .ok_or_else(|| GritPatternError::new("missing container of assignment"))?;
         let var_text = container.text()?;
         if is_reserved_metavariable(&var_text, None::<&TargetLanguage>) {
-            bail!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", var_text.trim_start_matches(GRIT_METAVARIABLE_PREFIX));
+            return Err(GritPatternError::new(format!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", var_text.trim_start_matches(GRIT_METAVARIABLE_PREFIX))));
         }
         let variable = ContainerCompiler::from_node(&container, context)?;
         Ok(Assignment::new(variable, pattern))

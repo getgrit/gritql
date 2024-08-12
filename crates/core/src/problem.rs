@@ -9,7 +9,6 @@ use crate::{
     marzano_resolved_pattern::{MarzanoFile, MarzanoResolvedPattern},
     pattern_compiler::compiler::VariableLocations,
 };
-use anyhow::{bail, Result};
 use grit_pattern_matcher::{
     constants::{GLOBAL_VARS_SCOPE_INDEX, NEW_FILES_INDEX},
     context::{QueryContext, StaticDefinitions},
@@ -19,7 +18,10 @@ use grit_pattern_matcher::{
         PredicateDefinition, ResolvedPattern, State, VariableContent,
     },
 };
-use grit_util::VariableMatch;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    VariableMatch,
+};
 use im::vector;
 use log::error;
 use marzano_language::{language::Tree, target_language::TargetLanguage};
@@ -374,9 +376,11 @@ impl Problem {
         context: &ExecutionContext,
         outgoing_tx: Sender<Vec<MatchResult>>,
         _cache: &impl GritCache,
-    ) -> Result<()> {
+    ) -> GritResult<()> {
         if self.is_multifile {
-            bail!("Streaming is not supported for multifile patterns");
+            return Err(GritPatternError::new(
+                "Streaming is not supported for multifile patterns",
+            ));
         }
 
         #[cfg(feature = "grit_tracing")]
@@ -516,7 +520,7 @@ impl Problem {
         file_names: Vec<&PathBuf>,
         owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
-    ) -> Result<Vec<MatchResult>> {
+    ) -> GritResult<Vec<MatchResult>> {
         let mut user_logs = vec![].into();
 
         let lazy_files = files;

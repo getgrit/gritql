@@ -1,12 +1,11 @@
 use crate::{inline_snippets::ReplacementInfo, marzano_binding::linearize_binding};
-use anyhow::Result;
 use grit_pattern_matcher::{
     binding::Binding,
     context::{ExecContext, QueryContext},
     effects::Effect,
     pattern::{FileRegistry, ResolvedPattern},
 };
-use grit_util::{AnalysisLogs, Ast, CodeRange, Language};
+use grit_util::{error::GritResult, AnalysisLogs, Ast, CodeRange, Language};
 use im::Vector;
 use std::collections::HashMap;
 use std::ops::Range;
@@ -35,7 +34,7 @@ pub(crate) fn apply_effects<'a, Q: QueryContext>(
     new_filename: &mut PathBuf,
     context: &'a Q::ExecContext<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<EffectOutcome> {
+) -> GritResult<EffectOutcome> {
     let language = context.language();
     let current_name = context.name();
 

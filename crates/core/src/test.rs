@@ -1,6 +1,6 @@
 use crate::pattern_compiler::src_to_problem_libs;
-use anyhow::{anyhow, Context, Result};
 use api::MatchResult;
+use grit_util::error::{GritPatternError, GritResult};
 use grit_util::{Range, VariableMatch};
 use insta::{assert_debug_snapshot, assert_snapshot};
 use lazy_static::lazy_static;
@@ -20,7 +20,7 @@ use walkdir::WalkDir;
 
 use super::*;
 
-pub fn src_to_problem(src: String, default_lang: TargetLanguage) -> Result<Problem> {
+pub fn src_to_problem(src: String, default_lang: TargetLanguage) -> GritResult<Problem> {
     let libs = BTreeMap::new();
     src_to_problem_libs(src, &libs, default_lang, None, None, None, None).map(|cr| cr.problem)
 }
@@ -68,12 +68,12 @@ fn match_pattern_one_file(
     file: &str,
     src: &str,
     default_language: TargetLanguage,
-) -> Result<ExecutionResult> {
+) -> GritResult<ExecutionResult> {
     let libs = BTreeMap::new();
     match_pattern_libs(pattern, &libs, file, src, default_language)
 }
 
-pub(crate) fn create_test_context() -> Result<ExecutionContext> {
+pub(crate) fn create_test_context() -> GritResult<ExecutionContext> {
     let context = ExecutionContext::default();
 
     // Exchange client tokens for a test token
@@ -92,7 +92,8 @@ pub(crate) fn create_test_context() -> Result<ExecutionContext> {
 }
 
 lazy_static! {
-    pub(crate) static ref TEST_EXECUTION_CONTEXT: Result<ExecutionContext> = create_test_context();
+    pub(crate) static ref TEST_EXECUTION_CONTEXT: GritResult<ExecutionContext> =
+        create_test_context();
 }
 
 #[allow(clippy::wildcard_enum_match_arm)]
@@ -102,7 +103,7 @@ fn match_pattern_libs(
     file: &str,
     src: &str,
     default_language: TargetLanguage,
-) -> Result<ExecutionResult> {
+) -> GritResult<ExecutionResult> {
     let default_context = ExecutionContext::default();
     let context = TEST_EXECUTION_CONTEXT.as_ref().unwrap_or(&default_context);
 
@@ -179,7 +180,7 @@ struct TestArgExpectedWithNewFile {
     new_file_body: String,
 }
 
-fn get_fixtures_root() -> Result<PathBuf> {
+fn get_fixtures_root() -> GritResult<PathBuf> {
     let parent_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
 
     let actual_path = PathBuf::from(parent_dir).join("fixtures");
@@ -187,11 +188,11 @@ fn get_fixtures_root() -> Result<PathBuf> {
     Ok(actual_path)
 }
 
-fn test_rewrite(dir: &str, pattern: &str, test: &str) -> Result<()> {
+fn test_rewrite(dir: &str, pattern: &str, test: &str) -> GritResult<()> {
     let (result, expected) = test_setup(dir, pattern, test)?;
     assert!(result.is_some(), "PATTERN failed to match");
     let result = result.the_match.unwrap();
-    let expected = expected.ok_or_else(|| anyhow!("expected result not found"))?;
+    let expected = expected.ok_or_else(|| GritPatternError::new("expected result not found"))?;
     assert!(result.rewrite.is_some(), "rewrite not found");
     let rewrite = result.rewrite.unwrap();
     if rewrite.trim() != expected.trim() {
@@ -240,7 +241,7 @@ fn new_files_assertion(
     pattern: &str,
     test: &str,
     output_files: HashMap<String, String>,
-) -> Result<()> {
+) -> GritResult<()> {
     let root = get_fixtures_root()?;
     let test = Path::new(test);
     let test = test.file_stem().unwrap();
@@ -287,19 +288,23 @@ fn new_files_assertion(
     Ok(())
 }
 
-fn test_match(pattern: &str, test: &str) -> Result<()> {
+fn test_match(pattern: &str, test: &str) -> GritResult<()> {
     let (result, _) = test_setup("test_patterns", pattern, test)?;
     assert!(result.is_some(), "pattern FAILED to match");
     Ok(())
 }
 
-fn test_no_match(pattern: &str, test: &str) -> Result<()> {
+fn test_no_match(pattern: &str, test: &str) -> GritResult<()> {
     let (result, _) = test_setup("test_patterns", pattern, test)?;
     assert!(result.is_none(), "pattern matched when it shouldn't have");
     Ok(())
 }
 
-fn test_setup(dir: &str, pattern: &str, test: &str) -> Result<(ExecutionResult, Option<String>)> {
+fn test_setup(
+    dir: &str,
+    pattern: &str,
+    test: &str,
+) -> GritResult<(ExecutionResult, Option<String>)> {
     let root = get_fixtures_root()?;
     let input = root.join(dir).join(pattern).join("input").join(test);
     let expected = root.join(dir).join(pattern).join("expected").join(test);
@@ -311,15 +316,19 @@ fn test_setup(dir: &str, pattern: &str, test: &str) -> Result<(ExecutionResult, 
     let lang = TargetLanguage::from_extension(
         Path::new(test)
             .extension()
-            .ok_or_else(|| anyhow!("test parameter {} must have an extension", test))?
+            .ok_or_else(|| {
+                GritPatternError::new(format!("test parameter {} must have an extension", test))
+            })?
             .to_str()
-            .ok_or_else(|| anyhow!("test parameter {} is malformed path", test))?,
+            .ok_or_else(|| {
+                GritPatternError::new(format!("test parameter {} is malformed path", test))
+            })?,
     )
     .ok_or_else(|| {
-        anyhow!(
+        GritPatternError::new(format!(
             "test parameter {} extension didn't correspond to any supported language",
             test
-        )
+        ))
     })?;
     let pattern = fs_err::read_to_string(pattern)?;
     let input = fs_err::read_to_string(input)?;
@@ -330,7 +339,7 @@ fn test_setup(dir: &str, pattern: &str, test: &str) -> Result<(ExecutionResult, 
     ))
 }
 
-fn run_test_expected(arg: TestArgExpected) -> Result<()> {
+fn run_test_expected(arg: TestArgExpected) -> GritResult<()> {
     let pattern = arg.pattern;
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let source = arg.source;
@@ -338,7 +347,7 @@ fn run_test_expected(arg: TestArgExpected) -> Result<()> {
     validate_execution_result(result, arg.expected)
 }
 
-fn run_test_expected_libs(arg: TestArgExpectedWithLibs) -> Result<()> {
+fn run_test_expected_libs(arg: TestArgExpectedWithLibs) -> GritResult<()> {
     let pattern = arg.pattern;
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let source = arg.source;
@@ -350,13 +359,13 @@ fn run_test_expected_libs(arg: TestArgExpectedWithLibs) -> Result<()> {
     validate_execution_result(result, arg.expected)
 }
 
-fn validate_execution_result(result: ExecutionResult, expected: String) -> Result<()> {
+fn validate_execution_result(result: ExecutionResult, expected: String) -> GritResult<()> {
     let result = result
         .the_match
-        .ok_or_else(|| anyhow!("pattern failed to MATCH"))?;
+        .ok_or_else(|| GritPatternError::new("pattern failed to MATCH"))?;
     let rewrite = result
         .rewrite
-        .ok_or_else(|| anyhow!("found a match but no rewrite"))?;
+        .ok_or_else(|| GritPatternError::new("found a match but no rewrite"))?;
     let rewrite = rewrite
         .lines()
         .map(|line| line.trim_end())
@@ -375,7 +384,7 @@ fn validate_execution_result(result: ExecutionResult, expected: String) -> Resul
     Ok(())
 }
 
-fn run_test_expected_with_new_file(arg: TestArgExpectedWithNewFile) -> Result<()> {
+fn run_test_expected_with_new_file(arg: TestArgExpectedWithNewFile) -> GritResult<()> {
     let pattern = arg.pattern;
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let source = arg.source;
@@ -402,7 +411,7 @@ fn run_test_expected_with_new_file(arg: TestArgExpectedWithNewFile) -> Result<()
     Ok(())
 }
 
-pub fn run_test_match(arg: TestArg) -> Result<()> {
+pub fn run_test_match(arg: TestArg) -> GritResult<()> {
     let pattern = arg.pattern;
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let source = arg.source;
@@ -413,7 +422,7 @@ pub fn run_test_match(arg: TestArg) -> Result<()> {
     Ok(())
 }
 
-fn run_test_no_match(arg: TestArg) -> Result<()> {
+fn run_test_no_match(arg: TestArg) -> GritResult<()> {
     let pattern = arg.pattern;
     let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
     let source = arg.source;
@@ -13162,7 +13171,7 @@ fn match_block_metavariable() {
             .trim_margin()
             .unwrap(),
             source: r#"
-                |fn func(opt: Option<Result<u64, String>>) {
+                |fn func(opt: Option<GritResult<u64, String>>) {
                 |   let n = match opt {
                 |       Some(n) => match n {
                 |           Ok(n) => n,
@@ -13200,7 +13209,7 @@ fn collapsible_match_block() {
             .trim_margin()
             .unwrap(),
             source: r#"
-                |fn func(opt: Option<Result<u64, String>>) {
+                |fn func(opt: Option<GritResult<u64, String>>) {
                 |   let n = match opt {
                 |       Some(n) => match n {
                 |           Ok(n) => n,
@@ -13213,7 +13222,7 @@ fn collapsible_match_block() {
             .trim_margin()
             .unwrap(),
             expected: r#"
-                |fn func(opt: Option<Result<u64, String>>) {
+                |fn func(opt: Option<GritResult<u64, String>>) {
                 |   let n = match opt {
                 |   Some(Ok(n)) => n,
                 |   _ => return,
@@ -13249,7 +13258,7 @@ fn rust_match_fn_params() {
                 |        state: &mut State<'a>,
                 |        context: &Context<'a>,
                 |        logs: &mut AnalysisLogs,
-                |    ) -> Result<bool> {
+                |    ) -> GritResult<bool> {
                 |        false
                 |    }
                 |}
@@ -13264,7 +13273,7 @@ fn rust_match_fn_params() {
                 |        state: &mut State<'a>,
                 |        context: &Context<'a>,
                 |        logs: &mut AnalysisLogs,
-                |    ) -> Result<bool> {
+                |    ) -> GritResult<bool> {
                 |        false
                 |    }
                 |}

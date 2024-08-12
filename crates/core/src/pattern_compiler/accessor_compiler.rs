@@ -3,9 +3,11 @@ use super::{
     map_compiler::MapCompiler, node_compiler::NodeCompiler, variable_compiler::VariableCompiler,
 };
 use crate::problem::MarzanoQueryContext;
-use anyhow::{anyhow, Result};
 use grit_pattern_matcher::pattern::{Accessor, AccessorKey, AccessorMap};
-use grit_util::AstNode;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AstNode,
+};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct AccessorCompiler;
@@ -17,10 +19,10 @@ impl NodeCompiler for AccessorCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let map = node
             .child_by_field_name("map")
-            .ok_or_else(|| anyhow!("missing map of accessor"))?;
+            .ok_or_else(|| GritPatternError::new("missing map of accessor"))?;
         let map = if map.node.kind() == "map" {
             AccessorMap::Map(MapCompiler::from_node(&map, context)?)
         } else {
@@ -29,7 +31,7 @@ impl NodeCompiler for AccessorCompiler {
 
         let key = node
             .child_by_field_name("key")
-            .ok_or_else(|| anyhow!("missing key of accessor"))?;
+            .ok_or_else(|| GritPatternError::new("missing key of accessor"))?;
 
         let key = if key.node.kind() == "variable" {
             AccessorKey::Variable(VariableCompiler::from_node(&key, context)?)

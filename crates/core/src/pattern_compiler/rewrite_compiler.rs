@@ -3,9 +3,11 @@ use super::{
     pattern_compiler::PatternCompiler,
 };
 use crate::{marzano_code_snippet::MarzanoCodeSnippet, problem::MarzanoQueryContext};
-use anyhow::{anyhow, Result};
 use grit_pattern_matcher::pattern::{DynamicPattern, Pattern, Rewrite};
-use grit_util::{AnalysisLogBuilder, AstNode};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogBuilder, AstNode,
+};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct RewriteCompiler;
@@ -18,13 +20,13 @@ impl NodeCompiler for RewriteCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let left = node
             .child_by_field_name("left")
-            .ok_or_else(|| anyhow!("missing lhs of rewrite"))?;
+            .ok_or_else(|| GritPatternError::new("missing lhs of rewrite"))?;
         let right = node
             .child_by_field_name("right")
-            .ok_or_else(|| anyhow!("missing rhs of rewrite"))?;
+            .ok_or_else(|| GritPatternError::new("missing rhs of rewrite"))?;
         let annotation = node.child_by_field_name("annotation");
         let left = PatternCompiler::from_node(&left, context)?;
         let right = PatternCompiler::from_node_with_rhs(&right, context, true)?;
@@ -50,7 +52,8 @@ impl NodeCompiler for RewriteCompiler {
                 .message(
                     format!("Warning: This is rewriting `{}` into the identical string `{}`, will have no effect.", left_source, right_source)
                 )
-                .build()?;
+                .build()
+                .map_err(|e| GritPatternError::new(e.to_string()))?;
                 context.logs.push(log);
             }
             (_, _) => {}
@@ -112,10 +115,7 @@ impl NodeCompiler for RewriteCompiler {
                 | Pattern::Modulo(_)
                 | Pattern::Like(_)
                 | Pattern::Dots
-                | Pattern::Sequential(_) => Err(anyhow!(
-                "right hand side of rewrite must be a code snippet or function call, but found: {:?}",
-                right
-            ))?,
+                | Pattern::Sequential(_) => Err(GritPatternError::new(format!("right hand side of rewrite must be a code snippet or function call, but found: {:?}", right)))?,
         };
 
         let annotation = annotation.and_then(|n| match n.text() {

@@ -1,7 +1,9 @@
 use super::{compiler::NodeCompilationContext, node_compiler::NodeCompiler};
-use anyhow::Result;
 use grit_pattern_matcher::pattern::{BooleanConstant, FloatConstant, IntConstant, StringConstant};
-use grit_util::AstNode;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AstNode,
+};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct BooleanConstantCompiler;
@@ -13,12 +15,12 @@ impl NodeCompiler for BooleanConstantCompiler {
         node: &NodeWithSource,
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let text = node.text()?.trim().to_string();
         let value = match text.as_str() {
             "true" => true,
             "false" => false,
-            _ => return Err(anyhow::anyhow!("Invalid boolean value")),
+            _ => return Err(GritPatternError::new("Invalid boolean value")),
         };
         Ok(BooleanConstant::new(value))
     }
@@ -33,7 +35,7 @@ impl NodeCompiler for FloatConstantCompiler {
         node: &NodeWithSource,
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let text = node.text()?.trim().to_string();
         let value = text.parse::<f64>()?;
         Ok(FloatConstant::new(value))
@@ -49,7 +51,7 @@ impl NodeCompiler for IntConstantCompiler {
         node: &NodeWithSource,
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let text = node.text()?.trim().to_string();
         let value = text.parse::<i64>()?;
         Ok(IntConstant::new(value))
@@ -65,7 +67,7 @@ impl NodeCompiler for StringConstantCompiler {
         node: &NodeWithSource,
         _context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let text = node.text()?.trim().to_string();
         let text = text.strip_prefix('\"').unwrap().strip_suffix('\"').unwrap();
         let text = text.replace("\\\"", "\"").replace("\\\\", "\\");

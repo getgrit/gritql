@@ -1,6 +1,6 @@
 use crate::{fs, problem::Problem, tree_sitter_serde::tree_sitter_node_to_json};
-use anyhow::{bail, Result};
 use grit_pattern_matcher::file_owners::FileOwner;
+use grit_util::error::{GritPatternError, GritResult};
 pub use grit_util::ByteRange;
 use grit_util::{AnalysisLog as GritAnalysisLog, Ast, Position, Range, VariableMatch};
 use im::Vector;
@@ -115,9 +115,9 @@ impl MatchResult {
 
     pub(crate) fn file_to_match_result(
         file: &Vector<&FileOwner<Tree>>,
-    ) -> Result<Option<MatchResult>> {
+    ) -> GritResult<Option<MatchResult>> {
         if file.is_empty() {
-            bail!("cannot have file with no versions")
+            return Err(GritPatternError::new("cannot have file with no versions"));
         } else if file.len() == 1 {
             let file = file.last().unwrap();
             if file.new {
@@ -288,7 +288,7 @@ pub fn is_match(result: &MatchResult) -> bool {
 
 pub trait FileMatchResult {
     fn file_name(&self) -> &str;
-    fn content(&self) -> Result<&str>;
+    fn content(&self) -> GritResult<&str>;
     fn ranges(&mut self) -> &Vec<Range>;
     // A verb representing the action taken on the file
     fn action() -> &'static str;
@@ -395,13 +395,13 @@ impl FileMatchResult for Match {
     fn action() -> &'static str {
         "matched"
     }
-    fn content(&self) -> Result<&str> {
+    fn content(&self) -> GritResult<&str> {
         let Some(content) = self.content.as_deref() else {
-            bail!("No content in match")
+            return Err(GritPatternError::new("No content in match"));
         };
 
         if content.is_empty() {
-            bail!("No content in match")
+            return Err(GritPatternError::new("No content in match"));
         } else {
             Ok(content)
         }
@@ -437,7 +437,7 @@ impl EntireFile {
     }
 
     /// Create an entire file from a file owner, including handling source maps and byte ranges
-    fn from_file(file: &FileOwner<Tree>) -> Result<Self> {
+    fn from_file(file: &FileOwner<Tree>) -> GritResult<Self> {
         let mut basic = if let Some(source_map) = &file.tree.source_map {
             let outer_source = source_map.fill_with_inner(&file.tree.source)?;
 
@@ -483,7 +483,7 @@ impl Rewrite {
     fn file_to_rewrite(
         initial: &FileOwner<Tree>,
         rewritten_file: &FileOwner<Tree>,
-    ) -> Result<Self> {
+    ) -> GritResult<Self> {
         let original = EntireFile::from_file(initial)?;
         let rewritten = EntireFile::from_file(rewritten_file)?;
         Ok(Rewrite::new(original, rewritten, None))
@@ -500,12 +500,12 @@ impl FileMatchResult for Rewrite {
     fn action() -> &'static str {
         "rewritten"
     }
-    fn content(&self) -> Result<&str> {
+    fn content(&self) -> GritResult<&str> {
         self.rewritten.content.as_deref().ok_or_else(|| {
-            anyhow::anyhow!(
+            GritPatternError::new(format!(
                 "No content in rewritten file {}",
                 self.rewritten.source_file
-            )
+            ))
         })
     }
 }
@@ -535,14 +535,19 @@ pub enum EnforcementLevel {
 }
 
 impl FromStr for EnforcementLevel {
-    type Err = anyhow::Error;
-    fn from_str(s: &str) -> Result<Self> {
+    type Err = GritPatternError;
+    fn from_str(s: &str) -> GritResult<Self> {
         match s {
             "none" => Ok(EnforcementLevel::None),
             "info" => Ok(EnforcementLevel::Info),
             "warn" => Ok(EnforcementLevel::Warn),
             "error" => Ok(EnforcementLevel::Error),
-            _ => bail!("'{}' is not a valid level", s),
+            _ => {
+                return Err(GritPatternError::new(format!(
+                    "'{}' is not a valid level",
+                    s
+                )))
+            }
         }
     }
 }
@@ -628,9 +633,12 @@ impl FileMatchResult for CreateFile {
     fn action() -> &'static str {
         "created"
     }
-    fn content(&self) -> Result<&str> {
+    fn content(&self) -> GritResult<&str> {
         self.rewritten.content.as_deref().ok_or_else(|| {
-            anyhow::anyhow!("No content in created file {}", self.rewritten.source_file)
+            GritPatternError::new(format!(
+                "No content in created file {}",
+                self.rewritten.source_file
+            ))
         })
     }
 }
@@ -661,9 +669,12 @@ impl FileMatchResult for RemoveFile {
     fn action() -> &'static str {
         "removed"
     }
-    fn content(&self) -> Result<&str> {
+    fn content(&self) -> GritResult<&str> {
         self.original.content.as_deref().ok_or_else(|| {
-            anyhow::anyhow!("No content in removed file {}", self.original.source_file)
+            GritPatternError::new(format!(
+                "No content in removed file {}",
+                self.original.source_file
+            ))
         })
     }
 }

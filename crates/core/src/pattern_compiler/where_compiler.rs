@@ -3,8 +3,8 @@ use super::{
     pattern_compiler::PatternCompiler, predicate_compiler::PredicateCompiler,
 };
 use crate::problem::MarzanoQueryContext;
-use anyhow::{anyhow, Result};
 use grit_pattern_matcher::pattern::Where;
+use grit_util::error::{GritPatternError, GritResult};
 use marzano_util::node_with_source::NodeWithSource;
 
 pub(crate) struct WhereCompiler;
@@ -16,14 +16,14 @@ impl NodeCompiler for WhereCompiler {
         node: &NodeWithSource,
         context: &mut NodeCompilationContext,
         _is_rhs: bool,
-    ) -> Result<Self::TargetPattern> {
+    ) -> GritResult<Self::TargetPattern> {
         let pattern = node
             .child_by_field_name("pattern")
-            .ok_or_else(|| anyhow!("missing pattern of patternWhere"))?;
+            .ok_or_else(|| GritPatternError::new("missing pattern of patternWhere"))?;
         let pattern = PatternCompiler::from_node(&pattern, context)?;
         let side_condition = node
             .child_by_field_name("side_condition")
-            .ok_or_else(|| anyhow!("missing side condition of patternWhere"))?;
+            .ok_or_else(|| GritPatternError::new("missing side condition of patternWhere"))?;
         let side_condition = PredicateCompiler::from_node(&side_condition, context)?;
         Ok(Where::new(pattern, side_condition))
     }
