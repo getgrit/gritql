@@ -131,7 +131,7 @@ impl LocalRepo {
 
         // If the length of remotes is 1, return the first remote
         if remotes.len() == 1 {
-            if let Ok(remote_obj) = Repository::find_remote(&self.repo, remotes.get(0).unwrap()) {
+            if let Ok(remote_obj) = self.repo.find_remote(remotes.get(0).unwrap()) {
                 if let Some(url) = remote_obj.url() {
                     return Some(url.to_string());
                 }
@@ -160,7 +160,7 @@ impl LocalRepo {
 
         // If upstream not found, fall back to the first remote listed
         if let Some(r) = remotes.get(0) {
-            if let Ok(remote_obj) = Repository::find_remote(&self.repo, r) {
+            if let Ok(remote_obj) = self.repo.find_remote(r) {
                 if let Some(url) = remote_obj.url() {
                     return Some(url.to_string());
                 }
