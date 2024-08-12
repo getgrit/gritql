@@ -85,7 +85,7 @@ impl<'a> MarzanoContext<'a> {
         code: &[u8],
         param_names: Vec<String>,
         input_bindings: &[&str],
-    ) -> Result<Vec<u8>> {
+    ) -> anyhow::Result<Vec<u8>> {
         (self.runtime.exec_external)(code, param_names, input_bindings)
     }
 

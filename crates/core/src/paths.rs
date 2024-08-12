@@ -13,7 +13,7 @@ pub(crate) fn absolutize(path: &Path) -> GritResult<PathBuf> {
 }
 
 #[cfg(not(feature = "absolute_filename"))]
-pub(crate) fn absolutize(path: &Path) -> Result<PathBuf> {
+pub(crate) fn absolutize(path: &Path) -> GritResult<PathBuf> {
     Ok(path.to_owned())
 }
 

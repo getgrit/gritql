@@ -95,7 +95,9 @@ impl FunctionDefinition<MarzanoQueryContext> for ForeignFunctionDefinition {
 
         // START Simple externalized version
         #[cfg(all(feature = "external_functions_ffi", target_arch = "wasm32"))]
-        let result = context.exec_external(&self.code, param_names, &resolved_str)?;
+        let result = context
+            .exec_external(&self.code, param_names, &resolved_str)
+            .map_err(|e| GritPatternError::new(e.to_string()))?;
 
         // END Simple externalized version
 
