@@ -124,6 +124,16 @@ impl LocalRepo {
 
     /// Return the remote url for the repo, if any is set
     pub fn remote(&self) -> Option<String> {
+        let Ok(remotes) = self.repo.remotes() else {
+            log::error!("No remotes found");
+            return None;
+        };
+
+        // If the length of remotes is 1, return the first remote
+        if remotes.len() == 1 {
+            return Some(remotes.get(0).unwrap().to_string());
+        }
+
         // First, try to get the upstream of the current branch
         if let Some(branch) = self.branch() {
             if let Ok(upstream) = self.repo.branch_upstream_remote(&branch) {
@@ -145,12 +155,10 @@ impl LocalRepo {
         }
 
         // If upstream not found, fall back to the first remote listed
-        if let Ok(remotes) = self.repo.remotes() {
-            if let Some(r) = remotes.get(0) {
-                if let Ok(remote_obj) = Repository::find_remote(&self.repo, r) {
-                    if let Some(url) = remote_obj.url() {
-                        return Some(url.to_string());
-                    }
+        if let Some(r) = remotes.get(0) {
+            if let Ok(remote_obj) = Repository::find_remote(&self.repo, r) {
+                if let Some(url) = remote_obj.url() {
+                    return Some(url.to_string());
                 }
             }
         }
