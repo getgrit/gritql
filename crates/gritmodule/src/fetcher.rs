@@ -111,7 +111,7 @@ impl LocalRepo {
                         }
                     }
                 } else {
-                    log::error!("Head is not a branch");
+                    log::debug!("Head is not a branch");
                     None
                 }
             }
@@ -124,28 +124,50 @@ impl LocalRepo {
 
     /// Return the remote url for the repo, if any is set
     pub fn remote(&self) -> Option<String> {
-        let remote = match self.repo.remotes() {
-            Ok(remotes) => match remotes.get(0) {
-                Some(r) => {
-                    let git_remote = Repository::find_remote(&self.repo, r);
-                    match git_remote {
-                        Ok(remote_obj) => {
-                            let url = remote_obj.url();
-                            if url.is_none() {
-                                return Default::default();
-                            }
-                            url.unwrap().to_string()
-                        }
-                        Err(_) => {
-                            return Default::default();
+        let Ok(remotes) = self.repo.remotes() else {
+            log::error!("No remotes found");
+            return None;
+        };
+
+        // If the length of remotes is 1, return the first remote
+        if remotes.len() == 1 {
+            if let Ok(remote_obj) = self.repo.find_remote(remotes.get(0).unwrap()) {
+                if let Some(url) = remote_obj.url() {
+                    return Some(url.to_string());
+                }
+            }
+        }
+
+        // First, try to get the upstream of the current branch
+        if let Some(branch) = self.branch() {
+            if let Ok(upstream) = self.repo.branch_upstream_remote(&branch) {
+                if let Some(upstream) = upstream.as_str() {
+                    if let Ok(remote) = self.repo.find_remote(upstream) {
+                        if let Some(url) = remote.url() {
+                            return Some(url.to_string());
                         }
                     }
                 }
-                None => return Default::default(),
-            },
-            Err(_) => return Default::default(),
-        };
-        Some(remote)
+            }
+        }
+
+        // Now just look for a remote named "origin"
+        if let Ok(remote) = self.repo.find_remote("origin") {
+            if let Some(url) = remote.url() {
+                return Some(url.to_string());
+            }
+        }
+
+        // If upstream not found, fall back to the first remote listed
+        if let Some(r) = remotes.get(0) {
+            if let Ok(remote_obj) = self.repo.find_remote(r) {
+                if let Some(url) = remote_obj.url() {
+                    return Some(url.to_string());
+                }
+            }
+        }
+
+        None
     }
 }
 
@@ -518,6 +540,92 @@ mod tests {
         };
 
         assert_eq!(module_repo, expected_repo);
+    }
+
+    #[tokio::test]
+    async fn module_repo_from_dir_with_two_origins() {
+        let dir = tempdir().unwrap().into_path();
+
+        // Clone the repository using the git command
+        let remote = "https://github.com/getgrit/stdlib.git";
+        let output = std::process::Command::new("git")
+            .arg("clone")
+            .arg(remote)
+            .arg(&dir)
+            .output()
+            .expect("Failed to execute git clone command");
+
+        if !output.status.success() {
+            panic!(
+                "Git clone failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+
+        // Add a second origin
+        let output2 = std::process::Command::new("git")
+            .arg("remote")
+            .arg("add")
+            .arg("alpha")
+            .arg("https://github.com/custodian-sample-org/alpha-shop.git")
+            .current_dir(&dir)
+            .output()
+            .expect("Failed to execute git remote add command");
+
+        if !output2.status.success() {
+            panic!(
+                "Git remote add failed: {}",
+                String::from_utf8_lossy(&output2.stderr)
+            );
+        }
+
+        println!("temp_dir: {:?}", dir);
+
+        let repo = LocalRepo::from_dir(&dir).await.unwrap();
+
+        assert_eq!(repo.remote().unwrap(), remote);
+    }
+
+    #[tokio::test]
+    async fn module_repo_from_dir_with_renamed_origins() {
+        let dir = tempdir().unwrap().into_path();
+
+        // Clone the repository using the git command
+        let remote = "https://github.com/getgrit/stdlib.git";
+        let output = std::process::Command::new("git")
+            .arg("clone")
+            .arg(remote)
+            .arg(&dir)
+            .output()
+            .expect("Failed to execute git clone command");
+
+        if !output.status.success() {
+            panic!(
+                "Git clone failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+
+        // Rename the origin to "alpha"
+        let output2 = std::process::Command::new("git")
+            .arg("remote")
+            .arg("rename")
+            .arg("origin")
+            .arg("alpha")
+            .current_dir(&dir)
+            .output()
+            .expect("Failed to execute git remote rename command");
+
+        if !output2.status.success() {
+            panic!(
+                "Git remote rename failed: {}",
+                String::from_utf8_lossy(&output2.stderr)
+            );
+        }
+
+        let repo = LocalRepo::from_dir(&dir).await.unwrap();
+
+        assert_eq!(repo.remote().unwrap(), remote);
     }
 
     #[test]
