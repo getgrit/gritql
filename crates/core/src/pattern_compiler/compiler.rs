@@ -21,7 +21,8 @@ use grit_pattern_matcher::{
     },
 };
 use grit_util::{
-    traverse, AnalysisLogs, Ast, AstNode, ByteRange, FileRange, Order, Range, VariableMatch,
+    error::GritPatternError, traverse, AnalysisLogs, Ast, AstNode, ByteRange, FileRange, Order,
+    Range, VariableMatch,
 };
 use itertools::Itertools;
 use marzano_language::{
@@ -32,7 +33,6 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     ffi::OsStr,
     path::Path,
-    str::Utf8Error,
     vec,
 };
 
@@ -102,7 +102,7 @@ fn insert_definition_index(
     let parameters: Vec<_> = definition
         .named_children_by_field_name("args")
         .map(|n| Ok((n.text()?.trim().to_string(), n.byte_range())))
-        .collect::<Result<Vec<(String, ByteRange)>, Utf8Error>>()?;
+        .collect::<Result<Vec<(String, ByteRange)>, GritPatternError>>()?;
     let duplicates = get_duplicates(&parameters);
     if !duplicates.is_empty() {
         bail!(
