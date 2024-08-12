@@ -574,6 +574,48 @@ mod tests {
         assert_eq!(repo.remote().unwrap(), remote);
     }
 
+    #[tokio::test]
+    async fn module_repo_from_dir_with_renamed_origins() {
+        let dir = tempdir().unwrap().into_path();
+
+        // Clone the repository using the git command
+        let remote = "https://github.com/getgrit/stdlib.git";
+        let output = std::process::Command::new("git")
+            .arg("clone")
+            .arg(remote)
+            .arg(&dir)
+            .output()
+            .expect("Failed to execute git clone command");
+
+        if !output.status.success() {
+            panic!(
+                "Git clone failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+
+        // Rename the origin to "alpha"
+        let output2 = std::process::Command::new("git")
+            .arg("remote")
+            .arg("rename")
+            .arg("origin")
+            .arg("alpha")
+            .current_dir(&dir)
+            .output()
+            .expect("Failed to execute git remote rename command");
+
+        if !output2.status.success() {
+            panic!(
+                "Git remote rename failed: {}",
+                String::from_utf8_lossy(&output2.stderr)
+            );
+        }
+
+        let repo = LocalRepo::from_dir(&dir).await.unwrap();
+
+        assert_eq!(repo.remote().unwrap(), remote);
+    }
+
     #[test]
     fn fails_if_attempting_to_prep_grit_modules_from_executable_ancestor() {
         let exe = current_exe().unwrap();
