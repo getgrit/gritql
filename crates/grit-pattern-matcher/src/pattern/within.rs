@@ -4,9 +4,8 @@ use super::{
     State,
 };
 use crate::{binding::Binding, context::QueryContext};
-use anyhow::Result;
 use core::fmt::Debug;
-use grit_util::{AnalysisLogs, AstNode};
+use grit_util::{error::GritResult, AnalysisLogs, AstNode};
 
 #[derive(Debug, Clone)]
 pub struct Within<Q: QueryContext> {
@@ -32,7 +31,7 @@ impl<Q: QueryContext> Matcher<Q> for Within<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let mut did_match = false;
         let mut cur_state = init_state.clone();
 

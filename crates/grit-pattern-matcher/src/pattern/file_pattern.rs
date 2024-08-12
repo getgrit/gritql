@@ -8,8 +8,7 @@ use crate::{
     context::ExecContext,
 };
 use crate::{context::QueryContext, pattern::resolved_pattern::File};
-use anyhow::Result;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct FilePattern<Q: QueryContext> {
@@ -30,7 +29,7 @@ impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let Some(file) = resolved_pattern.get_file() else {
             return Ok(false);
         };

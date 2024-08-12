@@ -3,8 +3,7 @@ use super::{
     PatternDefinition, State,
 };
 use crate::context::QueryContext;
-use anyhow::Result;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct Bubble<Q: QueryContext> {
@@ -34,7 +33,7 @@ impl<Q: QueryContext> Matcher<Q> for Bubble<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         self.pattern_def
             .call(state, binding, context, logs, &self.args)
     }

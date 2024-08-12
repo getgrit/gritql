@@ -8,9 +8,11 @@ use crate::{
     binding::Binding,
     context::{ExecContext, QueryContext},
 };
-use anyhow::{anyhow, bail, Result};
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 use regex::Regex;
 
 #[derive(Debug, Clone)]
@@ -37,7 +39,7 @@ impl<Q: QueryContext> RegexPattern<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
         must_match_entire_string: bool,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let text = binding.text(&state.files, context.language())?;
         let resolved_regex_text = match &self.regex {
             RegexLike::Regex(regex) => match must_match_entire_string {
@@ -62,17 +64,17 @@ impl<Q: QueryContext> RegexPattern<Q> {
         // todo: make sure the entire string is matched
 
         if captures.len() != self.variables.len() + 1 {
-            bail!(
+            return Err(GritPatternError::new(format!(
                 "regex pattern matched {} variables, but expected {}",
                 captures.len() - 1,
                 self.variables.len()
-            )
+            )));
         }
         // why not zip?
         for (i, variable) in self.variables.iter().enumerate() {
             let value = captures
                 .get(i + 1)
-                .ok_or_else(|| anyhow!("missing capture group"))?;
+                .ok_or_else(|| GritPatternError::new("missing capture group"))?;
 
             let range = value.range();
             let value = value.as_str();
@@ -131,7 +133,7 @@ impl<Q: QueryContext> Matcher<Q> for RegexPattern<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         self.execute_matching(binding, state, context, logs, true)
     }
 }

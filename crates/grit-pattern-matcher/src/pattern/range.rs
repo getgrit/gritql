@@ -4,8 +4,10 @@ use super::{
     state::State,
 };
 use crate::context::{ExecContext, QueryContext};
-use anyhow::{anyhow, Result};
-use grit_util::{AnalysisLogs, UtilRange};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, UtilRange,
+};
 
 #[derive(Debug, Clone)]
 pub struct Point {
@@ -14,14 +16,14 @@ pub struct Point {
 }
 
 impl Point {
-    pub fn new(line: Option<u32>, column: Option<u32>) -> Result<Option<Self>> {
+    pub fn new(line: Option<u32>, column: Option<u32>) -> GritResult<Option<Self>> {
         if let Some(line) = line {
             Ok(Some(Self { line, column }))
         } else {
             column
                 .map(|_| {
-                    Err(anyhow!(
-                        "cannot have a point with a column index, but no line"
+                    Err(GritPatternError::new(
+                        "cannot have a point with a column index, but no line",
                     ))
                 })
                 .unwrap_or(Ok(None))
@@ -70,7 +72,7 @@ impl<Q: QueryContext> Matcher<Q> for Range {
         _state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
-    ) -> anyhow::Result<bool> {
+    ) -> GritResult<bool> {
         if let Some(range) = binding.position(context.language()) {
             if let Some(start) = &self.start {
                 if start.line > range.start.line {

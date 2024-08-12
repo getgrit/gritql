@@ -4,9 +4,8 @@ use super::{
     State,
 };
 use crate::context::{ExecContext, QueryContext};
-use anyhow::Result;
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct StringConstant {
@@ -34,7 +33,7 @@ impl<Q: QueryContext> Matcher<Q> for StringConstant {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let text = binding.text(&state.files, context.language())?;
         if text == self.text {
             Ok(true)

@@ -3,8 +3,7 @@ use super::{
     state::State,
 };
 use crate::context::{ExecContext, QueryContext};
-use anyhow::Result;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct Step<Q: QueryContext> {
@@ -24,7 +23,7 @@ impl<Q: QueryContext> Matcher<Q> for Step<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         context.exec_step(&self.pattern, binding, state, logs)
     }
 }

@@ -3,8 +3,8 @@ use super::{
     State,
 };
 use crate::context::QueryContext;
-use anyhow::{anyhow, Result};
 use core::fmt::Debug;
+use grit_util::error::{GritPatternError, GritResult};
 use grit_util::AnalysisLogs;
 
 #[allow(dead_code)]
@@ -34,7 +34,7 @@ impl<Q: QueryContext> Matcher<Q> for Like<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         use crate::errors::debug;
 
         let snippet = self.like.text(state, context, logs)?;
@@ -52,7 +52,9 @@ impl<Q: QueryContext> Matcher<Q> for Like<Q> {
         _state: &mut State<'a, Q>,
         _context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
-        Err(anyhow!("Like only available under the embeddings feature"))
+    ) -> GritResult<bool> {
+        Err(GritPatternError::new(
+            "Like only available under the embeddings feature",
+        ))
     }
 }

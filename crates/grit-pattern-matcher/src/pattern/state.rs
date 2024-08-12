@@ -8,8 +8,10 @@ use crate::{
     intervals::{earliest_deadline_sort, get_top_level_intervals_in_range, Interval},
     pattern::resolved_pattern::ResolvedPattern,
 };
-use anyhow::{anyhow, bail, Result};
-use grit_util::{AnalysisLogs, CodeRange, Range, VariableMatch};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, CodeRange, Range, VariableMatch,
+};
 use im::{vector, Vector};
 use rand::SeedableRng;
 use std::ops::Range as StdRange;
@@ -55,7 +57,7 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
             .expect("File path should exist for given file index.")
     }
 
-    pub fn get_absolute_path(&self, pointer: FilePtr) -> Result<&'a PathBuf> {
+    pub fn get_absolute_path(&self, pointer: FilePtr) -> GritResult<&'a PathBuf> {
         let file_index = pointer.file as usize;
         let version_index = pointer.version as usize;
         if let Some(owners) = self.owners.get(file_index) {
@@ -63,8 +65,8 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
                 return Ok(&owner.absolute_path);
             }
         }
-        Err(anyhow!(
-            "Absolute file path accessed before file was loaded."
+        Err(GritPatternError::new(
+            "Absolute file path accessed before file was loaded.",
         ))
     }
 
@@ -143,7 +145,7 @@ fn get_top_level_effect_ranges<'a, Q: QueryContext>(
     range: &CodeRange,
     language: &Q::Language<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<Vec<EffectRange<'a, Q>>> {
+) -> GritResult<Vec<EffectRange<'a, Q>>> {
     let mut effects: Vec<EffectRange<Q>> = effects
         .iter()
         .filter(|effect| {
@@ -163,7 +165,7 @@ fn get_top_level_effect_ranges<'a, Q: QueryContext>(
             let binding = &effect.binding;
             let byte_range = binding
                 .range(language)
-                .ok_or_else(|| anyhow!("binding has no range"))?;
+                .ok_or_else(|| GritPatternError::new("binding has no range"))?;
             let end_byte = byte_range.end as u32;
             let start_byte = byte_range.start as u32;
             Ok(EffectRange {
@@ -171,9 +173,9 @@ fn get_top_level_effect_ranges<'a, Q: QueryContext>(
                 effect: effect.clone(),
             })
         })
-        .collect::<Result<Vec<EffectRange<Q>>>>()?;
+        .collect::<GritResult<Vec<EffectRange<Q>>>>()?;
     if !earliest_deadline_sort(&mut effects) {
-        bail!("effects have overlapping ranges");
+        return Err(GritPatternError::new("effects have overlapping ranges"));
     }
     Ok(get_top_level_intervals_in_range(
         effects,
@@ -188,7 +190,7 @@ pub fn get_top_level_effects<'a, Q: QueryContext>(
     range: &CodeRange,
     language: &Q::Language<'a>,
     logs: &mut AnalysisLogs,
-) -> Result<Vec<Effect<'a, Q>>> {
+) -> GritResult<Vec<Effect<'a, Q>>> {
     let top_level = get_top_level_effect_ranges(effects, memo, range, language, logs)?;
     let top_level: Vec<Effect<'a, Q>> = top_level
         .into_iter()

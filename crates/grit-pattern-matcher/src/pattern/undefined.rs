@@ -1,7 +1,6 @@
 use super::{resolved_pattern::ResolvedPattern, state::State};
 use crate::context::QueryContext;
-use anyhow::Result;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 // Undefined is a pattern that matches when a *Grit variable* is undefined.
 // It is *not* meant to match against a *JavaScript* `undefined` value.
@@ -14,7 +13,7 @@ impl Undefined {
         _init_state: &mut State<'a, Q>,
         _context: &'a Q::ExecContext<'a>,
         _logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         Ok(binding.matches_undefined())
     }
 }

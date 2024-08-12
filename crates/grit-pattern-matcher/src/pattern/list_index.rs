@@ -10,8 +10,10 @@ use crate::{
     binding::Binding,
     context::{ExecContext, QueryContext},
 };
-use anyhow::{anyhow, bail, Result};
-use grit_util::AnalysisLogs;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 
 #[derive(Debug, Clone)]
 pub enum ListOrContainer<Q: QueryContext> {
@@ -32,20 +34,25 @@ pub struct ListIndex<Q: QueryContext> {
 }
 
 impl<Q: QueryContext> ListIndex<Q> {
-    fn get_index<'a>(&'a self, state: &State<'a, Q>, lang: &Q::Language<'a>) -> Result<isize> {
+    fn get_index<'a>(&'a self, state: &State<'a, Q>, lang: &Q::Language<'a>) -> GritResult<isize> {
         match &self.index {
             ContainerOrIndex::Container(c) => {
-                let raw_index = c
-                    .get_pattern_or_resolved(state, lang)?
-                    .ok_or_else(|| anyhow!("list index must be resolvable: {:?}", self))?;
+                let raw_index = c.get_pattern_or_resolved(state, lang)?.ok_or_else(|| {
+                    GritPatternError::new(format!("list index must be resolvable: {:?}", self))
+                })?;
                 let index = match raw_index {
                     PatternOrResolved::Resolved(r) => r.text(&state.files, lang)?,
                     PatternOrResolved::ResolvedBinding(r) => r.text(&state.files, lang)?,
-                    PatternOrResolved::Pattern(_) => bail!("list index must be resolved"),
+                    PatternOrResolved::Pattern(_) => {
+                        return Err(GritPatternError::new("list index must be resolved"))
+                    }
                 };
-                let int_index = index
-                    .parse::<isize>()
-                    .map_err(|_| anyhow!("list index must be an integer but got {:?}", index))?;
+                let int_index = index.parse::<isize>().map_err(|_| {
+                    GritPatternError::new(format!(
+                        "list index must be an integer but got {:?}",
+                        index
+                    ))
+                })?;
                 Ok(int_index)
             }
             ContainerOrIndex::Index(i) => Ok(*i),
@@ -56,7 +63,7 @@ impl<Q: QueryContext> ListIndex<Q> {
         &'a self,
         state: &'b State<'a, Q>,
         lang: &Q::Language<'a>,
-    ) -> Result<Option<PatternOrResolved<'a, 'b, Q>>> {
+    ) -> GritResult<Option<PatternOrResolved<'a, 'b, Q>>> {
         let index = self.get_index(state, lang)?;
         match &self.list {
             ListOrContainer::Container(c) => match c.get_pattern_or_resolved(state, lang)? {
@@ -81,10 +88,15 @@ impl<Q: QueryContext> ListIndex<Q> {
                                 )
                             }));
                     } else {
-                        bail!("left side of a listIndex must be a list")
+                        return Err(GritPatternError::new(
+                            "left side of a listIndex must be a list",
+                        ));
                     }
                 }
-                Some(s) => bail!("left side of a listIndex must be a list but got {:?}", s),
+                Some(s) => Err(GritPatternError::new(format!(
+                    "left side of a listIndex must be a list but got {:?}",
+                    s
+                ))),
             },
             ListOrContainer::List(l) => Ok(l.get(index).map(PatternOrResolved::Pattern)),
         }
@@ -94,7 +106,7 @@ impl<Q: QueryContext> ListIndex<Q> {
         &'a self,
         state: &'b mut State<'a, Q>,
         lang: &Q::Language<'a>,
-    ) -> Result<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
+    ) -> GritResult<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
         let index = self.get_index(state, lang)?;
         match &self.list {
             ListOrContainer::Container(c) => match c.get_pattern_or_resolved_mut(state, lang)? {
@@ -115,10 +127,15 @@ impl<Q: QueryContext> ListIndex<Q> {
                             .get_list_item_at_mut(index)
                             .map(PatternOrResolvedMut::Resolved))
                     } else {
-                        bail!("left side of a listIndex must be a list")
+                        Err(GritPatternError::new(
+                            "left side of a listIndex must be a list",
+                        ))
                     }
                 }
-                Some(s) => bail!("left side of a listIndex must be a list but got {:?}", s),
+                Some(s) => Err(GritPatternError::new(format!(
+                    "left side of a listIndex must be a list but got {:?}",
+                    s
+                ))),
             },
             ListOrContainer::List(l) => Ok(l.get(index).map(PatternOrResolvedMut::Pattern)),
         }
@@ -129,7 +146,7 @@ impl<Q: QueryContext> ListIndex<Q> {
         state: &mut State<'a, Q>,
         lang: &Q::Language<'a>,
         value: Q::ResolvedPattern<'a>,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let index = self.get_index(state, lang)?;
         match &self.list {
             ListOrContainer::Container(c) => match c.get_pattern_or_resolved_mut(state, lang)? {
@@ -137,9 +154,11 @@ impl<Q: QueryContext> ListIndex<Q> {
                 Some(PatternOrResolvedMut::Resolved(resolved)) => {
                     resolved.set_list_item_at_mut(index, value)
                 }
-                Some(_) => bail!("accessor can only mutate a resolved list"),
+                Some(_) => Err(GritPatternError::new(
+                    "accessor can only mutate a resolved list",
+                )),
             },
-            ListOrContainer::List(_) => bail!("cannot mutate a list literal"),
+            ListOrContainer::List(_) => Err(GritPatternError::new("cannot mutate a list literal")),
         }
     }
 }
@@ -167,7 +186,7 @@ impl<Q: QueryContext> Matcher<Q> for ListIndex<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         match self.get(state, context.language())? {
             Some(PatternOrResolved::Resolved(r)) => {
                 execute_resolved_with_binding(r, binding, state, context.language())

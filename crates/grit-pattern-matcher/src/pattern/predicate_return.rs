@@ -5,8 +5,7 @@ use super::{
     state::State,
 };
 use crate::context::QueryContext;
-use anyhow::Result;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct PrReturn<Q: QueryContext> {
@@ -25,7 +24,7 @@ impl<Q: QueryContext> Evaluator<Q> for PrReturn<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>> {
+    ) -> GritResult<FuncEvaluation<Q>> {
         let resolved = ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
         Ok(FuncEvaluation {
             predicator: false,

@@ -7,8 +7,7 @@ use crate::{
     constant::Constant,
     context::{ExecContext, QueryContext},
 };
-use anyhow::Result;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct Modulo<Q: QueryContext> {
@@ -26,7 +25,7 @@ impl<Q: QueryContext> Modulo<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Q::ResolvedPattern<'a>> {
+    ) -> GritResult<Q::ResolvedPattern<'a>> {
         let res = self.evaluate(state, context, logs)?;
         Ok(Q::ResolvedPattern::from_constant(Constant::Integer(res)))
     }
@@ -36,7 +35,7 @@ impl<Q: QueryContext> Modulo<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<i64> {
+    ) -> GritResult<i64> {
         let lhs = self.lhs.text(state, context, logs)?;
         let rhs = self.rhs.text(state, context, logs)?;
         let lhs_int = lhs.parse::<i64>()?;
@@ -59,7 +58,7 @@ impl<Q: QueryContext> Matcher<Q> for Modulo<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let binding_text = binding.text(&state.files, context.language())?;
         let binding_int = binding_text.parse::<i64>()?;
         let target = self.evaluate(state, context, logs)?;

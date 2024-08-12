@@ -3,8 +3,7 @@ use super::{
     state::State,
 };
 use crate::{context::ExecContext, context::QueryContext};
-use anyhow::Result;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
@@ -40,7 +39,7 @@ impl<Q: QueryContext> Matcher<Q> for Limit<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         if context.ignore_limit_pattern() {
             let res = self.pattern.execute(binding, state, context, logs)?;
             return Ok(res);

@@ -4,8 +4,10 @@ use crate::{
     effects::Effect,
     pattern::{FileRegistry, Pattern, ResolvedPattern, State},
 };
-use anyhow::{bail, Result};
-use grit_util::{AnalysisLogs, ByteRange, CodeRange, Range};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, ByteRange, CodeRange, Range,
+};
 use std::path::Path;
 use std::{borrow::Cow, collections::HashMap};
 
@@ -21,12 +23,14 @@ pub trait Binding<'a, Q: QueryContext>: Clone + std::fmt::Debug + PartialEq + Si
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Q::Binding<'a>> {
+    ) -> GritResult<Q::Binding<'a>> {
         let resolved = Q::ResolvedPattern::from_pattern(pattern, state, context, logs)?;
         if let Some(binding) = resolved.get_last_binding() {
             Ok(binding.clone())
         } else {
-            bail!("cannot create binding from pattern without binding");
+            Err(GritPatternError::new(
+                "cannot create binding from pattern without binding",
+            ))
         }
     }
 
@@ -65,9 +69,9 @@ pub trait Binding<'a, Q: QueryContext>: Clone + std::fmt::Debug + PartialEq + Si
         memo: &mut HashMap<CodeRange, Option<String>>,
         distributed_indent: Option<usize>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Cow<'a, str>>;
+    ) -> GritResult<Cow<'a, str>>;
 
-    fn text(&self, language: &Q::Language<'a>) -> Result<Cow<str>>;
+    fn text(&self, language: &Q::Language<'a>) -> GritResult<Cow<str>>;
 
     fn source(&self) -> Option<&'a str>;
 
@@ -101,5 +105,5 @@ pub trait Binding<'a, Q: QueryContext>: Clone + std::fmt::Debug + PartialEq + Si
         &self,
         language: &Q::Language<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<()>;
+    ) -> GritResult<()>;
 }

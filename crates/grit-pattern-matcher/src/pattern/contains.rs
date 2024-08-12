@@ -8,9 +8,8 @@ use crate::{
     pattern::resolved_pattern::File,
 };
 use crate::{constants::GLOBAL_VARS_SCOPE_INDEX, context::ExecContext};
-use anyhow::Result;
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 use grit_util::{AstCursor, AstNode};
 
 #[derive(Debug, Clone)]
@@ -38,7 +37,7 @@ fn execute_until<'a, Q: QueryContext>(
     logs: &mut AnalysisLogs,
     the_contained: &'a Pattern<Q>,
     until: &'a Option<Pattern<Q>>,
-) -> Result<bool, anyhow::Error> {
+) -> GritResult<bool> {
     let mut did_match = false;
     let mut cur_state = init_state.clone();
     let mut cursor = node.walk();
@@ -92,7 +91,7 @@ impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         if let Some(binding) = resolved_pattern.get_last_binding() {
             if let Some(node) = binding.as_node() {
                 execute_until(
