@@ -131,7 +131,11 @@ impl LocalRepo {
 
         // If the length of remotes is 1, return the first remote
         if remotes.len() == 1 {
-            return Some(remotes.get(0).unwrap().to_string());
+            if let Ok(remote_obj) = Repository::find_remote(&self.repo, remotes.get(0).unwrap()) {
+                if let Some(url) = remote_obj.url() {
+                    return Some(url.to_string());
+                }
+            }
         }
 
         // First, try to get the upstream of the current branch
