@@ -129,7 +129,7 @@ impl LocalRepo {
             if let Ok(upstream) = self.repo.branch_upstream_remote(&branch) {
                 if let Some(upstream) = upstream.as_str() {
                     if let Ok(remote) = self.repo.find_remote(upstream) {
-                        if let Some(url) = remote.unwrap().url() {
+                        if let Some(url) = remote.url() {
                             return Some(url.to_string());
                         }
                     }
@@ -137,30 +137,25 @@ impl LocalRepo {
             }
         }
 
+        // Now just look for a remote named "origin"
+        if let Ok(remote) = self.repo.find_remote("origin") {
+            if let Some(url) = remote.url() {
+                return Some(url.to_string());
+            }
+        }
+
         // If upstream not found, fall back to the first remote listed
-        let remote = match self.repo.remotes() {
-            Ok(remotes) => match remotes.get(0) {
-                Some(r) => {
-                    let git_remote = Repository::find_remote(&self.repo, r);
-                    match git_remote {
-                        Ok(remote_obj) => {
-                            let url = remote_obj.url();
-                            if url.is_none() {
-                                return Default::default();
-                            }
-                            url.unwrap().to_string()
-                        }
-                        Err(_) => {
-                            return Default::default();
-                        }
+        if let Ok(remotes) = self.repo.remotes() {
+            if let Some(r) = remotes.get(0) {
+                if let Ok(remote_obj) = Repository::find_remote(&self.repo, r) {
+                    if let Some(url) = remote_obj.url() {
+                        return Some(url.to_string());
                     }
                 }
-                None => return Default::default(),
-            },
-            Err(_) => return Default::default(),
-        };
+            }
+        }
 
-        Some(remote)
+        None
     }
 }
 
