@@ -1,18 +1,19 @@
 use anyhow::anyhow;
 use anyhow::Result;
+use grit_util::error::{GritPatternError, GritResult};
 use path_absolutize::Absolutize;
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 
 #[cfg(feature = "absolute_filename")]
-pub(crate) fn absolutize(path: &Path) -> Result<PathBuf> {
+pub(crate) fn absolutize(path: &Path) -> GritResult<PathBuf> {
     path.absolutize()
         .map(|path| path.to_path_buf())
-        .map_err(|_| anyhow!("could not build absolute path from file name"))
+        .map_err(|_| GritPatternError::new("could not build absolute path from file name"))
 }
 
 #[cfg(not(feature = "absolute_filename"))]
-pub(crate) fn absolutize(path: &Path) -> Result<PathBuf> {
+pub(crate) fn absolutize(path: &Path) -> GritResult<PathBuf> {
     Ok(path.to_owned())
 }
 

@@ -5,8 +5,7 @@ use super::{
     state::State,
 };
 use crate::context::QueryContext;
-use anyhow::Result;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct Maybe<Q: QueryContext> {
@@ -26,7 +25,7 @@ impl<Q: QueryContext> Matcher<Q> for Maybe<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let mut state = init_state.clone();
         if self.pattern.execute(binding, &mut state, context, logs)? {
             *init_state = state;
@@ -58,7 +57,7 @@ impl<Q: QueryContext> Evaluator<Q> for PrMaybe<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>> {
+    ) -> GritResult<FuncEvaluation<Q>> {
         let mut state = init_state.clone();
         if self
             .predicate

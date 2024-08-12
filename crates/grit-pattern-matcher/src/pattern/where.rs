@@ -5,9 +5,8 @@ use super::{
     State,
 };
 use crate::context::QueryContext;
-use anyhow::Result;
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct Where<Q: QueryContext> {
@@ -39,7 +38,7 @@ impl<Q: QueryContext> Matcher<Q> for Where<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let mut cur_state = init_state.clone();
         if !self
             .pattern

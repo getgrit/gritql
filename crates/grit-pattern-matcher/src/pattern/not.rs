@@ -5,9 +5,8 @@ use super::{
     State,
 };
 use crate::context::QueryContext;
-use anyhow::{bail, Ok, Result};
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{error::{GritPatternError, GritResult}, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct Not<Q: QueryContext> {
@@ -33,7 +32,7 @@ impl<Q: QueryContext> Matcher<Q> for Not<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         Ok(!self
             .pattern
             .execute(binding, &mut state.clone(), context, logs)?)
@@ -63,12 +62,14 @@ impl<Q: QueryContext> Evaluator<Q> for PrNot<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>> {
+    ) -> GritResult<FuncEvaluation<Q>> {
         let res = self
             .predicate
             .execute_func(&mut state.clone(), context, logs)?;
         if res.ret_val.is_some() {
-            bail!("Cannot return from within not clause");
+            return Err(GritPatternError::new(
+                "Cannot return from within not clause",
+            ));
         }
         Ok(FuncEvaluation {
             predicator: !res.predicator,

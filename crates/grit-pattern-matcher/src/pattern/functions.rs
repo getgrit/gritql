@@ -4,9 +4,11 @@ use super::{
     state::State,
 };
 use crate::{context::ExecContext, context::QueryContext};
-use anyhow::{bail, Result};
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 
 #[derive(Debug, Clone)]
 pub struct FuncEvaluation<'a, Q: QueryContext> {
@@ -20,7 +22,7 @@ pub trait Evaluator<Q: QueryContext>: Debug {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>>;
+    ) -> GritResult<FuncEvaluation<Q>>;
 }
 
 #[derive(Debug, Clone)]
@@ -35,7 +37,7 @@ pub trait GritCall<Q: QueryContext> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Q::ResolvedPattern<'a>>;
+    ) -> GritResult<Q::ResolvedPattern<'a>>;
 }
 
 impl<Q: QueryContext> CallFunction<Q> {
@@ -50,7 +52,7 @@ impl<Q: QueryContext> GritCall<Q> for CallFunction<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Q::ResolvedPattern<'a>> {
+    ) -> GritResult<Q::ResolvedPattern<'a>> {
         let function_definition = &context.function_definitions()[self.index];
 
         match function_definition
@@ -58,7 +60,9 @@ impl<Q: QueryContext> GritCall<Q> for CallFunction<Q> {
             .ret_val
         {
             Some(pattern) => Ok(pattern),
-            None => bail!("Function call did not return a value"),
+            None => Err(GritPatternError::new(
+                "Function call did not return a value",
+            )),
         }
     }
 }

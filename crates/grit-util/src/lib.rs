@@ -4,6 +4,7 @@ mod ast_node_traversal;
 mod code_range;
 pub mod constants;
 mod effect_kind;
+pub mod error;
 mod language;
 mod parser;
 mod position;

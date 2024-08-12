@@ -24,6 +24,7 @@ napi = { version = "2.16.4", default-features = false, features = [
   "async",
 ], optional = true}
 napi-derive = { version = "2.12.2", optional = true }
+thiserror = { version = "1.0.61" }
 
 [features]
 default = []

@@ -11,7 +11,7 @@ use grit_pattern_matcher::{
         ResolvedPattern, State,
     },
 };
-use grit_util::{AnalysisLogs, AstNode, Language};
+use grit_util::{error::GritResult, AnalysisLogs, AstNode, Language};
 use marzano_language::language::{FieldId, LeafEquivalenceClass, MarzanoLanguage, SortId};
 use marzano_util::node_with_source::NodeWithSource;
 
@@ -58,7 +58,7 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
         init_state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let Some(binding) = binding.get_last_binding() else {
             return Ok(false);
         };
@@ -169,7 +169,7 @@ impl Matcher<MarzanoQueryContext> for AstLeafNode {
         _state: &mut State<'a, MarzanoQueryContext>,
         _context: &'a MarzanoContext<'a>,
         _logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let Some(node) = binding.get_last_binding().and_then(Binding::singleton) else {
             return Ok(false);
         };

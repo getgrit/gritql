@@ -18,9 +18,8 @@ use super::{
     State,
 };
 use crate::context::QueryContext;
-use anyhow::Result;
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub enum Predicate<Q: QueryContext> {
@@ -71,7 +70,7 @@ impl<Q: QueryContext> Evaluator<Q> for Predicate<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>> {
+    ) -> GritResult<FuncEvaluation<Q>> {
         match self {
             Predicate::Call(call) => call.execute_func(state, context, logs),
             Predicate::Or(or) => or.execute_func(state, context, logs),

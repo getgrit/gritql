@@ -4,8 +4,7 @@ use super::{
     State,
 };
 use crate::context::QueryContext;
-use anyhow::Result;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Clone, Debug)]
 pub struct PatternDefinition<Q: QueryContext> {
@@ -41,7 +40,7 @@ impl<Q: QueryContext> PatternDefinition<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
         args: &'a [Option<Pattern<Q>>],
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         state.reset_vars(self.scope, args);
         let res = self.pattern.execute(binding, state, context, logs);
 

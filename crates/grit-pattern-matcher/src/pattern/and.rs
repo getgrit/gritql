@@ -5,8 +5,7 @@ use super::{
     State,
 };
 use crate::context::QueryContext;
-use anyhow::Result;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct And<Q: QueryContext> {
@@ -32,7 +31,7 @@ impl<Q: QueryContext> Matcher<Q> for And<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         for p in self.patterns.iter() {
             if !p.execute(binding, state, context, logs)? {
                 return Ok(false);
@@ -65,7 +64,7 @@ impl<Q: QueryContext> Evaluator<Q> for PrAnd<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>> {
+    ) -> GritResult<FuncEvaluation<Q>> {
         for p in self.predicates.iter() {
             let res = p.execute_func(state, context, logs)?;
             match res.predicator {

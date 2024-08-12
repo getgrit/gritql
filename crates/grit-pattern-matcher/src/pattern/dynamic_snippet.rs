@@ -9,8 +9,7 @@ use super::{
     State,
 };
 use crate::context::{ExecContext, QueryContext};
-use anyhow::Result;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub enum DynamicSnippetPart {
@@ -46,7 +45,7 @@ impl<Q: QueryContext> DynamicPattern<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<String> {
+    ) -> GritResult<String> {
         let resolved = Q::ResolvedPattern::from_dynamic_pattern(self, state, context, logs)?;
         Ok(resolved.text(&state.files, context.language())?.to_string())
     }
@@ -65,7 +64,7 @@ impl<Q: QueryContext> Matcher<Q> for DynamicPattern<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         if binding.text(&state.files, context.language())? == self.text(state, context, logs)? {
             Ok(true)
         } else {

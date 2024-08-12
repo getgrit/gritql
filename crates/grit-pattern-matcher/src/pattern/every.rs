@@ -4,8 +4,7 @@ use super::{
     State,
 };
 use crate::{constant::Constant, context::QueryContext};
-use anyhow::Result;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct Every<Q: QueryContext> {
@@ -31,7 +30,7 @@ impl<Q: QueryContext> Matcher<Q> for Every<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         // might be necessary to clone init state at the top,
         // but more performant to not, so leaving out for now.
         if let Some(items) = binding.get_list_binding_items() {

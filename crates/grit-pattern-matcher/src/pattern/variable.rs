@@ -9,9 +9,10 @@ use crate::{
     constants::{ABSOLUTE_PATH_INDEX, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX},
     context::{ExecContext, QueryContext},
 };
-use anyhow::Result;
 use core::fmt::Debug;
-use grit_util::{constants::GRIT_METAVARIABLE_PREFIX, AnalysisLogs, ByteRange, Language};
+use grit_util::{
+    constants::GRIT_METAVARIABLE_PREFIX, error::GritResult, AnalysisLogs, ByteRange, Language,
+};
 use std::{borrow::Cow, collections::BTreeSet};
 
 #[derive(Clone, Debug, Copy)]
@@ -41,7 +42,7 @@ impl Variable {
     pub fn get_pattern_or_resolved<'a, 'b, Q: QueryContext>(
         &self,
         state: &'b State<'a, Q>,
-    ) -> Result<Option<PatternOrResolved<'a, 'b, Q>>> {
+    ) -> GritResult<Option<PatternOrResolved<'a, 'b, Q>>> {
         let v = state.trace_var(self);
         let content = &state.bindings[v.scope].last().unwrap()[v.index];
         if let Some(pattern) = content.pattern {
@@ -55,7 +56,7 @@ impl Variable {
     pub fn get_pattern_or_resolved_mut<'a, 'b, Q: QueryContext>(
         &self,
         state: &'b mut State<'a, Q>,
-    ) -> Result<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
+    ) -> GritResult<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
         let v = state.trace_var(self);
         let content = &mut state.bindings[v.scope].back_mut().unwrap()[v.index];
         if let Some(pattern) = content.pattern {
@@ -79,7 +80,7 @@ impl Variable {
         &self,
         state: &State<'a, Q>,
         lang: &Q::Language<'a>,
-    ) -> Result<Cow<'a, str>> {
+    ) -> GritResult<Cow<'a, str>> {
         state.bindings[self.scope].last().unwrap()[self.index].text(state, lang)
     }
 
@@ -88,7 +89,7 @@ impl Variable {
         resolved_pattern: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         language: &Q::Language<'a>,
-    ) -> Result<Option<bool>> {
+    ) -> GritResult<Option<bool>> {
         let mut variable_mirrors: Vec<VariableMirror<Q>> = Vec::new();
         {
             let variable_content = &mut **(state
@@ -165,7 +166,7 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         if let Some(res) = self.execute_resolved(resolved_pattern, state, context.language())? {
             return Ok(res);
         }
@@ -206,7 +207,7 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
 pub fn get_absolute_file_name<'a, Q: QueryContext>(
     state: &State<'a, Q>,
     lang: &Q::Language<'a>,
-) -> Result<String, anyhow::Error> {
+) -> GritResult<String> {
     let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[ABSOLUTE_PATH_INDEX]
         .value
         .as_ref();
@@ -219,7 +220,7 @@ pub fn get_absolute_file_name<'a, Q: QueryContext>(
 pub fn get_file_name<'a, Q: QueryContext>(
     state: &State<'a, Q>,
     lang: &Q::Language<'a>,
-) -> Result<String, anyhow::Error> {
+) -> GritResult<String> {
     let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX].last().unwrap()[FILENAME_INDEX]
         .value
         .as_ref();

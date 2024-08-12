@@ -1,5 +1,5 @@
-use crate::{AstCursor, ByteRange, CodeRange};
-use std::{borrow::Cow, str::Utf8Error};
+use crate::{error::GritResult, AstCursor, ByteRange, CodeRange};
+use std::borrow::Cow;
 
 /// Represents an AST node and offers convenient AST-specific functionality.
 ///
@@ -34,7 +34,7 @@ pub trait AstNode: std::fmt::Debug + Sized {
     fn previous_sibling(&self) -> Option<Self>;
 
     /// Returns the text representation of the node.
-    fn text(&self) -> Result<Cow<str>, Utf8Error>;
+    fn text(&self) -> GritResult<Cow<str>>;
 
     /// Returns the byte range of the node.
     fn byte_range(&self) -> ByteRange;

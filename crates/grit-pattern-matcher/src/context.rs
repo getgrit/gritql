@@ -6,8 +6,7 @@ use crate::{
         Pattern, PatternDefinition, PredicateDefinition, ResolvedPattern, State,
     },
 };
-use anyhow::Result;
-use grit_util::{AnalysisLogs, Ast, AstNode, Language};
+use grit_util::{error::GritResult, AnalysisLogs, Ast, AstNode, Language};
 
 /// Contains various kinds of context about the query being executed.
 pub trait QueryContext: Clone + std::fmt::Debug + Sized + 'static {
@@ -39,7 +38,7 @@ pub trait ExecContext<'a, Q: QueryContext> {
         context: &'a Self,
         state: &mut State<'a, Q>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Q::ResolvedPattern<'a>>;
+    ) -> GritResult<Q::ResolvedPattern<'a>>;
 
     /// Call this when "entering" a file to lazily load it.
     /// This MUST be implemented correctly, or the query engine will not work.
@@ -50,7 +49,7 @@ pub trait ExecContext<'a, Q: QueryContext> {
         file: &Q::File<'a>,
         state: &mut State<'a, Q>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool>;
+    ) -> GritResult<bool>;
 
     // FIXME: Don't depend on Grit's file handling in Context.
     fn files(&self) -> &FileOwners<Q::Tree<'a>>;
@@ -63,7 +62,7 @@ pub trait ExecContext<'a, Q: QueryContext> {
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool>;
+    ) -> GritResult<bool>;
 
     fn name(&self) -> Option<&str>;
 }

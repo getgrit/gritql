@@ -7,9 +7,11 @@ use super::{
     State,
 };
 use crate::{context::QueryContext, effects::Effect};
-use anyhow::{bail, Result};
 use core::fmt::Debug;
-use grit_util::{AnalysisLogs, EffectKind};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, EffectKind,
+};
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]
@@ -43,7 +45,7 @@ impl<Q: QueryContext> Rewrite<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let resolved = match resolved {
             Some(b) => {
                 if !self.left.execute(b, state, context, logs)? {
@@ -67,15 +69,22 @@ impl<Q: QueryContext> Rewrite<Q> {
                     {
                         Cow::Owned(content)
                     } else {
-                        bail!("Variable {:?} not bound", v);
+                        return Err(GritPatternError::new(format!("Variable {:?} not bound", v)));
                     }
                 } else {
-                    bail!("Rewrite side-conditions must have variable on left-hand side");
+                    return Err(GritPatternError::new(
+                        "Rewrite side-conditions must have variable on left-hand side",
+                    ));
                 }
             }
         };
         let Some(bindings) = resolved.get_bindings() else {
-            bail!("variable on left hand side of rewrite side-conditions can only be bound to bindings")
+            return Err(
+                GritPatternError::new(
+
+            "variable on left hand side of rewrite side-conditions can only be bound to bindings"
+                )
+            );
         };
         let replacement: Q::ResolvedPattern<'_> =
             ResolvedPattern::from_dynamic_pattern(&self.right, state, context, logs)?;
@@ -102,7 +111,7 @@ impl<Q: QueryContext> Matcher<Q> for Rewrite<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         self.execute_generalized(Some(binding), state, context, logs)
     }
 }
@@ -113,7 +122,7 @@ impl<Q: QueryContext> Evaluator<Q> for Rewrite<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>> {
+    ) -> GritResult<FuncEvaluation<Q>> {
         let predicator = self.execute_generalized(None, state, context, logs)?;
         Ok(FuncEvaluation {
             predicator,

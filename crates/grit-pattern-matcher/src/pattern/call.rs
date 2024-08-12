@@ -6,8 +6,10 @@ use super::{
     State,
 };
 use crate::{context::ExecContext, context::QueryContext};
-use anyhow::{bail, Result};
-use grit_util::AnalysisLogs;
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 
 #[derive(Clone, Debug)]
 pub struct Call<Q: QueryContext> {
@@ -36,7 +38,7 @@ impl<Q: QueryContext> Matcher<Q> for Call<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let pattern_definition = &context.pattern_definitions()[self.index];
 
         pattern_definition.call(state, binding, context, logs, &self.args)
@@ -67,7 +69,7 @@ impl<Q: QueryContext> Evaluator<Q> for PrCall<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>> {
+    ) -> GritResult<FuncEvaluation<Q>> {
         let predicate_definition = &context.predicate_definitions().get(self.index);
         if let Some(predicate_definition) = predicate_definition {
             let predicator = predicate_definition.call(state, context, &self.args, logs)?;
@@ -81,10 +83,10 @@ impl<Q: QueryContext> Evaluator<Q> for PrCall<Q> {
                 let res = function_definition.call(state, context, &self.args, logs)?;
                 Ok(res)
             } else {
-                bail!(
+                Err(GritPatternError::new(format!(
                     "predicate or function definition not found: {}. Try running grit init.",
                     self.index
-                );
+                )))
             }
         }
     }

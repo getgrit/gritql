@@ -6,8 +6,10 @@ use super::{
     State,
 };
 use crate::{context::ExecContext, context::QueryContext, effects::Effect};
-use anyhow::{bail, Result};
-use grit_util::{AnalysisLogs, EffectKind};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, EffectKind,
+};
 use std::borrow::Cow;
 
 #[derive(Debug, Clone)]
@@ -44,7 +46,7 @@ impl<Q: QueryContext> Matcher<Q> for Accumulate<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         if let Pattern::Variable(var) = &self.left {
             let var = state.trace_var(var);
             let append = ResolvedPattern::from_pattern(&self.right, state, context, logs)?;
@@ -55,10 +57,10 @@ impl<Q: QueryContext> Matcher<Q> for Accumulate<Q> {
                 base.extend(append, &mut state.effects, context.language())?;
                 Ok(true)
             } else {
-                bail!(
+                Err(GritPatternError::new(format!(
                     "Variable {} is not bound",
                     state.bindings[var.scope].last().unwrap()[var.index].name
-                )
+                )))
             }
         } else {
             let resolved = if !self.left.execute(context_node, state, context, logs)? {
@@ -67,19 +69,22 @@ impl<Q: QueryContext> Matcher<Q> for Accumulate<Q> {
                 Cow::Borrowed(context_node)
             };
             let Some(bindings) = resolved.get_bindings() else {
-                bail!("variable on left hand side of insert side-conditions can onlybe bound to bindings")
+                return Err(
+                    GritPatternError::new("variable on left hand side of insert side-conditions can only be bound to bindings")
+                );
             };
             let dynamic_right = match &self.dynamic_right {
                 Some(r) => r,
                 None => {
-                    bail!(
+                    return Err(
+                        GritPatternError::new(format!(
                         "Insert right hand side must be a code snippet when LHS is not a variable, but found: {:?}", self.right
-                    )
+                    )))
                 }
             };
             let mut replacement: Q::ResolvedPattern<'a> =
                 ResolvedPattern::from_dynamic_pattern(dynamic_right, state, context, logs)?;
-            let effects: Result<Vec<_>> = bindings
+            let effects: GritResult<Vec<_>> = bindings
                 .map(|binding| {
                     let is_first = !state.effects.iter().any(|e| e.binding == binding);
                     replacement.normalize_insert(&binding, is_first, context.language())?;
@@ -103,7 +108,7 @@ impl<Q: QueryContext> Evaluator<Q> for Accumulate<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>> {
+    ) -> GritResult<FuncEvaluation<Q>> {
         if let Pattern::Variable(var) = &self.left {
             let var = state.trace_var(var);
             let append = ResolvedPattern::from_pattern(&self.right, state, context, logs)?;
@@ -117,13 +122,15 @@ impl<Q: QueryContext> Evaluator<Q> for Accumulate<Q> {
                     ret_val: None,
                 })
             } else {
-                bail!(
+                Err(GritPatternError::new(format!(
                     "Variable {} is not bound",
                     state.bindings[var.scope].last().unwrap()[var.index].name
-                )
+                )))
             }
         } else {
-            bail!("Insert side-conditions must have variable on left-hand side");
+            Err(GritPatternError::new(
+                "Insert side-conditions must have variable on left-hand side",
+            ))
         }
     }
 }

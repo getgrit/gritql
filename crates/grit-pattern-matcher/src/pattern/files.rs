@@ -4,8 +4,7 @@ use super::{
     state::State,
 };
 use crate::context::QueryContext;
-use anyhow::Result;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct Files<Q: QueryContext> {
@@ -25,7 +24,7 @@ impl<Q: QueryContext> Matcher<Q> for Files<Q> {
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         if let Some(files) = resolved_pattern.get_files() {
             self.pattern.execute(files, state, context, logs)
         } else if resolved_pattern.get_file().is_some() {

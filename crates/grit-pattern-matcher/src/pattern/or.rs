@@ -7,9 +7,8 @@ use super::{
     State,
 };
 use crate::{binding::Binding, context::QueryContext};
-use anyhow::Result;
 use core::fmt::Debug;
-use grit_util::AnalysisLogs;
+use grit_util::{error::GritResult, AnalysisLogs};
 
 #[derive(Debug, Clone)]
 pub struct Or<Q: QueryContext> {
@@ -35,7 +34,7 @@ impl<Q: QueryContext> Matcher<Q> for Or<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         if let Some(binding) = resolved.get_last_binding() {
             for p in self.patterns.iter() {
                 // filter out pattern which cannot match because of a mismatched node type
@@ -89,7 +88,7 @@ impl<Q: QueryContext> Evaluator<Q> for PrOr<Q> {
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<Q>> {
+    ) -> GritResult<FuncEvaluation<Q>> {
         for p in self.predicates.iter() {
             let mut state = init_state.clone();
             let res = p.execute_func(&mut state, context, logs)?;

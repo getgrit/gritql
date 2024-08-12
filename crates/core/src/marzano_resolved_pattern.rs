@@ -2,7 +2,6 @@ use crate::{
     marzano_binding::MarzanoBinding, marzano_code_snippet::MarzanoCodeSnippet,
     marzano_context::MarzanoContext, paths::absolutize, problem::MarzanoQueryContext,
 };
-use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
     binding::Binding,
     constant::Constant,
@@ -14,7 +13,10 @@ use grit_pattern_matcher::{
         ResolvedPattern, ResolvedSnippet, State,
     },
 };
-use grit_util::{AnalysisLogs, Ast, AstNode, CodeRange, EffectKind, Range};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, Ast, AstNode, CodeRange, EffectKind, Range,
+};
 use im::{vector, Vector};
 use marzano_language::{language::FieldId, target_language::TargetLanguage};
 use marzano_util::node_with_source::NodeWithSource;
@@ -44,7 +46,7 @@ impl<'a> MarzanoResolvedPattern<'a> {
         Self::from_binding(MarzanoBinding::List(node, field_id))
     }
 
-    fn to_snippets(&self) -> Result<Vector<ResolvedSnippet<'a, MarzanoQueryContext>>> {
+    fn to_snippets(&self) -> GritResult<Vector<ResolvedSnippet<'a, MarzanoQueryContext>>> {
         match self {
             MarzanoResolvedPattern::Snippets(snippets) => Ok(snippets.clone()),
             MarzanoResolvedPattern::Binding(bindings) => {
@@ -52,7 +54,9 @@ impl<'a> MarzanoResolvedPattern<'a> {
                     bindings
                         .last()
                         .ok_or_else(|| {
-                            anyhow!("cannot create resolved snippet from unresolved binding")
+                            GritPatternError::new(
+                                "cannot create resolved snippet from unresolved binding",
+                            )
                         })?
                         .to_owned(),
                 )])
@@ -79,11 +83,11 @@ impl<'a> MarzanoResolvedPattern<'a> {
                 snippets.push(ResolvedSnippet::Text("}".into()));
                 Ok(snippets.into())
             }
-            MarzanoResolvedPattern::File(_) => Err(anyhow!(
-                "cannot convert ResolvedPattern::File to ResolvedSnippet"
+            MarzanoResolvedPattern::File(_) => Err(GritPatternError::new(
+                "cannot convert ResolvedPattern::File to ResolvedSnippet",
             )),
-            MarzanoResolvedPattern::Files(_) => Err(anyhow!(
-                "cannot convert ResolvedPattern::Files to ResolvedSnippet"
+            MarzanoResolvedPattern::Files(_) => Err(GritPatternError::new(
+                "cannot convert ResolvedPattern::Files to ResolvedSnippet",
             )),
             MarzanoResolvedPattern::Constant(c) => {
                 Ok(vector![ResolvedSnippet::Text(c.to_string().into(),)])
@@ -98,10 +102,10 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         mut with: MarzanoResolvedPattern<'a>,
         effects: &mut Vector<Effect<'a, MarzanoQueryContext>>,
         language: &TargetLanguage,
-    ) -> Result<()> {
+    ) -> GritResult<()> {
         match self {
             Self::Binding(bindings) => {
-                let new_effects: Result<Vec<Effect<MarzanoQueryContext>>> = bindings
+                let new_effects: GritResult<Vec<Effect<MarzanoQueryContext>>> = bindings
                     .iter()
                     .map(|b| {
                         let is_first = !effects.iter().any(|e| e.binding == *b);
@@ -123,22 +127,30 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                         snippets.extend(with_snippets);
                     }
                     Self::Binding(binding) => {
-                        let binding = binding
-                            .last()
-                            .ok_or_else(|| anyhow!("cannot extend with empty binding"))?;
+                        let binding = binding.last().ok_or_else(|| {
+                            GritPatternError::new("cannot extend with empty binding")
+                        })?;
                         snippets.push_back(ResolvedSnippet::Binding(binding.clone()));
                     }
                     Self::List(_) => {
-                        return Err(anyhow!("cannot extend ResolvedPattern::Snippet with List"))
+                        return Err(GritPatternError::new(
+                            "cannot extend ResolvedPattern::Snippet with List",
+                        ))
                     }
                     Self::File(_) => {
-                        return Err(anyhow!("cannot extend ResolvedPattern::Snippet with File"))
+                        return Err(GritPatternError::new(
+                            "cannot extend ResolvedPattern::Snippet with File",
+                        ))
                     }
                     Self::Files(_) => {
-                        return Err(anyhow!("cannot extend ResolvedPattern::Snippet with Files"))
+                        return Err(GritPatternError::new(
+                            "cannot extend ResolvedPattern::Snippet with Files",
+                        ))
                     }
                     Self::Map(_) => {
-                        return Err(anyhow!("cannot extend ResolvedPattern::Snippet with Map"))
+                        return Err(GritPatternError::new(
+                            "cannot extend ResolvedPattern::Snippet with Map",
+                        ))
                     }
                     Self::Constant(c) => {
                         snippets.push_back(ResolvedSnippet::Text(c.to_string().into()));
@@ -153,16 +165,18 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 lst.push_back(with);
                 Ok(())
             }
-            Self::File(_) => Err(anyhow!("cannot extend ResolvedPattern::File")),
-            Self::Files(_) => Err(anyhow!("cannot extend ResolvedPattern::Files")),
-            Self::Map(_) => Err(anyhow!("cannot extend ResolvedPattern::Map")),
+            Self::File(_) => Err(GritPatternError::new("cannot extend ResolvedPattern::File")),
+            Self::Files(_) => Err(GritPatternError::new(
+                "cannot extend ResolvedPattern::Files",
+            )),
+            Self::Map(_) => Err(GritPatternError::new("cannot extend ResolvedPattern::Map")),
             Self::Constant(Constant::Integer(i)) => {
                 if let Self::Constant(Constant::Integer(j)) = with {
                     *i += j;
                     Ok(())
                 } else {
-                    Err(anyhow!(
-                        "can only extend Constant::Integer with another Constant::Integer"
+                    Err(GritPatternError::new(
+                        "can only extend Constant::Integer with another Constant::Integer",
                     ))
                 }
             }
@@ -171,12 +185,14 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                     *x += y;
                     Ok(())
                 } else {
-                    Err(anyhow!(
-                        "can only extend Constant::Float with another Constant::Float"
+                    Err(GritPatternError::new(
+                        "can only extend Constant::Float with another Constant::Float",
                     ))
                 }
             }
-            Self::Constant(_) => Err(anyhow!("cannot extend ResolvedPattern::Constant")),
+            Self::Constant(_) => Err(GritPatternError::new(
+                "cannot extend ResolvedPattern::Constant",
+            )),
         }
     }
 
@@ -325,18 +341,18 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         matches!(self, Self::List(_))
     }
 
-    fn push_binding(&mut self, binding: MarzanoBinding<'a>) -> Result<()> {
+    fn push_binding(&mut self, binding: MarzanoBinding<'a>) -> GritResult<()> {
         let Self::Binding(bindings) = self else {
-            bail!("can only push to bindings");
+            return Err(GritPatternError::new("can only push to bindings"));
         };
 
         bindings.push_back(binding);
         Ok(())
     }
 
-    fn set_list_item_at_mut(&mut self, index: isize, value: Self) -> Result<bool> {
+    fn set_list_item_at_mut(&mut self, index: isize, value: Self) -> GritResult<bool> {
         let Self::List(items) = self else {
-            bail!("can only set items on a list")
+            return Err(GritPatternError::new("can only set items on a list"));
         };
 
         let Some(index) = to_unsigned(index, items.len()) else {
@@ -352,7 +368,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
+    ) -> GritResult<Self> {
         let mut parts = Vec::new();
         for part in &snippet.parts {
             match part {
@@ -368,10 +384,10 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                     } else if let Some(pattern) = content.pattern {
                         Self::from_pattern(pattern, state, context, logs)?
                     } else {
-                        bail!(
+                        return Err(GritPatternError::new(format!(
                             "cannot create resolved snippet from unresolved variable {}",
-                            name
-                        )
+                            name,
+                        )));
                     };
                     let value = value.to_snippets()?;
                     parts.extend(value);
@@ -386,7 +402,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
+    ) -> GritResult<Self> {
         match pattern {
             DynamicPattern::Variable(var) => {
                 let content = &state.bindings[var.scope].last().unwrap()[var.index];
@@ -397,10 +413,10 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 } else if let Some(pattern) = content.pattern {
                     Self::from_pattern(pattern, state, context, logs)
                 } else {
-                    bail!(
+                    return Err(GritPatternError::new(format!(
                         "cannot create resolved snippet from unresolved variable {}",
                         name
-                    )
+                    )));
                 }
             }
             DynamicPattern::Accessor(accessor) => {
@@ -428,7 +444,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
+    ) -> GritResult<Self> {
         match accessor.get(state, context.language())? {
             Some(PatternOrResolved::Pattern(pattern)) => {
                 Self::from_pattern(pattern, state, context, logs)
@@ -444,7 +460,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
+    ) -> GritResult<Self> {
         match index.get(state, context.language())? {
             Some(PatternOrResolved::Pattern(pattern)) => {
                 Self::from_pattern(pattern, state, context, logs)
@@ -460,7 +476,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
-    ) -> Result<Self> {
+    ) -> GritResult<Self> {
         match pattern {
             Pattern::Dynamic(pattern) => Self::from_dynamic_pattern(pattern, state, context, logs),
             Pattern::CodeSnippet(MarzanoCodeSnippet {
@@ -485,17 +501,17 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 } else if let Some(pattern) = content.pattern {
                     Self::from_pattern(pattern, state, context, logs)
                 } else {
-                    bail!(
+                    return Err(GritPatternError::new(format!(
                         "cannot create resolved snippet from unresolved variable {}",
                         name
-                    )
+                    )));
                 }
             }
             Pattern::List(list) => list
                 .patterns
                 .iter()
                 .map(|pattern| Self::from_pattern(pattern, state, context, logs))
-                .collect::<Result<Vector<_>>>()
+                .collect::<GritResult<Vector<_>>>()
                 .map(Self::List),
             Pattern::ListIndex(index) => Self::from_list_index(index, state, context, logs),
             Pattern::Map(map) => map
@@ -507,7 +523,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                         Self::from_pattern(value, state, context, logs)?,
                     ))
                 })
-                .collect::<Result<BTreeMap<_, _>>>()
+                .collect::<GritResult<BTreeMap<_, _>>>()
                 .map(Self::Map),
             Pattern::Accessor(accessor) => Self::from_accessor(accessor, state, context, logs),
             Pattern::File(file_pattern) => {
@@ -562,7 +578,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             | Pattern::Every(_)
             | Pattern::Dots
             | Pattern::Like(_)
-            | Pattern::Sequential(_) => Err(anyhow!(format!(
+            | Pattern::Sequential(_) => Err(GritPatternError::new(format!(
                 "cannot make resolved pattern from arbitrary pattern {}",
                 pattern.name()
             ))),
@@ -577,7 +593,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         memo: &mut HashMap<CodeRange, Option<String>>,
         should_pad_snippet: bool,
         logs: &mut AnalysisLogs,
-    ) -> Result<Cow<'a, str>> {
+    ) -> GritResult<Cow<'a, str>> {
         match self {
             // if whitespace is significant we need to distribute indentations
             // across lines within the snippet
@@ -604,7 +620,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                         .map(|snippet| {
                             snippet.linearized_text(language, effects, files, memo, None, logs)
                         })
-                        .collect::<Result<Vec<_>>>()?
+                        .collect::<GritResult<Vec<_>>>()?
                         .join("")
                         .into())
                 }
@@ -622,7 +638,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                         logs,
                     )
                 })
-                .collect::<Result<Vec<_>>>()?
+                .collect::<GritResult<Vec<_>>>()?
                 .join(",")
                 .into()),
             Self::Map(map) => Ok(("{".to_string()
@@ -644,7 +660,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                         };
                         Ok((key, linearized))
                     })
-                    .collect::<Result<Vec<_>>>()?
+                    .collect::<GritResult<Vec<_>>>()?
                     .iter()
                     .map(|(key, value)| format!("\"{}\": {}", key, value))
                     .collect::<Vec<_>>()
@@ -654,7 +670,9 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             // might have to handle differently for ResolvedPattern::List containing indent followed by binding
             Self::Binding(binding) => Ok(binding
                 .last()
-                .ok_or_else(|| anyhow!("cannot grab text of resolved_pattern with no binding"))?
+                .ok_or_else(|| {
+                    GritPatternError::new("cannot grab text of resolved_pattern with no binding")
+                })?
                 .linearized_text(
                     language,
                     effects,
@@ -679,7 +697,9 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             .into()),
             // unsure if this is correct, taken from text
             Self::Files(_files) => {
-                bail!("cannot linearize files pattern, not implemented yet");
+                Err(GritPatternError::new(
+                    "cannot linearize files pattern, not implemented yet",
+                ))
             }
             // unsure if this is correct, taken from text
             Self::Constant(c) => Ok(c.to_string().into()),
@@ -690,34 +710,34 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         &self,
         state: &FileRegistry<'a, MarzanoQueryContext>,
         language: &TargetLanguage,
-    ) -> Result<f64> {
+    ) -> GritResult<f64> {
         match self {
             Self::Constant(c) => match c {
                 Constant::Float(d) => Ok(*d),
                 Constant::Integer(i) => Ok(*i as f64),
                 Constant::String(s) => Ok(s.parse::<f64>()?),
-                Constant::Boolean(_) | Constant::Undefined => Err(anyhow!("Cannot convert constant to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")),
+                Constant::Boolean(_) | Constant::Undefined => Err(GritPatternError::new("Cannot convert constant to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")),
             },
             Self::Snippets(s) => {
                 let text = s
                     .iter()
                     .map(|snippet| snippet.text(state, language))
-                    .collect::<Result<Vec<_>>>()?
+                    .collect::<GritResult<Vec<_>>>()?
                     .join("");
                 text.parse::<f64>().map_err(|_| {
-                    anyhow!("Failed to convert snippet to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")
+                    GritPatternError::new("Failed to convert snippet to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")
                 })
             }
             Self::Binding(binding) => {
                 let text = binding
                     .last()
-                    .ok_or_else(|| anyhow!("cannot grab text of resolved_pattern with no binding"))?
+                    .ok_or_else(|| GritPatternError::new("cannot grab text of resolved_pattern with no binding"))?
                     .text(language)?;
                 text.parse::<f64>().map_err(|_| {
-                    anyhow!("Failed to convert binding to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")
+                    GritPatternError::new("Failed to convert binding to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")
                 })
             }
-            Self::List(_) | Self::Map(_) | Self::File(_) | Self::Files(_) => Err(anyhow!("Cannot convert type to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")),
+            Self::List(_) | Self::Map(_) | Self::File(_) | Self::Files(_) => Err(GritPatternError::new("Cannot convert type to double. Ensure that you are only attempting arithmetic operations on numeric-parsable types.")),
         }
     }
 
@@ -747,18 +767,18 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         &self,
         state: &FileRegistry<'a, MarzanoQueryContext>,
         language: &TargetLanguage,
-    ) -> Result<Cow<'a, str>> {
+    ) -> GritResult<Cow<'a, str>> {
         match self {
             Self::Snippets(snippets) => Ok(snippets
                 .iter()
                 .map(|snippet| snippet.text(state, language))
-                .collect::<Result<Vec<_>>>()?
+                .collect::<GritResult<Vec<_>>>()?
                 .join("")
                 .into()),
             Self::List(list) => Ok(list
                 .iter()
                 .map(|pattern| pattern.text(state, language))
-                .collect::<Result<Vec<_>>>()?
+                .collect::<GritResult<Vec<_>>>()?
                 .join(",")
                 .into()),
             Self::Map(map) => Ok(("{".to_string()
@@ -779,7 +799,9 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 .into()),
             Self::Binding(binding) => Ok(binding
                 .last()
-                .ok_or_else(|| anyhow!("cannot grab text of resolved_pattern with no binding"))?
+                .ok_or_else(|| {
+                    GritPatternError::new("cannot grab text of resolved_pattern with no binding")
+                })?
                 .text(language)?
                 .into_owned()
                 .into()),
@@ -799,7 +821,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         binding: &MarzanoBinding<'a>,
         is_first: bool,
         language: &TargetLanguage,
-    ) -> Result<()> {
+    ) -> GritResult<()> {
         let Self::Snippets(ref mut snippets) = self else {
             return Ok(());
         };
@@ -818,7 +840,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
         &self,
         state: &mut State<'a, MarzanoQueryContext>,
         language: &TargetLanguage,
-    ) -> Result<bool> {
+    ) -> GritResult<bool> {
         let truthiness = match self {
             Self::Binding(bindings) => bindings.last().map_or(false, Binding::is_truthy),
             Self::List(elements) => !elements.is_empty(),
@@ -856,7 +878,7 @@ impl<'a> File<'a, MarzanoQueryContext> for MarzanoFile<'a> {
         &self,
         files: &FileRegistry<'a, MarzanoQueryContext>,
         language: &TargetLanguage,
-    ) -> Result<MarzanoResolvedPattern<'a>> {
+    ) -> GritResult<MarzanoResolvedPattern<'a>> {
         match self {
             Self::Resolved(resolved) => {
                 let name = resolved.name.text(files, language)?;
