@@ -67,8 +67,9 @@ features = ["marzano-cli/grit_beta"]
 npm-package = "cli"
 # the homebrew package should have this name
 formula = "grit"
+# Custom display name to use for this app in release bodies
+display-name = "grit"
 
 [package.metadata.dist.bin-aliases]
 # all installers should ensure marzano can also be run as "grit"
 marzano = ["grit"]
-display-name = "grit"
