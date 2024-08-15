@@ -389,36 +389,45 @@
   {
     "type": "flow_mapping",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "alias",
-          "named": true
-        },
-        {
-          "type": "anchor",
-          "named": true
-        },
-        {
-          "type": "double_quote_scalar",
-          "named": true
-        },
-        {
-          "type": "flow_node",
-          "named": true
-        },
-        {
-          "type": "flow_pair",
-          "named": true
-        },
-        {
-          "type": "tag",
-          "named": true
-        }
-      ]
+    "fields": {
+      "items": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "alias",
+            "named": true
+          },
+          {
+            "type": "anchor",
+            "named": true
+          },
+          {
+            "type": "double_quote_scalar",
+            "named": true
+          },
+          {
+            "type": "flow_node",
+            "named": true
+          },
+          {
+            "type": "flow_pair",
+            "named": true
+          },
+          {
+            "type": "tag",
+            "named": true
+          },
+          {
+            "type": "}",
+            "named": false
+          }
+        ]
+      }
     }
   },
   {
