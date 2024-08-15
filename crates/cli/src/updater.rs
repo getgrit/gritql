@@ -3,7 +3,6 @@ use anyhow::{Context, Result};
 use axoupdater::{AxoUpdater, ReleaseSource, ReleaseSourceType, Version};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::Colorize;
-use futures_util::StreamExt;
 use indicatif::ProgressBar;
 use log::info;
 use marzano_auth::info::AuthInfo;

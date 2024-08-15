@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result};
 use clap::Args;
 use log::info;
 use serde::Serialize;

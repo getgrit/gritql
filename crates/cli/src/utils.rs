@@ -1,49 +1,11 @@
-use clap::ValueEnum;
+
 use git2::{Repository, StatusOptions};
 use marzano_gritmodule::searcher::find_git_dir_from;
-use serde::{Deserialize, Serialize};
+
 use std::{
-    fmt::{Display, Formatter},
     net::{SocketAddr, TcpListener},
     path::PathBuf,
 };
-
-#[derive(Debug, PartialEq, PartialOrd, Clone, Copy, Serialize, Deserialize, ValueEnum)]
-pub enum OperatingSystem {
-    #[serde(rename = "windows")]
-    Windows,
-    #[serde(rename = "linux")]
-    Linux,
-    #[serde(rename = "macos")]
-    MacOS,
-}
-
-impl Display for OperatingSystem {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            OperatingSystem::Windows => write!(f, "windows"),
-            OperatingSystem::Linux => write!(f, "linux"),
-            OperatingSystem::MacOS => write!(f, "macos"),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, PartialOrd, Clone, Copy, Serialize, Deserialize, ValueEnum)]
-pub enum Architecture {
-    #[serde(rename = "x64")]
-    X64,
-    #[serde(rename = "arm64")]
-    Arm64,
-}
-
-impl Display for Architecture {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Architecture::X64 => write!(f, "x64"),
-            Architecture::Arm64 => write!(f, "arm64"),
-        }
-    }
-}
 
 #[allow(dead_code)]
 pub fn get_random_port() -> Option<u16> {
