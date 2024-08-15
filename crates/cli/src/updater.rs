@@ -351,12 +351,7 @@ impl Updater {
         Ok(())
     }
 
-    pub async fn install_latest(
-        &mut self,
-        app: SupportedApp,
-        _os: Option<&str>,
-        _arch: Option<&str>,
-    ) -> Result<()> {
+    pub async fn install_latest(&mut self, app: SupportedApp) -> Result<()> {
         self.install_latest_axo(app).await
     }
 
@@ -736,9 +731,7 @@ mod tests {
             "744cc867-ae03-497f-b82a-ee6a4a57e90e".to_string(),
         )?;
 
-        updater
-            .install_latest(SupportedApp::Marzano, None, None)
-            .await?;
+        updater.install_latest(SupportedApp::Marzano).await?;
 
         let manifest = async_fs::read_to_string(updater.manifest_path.clone()).await?;
 

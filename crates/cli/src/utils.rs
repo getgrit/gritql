@@ -28,16 +28,6 @@ impl Display for OperatingSystem {
     }
 }
 
-pub fn get_client_os() -> &'static str {
-    match std::env::consts::OS {
-        "macos" => "macos",
-        "linux" => "linux",
-        "windows" => "windows",
-        "darwin" => "macos",
-        _ => "linux",
-    }
-}
-
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy, Serialize, Deserialize, ValueEnum)]
 pub enum Architecture {
     #[serde(rename = "x64")]
@@ -52,15 +42,6 @@ impl Display for Architecture {
             Architecture::X64 => write!(f, "x64"),
             Architecture::Arm64 => write!(f, "arm64"),
         }
-    }
-}
-
-pub fn get_client_arch() -> &'static str {
-    match std::env::consts::ARCH {
-        "x86_64" => "x64",
-        "aarch64" => "arm64",
-        // Fall back to x64
-        _ => "x64",
     }
 }
 
