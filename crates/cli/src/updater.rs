@@ -646,33 +646,7 @@ pub async fn check_release(
     app: SupportedApp,
     current_binary: &Option<AppManifest>,
 ) -> Result<Option<String>> {
-    match app {
-        SupportedApp::Marzano | SupportedApp::Gouda => check_release_axo(app, current_binary).await,
-        _ => check_release_internal(app, current_binary).await,
-    }
-}
-
-pub async fn check_release_internal(
-    app: SupportedApp,
-    current_binary: &Option<AppManifest>,
-) -> Result<Option<String>> {
-    let (_, info_url) = match get_release_url(app, None, None).await {
-        Ok(urls) => urls,
-        Err(_) => return Ok(None),
-    };
-    let manifest = match fetch_manifest(&info_url, app).await {
-        Ok(manifest) => manifest,
-        Err(_) => return Ok(None),
-    };
-    if let Some(current_manifest) = current_binary {
-        if manifest.release != current_manifest.release && manifest.release.is_some() {
-            Ok(manifest.version)
-        } else {
-            Ok(None)
-        }
-    } else {
-        Ok(None)
-    }
+    check_release_axo(app, current_binary).await
 }
 
 pub async fn check_release_axo(
