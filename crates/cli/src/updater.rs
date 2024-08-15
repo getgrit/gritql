@@ -48,7 +48,7 @@ impl fmt::Display for AllApp {
             AllApp::Timekeeper => write!(f, "timekeeper"),
             AllApp::Engine => write!(f, "engine"),
             AllApp::Yeast => write!(f, "yeast"),
-            AllApp::WorkflowRunner => write!(f, "workflow_runner"),
+            AllApp::WorkflowRunner => write!(f, "workflow-runner"),
             AllApp::Gouda => write!(f, "gouda"),
         }
     }
@@ -85,7 +85,7 @@ impl SupportedApp {
             SupportedApp::Marzano => "marzano".to_string(),
             SupportedApp::Gouda => "gouda".to_string(),
             #[cfg(feature = "workflows_v2")]
-            SupportedApp::WorkflowRunner => "workflow_runner".to_string(),
+            SupportedApp::WorkflowRunner => "workflow-runner".to_string(),
         }
     }
 
@@ -399,7 +399,9 @@ impl Updater {
         arch: Option<&str>,
     ) -> Result<()> {
         match app {
-            SupportedApp::Marzano | SupportedApp::Gouda => self.install_latest_axo(app).await,
+            SupportedApp::Marzano | SupportedApp::Gouda | SupportedApp::WorkflowRunner => {
+                self.install_latest_axo(app).await
+            }
             _ => self.install_latest_internal(app, os, arch).await,
         }
     }
