@@ -9,7 +9,7 @@ use log::info;
 use marzano_auth::info::AuthInfo;
 use marzano_gritmodule::config::REPO_CONFIG_DIR_NAME;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
-use reqwest::redirect::Policy;
+
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -23,7 +23,6 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
-use crate::utils::{get_client_arch, get_client_os};
 use marzano_auth::env::{get_env_auth, get_grit_api_url};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -641,7 +640,6 @@ fn release_details_relative_url(release: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use fs_err::create_dir_all;
 
     use anyhow::Result;
     use chrono::NaiveDate;
