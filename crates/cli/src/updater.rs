@@ -3,13 +3,12 @@ use anyhow::{Context, Result};
 use axoupdater::{AxoUpdater, ReleaseSource, ReleaseSourceType, Version};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::Colorize;
-use futures_util::StreamExt;
 use indicatif::ProgressBar;
 use log::info;
 use marzano_auth::info::AuthInfo;
 use marzano_gritmodule::config::REPO_CONFIG_DIR_NAME;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
-use reqwest::redirect::Policy;
+
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -19,11 +18,10 @@ use std::sync::Arc;
 use tokio::fs as async_fs;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::process::Command as AsyncCommand;
+
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
-use crate::utils::{get_client_arch, get_client_os};
 use marzano_auth::env::{get_env_auth, get_grit_api_url};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -48,7 +46,7 @@ impl fmt::Display for AllApp {
             AllApp::Timekeeper => write!(f, "timekeeper"),
             AllApp::Engine => write!(f, "engine"),
             AllApp::Yeast => write!(f, "yeast"),
-            AllApp::WorkflowRunner => write!(f, "workflow_runner"),
+            AllApp::WorkflowRunner => write!(f, "workflow-runner"),
             AllApp::Gouda => write!(f, "gouda"),
         }
     }
@@ -85,7 +83,7 @@ impl SupportedApp {
             SupportedApp::Marzano => "marzano".to_string(),
             SupportedApp::Gouda => "gouda".to_string(),
             #[cfg(feature = "workflows_v2")]
-            SupportedApp::WorkflowRunner => "workflow_runner".to_string(),
+            SupportedApp::WorkflowRunner => "workflow-runner".to_string(),
         }
     }
 
@@ -96,19 +94,6 @@ impl SupportedApp {
             #[cfg(feature = "workflows_v2")]
             SupportedApp::WorkflowRunner => "GRIT_WORKFLOW_RUNNER".to_string(),
         }
-    }
-
-    fn get_bin_name(&self) -> String {
-        format!("{}-{}", self.get_base_name(), get_client_os())
-    }
-
-    fn get_fallback_bin_name(&self) -> String {
-        self.get_base_name().to_string()
-    }
-
-    fn get_file_name(&self, os: &str, arch: &str) -> String {
-        let base_name = self.get_base_name();
-        format!("{}-{}-{}", base_name, os, arch)
     }
 
     pub fn from_all_app(app: AllApp) -> Option<Self> {
@@ -365,43 +350,8 @@ impl Updater {
         Ok(())
     }
 
-    pub async fn install_latest_internal(
-        &mut self,
-        app: SupportedApp,
-        os: Option<&str>,
-        arch: Option<&str>,
-    ) -> Result<()> {
-        // Look for updates
-        let (download_url, info_url) = get_release_url(app, os, arch).await?;
-
-        info!("Starting download");
-        // Download the artifact
-        let downloader = self.download_artifact(app, download_url);
-        let manifest_fetcher = fetch_manifest(&info_url, app);
-        let (downloaded, manifest) = tokio::try_join!(downloader, manifest_fetcher)?;
-
-        // Unzip the artifact
-        self.unpack_artifact(app, downloaded.to_owned()).await?;
-
-        // Clean up the temp artifact
-        async_fs::remove_file(&downloaded).await?;
-
-        self.set_app_version(app, manifest.version.unwrap(), manifest.release.unwrap())?;
-        self.dump().await?;
-
-        Ok(())
-    }
-
-    pub async fn install_latest(
-        &mut self,
-        app: SupportedApp,
-        os: Option<&str>,
-        arch: Option<&str>,
-    ) -> Result<()> {
-        match app {
-            SupportedApp::Marzano | SupportedApp::Gouda => self.install_latest_axo(app).await,
-            _ => self.install_latest_internal(app, os, arch).await,
-        }
+    pub async fn install_latest(&mut self, app: SupportedApp) -> Result<()> {
+        self.install_latest_axo(app).await
     }
 
     pub fn get_context(&self) -> Result<ExecutionContext> {
@@ -501,84 +451,6 @@ impl Updater {
             return Ok(refreshed);
         }
         Ok(auth)
-    }
-
-    async fn download_artifact(&self, app: SupportedApp, artifact_url: String) -> Result<PathBuf> {
-        let target_path = self.bin_path.join(format!("{}-temp", app.get_bin_name()));
-
-        match reqwest::get(&artifact_url).await {
-            Ok(response) => {
-                let mut file = async_fs::File::create(&target_path).await?;
-                let mut bytes_stream = response.bytes_stream();
-                while let Some(chunk) = bytes_stream.next().await {
-                    tokio::io::copy(&mut chunk?.as_ref(), &mut file).await?;
-                }
-            }
-            Err(e) => {
-                bail!("Failed to download artifact: {:?}", e);
-            }
-        }
-
-        Ok(target_path)
-    }
-
-    async fn unpack_artifact(&self, app: SupportedApp, packed_path: PathBuf) -> Result<()> {
-        let unpacked_dir = self.bin_path.join(format!("{}-bin", app.get_bin_name()));
-        // Create the subdir
-        async_fs::create_dir_all(&unpacked_dir).await?;
-
-        info!(
-            "Unpacking from {} to {}",
-            packed_path.display(),
-            unpacked_dir.display()
-        );
-
-        let output = AsyncCommand::new("tar")
-            .arg("-xzf")
-            .arg(packed_path)
-            .arg("-C")
-            .arg(&unpacked_dir)
-            .output()
-            .await?;
-
-        if !output.status.success() {
-            bail!("Failed to unpack files: {:?}", output);
-        }
-
-        let target_path = self.get_app_bin(&app)?;
-        if async_fs::rename(unpacked_dir.join(app.get_bin_name()), &target_path)
-            .await
-            .is_err()
-        {
-            if let Err(e) =
-                async_fs::rename(unpacked_dir.join(app.get_fallback_bin_name()), &target_path).await
-            {
-                bail!("Failed to move files: {:?}", e);
-            }
-        }
-
-        // Make the file executable
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-
-            let target_file = fs_err::File::open(&target_path)?;
-            let mut perms = target_file.metadata()?.permissions();
-            perms.set_mode(0o744);
-            if let Err(e) = target_file.set_permissions(perms) {
-                bail!(
-                    "Failed to make {} executable: {:?}",
-                    target_path.display(),
-                    e
-                );
-            }
-
-            info!("Successfully made {} executable", target_path.display());
-        }
-
-        async_fs::remove_dir_all(&unpacked_dir).await?;
-
-        Ok(())
     }
 
     fn _get_app_manifest(&self, app: SupportedApp) -> Result<&AppManifest> {
@@ -694,96 +566,14 @@ impl Updater {
     }
 }
 
-async fn get_release_url(
-    app_name: SupportedApp,
-    os: Option<&str>,
-    arch: Option<&str>,
-) -> Result<(String, String)> {
-    let client = reqwest::Client::builder()
-        .redirect(Policy::none())
-        .build()?;
-
-    let filename = app_name.get_file_name(
-        os.unwrap_or(get_client_os()),
-        arch.unwrap_or(get_client_arch()),
-    );
-
-    let url = format!(
-        "{}/v1/accounts/{}/artifacts/{}",
-        KEYGEN_API, KEYGEN_ACCOUNT, filename
-    );
-    info!("Fetching release URL from: {}", url);
-    let res = client.get(&url).send().await?.text().await?;
-
-    // Parse as JSON
-    let json_data: serde_json::Value = serde_json::from_str(&res)?;
-
-    let latest_release_download_url = if let Some(artifact_data) = json_data["data"]
-        .get("links")
-        .and_then(|links| links.get("redirect"))
-    {
-        let artifact_url = artifact_data
-            .as_str()
-            .expect("Download URL should be a string");
-        artifact_url
-    } else {
-        bail!("Could not find artifact download URL");
-    };
-
-    let latest_release_info_url = if let Some(artifact_data) = json_data["data"]
-        .get("relationships")
-        .and_then(|relationships| relationships.get("release"))
-        .and_then(|release| release.get("links"))
-        .and_then(|links| links.get("related"))
-    {
-        let artifact_url = artifact_data
-            .as_str()
-            .expect("Release info URL should be a string");
-        artifact_url
-    } else {
-        bail!("Could not find release info URL");
-    };
-
-    Ok((
-        latest_release_download_url.to_string(),
-        latest_release_info_url.to_string(),
-    ))
-}
-
 pub async fn check_release(
     app: SupportedApp,
     current_binary: &Option<AppManifest>,
 ) -> Result<Option<String>> {
-    match app {
-        SupportedApp::Marzano | SupportedApp::Gouda => check_release_axo(app, current_binary).await,
-        _ => check_release_internal(app, current_binary).await,
-    }
+    check_release_axo(app, current_binary).await
 }
 
-pub async fn check_release_internal(
-    app: SupportedApp,
-    current_binary: &Option<AppManifest>,
-) -> Result<Option<String>> {
-    let (_, info_url) = match get_release_url(app, None, None).await {
-        Ok(urls) => urls,
-        Err(_) => return Ok(None),
-    };
-    let manifest = match fetch_manifest(&info_url, app).await {
-        Ok(manifest) => manifest,
-        Err(_) => return Ok(None),
-    };
-    if let Some(current_manifest) = current_binary {
-        if manifest.release != current_manifest.release && manifest.release.is_some() {
-            Ok(manifest.version)
-        } else {
-            Ok(None)
-        }
-    } else {
-        Ok(None)
-    }
-}
-
-pub async fn check_release_axo(
+async fn check_release_axo(
     app: SupportedApp,
     current_binary: &Option<AppManifest>,
 ) -> Result<Option<String>> {
@@ -844,7 +634,6 @@ fn release_details_relative_url(release: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use fs_err::create_dir_all;
 
     use anyhow::Result;
     use chrono::NaiveDate;
@@ -852,18 +641,6 @@ mod tests {
     use trim_margin::MarginTrimmable;
 
     use super::*;
-
-    #[tokio::test]
-    async fn test_filenames() -> Result<()> {
-        let marzano = SupportedApp::Marzano;
-
-        assert_eq!(
-            marzano.get_file_name("macos", "arm64"),
-            "marzano-macos-arm64"
-        );
-
-        Ok(())
-    }
 
     #[tokio::test]
     async fn test_basic_updater() -> Result<()> {
@@ -940,38 +717,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn does_not_indicate_update_when_version_is_unknown() -> Result<()> {
-        let app = SupportedApp::Marzano;
-        let (_, info_url) = get_release_url(app, None, None).await?;
-        let manifest = fetch_manifest(&info_url, app).await?;
-
-        let temp_manifest_path = tempdir().unwrap().path().join(MANIFEST_FILE);
-        create_dir_all(temp_manifest_path.parent().unwrap())?;
-        let mut manifest_file = File::create(&temp_manifest_path).await?;
-        let manifest_string = format!(
-            r#"{{
-  "binaries": {{
-    "marzano": {{
-      "name": "marzano",
-      "release": "{}",
-      "version": null
-    }}
-  }},
-  "installationId": "9a151548-26ee-45bd-a793-8b3d8d7f0f33"
-}}"#,
-            manifest.release.unwrap()
-        );
-        manifest_file.write_all(manifest_string.as_bytes()).await?;
-
-        let mut updater = Updater::_from_manifest(temp_manifest_path).await?;
-        let has_update = updater.check_for_update().await?;
-
-        assert!(!has_update);
-
-        Ok(())
-    }
-
-    #[tokio::test]
     #[ignore = "This test is too platform-specific"]
     async fn test_updates() -> Result<()> {
         let temp_dir = tempdir().unwrap();
@@ -985,9 +730,7 @@ mod tests {
             "744cc867-ae03-497f-b82a-ee6a4a57e90e".to_string(),
         )?;
 
-        updater
-            .install_latest(SupportedApp::Marzano, None, None)
-            .await?;
+        updater.install_latest(SupportedApp::Marzano).await?;
 
         let manifest = async_fs::read_to_string(updater.manifest_path.clone()).await?;
 

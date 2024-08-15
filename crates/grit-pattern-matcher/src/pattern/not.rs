@@ -6,7 +6,10 @@ use super::{
 };
 use crate::context::QueryContext;
 use core::fmt::Debug;
-use grit_util::{error::{GritPatternError, GritResult}, AnalysisLogs};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 
 #[derive(Debug, Clone)]
 pub struct Not<Q: QueryContext> {

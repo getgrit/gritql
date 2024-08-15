@@ -696,11 +696,9 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             )
             .into()),
             // unsure if this is correct, taken from text
-            Self::Files(_files) => {
-                Err(GritPatternError::new(
-                    "cannot linearize files pattern, not implemented yet",
-                ))
-            }
+            Self::Files(_files) => Err(GritPatternError::new(
+                "cannot linearize files pattern, not implemented yet",
+            )),
             // unsure if this is correct, taken from text
             Self::Constant(c) => Ok(c.to_string().into()),
         }
