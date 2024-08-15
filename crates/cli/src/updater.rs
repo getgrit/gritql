@@ -19,7 +19,7 @@ use std::sync::Arc;
 use tokio::fs as async_fs;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::process::Command as AsyncCommand;
+
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
@@ -96,19 +96,6 @@ impl SupportedApp {
             #[cfg(feature = "workflows_v2")]
             SupportedApp::WorkflowRunner => "GRIT_WORKFLOW_RUNNER".to_string(),
         }
-    }
-
-    fn get_bin_name(&self) -> String {
-        format!("{}-{}", self.get_base_name(), get_client_os())
-    }
-
-    fn get_fallback_bin_name(&self) -> String {
-        self.get_base_name().to_string()
-    }
-
-    fn get_file_name(&self, os: &str, arch: &str) -> String {
-        let base_name = self.get_base_name();
-        format!("{}-{}-{}", base_name, os, arch)
     }
 
     pub fn from_all_app(app: AllApp) -> Option<Self> {
@@ -368,8 +355,8 @@ impl Updater {
     pub async fn install_latest(
         &mut self,
         app: SupportedApp,
-        os: Option<&str>,
-        arch: Option<&str>,
+        _os: Option<&str>,
+        _arch: Option<&str>,
     ) -> Result<()> {
         self.install_latest_axo(app).await
     }
