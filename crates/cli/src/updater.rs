@@ -573,62 +573,6 @@ impl Updater {
     }
 }
 
-async fn get_release_url(
-    app_name: SupportedApp,
-    os: Option<&str>,
-    arch: Option<&str>,
-) -> Result<(String, String)> {
-    let client = reqwest::Client::builder()
-        .redirect(Policy::none())
-        .build()?;
-
-    let filename = app_name.get_file_name(
-        os.unwrap_or(get_client_os()),
-        arch.unwrap_or(get_client_arch()),
-    );
-
-    let url = format!(
-        "{}/v1/accounts/{}/artifacts/{}",
-        KEYGEN_API, KEYGEN_ACCOUNT, filename
-    );
-    info!("Fetching release URL from: {}", url);
-    let res = client.get(&url).send().await?.text().await?;
-
-    // Parse as JSON
-    let json_data: serde_json::Value = serde_json::from_str(&res)?;
-
-    let latest_release_download_url = if let Some(artifact_data) = json_data["data"]
-        .get("links")
-        .and_then(|links| links.get("redirect"))
-    {
-        let artifact_url = artifact_data
-            .as_str()
-            .expect("Download URL should be a string");
-        artifact_url
-    } else {
-        bail!("Could not find artifact download URL");
-    };
-
-    let latest_release_info_url = if let Some(artifact_data) = json_data["data"]
-        .get("relationships")
-        .and_then(|relationships| relationships.get("release"))
-        .and_then(|release| release.get("links"))
-        .and_then(|links| links.get("related"))
-    {
-        let artifact_url = artifact_data
-            .as_str()
-            .expect("Release info URL should be a string");
-        artifact_url
-    } else {
-        bail!("Could not find release info URL");
-    };
-
-    Ok((
-        latest_release_download_url.to_string(),
-        latest_release_info_url.to_string(),
-    ))
-}
-
 pub async fn check_release(
     app: SupportedApp,
     current_binary: &Option<AppManifest>,
@@ -707,18 +651,6 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_filenames() -> Result<()> {
-        let marzano = SupportedApp::Marzano;
-
-        assert_eq!(
-            marzano.get_file_name("macos", "arm64"),
-            "marzano-macos-arm64"
-        );
-
-        Ok(())
-    }
-
-    #[tokio::test]
     async fn test_basic_updater() -> Result<()> {
         let temp_dir = tempdir()?;
 
@@ -788,38 +720,6 @@ mod tests {
         // Get the version of the marzano binary
         let marzano_version = new_updater._get_app_version(SupportedApp::Marzano)?;
         assert_eq!(marzano_version, "0.0.1-alpha.1687311119164");
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn does_not_indicate_update_when_version_is_unknown() -> Result<()> {
-        let app = SupportedApp::Marzano;
-        let (_, info_url) = get_release_url(app, None, None).await?;
-        let manifest = fetch_manifest(&info_url, app).await?;
-
-        let temp_manifest_path = tempdir().unwrap().path().join(MANIFEST_FILE);
-        create_dir_all(temp_manifest_path.parent().unwrap())?;
-        let mut manifest_file = File::create(&temp_manifest_path).await?;
-        let manifest_string = format!(
-            r#"{{
-  "binaries": {{
-    "marzano": {{
-      "name": "marzano",
-      "release": "{}",
-      "version": null
-    }}
-  }},
-  "installationId": "9a151548-26ee-45bd-a793-8b3d8d7f0f33"
-}}"#,
-            manifest.release.unwrap()
-        );
-        manifest_file.write_all(manifest_string.as_bytes()).await?;
-
-        let mut updater = Updater::_from_manifest(temp_manifest_path).await?;
-        let has_update = updater.check_for_update().await?;
-
-        assert!(!has_update);
 
         Ok(())
     }
