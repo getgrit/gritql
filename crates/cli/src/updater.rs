@@ -398,12 +398,7 @@ impl Updater {
         os: Option<&str>,
         arch: Option<&str>,
     ) -> Result<()> {
-        match app {
-            SupportedApp::Marzano | SupportedApp::Gouda | SupportedApp::WorkflowRunner => {
-                self.install_latest_axo(app).await
-            }
-            _ => self.install_latest_internal(app, os, arch).await,
-        }
+        self.install_latest_axo(app).await
     }
 
     pub fn get_context(&self) -> Result<ExecutionContext> {
