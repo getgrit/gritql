@@ -365,33 +365,6 @@ impl Updater {
         Ok(())
     }
 
-    pub async fn install_latest_internal(
-        &mut self,
-        app: SupportedApp,
-        os: Option<&str>,
-        arch: Option<&str>,
-    ) -> Result<()> {
-        // Look for updates
-        let (download_url, info_url) = get_release_url(app, os, arch).await?;
-
-        info!("Starting download");
-        // Download the artifact
-        let downloader = self.download_artifact(app, download_url);
-        let manifest_fetcher = fetch_manifest(&info_url, app);
-        let (downloaded, manifest) = tokio::try_join!(downloader, manifest_fetcher)?;
-
-        // Unzip the artifact
-        self.unpack_artifact(app, downloaded.to_owned()).await?;
-
-        // Clean up the temp artifact
-        async_fs::remove_file(&downloaded).await?;
-
-        self.set_app_version(app, manifest.version.unwrap(), manifest.release.unwrap())?;
-        self.dump().await?;
-
-        Ok(())
-    }
-
     pub async fn install_latest(
         &mut self,
         app: SupportedApp,
@@ -498,84 +471,6 @@ impl Updater {
             return Ok(refreshed);
         }
         Ok(auth)
-    }
-
-    async fn download_artifact(&self, app: SupportedApp, artifact_url: String) -> Result<PathBuf> {
-        let target_path = self.bin_path.join(format!("{}-temp", app.get_bin_name()));
-
-        match reqwest::get(&artifact_url).await {
-            Ok(response) => {
-                let mut file = async_fs::File::create(&target_path).await?;
-                let mut bytes_stream = response.bytes_stream();
-                while let Some(chunk) = bytes_stream.next().await {
-                    tokio::io::copy(&mut chunk?.as_ref(), &mut file).await?;
-                }
-            }
-            Err(e) => {
-                bail!("Failed to download artifact: {:?}", e);
-            }
-        }
-
-        Ok(target_path)
-    }
-
-    async fn unpack_artifact(&self, app: SupportedApp, packed_path: PathBuf) -> Result<()> {
-        let unpacked_dir = self.bin_path.join(format!("{}-bin", app.get_bin_name()));
-        // Create the subdir
-        async_fs::create_dir_all(&unpacked_dir).await?;
-
-        info!(
-            "Unpacking from {} to {}",
-            packed_path.display(),
-            unpacked_dir.display()
-        );
-
-        let output = AsyncCommand::new("tar")
-            .arg("-xzf")
-            .arg(packed_path)
-            .arg("-C")
-            .arg(&unpacked_dir)
-            .output()
-            .await?;
-
-        if !output.status.success() {
-            bail!("Failed to unpack files: {:?}", output);
-        }
-
-        let target_path = self.get_app_bin(&app)?;
-        if async_fs::rename(unpacked_dir.join(app.get_bin_name()), &target_path)
-            .await
-            .is_err()
-        {
-            if let Err(e) =
-                async_fs::rename(unpacked_dir.join(app.get_fallback_bin_name()), &target_path).await
-            {
-                bail!("Failed to move files: {:?}", e);
-            }
-        }
-
-        // Make the file executable
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-
-            let target_file = fs_err::File::open(&target_path)?;
-            let mut perms = target_file.metadata()?.permissions();
-            perms.set_mode(0o744);
-            if let Err(e) = target_file.set_permissions(perms) {
-                bail!(
-                    "Failed to make {} executable: {:?}",
-                    target_path.display(),
-                    e
-                );
-            }
-
-            info!("Successfully made {} executable", target_path.display());
-        }
-
-        async_fs::remove_dir_all(&unpacked_dir).await?;
-
-        Ok(())
     }
 
     fn _get_app_manifest(&self, app: SupportedApp) -> Result<&AppManifest> {
