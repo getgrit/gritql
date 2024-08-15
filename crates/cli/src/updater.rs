@@ -573,7 +573,7 @@ pub async fn check_release(
     check_release_axo(app, current_binary).await
 }
 
-pub async fn check_release_axo(
+async fn check_release_axo(
     app: SupportedApp,
     current_binary: &Option<AppManifest>,
 ) -> Result<Option<String>> {
