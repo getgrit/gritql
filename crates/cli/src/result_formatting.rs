@@ -408,18 +408,19 @@ impl Messager for FormattedMessager<'_> {
             let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
             writeln!(writer, "[{:?}] {}", log.level, log.message)?;
         } else {
+            let msg = format!("[{:?}] {} {:?}", log.level, log.message, log.step_id);
             match log.level {
                 AnalysisLogLevel::Debug => {
-                    debug!("{}", log.message);
+                    debug!("{}", msg);
                 }
                 AnalysisLogLevel::Info => {
-                    info!("{}", log.message);
+                    info!("{}", msg);
                 }
                 AnalysisLogLevel::Warn => {
-                    warn!("{}", log.message);
+                    warn!("{}", msg);
                 }
                 AnalysisLogLevel::Error => {
-                    error!("{}", log.message);
+                    error!("{}", msg);
                 }
             }
         }

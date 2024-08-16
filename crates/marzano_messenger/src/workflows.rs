@@ -50,6 +50,7 @@ pub trait WorkflowMessenger: Messager {
 pub struct SimpleWorkflowMessage {
     pub kind: String,
     pub message: serde_json::Value,
+    pub step_id: String,
 }
 
 /// Wrap match results to account for workflow logic and path normalization
@@ -57,4 +58,5 @@ pub struct SimpleWorkflowMessage {
 pub struct WorkflowMatchResult {
     pub result: MatchResult,
     pub workspace_path: Option<PathBuf>,
+    pub step_id: String,
 }
