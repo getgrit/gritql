@@ -452,12 +452,22 @@ fn get_otel_setup() -> Result<Option<Tracer>> {
     let baselime_key = get_otel_key("BASELIME_OTEL_KEY");
     let hyperdx_key = get_otel_key("HYPERDX_OTEL_KEY");
 
+    let env = get_otel_key("GRIT_DEPLOYMENT_ENV").unwrap_or_else(|| "prod".to_string());
+
     match (grafana_key, honeycomb_key, baselime_key, hyperdx_key) {
         (None, None, None, None) => {
-            #[cfg(feature = "server")]
-            eprintln!("No OTLP key found, tracing will be disabled");
-            return Ok(None);
+            if let Some(endpoint) = get_otel_key("OTEL_EXPORTER_OTLP_ENDPOINT") {
+                eprintln!(
+                    "No explicit OTLP key found, using default OTLP endpoint: {}",
+                    endpoint
+                );
+            } else {
+                #[cfg(feature = "server")]
+                eprintln!("No OTLP key found, tracing will be disabled");
+                return Ok(None);
+            }
         }
+
         (Some(grafana_key), _, _, _) => {
             let instance_id = "665534";
             let encoded =
@@ -468,13 +478,13 @@ fn get_otel_setup() -> Result<Option<Tracer>> {
                     "Authorization".into(),
                     format!("Basic {}", encoded),
                 )]));
-            eprintln!("Using Grafana OTLP key");
+            eprintln!("Using Grafana OTLP key for {}", env);
         }
         (_, Some(honeycomb_key), _, _) => {
             exporter = exporter
                 .with_endpoint("https://api.honeycomb.io")
                 .with_headers(HashMap::from([("x-honeycomb-team".into(), honeycomb_key)]));
-            eprintln!("Using Honeycomb OTLP key");
+            eprintln!("Using Honeycomb OTLP key for {}", env);
         }
         (_, _, Some(baselime_key), _) => {
             exporter = exporter
@@ -483,17 +493,15 @@ fn get_otel_setup() -> Result<Option<Tracer>> {
                     ("x-api-key".into(), baselime_key),
                     ("x-baselime-dataset".into(), "otel".into()),
                 ]));
-            eprintln!("Using Baselime OTLP key");
+            eprintln!("Using Baselime OTLP key for {}", env);
         }
         (_, _, _, Some(hyperdx_key)) => {
             exporter = exporter
                 .with_endpoint("https://in-otel.hyperdx.io")
                 .with_headers(HashMap::from([("authorization".into(), hyperdx_key)]));
-            eprintln!("Using HyperDX OTLP key");
+            eprintln!("Using HyperDX OTLP key for {}", env);
         }
     }
-
-    let env = get_otel_key("GRIT_DEPLOYMENT_ENV").unwrap_or_else(|| "prod".to_string());
 
     let tracer = opentelemetry_otlp::new_pipeline()
         .tracing()
@@ -517,8 +525,12 @@ pub async fn run_command_with_tracing() -> Result<()> {
         if let Some(tracer) = tracer {
             let env_filter = EnvFilter::try_from_default_env()
                 .unwrap_or(EnvFilter::new("TRACE"))
+                // Exclude noisy tokio stuff "h2::proto::streams::prioritize
+                .add_directive("h2=off".parse().unwrap())
+                // This is also noisy
+                .add_directive("axum::serve=DEBUG".parse().unwrap())
                 // We don't want to trace the tracing library itself
-                .add_directive("hyper::proto=off".parse().unwrap());
+                .add_directive("hyper=off".parse().unwrap());
 
             let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
             let subscriber = Registry::default().with(env_filter).with(telemetry);
