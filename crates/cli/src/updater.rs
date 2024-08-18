@@ -512,7 +512,7 @@ impl Updater {
 
         pg.finish_and_clear();
 
-        Get the path again, since it may have been moved
+        // Get the path again, since it may have been moved
         let bin_path = self.get_app_bin(&app)?;
         if bin_path.exists() {
             return Ok(bin_path);
