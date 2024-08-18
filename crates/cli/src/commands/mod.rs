@@ -456,10 +456,17 @@ fn get_otel_setup() -> Result<Option<Tracer>> {
 
     match (grafana_key, honeycomb_key, baselime_key, hyperdx_key) {
         (None, None, None, None) => {
-            #[cfg(feature = "server")]
-            eprintln!("No OTLP key found, tracing will be disabled");
-            return Ok(None);
+            if let Some(endpoint) = get_otel_key("OTEL_EXPORTER_OTLP_ENDPOINT") {
+                eprintln!(
+                    "No explicit OTLP key found, using default OTLP endpoint: {}",
+                    endpoint
+                );
+            } else {
+                eprintln!("No OTLP key found, tracing will be disabled");
+                return Ok(None);
+            }
         }
+
         (Some(grafana_key), _, _, _) => {
             let instance_id = "665534";
             let encoded =
