@@ -462,6 +462,7 @@ fn get_otel_setup() -> Result<Option<Tracer>> {
                     endpoint
                 );
             } else {
+                #[cfg(feature = "server")]
                 eprintln!("No OTLP key found, tracing will be disabled");
                 return Ok(None);
             }
