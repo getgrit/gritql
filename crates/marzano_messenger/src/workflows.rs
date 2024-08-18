@@ -15,7 +15,7 @@ pub enum OutcomeKind {
     Skipped,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct PackagedWorkflowOutcome {
     pub message: Option<String>,
     pub outcome: Option<OutcomeKind>,
@@ -81,7 +81,7 @@ impl StatusManager {
         false
     }
 
-    fn get_workflow_status(&mut self) -> anyhow::Result<Option<&PackagedWorkflowOutcome>> {
+    pub fn get_workflow_status(&mut self) -> anyhow::Result<Option<&PackagedWorkflowOutcome>> {
         Ok(self.status.as_ref())
     }
 }

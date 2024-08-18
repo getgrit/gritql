@@ -34,6 +34,23 @@ impl Default for TestingMessenger {
 }
 
 impl Messager for TestingMessenger {
+    fn start_workflow(&mut self) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    fn finish_workflow(
+        &mut self,
+        _outcome: &crate::workflows::PackagedWorkflowOutcome,
+    ) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    fn get_workflow_status(
+        &mut self,
+    ) -> anyhow::Result<Option<&crate::workflows::PackagedWorkflowOutcome>> {
+        Ok(None)
+    }
+
     fn get_min_level(&self) -> VisibilityLevels {
         VisibilityLevels::Debug
     }

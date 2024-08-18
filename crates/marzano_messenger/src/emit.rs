@@ -259,15 +259,10 @@ pub trait Messager: Send + Sync {
 
     // Called when a workflow finishes processing, with the outcome
     // Note that this *may* be called multiple times. The *first* time it is called should be considered the "true" outcome.
-    fn finish_workflow(&mut self, _outcome: &PackagedWorkflowOutcome) -> anyhow::Result<()> {
-        // do nothing
-        Ok(())
-    }
+    fn finish_workflow(&mut self, _outcome: &PackagedWorkflowOutcome) -> anyhow::Result<()>;
 
     // Get the current workflow outcome, if one has been set
-    fn get_workflow_status(&mut self) -> anyhow::Result<Option<&PackagedWorkflowOutcome>> {
-        Ok(None)
-    }
+    fn get_workflow_status(&mut self) -> anyhow::Result<Option<&PackagedWorkflowOutcome>>;
 
     // Handle state
     fn track_accept(&mut self, _accepted: &MatchResult) -> anyhow::Result<()> {

@@ -122,6 +122,20 @@ impl<'a> Messager for MessengerVariant<'a> {
             MessengerVariant::Combined(m) => m.finish_workflow(outcome),
         }
     }
+
+    fn get_workflow_status(&mut self) -> anyhow::Result<Option<&PackagedWorkflowOutcome>> {
+        match self {
+            MessengerVariant::Formatted(m) => m.get_workflow_status(),
+            MessengerVariant::Transformed(m) => m.get_workflow_status(),
+            MessengerVariant::JsonLine(m) => m.get_workflow_status(),
+            #[cfg(feature = "remote_redis")]
+            MessengerVariant::Redis(m) => m.get_workflow_status(),
+            #[cfg(feature = "remote_pubsub")]
+            MessengerVariant::GooglePubSub(m) => m.get_workflow_status(),
+            #[cfg(feature = "server")]
+            MessengerVariant::Combined(m) => m.get_workflow_status(),
+        }
+    }
 }
 
 impl<'a> WorkflowMessenger for MessengerVariant<'a> {

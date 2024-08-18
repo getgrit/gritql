@@ -439,6 +439,7 @@ pub struct TransformedMessenger<'a> {
     total_accepted: usize,
     total_rejected: usize,
     total_supressed: usize,
+    status: StatusManager,
 }
 
 impl<'a> TransformedMessenger<'_> {
@@ -448,6 +449,7 @@ impl<'a> TransformedMessenger<'_> {
             total_accepted: 0,
             total_rejected: 0,
             total_supressed: 0,
+            status: StatusManager::new(),
         }
     }
 }
@@ -455,6 +457,20 @@ impl<'a> TransformedMessenger<'_> {
 impl Messager for TransformedMessenger<'_> {
     fn get_min_level(&self) -> VisibilityLevels {
         VisibilityLevels::Primary
+    }
+
+    fn finish_workflow(
+        &mut self,
+        outcome: &marzano_messenger::workflows::PackagedWorkflowOutcome,
+    ) -> anyhow::Result<()> {
+        self.status.upsert(outcome);
+        Ok(())
+    }
+
+    fn get_workflow_status(
+        &mut self,
+    ) -> anyhow::Result<Option<&marzano_messenger::workflows::PackagedWorkflowOutcome>> {
+        self.status.get_workflow_status()
     }
 
     fn raw_emit(&mut self, message: &MatchResult) -> anyhow::Result<()> {

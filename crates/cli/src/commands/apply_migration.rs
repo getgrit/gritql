@@ -103,6 +103,8 @@ pub(crate) async fn run_apply_migration(
         if !workflow_status.success {
             anyhow::bail!(GoodError::new());
         }
+    } else {
+        anyhow::bail!("Final workflow status not found");
     }
 
     Ok(())
