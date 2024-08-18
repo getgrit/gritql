@@ -9,6 +9,7 @@ use marzano_core::api::{
 };
 use marzano_core::constants::DEFAULT_FILE_NAME;
 use marzano_messenger::output_mode::OutputMode;
+use marzano_messenger::workflows::StatusManager;
 use std::fmt::Display;
 use std::{
     io::Write,
@@ -303,7 +304,7 @@ pub struct FormattedMessager<'a> {
     total_supressed: usize,
     input_pattern: String,
     min_level: VisibilityLevels,
-    workflow_done: bool,
+    status_manager: StatusManager,
 }
 
 impl<'a> FormattedMessager<'_> {
@@ -323,7 +324,7 @@ impl<'a> FormattedMessager<'_> {
             total_supressed: 0,
             input_pattern,
             min_level,
-            workflow_done: false,
+            status_manager: StatusManager::default(),
         }
     }
 }
@@ -382,11 +383,17 @@ impl Messager for FormattedMessager<'_> {
         Ok(())
     }
 
+    fn get_workflow_status(
+        &mut self,
+    ) -> anyhow::Result<Option<&marzano_messenger::workflows::PackagedWorkflowOutcome>> {
+        self.status_manager.get_workflow_status()
+    }
+
     fn finish_workflow(
         &mut self,
         outcome: &marzano_messenger::workflows::PackagedWorkflowOutcome,
     ) -> anyhow::Result<()> {
-        if self.workflow_done {
+        if !self.status_manager.upsert(outcome) {
             // If we already finished once, short-circuit it
             return Ok(());
         }
@@ -397,8 +404,6 @@ impl Messager for FormattedMessager<'_> {
         } else {
             log::info!("{}", get_pretty_workflow_message(outcome));
         }
-
-        self.workflow_done = true;
 
         Ok(())
     }
@@ -434,6 +439,7 @@ pub struct TransformedMessenger<'a> {
     total_accepted: usize,
     total_rejected: usize,
     total_supressed: usize,
+    status: StatusManager,
 }
 
 impl<'a> TransformedMessenger<'_> {
@@ -443,6 +449,7 @@ impl<'a> TransformedMessenger<'_> {
             total_accepted: 0,
             total_rejected: 0,
             total_supressed: 0,
+            status: StatusManager::new(),
         }
     }
 }
@@ -450,6 +457,20 @@ impl<'a> TransformedMessenger<'_> {
 impl Messager for TransformedMessenger<'_> {
     fn get_min_level(&self) -> VisibilityLevels {
         VisibilityLevels::Primary
+    }
+
+    fn finish_workflow(
+        &mut self,
+        outcome: &marzano_messenger::workflows::PackagedWorkflowOutcome,
+    ) -> anyhow::Result<()> {
+        self.status.upsert(outcome);
+        Ok(())
+    }
+
+    fn get_workflow_status(
+        &mut self,
+    ) -> anyhow::Result<Option<&marzano_messenger::workflows::PackagedWorkflowOutcome>> {
+        self.status.get_workflow_status()
     }
 
     fn raw_emit(&mut self, message: &MatchResult) -> anyhow::Result<()> {

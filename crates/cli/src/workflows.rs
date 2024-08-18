@@ -49,10 +49,8 @@ pub struct WorkflowInputs {
     pub verbose: bool,
 }
 
-pub async fn run_bin_workflow<M>(
-    emitter: M,
-    mut arg: WorkflowInputs,
-) -> Result<(M, PackagedWorkflowOutcome)>
+#[allow(unused_mut)]
+pub async fn run_bin_workflow<M>(mut emitter: M, mut arg: WorkflowInputs) -> Result<M>
 where
     M: Messager + WorkflowMessenger + Send + 'static,
 {
@@ -165,33 +163,30 @@ where
 
     // Stop the embedded server
     #[cfg(feature = "workflow_server")]
-    let emitter = {
+    let mut emitter = {
         shutdown_tx.send(()).unwrap();
         handle.await?
     };
 
-    // TODO: pass along outcome message
-    if status.success() {
-        Ok((
-            emitter,
-            PackagedWorkflowOutcome {
-                message: None,
-                outcome: None,
-                success: true,
-                data: None,
-            },
-        ))
+    // Note the workflow may have already emitted its own conclusion - this is a fallback
+    let fallback_outcome = if status.success() {
+        PackagedWorkflowOutcome {
+            message: None,
+            outcome: None,
+            success: true,
+            data: None,
+        }
     } else {
-        Ok((
-            emitter,
-            PackagedWorkflowOutcome {
-                message: None,
-                outcome: None,
-                success: false,
-                data: None,
-            },
-        ))
-    }
+        PackagedWorkflowOutcome {
+            message: None,
+            outcome: None,
+            success: false,
+            data: None,
+        }
+    };
+    emitter.finish_workflow(&fallback_outcome)?;
+
+    Ok(emitter)
 }
 
 #[cfg(feature = "remote_workflows")]

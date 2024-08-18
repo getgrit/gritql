@@ -16,6 +16,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use crate::analytics::track_event_line;
+use crate::error::GoodError;
 use crate::flags::GlobalFormatFlags;
 use crate::lister::list_applyables;
 use crate::resolver::{get_grit_files_from, resolve_from, Source};
@@ -128,7 +129,7 @@ pub(crate) async fn run_plumbing(
     details: &mut ApplyDetails,
     parent: GlobalFormatFlags,
 ) -> Result<()> {
-    match args {
+    let result = match args {
         PlumbingArgs::Apply {
             apply_pattern_args,
             shared_args,
@@ -319,6 +320,17 @@ pub(crate) async fn run_plumbing(
                 VisibilityLevels::default(),
             )
             .await
+        }
+    };
+    // We want plumbing to always return a success code, even for "good" errors (failed checks, etc)
+    match result {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            if e.downcast_ref::<GoodError>().is_some() {
+                Ok(())
+            } else {
+                Err(e)
+            }
         }
     }
 }
