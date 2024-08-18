@@ -497,6 +497,7 @@ impl Updater {
         Ok(bin_path.exists())
     }
 
+    /// Get the path to the app's binary, installing it if necessary
     pub async fn get_app_bin_and_install(&mut self, app: SupportedApp) -> Result<PathBuf> {
         // If the path is overridden, skip checking install
         if let Some(bin_path) = self.get_env_bin(&app)? {
