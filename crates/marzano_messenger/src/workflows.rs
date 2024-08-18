@@ -60,3 +60,34 @@ pub struct WorkflowMatchResult {
     pub workspace_path: Option<PathBuf>,
     pub step_id: String,
 }
+
+/// Status manager makes it easier to implement the required parts of the workflow status API
+/// It sets the status of the workflow the first time it's updated, and then ignores all further updates
+pub struct StatusManager {
+    status: Option<PackagedWorkflowOutcome>,
+}
+
+impl StatusManager {
+    pub fn new() -> Self {
+        Self { status: None }
+    }
+
+    pub fn upsert(&mut self, outcome: &PackagedWorkflowOutcome) -> bool {
+        if self.status.is_none() {
+            self.status = Some(outcome.clone());
+            return true;
+        }
+
+        false
+    }
+
+    fn get_workflow_status(&mut self) -> anyhow::Result<Option<&PackagedWorkflowOutcome>> {
+        Ok(self.status.as_ref())
+    }
+}
+
+impl Default for StatusManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}

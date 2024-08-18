@@ -265,7 +265,9 @@ pub trait Messager: Send + Sync {
     }
 
     // Get the current workflow outcome, if one has been set
-    fn get_workflow_status(&mut self) -> anyhow::Result<Option<PackagedWorkflowOutcome>>;
+    fn get_workflow_status(&mut self) -> anyhow::Result<Option<&PackagedWorkflowOutcome>> {
+        Ok(None)
+    }
 
     // Handle state
     fn track_accept(&mut self, _accepted: &MatchResult) -> anyhow::Result<()> {

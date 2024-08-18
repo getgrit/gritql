@@ -49,7 +49,8 @@ pub struct WorkflowInputs {
     pub verbose: bool,
 }
 
-pub async fn run_bin_workflow<M>(mut emitter: M, mut arg: WorkflowInputs) -> Result<(M)>
+#[allow(unused_mut)]
+pub async fn run_bin_workflow<M>(mut emitter: M, mut arg: WorkflowInputs) -> Result<M>
 where
     M: Messager + WorkflowMessenger + Send + 'static,
 {
@@ -162,7 +163,7 @@ where
 
     // Stop the embedded server
     #[cfg(feature = "workflow_server")]
-    let emitter = {
+    let mut emitter = {
         shutdown_tx.send(()).unwrap();
         handle.await?
     };

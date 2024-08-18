@@ -66,6 +66,8 @@ pub(crate) async fn run_apply_migration(
     flags: &GlobalFormatFlags,
     min_level: marzano_messenger::emit::VisibilityLevels,
 ) -> Result<()> {
+    use crate::error::GoodError;
+
     let input = arg.get_payload()?;
 
     let format = OutputFormat::from(flags);
@@ -99,7 +101,7 @@ pub(crate) async fn run_apply_migration(
     // Get the final workflow status from the emitter
     if let Some(workflow_status) = emitter.get_workflow_status()? {
         if !workflow_status.success {
-            bail!(GoodError::new());
+            anyhow::bail!(GoodError::new());
         }
     }
 
