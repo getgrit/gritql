@@ -412,7 +412,7 @@ impl Updater {
 
     /// Retrieve auth info from the manifest, if available
     pub fn get_auth(&self) -> Option<AuthInfo> {
-        let auth = get_env_auth(false);
+        let auth = get_env_auth(true);
         if let Some(auth) = auth {
             return Some(auth);
         }
@@ -513,10 +513,10 @@ impl Updater {
         pg.finish_and_clear();
 
         // Get the path again, since it may have been moved
-        let bin_path = self.get_app_bin(&app)?;
-        if bin_path.exists() {
-            return Ok(bin_path);
-        }
+        // let bin_path = self.get_app_bin(&app)?;
+        // if bin_path.exists() {
+        //     return Ok(bin_path);
+        // }
         bail!("Attempted to install {} but could not find it", app);
     }
 
