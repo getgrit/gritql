@@ -82,7 +82,7 @@ pub(crate) async fn run_apply_migration(
 
     emitter.start_workflow()?;
 
-    let (mut emitter, outcome) = run_bin_workflow(
+    let mut emitter = run_bin_workflow(
         emitter,
         WorkflowInputs {
             verbose: arg.verbose,
@@ -94,9 +94,14 @@ pub(crate) async fn run_apply_migration(
     )
     .await?;
 
-    // Note the workflow may have already emitted its own conclusion - this is a fallback
-    emitter.finish_workflow(&outcome)?;
     emitter.flush().await?;
+
+    // Get the final workflow status from the emitter
+    if let Some(workflow_status) = emitter.get_workflow_status()? {
+        if !workflow_status.success {
+            bail!(GoodError::new());
+        }
+    }
 
     Ok(())
 }
