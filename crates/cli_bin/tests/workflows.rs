@@ -4,6 +4,7 @@ use anyhow::Result;
 mod common;
 
 #[test]
+#[ignore = "No auth token is available in CI"]
 fn run_test_workflow() -> Result<()> {
     let (_temp_dir, temp_fixtures_root) = get_fixture("grit_modules", true)?;
 
