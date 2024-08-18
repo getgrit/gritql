@@ -412,7 +412,7 @@ impl Updater {
 
     /// Retrieve auth info from the manifest, if available
     pub fn get_auth(&self) -> Option<AuthInfo> {
-        let auth = get_env_auth(false);
+        let auth = get_env_auth(true);
         if let Some(auth) = auth {
             return Some(auth);
         }
@@ -497,6 +497,7 @@ impl Updater {
         Ok(bin_path.exists())
     }
 
+    /// Get the path to the app's binary, installing it if necessary
     pub async fn get_app_bin_and_install(&mut self, app: SupportedApp) -> Result<PathBuf> {
         // If the path is overridden, skip checking install
         if let Some(bin_path) = self.get_env_bin(&app)? {
@@ -506,11 +507,18 @@ impl Updater {
         if bin_path.exists() {
             return Ok(bin_path);
         }
-        bail!(
-            "Please set the {} environment variable to the path of the {} binary",
-            app.get_env_name(),
-            app
-        );
+        let pg = ProgressBar::new_spinner();
+        pg.set_message(format!("Downloading {}...", app));
+        self.install_latest(app).await?;
+
+        pg.finish_and_clear();
+
+        // Get the path again, since it may have been moved
+        let bin_path = self.get_app_bin(&app)?;
+        if bin_path.exists() {
+            return Ok(bin_path);
+        }
+        bail!("Attempted to install {} but could not find it", app);
     }
 
     pub async fn sync_manifest_version(&mut self, app: SupportedApp) -> Result<Option<String>> {

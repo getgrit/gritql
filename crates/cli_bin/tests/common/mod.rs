@@ -8,6 +8,8 @@ use marzano_gritmodule::config::GRIT_GLOBAL_DIR_ENV;
 use tempfile::tempdir;
 
 pub const BIN_NAME: &str = "marzano";
+
+#[allow(dead_code)]
 pub const INSTA_FILTERS: &[(&str, &str)] = &[(
     r"\b[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}\b",
     "[UUID]",
