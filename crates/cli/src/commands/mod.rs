@@ -518,9 +518,11 @@ pub async fn run_command_with_tracing() -> Result<()> {
             let env_filter = EnvFilter::try_from_default_env()
                 .unwrap_or(EnvFilter::new("TRACE"))
                 // Exclude noisy tokio stuff "h2::proto::streams::prioritize
-                .add_directive("h2::proto=off".parse().unwrap())
+                .add_directive("h2=off".parse().unwrap())
+                // This is also noisy
+                .add_directive("axum::serve=DEBUG".parse().unwrap())
                 // We don't want to trace the tracing library itself
-                .add_directive("hyper::proto=off".parse().unwrap());
+                .add_directive("hyper=off".parse().unwrap());
 
             let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
             let subscriber = Registry::default().with(env_filter).with(telemetry);
