@@ -6,7 +6,7 @@ use anyhow::bail;
 use anyhow::{anyhow, Result};
 use assert_cmd::Command;
 use common::get_test_cmd;
-use insta::assert_snapshot;
+use insta::{assert_snapshot, assert_yaml_snapshot};
 use marzano_gritmodule::config::{
     CONFIG_FILE_NAMES, GRIT_GLOBAL_DIR_ENV, GRIT_MODULE_DIR, REPO_CONFIG_DIR_NAME,
     REPO_CONFIG_PATTERNS_DIR,
@@ -1741,8 +1741,13 @@ fn output_jsonl() -> Result<()> {
     );
 
     let content = fs_err::read_to_string(dir.join("output.jsonl"))?;
+    // Parse the JSONL lines
+    let lines: Vec<_> = content
+        .lines()
+        .map(|x| serde_json::from_str::<serde_json::Value>(x).unwrap())
+        .collect();
     insta::with_settings!({filters => INSTA_FILTERS.to_vec()}, {
-        assert_snapshot!(content);
+        assert_yaml_snapshot!(lines);
     });
 
     let line_count = content.lines().count();
