@@ -1,4 +1,4 @@
-use anyhow::{Result};
+use anyhow::Result;
 use clap::Args;
 use futures::stream::StreamExt;
 use marzano_auth::{env::get_grit_api_url, info::AuthInfo};
@@ -7,7 +7,7 @@ use marzano_messenger::{
     workflows::WorkflowMessenger,
     SimpleLogMessage,
 };
-use reqwest::{Client};
+use reqwest::Client;
 use serde::Serialize;
 
 use crate::{
@@ -75,10 +75,13 @@ where
             }
             Ok(reqwest_eventsource::Event::Message(message)) => {
                 let grit = match message.event.as_str() {
-                    "log" => {
-                        let log = serde_json::from_str::<SimpleLogMessage>(&message.data)?;
-                        GritEvent::Log(log)
-                    }
+                    "log" => match serde_json::from_str::<SimpleLogMessage>(&message.data) {
+                        Ok(log) => GritEvent::Log(log),
+                        Err(e) => {
+                            eprintln!("Error parsing log: {}", e);
+                            break;
+                        }
+                    },
                     "end" => GritEvent::End,
                     _ => GritEvent::Unknown,
                 };
