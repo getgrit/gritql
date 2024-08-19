@@ -223,7 +223,8 @@ impl fmt::Display for FormattedResult {
                                     match overlap {
                                         None => {}
                                         Some((start_col, end_col)) => {
-                                            if end_col >= line.len() {
+                                            // Note we use > because slicing at the end of a string is valid - the lower bound is inclusive
+                                            if end_col > line.len() {
                                                 writeln!(f, "end_col {} is greater than line length {} in line {}", end_col, line.len(), line)?;
                                             } else {
                                                 // This line is part of the match
