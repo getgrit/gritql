@@ -14,5 +14,6 @@ pub enum WorkflowCommands {
     /// List all available workflows
     List(WorkflowsListArgs),
     /// Watch an existing workflow
+    #[clap(hide = true)]
     Watch(WorkflowWatchArgs),
 }
