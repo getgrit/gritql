@@ -180,7 +180,6 @@ expression: lines
       endByte: 252
   reason: ~
   id: [UUID]
-  innerContent: ~
 - __typename: Match
   messages: []
   variables:
@@ -471,7 +470,6 @@ expression: lines
       endByte: 3005
   reason: ~
   id: [UUID]
-  innerContent: ~
 - __typename: AllDone
   processed: 2
   found: 13

@@ -356,6 +356,7 @@ pub struct Match {
     #[serde(default)]
     pub id: Uuid,
     /// Parsed content of the file, if a source map was used
+    #[serde(skip)]
     inner_content: Option<String>,
 }
 
@@ -429,6 +430,7 @@ pub struct EntireFile {
     #[serde(default)]
     pub ranges: Vec<Range>,
     /// Inner (parsed) content of the file, if a source map was used
+    #[serde(skip)]
     inner_content: Option<String>,
 }
 
