@@ -6,5 +6,5 @@ pub struct SimpleLogMessage {
     pub message: String,
     pub level: AnalysisLogLevel,
     pub meta: Option<std::collections::HashMap<String, serde_json::Value>>,
-    pub step_id: String,
+    pub step_id: Option<String>,
 }
