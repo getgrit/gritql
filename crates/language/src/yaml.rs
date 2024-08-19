@@ -199,5 +199,4 @@ mod tests {
         assert!(!nodes.is_empty());
         assert!(found_metavar);
     }
-
 }

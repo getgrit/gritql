@@ -2269,8 +2269,8 @@ fn yaml_metavariable_in_flow() {
             pattern: r#"
                  |language yaml
                  |`{ key: $data }`"#
-            .trim_margin()
-            .unwrap(),
+                .trim_margin()
+                .unwrap(),
             source: r#"
                  |---
                  |something: { key: 10 }"#
@@ -2288,8 +2288,8 @@ fn yaml_metavariable_in_flow_rewrite() {
             pattern: r#"
                  |language yaml
                  |`{ key: $data }` => `{ key: 10 }`"#
-            .trim_margin()
-            .unwrap(),
+                .trim_margin()
+                .unwrap(),
             source: r#"
                  |---
                  |something: { key: 5 }"#
