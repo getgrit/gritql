@@ -50,7 +50,7 @@ pub trait WorkflowMessenger: Messager {
 pub struct SimpleWorkflowMessage {
     pub kind: String,
     pub message: serde_json::Value,
-    pub step_id: String,
+    pub step_id: Option<String>,
 }
 
 /// Wrap match results to account for workflow logic and path normalization

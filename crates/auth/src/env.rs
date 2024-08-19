@@ -1,6 +1,6 @@
 use std::env;
 
-use crate::{info::AuthInfo, testing::get_testing_auth_info};
+use crate::info::AuthInfo;
 
 pub static ENV_VAR_GRIT_LOCAL_SERVER: &str = "GRIT_LOCAL_SERVER";
 pub static ENV_VAR_GRIT_AUTH_TOKEN: &str = "GRIT_AUTH_TOKEN";
@@ -23,18 +23,12 @@ pub fn get_app_url() -> String {
     env::var(ENV_VAR_GRIT_APP_URL).unwrap_or_else(|_| String::from(DEFAULT_GRIT_APP_URL))
 }
 
-pub fn get_env_auth(allow_testing: bool) -> Option<AuthInfo> {
+pub fn get_env_auth() -> Option<AuthInfo> {
     let env_token = std::env::var(ENV_VAR_GRIT_AUTH_TOKEN).ok();
     if let Some(token) = env_token {
         return Some(AuthInfo::new(token.to_string()));
     }
-    #[cfg(any(test, feature = "test-utils"))]
-    if allow_testing {
-        let testing = get_testing_auth_info();
-        if let Ok(auth) = testing {
-            return Some(auth);
-        }
-    }
+
     None
 }
 

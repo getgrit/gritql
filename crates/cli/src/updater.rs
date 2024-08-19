@@ -412,7 +412,7 @@ impl Updater {
 
     /// Retrieve auth info from the manifest, if available
     pub fn get_auth(&self) -> Option<AuthInfo> {
-        let auth = get_env_auth(true);
+        let auth = get_env_auth();
         if let Some(auth) = auth {
             return Some(auth);
         }
