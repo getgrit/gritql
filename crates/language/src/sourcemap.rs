@@ -44,8 +44,6 @@ impl EmbeddedSourceMap {
     ) -> Result<EmbeddedSourceMap> {
         let mut new_map = self.clone();
 
-        println!("New adjustment cycle!");
-
         let mut section_iter = new_map.sections.iter().enumerate().peekable();
 
         let mut section_adjustments: Vec<i64> = vec![0; new_map.sections.len()];
@@ -57,7 +55,6 @@ impl EmbeddedSourceMap {
                 if section.inner_range_end > source_range.start {
                     let length_diff =
                         *replacement_length as i64 - (source_range.end - source_range.start) as i64;
-                    println!("Adjusting {:?} with {}", source_range, length_diff);
 
                     section_adjustments[*index] += length_diff;
                     break;
@@ -71,7 +68,6 @@ impl EmbeddedSourceMap {
         let mut accumulated_offset = 0;
         for (section, adjustment) in new_map.sections.iter_mut().zip(section_adjustments) {
             accumulated_offset += adjustment;
-            println!("Adding {} to section {:?}", accumulated_offset, section);
             section.inner_range_end =
                 (section.inner_range_end as i64 + accumulated_offset) as usize;
         }

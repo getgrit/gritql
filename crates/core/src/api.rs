@@ -355,6 +355,8 @@ pub struct Match {
     pub reason: Option<MatchReason>,
     #[serde(default)]
     pub id: Uuid,
+    /// Parsed content of the file, if a source map was used
+    inner_content: Option<String>,
 }
 
 impl From<EntireFile> for Match {
@@ -367,6 +369,7 @@ impl From<EntireFile> for Match {
             reason: None,
             content: file_match.content,
             id: Uuid::new_v4(),
+            inner_content: file_match.inner_content,
         }
     }
 }
@@ -381,6 +384,7 @@ impl From<Match> for EntireFile {
             // TODO: fix this or drop byte_ranges entirely
             byte_ranges: None,
             content: file_match.content,
+            inner_content: file_match.inner_content,
         }
     }
 }
@@ -396,6 +400,10 @@ impl FileMatchResult for Match {
         "matched"
     }
     fn content(&self) -> Result<&str> {
+        if let Some(inner_content) = self.inner_content.as_deref() {
+            return Ok(inner_content);
+        }
+
         let Some(content) = self.content.as_deref() else {
             bail!("No content in match")
         };
@@ -420,6 +428,8 @@ pub struct EntireFile {
     pub byte_ranges: Option<Vec<ByteRange>>,
     #[serde(default)]
     pub ranges: Vec<Range>,
+    /// Inner (parsed) content of the file, if a source map was used
+    inner_content: Option<String>,
 }
 
 impl EntireFile {
@@ -433,6 +443,7 @@ impl EntireFile {
             messages: vec![],
             byte_ranges: byte_range.map(|r| r.to_owned()),
             ranges: vec![],
+            inner_content: None,
         }
     }
 
@@ -441,12 +452,14 @@ impl EntireFile {
         let mut basic = if let Some(source_map) = &file.tree.source_map {
             let outer_source = source_map.fill_with_inner(&file.tree.source)?;
 
-            Self::file_to_entire_file(
+            let mut basic = Self::file_to_entire_file(
                 file.name.to_string_lossy().as_ref(),
                 &outer_source,
                 // Exclude the matches, since they aren't reliable yet
                 None,
-            )
+            );
+            basic.inner_content = Some(file.tree.source.to_owned());
+            basic
         } else {
             Self::file_to_entire_file(
                 file.name.to_string_lossy().as_ref(),

@@ -223,30 +223,22 @@ impl fmt::Display for FormattedResult {
                                     match overlap {
                                         None => {}
                                         Some((start_col, end_col)) => {
-                                            println!("line: {}", line);
-                                            println!("range: {:?}", range);
-                                            // This line is part of the match
-                                            let Some(prefix) = &line.get(0..start_col) else {
-                                                writeln!(f, "prefix is none")?;
-                                                break;
-                                            };
-                                            let Some(highlight) = &line.get(start_col..end_col)
-                                            else {
-                                                writeln!(f, "highlight is none")?;
-                                                break;
-                                            };
-                                            let Some(suffix) = &line.get(end_col..) else {
-                                                writeln!(f, "suffix is none")?;
-                                                break;
-                                            };
-                                            writeln!(
-                                                f,
-                                                "{:6}  {}{}{}",
-                                                line_number,
-                                                prefix.dimmed(),
-                                                highlight.blue().bold(),
-                                                suffix.dimmed()
-                                            )?;
+                                            if end_col >= line.len() {
+                                                writeln!(f, "end_col {} is greater than line length {} in line {}", end_col, line.len(), line)?;
+                                            } else {
+                                                // This line is part of the match
+                                                let prefix = &line[0..start_col];
+                                                let highlight = &line[start_col..end_col];
+                                                let suffix = &line[end_col..];
+                                                writeln!(
+                                                    f,
+                                                    "{:6}  {}{}{}",
+                                                    line_number,
+                                                    prefix.dimmed(),
+                                                    highlight.blue().bold(),
+                                                    suffix.dimmed()
+                                                )?;
+                                            }
                                         }
                                     }
                                 } else {
