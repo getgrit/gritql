@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result};
 use clap::Args;
 use futures::stream::StreamExt;
 use marzano_auth::{env::get_grit_api_url, info::AuthInfo};
@@ -7,14 +7,12 @@ use marzano_messenger::{
     workflows::WorkflowMessenger,
     SimpleLogMessage,
 };
-use reqwest::{Client, RequestBuilder};
+use reqwest::{Client};
 use serde::Serialize;
 
 use crate::{
     flags::{GlobalFormatFlags, OutputFormat},
-    lister::list_applyables,
     messenger_variant::create_emitter,
-    resolver::{resolve_from_cwd, Source},
     updater::Updater,
 };
 
