@@ -97,15 +97,15 @@ use tracing::instrument;
 use version::VersionArgs;
 
 #[cfg(feature = "workflows_v2")]
-use workflows_list::run_list_workflows;
-
-#[cfg(feature = "workflows_v2")]
 use crate::commands::workflows::{WorkflowCommands, Workflows};
+#[cfg(feature = "workflows_v2")]
+use workflows_list::run_list_workflows;
+#[cfg(feature = "workflows_v2")]
+use workflows_watch::run_watch_workflow;
 
 #[cfg(feature = "docgen")]
 use crate::commands::docgen::{run_docgen, DocGenArgs};
 
-use self::workflows_watch::run_watch_workflow;
 use self::{
     apply::run_apply,
     auth_login::run_login,
