@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use serde::Serialize;
 
-use super::workflows_list::WorkflowsListArgs;
+use super::{workflows_list::WorkflowsListArgs, workflows_watch::WorkflowWatchArgs};
 
 #[derive(Parser, Debug, Serialize)]
 pub struct Workflows {
@@ -13,4 +13,7 @@ pub struct Workflows {
 pub enum WorkflowCommands {
     /// List all available workflows
     List(WorkflowsListArgs),
+    /// Watch an existing workflow
+    #[clap(hide = true)]
+    Watch(WorkflowWatchArgs),
 }
