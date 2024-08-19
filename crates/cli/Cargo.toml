@@ -78,6 +78,7 @@ notify-debouncer-mini = "0.4.1"
 tracing-subscriber = { version = "0.3", default-features = false, optional = true }
 
 fs-err = { version = "2.11.0" }
+reqwest-eventsource = "0.6.0"
 
 [target.'cfg(not(windows))'.dependencies]
 openssl = { version = "0.10", features = ["vendored"] }

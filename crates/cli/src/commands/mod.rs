@@ -29,6 +29,8 @@ pub(crate) mod apply_migration;
 pub(crate) mod workflows;
 #[cfg(feature = "workflows_v2")]
 pub(crate) mod workflows_list;
+#[cfg(feature = "workflows_v2")]
+pub(crate) mod workflows_watch;
 
 use crate::error::GoodError;
 
@@ -103,6 +105,7 @@ use crate::commands::workflows::{WorkflowCommands, Workflows};
 #[cfg(feature = "docgen")]
 use crate::commands::docgen::{run_docgen, DocGenArgs};
 
+use self::workflows_watch::run_watch_workflow;
 use self::{
     apply::run_apply,
     auth_login::run_login,
@@ -193,6 +196,7 @@ impl fmt::Display for Commands {
             #[cfg(feature = "workflows_v2")]
             Commands::Workflows(arg) => match arg.workflows_commands {
                 WorkflowCommands::List(_) => write!(f, "workflows list"),
+                WorkflowCommands::Watch(_) => write!(f, "workflows watch"),
             },
             Commands::Plumbing(_) => write!(f, "plumbing"),
             Commands::Version(_) => write!(f, "version"),
@@ -384,6 +388,7 @@ async fn run_command() -> Result<()> {
         #[cfg(feature = "workflows_v2")]
         Commands::Workflows(arg) => match arg.workflows_commands {
             WorkflowCommands::List(arg) => run_list_workflows(&arg, &app.format_flags).await,
+            WorkflowCommands::Watch(arg) => run_watch_workflow(&arg, &app.format_flags).await,
         },
         Commands::Plumbing(arg) => {
             run_plumbing(arg, multi, &mut apply_details, app.format_flags).await
