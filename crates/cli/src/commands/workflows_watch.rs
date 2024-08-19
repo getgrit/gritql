@@ -1,18 +1,12 @@
 use anyhow::{bail, Result};
 use clap::Args;
-use marzano_auth::{env::get_grit_api_url, info::AuthInfo};
-use marzano_messenger::{
-    emit::{Messager, VisibilityLevels},
-    workflows::WorkflowMessenger,
-    LogMessage, SimpleLogMessage,
-};
-use reqwest::Client;
+
+
+
 use serde::Serialize;
 
 use crate::{
-    flags::{GlobalFormatFlags, OutputFormat},
-    messenger_variant::create_emitter,
-    updater::Updater,
+    flags::{GlobalFormatFlags},
 };
 
 #[derive(Args, Debug, Serialize)]
@@ -22,7 +16,7 @@ pub struct WorkflowWatchArgs {
     workflow_id: String,
 }
 
-pub async fn run_watch_workflow(arg: &WorkflowWatchArgs, parent: &GlobalFormatFlags) -> Result<()> {
+pub async fn run_watch_workflow(_arg: &WorkflowWatchArgs, _parent: &GlobalFormatFlags) -> Result<()> {
     #[cfg(feature = "remote_workflows")]
     {
         let mut updater = Updater::from_current_bin().await?;
