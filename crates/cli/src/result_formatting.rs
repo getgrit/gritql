@@ -223,10 +223,22 @@ impl fmt::Display for FormattedResult {
                                     match overlap {
                                         None => {}
                                         Some((start_col, end_col)) => {
+                                            println!("line: {}", line);
+                                            println!("range: {:?}", range);
                                             // This line is part of the match
-                                            let prefix = &line[0..start_col];
-                                            let highlight = &line[start_col..end_col];
-                                            let suffix = &line[end_col..];
+                                            let Some(prefix) = &line.get(0..start_col) else {
+                                                writeln!(f, "prefix is none")?;
+                                                break;
+                                            };
+                                            let Some(highlight) = &line.get(start_col..end_col)
+                                            else {
+                                                writeln!(f, "highlight is none")?;
+                                                break;
+                                            };
+                                            let Some(suffix) = &line.get(end_col..) else {
+                                                writeln!(f, "suffix is none")?;
+                                                break;
+                                            };
                                             writeln!(
                                                 f,
                                                 "{:6}  {}{}{}",

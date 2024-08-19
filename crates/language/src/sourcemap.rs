@@ -82,8 +82,6 @@ impl EmbeddedSourceMap {
     pub fn fill_with_inner(&self, new_inner_source: &str) -> Result<String> {
         let mut outer_source = self.outer_source.clone();
 
-        println!("inner output: {}", new_inner_source);
-
         let mut current_inner_offset = 0;
         let mut current_outer_offset = 0;
 
