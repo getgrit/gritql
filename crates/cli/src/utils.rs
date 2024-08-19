@@ -1,4 +1,3 @@
-
 use git2::{Repository, StatusOptions};
 use marzano_gritmodule::searcher::find_git_dir_from;
 

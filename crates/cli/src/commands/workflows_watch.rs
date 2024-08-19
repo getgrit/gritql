@@ -1,13 +1,9 @@
 use anyhow::{bail, Result};
 use clap::Args;
 
-
-
 use serde::Serialize;
 
-use crate::{
-    flags::{GlobalFormatFlags},
-};
+use crate::flags::GlobalFormatFlags;
 
 #[derive(Args, Debug, Serialize)]
 pub struct WorkflowWatchArgs {
@@ -16,7 +12,10 @@ pub struct WorkflowWatchArgs {
     workflow_id: String,
 }
 
-pub async fn run_watch_workflow(_arg: &WorkflowWatchArgs, _parent: &GlobalFormatFlags) -> Result<()> {
+pub async fn run_watch_workflow(
+    _arg: &WorkflowWatchArgs,
+    _parent: &GlobalFormatFlags,
+) -> Result<()> {
     #[cfg(feature = "remote_workflows")]
     {
         let mut updater = Updater::from_current_bin().await?;
