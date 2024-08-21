@@ -325,21 +325,23 @@ async fn run_command() -> Result<()> {
         _ => LevelFilter::Info,
     });
     let format: OutputFormat = (&app.format_flags).into();
-    let logger = env_logger::Builder::new()
-        .format(|buf, record| writeln!(buf, "{}", record.args()))
-        .filter_level(log_level)
-        .target(match format {
-            OutputFormat::Standard => env_logger::Target::Stdout,
-            OutputFormat::Transformed => env_logger::Target::Stderr,
-            OutputFormat::Json | OutputFormat::Jsonl => env_logger::Target::Stderr,
-            #[cfg(feature = "remote_redis")]
-            OutputFormat::Redis => env_logger::Target::Stderr,
-            #[cfg(feature = "remote_pubsub")]
-            OutputFormat::PubSub => env_logger::Target::Stderr,
-            #[cfg(feature = "server")]
-            OutputFormat::Combined => env_logger::Target::Stderr,
-        })
-        .build();
+    let mut logger = env_logger::Builder::new();
+    logger.filter_level(log_level);
+    logger.target(match format {
+        OutputFormat::Standard => env_logger::Target::Stdout,
+        OutputFormat::Transformed => env_logger::Target::Stderr,
+        OutputFormat::Json | OutputFormat::Jsonl => env_logger::Target::Stderr,
+        #[cfg(feature = "remote_redis")]
+        OutputFormat::Redis => env_logger::Target::Stderr,
+        #[cfg(feature = "remote_pubsub")]
+        OutputFormat::PubSub => env_logger::Target::Stderr,
+        #[cfg(feature = "server")]
+        OutputFormat::Combined => env_logger::Target::Stderr,
+    });
+    if !matches!(app.command, Commands::Plumbing(_)) {
+        logger.format(|buf, record| writeln!(buf, "{}", record.args()));
+    };
+    let logger = logger.build();
     let multi = MultiProgress::new();
     LogWrapper::new(multi.clone(), logger).try_init().unwrap();
 
