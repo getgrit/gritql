@@ -178,9 +178,11 @@ pub async fn list_applyables(
             // If all patterns have the same source, print it in the header and not next to each item
             let unique_source = get_unique_source(patterns);
             if let Some(source) = unique_source.clone() {
-                log::info!("\n{}", format!("{} patterns ({})", language, source).blue());
+                log::info!("\n");
+                log::info!("{}", format!("{} patterns ({})", language, source).blue());
             } else {
-                log::info!("\n{}", format!("{} patterns", language).blue());
+                log::info!("\n");
+                log::info!("{}", format!("{} patterns", language).blue());
             }
 
             for pattern in patterns {
@@ -194,7 +196,8 @@ pub async fn list_applyables(
 
         let mut patterns_by_language = group_by_language(local_patterns);
         for (language, patterns) in &mut patterns_by_language {
-            log::info!("\n{}", &format!("{} patterns", language).blue());
+            log::info!("\n");
+            log::info!("{}", &format!("{} patterns", language).blue());
 
             patterns.sort();
 
@@ -208,7 +211,8 @@ pub async fn list_applyables(
         }
         let mut patterns_by_language = group_by_language(user_patterns);
         for (language, patterns) in &mut patterns_by_language {
-            log::info!("\n{}", &format!("{} patterns", language).blue());
+            log::info!("\n");
+            log::info!("{}", &format!("{} patterns", language).blue());
 
             patterns.sort();
 
