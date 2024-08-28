@@ -2,10 +2,10 @@ use crate::context::ExecContext;
 use crate::pattern::ResolvedPattern;
 use crate::{
     context::QueryContext,
-    pattern::{DynamicPattern, Pattern, PatternOrResolved, State},
+    pattern::{Pattern, PatternOrResolved, State},
 };
 use grit_util::error::GritResult;
-use grit_util::{error::GritPatternError, AnalysisLogs, EffectKind};
+use grit_util::{error::GritPatternError, EffectKind};
 
 #[derive(Debug, Clone)]
 pub struct Effect<'a, Q: QueryContext> {
@@ -14,8 +14,8 @@ pub struct Effect<'a, Q: QueryContext> {
     pub kind: EffectKind,
 }
 
-pub fn insert_effect<'a, 'b, Q: QueryContext>(
-    left: &PatternOrResolved<'a, 'b, Q>,
+pub fn insert_effect<'a, Q: QueryContext>(
+    left: &PatternOrResolved<'a, '_, Q>,
     mut replacement: Q::ResolvedPattern<'a>,
     state: &mut State<'a, Q>,
     context: &'a Q::ExecContext<'a>,

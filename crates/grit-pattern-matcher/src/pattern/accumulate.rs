@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use super::{
     dynamic_snippet::DynamicPattern,
     functions::{Evaluator, FuncEvaluation},
