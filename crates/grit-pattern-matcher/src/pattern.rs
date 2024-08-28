@@ -107,9 +107,8 @@ pub use r#match::Match;
 pub use r#where::Where;
 pub use range::{Point, Range};
 pub use regex::{RegexLike, RegexPattern};
-pub use resolved_pattern::{
-    File, JoinFn, LazyBuiltIn, ResolvedFile, ResolvedPattern, ResolvedSnippet,
-};
+pub use resolved_pattern::ResolvedPattern;
+pub use resolved_pattern::{File, JoinFn, LazyBuiltIn, ResolvedFile, ResolvedSnippet};
 pub use rewrite::Rewrite;
 pub use sequential::Sequential;
 pub use some::Some;
