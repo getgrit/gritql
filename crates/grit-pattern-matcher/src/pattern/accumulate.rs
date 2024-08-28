@@ -54,23 +54,21 @@ impl<Q: QueryContext> Matcher<Q> for Accumulate<Q> {
         if let Pattern::Variable(_) = &self.left {
             let left = PatternOrResolved::Pattern(&self.left);
             let right = ResolvedPattern::from_pattern(&self.right, state, context, logs)?;
-            insert_effect(&left, right, state, context, logs)
+            insert_effect(&left, right, state, context)
         } else {
-            let resolved = if !self.left.execute(context_node, state, context, logs)? {
+            if !self.left.execute(context_node, state, context, logs)? {
                 return Ok(false);
-            } else {
-                Cow::Borrowed(context_node)
             };
-            let Some(dynamic_right) = self.dynamic_right else {
+            let resolved = context_node;
+            let Some(dynamic_right) = &self.dynamic_right else {
                 return Err(GritPatternError::new(
                     "Insert right hand side must be a code snippet when LHS is not a variable",
                 ));
             };
             let left = PatternOrResolved::Resolved(resolved);
-            let right =
-                ResolvedPattern::from_dynamic_pattern(&dynamic_right, state, context, logs)?;
+            let right = ResolvedPattern::from_dynamic_pattern(dynamic_right, state, context, logs)?;
 
-            insert_effect(&left, right, state, context, logs)
+            insert_effect(&left, right, state, context)
         }
     }
 }

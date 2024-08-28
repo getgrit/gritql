@@ -16,10 +16,9 @@ pub struct Effect<'a, Q: QueryContext> {
 
 pub fn insert_effect<'a, 'b, Q: QueryContext>(
     left: &PatternOrResolved<'a, 'b, Q>,
-    replacement: Q::ResolvedPattern<'a>,
+    mut replacement: Q::ResolvedPattern<'a>,
     state: &mut State<'a, Q>,
     context: &'a Q::ExecContext<'a>,
-    logs: &mut AnalysisLogs,
 ) -> GritResult<bool> {
     match left {
         PatternOrResolved::Pattern(Pattern::Variable(var)) => {
