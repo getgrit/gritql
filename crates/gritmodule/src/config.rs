@@ -13,8 +13,6 @@ use std::{env, fmt, io::ErrorKind, str::FromStr};
 use tokio::{fs, io::AsyncWriteExt};
 use tracing::instrument;
 
-use crate::installer::install_default_stdlib;
-use crate::resolver::fetch_modules;
 use crate::searcher::{
     find_git_dir_from, find_global_grit_dir, find_global_grit_modules_dir, find_grit_dir_from,
 };
@@ -24,6 +22,8 @@ use crate::{
     parser::PatternFileExt,
     utils::is_pattern_name,
 };
+use crate::{installer::install_default_stdlib, resolver::find_and_resolve_grit_dir};
+use crate::{patterns_directory::PatternsDirectory, resolver::fetch_modules};
 use anyhow::{bail, Result};
 
 #[derive(Debug, Deserialize)]
@@ -375,6 +375,15 @@ pub fn get_stdlib_modules() -> Vec<ModuleRepo> {
 pub enum ConfigSource {
     Local(PathBuf),
     Global(PathBuf),
+}
+
+impl ConfigSource {
+    pub async fn get_grit_files(&self) -> Result<PatternsDirectory> {
+        match self {
+            ConfigSource::Local(path) => find_and_resolve_grit_dir(Some(path.clone()), None).await,
+            ConfigSource::Global(path) => find_and_resolve_grit_dir(None, Some(path.clone())).await,
+        }
+    }
 }
 
 impl fmt::Display for ConfigSource {
