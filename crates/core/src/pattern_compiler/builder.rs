@@ -9,7 +9,7 @@ use super::{
 };
 use crate::{
     analysis::{has_limit, is_multifile},
-    built_in_functions::{BuiltInFunction, BuiltIns},
+    built_in_functions::{BuiltInFunction, BuiltIns, CallbackFn},
     foreign_function_definition::ForeignFunctionDefinition,
     problem::{MarzanoQueryContext, Problem},
 };
@@ -17,18 +17,12 @@ use crate::{built_in_functions::CallableFn, pattern_compiler::compiler::Definiti
 use anyhow::{bail, Result};
 use grit_pattern_matcher::{
     constants::{
-        ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX,
-        PROGRAM_INDEX,
+        ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
     },
     pattern::{
-        And, GritFunctionDefinition, Pattern,
-        PatternDefinition, Predicate, PredicateDefinition,
+        And, GritFunctionDefinition, Pattern, PatternDefinition, Predicate, PredicateDefinition,
         VariableSourceLocations, Where,
     },
-};
-use grit_pattern_matcher::{
-    pattern::{CallbackPattern},
-    CallbackPatternFn,
 };
 use grit_util::{AnalysisLogs, Ast, FileRange};
 
@@ -240,8 +234,8 @@ impl PatternBuilder {
     }
 
     /// Add a callback
-    pub fn matches_callback(self, cb: impl CallbackPatternFn<MarzanoQueryContext>) -> Self {
-        let pattern = Pattern::CallbackPattern(Box::new(CallbackPattern::new(cb)));
+    pub fn matches_callback(mut self, cb: Box<CallbackFn>) -> Self {
+        let pattern = self.built_ins.add_callback(cb);
         self.matches(pattern)
     }
 

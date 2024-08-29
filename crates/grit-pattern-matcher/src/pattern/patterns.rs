@@ -96,7 +96,7 @@ pub enum Pattern<Q: QueryContext> {
     CallBuiltIn(Box<CallBuiltIn<Q>>),
     CallFunction(Box<CallFunction<Q>>),
     CallForeignFunction(Box<CallForeignFunction<Q>>),
-    CallbackPattern(Box<CallbackPattern<Q>>),
+    CallbackPattern(Box<CallbackPattern>),
     Assignment(Box<Assignment<Q>>),
     Accumulate(Box<Accumulate<Q>>),
     And(Box<And<Q>>),

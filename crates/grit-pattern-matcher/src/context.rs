@@ -2,8 +2,9 @@ use crate::{
     binding::Binding,
     file_owners::FileOwners,
     pattern::{
-        AstLeafNodePattern, AstNodePattern, CallBuiltIn, CodeSnippet, File, GritFunctionDefinition,
-        Pattern, PatternDefinition, PredicateDefinition, ResolvedPattern, State,
+        AstLeafNodePattern, AstNodePattern, CallBuiltIn, CallbackPattern, CodeSnippet, File,
+        GritFunctionDefinition, Pattern, PatternDefinition, PredicateDefinition, ResolvedPattern,
+        State,
     },
 };
 use grit_util::{error::GritResult, AnalysisLogs, Ast, AstNode, Language};
@@ -39,6 +40,15 @@ pub trait ExecContext<'a, Q: QueryContext> {
         state: &mut State<'a, Q>,
         logs: &mut AnalysisLogs,
     ) -> GritResult<Q::ResolvedPattern<'a>>;
+
+    fn call_callback<'b>(
+        &self,
+        call: &'a CallbackPattern,
+        context: &'a Self,
+        binding: &'b Q::ResolvedPattern<'a>,
+        state: &mut State<'a, Q>,
+        logs: &mut AnalysisLogs,
+    ) -> GritResult<bool>;
 
     /// Call this when "entering" a file to lazily load it.
     /// This MUST be implemented correctly, or the query engine will not work.

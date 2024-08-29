@@ -73,7 +73,7 @@ pub use boolean_constant::BooleanConstant;
 pub use bubble::Bubble;
 pub use call::{Call, PrCall};
 pub use call_built_in::CallBuiltIn;
-pub use callback_pattern::{CallbackPattern, CallbackPatternFn};
+pub use callback_pattern::CallbackPattern;
 pub use container::{Container, PatternOrResolved, PatternOrResolvedMut};
 pub use contains::Contains;
 pub use divide::Divide;

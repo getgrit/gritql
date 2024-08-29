@@ -16,4 +16,3 @@ pub mod intervals;
 pub mod pattern;
 
 pub use analysis::has_rewrite;
-pub use pattern::CallbackPatternFn;

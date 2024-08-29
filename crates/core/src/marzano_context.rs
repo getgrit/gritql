@@ -14,8 +14,8 @@ use grit_pattern_matcher::{
     context::ExecContext,
     file_owners::FileOwners,
     pattern::{
-        CallBuiltIn, File, FilePtr, GritFunctionDefinition, Matcher, Pattern, PatternDefinition,
-        PredicateDefinition, ResolvedPattern, State,
+        CallBuiltIn, CallbackPattern, File, FilePtr, GritFunctionDefinition, Matcher, Pattern,
+        PatternDefinition, PredicateDefinition, ResolvedPattern, State,
     },
 };
 use grit_util::{
@@ -120,6 +120,19 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
     ) -> GritResult<MarzanoResolvedPattern<'a>> {
         self.built_ins
             .call(call, context, state, logs)
+            .map_err(|e| GritPatternError::new(e.to_string()))
+    }
+
+    fn call_callback<'b>(
+        &self,
+        call: &'a CallbackPattern,
+        context: &'a Self,
+        binding: &'b MarzanoResolvedPattern<'a>,
+        state: &mut State<'a, MarzanoQueryContext>,
+        logs: &mut AnalysisLogs,
+    ) -> GritResult<bool> {
+        self.built_ins
+            .call_callback(call, context, binding, state, logs)
             .map_err(|e| GritPatternError::new(e.to_string()))
     }
 

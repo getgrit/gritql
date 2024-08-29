@@ -1,54 +1,43 @@
 use super::{Matcher, PatternName, State};
+use crate::context::ExecContext;
 use crate::context::QueryContext;
 use grit_util::{error::GritResult, AnalysisLogs};
-use std::{fmt::Debug, sync::Arc};
+use std::fmt::Debug;
 
-pub trait CallbackPatternFn<Q: QueryContext>:
-    for<'a> Fn(
-        &<Q as QueryContext>::ResolvedPattern<'a>,
-        &'a Q::ExecContext<'a>,
-        &mut State<'a, Q>,
-        &mut AnalysisLogs,
-    ) -> GritResult<bool>
-    + Send
-    + Sync
-    + 'static
-{
+/// A callback pattern is used to reference against a callback function.
+/// The actual callback function is stored in the context, just the index is provided here.
+/// This is useful for adding new user-defined functions in Rust.
+pub struct CallbackPattern {
+    pub callback_index: usize,
 }
 
-pub struct CallbackPattern<Q: QueryContext> {
-    closure: Arc<Box<dyn CallbackPatternFn<Q>>>,
-}
-
-impl<Q: QueryContext> Clone for CallbackPattern<Q> {
+impl Clone for CallbackPattern {
     fn clone(&self) -> Self {
         Self {
-            closure: self.closure.clone(),
+            callback_index: self.callback_index,
         }
     }
 }
 
-impl<Q: QueryContext> CallbackPattern<Q> {
-    pub fn new(callback: impl CallbackPatternFn<Q>) -> Self {
-        Self {
-            closure: Arc::new(Box::new(callback)),
-        }
+impl CallbackPattern {
+    pub fn new(callback_index: usize) -> Self {
+        Self { callback_index }
     }
 }
 
-impl<Q: QueryContext> PatternName for CallbackPattern<Q> {
+impl PatternName for CallbackPattern {
     fn name(&self) -> &'static str {
         "CALLBACK_PATTERN"
     }
 }
 
-impl<Q: QueryContext> Debug for CallbackPattern<Q> {
+impl Debug for CallbackPattern {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "CallbackPattern")
     }
 }
 
-impl<Q: QueryContext> Matcher<Q> for CallbackPattern<Q> {
+impl<Q: QueryContext> Matcher<Q> for CallbackPattern {
     fn execute<'a>(
         &'a self,
         binding: &Q::ResolvedPattern<'a>,
@@ -56,6 +45,6 @@ impl<Q: QueryContext> Matcher<Q> for CallbackPattern<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-        (self.closure)(binding, context, state, logs)
+        context.call_callback(self, context, binding, state, logs)
     }
 }
