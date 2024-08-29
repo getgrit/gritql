@@ -8,8 +8,8 @@ use grit_pattern_matcher::{
     constant::Constant,
     context::ExecContext,
     pattern::{
-        get_absolute_file_name, CallBuiltIn, JoinFn, LazyBuiltIn, Pattern, ResolvedPattern,
-        ResolvedSnippet, State,
+        get_absolute_file_name, CallBuiltIn, CallbackPattern, JoinFn, LazyBuiltIn, Pattern,
+        ResolvedPattern, ResolvedSnippet, State,
     },
 };
 use grit_util::{AnalysisLogs, CodeRange, Language};
@@ -32,6 +32,15 @@ pub type CallableFn = dyn for<'a> Fn(
         &mut State<'a, MarzanoQueryContext>,
         &mut AnalysisLogs,
     ) -> Result<MarzanoResolvedPattern<'a>>
+    + Send
+    + Sync;
+
+pub type CallbackFn = dyn for<'a, 'b> Fn(
+        &'b <crate::problem::MarzanoQueryContext as grit_pattern_matcher::context::QueryContext>::ResolvedPattern<'a>,
+        &'a MarzanoContext<'a>,
+        &mut State<'a, MarzanoQueryContext>,
+        &mut AnalysisLogs,
+    ) -> Result<bool>
     + Send
     + Sync;
 
@@ -66,8 +75,18 @@ impl std::fmt::Debug for BuiltInFunction {
     }
 }
 
-#[derive(Debug)]
-pub struct BuiltIns(Vec<BuiltInFunction>);
+pub struct BuiltIns {
+    built_ins: Vec<BuiltInFunction>,
+    callbacks: Vec<Box<CallbackFn>>,
+}
+
+impl std::fmt::Debug for BuiltIns {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("BuiltIns")
+            .field("built_ins", &self.built_ins)
+            .finish()
+    }
+}
 
 impl BuiltIns {
     pub(crate) fn call<'a>(
@@ -77,7 +96,7 @@ impl BuiltIns {
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
     ) -> Result<MarzanoResolvedPattern<'a>> {
-        self.0[call.index].call(&call.args, context, state, logs)
+        self.built_ins[call.index].call(&call.args, context, state, logs)
     }
 
     pub(crate) fn call_from_args(
@@ -87,7 +106,7 @@ impl BuiltIns {
         lang: &impl Language,
         name: &str,
     ) -> Result<CallBuiltIn<MarzanoQueryContext>> {
-        let params = &built_ins.0[index].params;
+        let params = &built_ins.built_ins[index].params;
         let mut pattern_params = Vec::with_capacity(args.len());
         for param in params.iter() {
             match args.remove(&(lang.metavariable_prefix().to_owned() + param)) {
@@ -98,24 +117,32 @@ impl BuiltIns {
         Ok(CallBuiltIn::new(index, name, pattern_params))
     }
 
+    pub(crate) fn call_callback<'a>(
+        &self,
+        call: &'a CallbackPattern,
+        context: &'a MarzanoContext<'a>,
+        binding: &MarzanoResolvedPattern<'a>,
+        state: &mut State<'a, MarzanoQueryContext>,
+        logs: &mut AnalysisLogs,
+    ) -> Result<bool> {
+        (self.callbacks[call.callback_index])(binding, context, state, logs)
+    }
+
     /// Add an anonymous built-in, used for callbacks
-    /// Returns the index of the added function
-    pub fn add_callback(&mut self, func: Box<CallableFn>) -> usize {
-        self.0.push(BuiltInFunction::new(
-            "anon_hidden_callback",
-            vec!["match"],
-            func,
-        ));
-        self.0.len() - 1
+    /// Returns a pattern that can be used to call the callback
+    pub fn add_callback(&mut self, func: Box<CallbackFn>) -> Pattern<MarzanoQueryContext> {
+        self.callbacks.push(func);
+        let index = self.callbacks.len() - 1;
+        Pattern::CallbackPattern(Box::new(CallbackPattern::new(index)))
     }
 
     pub fn add_built_in(&mut self, built_in: BuiltInFunction) {
-        self.0.push(built_in);
+        self.built_ins.push(built_in);
     }
 
     pub fn extend_builtins(&mut self, other: BuiltIns) -> Result<()> {
-        let self_name = self.0.iter().map(|b| &b.name).collect_vec();
-        let other_name = other.0.iter().map(|b| &b.name).collect_vec();
+        let self_name = self.built_ins.iter().map(|b| &b.name).collect_vec();
+        let other_name = other.built_ins.iter().map(|b| &b.name).collect_vec();
         let repeats = self_name
             .iter()
             .filter(|n| other_name.contains(n))
@@ -130,13 +157,13 @@ impl BuiltIns {
                 repeated_names
             ))
         } else {
-            self.0.extend(other.0);
+            self.built_ins.extend(other.built_ins);
             Ok(())
         }
     }
 
     pub(crate) fn get_built_ins(&self) -> &[BuiltInFunction] {
-        &self.0
+        &self.built_ins
     }
 
     pub fn get_built_in_functions() -> BuiltIns {
@@ -160,7 +187,10 @@ impl BuiltIns {
 
 impl From<Vec<BuiltInFunction>> for BuiltIns {
     fn from(built_ins: Vec<BuiltInFunction>) -> Self {
-        Self(built_ins)
+        Self {
+            built_ins,
+            callbacks: vec![],
+        }
     }
 }
 

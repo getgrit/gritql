@@ -486,6 +486,12 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             Pattern::CallBuiltIn(built_in) => built_in.call(state, context, logs),
             Pattern::CallFunction(func) => func.call(state, context, logs),
             Pattern::CallForeignFunction(func) => func.call(state, context, logs),
+            Pattern::CallbackPattern(callback) => {
+                Err(GritPatternError::new(format!(
+                    "cannot make resolved pattern from callback pattern {}",
+                    callback.name()
+                )))
+            }
             Pattern::StringConstant(string) => Ok(Self::Snippets(vector![ResolvedSnippet::Text(
                 (&string.text).into(),
             )])),

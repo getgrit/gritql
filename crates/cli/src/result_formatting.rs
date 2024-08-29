@@ -205,7 +205,7 @@ impl fmt::Display for FormattedResult {
                 let source = m.content();
                 match source {
                     Err(e) => {
-                        writeln!(f, "Could not read flie: {}", e)?;
+                        writeln!(f, "Could not read file: {}", e)?;
                         return Ok(());
                     }
                     Ok(source) => {

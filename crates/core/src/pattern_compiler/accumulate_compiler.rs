@@ -84,6 +84,7 @@ impl NodeCompiler for AccumulateCompiler {
             | Pattern::Dots
             | Pattern::Like(_)
             | Pattern::Sequential(_) => None,
+            Pattern::CallbackPattern(_) => None,
         };
         Ok(Accumulate::new(left, right, dynamic_right))
     }

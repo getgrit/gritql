@@ -110,7 +110,8 @@ fn execute<'a, Q: QueryContext>(
         | Pattern::Modulo(_)
         | Pattern::Dots
         | Pattern::Sequential(_)
-        | Pattern::Like(_) => {
+        | Pattern::Like(_)
+        | Pattern::CallbackPattern(_) => {
             let resolved = Q::ResolvedPattern::from_pattern(pattern, state, context, logs)
                 .map_err(|err| {
                     GritPatternError::new(format!(

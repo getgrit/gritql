@@ -101,6 +101,7 @@ fn is_sequential<Q: QueryContext>(
         | Pattern::CallBuiltIn(_)
         | Pattern::CallFunction(_)
         | Pattern::CallForeignFunction(_)
+        | Pattern::CallbackPattern(_)
         | Pattern::Assignment(_)
         | Pattern::Accumulate(_)
         | Pattern::And(_)
@@ -166,6 +167,7 @@ pub(crate) fn should_autowrap<Q: QueryContext>(
         | Pattern::CallBuiltIn(_)
         | Pattern::CallFunction(_)
         | Pattern::CallForeignFunction(_)
+        | Pattern::CallbackPattern(_)
         | Pattern::Assignment(_)
         | Pattern::Accumulate(_)
         | Pattern::And(_)
@@ -294,6 +296,7 @@ fn extract_limit_pattern<Q: QueryContext>(
         | Pattern::Modulo(_)
         | Pattern::Like(_)
         | Pattern::Dots => (pattern, None),
+        Pattern::CallbackPattern(_) => (pattern, None),
     }
 }
 
@@ -337,6 +340,7 @@ fn should_wrap_in_file<Q: QueryContext>(
         | Pattern::CallBuiltIn(_)
         | Pattern::CallFunction(_)
         | Pattern::CallForeignFunction(_)
+        | Pattern::CallbackPattern(_)
         | Pattern::Assignment(_)
         | Pattern::Accumulate(_)
         | Pattern::If(_)
