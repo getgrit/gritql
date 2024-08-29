@@ -117,11 +117,11 @@ impl BuiltIns {
         Ok(CallBuiltIn::new(index, name, pattern_params))
     }
 
-    pub(crate) fn call_callback<'a, 'b>(
+    pub(crate) fn call_callback<'a>(
         &self,
         call: &'a CallbackPattern,
         context: &'a MarzanoContext<'a>,
-        binding: &'b MarzanoResolvedPattern<'a>,
+        binding: &MarzanoResolvedPattern<'a>,
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
