@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use marzano_core::api::EnforcementLevel;
 use marzano_gritmodule::config::{DefinitionSource, ResolvedGritDefinition};
 
@@ -36,6 +36,9 @@ impl Listable for ResolvedGritDefinition {
 }
 
 pub(crate) async fn run_patterns_list(arg: ListArgs, parent: GlobalFormatFlags) -> Result<()> {
-    let (resolved, curr_repo) = resolve_from_flags_or_cwd(&parent, &arg.source).await?;
+    let (resolved, curr_repo) = resolve_from_flags_or_cwd(&parent, &arg.source)
+        .await
+        .context("Failed to resolve patterns from flags or current working directory. Verify your inputs or try running `grit patterns list` in the correct directory.")?;
+
     list_applyables(false, false, resolved, arg.level, &parent, curr_repo).await
 }
