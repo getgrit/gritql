@@ -127,12 +127,11 @@ pub(crate) async fn run_check(
     // Construct a resolver
     let resolver = GritModuleResolver::new();
 
-    let mut body_to_pattern: HashMap<String, &ResolvedGritDefinition> = HashMap::new();
+    let mut pattern_lookup: HashMap<[u8; 32], &ResolvedGritDefinition> = HashMap::new();
     let compile_tasks: Result<HashMap<String, Problem>, _> = enforced
         .iter()
         .map(|p| {
             let body = format!("{}()", p.local_name);
-            body_to_pattern.insert(body.clone(), p);
             let lang = PatternLanguage::get_language(&p.body);
             let grit_files = grit_files.get_language_directory_or_default(lang)?;
             let rich_pattern = resolver
@@ -140,7 +139,10 @@ pub(crate) async fn run_check(
                 .unwrap();
             let lang = PatternLanguage::get_language(&p.body);
             match rich_pattern.compile(&grit_files, lang, filter_range.clone(), None) {
-                Ok(c) => Ok((p.local_name.clone(), c.problem)),
+                Ok(c) => {
+                    pattern_lookup.insert(c.problem.hash, p);
+                    Ok((p.local_name.clone(), c.problem))
+                }
                 Err(e) => {
                     bail!("Unable to compile pattern {}:\n{}", p.local_name, e);
                 }
@@ -150,7 +152,7 @@ pub(crate) async fn run_check(
     let compiled_map = compile_tasks?;
     let problems: Vec<_> = compiled_map.values().collect();
 
-    let results: DashMap<String, Vec<MatchResult>> = DashMap::new();
+    let results: DashMap<[u8; 32], Vec<MatchResult>> = DashMap::new();
 
     let target_languages: Vec<PatternLanguage> = problems
         .iter()
@@ -204,7 +206,7 @@ pub(crate) async fn run_check(
                 cache.put_no_matches(hash, pattern.hash).unwrap();
             }
         }
-        let mut entry = results.entry(pattern.tree.source.clone()).or_default();
+        let mut entry = results.entry(pattern.hash).or_default();
         entry.extend(result.into_iter().filter(is_match));
         pg.inc(1);
     });
@@ -212,11 +214,11 @@ pub(crate) async fn run_check(
     let mut check_results: HashMap<String, Vec<CheckResult>> = HashMap::new();
 
     for result in results.iter() {
-        let body = result.key();
+        let key = result.key();
         let match_results = result.value();
-        let pattern = match body_to_pattern.get(body) {
+        let pattern = match pattern_lookup.get(key) {
             Some(p) => p,
-            None => bail!("Unable to find pattern for body {}", body),
+            None => bail!("Unable to find pattern for pattern!"),
         };
         let relevant_results = match_results
             .par_iter()

@@ -34,6 +34,8 @@ mod variables;
 #[cfg(feature = "wasm_core")]
 use getrandom as _;
 #[cfg(test)]
+mod test_callback;
+#[cfg(test)]
 mod test_notebooks;
 
 #[cfg(test)]

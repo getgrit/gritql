@@ -307,7 +307,17 @@ pub struct PatternInfo {
 
 impl PatternInfo {
     pub fn from_compiled(compiled: Problem, source_file: String) -> Self {
-        let node = compiled.tree.root_node();
+        let Some(tree) = &compiled.tree else {
+            return Self {
+                messages: vec![],
+                variables: vec![],
+                source_file,
+                parsed_pattern: "".to_string(),
+                valid: false,
+                uses_ai: false,
+            };
+        };
+        let node = tree.root_node();
         let grit_node_types = grit_node_types();
         let parsed_pattern = to_string_pretty(&tree_sitter_node_to_json(
             &node.node,

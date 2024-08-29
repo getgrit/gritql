@@ -64,6 +64,17 @@ pub struct PatternBuilder {
 }
 
 impl PatternBuilder {
+    pub fn start_empty(src: &str, lang: TargetLanguage) -> Result<Self> {
+        Self::start(
+            src.to_string(),
+            &BTreeMap::new(),
+            lang,
+            None,
+            &mut MarzanoGritParser::new().unwrap(),
+            None,
+        )
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn start(
         src: String,
@@ -262,7 +273,7 @@ impl PatternBuilder {
         } else {
             self
         };
-        let problem = Problem::new(
+        let problem = Problem::new_from_tree(
             target_builder.tree,
             target_builder.pattern,
             target_builder.language,

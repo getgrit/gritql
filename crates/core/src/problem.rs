@@ -47,7 +47,7 @@ use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 #[derive(Debug)]
 pub struct Problem {
-    pub tree: Tree,
+    pub tree: Option<Tree>,
     pub pattern: Pattern<MarzanoQueryContext>,
     pub language: TargetLanguage,
     pub built_ins: BuiltIns,
@@ -64,7 +64,11 @@ pub struct Problem {
 
 impl Problem {
     pub fn compiled_vars(&self) -> Vec<VariableMatch> {
-        self.variables.compiled_vars(&self.tree.source)
+        if let Some(tree) = &self.tree {
+            self.variables.compiled_vars(&tree.source)
+        } else {
+            vec![]
+        }
     }
 
     pub fn definitions(&self) -> StaticDefinitions<'_, MarzanoQueryContext> {
@@ -117,7 +121,7 @@ fn send(tx: &Sender<Vec<MatchResult>>, value: Vec<MatchResult>) {
 
 impl Problem {
     #[allow(clippy::too_many_arguments)]
-    pub(crate) fn new(
+    pub(crate) fn new_from_tree(
         tree: Tree,
         pattern: Pattern<MarzanoQueryContext>,
         language: TargetLanguage,
@@ -147,7 +151,7 @@ impl Problem {
         let hash = hasher.finalize().into();
 
         Self {
-            tree,
+            tree: Some(tree),
             pattern,
             language,
             built_ins,
