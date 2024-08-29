@@ -296,6 +296,7 @@ impl<Q: QueryContext> Pattern<Q> {
                 children
             }
             Pattern::CallForeignFunction(c) => args_children(&c.args, definitions),
+            Pattern::CallbackPattern(_) => vec![],
             Pattern::Assignment(a) => vec![PatternOrPredicate::Pattern(&a.pattern)],
             Pattern::Accumulate(a) => vec![
                 PatternOrPredicate::Pattern(&a.left),

@@ -45,7 +45,7 @@ use super::{
     undefined::Undefined,
     variable::Variable,
     within::Within,
-    State,
+    CallbackPattern, State,
 };
 use crate::{
     constants::{FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX},
@@ -96,6 +96,7 @@ pub enum Pattern<Q: QueryContext> {
     CallBuiltIn(Box<CallBuiltIn<Q>>),
     CallFunction(Box<CallFunction<Q>>),
     CallForeignFunction(Box<CallForeignFunction<Q>>),
+    CallbackPattern(Box<CallbackPattern<Q>>),
     Assignment(Box<Assignment<Q>>),
     Accumulate(Box<Accumulate<Q>>),
     And(Box<And<Q>>),
@@ -183,6 +184,7 @@ impl<Q: QueryContext> PatternName for Pattern<Q> {
             Pattern::CallBuiltIn(built_in) => built_in.name(),
             Pattern::CallFunction(call_function) => call_function.name(),
             Pattern::CallForeignFunction(call_function) => call_function.name(),
+            Pattern::CallbackPattern(callback) => callback.name(),
             Pattern::Assignment(assignment) => assignment.name(),
             Pattern::Accumulate(accumulate) => accumulate.name(),
             Pattern::StringConstant(string_constant) => string_constant.name(),
@@ -260,6 +262,7 @@ impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
             Pattern::CallForeignFunction(_) => Err(GritPatternError::new_matcher(
                 "CallForeignFunction cannot be executed at the moment",
             )),
+            Pattern::CallbackPattern(callback) => callback.execute(binding, state, context, logs),
             Pattern::Assignment(assignment) => assignment.execute(binding, state, context, logs),
             Pattern::Accumulate(accumulate) => accumulate.execute(binding, state, context, logs),
             Pattern::StringConstant(string_constant) => {
