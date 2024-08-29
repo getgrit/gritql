@@ -51,12 +51,11 @@ impl<Q: QueryContext> Debug for CallbackPattern<Q> {
 impl<Q: QueryContext> Matcher<Q> for CallbackPattern<Q> {
     fn execute<'a>(
         &'a self,
-        _binding: &Q::ResolvedPattern<'a>,
-        _state: &mut State<'a, Q>,
-        _context: &'a Q::ExecContext<'a>,
-        _logs: &mut AnalysisLogs,
+        binding: &Q::ResolvedPattern<'a>,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
+        logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-        // (self.callback)(state, binding, context, logs)
-        todo!("Not implemented")
+        (self.closure)(binding, context, state, logs)
     }
 }

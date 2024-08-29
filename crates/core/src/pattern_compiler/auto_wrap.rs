@@ -202,8 +202,6 @@ pub(crate) fn should_autowrap<Q: QueryContext>(
         | Pattern::Modulo(_)
         | Pattern::Like(_)
         | Pattern::Dots => true,
-        Pattern::CallbackPattern(_) => true,
-        Pattern::CallbackPattern(_) => true,
     }
 }
 

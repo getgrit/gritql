@@ -487,7 +487,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             Pattern::CallFunction(func) => func.call(state, context, logs),
             Pattern::CallForeignFunction(func) => func.call(state, context, logs),
             Pattern::CallbackPattern(callback) => {
-                return Err(GritPatternError::new(format!(
+                Err(GritPatternError::new(format!(
                     "cannot make resolved pattern from callback pattern {}",
                     callback.name()
                 )))
