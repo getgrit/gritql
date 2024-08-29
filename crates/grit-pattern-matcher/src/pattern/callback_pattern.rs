@@ -1,7 +1,7 @@
 use super::{Matcher, PatternName, State};
 use crate::context::QueryContext;
 use grit_util::{error::GritResult, AnalysisLogs};
-use std::{fmt::Debug, rc::Rc, sync::Arc};
+use std::{fmt::Debug, sync::Arc};
 
 pub trait CallbackPatternFn<Q: QueryContext>:
     for<'a> Fn(
@@ -51,10 +51,10 @@ impl<Q: QueryContext> Debug for CallbackPattern<Q> {
 impl<Q: QueryContext> Matcher<Q> for CallbackPattern<Q> {
     fn execute<'a>(
         &'a self,
-        binding: &Q::ResolvedPattern<'a>,
-        state: &mut State<'a, Q>,
-        context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        _binding: &Q::ResolvedPattern<'a>,
+        _state: &mut State<'a, Q>,
+        _context: &'a Q::ExecContext<'a>,
+        _logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
         // (self.callback)(state, binding, context, logs)
         todo!("Not implemented")

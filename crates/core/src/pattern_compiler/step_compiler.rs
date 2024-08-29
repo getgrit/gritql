@@ -74,7 +74,8 @@ impl NodeCompiler for StepCompiler {
             | Pattern::Divide(_)
             | Pattern::Modulo(_)
             | Pattern::Dots
-            | Pattern::Like(_) => {
+            | Pattern::Like(_)
+            | Pattern::CallbackPattern(_) => {
                 let range = node.range();
                 let log = AnalysisLogBuilder::default()
                     .level(441_u16)
