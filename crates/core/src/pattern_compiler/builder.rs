@@ -18,7 +18,6 @@ use crate::{
 };
 use crate::{built_in_functions::CallableFn, pattern_compiler::compiler::DefinitionOutput};
 use anyhow::{bail, Result};
-use grit_pattern_matcher::pattern::State;
 use grit_pattern_matcher::{
     constant::Constant,
     constants::{
@@ -31,6 +30,10 @@ use grit_pattern_matcher::{
         VariableSourceLocations, Where,
     },
 };
+use grit_pattern_matcher::{
+    pattern::{CallbackPattern, State},
+    CallbackPatternFn,
+};
 use grit_util::{AnalysisLogs, Ast, FileRange};
 
 use marzano_language::{
@@ -38,15 +41,6 @@ use marzano_language::{
 };
 
 use std::{collections::BTreeMap, path::Path, vec};
-
-pub type CallbackMatchFn = dyn for<'a> Fn(
-        &<problem::MarzanoQueryContext as grit_pattern_matcher::context::QueryContext>::ResolvedPattern<'a>,
-        &'a MarzanoContext<'a>,
-        &mut State<'a, MarzanoQueryContext>,
-        &mut AnalysisLogs,
-    ) -> Result<bool>
-    + Send
-    + Sync;
 
 /// Pattern Builder allows you to progressively compile a pattern.
 /// You always start with a source GritQL string, but additional patterns can be attached before the final query.
@@ -250,54 +244,9 @@ impl PatternBuilder {
     }
 
     /// Add a callback
-    pub fn matches_callback(mut self, cb: Box<CallbackMatchFn>) -> Self {
-        // This is a bit of a hack, but we can dynamically inject a new built-in and use that to call the callback
-        let index = self
-            .built_ins
-            .add_callback(Box::new(move |args, context, state, logs| {
-                let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
-                let first = args[0].as_ref().unwrap();
-
-                let callback_result = cb(first, context, state, logs)?;
-
-                Ok(MarzanoResolvedPattern::Constant(Constant::Boolean(
-                    callback_result,
-                )))
-            }));
-
-        let compilation = CompilationContext {
-            file: DEFAULT_FILE_NAME,
-            built_ins: &self.built_ins,
-            lang: &self.language,
-            pattern_definition_info: &self.pattern_definition_indices,
-            predicate_definition_info: &self.predicate_definition_indices,
-            function_definition_info: &self.function_definition_indices,
-            foreign_function_definition_info: &self.foreign_function_indices,
-        };
-
-        let mut node_context = NodeCompilationContext {
-            compilation: &compilation,
-            vars: &mut self.vars,
-            vars_array: &mut self.vars_array,
-            scope_index: self.current_scope_index,
-            global_vars: &mut self.global_vars,
-            logs: &mut self.compilation_warnings,
-        };
-
-        // We reuse the match name here, not sure that's right.
-        let match_var = variable_from_name(MATCH_VAR, &mut node_context).unwrap();
-        let predicate_match = Predicate::Match(Box::new(Match::new(
-            Container::FunctionCall(Box::new(CallBuiltIn::new(
-                index,
-                &format!("match_{}", index),
-                vec![Some(grit_pattern_matcher::pattern::Pattern::Variable(
-                    match_var,
-                ))],
-            ))),
-            Some(Pattern::BooleanConstant(BooleanConstant::new(true))),
-        )));
-
-        self.wrap_with_condition(predicate_match)
+    pub fn matches_callback(mut self, cb: impl CallbackPatternFn<MarzanoQueryContext>) -> Self {
+        let pattern = Pattern::CallbackPattern(Box::new(CallbackPattern::new(cb)));
+        self.matches(pattern)
     }
 
     /// Add a new built in
