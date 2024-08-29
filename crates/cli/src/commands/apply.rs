@@ -1,5 +1,5 @@
 use anyhow::Result;
-use clap::Args;
+use clap::{Args, Parser}; // Updated to import Parser for Clap functionality
 use indicatif::MultiProgress;
 
 use marzano_gritmodule::searcher::find_workflow_file_from;
@@ -30,8 +30,38 @@ pub struct ApplyArgs {
   - A workflow name (ex. `lint`)"
     )]
     pattern_or_workflow: String,
+
     #[clap(index = 2, value_parser, default_value = ".")]
     paths: Vec<PathBuf>,
+
+    // Define the --language and --lang options with aliases
+    #[clap(
+        long = "language",
+        short = 'l',
+        alias = "lang",
+        possible_values = &[
+            "js", "javascript",
+            "py", "python",
+            "html", "css",
+            "json", "java",
+            "csharp", "markdown",
+            "go", "rust",
+            "ruby", "solidity",
+            "hcl", "yaml",
+            "sql", "vue",
+            "toml", "php",
+            "phponly"
+        ],
+        aliases = &[
+            ("javascript", &["js"]),
+            ("python", &["py"]),
+            ("js", &["javascript"]),
+            ("py", &["python"]),
+            // Add more aliases as needed
+        ],
+        help = "Specify the language"
+    )]
+    language: Option<String>,
 
     #[cfg(feature = "workflows_v2")]
     #[command(flatten)]
@@ -135,6 +165,7 @@ mod tests {
         let args = ApplyArgs {
             pattern_or_workflow: pattern,
             paths,
+            language: None,
             apply_migration_args,
             apply_pattern_args,
             shared_apply_args: Default::default(),
