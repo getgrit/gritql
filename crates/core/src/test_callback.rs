@@ -16,7 +16,7 @@ fn test_callback() {
     let src = r#"language js `console.log($_)`"#;
     let mut parser = MarzanoGritParser::new().unwrap();
     let src_tree = parser
-        .parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))
+        .parse_file(src, Some(Path::new(DEFAULT_FILE_NAME)))
         .unwrap();
     let lang = TargetLanguage::from_tree(&src_tree).unwrap();
 
@@ -25,7 +25,7 @@ fn test_callback() {
 
     assert!(!callback_called.load(std::sync::atomic::Ordering::SeqCst));
 
-    let mut builder = PatternBuilder::start_empty(&src, lang).unwrap();
+    let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
     builder = builder.matches_callback(Box::new(move |binding, context, state, _| {
         let text = binding
             .text(&state.files, context.language)
@@ -45,6 +45,6 @@ fn test_callback() {
         .to_owned(),
         true,
     )];
-    let results = run_on_test_files(&problem, &test_files);
+    let _results = run_on_test_files(&problem, &test_files);
     assert!(callback_called.load(std::sync::atomic::Ordering::SeqCst));
 }
