@@ -166,6 +166,7 @@ pub(crate) fn should_autowrap<Q: QueryContext>(
         | Pattern::CallBuiltIn(_)
         | Pattern::CallFunction(_)
         | Pattern::CallForeignFunction(_)
+        | Pattern::CallbackPattern(_)
         | Pattern::Assignment(_)
         | Pattern::Accumulate(_)
         | Pattern::And(_)

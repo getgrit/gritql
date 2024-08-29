@@ -124,6 +124,7 @@ pub fn extract_filename_pattern<Q: QueryContext>(
         | Pattern::CallBuiltIn(_)
         | Pattern::CallFunction(_)
         | Pattern::CallForeignFunction(_)
+        | Pattern::CallbackPattern(_)
         | Pattern::Assignment(_)
         | Pattern::Accumulate(_)
         | Pattern::Not(_)

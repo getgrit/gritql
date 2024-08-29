@@ -41,6 +41,7 @@ impl NodeCompiler for StepCompiler {
             | Pattern::Limit(_)
             | Pattern::CallBuiltIn(_)
             | Pattern::CallFunction(_)
+            | Pattern::CallbackPattern(_)
             | Pattern::CallForeignFunction(_)
             | Pattern::Assignment(_)
             | Pattern::Accumulate(_)
