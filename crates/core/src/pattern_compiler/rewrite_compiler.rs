@@ -112,6 +112,7 @@ impl NodeCompiler for RewriteCompiler {
                 | Pattern::Modulo(_)
                 | Pattern::Like(_)
                 | Pattern::Dots
+                | Pattern::CallbackPattern(_)
                 | Pattern::Sequential(_) => Err(anyhow!(
                 "right hand side of rewrite must be a code snippet or function call, but found: {:?}",
                 right
