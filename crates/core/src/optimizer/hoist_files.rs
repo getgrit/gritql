@@ -310,6 +310,7 @@ fn is_safe_to_hoist<Q: QueryContext>(pattern: &Pattern<Q>) -> Result<bool> {
         | Pattern::CallBuiltIn(_)
         | Pattern::CallFunction(_)
         | Pattern::CallForeignFunction(_)
+        | Pattern::CallbackPattern(_)
         | Pattern::Assignment(_)
         | Pattern::Accumulate(_)
         | Pattern::And(_)
