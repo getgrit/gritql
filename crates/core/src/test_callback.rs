@@ -1,4 +1,4 @@
-use grit_pattern_matcher::pattern::{Pattern, ResolvedPattern, StringConstant};
+use grit_pattern_matcher::pattern::{Matcher, Pattern, ResolvedPattern, StringConstant};
 use grit_pattern_matcher::{constants::DEFAULT_FILE_NAME, pattern::Contains};
 use marzano_language::{grit_parser::MarzanoGritParser, target_language::TargetLanguage};
 use std::{
@@ -6,6 +6,7 @@ use std::{
     sync::{atomic::AtomicBool, Arc},
 };
 
+use crate::problem::MarzanoQueryContext;
 use crate::{
     pattern_compiler::{CompilationResult, PatternBuilder},
     test_utils::{run_on_test_files, SyntheticFile},
@@ -81,13 +82,21 @@ pattern this_thing() {
         assert!(state.find_var_in_scope("fuzz").is_some());
 
         let pattern = Pattern::Contains(Box::new(Contains::new(
-            Pattern::StringConstant(StringConstant::new("name".to_owned())),
+            Pattern::<MarzanoQueryContext>::StringConstant(StringConstant::new("name".to_owned())),
             None,
         )));
-        assert!(lazy.matches(&pattern, context, state, logs).unwrap());
+        assert!(lazy.matches(pattern, context, state, logs).unwrap());
 
-        println!("registered_var: {:?}", registered_var);
-        println!("lazy: {:?}", lazy);
+        let non_matching_pattern = Pattern::Contains(Box::new(Contains::new(
+            Pattern::<MarzanoQueryContext>::StringConstant(StringConstant::new(
+                "not_found".to_owned(),
+            )),
+            None,
+        )));
+        assert!(!lazy
+            .matches(non_matching_pattern, context, state, logs)
+            .unwrap());
+
         callback_called_clone.store(true, std::sync::atomic::Ordering::SeqCst);
         Ok(true)
     }));
