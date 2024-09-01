@@ -82,6 +82,9 @@ pattern this_thing() {
 
         println!("registered_var: {:?}", registered_var);
         println!("lazy: {:?}", lazy);
+
+        // let does_have_name =
+
         callback_called_clone.store(true, std::sync::atomic::Ordering::SeqCst);
         Ok(true)
     }));

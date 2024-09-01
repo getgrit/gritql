@@ -126,7 +126,7 @@ impl BuiltIns {
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        let mut lazy = LazyTraversal::new(binding);
+        let mut lazy = LazyTraversal::new(binding, context, state, logs);
         (self.callbacks[call.callback_index])(binding, context, state, logs, &mut lazy)
     }
 
