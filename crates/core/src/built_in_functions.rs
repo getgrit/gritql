@@ -1,6 +1,6 @@
 use crate::{
-    marzano_context::MarzanoContext, marzano_resolved_pattern::MarzanoResolvedPattern,
-    paths::resolve, problem::MarzanoQueryContext,
+    lazy::LazyTraversal, marzano_context::MarzanoContext,
+    marzano_resolved_pattern::MarzanoResolvedPattern, paths::resolve, problem::MarzanoQueryContext,
 };
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
@@ -40,6 +40,7 @@ pub type CallbackFn = dyn for<'a, 'b> Fn(
         &'a MarzanoContext<'a>,
         &mut State<'a, MarzanoQueryContext>,
         &mut AnalysisLogs,
+        &mut LazyTraversal<'a, 'b>
     ) -> Result<bool>
     + Send
     + Sync;
@@ -125,7 +126,8 @@ impl BuiltIns {
         state: &mut State<'a, MarzanoQueryContext>,
         logs: &mut AnalysisLogs,
     ) -> Result<bool> {
-        (self.callbacks[call.callback_index])(binding, context, state, logs)
+        let mut lazy = LazyTraversal::new(binding);
+        (self.callbacks[call.callback_index])(binding, context, state, logs, &mut lazy)
     }
 
     /// Add an anonymous built-in, used for callbacks

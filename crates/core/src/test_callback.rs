@@ -26,7 +26,7 @@ fn test_callback() {
     assert!(!callback_called.load(std::sync::atomic::Ordering::SeqCst));
 
     let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
-    builder = builder.matches_callback(Box::new(move |binding, context, state, _| {
+    builder = builder.matches_callback(Box::new(move |binding, context, state, _, _| {
         let text = binding
             .text(&state.files, context.language)
             .unwrap()
@@ -72,11 +72,16 @@ pattern this_thing() {
     assert!(!callback_called.load(std::sync::atomic::Ordering::SeqCst));
 
     let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
-    builder = builder.matches_callback(Box::new(move |binding, context, state, _| {
+    builder = builder.matches_callback(Box::new(move |binding, context, state, _, lazy| {
         assert!(state.find_var_in_scope("$foo").is_some());
         assert!(state.find_var_in_scope("$bar").is_some());
         assert!(state.find_var_in_scope("$dude").is_none());
         assert!(state.find_var_in_scope("$baz").is_none());
+        let registered_var = state.register_var("fuzz");
+        assert!(state.find_var_in_scope("fuzz").is_some());
+
+        println!("registered_var: {:?}", registered_var);
+        println!("lazy: {:?}", lazy);
         callback_called_clone.store(true, std::sync::atomic::Ordering::SeqCst);
         Ok(true)
     }));

@@ -314,8 +314,15 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         None
     }
 
+    pub fn register_var(&mut self, name: &str) -> Variable {
+        let var = Variable::new(self.current_scope, self.bindings[self.current_scope].len());
+        self.bindings[self.current_scope]
+            .push_back(vector![Box::new(VariableContent::new(name.to_string()))]);
+        var
+    }
+
     /// Attempt to find a variable by name in the current scope
-    pub fn find_var_in_scope(&self, name: &str) -> Option<Variable> {
+    pub fn find_var_in_scope(&mut self, name: &str) -> Option<Variable> {
         for (index, content) in self.bindings[self.current_scope]
             .last()
             .unwrap()
