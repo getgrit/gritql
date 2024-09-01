@@ -50,6 +50,7 @@ impl<'a> MarzanoResolvedPattern<'a> {
     /// Check if a pattern matches a provided pattern
     ///
     /// Note this leaks memory, so should only be used in short-lived programs
+    #[allow(dead_code)]
     pub(crate) fn matches(
         &self,
         pattern: &Pattern<MarzanoQueryContext>,
