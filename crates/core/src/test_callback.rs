@@ -1,11 +1,10 @@
-use grit_pattern_matcher::pattern::{ResolvedPattern};
-use grit_pattern_matcher::{constants::DEFAULT_FILE_NAME};
+use grit_pattern_matcher::constants::DEFAULT_FILE_NAME;
+use grit_pattern_matcher::pattern::ResolvedPattern;
 use marzano_language::{grit_parser::MarzanoGritParser, target_language::TargetLanguage};
 use std::{
     path::Path,
     sync::{atomic::AtomicBool, Arc},
 };
-
 
 use crate::{
     pattern_compiler::{CompilationResult, PatternBuilder},
@@ -27,7 +26,7 @@ fn test_callback() {
     assert!(!callback_called.load(std::sync::atomic::Ordering::SeqCst));
 
     let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
-    builder = builder.matches_callback(Box::new(move |binding, context, state, _, _| {
+    builder = builder.matches_callback(Box::new(move |binding, context, state, logs| {
         let text = binding
             .text(&state.files, context.language)
             .unwrap()
