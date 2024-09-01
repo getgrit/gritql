@@ -28,33 +28,31 @@ impl<Q: QueryContext> PatternName for Like<Q> {
 
 impl<Q: QueryContext> Matcher<Q> for Like<Q> {
     #[cfg(feature = "embeddings")]
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        use crate::errors::debug;
+    use crate::errors::debug;
 
         let snippet = self.like.text(state, context, logs)?;
         let code = binding.text(&state.files)?.to_string();
         let model = embeddings::embed::EmbeddingModel::VoyageCode2;
         let similarity =
             model.similarity(snippet, code, context.runtime, |s| debug(logs, state, s))? as f64;
-        Ok(similarity > self.threshold.float(state, context, logs)?)
-    }
+        Ok(similarity > self.threshold.float(state, context, logs)?) }
 
     #[cfg(not(feature = "embeddings"))]
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         _binding: &Q::ResolvedPattern<'a>,
         _state: &mut State<'a, Q>,
         _context: &'a Q::ExecContext<'a>,
-        _logs: &mut AnalysisLogs,
+        _logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        Err(GritPatternError::new(
+    Err(GritPatternError::new(
             "Like only available under the embeddings feature",
-        ))
-    }
+        )) }
 }

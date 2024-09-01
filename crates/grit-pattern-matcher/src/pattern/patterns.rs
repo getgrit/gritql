@@ -227,8 +227,8 @@ impl<Q: QueryContext> PatternName for Pattern<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,

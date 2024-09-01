@@ -34,21 +34,20 @@ impl<Q: QueryContext> PatternName for If<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for If<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        let mut state = init_state.clone();
+    let mut state = init_state.clone();
         if self.if_.execute_func(&mut state, context, logs)?.predicator {
             *init_state = state;
             self.then.execute(binding, init_state, context, logs)
         } else {
             self.else_.execute(binding, init_state, context, logs)
-        }
-    }
+        } }
 }
 
 #[derive(Debug, Clone)]

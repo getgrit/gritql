@@ -18,20 +18,19 @@ impl<Q: QueryContext> Files<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Files<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         resolved_pattern: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        if let Some(files) = resolved_pattern.get_files() {
+    if let Some(files) = resolved_pattern.get_files() {
             self.pattern.execute(files, state, context, logs)
         } else if resolved_pattern.get_file().is_some() {
             let files = ResolvedPattern::from_list_parts([resolved_pattern.to_owned()].into_iter());
             self.pattern.execute(&files, state, context, logs)
         } else {
             Ok(false)
-        }
-    }
+        } }
 }

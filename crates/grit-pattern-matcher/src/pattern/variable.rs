@@ -160,14 +160,14 @@ impl PatternName for Variable {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Variable {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         resolved_pattern: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        if let Some(res) = self.execute_resolved(resolved_pattern, state, context.language())? {
+    if let Some(res) = self.execute_resolved(resolved_pattern, state, context.language())? {
             return Ok(res);
         }
         // we only check the assignment if the variable is not bound already
@@ -200,8 +200,7 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
         variable_content
             .value_history
             .push(resolved_pattern.clone());
-        Ok(true)
-    }
+        Ok(true) }
 }
 
 pub fn get_absolute_file_name<'a, Q: QueryContext>(

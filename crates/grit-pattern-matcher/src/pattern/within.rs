@@ -25,14 +25,14 @@ impl<Q: QueryContext> PatternName for Within<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Within<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        let mut did_match = false;
+    let mut did_match = false;
         let mut cur_state = init_state.clone();
 
         let state = cur_state.clone();
@@ -66,6 +66,5 @@ impl<Q: QueryContext> Matcher<Q> for Within<Q> {
             Ok(true)
         } else {
             Ok(false)
-        }
-    }
+        } }
 }

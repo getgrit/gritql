@@ -32,14 +32,14 @@ impl<Q: QueryContext> PatternName for Where<Q> {
 impl<Q: QueryContext> Matcher<Q> for Where<Q> {
     // order here is pattern then side condition, do we prefer side condition then pattern?
     // should the state be reset on failure?
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        let mut cur_state = init_state.clone();
+    let mut cur_state = init_state.clone();
         if !self
             .pattern
             .execute(binding, &mut cur_state, context, logs)?
@@ -55,6 +55,5 @@ impl<Q: QueryContext> Matcher<Q> for Where<Q> {
             Ok(true)
         } else {
             Ok(false)
-        }
-    }
+        } }
 }

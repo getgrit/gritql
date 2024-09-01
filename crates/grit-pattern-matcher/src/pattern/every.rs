@@ -24,14 +24,14 @@ impl<Q: QueryContext> PatternName for Every<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Every<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        // might be necessary to clone init state at the top,
+    // might be necessary to clone init state at the top,
         // but more performant to not, so leaving out for now.
         if let Some(items) = binding.get_list_binding_items() {
             let pattern = &self.pattern;
@@ -62,6 +62,5 @@ impl<Q: QueryContext> Matcher<Q> for Every<Q> {
             Ok(true)
         } else {
             Ok(false)
-        }
-    }
+        } }
 }

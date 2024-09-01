@@ -24,15 +24,14 @@ impl PatternName for FloatConstant {
 }
 
 impl<Q: QueryContext> Matcher<Q> for FloatConstant {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        _logs: &mut AnalysisLogs,
+        _logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        let text = binding.text(&state.files, context.language())?;
+    let text = binding.text(&state.files, context.language())?;
         let parsed_double = text.parse::<f64>()?;
-        Ok(parsed_double == self.value)
-    }
+        Ok(parsed_double == self.value) }
 }

@@ -58,19 +58,18 @@ impl<Q: QueryContext> PatternName for DynamicPattern<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for DynamicPattern<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        if binding.text(&state.files, context.language())? == self.text(state, context, logs)? {
+    if binding.text(&state.files, context.language())? == self.text(state, context, logs)? {
             Ok(true)
         } else {
             Ok(false)
-        }
-    }
+        } }
 }
 
 impl PatternName for DynamicSnippet {

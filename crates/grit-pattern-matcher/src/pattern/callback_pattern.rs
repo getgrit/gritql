@@ -38,13 +38,12 @@ impl Debug for CallbackPattern {
 }
 
 impl<Q: QueryContext> Matcher<Q> for CallbackPattern {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        context.call_callback(self, context, binding, state, logs)
-    }
+    context.call_callback(self, context, binding, state, logs) }
 }

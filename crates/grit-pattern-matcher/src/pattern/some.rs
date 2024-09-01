@@ -24,14 +24,14 @@ impl<Q: QueryContext> PatternName for Some<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Some<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        if let Some(items) = binding.get_list_binding_items() {
+    if let Some(items) = binding.get_list_binding_items() {
             let mut did_match = false;
             let mut cur_state = init_state.clone();
             for item in items {
@@ -75,6 +75,5 @@ impl<Q: QueryContext> Matcher<Q> for Some<Q> {
             Ok(did_match)
         } else {
             Ok(false)
-        }
-    }
+        } }
 }

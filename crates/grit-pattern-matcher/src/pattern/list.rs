@@ -35,14 +35,14 @@ impl<Q: QueryContext> PatternName for List<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for List<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        if let Some(items) = binding.get_list_binding_items() {
+    if let Some(items) = binding.get_list_binding_items() {
             let patterns: Vec<_> = items.map(Cow::Owned).collect();
             execute_assoc(&self.patterns, &patterns, state, context, logs)
         } else if let Some(items) = binding.get_list_items() {
@@ -50,8 +50,7 @@ impl<Q: QueryContext> Matcher<Q> for List<Q> {
             execute_assoc(&self.patterns, &patterns, state, context, logs)
         } else {
             Ok(false)
-        }
-    }
+        } }
 }
 
 fn execute_assoc<'a, Q: QueryContext>(

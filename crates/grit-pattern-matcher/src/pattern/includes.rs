@@ -140,13 +140,12 @@ fn execute<'a, Q: QueryContext>(
 // Includes and within should call the same function taking an iterator as an argument
 // even better two arguments an accumulator and an iterator.
 impl<Q: QueryContext> Matcher<Q> for Includes<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        execute(&self.includes, binding, state, context, logs)
-    }
+    execute(&self.includes, binding, state, context, logs) }
 }

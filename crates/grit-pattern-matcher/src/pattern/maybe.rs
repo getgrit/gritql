@@ -19,19 +19,18 @@ impl<Q: QueryContext> Maybe<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Maybe<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        let mut state = init_state.clone();
+    let mut state = init_state.clone();
         if self.pattern.execute(binding, &mut state, context, logs)? {
             *init_state = state;
         }
-        Ok(true)
-    }
+        Ok(true) }
 }
 
 impl<Q: QueryContext> PatternName for Maybe<Q> {

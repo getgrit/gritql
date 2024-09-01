@@ -11,20 +11,19 @@ use std::ops;
 pub struct Sequential<Q: QueryContext>(pub Vec<Step<Q>>);
 
 impl<Q: QueryContext> Matcher<Q> for Sequential<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        for step in &self.0 {
+    for step in &self.0 {
             if !step.execute(binding, state, context, logs)? {
                 return Ok(false);
             }
         }
-        Ok(true)
-    }
+        Ok(true) }
 }
 
 impl<Q: QueryContext> From<Vec<Step<Q>>> for Sequential<Q> {

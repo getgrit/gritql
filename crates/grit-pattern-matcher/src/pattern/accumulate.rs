@@ -42,14 +42,14 @@ impl<Q: QueryContext> PatternName for Accumulate<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Accumulate<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         context_node: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        if let Pattern::Variable(_) = &self.left {
+    if let Pattern::Variable(_) = &self.left {
             let left = PatternOrResolved::Pattern(&self.left);
             let right = ResolvedPattern::from_pattern(&self.right, state, context, logs)?;
             insert_effect(&left, right, state, context)
@@ -67,8 +67,7 @@ impl<Q: QueryContext> Matcher<Q> for Accumulate<Q> {
             let right = ResolvedPattern::from_dynamic_pattern(dynamic_right, state, context, logs)?;
 
             insert_effect(&left, right, state, context)
-        }
-    }
+        } }
 }
 
 impl<Q: QueryContext> Evaluator<Q> for Accumulate<Q> {

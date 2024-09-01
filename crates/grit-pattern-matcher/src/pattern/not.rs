@@ -29,17 +29,16 @@ impl<Q: QueryContext> PatternName for Not<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Not<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        Ok(!self
+    Ok(!self
             .pattern
-            .execute(binding, &mut state.clone(), context, logs)?)
-    }
+            .execute(binding, &mut state.clone(), context, logs)?) }
 }
 
 #[derive(Debug, Clone)]

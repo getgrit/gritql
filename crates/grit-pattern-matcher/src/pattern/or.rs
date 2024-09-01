@@ -28,14 +28,14 @@ impl<Q: QueryContext> PatternName for Or<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Or<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         resolved: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        if let Some(binding) = resolved.get_last_binding() {
+    if let Some(binding) = resolved.get_last_binding() {
             for p in self.patterns.iter() {
                 // filter out pattern which cannot match because of a mismatched node type
                 if let (Some(binding_node), Pattern::AstNode(node_pattern)) = (binding.as_node(), p)
@@ -61,8 +61,7 @@ impl<Q: QueryContext> Matcher<Q> for Or<Q> {
                 }
             }
         };
-        Ok(false)
-    }
+        Ok(false) }
 }
 
 #[derive(Debug, Clone)]

@@ -25,20 +25,19 @@ impl<Q: QueryContext> PatternName for And<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for And<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        for p in self.patterns.iter() {
+    for p in self.patterns.iter() {
             if !p.execute(binding, state, context, logs)? {
                 return Ok(false);
             };
         }
-        Ok(true)
-    }
+        Ok(true) }
 }
 
 #[derive(Debug, Clone)]

@@ -140,14 +140,14 @@ impl<Q: QueryContext> PatternName for Accessor<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Accessor<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        match self.get(state, context.language())? {
+    match self.get(state, context.language())? {
             Some(PatternOrResolved::Resolved(r)) => {
                 execute_resolved_with_binding(r, binding, state, context.language())
             }
@@ -156,8 +156,7 @@ impl<Q: QueryContext> Matcher<Q> for Accessor<Q> {
             }
             Some(PatternOrResolved::Pattern(p)) => p.execute(binding, state, context, logs),
             None => Ok(binding.matches_false_or_undefined()),
-        }
-    }
+        } }
 }
 
 pub fn execute_resolved_with_binding<'a, Q: QueryContext>(

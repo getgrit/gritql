@@ -39,8 +39,8 @@ impl<Q: QueryContext> Rewrite<Q> {
      *
      * If called from a rewrite pattern, the binding should be Some(the current node).
      */
-    pub(crate) fn execute_generalized<'a>(
-        &'a self,
+    pub(crate) fn execute_generalized<'a, 'b>(
+        &'b self,
         resolved: Option<&Q::ResolvedPattern<'a>>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
@@ -105,8 +105,8 @@ impl<Q: QueryContext> PatternName for Rewrite<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Rewrite<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,

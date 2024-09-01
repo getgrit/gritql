@@ -27,18 +27,17 @@ impl<Q: QueryContext> PatternName for Assignment<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Assignment<Q> {
-    fn execute<'a>(
-        &'a self,
+    fn execute<'a, 'b>(
+        &'b self,
         _context_node: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs,
+        logs: &mut AnalysisLogs
     ) -> GritResult<bool> {
-        let resolved = ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
+    let resolved = ResolvedPattern::from_pattern(&self.pattern, state, context, logs)?;
         self.container
             .set_resolved(state, context.language(), resolved)?;
-        Ok(true)
-    }
+        Ok(true) }
 }
 
 impl<Q: QueryContext> Evaluator<Q> for Assignment<Q> {
