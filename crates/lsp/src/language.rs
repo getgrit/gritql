@@ -31,7 +31,7 @@ pub fn language_id_to_pattern_language(language_id: &str) -> Option<PatternLangu
         }
         "html" => Some(PatternLanguage::Html),
         "css" => Some(PatternLanguage::Css),
-        "json" => Some(PatternLanguage::Json),
+        "json" | "jsonc"  => Some(PatternLanguage::Json),
         "java" => Some(PatternLanguage::Java),
         "csharp" => Some(PatternLanguage::CSharp),
         "python" => Some(PatternLanguage::Python),
