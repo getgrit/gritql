@@ -41,8 +41,9 @@ impl<Q: QueryContext> PatternDefinition<Q> {
         logs: &mut AnalysisLogs,
         args: &'a [Option<Pattern<Q>>],
     ) -> GritResult<bool> {
-        state.reset_vars(self.scope, args);
+        let tracker = state.enter_scope(self.scope, args);
         let res = self.pattern.execute(binding, state, context, logs);
+        state.exit_scope(tracker);
 
         let fn_state = state.bindings[self.scope].pop_back().unwrap();
         let cur_fn_state = state.bindings[self.scope].back_mut().unwrap();

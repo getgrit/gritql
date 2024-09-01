@@ -18,7 +18,7 @@ variables:
     scopedName: 0_3_$absolute_filename
     ranges: []
   - name: $msg
-    scopedName: 13_0_$msg
+    scopedName: 14_0_$msg
     ranges:
       - start:
           line: 3
@@ -29,7 +29,7 @@ variables:
         startByte: 26
         endByte: 30
   - name: $match
-    scopedName: 13_1_$match
+    scopedName: 14_1_$match
     ranges: []
 sourceFile: "language js\n\n`console.log($msg)`\n"
 parsedPattern: "[..]"
