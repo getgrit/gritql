@@ -60,7 +60,6 @@ default = [
   "network_requests",
   "language-parsers",
   "non_wasm",
-  "matches",
 ]
 external_functions_common = []
 external_functions = ["external_functions_common", "dep:marzano-externals"]
@@ -91,4 +90,3 @@ grit-parser = ["marzano-language/grit-parser"]
 absolute_filename = []
 non_wasm = ["absolute_filename"]
 test_utils = []
-matches = []
