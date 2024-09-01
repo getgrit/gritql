@@ -1,12 +1,12 @@
-use grit_pattern_matcher::pattern::{Matcher, Pattern, ResolvedPattern, StringConstant};
-use grit_pattern_matcher::{constants::DEFAULT_FILE_NAME, pattern::Contains};
+use grit_pattern_matcher::pattern::{ResolvedPattern};
+use grit_pattern_matcher::{constants::DEFAULT_FILE_NAME};
 use marzano_language::{grit_parser::MarzanoGritParser, target_language::TargetLanguage};
 use std::{
     path::Path,
     sync::{atomic::AtomicBool, Arc},
 };
 
-use crate::problem::MarzanoQueryContext;
+
 use crate::{
     pattern_compiler::{CompilationResult, PatternBuilder},
     test_utils::{run_on_test_files, SyntheticFile},

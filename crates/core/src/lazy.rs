@@ -8,7 +8,7 @@ use crate::marzano_context::MarzanoContext;
 use crate::{marzano_resolved_pattern::MarzanoResolvedPattern, problem::MarzanoQueryContext};
 
 #[derive(Debug, Clone)]
-pub(crate) struct LazyTraversal<'a, 'b> {
+pub struct LazyTraversal<'a, 'b> {
     root: &'b MarzanoResolvedPattern<'a>,
 }
 
@@ -17,6 +17,7 @@ impl<'a, 'b> LazyTraversal<'a, 'b> {
         Self { root }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn matches(
         &mut self,
         pattern: Pattern<MarzanoQueryContext>,
@@ -36,8 +37,8 @@ impl<'a, 'b> LazyTraversal<'a, 'b> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use grit_pattern_matcher::pattern::{Matcher, Pattern, ResolvedPattern, StringConstant};
+
+    use grit_pattern_matcher::pattern::{Pattern, StringConstant};
     use grit_pattern_matcher::{constants::DEFAULT_FILE_NAME, pattern::Contains};
     use marzano_language::{grit_parser::MarzanoGritParser, target_language::TargetLanguage};
     use std::{
@@ -74,35 +75,36 @@ mod test {
         assert!(!callback_called.load(std::sync::atomic::Ordering::SeqCst));
 
         let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
-        builder = builder.matches_callback(Box::new(move |binding, context, state, logs, lazy| {
-            assert!(state.find_var_in_scope("$foo").is_some());
-            assert!(state.find_var_in_scope("$bar").is_some());
-            assert!(state.find_var_in_scope("$dude").is_none());
-            assert!(state.find_var_in_scope("$baz").is_none());
-            let registered_var = state.register_var("fuzz");
-            assert!(state.find_var_in_scope("fuzz").is_some());
+        builder =
+            builder.matches_callback(Box::new(move |_binding, context, state, logs, lazy| {
+                assert!(state.find_var_in_scope("$foo").is_some());
+                assert!(state.find_var_in_scope("$bar").is_some());
+                assert!(state.find_var_in_scope("$dude").is_none());
+                assert!(state.find_var_in_scope("$baz").is_none());
+                let _registered_var = state.register_var("fuzz");
+                assert!(state.find_var_in_scope("fuzz").is_some());
 
-            let pattern = Pattern::Contains(Box::new(Contains::new(
-                Pattern::<MarzanoQueryContext>::StringConstant(StringConstant::new(
-                    "name".to_owned(),
-                )),
-                None,
-            )));
-            assert!(lazy.matches(pattern, context, state, logs).unwrap());
+                let pattern = Pattern::Contains(Box::new(Contains::new(
+                    Pattern::<MarzanoQueryContext>::StringConstant(StringConstant::new(
+                        "name".to_owned(),
+                    )),
+                    None,
+                )));
+                assert!(lazy.matches(pattern, context, state, logs).unwrap());
 
-            let non_matching_pattern = Pattern::Contains(Box::new(Contains::new(
-                Pattern::<MarzanoQueryContext>::StringConstant(StringConstant::new(
-                    "not_found".to_owned(),
-                )),
-                None,
-            )));
-            assert!(!lazy
-                .matches(non_matching_pattern, context, state, logs)
-                .unwrap());
+                let non_matching_pattern = Pattern::Contains(Box::new(Contains::new(
+                    Pattern::<MarzanoQueryContext>::StringConstant(StringConstant::new(
+                        "not_found".to_owned(),
+                    )),
+                    None,
+                )));
+                assert!(!lazy
+                    .matches(non_matching_pattern, context, state, logs)
+                    .unwrap());
 
-            callback_called_clone.store(true, std::sync::atomic::Ordering::SeqCst);
-            Ok(true)
-        }));
+                callback_called_clone.store(true, std::sync::atomic::Ordering::SeqCst);
+                Ok(true)
+            }));
         let CompilationResult { problem, .. } = builder.compile(None, None, true).unwrap();
 
         println!("problem: {:?}", problem);
