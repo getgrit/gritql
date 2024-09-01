@@ -1,13 +1,37 @@
 use marzano_language::target_language::{PatternLanguage, TargetLanguage};
 
 pub fn language_id_to_pattern_language(language_id: &str) -> Option<PatternLanguage> {
-    match language_id {
+    // Normalize aliases to main language identifiers
+    let normalized_language_id = match language_id {
+        "js" => "javascript",
+        "ts" => "typescript",
+        "jsx" | "tsx" => "typescriptreact",
+        "htm" => "html",
+        "css" => "css",
+        "jsonc" => "json",
+        "c#" => "csharp",
+        "py" | "python" => "python",
+        "md" => "markdown",
+        "go" => "go",
+        "rs" => "rust",
+        "rb" => "ruby",
+        "sol" => "solidity",
+        "tf" => "terraform",
+        "yml" => "yaml",
+        "sql" => "sql",
+        "vue" => "vue",
+        "toml" => "toml",
+        "php" => "php",
+        _ => language_id, // If no alias, use the input as-is
+    };
+
+    match normalized_language_id {
         "javascript" | "typescript" | "javascriptreact" | "typescriptreact" => {
             Some(PatternLanguage::Tsx)
         }
         "html" => Some(PatternLanguage::Html),
         "css" => Some(PatternLanguage::Css),
-        "json" | "jsonc" => Some(PatternLanguage::Json),
+        "json" => Some(PatternLanguage::Json),
         "java" => Some(PatternLanguage::Java),
         "csharp" => Some(PatternLanguage::CSharp),
         "python" => Some(PatternLanguage::Python),
@@ -25,6 +49,7 @@ pub fn language_id_to_pattern_language(language_id: &str) -> Option<PatternLangu
         _ => None,
     }
 }
+
 
 #[allow(dead_code)]
 pub fn target_language_to_language_id(target_language: TargetLanguage) -> &'static str {
