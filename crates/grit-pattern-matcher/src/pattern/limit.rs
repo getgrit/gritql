@@ -33,14 +33,14 @@ impl<Q: QueryContext> PatternName for Limit<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Limit<Q> {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs
+        logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    if context.ignore_limit_pattern() {
+        if context.ignore_limit_pattern() {
             let res = self.pattern.execute(binding, state, context, logs)?;
             return Ok(res);
         }
@@ -66,5 +66,6 @@ impl<Q: QueryContext> Matcher<Q> for Limit<Q> {
                 break;
             }
         }
-        Ok(true) }
+        Ok(true)
+    }
 }

@@ -29,14 +29,14 @@ impl<Q: QueryContext> Matcher<Q> for Any<Q> {
     // apply all successful updates to the state
     // must have at least one successful match
     // return soft and failed on failure
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         binding: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs
+        logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    let mut matched = false;
+        let mut matched = false;
         let mut cur_state = init_state.clone();
         for pattern in &self.patterns {
             let state = cur_state.clone();
@@ -51,7 +51,8 @@ impl<Q: QueryContext> Matcher<Q> for Any<Q> {
             Ok(true)
         } else {
             Ok(false)
-        } }
+        }
+    }
 }
 #[derive(Debug, Clone)]
 pub struct PrAny<Q: QueryContext> {

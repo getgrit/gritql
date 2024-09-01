@@ -180,14 +180,14 @@ impl<Q: QueryContext> PatternName for ListIndex<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for ListIndex<Q> {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs
+        logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    match self.get(state, context.language())? {
+        match self.get(state, context.language())? {
             Some(PatternOrResolved::Resolved(r)) => {
                 execute_resolved_with_binding(r, binding, state, context.language())
             }
@@ -196,5 +196,6 @@ impl<Q: QueryContext> Matcher<Q> for ListIndex<Q> {
             }
             Some(PatternOrResolved::Pattern(p)) => p.execute(binding, state, context, logs),
             None => Ok(binding.matches_false_or_undefined()),
-        } }
+        }
+    }
 }

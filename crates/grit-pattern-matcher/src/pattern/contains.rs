@@ -85,14 +85,14 @@ fn execute_until<'a, Q: QueryContext>(
 // Contains and within should call the same function taking an iterator as an argument
 // even better two arguments an accumulator and an iterator.
 impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         resolved_pattern: &Q::ResolvedPattern<'a>,
         init_state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs
+        logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    if let Some(binding) = resolved_pattern.get_last_binding() {
+        if let Some(binding) = resolved_pattern.get_last_binding() {
             if let Some(node) = binding.as_node() {
                 execute_until(
                     init_state,
@@ -248,5 +248,6 @@ impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
             Ok(true)
         } else {
             return Ok(false);
-        } }
+        }
+    }
 }

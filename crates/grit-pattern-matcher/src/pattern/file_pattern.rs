@@ -23,14 +23,14 @@ impl<Q: QueryContext> FilePattern<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         resolved_pattern: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs
+        logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    let Some(file) = resolved_pattern.get_file() else {
+        let Some(file) = resolved_pattern.get_file() else {
             return Ok(false);
         };
 
@@ -65,5 +65,6 @@ impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
             return Ok(false);
         }
 
-        Ok(true) }
+        Ok(true)
+    }
 }

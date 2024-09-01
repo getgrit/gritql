@@ -32,16 +32,17 @@ impl<Q: QueryContext> PatternName for Call<Q> {
 // todo parameters, and name should both be usize references
 // argument should throw an error if its not a parameter at compile time
 impl<Q: QueryContext> Matcher<Q> for Call<Q> {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs
+        logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    let pattern_definition = &context.pattern_definitions()[self.index];
+        let pattern_definition = &context.pattern_definitions()[self.index];
 
-        pattern_definition.call(state, binding, context, logs, &self.args) }
+        pattern_definition.call(state, binding, context, logs, &self.args)
+    }
 }
 
 #[derive(Debug, Clone)]

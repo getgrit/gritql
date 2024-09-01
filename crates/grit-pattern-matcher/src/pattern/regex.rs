@@ -127,12 +127,13 @@ impl<Q: QueryContext> PatternName for RegexPattern<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for RegexPattern<Q> {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs
+        logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    self.execute_matching(binding, state, context, logs, true) }
+        self.execute_matching(binding, state, context, logs, true)
+    }
 }

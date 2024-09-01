@@ -24,14 +24,15 @@ impl PatternName for BooleanConstant {
 }
 
 impl<Q: QueryContext> Matcher<Q> for BooleanConstant {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        _logs: &mut AnalysisLogs
+        _logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    binding
+        binding
             .is_truthy(state, context.language())
-            .map(|truthiness| truthiness == self.value) }
+            .map(|truthiness| truthiness == self.value)
+    }
 }

@@ -27,13 +27,14 @@ impl<Q: QueryContext> PatternName for Bubble<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Bubble<Q> {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs
+        logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    self.pattern_def
-            .call(state, binding, context, logs, &self.args) }
+        self.pattern_def
+            .call(state, binding, context, logs, &self.args)
+    }
 }

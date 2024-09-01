@@ -17,12 +17,13 @@ impl<Q: QueryContext> Step<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Step<Q> {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs
+        logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    context.exec_step(&self.pattern, binding, state, logs) }
+        context.exec_step(&self.pattern, binding, state, logs)
+    }
 }

@@ -29,14 +29,14 @@ impl<Q: QueryContext> PatternName for GritMap<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for GritMap<Q> {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs
+        logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    let Some(map) = binding.get_map() else {
+        let Some(map) = binding.get_map() else {
             return Ok(false);
         };
 
@@ -54,5 +54,6 @@ impl<Q: QueryContext> Matcher<Q> for GritMap<Q> {
                 return Ok(false);
             }
         }
-        Ok(true) }
+        Ok(true)
+    }
 }

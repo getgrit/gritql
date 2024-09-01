@@ -93,14 +93,15 @@ impl<Q: QueryContext> Log<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Log<Q> {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         _binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs
+        logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    self.add_log(state, context, logs) }
+        self.add_log(state, context, logs)
+    }
 }
 
 impl<Q: QueryContext> Evaluator<Q> for Log<Q> {

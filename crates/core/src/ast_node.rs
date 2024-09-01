@@ -52,14 +52,14 @@ impl PatternName for ASTNode {
 }
 
 impl Matcher<MarzanoQueryContext> for ASTNode {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         binding: &MarzanoResolvedPattern<'a>,
         init_state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext,
-        logs: &mut AnalysisLogs
+        logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    let Some(binding) = binding.get_last_binding() else {
+        let Some(binding) = binding.get_last_binding() else {
             return Ok(false);
         };
         let Some(node) = binding.singleton() else {
@@ -125,7 +125,8 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
             }
         }
         *init_state = running_state;
-        Ok(true) }
+        Ok(true)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -162,14 +163,14 @@ impl PatternName for AstLeafNode {
 }
 
 impl Matcher<MarzanoQueryContext> for AstLeafNode {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         binding: &MarzanoResolvedPattern<'a>,
         _state: &mut State<'a, MarzanoQueryContext>,
         _context: &'a MarzanoContext<'a>,
-        _logs: &mut AnalysisLogs
+        _logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    let Some(node) = binding.get_last_binding().and_then(Binding::singleton) else {
+        let Some(node) = binding.get_last_binding().and_then(Binding::singleton) else {
             return Ok(false);
         };
         if let Some(e) = &self.equivalence_class {
@@ -178,5 +179,6 @@ impl Matcher<MarzanoQueryContext> for AstLeafNode {
             Ok(false)
         } else {
             Ok(node.text()?.trim() == self.text)
-        } }
+        }
+    }
 }

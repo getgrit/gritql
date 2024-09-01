@@ -24,14 +24,15 @@ impl PatternName for IntConstant {
 }
 
 impl<Q: QueryContext> Matcher<Q> for IntConstant {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        _logs: &mut AnalysisLogs
+        _logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    let text = binding.text(&state.files, context.language())?;
+        let text = binding.text(&state.files, context.language())?;
         let parsed_int = text.parse::<i64>()?;
-        Ok(parsed_int == self.value) }
+        Ok(parsed_int == self.value)
+    }
 }

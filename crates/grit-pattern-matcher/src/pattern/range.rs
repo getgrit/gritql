@@ -66,14 +66,14 @@ impl From<UtilRange> for Range {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Range {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         binding: &Q::ResolvedPattern<'a>,
         _state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        _logs: &mut AnalysisLogs
+        _logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    if let Some(range) = binding.position(context.language()) {
+        if let Some(range) = binding.position(context.language()) {
             if let Some(start) = &self.start {
                 if start.line > range.start.line {
                     return Ok(false);
@@ -96,7 +96,8 @@ impl<Q: QueryContext> Matcher<Q> for Range {
             }
             return Ok(true);
         }
-        Ok(false) }
+        Ok(false)
+    }
 }
 
 impl PatternName for Range {

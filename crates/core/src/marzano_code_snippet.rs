@@ -49,14 +49,14 @@ impl PatternName for MarzanoCodeSnippet {
 
 impl Matcher<MarzanoQueryContext> for MarzanoCodeSnippet {
     // wrong, but whatever for now
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         resolved: &MarzanoResolvedPattern<'a>,
         state: &mut State<'a, MarzanoQueryContext>,
         context: &'a MarzanoContext<'a>,
-        logs: &mut AnalysisLogs
+        logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    let Some(binding) = resolved.get_last_binding() else {
+        let Some(binding) = resolved.get_last_binding() else {
             return Ok(resolved.text(&state.files, context.language())?.trim() == self.source);
         };
 
@@ -72,5 +72,6 @@ impl Matcher<MarzanoQueryContext> for MarzanoCodeSnippet {
             pattern.execute(resolved, state, context, logs)
         } else {
             Ok(false)
-        } }
+        }
+    }
 }

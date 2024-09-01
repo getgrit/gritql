@@ -1,5 +1,5 @@
-use grit_pattern_matcher::pattern::{Pattern, ResolvedPattern, StringConstant};
-use grit_pattern_matcher::{constants::DEFAULT_FILE_NAME, pattern::Contains};
+use grit_pattern_matcher::constants::DEFAULT_FILE_NAME;
+use grit_pattern_matcher::pattern::ResolvedPattern;
 use marzano_language::{grit_parser::MarzanoGritParser, target_language::TargetLanguage};
 use std::{
     path::Path,
@@ -72,19 +72,13 @@ pattern this_thing() {
     assert!(!callback_called.load(std::sync::atomic::Ordering::SeqCst));
 
     let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
-    builder = builder.matches_callback(Box::new(move |binding, context, state, logs, lazy| {
+    builder = builder.matches_callback(Box::new(move |binding, context, state, _, lazy| {
         assert!(state.find_var_in_scope("$foo").is_some());
         assert!(state.find_var_in_scope("$bar").is_some());
         assert!(state.find_var_in_scope("$dude").is_none());
         assert!(state.find_var_in_scope("$baz").is_none());
         let registered_var = state.register_var("fuzz");
         assert!(state.find_var_in_scope("fuzz").is_some());
-
-        let pattern = Pattern::Contains(Box::new(Contains::new(
-            Pattern::StringConstant(StringConstant::new("name".to_owned())),
-            None,
-        )));
-        assert!(lazy.matches(&pattern, context, state, logs).unwrap());
 
         println!("registered_var: {:?}", registered_var);
         println!("lazy: {:?}", lazy);

@@ -50,15 +50,16 @@ impl<Q: QueryContext> PatternName for Divide<Q> {
 }
 
 impl<Q: QueryContext> Matcher<Q> for Divide<Q> {
-    fn execute<'a, 'b>(
-        &'b self,
+    fn execute<'a>(
+        &'a self,
         binding: &Q::ResolvedPattern<'a>,
         state: &mut State<'a, Q>,
         context: &'a Q::ExecContext<'a>,
-        logs: &mut AnalysisLogs
+        logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-    let binding_text = binding.text(&state.files, context.language())?;
+        let binding_text = binding.text(&state.files, context.language())?;
         let binding_int = binding_text.parse::<f64>()?;
         let target = self.evaluate(state, context, logs)?;
-        Ok(binding_int == target) }
+        Ok(binding_int == target)
+    }
 }
