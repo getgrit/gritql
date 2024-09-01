@@ -18,10 +18,10 @@ variables:
     scopedName: 0_3_$absolute_filename
     ranges: []
   - name: $match
-    scopedName: 13_0_$match
+    scopedName: 14_0_$match
     ranges: []
   - name: $body
-    scopedName: 14_0_$body
+    scopedName: 15_0_$body
     ranges:
       - start:
           line: 1
@@ -32,7 +32,7 @@ variables:
         startByte: 32
         endByte: 37
   - name: $args
-    scopedName: 14_1_$args
+    scopedName: 15_1_$args
     ranges:
       - start:
           line: 1
@@ -43,7 +43,7 @@ variables:
         startByte: 23
         endByte: 28
   - name: $body
-    scopedName: 15_0_$body
+    scopedName: 16_0_$body
     ranges:
       - start:
           line: 1
@@ -54,7 +54,7 @@ variables:
         startByte: 63
         endByte: 68
   - name: $args
-    scopedName: 15_1_$args
+    scopedName: 16_1_$args
     ranges:
       - start:
           line: 1

@@ -61,8 +61,8 @@ expression: lines
     - name: $p
       scopedName: 8_0_$p
       ranges: []
-    - name: $all_imports
-      scopedName: 8_1_$all_imports
+    - name: $insert
+      scopedName: 8_1_$insert
       ranges: []
     - name: $h
       scopedName: 8_2_$h
@@ -79,53 +79,59 @@ expression: lines
     - name: $all_imports
       scopedName: 9_1_$all_imports
       ranges: []
-    - name: $our_source
-      scopedName: 9_2_$our_source
-      ranges: []
-    - name: $imported_names
-      scopedName: 9_3_$imported_names
-      ranges: []
-    - name: $joined_imported_names
-      scopedName: 9_4_$joined_imported_names
-      ranges: []
     - name: $p
       scopedName: 10_0_$p
       ranges: []
+    - name: $all_imports
+      scopedName: 10_1_$all_imports
+      ranges: []
     - name: $our_source
-      scopedName: 10_1_$our_source
+      scopedName: 10_2_$our_source
       ranges: []
     - name: $imported_names
-      scopedName: 10_2_$imported_names
-      ranges: []
-    - name: $all_imports
-      scopedName: 10_3_$all_imports
-      ranges: []
-    - name: $name
-      scopedName: 10_4_$name
-      ranges: []
-    - name: $our_source
-      scopedName: 11_0_$our_source
+      scopedName: 10_3_$imported_names
       ranges: []
     - name: $joined_imported_names
-      scopedName: 11_1_$joined_imported_names
+      scopedName: 10_4_$joined_imported_names
+      ranges: []
+    - name: $p
+      scopedName: 11_0_$p
+      ranges: []
+    - name: $our_source
+      scopedName: 11_1_$our_source
+      ranges: []
+    - name: $imported_names
+      scopedName: 11_2_$imported_names
+      ranges: []
+    - name: $all_imports
+      scopedName: 11_3_$all_imports
+      ranges: []
+    - name: $name
+      scopedName: 11_4_$name
+      ranges: []
+    - name: $our_source
+      scopedName: 12_0_$our_source
+      ranges: []
+    - name: $joined_imported_names
+      scopedName: 12_1_$joined_imported_names
       ranges: []
     - name: $imports
-      scopedName: 11_2_$imports
+      scopedName: 12_2_$imports
       ranges: []
     - name: $source
-      scopedName: 11_3_$source
+      scopedName: 12_3_$source
       ranges: []
     - name: $statement
-      scopedName: 11_4_$statement
+      scopedName: 12_4_$statement
       ranges: []
     - name: $imports
-      scopedName: 12_0_$imports
+      scopedName: 13_0_$imports
       ranges: []
     - name: $source
-      scopedName: 12_1_$source
+      scopedName: 13_1_$source
       ranges: []
     - name: $match
-      scopedName: 13_0_$match
+      scopedName: 14_0_$match
       ranges:
         - start:
             line: 4
@@ -239,8 +245,8 @@ expression: lines
     - name: $p
       scopedName: 8_0_$p
       ranges: []
-    - name: $all_imports
-      scopedName: 8_1_$all_imports
+    - name: $insert
+      scopedName: 8_1_$insert
       ranges: []
     - name: $h
       scopedName: 8_2_$h
@@ -257,53 +263,59 @@ expression: lines
     - name: $all_imports
       scopedName: 9_1_$all_imports
       ranges: []
-    - name: $our_source
-      scopedName: 9_2_$our_source
-      ranges: []
-    - name: $imported_names
-      scopedName: 9_3_$imported_names
-      ranges: []
-    - name: $joined_imported_names
-      scopedName: 9_4_$joined_imported_names
-      ranges: []
     - name: $p
       scopedName: 10_0_$p
       ranges: []
+    - name: $all_imports
+      scopedName: 10_1_$all_imports
+      ranges: []
     - name: $our_source
-      scopedName: 10_1_$our_source
+      scopedName: 10_2_$our_source
       ranges: []
     - name: $imported_names
-      scopedName: 10_2_$imported_names
-      ranges: []
-    - name: $all_imports
-      scopedName: 10_3_$all_imports
-      ranges: []
-    - name: $name
-      scopedName: 10_4_$name
-      ranges: []
-    - name: $our_source
-      scopedName: 11_0_$our_source
+      scopedName: 10_3_$imported_names
       ranges: []
     - name: $joined_imported_names
-      scopedName: 11_1_$joined_imported_names
+      scopedName: 10_4_$joined_imported_names
+      ranges: []
+    - name: $p
+      scopedName: 11_0_$p
+      ranges: []
+    - name: $our_source
+      scopedName: 11_1_$our_source
+      ranges: []
+    - name: $imported_names
+      scopedName: 11_2_$imported_names
+      ranges: []
+    - name: $all_imports
+      scopedName: 11_3_$all_imports
+      ranges: []
+    - name: $name
+      scopedName: 11_4_$name
+      ranges: []
+    - name: $our_source
+      scopedName: 12_0_$our_source
+      ranges: []
+    - name: $joined_imported_names
+      scopedName: 12_1_$joined_imported_names
       ranges: []
     - name: $imports
-      scopedName: 11_2_$imports
+      scopedName: 12_2_$imports
       ranges: []
     - name: $source
-      scopedName: 11_3_$source
+      scopedName: 12_3_$source
       ranges: []
     - name: $statement
-      scopedName: 11_4_$statement
+      scopedName: 12_4_$statement
       ranges: []
     - name: $imports
-      scopedName: 12_0_$imports
+      scopedName: 13_0_$imports
       ranges: []
     - name: $source
-      scopedName: 12_1_$source
+      scopedName: 13_1_$source
       ranges: []
     - name: $match
-      scopedName: 13_0_$match
+      scopedName: 14_0_$match
       ranges:
         - start:
             line: 14

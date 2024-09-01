@@ -18,7 +18,7 @@ variables:
     scopedName: 0_3_$absolute_filename
     ranges: []
   - name: $match
-    scopedName: 14_0_$match
+    scopedName: 15_0_$match
     ranges: []
 sourceFile: "engine marzano(0.1)\nlanguage js\n\nfunction adder() js {\n  console.log(\"We are in JavaScript now!\");\n  return 10 % 3\n}\n\n`x` => adder()"
 parsedPattern: "[..]"
