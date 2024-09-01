@@ -49,10 +49,7 @@ impl<'a> MarzanoResolvedPattern<'a> {
 
     /// Check if a pattern matches a provided pattern
     ///
-    /// # Safety
-    ///
-    /// This API is experimental and unsafe.
-    /// You should ensure pattern lives as long as possible, since we assume it is 'static
+    /// Note this leaks memory, so should only be used in short-lived programs
     pub(crate) fn matches(
         &self,
         pattern: &Pattern<MarzanoQueryContext>,
@@ -60,10 +57,8 @@ impl<'a> MarzanoResolvedPattern<'a> {
         context: &'a MarzanoContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-        // SAFETY: in most cases, matching does not rely on the pattern after matching
-        // ... but this is still very experimental
         let borrowed_pattern: &'static Pattern<MarzanoQueryContext> =
-            unsafe { std::mem::transmute(pattern) };
+            Box::leak(Box::new(pattern.clone()));
 
         let matches = borrowed_pattern.execute(self, state, context, logs)?;
         Ok(matches)
