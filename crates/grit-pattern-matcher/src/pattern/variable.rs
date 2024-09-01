@@ -13,12 +13,17 @@ use core::fmt::Debug;
 use grit_util::{
     constants::GRIT_METAVARIABLE_PREFIX, error::GritResult, AnalysisLogs, ByteRange, Language,
 };
-use std::{borrow::Cow, collections::BTreeSet};
+use std::{
+    borrow::Cow,
+    collections::BTreeSet,
+    sync::{atomic::AtomicU32, Arc},
+};
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug)]
 pub struct Variable {
     pub scope: usize,
     pub index: usize,
+    // loaded_location: Arc<AtomicU32>,
 }
 
 #[derive(Debug, Clone)]

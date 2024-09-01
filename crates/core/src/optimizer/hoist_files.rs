@@ -221,7 +221,7 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
                 Ok(Some(Pattern::Any(Box::new(Any::new(patterns)))))
             }
             Predicate::Match(m) => {
-                match m.val {
+                match &m.val {
                     grit_pattern_matcher::pattern::Container::Variable(var) => {
                         if var.is_file_name() {
                             match &m.pattern {

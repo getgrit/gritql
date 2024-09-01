@@ -292,7 +292,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         {
             self.trace_var(v)
         } else {
-            *var
+            var.clone()
         }
     }
 
