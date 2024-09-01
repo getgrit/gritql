@@ -10,7 +10,7 @@ mod equivalence;
 mod foreign_function_definition;
 pub mod fs;
 mod inline_snippets;
-mod lazy;
+
 mod limits;
 pub mod marzano_binding;
 pub mod marzano_code_snippet;
@@ -27,6 +27,9 @@ mod suppress;
 mod text_unparser;
 pub mod tree_sitter_serde;
 mod variables;
+
+#[cfg(feature = "matches")]
+mod lazy;
 
 // getrandom is a deeply nested dependency used by many things eg. uuid
 // to get wasm working we needed to enable a feature for this crate, so
