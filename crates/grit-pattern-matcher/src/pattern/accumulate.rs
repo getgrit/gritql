@@ -58,13 +58,13 @@ impl<Q: QueryContext> Matcher<Q> for Accumulate<Q> {
                 return Ok(false);
             };
             let resolved = context_node;
-            let Some(dynamic_right) = &self.dynamic_right else {
-                return Err(GritPatternError::new(
-                    "Insert right hand side must be a code snippet when LHS is not a variable",
-                ));
-            };
             let left = PatternOrResolved::Resolved(resolved);
-            let right = ResolvedPattern::from_dynamic_pattern(dynamic_right, state, context, logs)?;
+
+            let right = if let Some(dynamic_right) = &self.dynamic_right {
+                ResolvedPattern::from_dynamic_pattern(dynamic_right, state, context, logs)?
+            } else {
+                ResolvedPattern::from_pattern(&self.right, state, context, logs)?
+            };
 
             insert_effect(&left, right, state, context)
         }

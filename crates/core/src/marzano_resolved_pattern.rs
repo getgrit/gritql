@@ -2,6 +2,7 @@ use crate::{
     marzano_binding::MarzanoBinding, marzano_code_snippet::MarzanoCodeSnippet,
     marzano_context::MarzanoContext, paths::absolutize, problem::MarzanoQueryContext,
 };
+use grit_pattern_matcher::pattern::Matcher;
 use grit_pattern_matcher::{
     binding::Binding,
     constant::Constant,
@@ -44,6 +45,24 @@ impl<'a> MarzanoResolvedPattern<'a> {
 
     pub(crate) fn from_list_binding(node: NodeWithSource<'a>, field_id: FieldId) -> Self {
         Self::from_binding(MarzanoBinding::List(node, field_id))
+    }
+
+    /// Check if a pattern matches a provided pattern
+    ///
+    /// Note this leaks memory, so should only be used in short-lived programs
+    #[allow(dead_code)]
+    pub(crate) fn matches(
+        &self,
+        pattern: &Pattern<MarzanoQueryContext>,
+        state: &mut State<'a, MarzanoQueryContext>,
+        context: &'a MarzanoContext<'a>,
+        logs: &mut AnalysisLogs,
+    ) -> GritResult<bool> {
+        let borrowed_pattern: &'static Pattern<MarzanoQueryContext> =
+            Box::leak(Box::new(pattern.clone()));
+
+        let matches = borrowed_pattern.execute(self, state, context, logs)?;
+        Ok(matches)
     }
 
     fn to_snippets(&self) -> GritResult<Vector<ResolvedSnippet<'a, MarzanoQueryContext>>> {
@@ -486,12 +505,10 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             Pattern::CallBuiltIn(built_in) => built_in.call(state, context, logs),
             Pattern::CallFunction(func) => func.call(state, context, logs),
             Pattern::CallForeignFunction(func) => func.call(state, context, logs),
-            Pattern::CallbackPattern(callback) => {
-                Err(GritPatternError::new(format!(
-                    "cannot make resolved pattern from callback pattern {}",
-                    callback.name()
-                )))
-            }
+            Pattern::CallbackPattern(callback) => Err(GritPatternError::new(format!(
+                "cannot make resolved pattern from callback pattern {}",
+                callback.name()
+            ))),
             Pattern::StringConstant(string) => Ok(Self::Snippets(vector![ResolvedSnippet::Text(
                 (&string.text).into(),
             )])),

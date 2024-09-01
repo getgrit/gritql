@@ -49,6 +49,12 @@ impl<Q: QueryContext> DynamicPattern<Q> {
         let resolved = Q::ResolvedPattern::from_dynamic_pattern(self, state, context, logs)?;
         Ok(resolved.text(&state.files, context.language())?.to_string())
     }
+
+    /// Create a constant DynamicPattern from a string.
+    pub fn from_str_constant(s: &str) -> GritResult<Self> {
+        let parts = vec![DynamicSnippetPart::String(s.to_string())];
+        Ok(DynamicPattern::Snippet(DynamicSnippet { parts }))
+    }
 }
 
 impl<Q: QueryContext> PatternName for DynamicPattern<Q> {

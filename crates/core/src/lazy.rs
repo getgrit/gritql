@@ -1,40 +1,3 @@
-use grit_pattern_matcher::pattern::Matcher;
-use grit_pattern_matcher::pattern::Pattern;
-use grit_pattern_matcher::pattern::State;
-use grit_util::error::GritResult;
-use grit_util::AnalysisLogs;
-
-use crate::marzano_context::MarzanoContext;
-use crate::{marzano_resolved_pattern::MarzanoResolvedPattern, problem::MarzanoQueryContext};
-
-#[derive(Debug, Clone)]
-pub struct LazyTraversal<'a, 'b> {
-    root: &'b MarzanoResolvedPattern<'a>,
-}
-
-impl<'a, 'b> LazyTraversal<'a, 'b> {
-    pub(crate) fn new(root: &'b MarzanoResolvedPattern<'a>) -> Self {
-        Self { root }
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn matches(
-        &mut self,
-        pattern: Pattern<MarzanoQueryContext>,
-        context: &'a MarzanoContext<'a>,
-        state: &mut State<'a, MarzanoQueryContext>,
-        logs: &mut AnalysisLogs,
-    ) -> GritResult<bool> {
-        // THIS IS UNSAFE
-        // TODO: make this safe / improve the lifetimes so pattern does not need to be static
-        let borrowed_pattern: &'static Pattern<MarzanoQueryContext> =
-            unsafe { std::mem::transmute(&pattern) };
-
-        let matches = borrowed_pattern.execute(self.root, state, context, logs)?;
-        Ok(matches)
-    }
-}
-
 #[cfg(test)]
 mod test {
 
@@ -75,39 +38,36 @@ mod test {
         assert!(!callback_called.load(std::sync::atomic::Ordering::SeqCst));
 
         let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
-        builder =
-            builder.matches_callback(Box::new(move |_binding, context, state, logs, lazy| {
-                assert!(state.find_var_in_scope("$foo").is_some());
-                assert!(state.find_var_in_scope("$bar").is_some());
-                assert!(state.find_var_in_scope("$dude").is_none());
-                assert!(state.find_var_in_scope("$baz").is_none());
-                let _registered_var = state.register_var("fuzz");
-                assert!(state.find_var_in_scope("fuzz").is_some());
+        builder = builder.matches_callback(Box::new(move |binding, context, state, logs| {
+            assert!(state.find_var_in_scope("$foo").is_some());
+            assert!(state.find_var_in_scope("$bar").is_some());
+            assert!(state.find_var_in_scope("$dude").is_none());
+            assert!(state.find_var_in_scope("$baz").is_none());
+            let _registered_var = state.register_var("fuzz");
+            assert!(state.find_var_in_scope("fuzz").is_some());
 
-                let pattern = Pattern::Contains(Box::new(Contains::new(
-                    Pattern::<MarzanoQueryContext>::StringConstant(StringConstant::new(
-                        "name".to_owned(),
-                    )),
-                    None,
-                )));
-                assert!(lazy.matches(pattern, context, state, logs).unwrap());
+            let pattern = Pattern::Contains(Box::new(Contains::new(
+                Pattern::<MarzanoQueryContext>::StringConstant(StringConstant::new(
+                    "name".to_owned(),
+                )),
+                None,
+            )));
+            assert!(binding.matches(&pattern, state, context, logs).unwrap());
 
-                let non_matching_pattern = Pattern::Contains(Box::new(Contains::new(
-                    Pattern::<MarzanoQueryContext>::StringConstant(StringConstant::new(
-                        "not_found".to_owned(),
-                    )),
-                    None,
-                )));
-                assert!(!lazy
-                    .matches(non_matching_pattern, context, state, logs)
-                    .unwrap());
+            let non_matching_pattern = Pattern::Contains(Box::new(Contains::new(
+                Pattern::<MarzanoQueryContext>::StringConstant(StringConstant::new(
+                    "not_found".to_owned(),
+                )),
+                None,
+            )));
+            assert!(!binding
+                .matches(&non_matching_pattern, state, context, logs)
+                .unwrap());
 
-                callback_called_clone.store(true, std::sync::atomic::Ordering::SeqCst);
-                Ok(true)
-            }));
+            callback_called_clone.store(true, std::sync::atomic::Ordering::SeqCst);
+            Ok(true)
+        }));
         let CompilationResult { problem, .. } = builder.compile(None, None, true).unwrap();
-
-        println!("problem: {:?}", problem);
 
         let test_files = vec![SyntheticFile::new(
             "file.js".to_owned(),
