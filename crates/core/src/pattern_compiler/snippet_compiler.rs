@@ -113,12 +113,12 @@ pub(crate) fn dynamic_snippet_from_source(
             )));
         } else if let Some(var) = context.global_vars.get(var.as_ref()) {
             if context.compilation.file == DEFAULT_FILE_NAME {
-                context.vars_array[GLOBAL_VARS_SCOPE_INDEX][*var]
+                context.vars_array[GLOBAL_VARS_SCOPE_INDEX as usize][*var]
                     .locations
                     .insert(range);
             }
             parts.push(DynamicSnippetPart::Variable(Variable::new(
-                GLOBAL_VARS_SCOPE_INDEX,
+                GLOBAL_VARS_SCOPE_INDEX as usize,
                 *var,
             )));
         } else if var.starts_with("$GLOBAL_") {

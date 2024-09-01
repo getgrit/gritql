@@ -553,8 +553,10 @@ impl Problem {
         let file_registry = FileRegistry::new_from_paths(file_names);
         let mut state = State::new(bindings, file_registry);
 
-        let the_new_files =
-            state.bindings[GLOBAL_VARS_SCOPE_INDEX].back_mut().unwrap()[NEW_FILES_INDEX].as_mut();
+        let the_new_files = state.bindings[GLOBAL_VARS_SCOPE_INDEX as usize]
+            .back_mut()
+            .unwrap()[NEW_FILES_INDEX]
+            .as_mut();
         the_new_files.value = Some(MarzanoResolvedPattern::from_list_parts([].into_iter()));
 
         let mut results: Vec<MatchResult> = Vec::new();

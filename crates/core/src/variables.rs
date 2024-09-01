@@ -70,19 +70,19 @@ fn register_variable_optional_range(
     if let Some(i) = global_vars.get(name) {
         if let Some(FileLocation { range, file_name }) = location {
             if file_name == DEFAULT_FILE_NAME {
-                vars_array[GLOBAL_VARS_SCOPE_INDEX][*i]
+                vars_array[GLOBAL_VARS_SCOPE_INDEX as usize][*i]
                     .locations
                     .insert(range);
             }
         }
-        return Ok(Variable::new(GLOBAL_VARS_SCOPE_INDEX, *i));
+        return Ok(Variable::new(GLOBAL_VARS_SCOPE_INDEX as usize, *i));
     }
     let (name_map, scope_index) = if name.starts_with("$GLOBAL_") || name.starts_with("^GLOBAL_") {
         (global_vars, GLOBAL_VARS_SCOPE_INDEX)
     } else {
-        (vars, *scope_index)
+        (vars, *scope_index as u16)
     };
-    let scope = &mut vars_array[scope_index];
+    let scope = &mut vars_array[scope_index as usize];
     let index = scope.len();
     name_map.insert(name.to_owned(), index);
 
@@ -100,5 +100,5 @@ fn register_variable_optional_range(
         file,
         locations,
     });
-    Ok(Variable::new(scope_index, index))
+    Ok(Variable::new(scope_index as usize, index))
 }

@@ -376,7 +376,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                     parts.push(ResolvedSnippet::Text(string.into()));
                 }
                 DynamicSnippetPart::Variable(var) => {
-                    let content = &state.bindings[var.scope].last().unwrap()[var.index];
+                    let content = &state.bindings[var.scope().into()].last().unwrap()[var.index().into()];
                     let name = &content.name;
                     // feels weird not sure if clone is correct
                     let value = if let Some(value) = &content.value {
@@ -405,7 +405,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
     ) -> GritResult<Self> {
         match pattern {
             DynamicPattern::Variable(var) => {
-                let content = &state.bindings[var.scope].last().unwrap()[var.index];
+                let content = &state.bindings[var.scope().into()].last().unwrap()[var.index().into()];
                 let name = &content.name;
                 // feels weird not sure if clone is correct
                 if let Some(value) = &content.value {
@@ -499,7 +499,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             Pattern::FloatConstant(double) => Ok(Self::Constant(Constant::Float(double.value))),
             Pattern::BooleanConstant(bool) => Ok(Self::Constant(Constant::Boolean(bool.value))),
             Pattern::Variable(var) => {
-                let content = &state.bindings[var.scope].last().unwrap()[var.index];
+                let content = &state.bindings[var.scope().into()].last().unwrap()[var.index().into()];
                 let name = &content.name;
                 // feels weird not sure if clone is correct
                 if let Some(value) = &content.value {
