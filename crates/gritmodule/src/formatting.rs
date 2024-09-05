@@ -15,7 +15,7 @@ async fn biome(dir: &TempDir) {
         .arg("--write")
         .arg(dir.path().join("**/*"))
         .output()
-        .await;
+        .await?;
     log::debug!("biome output: {:?}", output)
 }
 
@@ -29,7 +29,7 @@ async fn prettier(dir: &TempDir) {
         .arg("--write")
         .arg(dir.path().join("**/*"))
         .output()
-        .await;
+        .await?;
     log::debug!("prettier output: {:?}", output);
 }
 
