@@ -254,12 +254,11 @@ async fn format_temp_dir(dir: &TempDir, languages: Vec<&PatternLanguage>) -> Res
         preferred_formatter(dir).await;
     }
 
-    if languages.contains(&&PatternLanguage::Json)
-        || languages.contains(&&PatternLanguage::Html)
-        || languages.contains(&&PatternLanguage::Css)
-    {
+    if languages.contains(&&PatternLanguage::Json) {
         preferred_formatter(dir).await;
-    } else if languages.contains(&&PatternLanguage::MarkdownBlock)
+    } else if languages.contains(&&PatternLanguage::Html)
+        || languages.contains(&&PatternLanguage::Css)
+	|| languages.contains(&&PatternLanguage::MarkdownBlock)
         || languages.contains(&&PatternLanguage::MarkdownInline)
         || languages.contains(&&PatternLanguage::Yaml)
     {
