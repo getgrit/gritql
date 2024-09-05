@@ -2,7 +2,6 @@ use anyhow::{Context, Result};
 use log::{debug, info};
 use marzano_language::target_language::PatternLanguage;
 use marzano_util::rich_path::RichFile;
-use std::env;
 use tempfile::TempDir;
 use tokio::{
     fs::{self, create_dir_all, OpenOptions},
@@ -10,67 +9,27 @@ use tokio::{
     process::Command,
 };
 
-async fn preferred_formatter(dir: &TempDir) {
-    log::debug!("Running code formatter");
-    match env::var("FORCE_PRETTIER") {
-        Ok(s) => {
-            if s == "1" {
-                prettier(dir, true).await;
-            } else {
-                biome(dir).await;
-            }
-        }
-        Err(_) => biome(dir).await,
-    }
-}
-
 async fn biome(dir: &TempDir) {
-    match env::var("FORCE_NPX_BIOME") {
-        Ok(v) => {
-            if v == "1" {
-                run_npx_biome(dir).await;
-            } else {
-                run_system_biome(dir).await;
-            }
-        }
-        Err(_) => run_system_biome(dir).await,
-    }
-}
-
-async fn run_npx_biome(dir: &TempDir) {
-    run_biome(dir, vec!["npx", "@biomejs/biome", "format", "--write"]).await;
-}
-
-async fn run_system_biome(dir: &TempDir) {
-    run_biome(dir, vec!["biome", "format", "--write"]).await
-}
-
-async fn run_biome(dir: &TempDir, commands: Vec<&str>) {
-    let mut cmd = Command::new(&commands[0]);
-    for a in &commands[1..] {
-        cmd.arg(a);
-    }
-    cmd.arg(dir.path().join("**/*"));
-    let output = cmd.output().await;
-    log::debug!("biome output: {:?}", output)
-}
-
-async fn prettier(dir: &TempDir, babel: bool) {
-    // npx has an interactive prompt asking if you want to install the package if it isn't installed.
-    // we pass `--yes` to avoid the interactive prompt
-    let mut cmd = Command::new("npx");
-    cmd.arg("--yes").arg("prettier");
-
-    if babel {
-        cmd.arg("--parser").arg("babel-ts");
-    }
-
-    let output = cmd
+    let output = Command::new("biome")
+        .arg("format")
         .arg("--write")
         .arg(dir.path().join("**/*"))
         .output()
         .await;
+    log::debug!("biome output: {:?}", output)
+}
 
+async fn prettier(dir: &TempDir) {
+    // npx has an interactive prompt asking if you want to install the package if it isn't installed.
+    // we pass `--yes` to avoid the interactive prompt
+    let output = Command::new("npx")
+	.arg("--yes")
+	.arg("prettier")
+        .arg("format")
+        .arg("--write")
+        .arg(dir.path().join("**/*"))
+        .output()
+        .await;
     log::debug!("prettier output: {:?}", output);
 }
 
@@ -250,19 +209,16 @@ async fn format_temp_dir(dir: &TempDir, languages: Vec<&PatternLanguage>) -> Res
     if languages.contains(&&PatternLanguage::Tsx)
         || languages.contains(&&PatternLanguage::JavaScript)
         || languages.contains(&&PatternLanguage::TypeScript)
+        || languages.contains(&&PatternLanguage::Json)
     {
-        preferred_formatter(dir).await;
-    }
-
-    if languages.contains(&&PatternLanguage::Json) {
-        preferred_formatter(dir).await;
+        biome(dir).await;
     } else if languages.contains(&&PatternLanguage::Html)
         || languages.contains(&&PatternLanguage::Css)
         || languages.contains(&&PatternLanguage::MarkdownBlock)
         || languages.contains(&&PatternLanguage::MarkdownInline)
         || languages.contains(&&PatternLanguage::Yaml)
     {
-        prettier(dir, false).await;
+        prettier(dir).await;
     }
 
     Ok(())
