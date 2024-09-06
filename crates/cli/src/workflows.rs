@@ -266,7 +266,7 @@ pub async fn run_remote_workflow(
 
         log::info!(
             "Run this to watch this workflow again:\n  {}",
-            format!("grit workflows watch {}", &result.workflow_id)
+            format!("grit workflows watch {}", &result.execution_id)
                 .bright_yellow()
                 .bold(),
         );
