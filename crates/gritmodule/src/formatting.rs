@@ -9,30 +9,6 @@ use tokio::{
     process::Command,
 };
 
-async fn biome(dir: &TempDir) {
-    let output = Command::new("biome")
-        .arg("format")
-        .arg("--write")
-        .arg(dir.path().join("**/*"))
-        .output()
-        .await?;
-    log::debug!("biome output: {:?}", output)
-}
-
-async fn prettier(dir: &TempDir) {
-    // npx has an interactive prompt asking if you want to install the package if it isn't installed.
-    // we pass `--yes` to avoid the interactive prompt
-    let output = Command::new("npx")
-	.arg("--yes")
-	.arg("prettier")
-        .arg("format")
-        .arg("--write")
-        .arg(dir.path().join("**/*"))
-        .output()
-        .await?;
-    log::debug!("prettier output: {:?}", output);
-}
-
 pub async fn format_rich_files(
     language: &PatternLanguage,
     files: Vec<RichFile>,
@@ -211,14 +187,30 @@ async fn format_temp_dir(dir: &TempDir, languages: Vec<&PatternLanguage>) -> Res
         || languages.contains(&&PatternLanguage::TypeScript)
         || languages.contains(&&PatternLanguage::Json)
     {
-        biome(dir).await;
+        let output = Command::new("biome")
+            .arg("format")
+            .arg("--write")
+            .arg(dir.path().join("**/*"))
+            .output()
+            .await?;
+        log::debug!("biome output: {:?}", output)
     } else if languages.contains(&&PatternLanguage::Html)
         || languages.contains(&&PatternLanguage::Css)
         || languages.contains(&&PatternLanguage::MarkdownBlock)
         || languages.contains(&&PatternLanguage::MarkdownInline)
         || languages.contains(&&PatternLanguage::Yaml)
     {
-        prettier(dir).await;
+        let output = Command::new("npx")
+            // npx has an interactive prompt asking if you want to install the package if it isn't installed.
+            // we pass `--yes` to avoid the interactive prompt
+            .arg("--yes")
+            .arg("prettier")
+            .arg("format")
+            .arg("--write")
+            .arg(dir.path().join("**/*"))
+            .output()
+            .await?;
+        log::debug!("prettier output: {:?}", output);
     }
 
     Ok(())
