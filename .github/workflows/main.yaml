@@ -47,6 +47,10 @@ jobs:
         run: |
           npm install -g prettier
           prettier --version
+      - name: Install biome
+        run: |
+          npm install -g @biomejs/biome
+          biome --version
       - name: test
         run: |
           cargo test --workspace \
