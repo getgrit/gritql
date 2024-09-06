@@ -673,9 +673,23 @@ mod tests {
         let pattern_tsx = "language js(jsx)";
         let pattern_default = "language js";
         let pattern_default_fall_through = "language js(block)";
+        let pattern_python_alias = "language py";
+        let pattern_csharp_alias = "language cs";
+        let pattern_rust_alias = "language rs";
+        let pattern_ruby_alias = "language rb";
+        let pattern_solidity_alias = "language sol";
+        let pattern_hcl_alias = "language tf";
+        let pattern_yaml_alias = "language yml";
         let js: TargetLanguage = PatternLanguage::JavaScript.try_into().unwrap();
         let ts: TargetLanguage = PatternLanguage::TypeScript.try_into().unwrap();
         let tsx: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
+        let python: TargetLanguage = PatternLanguage::Python.try_into().unwrap();
+        let csharp: TargetLanguage = PatternLanguage::CSharp.try_into().unwrap();
+        let rust: TargetLanguage = PatternLanguage::Rust.try_into().unwrap();
+        let ruby: TargetLanguage = PatternLanguage::Ruby.try_into().unwrap();
+        let solidity: TargetLanguage = PatternLanguage::Solidity.try_into().unwrap();
+        let hcl: TargetLanguage = PatternLanguage::Hcl.try_into().unwrap();
+        let yaml: TargetLanguage = PatternLanguage::Yaml.try_into().unwrap();
         assert_eq!(
             TargetLanguage::get_language(pattern_javascript)
                 .unwrap()
@@ -705,6 +719,48 @@ mod tests {
                 .unwrap()
                 .language_name(),
             tsx.language_name()
+        );
+        assert_eq!(
+            TargetLanguage::get_language(pattern_python_alias)
+                  .unwrap()
+                  .language_name(),
+           python.language_name()
+        );
+        assert_eq!(
+            TargetLanguage::get_language(pattern_csharp_alias)
+                 .unwrap()
+                 .language_name(),
+          csharp.language_name()
+        );
+        assert_eq!(
+            TargetLanguage::get_language(pattern_rust_alias)
+                 .unwrap()
+                 .language_name(),
+            rust.language_name()
+        );
+        assert_eq!(
+             TargetLanguage::get_language(pattern_ruby_alias)
+                  .unwrap()
+                  .language_name(),
+             ruby.language_name()
+        );
+        assert_eq!(
+             TargetLanguage::get_language(pattern_solidity_alias)
+                  .unwrap()
+                  .language_name(),
+         solidity.language_name()
+        );
+        assert_eq!(
+             TargetLanguage::get_language(pattern_hcl_alias)
+                  .unwrap()
+                  .language_name(),
+              hcl.language_name()
+        );
+        assert_eq!(
+             TargetLanguage::get_language(pattern_yaml_alias)
+                  .unwrap()
+                  .language_name(),
+             yaml.language_name()
         );
     }
 }
