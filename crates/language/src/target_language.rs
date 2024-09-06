@@ -129,6 +129,48 @@ impl PatternLanguage {
         Self::from_string(lang, flavor.as_deref())
     }
 
+impl PatternLanguage {
+    pub fn from_string_or_alias(name: &str, flavor: Option<&str>) -> Option<Self> {
+        match name {
+            "py" | "python" => Some(Self::Python),
+            "js" | "javascript" => match flavor {
+                Some("jsx") => Some(Self::Tsx),
+                Some("flow") => Some(Self::Tsx),
+                Some("FlowComments") => Some(Self::Tsx),
+                Some("typescript") => Some(Self::TypeScript),
+                Some("js_do_not_use") => Some(Self::JavaScript),
+                _ => Some(Self::Tsx),
+           },
+           "ts" | "typescript" => Some(Self::Typescript),
+           "html" => Some(Self::Html),
+           "css" => Some(Self::Css),
+           "json" => Some(Self::Json),
+           "java" => Some(Self::Java),
+           "cs" | "csharp" => Some(Self::CSharp),
+           "md" | "markdown" => match flavor {
+               Some("block") => Some(Self::MarkdownBlock),
+               Some("inline") => Some(Self::MarkdownInline),
+               _ => Some(Self::MarkdownInline),
+          },
+          "go" => Some(Self::Go),
+          "rs" | "rust" => Some(Self::Rust),
+          "rb" | "ruby" => Some(Self::Ruby),
+          "sol" | "solidity" => Some(Self::Solidity),
+          "hcl" | "tf" | "terraform" => Some(Self::Hcl),
+          "yml" | "yaml" => Some(Self::Yaml),
+          "sql" => Some(Self::Sql),
+          "vue" => Some(Self::Vue),
+          "toml" => Some(Self::Toml),
+          "php" => match flavor {
+              Some("html") => Some(Self::Php),
+              Some("only") => Some(self::PhpOnly),
+              _ => Some(Self::Php),
+          },
+          "universal" => Some(Self::Universal),
+          _ => None,
+        }
+    }
+    
     #[cfg(not(feature = "builtin-parser"))]
     pub fn get_language_with_parser(_parser: &mut MarzanoGritParser, _body: &str) -> Option<Self> {
         unimplemented!("grit_parser is unavailable when feature flag [builtin-parser] is off.")
@@ -146,6 +188,7 @@ impl PatternLanguage {
     }
 
     pub fn from_string(name: &str, flavor: Option<&str>) -> Option<Self> {
+        Self::from_string_or_alias(name, flavor)
         match name {
             "js" => match flavor {
                 Some("jsx") => Some(Self::Tsx),
@@ -245,6 +288,7 @@ impl PatternLanguage {
     }
 
     pub fn from_extension(extension: &str) -> Option<Self> {
+        Self::from_string_or_alias(extension, None)
         match extension {
             "js" | "jsx" | "cjs" | "mjs" => Some(Self::Tsx),
             "ts" | "tsx" | "cts" | "mts" => Some(Self::Tsx),
