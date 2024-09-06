@@ -237,7 +237,7 @@ pub(crate) async fn run_apply_pattern(
             "A path must have an extension to determine the language for stdin"
         ))?;
         if let Some(ext) = ext.to_str() {
-            PatternLanguage::from_extension(ext)
+            PatternLanguage::from_string_or_alias(ext, None)
         } else {
             default_lang
         }
