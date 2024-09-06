@@ -205,7 +205,6 @@ async fn format_temp_dir(dir: &TempDir, languages: Vec<&PatternLanguage>) -> Res
             // we pass `--yes` to avoid the interactive prompt
             .arg("--yes")
             .arg("prettier")
-            .arg("format")
             .arg("--write")
             .arg(dir.path().join("**/*"))
             .output()
