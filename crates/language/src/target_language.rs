@@ -866,4 +866,45 @@ mod tests {
         let other_comment = lang.extract_single_line_comment(other_text).unwrap();
         assert_eq!(other_comment, "this is a comment");
     }
+
+    #[test]
+    fn test_from_string_or_alias() {
+       assert_eq!(PatternLanguage::from_string_or_alias("py", None), Some(PatternLanguage::Python));
+       assert_eq!(PatternLanguage::from_string_or_alias("python", None), Some(PatternLanguage::Python));
+       assert_eq!(PatternLanguage::from_string_or_alias("js", None), Some(PatternLanguage::Tsx));
+       assert_eq!(PatternLanguage::from_string_or_alias("javascript", None), Some(PatternLanguage::Tsx));
+       assert_eq!(PatternLanguage::from_string_or_alias("ts", None), Some(PatternLanguage::TypeScript));
+       assert_eq!(PatternLanguage::from_string_or_alias("typescript", None), Some(PatternLanguage::TypeScript));
+       assert_eq!(PatternLanguage::from_string_or_alias("cs", None), Some(PatternLanguage::CSharp));
+       assert_eq!(PatternLanguage::from_string_or_alias("csharp", None), Some(PatternLanguage::CSharp));
+       assert_eq!(PatternLanguage::from_string_or_alias("md", None), Some(PatternLanguage::MarkdownInline));
+       assert_eq!(PatternLanguage::from_string_or_alias("markdown", None), Some(PatternLanguage::MarkdownInline));
+       assert_eq!(PatternLanguage::from_string_or_alias("rs", None), Some(PatternLanguage::Rust));
+       assert_eq!(PatternLanguage::from_string_or_alias("rust", None), Some(PatternLanguage::Rust));
+       assert_eq!(PatternLanguage::from_string_or_alias("rb", None), Some(PatternLanguage::Ruby));
+       assert_eq!(PatternLanguage::from_string_or_alias("ruby", None), Some(PatternLanguage::Ruby));
+       assert_eq!(PatternLanguage::from_string_or_alias("sol", None), Some(PatternLanguage::Solidity));
+       assert_eq!(PatternLanguage::from_string_or_alias("solidity", None), Some(PatternLanguage::Solidity));
+       assert_eq!(PatternLanguage::from_string_or_alias("tf", None), Some(PatternLanguage::Hcl));
+       assert_eq!(PatternLanguage::from_string_or_alias("hcl", None), Some(PatternLanguage::Hcl));
+       assert_eq!(PatternLanguage::from_string_or_alias("terraform", None), Some(PatternLanguage::Hcl));
+       assert_eq!(PatternLanguage::from_string_or_alias("yml", None), Some(PatternLanguage::Yaml));
+       assert_eq!(PatternLanguage::from_string_or_alias("yaml", None), Some(PatternLanguage::Yaml));
+       assert_eq!(PatternLanguage::from_string_or_alias("unknown", None), None);
+    }
+
+   #[test]
+   fn test_from_extension() {
+      assert_eq!(PatternLanguage::from_extension("py"), Some(PatternLanguage::Python));
+      assert_eq!(PatternLanguage::from_extension("js"), Some(PatternLanguage::Tsx));
+      assert_eq!(PatternLanguage::from_extension("ts"), Some(PatternLanguage::TypeScript));
+      assert_eq!(PatternLanguage::from_extension("cs"), Some(PatternLanguage::CSharp));
+      assert_eq!(PatternLanguage::from_extension("md"), Some(PatternLanguage::MarkdownInline));
+      assert_eq!(PatternLanguage::from_extension("rs"), Some(PatternLanguage::Rust));
+      assert_eq!(PatternLanguage::from_extension("rb"), Some(PatternLanguage::Ruby));
+      assert_eq!(PatternLanguage::from_extension("sol"), Some(PatternLanguage::Solidity));
+      assert_eq!(PatternLanguage::from_extension("tf"), Some(PatternLanguage::Hcl));
+      assert_eq!(PatternLanguage::from_extension("yml"), Some(PatternLanguage::Yaml));
+      assert_eq!(PatternLanguage::from_extension("unknown"), None);
+   }
 }
