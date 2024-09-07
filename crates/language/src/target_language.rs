@@ -188,9 +188,9 @@ impl PatternLanguage {
     }
 
     pub fn from_string(name: &str, flavor: Option<&str>) -> Option<Self> {
-        Self::from_string_or_alias(name, flavor)
         match name {
-            "js" => match flavor {
+            "py" | "python" => Some(Self::Python),
+            "js" | "javascript" => match flavor {
                 Some("jsx") => Some(Self::Tsx),
                 Some("flow") => Some(Self::Tsx),
                 Some("flowComments") => Some(Self::Tsx),
@@ -198,35 +198,34 @@ impl PatternLanguage {
                 Some("js_do_not_use") => Some(Self::JavaScript),
                 _ => Some(Self::Tsx),
             },
-            "html" => Some(Self::Html),
-            "css" => Some(Self::Css),
-            "json" => Some(Self::Json),
-            "java" => Some(Self::Java),
-            "csharp" => Some(Self::CSharp),
-            "markdown" => match flavor {
-                Some("block") => Some(Self::MarkdownBlock),
-                Some("inline") => Some(Self::MarkdownInline),
-                _ => Some(Self::MarkdownInline),
-            },
-            "ipynb" => Some(Self::Python),
-            "python" => Some(Self::Python),
-            "go" => Some(Self::Go),
-            "rust" => Some(Self::Rust),
-            "ruby" => Some(Self::Ruby),
-            "sol" | "solidity" => Some(Self::Solidity),
-            "hcl" => Some(Self::Hcl),
-            "yaml" => Some(Self::Yaml),
-            "sql" => Some(Self::Sql),
-            "vue" => Some(Self::Vue),
-            "toml" => Some(Self::Toml),
-            "php" => match flavor {
-                Some("html") => Some(Self::Php),
-                Some("only") => Some(Self::PhpOnly),
-                _ => Some(Self::Php),
-            },
-            "universal" => Some(Self::Universal),
-            _ => None,
-        }
+           "ts" | "typescript" => Some(Self::TypeScript),
+           "html" => Some(Self::Html),
+           "css" => Some(Self::Css),
+           "json" => Some(Self::Json),
+           "java" => Some(Self::Java),
+           "cs" | "csharp" => Some(Self::CSharp),
+           "md" | "markdown" => match flavor {
+               Some("block") => Some(Self::MarkdownBlock),
+               Some("inline") => Some(Self::MarkdownInline),
+               _ => Some(Self::MarkdownInline),
+           },
+          "go" => Some(Self::Go),
+          "rs" | "rust" => Some(Self::Rust),
+          "rb" | "ruby" => Some(Self::Ruby),
+          "sol" | "solidity" => Some(Self::Solidity),
+          "hcl" | "tf" | "terraform" => Some(Self::Hcl),
+          "yml" | "yaml" => Some(Self::Yaml),
+          "sql" => Some(Self::Sql),
+          "vue" => Some(Self::Vue),
+          "toml" => Some(Self::Toml),
+          "php" => match flavor {
+              Some("html") => Some(Self::Php),
+              Some("only") => Some(Self::PhpOnly),
+              _ => Some(Self::Php),
+          },
+          "universal" => Some(Self::Universal),
+          _ => None,
+       } 
     }
 
     fn get_file_extensions(&self) -> &'static [&'static str] {
