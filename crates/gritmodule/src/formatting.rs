@@ -187,7 +187,7 @@ async fn format_temp_dir(dir: &TempDir, languages: Vec<&PatternLanguage>) -> Res
         || languages.contains(&&PatternLanguage::TypeScript)
         || languages.contains(&&PatternLanguage::Json)
     {
-        info!("Formatting with biome into {}", dir.path().display());
+        log::debug!("Formatting with biome");
         let output = Command::new("biome")
             .arg("format")
             .arg("--write")
@@ -201,7 +201,7 @@ async fn format_temp_dir(dir: &TempDir, languages: Vec<&PatternLanguage>) -> Res
         || languages.contains(&&PatternLanguage::MarkdownInline)
         || languages.contains(&&PatternLanguage::Yaml)
     {
-        info!("Formatting with prettier into {}", dir.path().display());
+        log::debug!("Formatting with prettier");
         let output = Command::new("npx")
             // npx has an interactive prompt asking if you want to install the package if it isn't installed.
             // we pass `--yes` to avoid the interactive prompt
