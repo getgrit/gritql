@@ -315,6 +315,7 @@ pub(crate) async fn run_plumbing(
                     input: Some(buffer),
                     remote: false,
                     verbose: true,
+                    watch: false,
                 },
                 &parent,
                 VisibilityLevels::default(),

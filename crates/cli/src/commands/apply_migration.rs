@@ -29,6 +29,9 @@ pub struct ApplyMigrationArgs {
         help = "Run the workflow remotely on Grit Cloud"
     )]
     pub(crate) remote: bool,
+    /// Watch the workflow for updates (only applicable when running remotely)
+    #[clap(long, help_heading = "Workflow options")]
+    pub(crate) watch: bool,
     /// Print verbose output
     #[clap(long)]
     pub(crate) verbose: bool,

@@ -194,6 +194,7 @@ pub async fn run_remote_workflow(
     workflow_name: String,
     args: crate::commands::apply_migration::ApplyMigrationArgs,
     ranges: Option<Vec<FileDiff>>,
+    flags: &crate::flags::GlobalFormatFlags,
 ) -> Result<()> {
     use colored::Colorize;
     use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
@@ -234,11 +235,42 @@ pub async fn run_remote_workflow(
 
     let settings =
         grit_cloud_client::RemoteWorkflowSettings::new(workflow_name, &repo, input.into());
-    let url = grit_cloud_client::run_remote_workflow(settings, &auth).await?;
+    let result = grit_cloud_client::run_remote_workflow(settings, &auth).await?;
 
     pb.finish_and_clear();
 
-    log::info!("Workflow started at: {}", url.bright_blue().underline());
+    log::info!(
+        "Workflow started at: {}",
+        result.url().bright_blue().underline()
+    );
+
+    if args.watch {
+        // Wait 1 seconds for the workflow to start
+        tokio::time::sleep(Duration::from_secs(1)).await;
+
+        let auth = updater.get_valid_auth().await?;
+
+        let format = crate::flags::OutputFormat::from(flags);
+        let emitter = crate::messenger_variant::create_emitter(
+            &format,
+            marzano_messenger::output_mode::OutputMode::default(),
+            None,
+            false,
+            None,
+            None,
+            marzano_messenger::emit::VisibilityLevels::default(),
+        )
+        .await?;
+
+        grit_cloud_client::watch_workflow(&result.execution_id, &auth, emitter).await?;
+
+        log::info!(
+            "Run this to watch this workflow again:\n  {}",
+            format!("grit workflows watch {}", &result.execution_id)
+                .bright_yellow()
+                .bold(),
+        );
+    }
 
     Ok(())
 }
