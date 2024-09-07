@@ -130,7 +130,7 @@ impl PatternLanguage {
     }
 
 impl PatternLanguage {
-    pub fn from_string_or_alias(name: &str, flavor: Option<&str>) -> Option<Self> {
+    pub fn from_string(name: &str, flavor: Option<&str>) -> Option<Self> {
         match name {
             "py" | "python" => Some(Self::Python),
             "js" | "javascript" => match flavor {
