@@ -299,6 +299,9 @@ pub(crate) async fn run_plumbing(
         } => {
             let buffer = read_input(&shared_args)?;
 
+            let execution_id = std::env::var("GRIT_EXECUTION_ID")
+                .unwrap_or_else(|_| uuid::Uuid::new_v4().to_string());
+
             let current_dir = current_dir()?;
             let mut updater = Updater::from_current_bin().await?;
             let auth = updater.get_valid_auth().await.ok();
@@ -320,6 +323,7 @@ pub(crate) async fn run_plumbing(
                 },
                 &parent,
                 VisibilityLevels::default(),
+                execution_id,
             )
             .await
         }

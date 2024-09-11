@@ -16,7 +16,6 @@ use std::path::{Path, PathBuf};
 use tempfile::NamedTempFile;
 use tokio::fs;
 use tokio::process::Command;
-use uuid::Uuid;
 
 pub static GRIT_REPO_URL_NAME: &str = "grit_repo_url";
 pub static GRIT_REPO_BRANCH_NAME: &str = "grit_branch";
@@ -40,6 +39,8 @@ pub struct WorkflowSettings {
 
 #[derive(Debug)]
 pub struct WorkflowInputs {
+    /// The workflow execution ID
+    pub execution_id: String,
     // If this is a custom workflow, this will be the path to the entrypoint
     pub workflow_entrypoint: String,
     /// Ranges to target, if any
@@ -59,8 +60,7 @@ where
 {
     let cwd = std::env::current_dir()?;
 
-    let workflow_id =
-        std::env::var("GRIT_EXECUTION_ID").unwrap_or_else(|_| Uuid::new_v4().to_string());
+    let workflow_id = arg.execution_id.clone();
     let marzano_bin = std::env::current_exe()?;
 
     let mut updater = Updater::from_current_bin().await?;

@@ -297,7 +297,38 @@ fn write_analytics_event(
     }
 }
 
-async fn run_command() -> Result<()> {
+fn setup_env_logger(app: &App, multi: &MultiProgress) {
+    let format: OutputFormat = (&app.format_flags).into();
+    let mut logger = env_logger::Builder::new();
+
+    let log_level = app.format_flags.log_level.unwrap_or(match &app.command {
+        Commands::Lsp(_) => LevelFilter::Off,
+        Commands::Plumbing(_) => LevelFilter::Off,
+        _ => LevelFilter::Info,
+    });
+
+    logger.filter_level(log_level);
+    logger.target(match format {
+        OutputFormat::Standard => env_logger::Target::Stdout,
+        OutputFormat::Transformed => env_logger::Target::Stderr,
+        OutputFormat::Json | OutputFormat::Jsonl => env_logger::Target::Stderr,
+        #[cfg(feature = "remote_redis")]
+        OutputFormat::Redis => env_logger::Target::Stderr,
+        #[cfg(feature = "remote_pubsub")]
+        OutputFormat::PubSub => env_logger::Target::Stderr,
+        #[cfg(feature = "server")]
+        OutputFormat::Combined => env_logger::Target::Stderr,
+    });
+    if !matches!(app.command, Commands::Plumbing(_)) {
+        logger.format(|buf, record| writeln!(buf, "{}", record.args()));
+    };
+    let logger = logger.build();
+    if let Err(e) = LogWrapper::new(multi.clone(), logger).try_init() {
+        log::info!("Failed to initialize logger: {:?}", e);
+    }
+}
+
+async fn run_command(use_tracing: bool) -> Result<()> {
     let app = App::parse();
     // Use this *only* for analytics, not for any other purpose.
     let analytics_args = std::env::args().collect::<Vec<_>>();
@@ -317,31 +348,19 @@ async fn run_command() -> Result<()> {
             Ok(Some(child)) => Some(child),
         };
 
-    let log_level = app.format_flags.log_level.unwrap_or(match &app.command {
-        Commands::Lsp(_) => LevelFilter::Off,
-        Commands::Plumbing(_) => LevelFilter::Off,
-        _ => LevelFilter::Info,
-    });
-    let format: OutputFormat = (&app.format_flags).into();
-    let mut logger = env_logger::Builder::new();
-    logger.filter_level(log_level);
-    logger.target(match format {
-        OutputFormat::Standard => env_logger::Target::Stdout,
-        OutputFormat::Transformed => env_logger::Target::Stderr,
-        OutputFormat::Json | OutputFormat::Jsonl => env_logger::Target::Stderr,
-        #[cfg(feature = "remote_redis")]
-        OutputFormat::Redis => env_logger::Target::Stderr,
-        #[cfg(feature = "remote_pubsub")]
-        OutputFormat::PubSub => env_logger::Target::Stderr,
-        #[cfg(feature = "server")]
-        OutputFormat::Combined => env_logger::Target::Stderr,
-    });
-    if !matches!(app.command, Commands::Plumbing(_)) {
-        logger.format(|buf, record| writeln!(buf, "{}", record.args()));
-    };
-    let logger = logger.build();
     let multi = MultiProgress::new();
-    LogWrapper::new(multi.clone(), logger).try_init().unwrap();
+
+    #[cfg(not(feature = "grit_tracing"))]
+    setup_env_logger(&app, &multi);
+    #[cfg(feature = "grit_tracing")]
+    if !use_tracing {
+        setup_env_logger(&app, &multi);
+    } else if let Err(e) = tracing_log::LogTracer::init() {
+        eprintln!("Failed to initialize LogTracer: {:?}", e);
+        setup_env_logger(&app, &multi)
+    }
+
+    log::info!("Running command: {}", app.command);
 
     let command = app.command.to_string();
     let mut apply_details = ApplyDetails {
@@ -567,7 +586,7 @@ pub async fn run_command_with_tracing() -> Result<()> {
             let res = async move {
                 event!(Level::INFO, "starting the CLI!");
 
-                let res = run_command().await;
+                let res = run_command(true).await;
 
                 event!(Level::INFO, "ending the CLI!");
 
@@ -584,7 +603,7 @@ pub async fn run_command_with_tracing() -> Result<()> {
     let subscriber = tracing::subscriber::NoSubscriber::new();
     tracing::subscriber::set_global_default(subscriber).expect("setting tracing default failed");
 
-    let res = run_command().await;
+    let res = run_command(false).await;
     if let Err(ref e) = res {
         if let Some(good) = e.downcast_ref::<GoodError>() {
             if let Some(msg) = &good.message {
