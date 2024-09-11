@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use clap::{Args, Subcommand};
 use indicatif::MultiProgress;
 use marzano_gritmodule::config::{
@@ -14,6 +14,7 @@ use std::env::current_dir;
 use std::io::{stdin, Read};
 use std::path::Path;
 use std::path::PathBuf;
+use tracing::Instrument as _;
 
 use crate::analytics::track_event_line;
 use crate::error::GoodError;
@@ -299,14 +300,30 @@ pub(crate) async fn run_plumbing(
         } => {
             let buffer = read_input(&shared_args)?;
 
+            let execution_id = std::env::var("GRIT_EXECUTION_ID")
+                .unwrap_or_else(|_| uuid::Uuid::new_v4().to_string());
+
             let current_dir = current_dir()?;
             let mut updater = Updater::from_current_bin().await?;
-            let auth = updater.get_valid_auth().await.ok();
+            let auth = updater
+                .get_valid_auth()
+                .instrument(tracing::span!(
+                    tracing::Level::INFO,
+                    "grit_marzano.auth",
+                    "execution_id" = execution_id.as_str(),
+                ))
+                .await
+                .ok();
 
             let custom_workflow =
                 crate::workflows::find_workflow_file_from(current_dir.clone(), &definition, auth)
+                    .instrument(tracing::span!(
+                        tracing::Level::INFO,
+                        "grit_marzano.find_workflow",
+                        "execution_id" = execution_id.as_str(),
+                    ))
                     .await
-                    .unwrap();
+                    .context("Failed to find workflow file")?;
 
             super::apply_migration::run_apply_migration(
                 custom_workflow,
@@ -320,7 +337,13 @@ pub(crate) async fn run_plumbing(
                 },
                 &parent,
                 VisibilityLevels::default(),
+                execution_id.clone(),
             )
+            .instrument(tracing::span!(
+                tracing::Level::INFO,
+                "grit_marzano.run_workflow",
+                "execution_id" = execution_id.as_str(),
+            ))
             .await
         }
     };
