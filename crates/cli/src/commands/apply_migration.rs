@@ -8,6 +8,7 @@ use anyhow::Result;
 use clap::Args;
 use marzano_gritmodule::searcher::WorkflowInfo;
 use marzano_messenger::emit::Messager;
+use marzano_messenger::workflows::PackagedWorkflowOutcome;
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -69,7 +70,7 @@ pub(crate) async fn run_apply_migration(
     flags: &GlobalFormatFlags,
     min_level: marzano_messenger::emit::VisibilityLevels,
     execution_id: String,
-) -> Result<()> {
+) -> Result<PackagedWorkflowOutcome> {
     use crate::error::GoodError;
 
     let input = arg.get_payload()?;
@@ -104,13 +105,13 @@ pub(crate) async fn run_apply_migration(
     emitter.flush().await?;
 
     // Get the final workflow status from the emitter
-    if let Some(workflow_status) = emitter.get_workflow_status()? {
-        if !workflow_status.success {
-            anyhow::bail!(GoodError::new());
-        }
-    } else {
+    let Some(workflow_status) = emitter.get_workflow_status()? else {
         anyhow::bail!("Final workflow status not found");
+    };
+
+    if !workflow_status.success {
+        anyhow::bail!(GoodError::new());
     }
 
-    Ok(())
+    Ok(workflow_status.clone())
 }

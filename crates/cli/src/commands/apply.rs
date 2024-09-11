@@ -99,7 +99,7 @@ pub(crate) async fn run_apply(
                 .await;
 
         if let Some(custom_workflow) = custom_workflow {
-            return run_apply_migration(
+            run_apply_migration(
                 custom_workflow,
                 paths,
                 ranges,
@@ -113,7 +113,9 @@ pub(crate) async fn run_apply(
                 "grit_marzano.run_workflow",
                 "execution_id" = execution_id.as_str(),
             ))
-            .await;
+            .await?;
+
+            return Ok(());
         }
     }
 

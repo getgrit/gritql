@@ -344,7 +344,9 @@ pub(crate) async fn run_plumbing(
                 "grit_marzano.run_workflow",
                 "execution_id" = execution_id.as_str(),
             ))
-            .await
+            .await?;
+
+            Ok(())
         }
     };
     // We want plumbing to always return a success code, even for "good" errors (failed checks, etc)

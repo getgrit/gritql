@@ -30,6 +30,8 @@ pub(crate) mod workflows;
 #[cfg(feature = "workflows_v2")]
 pub(crate) mod workflows_list;
 #[cfg(feature = "workflows_v2")]
+pub(crate) mod workflows_upload;
+#[cfg(feature = "workflows_v2")]
 pub(crate) mod workflows_watch;
 
 use crate::error::GoodError;
@@ -99,6 +101,8 @@ use version::VersionArgs;
 use crate::commands::workflows::{WorkflowCommands, Workflows};
 #[cfg(feature = "workflows_v2")]
 use workflows_list::run_list_workflows;
+#[cfg(feature = "workflows_v2")]
+use workflows_upload::run_upload_workflows;
 #[cfg(feature = "workflows_v2")]
 use workflows_watch::run_watch_workflow;
 
@@ -196,6 +200,7 @@ impl fmt::Display for Commands {
             Commands::Workflows(arg) => match arg.workflows_commands {
                 WorkflowCommands::List(_) => write!(f, "workflows list"),
                 WorkflowCommands::Watch(_) => write!(f, "workflows watch"),
+                WorkflowCommands::Upload(_) => write!(f, "workflows upload"),
             },
             Commands::Plumbing(_) => write!(f, "plumbing"),
             Commands::Version(_) => write!(f, "version"),
@@ -416,6 +421,9 @@ async fn run_command(_use_tracing: bool) -> Result<()> {
             Commands::Workflows(arg) => match arg.workflows_commands {
                 WorkflowCommands::List(arg) => run_list_workflows(&arg, &app.format_flags).await,
                 WorkflowCommands::Watch(arg) => run_watch_workflow(&arg, &app.format_flags).await,
+                WorkflowCommands::Upload(arg) => {
+                    run_upload_workflows(&arg, &app.format_flags).await
+                }
             },
             Commands::Plumbing(arg) => {
                 run_plumbing(arg, multi, &mut apply_details, app.format_flags).await
