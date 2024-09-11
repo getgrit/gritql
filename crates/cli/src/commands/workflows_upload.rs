@@ -35,6 +35,9 @@ pub async fn run_upload_workflows(
         ..Default::default()
     };
 
+    let execution_id =
+        std::env::var("GRIT_EXECUTION_ID").unwrap_or_else(|_| uuid::Uuid::new_v4().to_string());
+
     let result = run_apply_migration(
         workflow_info,
         vec![],
@@ -42,6 +45,7 @@ pub async fn run_upload_workflows(
         apply_migration_args,
         parent,
         VisibilityLevels::default(),
+        execution_id,
     )
     .await?;
 
