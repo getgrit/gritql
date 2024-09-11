@@ -321,7 +321,9 @@ pub(crate) async fn run_plumbing(
                 &parent,
                 VisibilityLevels::default(),
             )
-            .await
+            .await?;
+
+            Ok(())
         }
     };
     // We want plumbing to always return a success code, even for "good" errors (failed checks, etc)

@@ -80,7 +80,7 @@ pub(crate) async fn run_apply(
             crate::workflows::find_workflow_file_from(current_dir, &args.pattern_or_workflow, auth)
                 .await;
         if let Some(custom_workflow) = custom_workflow {
-            return run_apply_migration(
+            run_apply_migration(
                 custom_workflow,
                 args.paths,
                 ranges,
@@ -88,7 +88,9 @@ pub(crate) async fn run_apply(
                 flags,
                 args.apply_pattern_args.visibility,
             )
-            .await;
+            .await?;
+
+            return Ok(());
         }
     }
 

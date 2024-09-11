@@ -6,8 +6,7 @@ use std::path::PathBuf;
 use crate::flags::GlobalFormatFlags;
 
 use crate::commands::apply_migration::{run_apply_migration, ApplyMigrationArgs};
-// use crate::workflows::fetch_remote_workflow;
-use marzano_gritmodule::searcher::WorkflowInfo;
+use crate::workflows::fetch_remote_workflow;
 use marzano_messenger::emit::VisibilityLevels;
 
 #[derive(Args, Debug, Serialize)]
@@ -25,24 +24,16 @@ pub async fn run_upload_workflows(
     }
 
     let workflow_path = PathBuf::from(&_arg.workflow_path);
-    // let workflow_info = fetch_remote_workflow(
-    //     "https://storage.googleapis.com/grit-workflows-dev-workflow_definitions/upload_workflow.js",
-    //     None,
-    // )
-    // .await?;
-    // println!("Workflow infosss: {:?}", workflow_info);
-    println!("Workflow path: {:?}", workflow_path);
+    let workflow_info = fetch_remote_workflow(
+        "https://storage.googleapis.com/grit-workflows-dev-workflow_definitions/upload_workflow.js",
+        None,
+    )
+    .await?;
 
     let apply_migration_args = ApplyMigrationArgs {
-        // input: Some(format!(r#"{{"workflow": "{}"}}"#, workflow_path.display())),
-        input: Some(format!(r#"{{"query": "{}"}}"#, workflow_path.display())),
+        input: Some(format!(r#"{{"workflow": "{}"}}"#, workflow_path.display())),
         ..Default::default()
     };
-
-    let workflow_info = WorkflowInfo::new(PathBuf::from(
-        // "/Users/jfuentes/Projects/leetcode/rewriter/.grit/workflows/upload_workflow.ts",
-        "/Users/jfuentes/Projects/leetcode/rewriter/.grit/workflows/test/hello.ts",
-    ));
 
     let result = run_apply_migration(
         workflow_info,
@@ -53,6 +44,15 @@ pub async fn run_upload_workflows(
         VisibilityLevels::default(),
     )
     .await?;
-    println!("Result: {:?}", result);
-    Ok(())
+
+    if let Some(data) = result.data.and_then(|v| v.get("url").cloned()) {
+        if let Some(data_str) = data.as_str() {
+            if let Some(last_part) = data_str.split('/').last() {
+                println!("Uploaded Workflow ID: {}", last_part);
+                return Ok(());
+            }
+        }
+    }
+
+    bail!("Failed to upload workflow: URL not returned")
 }
