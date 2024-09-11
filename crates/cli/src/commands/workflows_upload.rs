@@ -49,12 +49,10 @@ pub async fn run_upload_workflows(
     )
     .await?;
 
-    if let Some(data) = result.data.and_then(|v| v.get("url").cloned()) {
+    if let Some(data) = result.data.and_then(|v| v.get("id").cloned()) {
         if let Some(data_str) = data.as_str() {
-            if let Some(last_part) = data_str.split('/').last() {
-                println!("Uploaded Workflow ID: {}", last_part);
-                return Ok(());
-            }
+            println!("Uploaded Workflow ID: {}", data_str);
+            return Ok(());
         }
     }
 
