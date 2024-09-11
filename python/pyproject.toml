@@ -2,15 +2,15 @@
 name = "gritql"
 requires-python = ">=3.8"
 classifiers = [
-    "Programming Language :: Rust",
-    "Programming Language :: Python :: Implementation :: CPython",
-    "Programming Language :: Python :: Implementation :: PyPy",
+  "Programming Language :: Rust",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
 ]
-version = "0.1.0"
+version = "0.1.3"
 
 [tool.poetry]
 name = "gritql"
-version = "0.1.2"
+version = "0.1.3"
 description = "Python bindings for GritQL"
 authors = ["Grit <developers@grit.io>"]
 license = "MIT"

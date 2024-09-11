@@ -47,7 +47,7 @@ def find_install() -> Path:
 
     platform = "macos" if sys.platform == "darwin" else "linux"
 
-    dir_name = _cache_dir() / "openai-python"
+    dir_name = _cache_dir() / "grit"
     install_dir = dir_name / ".install"
     target_dir = install_dir / "bin"
 
