@@ -93,7 +93,6 @@ use std::io::Write;
 use std::process::{ChildStdin, Command, Stdio};
 use std::time::Instant;
 use std::{fmt, process::Child};
-use tracing::instrument;
 use version::VersionArgs;
 
 #[cfg(feature = "workflows_v2")]
@@ -298,7 +297,6 @@ fn write_analytics_event(
     }
 }
 
-#[instrument]
 async fn run_command() -> Result<()> {
     let app = App::parse();
     // Use this *only* for analytics, not for any other purpose.
@@ -364,71 +362,89 @@ async fn run_command() -> Result<()> {
         _ => {
             updater.check_for_update().await?;
         }
-    }
-
-    let res = match app.command {
-        Commands::Apply(arg) => run_apply(arg, multi, &mut apply_details, &app.format_flags).await,
-        Commands::Check(arg) => run_check(arg, &app.format_flags, multi, false, None).await,
-        Commands::List(arg) => run_list_all(&arg, &app.format_flags).await,
-        Commands::Doctor(arg) => run_doctor(arg).await,
-        Commands::Auth(arg) => match arg.auth_commands {
-            AuthCommands::Login(arg) => run_login(arg).await,
-            AuthCommands::Logout(arg) => run_logout(arg).await,
-            AuthCommands::GetToken(arg) => run_get_token(arg).await,
-            AuthCommands::Refresh(arg) => run_refresh_auth(arg).await,
-        },
-        Commands::Lsp(arg) => run_lsp(arg).await,
-        Commands::Install(arg) => run_install(arg).await,
-        Commands::Init(arg) => run_init(arg).await,
-        Commands::Parse(arg) => run_parse(arg, app.format_flags, None).await,
-        Commands::Patterns(arg) => match arg.patterns_commands {
-            PatternCommands::List(arg) => run_patterns_list(arg, app.format_flags).await,
-            PatternCommands::Test(arg) => run_patterns_test(arg, app.format_flags).await,
-            PatternCommands::Edit(arg) => run_patterns_edit(arg).await,
-            PatternCommands::Describe(arg) => run_patterns_describe(arg).await,
-        },
-        #[cfg(feature = "workflows_v2")]
-        Commands::Workflows(arg) => match arg.workflows_commands {
-            WorkflowCommands::List(arg) => run_list_workflows(&arg, &app.format_flags).await,
-            WorkflowCommands::Watch(arg) => run_watch_workflow(&arg, &app.format_flags).await,
-        },
-        Commands::Plumbing(arg) => {
-            run_plumbing(arg, multi, &mut apply_details, app.format_flags).await
-        }
-        Commands::Version(arg) => run_version(arg).await,
-        #[cfg(feature = "docgen")]
-        Commands::Docgen(arg) => run_docgen(arg).await,
-        #[cfg(feature = "server")]
-        Commands::Server(arg) => cli_server::commands::run_server_command(arg).await,
-    };
-    let elapsed = start.elapsed();
-    let details = if command == "apply" {
-        Some(apply_details)
-    } else {
-        None
     };
 
-    let final_analytics_event = match res {
-        Ok(_) => AnalyticsEvent::Completed(CompletedEvent::from_res(elapsed, details)),
-
-        Err(_) => AnalyticsEvent::Errored(ErroredEvent::from_elapsed(elapsed)),
-    };
-
-    write_analytics_event(
-        analytics_child.as_mut().map(|c| c.stdin.as_mut().unwrap()),
-        &final_analytics_event,
+    #[cfg(feature = "grit_tracing")]
+    let cmd_span = span!(
+        Level::INFO,
+        "grit_marzano.run_command",
+        "grit.command" = command.as_str()
     );
 
-    // If we are in the foreground, wait for the analytics worker to finish
-    if is_telemetry_foregrounded() {
-        if let Some(mut child) = analytics_child {
-            log::info!("Waiting for analytics worker to finish");
-            let res = child.wait();
-            if let Err(e) = res {
-                log::info!("Failed to wait for analytics worker: {:?}", e);
+    let runner = async move {
+        let res = match app.command {
+            Commands::Apply(arg) => {
+                run_apply(arg, multi, &mut apply_details, &app.format_flags).await
+            }
+            Commands::Check(arg) => run_check(arg, &app.format_flags, multi, false, None).await,
+            Commands::List(arg) => run_list_all(&arg, &app.format_flags).await,
+            Commands::Doctor(arg) => run_doctor(arg).await,
+            Commands::Auth(arg) => match arg.auth_commands {
+                AuthCommands::Login(arg) => run_login(arg).await,
+                AuthCommands::Logout(arg) => run_logout(arg).await,
+                AuthCommands::GetToken(arg) => run_get_token(arg).await,
+                AuthCommands::Refresh(arg) => run_refresh_auth(arg).await,
+            },
+            Commands::Lsp(arg) => run_lsp(arg).await,
+            Commands::Install(arg) => run_install(arg).await,
+            Commands::Init(arg) => run_init(arg).await,
+            Commands::Parse(arg) => run_parse(arg, app.format_flags, None).await,
+            Commands::Patterns(arg) => match arg.patterns_commands {
+                PatternCommands::List(arg) => run_patterns_list(arg, app.format_flags).await,
+                PatternCommands::Test(arg) => run_patterns_test(arg, app.format_flags).await,
+                PatternCommands::Edit(arg) => run_patterns_edit(arg).await,
+                PatternCommands::Describe(arg) => run_patterns_describe(arg).await,
+            },
+            #[cfg(feature = "workflows_v2")]
+            Commands::Workflows(arg) => match arg.workflows_commands {
+                WorkflowCommands::List(arg) => run_list_workflows(&arg, &app.format_flags).await,
+                WorkflowCommands::Watch(arg) => run_watch_workflow(&arg, &app.format_flags).await,
+            },
+            Commands::Plumbing(arg) => {
+                run_plumbing(arg, multi, &mut apply_details, app.format_flags).await
+            }
+            Commands::Version(arg) => run_version(arg).await,
+            #[cfg(feature = "docgen")]
+            Commands::Docgen(arg) => run_docgen(arg).await,
+            #[cfg(feature = "server")]
+            Commands::Server(arg) => cli_server::commands::run_server_command(arg).await,
+        };
+        let elapsed = start.elapsed();
+        let details = if command == "apply" {
+            Some(apply_details)
+        } else {
+            None
+        };
+
+        let final_analytics_event = match res {
+            Ok(_) => AnalyticsEvent::Completed(CompletedEvent::from_res(elapsed, details)),
+
+            Err(_) => AnalyticsEvent::Errored(ErroredEvent::from_elapsed(elapsed)),
+        };
+
+        write_analytics_event(
+            analytics_child.as_mut().map(|c| c.stdin.as_mut().unwrap()),
+            &final_analytics_event,
+        );
+
+        // If we are in the foreground, wait for the analytics worker to finish
+        if is_telemetry_foregrounded() {
+            if let Some(mut child) = analytics_child {
+                log::info!("Waiting for analytics worker to finish");
+                let res = child.wait();
+                if let Err(e) = res {
+                    log::info!("Failed to wait for analytics worker: {:?}", e);
+                }
             }
         }
-    }
+
+        res
+    };
+
+    #[cfg(feature = "grit_tracing")]
+    let res = runner.instrument(cmd_span).await;
+    #[cfg(not(feature = "grit_tracing"))]
+    let res = runner.await;
 
     res
 }
