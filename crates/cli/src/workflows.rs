@@ -4,7 +4,6 @@ use console::style;
 use log::debug;
 use marzano_auth::env::{get_grit_api_url, ENV_VAR_GRIT_API_URL, ENV_VAR_GRIT_AUTH_TOKEN};
 use marzano_auth::info::AuthInfo;
-use marzano_core::api::AnalysisLogLevel;
 use marzano_gritmodule::config::REPO_CONFIG_DIR_NAME;
 use marzano_gritmodule::searcher::WorkflowInfo;
 use marzano_gritmodule::{fetcher::LocalRepo, searcher::find_grit_dir_from};
@@ -13,9 +12,8 @@ use marzano_messenger::{emit::Messager, workflows::PackagedWorkflowOutcome};
 use marzano_util::diff::FileDiff;
 use serde::Serialize;
 use serde_json::to_string;
-use std::hash::Hash;
 use std::path::{Path, PathBuf};
-use std::process::{ChildStderr, ChildStdout, Stdio};
+use std::process::Stdio;
 use tempfile::NamedTempFile;
 use tokio::fs;
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -176,6 +174,7 @@ where
     let mut stderr_reader = BufReader::new(stderr).lines();
 
     // TODO: make this more elegant by allowing Emitter to be shared between threads
+    #[cfg(feature = "workflow_server")]
     let stdout_messages = messages.clone();
     let stdout_handle = tokio::spawn(async move {
         while let Some(line) = stdout_reader.next_line().await.unwrap() {
@@ -183,7 +182,7 @@ where
             stdout_messages
                 .send(grit_cloud_client::ServerMessage::Log(
                     marzano_messenger::SimpleLogMessage {
-                        level: AnalysisLogLevel::Info,
+                        level: marzano_core::api::AnalysisLogLevel::Info,
                         step_id: None,
                         message: line,
                         meta: Some(std::collections::HashMap::from([(
@@ -204,7 +203,7 @@ where
             messages
                 .send(grit_cloud_client::ServerMessage::Log(
                     marzano_messenger::SimpleLogMessage {
-                        level: AnalysisLogLevel::Error,
+                        level: marzano_core::api::AnalysisLogLevel::Error,
                         step_id: None,
                         message: line,
                         meta: Some(std::collections::HashMap::from([(

@@ -328,7 +328,7 @@ fn setup_env_logger(app: &App, multi: &MultiProgress) {
     }
 }
 
-async fn run_command(use_tracing: bool) -> Result<()> {
+async fn run_command(_use_tracing: bool) -> Result<()> {
     let app = App::parse();
     // Use this *only* for analytics, not for any other purpose.
     let analytics_args = std::env::args().collect::<Vec<_>>();
@@ -353,7 +353,7 @@ async fn run_command(use_tracing: bool) -> Result<()> {
     #[cfg(not(feature = "grit_tracing"))]
     setup_env_logger(&app, &multi);
     #[cfg(feature = "grit_tracing")]
-    if !use_tracing {
+    if !_use_tracing {
         setup_env_logger(&app, &multi);
     } else if let Err(e) = tracing_log::LogTracer::init() {
         eprintln!("Failed to initialize LogTracer: {:?}", e);
