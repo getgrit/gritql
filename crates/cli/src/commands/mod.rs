@@ -324,7 +324,7 @@ fn setup_env_logger(app: &App, multi: &MultiProgress) {
     };
     let logger = logger.build();
     if let Err(e) = LogWrapper::new(multi.clone(), logger).try_init() {
-        log::info!("Failed to initialize logger: {:?}", e);
+        eprintln!("Failed to initialize logger: {:?}", e);
     }
 }
 
