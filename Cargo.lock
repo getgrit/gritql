@@ -2281,6 +2281,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "tracing",
+ "tracing-log",
  "tracing-opentelemetry",
  "tracing-subscriber",
  "trim-margin",

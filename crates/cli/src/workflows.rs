@@ -324,7 +324,7 @@ pub async fn find_workflow_file_from(
         match fetch_remote_workflow(workflow_path_or_name, auth).await {
             Ok(info) => return Some(info),
             Err(e) => {
-                log::warn!("Failed to fetch remote workflow: {}", e);
+                log::error!("Failed to fetch remote workflow: {}", e);
             }
         }
     }

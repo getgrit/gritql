@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use clap::{Args, Subcommand};
 use indicatif::MultiProgress;
 use marzano_gritmodule::config::{
@@ -306,7 +306,7 @@ pub(crate) async fn run_plumbing(
             let custom_workflow =
                 crate::workflows::find_workflow_file_from(current_dir.clone(), &definition, auth)
                     .await
-                    .unwrap();
+                    .context("Failed to find workflow file")?;
 
             super::apply_migration::run_apply_migration(
                 custom_workflow,
