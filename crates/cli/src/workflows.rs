@@ -288,10 +288,14 @@ async fn fetch_remote_workflow(
     let client = reqwest::Client::new();
     let mut request = client.get(workflow_path_or_name);
     if let Some(auth_info) = auth {
-        request = request.header(
-            "Authorization",
-            format!("Bearer {}", auth_info.access_token),
-        );
+        // Only inject auth if URL is from localhost or grit.io
+        if workflow_path_or_name.contains("localhost") || workflow_path_or_name.contains("grit.io")
+        {
+            request = request.header(
+                "Authorization",
+                format!("Bearer {}", auth_info.access_token),
+            );
+        }
     }
     let response = request.send().await?;
 
