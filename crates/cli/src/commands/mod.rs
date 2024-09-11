@@ -360,8 +360,6 @@ async fn run_command(use_tracing: bool) -> Result<()> {
         setup_env_logger(&app, &multi)
     }
 
-    log::info!("Running command: {}", app.command);
-
     let command = app.command.to_string();
     let mut apply_details = ApplyDetails {
         matched: 0,
