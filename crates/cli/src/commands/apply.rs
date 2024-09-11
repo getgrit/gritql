@@ -67,13 +67,8 @@ pub(crate) async fn run_apply(
 
         #[cfg(feature = "remote_workflows")]
         if args.apply_migration_args.remote {
-            return crate::workflows::run_remote_workflow(
-                args.pattern_or_workflow,
-                args.apply_migration_args,
-                ranges,
-                flags,
-            )
-            .await;
+            return crate::workflows::run_remote_workflow(args.apply_migration_args, ranges, flags)
+                .await;
         }
 
         let paths = args.paths.clone();

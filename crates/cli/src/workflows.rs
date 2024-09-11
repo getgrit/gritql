@@ -255,7 +255,6 @@ where
 
 #[cfg(feature = "remote_workflows")]
 pub async fn run_remote_workflow(
-    workflow_name: String,
     args: crate::commands::apply_migration::ApplyMigrationArgs,
     ranges: Option<Vec<FileDiff>>,
     flags: &crate::flags::GlobalFormatFlags,
@@ -297,8 +296,12 @@ pub async fn run_remote_workflow(
         }
     }
 
+    let Some(workflow_id) = args.workflow_id else {
+        anyhow::bail!("No workflow ID provided");
+    };
+
     let settings =
-        grit_cloud_client::RemoteWorkflowSettings::new(workflow_name, &repo, input.into());
+        grit_cloud_client::RemoteWorkflowSettings::new(&workflow_id, &repo, input.into());
     let result = grit_cloud_client::run_remote_workflow(settings, &auth).await?;
 
     pb.finish_and_clear();
