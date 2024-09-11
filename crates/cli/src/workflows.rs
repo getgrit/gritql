@@ -4,6 +4,7 @@ use console::style;
 use log::debug;
 use marzano_auth::env::{get_grit_api_url, ENV_VAR_GRIT_API_URL, ENV_VAR_GRIT_AUTH_TOKEN};
 use marzano_auth::info::AuthInfo;
+use marzano_core::api::AnalysisLogLevel;
 use marzano_gritmodule::config::REPO_CONFIG_DIR_NAME;
 use marzano_gritmodule::searcher::WorkflowInfo;
 use marzano_gritmodule::{fetcher::LocalRepo, searcher::find_grit_dir_from};
@@ -56,7 +57,7 @@ pub struct WorkflowInputs {
 }
 
 #[allow(unused_mut)]
-pub async fn run_bin_workflow<M>(mut emitter: M, mut arg: WorkflowInputs) -> Result<M>
+pub async fn run_bin_workflow<M>(emitter: &'static mut M, mut arg: WorkflowInputs) -> Result<()>
 where
     M: Messager + WorkflowMessenger + Send + 'static,
 {
@@ -172,12 +173,18 @@ where
     let stdout_reader = BufReader::new(stdout).lines();
     let stderr_reader = BufReader::new(stderr).lines();
 
-    tokio::spawn(async move {
-        let mut stdout_reader = stdout_reader;
-        while let Some(line) = stdout_reader.next_line().await.unwrap() {
-            log::info!("stdout: {}", line);
-        }
-    });
+    // let stdout_handler = tokio::spawn(async move {
+    //     let mut stdout_reader = stdout_reader;
+    //     while let Some(line) = stdout_reader.next_line().await.unwrap() {
+    //         let log = marzano_messenger::SimpleLogMessage {
+    //             message: line,
+    //             level: AnalysisLogLevel::Info,
+    //             meta: None,
+    //             step_id: None,
+    //         };
+    //         emitter_mut.emit_log(&log);
+    //     }
+    // });
 
     // tokio::select! {
     //     res = stdout_reader.for_each(|line| async {
@@ -200,7 +207,7 @@ where
 
     // Stop the embedded server
     #[cfg(feature = "workflow_server")]
-    let mut emitter = {
+    {
         shutdown_tx.send(()).unwrap();
         handle.await?
     };

@@ -88,8 +88,8 @@ pub(crate) async fn run_apply_migration(
 
     emitter.start_workflow()?;
 
-    let mut emitter = run_bin_workflow(
-        emitter,
+    run_bin_workflow(
+        &mut emitter,
         WorkflowInputs {
             execution_id,
             verbose: arg.verbose,
