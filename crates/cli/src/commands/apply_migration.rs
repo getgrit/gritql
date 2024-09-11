@@ -69,6 +69,7 @@ pub(crate) async fn run_apply_migration(
     arg: ApplyMigrationArgs,
     flags: &GlobalFormatFlags,
     min_level: marzano_messenger::emit::VisibilityLevels,
+    execution_id: String,
 ) -> Result<PackagedWorkflowOutcome> {
     use crate::error::GoodError;
 
@@ -91,6 +92,7 @@ pub(crate) async fn run_apply_migration(
     let mut emitter = run_bin_workflow(
         emitter,
         WorkflowInputs {
+            execution_id,
             verbose: arg.verbose,
             workflow_entrypoint: workflow.entrypoint().into(),
             paths,

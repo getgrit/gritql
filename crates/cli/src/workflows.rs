@@ -13,10 +13,11 @@ use marzano_util::diff::FileDiff;
 use serde::Serialize;
 use serde_json::to_string;
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
 use tempfile::NamedTempFile;
 use tokio::fs;
+use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
-use uuid::Uuid;
 
 pub static GRIT_REPO_URL_NAME: &str = "grit_repo_url";
 pub static GRIT_REPO_BRANCH_NAME: &str = "grit_branch";
@@ -40,6 +41,8 @@ pub struct WorkflowSettings {
 
 #[derive(Debug)]
 pub struct WorkflowInputs {
+    /// The workflow execution ID
+    pub execution_id: String,
     // If this is a custom workflow, this will be the path to the entrypoint
     pub workflow_entrypoint: String,
     /// Ranges to target, if any
@@ -59,21 +62,21 @@ where
 {
     let cwd = std::env::current_dir()?;
 
-    let workflow_id =
-        std::env::var("GRIT_EXECUTION_ID").unwrap_or_else(|_| Uuid::new_v4().to_string());
+    let workflow_id = arg.execution_id.clone();
     let marzano_bin = std::env::current_exe()?;
 
     let mut updater = Updater::from_current_bin().await?;
     let repo = LocalRepo::from_dir(&cwd).await;
 
     #[cfg(feature = "workflow_server")]
-    let (server_addr, handle, shutdown_tx) = {
+    let (messages, server_addr, handle, shutdown_tx) = {
         let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
         let socket = tokio::net::TcpListener::bind("0.0.0.0:0").await?;
         let server_addr = format!("http://{}", socket.local_addr()?).to_string();
-        let handle = grit_cloud_client::spawn_server_tasks(emitter, shutdown_rx, socket);
+        let (messages, handle) =
+            grit_cloud_client::spawn_server_tasks(emitter, shutdown_rx, socket);
         log::info!("Started local server at {}", server_addr);
-        (server_addr, handle, shutdown_tx)
+        (messages, server_addr, handle, shutdown_tx)
     };
 
     let root = std::env::var(ENV_GRIT_WORKSPACE_ROOT).unwrap_or_else(|_| {
@@ -159,8 +162,62 @@ where
         .arg("--file")
         .arg(&tempfile_path)
         .kill_on_drop(true)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()
         .expect("Failed to start worker");
+
+    let stdout = final_child.stdout.take().expect("Failed to get stdout");
+    let stderr = final_child.stderr.take().expect("Failed to get stderr");
+
+    let mut stdout_reader = BufReader::new(stdout).lines();
+    let mut stderr_reader = BufReader::new(stderr).lines();
+
+    // TODO: make this more elegant by allowing Emitter to be shared between threads
+    #[cfg(feature = "workflow_server")]
+    let stdout_messages = messages.clone();
+    let stdout_handle = tokio::spawn(async move {
+        while let Some(line) = stdout_reader.next_line().await.unwrap() {
+            #[cfg(feature = "workflow_server")]
+            stdout_messages
+                .send(grit_cloud_client::ServerMessage::Log(
+                    marzano_messenger::SimpleLogMessage {
+                        level: marzano_core::api::AnalysisLogLevel::Info,
+                        step_id: None,
+                        message: line,
+                        meta: Some(std::collections::HashMap::from([(
+                            "source".to_string(),
+                            serde_json::Value::String("stdout".to_string()),
+                        )])),
+                    },
+                ))
+                .await
+                .unwrap();
+            #[cfg(not(feature = "workflow_server"))]
+            log::info!("{}", line);
+        }
+    });
+    let stderr_handle = tokio::spawn(async move {
+        while let Some(line) = stderr_reader.next_line().await.unwrap() {
+            #[cfg(feature = "workflow_server")]
+            messages
+                .send(grit_cloud_client::ServerMessage::Log(
+                    marzano_messenger::SimpleLogMessage {
+                        level: marzano_core::api::AnalysisLogLevel::Error,
+                        step_id: None,
+                        message: line,
+                        meta: Some(std::collections::HashMap::from([(
+                            "source".to_string(),
+                            serde_json::Value::String("stderr".to_string()),
+                        )])),
+                    },
+                ))
+                .await
+                .unwrap();
+            #[cfg(not(feature = "workflow_server"))]
+            log::info!("{}", line);
+        }
+    });
 
     let status = final_child.wait().await?;
 
@@ -170,6 +227,10 @@ where
         shutdown_tx.send(()).unwrap();
         handle.await?
     };
+
+    // Wait for the stdout and stderr readers to finish
+    stdout_handle.await?;
+    stderr_handle.await?;
 
     // Note the workflow may have already emitted its own conclusion - this is a fallback
     let fallback_outcome = if status.success() {
@@ -288,10 +349,14 @@ pub async fn fetch_remote_workflow(
     let client = reqwest::Client::new();
     let mut request = client.get(workflow_path_or_name);
     if let Some(auth_info) = auth {
-        request = request.header(
-            "Authorization",
-            format!("Bearer {}", auth_info.access_token),
-        );
+        // Only inject auth if URL is from localhost or grit.io
+        if workflow_path_or_name.contains("localhost") || workflow_path_or_name.contains("grit.io")
+        {
+            request = request.header(
+                "Authorization",
+                format!("Bearer {}", auth_info.access_token),
+            );
+        }
     }
     let response = request.send().await?;
 
@@ -320,7 +385,7 @@ pub async fn find_workflow_file_from(
         match fetch_remote_workflow(workflow_path_or_name, auth).await {
             Ok(info) => return Some(info),
             Err(e) => {
-                log::warn!("Failed to fetch remote workflow: {}", e);
+                log::error!("Failed to fetch remote workflow: {}", e);
             }
         }
     }
