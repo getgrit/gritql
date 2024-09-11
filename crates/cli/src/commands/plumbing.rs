@@ -14,6 +14,7 @@ use std::env::current_dir;
 use std::io::{stdin, Read};
 use std::path::Path;
 use std::path::PathBuf;
+use tracing::Instrument as _;
 
 use crate::analytics::track_event_line;
 use crate::error::GoodError;
@@ -304,10 +305,23 @@ pub(crate) async fn run_plumbing(
 
             let current_dir = current_dir()?;
             let mut updater = Updater::from_current_bin().await?;
-            let auth = updater.get_valid_auth().await.ok();
+            let auth = updater
+                .get_valid_auth()
+                .instrument(tracing::span!(
+                    tracing::Level::INFO,
+                    "grit_marzano.auth",
+                    "execution_id" = execution_id.as_str(),
+                ))
+                .await
+                .ok();
 
             let custom_workflow =
                 crate::workflows::find_workflow_file_from(current_dir.clone(), &definition, auth)
+                    .instrument(tracing::span!(
+                        tracing::Level::INFO,
+                        "grit_marzano.find_workflow",
+                        "execution_id" = execution_id.as_str(),
+                    ))
                     .await
                     .context("Failed to find workflow file")?;
 
@@ -323,8 +337,13 @@ pub(crate) async fn run_plumbing(
                 },
                 &parent,
                 VisibilityLevels::default(),
-                execution_id,
+                execution_id.clone(),
             )
+            .instrument(tracing::span!(
+                tracing::Level::INFO,
+                "grit_marzano.run_workflow",
+                "execution_id" = execution_id.as_str(),
+            ))
             .await
         }
     };
