@@ -332,6 +332,7 @@ pub(crate) async fn run_plumbing(
                 super::apply_migration::ApplyMigrationArgs {
                     input: Some(buffer),
                     remote: false,
+                    workflow_id: None,
                     verbose: true,
                     watch: false,
                 },
