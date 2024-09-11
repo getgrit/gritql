@@ -20,6 +20,7 @@ use crate::error::GoodError;
 use crate::flags::GlobalFormatFlags;
 use crate::lister::list_applyables;
 use crate::resolver::{get_grit_files_from, resolve_from, Source};
+use crate::updater::Updater;
 
 use super::super::analytics::AnalyticsArgs;
 use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
@@ -299,13 +300,13 @@ pub(crate) async fn run_plumbing(
             let buffer = read_input(&shared_args)?;
 
             let current_dir = current_dir()?;
+            let mut updater = Updater::from_current_bin().await?;
+            let auth = updater.get_valid_auth().await.ok();
 
-            let custom_workflow = marzano_gritmodule::searcher::find_workflow_file_from(
-                current_dir.clone(),
-                &definition,
-            )
-            .await
-            .unwrap();
+            let custom_workflow =
+                crate::workflows::find_workflow_file_from(current_dir.clone(), &definition, auth)
+                    .await
+                    .unwrap();
 
             super::apply_migration::run_apply_migration(
                 custom_workflow,

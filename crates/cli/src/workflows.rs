@@ -3,13 +3,16 @@ use anyhow::Result;
 use console::style;
 use log::debug;
 use marzano_auth::env::{get_grit_api_url, ENV_VAR_GRIT_API_URL, ENV_VAR_GRIT_AUTH_TOKEN};
+use marzano_auth::info::AuthInfo;
+use marzano_gritmodule::config::REPO_CONFIG_DIR_NAME;
+use marzano_gritmodule::searcher::WorkflowInfo;
 use marzano_gritmodule::{fetcher::LocalRepo, searcher::find_grit_dir_from};
 use marzano_messenger::workflows::WorkflowMessenger;
 use marzano_messenger::{emit::Messager, workflows::PackagedWorkflowOutcome};
 use marzano_util::diff::FileDiff;
 use serde::Serialize;
 use serde_json::to_string;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::NamedTempFile;
 use tokio::fs;
 use tokio::process::Command;
@@ -273,4 +276,79 @@ pub async fn run_remote_workflow(
     }
 
     Ok(())
+}
+
+async fn fetch_remote_workflow(
+    workflow_path_or_name: &str,
+    auth: Option<AuthInfo>,
+) -> Result<WorkflowInfo> {
+    let temp_dir = tempfile::tempdir()?;
+    // Note: into_path is important here to prevent the temp_dir from being dropped
+    let temp_file_path = temp_dir.into_path().join("downloaded_workflow.ts");
+    let client = reqwest::Client::new();
+    let mut request = client.get(workflow_path_or_name);
+    if let Some(auth_info) = auth {
+        request = request.header(
+            "Authorization",
+            format!("Bearer {}", auth_info.access_token),
+        );
+    }
+    let response = request.send().await?;
+
+    // Verify status code
+    if !response.status().is_success() {
+        return Err(anyhow::anyhow!(
+            "Failed to fetch remote workflow: {}
+    {}",
+            response.status(),
+            response.text().await?
+        ));
+    }
+
+    let content = response.text().await?;
+    fs_err::write(&temp_file_path, content)?;
+    Ok(WorkflowInfo::new(temp_file_path))
+}
+
+pub async fn find_workflow_file_from(
+    dir: PathBuf,
+    workflow_path_or_name: &str,
+    auth: Option<AuthInfo>,
+) -> Option<WorkflowInfo> {
+    if workflow_path_or_name.starts_with("http://") || workflow_path_or_name.starts_with("https://")
+    {
+        match fetch_remote_workflow(workflow_path_or_name, auth).await {
+            Ok(info) => return Some(info),
+            Err(e) => {
+                log::warn!("Failed to fetch remote workflow: {}", e);
+            }
+        }
+    }
+
+    if workflow_path_or_name.ends_with(".js") || workflow_path_or_name.ends_with(".ts") {
+        let workflow_file_path = if Path::new(workflow_path_or_name).is_absolute() {
+            PathBuf::from(workflow_path_or_name)
+        } else {
+            dir.join(workflow_path_or_name)
+        };
+        if fs::metadata(&workflow_file_path).await.is_ok() {
+            return Some(WorkflowInfo::new(workflow_file_path));
+        }
+    }
+
+    let base_search_string = format!(
+        "{}/workflows/{}.ts",
+        REPO_CONFIG_DIR_NAME, workflow_path_or_name
+    );
+    let bundled_search_string = format!(
+        "{}/workflows/{}/index.ts",
+        REPO_CONFIG_DIR_NAME, workflow_path_or_name
+    );
+    let workflow_file = marzano_gritmodule::searcher::search(
+        dir,
+        &[base_search_string, bundled_search_string],
+        None,
+    )
+    .await;
+    workflow_file.map(|path| WorkflowInfo::new(PathBuf::from(path)))
 }
