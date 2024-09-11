@@ -74,14 +74,11 @@ pub(crate) async fn run_apply(
         }
 
         let mut updater = Updater::from_current_bin().await?;
-        let auth = updater.get_valid_auth().await?;
+        let auth = updater.get_valid_auth().await.ok();
 
-        let custom_workflow = crate::workflows::find_workflow_file_from(
-            current_dir,
-            &args.pattern_or_workflow,
-            Some(auth),
-        )
-        .await;
+        let custom_workflow =
+            crate::workflows::find_workflow_file_from(current_dir, &args.pattern_or_workflow, auth)
+                .await;
         if let Some(custom_workflow) = custom_workflow {
             return run_apply_migration(
                 custom_workflow,

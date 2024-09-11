@@ -301,15 +301,12 @@ pub(crate) async fn run_plumbing(
 
             let current_dir = current_dir()?;
             let mut updater = Updater::from_current_bin().await?;
-            let auth = updater.get_valid_auth().await?;
+            let auth = updater.get_valid_auth().await.ok();
 
-            let custom_workflow = crate::workflows::find_workflow_file_from(
-                current_dir.clone(),
-                &definition,
-                Some(auth),
-            )
-            .await
-            .unwrap();
+            let custom_workflow =
+                crate::workflows::find_workflow_file_from(current_dir.clone(), &definition, auth)
+                    .await
+                    .unwrap();
 
             super::apply_migration::run_apply_migration(
                 custom_workflow,
