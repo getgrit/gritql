@@ -438,11 +438,6 @@ async fn run_command() -> Result<()> {
             }
         }
 
-        // If there is an error, log it
-        if let Err(e) = &res {
-            event!(Level::ERROR, "Error: {:?}", e);
-        }
-
         res
     };
 
