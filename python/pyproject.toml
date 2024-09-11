@@ -6,11 +6,11 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-version = "0.1.3"
+version = "0.1.4"
 
 [tool.poetry]
 name = "gritql"
-version = "0.1.3"
+version = "0.1.4"
 description = "Python bindings for GritQL"
 authors = ["Grit <developers@grit.io>"]
 license = "MIT"
