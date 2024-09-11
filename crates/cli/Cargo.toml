@@ -76,7 +76,7 @@ tracing = { version = "0.1.40", default-features = false, features = [] }
 notify = "6.1.1"
 notify-debouncer-mini = "0.4.1"
 tracing-subscriber = { version = "0.3", default-features = false, optional = true }
-tracing-log = "0.2.0"
+tracing-log = { version = "0.2.0", optional = true }
 
 fs-err = { version = "2.11.0" }
 
@@ -129,6 +129,7 @@ grit_tracing = [
   "dep:opentelemetry_sdk",
   "dep:tracing-opentelemetry",
   "dep:tracing-subscriber",
+  "dep:tracing-log",
   "marzano-core/grit_tracing",
 ]
 external_functions = ["marzano-core/external_functions"]
