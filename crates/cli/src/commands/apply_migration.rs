@@ -102,13 +102,16 @@ pub(crate) async fn run_apply_migration(
     emitter.flush().await?;
 
     // Get the final workflow status from the emitter
-    if let Some(workflow_status) = emitter.get_workflow_status()? {
-        if !workflow_status.success {
-            anyhow::bail!(GoodError::new());
-        }
-    } else {
+    let Some(workflow_status) = emitter.get_workflow_status()? else {
         anyhow::bail!("Final workflow status not found");
+    };
+
+    if !workflow_status.success {
+        anyhow::bail!(GoodError::new());
     }
+
+    println!("Workflow status: {:?}", workflow_status);
+    println!("Workflow data: {:?}", workflow_status.data);
 
     Ok(())
 }

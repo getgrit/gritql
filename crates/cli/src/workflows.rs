@@ -278,7 +278,7 @@ pub async fn run_remote_workflow(
     Ok(())
 }
 
-async fn fetch_remote_workflow(
+pub async fn fetch_remote_workflow(
     workflow_path_or_name: &str,
     auth: Option<AuthInfo>,
 ) -> Result<WorkflowInfo> {
