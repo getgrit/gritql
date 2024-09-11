@@ -13,8 +13,10 @@ use marzano_util::diff::FileDiff;
 use serde::Serialize;
 use serde_json::to_string;
 use std::path::{Path, PathBuf};
+use std::process::{ChildStderr, ChildStdout, Stdio};
 use tempfile::NamedTempFile;
 use tokio::fs;
+use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
 pub static GRIT_REPO_URL_NAME: &str = "grit_repo_url";
@@ -159,8 +161,40 @@ where
         .arg("--file")
         .arg(&tempfile_path)
         .kill_on_drop(true)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()
         .expect("Failed to start worker");
+
+    let stdout = final_child.stdout.take().expect("Failed to get stdout");
+    let stderr = final_child.stderr.take().expect("Failed to get stderr");
+
+    let stdout_reader = BufReader::new(stdout).lines();
+    let stderr_reader = BufReader::new(stderr).lines();
+
+    tokio::spawn(async move {
+        let mut stdout_reader = stdout_reader;
+        while let Some(line) = stdout_reader.next_line().await.unwrap() {
+            log::info!("stdout: {}", line);
+        }
+    });
+
+    // tokio::select! {
+    //     res = stdout_reader.for_each(|line| async {
+    //         if let Ok(line) = line {
+    //             println!("stdout: {}", line);
+    //         }
+    //     }) => {
+    //         res?;
+    //     }
+    //     res = stderr_reader.for_each(|line| async {
+    //         if let Ok(line) = line {
+    //             println!("stderr: {}", line);
+    //         }
+    //     }) => {
+    //         res?;
+    //     }
+    // }
 
     let status = final_child.wait().await?;
 
