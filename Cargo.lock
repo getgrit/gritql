@@ -2350,7 +2350,6 @@ dependencies = [
  "marzano-util",
  "rand",
  "regex",
- "reqwest 0.11.24",
  "serde",
  "serde_yaml",
  "tempfile",
