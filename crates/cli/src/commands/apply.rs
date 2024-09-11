@@ -2,13 +2,12 @@ use anyhow::Result;
 use clap::Args;
 use indicatif::MultiProgress;
 
-use marzano_gritmodule::searcher::find_workflow_file_from;
 use marzano_messenger::emit::ApplyDetails;
 use serde::Serialize;
 use std::env::current_dir;
 use std::path::PathBuf;
 
-use crate::flags::GlobalFormatFlags;
+use crate::{flags::GlobalFormatFlags, updater::Updater};
 
 #[cfg(feature = "workflows_v2")]
 use super::apply_migration::{run_apply_migration, ApplyMigrationArgs};
@@ -74,7 +73,15 @@ pub(crate) async fn run_apply(
             .await;
         }
 
-        let custom_workflow = find_workflow_file_from(current_dir, &args.pattern_or_workflow).await;
+        let mut updater = Updater::from_current_bin().await?;
+        let auth = updater.get_valid_auth().await?;
+
+        let custom_workflow = crate::workflows::find_workflow_file_from(
+            current_dir,
+            &args.pattern_or_workflow,
+            Some(auth),
+        )
+        .await;
         if let Some(custom_workflow) = custom_workflow {
             return run_apply_migration(
                 custom_workflow,

@@ -87,7 +87,7 @@ pub async fn collect_patterns(
     Ok(all_patterns)
 }
 
-async fn search(
+pub async fn search(
     current_path: PathBuf,
     config_file_names: &[String],
     stop_file: Option<&str>,
@@ -118,66 +118,16 @@ async fn search(
     }
 }
 
-async fn fetch_remote_workflow(workflow_path_or_name: &str) -> Result<WorkflowInfo> {
-    let temp_dir = tempfile::tempdir()?;
-    // Note: into_path is important here to prevent the temp_dir from being dropped
-    let temp_file_path = temp_dir.into_path().join("downloaded_workflow.ts");
-    let response = reqwest::get(workflow_path_or_name).await?;
-    let content = response.text().await?;
-    fs_err::write(&temp_file_path, content)?;
-    Ok(WorkflowInfo {
-        path: temp_file_path,
-    })
-}
-
-pub async fn find_workflow_file_from(
-    dir: PathBuf,
-    workflow_path_or_name: &str,
-) -> Option<WorkflowInfo> {
-    if workflow_path_or_name.ends_with(".js") || workflow_path_or_name.ends_with(".ts") {
-        if workflow_path_or_name.starts_with("http://")
-            || workflow_path_or_name.starts_with("https://")
-        {
-            match fetch_remote_workflow(workflow_path_or_name).await {
-                Ok(info) => return Some(info),
-                Err(e) => {
-                    log::warn!("Failed to fetch remote workflow: {}", e);
-                }
-            }
-        }
-
-        let workflow_file_path = if Path::new(workflow_path_or_name).is_absolute() {
-            PathBuf::from(workflow_path_or_name)
-        } else {
-            dir.join(workflow_path_or_name)
-        };
-        if fs::metadata(&workflow_file_path).await.is_ok() {
-            return Some(WorkflowInfo {
-                path: workflow_file_path,
-            });
-        }
-    }
-
-    let base_search_string = format!(
-        "{}/workflows/{}.ts",
-        REPO_CONFIG_DIR_NAME, workflow_path_or_name
-    );
-    let bundled_search_string = format!(
-        "{}/workflows/{}/index.ts",
-        REPO_CONFIG_DIR_NAME, workflow_path_or_name
-    );
-    let workflow_file = search(dir, &[base_search_string, bundled_search_string], None).await;
-    workflow_file.map(|path| WorkflowInfo {
-        path: PathBuf::from(path),
-    })
-}
-
 #[derive(Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct WorkflowInfo {
     path: PathBuf,
 }
 
 impl WorkflowInfo {
+    pub fn new(path: PathBuf) -> Self {
+        Self { path }
+    }
+
     pub fn entrypoint(&self) -> Cow<'_, str> {
         self.path.to_string_lossy()
     }
