@@ -8,7 +8,7 @@ use marzano_gritmodule::fetcher::KeepFetcherKind;
 use marzano_gritmodule::patterns_directory::PatternsDirectory;
 use marzano_gritmodule::searcher::find_grit_modules_dir;
 use marzano_gritmodule::utils::is_pattern_name;
-use marzano_messenger::emit::{ApplyDetails, VisibilityLevels};
+use marzano_messenger::emit::{ApplyDetails, Messager, VisibilityLevels};
 use serde::{Deserialize, Serialize};
 use std::env::current_dir;
 use std::io::{stdin, Read};
@@ -18,8 +18,9 @@ use tracing::Instrument as _;
 
 use crate::analytics::track_event_line;
 use crate::error::GoodError;
-use crate::flags::GlobalFormatFlags;
+use crate::flags::{GlobalFormatFlags, OutputFormat};
 use crate::lister::list_applyables;
+use crate::messenger_variant::create_emitter;
 use crate::resolver::{get_grit_files_from, resolve_from, Source};
 use crate::updater::Updater;
 
@@ -303,6 +304,18 @@ pub(crate) async fn run_plumbing(
             let execution_id = std::env::var("GRIT_EXECUTION_ID")
                 .unwrap_or_else(|_| uuid::Uuid::new_v4().to_string());
 
+            let format = OutputFormat::from(&parent);
+            let mut emitter = create_emitter(
+                &format,
+                marzano_messenger::output_mode::OutputMode::default(),
+                None,
+                false,
+                None,
+                None,
+                VisibilityLevels::default(),
+            )
+            .await?;
+
             let current_dir = current_dir()?;
             let mut updater = Updater::from_current_bin().await?;
             let auth = updater
@@ -315,15 +328,29 @@ pub(crate) async fn run_plumbing(
                 .await
                 .ok();
 
-            let custom_workflow =
-                crate::workflows::find_workflow_file_from(current_dir.clone(), &definition, auth)
-                    .instrument(tracing::span!(
-                        tracing::Level::INFO,
-                        "grit_marzano.find_workflow",
-                        "execution_id" = execution_id.as_str(),
-                    ))
-                    .await
-                    .context("Failed to find workflow file")?;
+            let custom_workflow = match crate::workflows::find_workflow_file_from(
+                current_dir.clone(),
+                &definition,
+                auth,
+            )
+            .instrument(tracing::span!(
+                tracing::Level::INFO,
+                "grit_marzano.find_workflow",
+                "execution_id" = execution_id.as_str(),
+            ))
+            .await
+            .context("Failed to find workflow file")
+            {
+                Ok(workflow) => workflow,
+                Err(e) => {
+                    let log = marzano_messenger::SimpleLogMessage::new_error(format!(
+                        "Failed to find workflow file: {}",
+                        e
+                    ));
+                    emitter.emit_log(&log)?;
+                    return Err(e);
+                }
+            };
 
             super::apply_migration::run_apply_migration(
                 custom_workflow,
@@ -336,8 +363,7 @@ pub(crate) async fn run_plumbing(
                     verbose: true,
                     watch: false,
                 },
-                &parent,
-                VisibilityLevels::default(),
+                emitter,
                 execution_id.clone(),
             )
             .instrument(tracing::span!(
