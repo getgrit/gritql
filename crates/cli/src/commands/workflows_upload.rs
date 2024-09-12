@@ -1,5 +1,6 @@
 use anyhow::{bail, Result};
 use clap::Args;
+use console::style;
 use serde::Serialize;
 use std::path::PathBuf;
 
@@ -12,13 +13,15 @@ use marzano_messenger::emit::VisibilityLevels;
 #[derive(Args, Debug, Serialize)]
 pub struct WorkflowsUploadArgs {
     #[clap(index = 1)]
-    workflow_path: String,
+    pub workflow_path: String,
+    #[clap(index = 2)]
+    pub workflow_id: String,
 }
 
 pub async fn run_upload_workflows(
     _arg: &WorkflowsUploadArgs,
     parent: &GlobalFormatFlags,
-) -> Result<()> {
+) -> Result<String> {
     if parent.json || parent.jsonl {
         bail!("JSON output not supported for workflows");
     }
@@ -31,7 +34,11 @@ pub async fn run_upload_workflows(
     .await?;
 
     let apply_migration_args = ApplyMigrationArgs {
-        input: Some(format!(r#"{{"workflow": "{}"}}"#, workflow_path.display())),
+        input: Some(format!(
+            r#"{{"workflow": "{}", "workflow_id": "{}" }}"#,
+            workflow_path.display(),
+            _arg.workflow_id
+        )),
         ..Default::default()
     };
 
@@ -49,10 +56,10 @@ pub async fn run_upload_workflows(
     )
     .await?;
 
-    if let Some(data) = result.data.and_then(|v| v.get("id").cloned()) {
-        if let Some(data_str) = data.as_str() {
-            println!("Uploaded Workflow ID: {}", data_str);
-            return Ok(());
+    if let Some(data) = result.data.and_then(|v| v.get("download").cloned()) {
+        if let Some(download_url) = data.as_str() {
+            log::info!("Download URL: {}\n", style(download_url).bold().blue());
+            return Ok(download_url.to_string());
         }
     }
 

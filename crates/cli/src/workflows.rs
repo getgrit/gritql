@@ -255,6 +255,7 @@ where
 
 #[cfg(feature = "remote_workflows")]
 pub async fn run_remote_workflow(
+    pattern_or_workflow: String,
     args: crate::commands::apply_migration::ApplyMigrationArgs,
     ranges: Option<Vec<FileDiff>>,
     flags: &crate::flags::GlobalFormatFlags,
@@ -263,6 +264,8 @@ pub async fn run_remote_workflow(
     use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
     use marzano_gritmodule::fetcher::ModuleRepo;
     use std::time::Duration;
+
+    use crate::commands::workflows_upload::{run_upload_workflows, WorkflowsUploadArgs};
 
     let mut updater = Updater::from_current_bin().await?;
     let cwd = std::env::current_dir()?;
@@ -300,8 +303,16 @@ pub async fn run_remote_workflow(
         anyhow::bail!("No workflow ID provided");
     };
 
+    let upload_args = WorkflowsUploadArgs {
+        workflow_path: pattern_or_workflow,
+        workflow_id: workflow_id.to_string(),
+    };
+    let artifact_download_url = run_upload_workflows(&upload_args, &flags).await?;
+    input.insert("definition".to_string(), artifact_download_url.into());
+
     let settings =
         grit_cloud_client::RemoteWorkflowSettings::new(&workflow_id, &repo, input.into());
+
     let result = grit_cloud_client::run_remote_workflow(settings, &auth).await?;
 
     pb.finish_and_clear();
