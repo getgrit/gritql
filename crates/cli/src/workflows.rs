@@ -190,6 +190,7 @@ where
             }
         }
     });
+    let mut stderr_emitter = emitter.clone();
     let stderr_handle = tokio::spawn(async move {
         while let Some(line) = stderr_reader.next_line().await.unwrap() {
             let log = marzano_messenger::SimpleLogMessage {
@@ -201,7 +202,7 @@ where
                     serde_json::Value::String("stderr".to_string()),
                 )])),
             };
-            if let Err(e) = emitter.emit_log(&log) {
+            if let Err(e) = stderr_emitter.emit_log(&log) {
                 log::error!("Error emitting log: {}", e);
             }
         }
