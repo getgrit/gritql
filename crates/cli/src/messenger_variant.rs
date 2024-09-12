@@ -26,6 +26,7 @@ use crate::{
 };
 
 #[allow(clippy::large_enum_variant)]
+#[derive(Clone)]
 pub enum MessengerVariant<'a> {
     Formatted(FormattedMessager<'a>),
     JsonLine(JSONLineMessenger<'a>),
@@ -109,17 +110,17 @@ impl<'a> Messager for MessengerVariant<'a> {
         }
     }
 
-    fn finish_workflow(&mut self, outcome: &PackagedWorkflowOutcome) -> anyhow::Result<()> {
+    async fn finish_workflow(&mut self, outcome: &PackagedWorkflowOutcome) -> anyhow::Result<()> {
         match self {
-            MessengerVariant::Formatted(m) => m.finish_workflow(outcome),
-            MessengerVariant::Transformed(m) => m.finish_workflow(outcome),
-            MessengerVariant::JsonLine(m) => m.finish_workflow(outcome),
+            MessengerVariant::Formatted(m) => m.finish_workflow(outcome).await,
+            MessengerVariant::Transformed(m) => m.finish_workflow(outcome).await,
+            MessengerVariant::JsonLine(m) => m.finish_workflow(outcome).await,
             #[cfg(feature = "remote_redis")]
-            MessengerVariant::Redis(m) => m.finish_workflow(outcome),
+            MessengerVariant::Redis(m) => m.finish_workflow(outcome).await,
             #[cfg(feature = "remote_pubsub")]
-            MessengerVariant::GooglePubSub(m) => m.finish_workflow(outcome),
+            MessengerVariant::GooglePubSub(m) => m.finish_workflow(outcome).await,
             #[cfg(feature = "server")]
-            MessengerVariant::Combined(m) => m.finish_workflow(outcome),
+            MessengerVariant::Combined(m) => m.finish_workflow(outcome).await,
         }
     }
 
@@ -295,7 +296,7 @@ pub async fn create_emitter<'a>(
         }
         #[cfg(feature = "remote_redis")]
         OutputFormat::Redis => {
-            let messenger = RedisMessenger::create(mode, None, _root_path)?;
+            let messenger = RedisMessenger::create(mode, None, _root_path).await?;
             messenger.into()
         }
         #[cfg(feature = "remote_pubsub")]
