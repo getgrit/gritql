@@ -360,7 +360,11 @@ async fn run_command(_use_tracing: bool) -> Result<()> {
     #[cfg(feature = "grit_tracing")]
     if !_use_tracing {
         setup_env_logger(&app, &multi);
-    } else if let Err(e) = tracing_log::LogTracer::init() {
+    } else if let Err(e) = tracing_log::log_tracer::Builder::new()
+        .ignore_all(vec!["rustls", "tonic", "mio", "hyper"])
+        .with_max_level(LevelFilter::Debug)
+        .init()
+    {
         eprintln!("Failed to initialize LogTracer: {:?}", e);
         setup_env_logger(&app, &multi)
     }
