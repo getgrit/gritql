@@ -9,21 +9,23 @@ use crate::{
 /// A testing messenger that doesn't actually send messages anywhere.
 ///
 /// This should be used in tests to avoid sending messages to real backends.
+#[derive(Clone)]
 pub struct TestingMessenger {
-    message_count: usize,
-    log_count: usize,
+    message_count: std::sync::Arc<std::sync::atomic::AtomicUsize>,
+    log_count: std::sync::Arc<std::sync::atomic::AtomicUsize>,
 }
 
 impl TestingMessenger {
     pub fn new() -> Self {
         Self {
-            message_count: 0,
-            log_count: 0,
+            message_count: std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0)),
+            log_count: std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0)),
         }
     }
 
     pub fn total_count(&self) -> usize {
-        self.log_count + self.message_count
+        self.message_count.load(std::sync::atomic::Ordering::SeqCst)
+            + self.log_count.load(std::sync::atomic::Ordering::SeqCst)
     }
 }
 
@@ -38,7 +40,7 @@ impl Messager for TestingMessenger {
         Ok(())
     }
 
-    fn finish_workflow(
+    async fn finish_workflow(
         &mut self,
         _outcome: &crate::workflows::PackagedWorkflowOutcome,
     ) -> anyhow::Result<()> {
@@ -56,12 +58,14 @@ impl Messager for TestingMessenger {
     }
 
     fn raw_emit(&mut self, _message: &MatchResult) -> Result<()> {
-        self.message_count += 1;
+        self.message_count
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
 
     fn emit_log(&mut self, _log: &crate::SimpleLogMessage) -> anyhow::Result<()> {
-        self.log_count += 1;
+        self.log_count
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
 }

@@ -1,4 +1,5 @@
 use anyhow::Result;
+use std::future::Future;
 use std::{
     collections::HashMap,
     sync::atomic::{AtomicI32, Ordering},
@@ -259,7 +260,10 @@ pub trait Messager: Send + Sync {
 
     // Called when a workflow finishes processing, with the outcome
     // Note that this *may* be called multiple times. The *first* time it is called should be considered the "true" outcome.
-    fn finish_workflow(&mut self, _outcome: &PackagedWorkflowOutcome) -> anyhow::Result<()>;
+    fn finish_workflow(
+        &mut self,
+        _outcome: &PackagedWorkflowOutcome,
+    ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
     // Get the current workflow outcome, if one has been set
     fn get_workflow_status(&mut self) -> anyhow::Result<Option<&PackagedWorkflowOutcome>>;

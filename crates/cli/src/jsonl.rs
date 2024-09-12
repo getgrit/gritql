@@ -12,6 +12,7 @@ use marzano_messenger::{
     workflows::StatusManager,
 };
 
+#[derive(Clone)]
 pub struct JSONLineMessenger<'a> {
     writer: Arc<Mutex<Box<dyn Write + Send + 'a>>>,
     mode: OutputMode,
@@ -45,7 +46,7 @@ impl<'a> Messager for JSONLineMessenger<'a> {
         self.status.get_workflow_status()
     }
 
-    fn finish_workflow(
+    async fn finish_workflow(
         &mut self,
         outcome: &marzano_messenger::workflows::PackagedWorkflowOutcome,
     ) -> anyhow::Result<()> {

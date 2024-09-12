@@ -58,7 +58,7 @@ pub struct WorkflowInputs {
 #[allow(unused_mut)]
 pub async fn run_bin_workflow<M>(mut emitter: M, mut arg: WorkflowInputs) -> Result<M>
 where
-    M: Messager + WorkflowMessenger + Send + 'static,
+    M: Messager + WorkflowMessenger + Send + Clone + 'static,
 {
     let cwd = std::env::current_dir()?;
 
@@ -69,14 +69,14 @@ where
     let repo = LocalRepo::from_dir(&cwd).await;
 
     #[cfg(feature = "workflow_server")]
-    let (messages, server_addr, handle, shutdown_tx) = {
+    let (server_addr, handle, shutdown_tx) = {
+        let server_emitter = emitter.clone();
         let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
         let socket = tokio::net::TcpListener::bind("0.0.0.0:0").await?;
         let server_addr = format!("http://{}", socket.local_addr()?).to_string();
-        let (messages, handle) =
-            grit_cloud_client::spawn_server_tasks(emitter, shutdown_rx, socket);
-        log::info!("Started local server at {}", server_addr);
-        (messages, server_addr, handle, shutdown_tx)
+        let handle = grit_cloud_client::spawn_server_tasks(server_emitter, shutdown_rx, socket);
+        log::debug!("Started local server at {}", server_addr);
+        (server_addr, handle, shutdown_tx)
     };
 
     let root = std::env::var(ENV_GRIT_WORKSPACE_ROOT).unwrap_or_else(|_| {
@@ -173,49 +173,37 @@ where
     let mut stdout_reader = BufReader::new(stdout).lines();
     let mut stderr_reader = BufReader::new(stderr).lines();
 
-    // TODO: make this more elegant by allowing Emitter to be shared between threads
-    #[cfg(feature = "workflow_server")]
-    let stdout_messages = messages.clone();
+    let mut stdout_emitter = emitter.clone();
     let stdout_handle = tokio::spawn(async move {
         while let Some(line) = stdout_reader.next_line().await.unwrap() {
-            #[cfg(feature = "workflow_server")]
-            stdout_messages
-                .send(grit_cloud_client::ServerMessage::Log(
-                    marzano_messenger::SimpleLogMessage {
-                        level: marzano_core::api::AnalysisLogLevel::Info,
-                        step_id: None,
-                        message: line,
-                        meta: Some(std::collections::HashMap::from([(
-                            "source".to_string(),
-                            serde_json::Value::String("stdout".to_string()),
-                        )])),
-                    },
-                ))
-                .await
-                .unwrap();
-            #[cfg(not(feature = "workflow_server"))]
-            log::info!("{}", line);
+            let log = marzano_messenger::SimpleLogMessage {
+                level: marzano_core::api::AnalysisLogLevel::Info,
+                step_id: None,
+                message: line,
+                meta: Some(std::collections::HashMap::from([(
+                    "source".to_string(),
+                    serde_json::Value::String("stdout".to_string()),
+                )])),
+            };
+            if let Err(e) = stdout_emitter.emit_log(&log) {
+                log::error!("Error emitting log: {}", e);
+            }
         }
     });
     let stderr_handle = tokio::spawn(async move {
         while let Some(line) = stderr_reader.next_line().await.unwrap() {
-            #[cfg(feature = "workflow_server")]
-            messages
-                .send(grit_cloud_client::ServerMessage::Log(
-                    marzano_messenger::SimpleLogMessage {
-                        level: marzano_core::api::AnalysisLogLevel::Error,
-                        step_id: None,
-                        message: line,
-                        meta: Some(std::collections::HashMap::from([(
-                            "source".to_string(),
-                            serde_json::Value::String("stderr".to_string()),
-                        )])),
-                    },
-                ))
-                .await
-                .unwrap();
-            #[cfg(not(feature = "workflow_server"))]
-            log::info!("{}", line);
+            let log = marzano_messenger::SimpleLogMessage {
+                level: marzano_core::api::AnalysisLogLevel::Error,
+                step_id: None,
+                message: line,
+                meta: Some(std::collections::HashMap::from([(
+                    "source".to_string(),
+                    serde_json::Value::String("stderr".to_string()),
+                )])),
+            };
+            if let Err(e) = emitter.emit_log(&log) {
+                log::error!("Error emitting log: {}", e);
+            }
         }
     });
 
@@ -248,7 +236,7 @@ where
             data: None,
         }
     };
-    emitter.finish_workflow(&fallback_outcome)?;
+    emitter.finish_workflow(&fallback_outcome).await?;
 
     Ok(emitter)
 }

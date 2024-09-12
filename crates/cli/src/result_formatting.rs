@@ -300,6 +300,7 @@ impl fmt::Display for FormattedResult {
     }
 }
 
+#[derive(Clone)]
 pub struct FormattedMessager<'a> {
     writer: Option<Arc<Mutex<Box<dyn Write + Send + 'a>>>>,
     mode: OutputMode,
@@ -394,7 +395,7 @@ impl Messager for FormattedMessager<'_> {
         self.status_manager.get_workflow_status()
     }
 
-    fn finish_workflow(
+    async fn finish_workflow(
         &mut self,
         outcome: &marzano_messenger::workflows::PackagedWorkflowOutcome,
     ) -> anyhow::Result<()> {
@@ -439,6 +440,7 @@ impl Messager for FormattedMessager<'_> {
 }
 
 /// Prints the transformed files themselves, with no metadata
+#[derive(Clone)]
 pub struct TransformedMessenger<'a> {
     writer: Option<Arc<Mutex<Box<dyn Write + Send + 'a>>>>,
     total_accepted: usize,
@@ -464,7 +466,7 @@ impl Messager for TransformedMessenger<'_> {
         VisibilityLevels::Primary
     }
 
-    fn finish_workflow(
+    async fn finish_workflow(
         &mut self,
         outcome: &marzano_messenger::workflows::PackagedWorkflowOutcome,
     ) -> anyhow::Result<()> {
