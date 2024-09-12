@@ -1,7 +1,10 @@
 use clap::{Parser, Subcommand};
 use serde::Serialize;
 
-use super::{workflows_list::WorkflowsListArgs, workflows_watch::WorkflowWatchArgs, workflows_upload::WorkflowsUploadArgs};
+use super::{
+    workflows_list::WorkflowsListArgs, workflows_upload::WorkflowsUploadArgs,
+    workflows_watch::WorkflowWatchArgs,
+};
 
 #[derive(Parser, Debug, Serialize)]
 pub struct Workflows {
