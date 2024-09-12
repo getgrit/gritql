@@ -1,5 +1,5 @@
-use crate::flags::GlobalFormatFlags;
-use crate::{flags::OutputFormat, messenger_variant::create_emitter};
+
+
 use marzano_messenger::emit::FlushableMessenger;
 
 #[cfg(not(feature = "workflows_v2"))]
@@ -71,25 +71,12 @@ pub(crate) async fn run_apply_migration(
     paths: Vec<PathBuf>,
     ranges: Option<Vec<marzano_util::diff::FileDiff>>,
     arg: ApplyMigrationArgs,
-    flags: &GlobalFormatFlags,
-    min_level: marzano_messenger::emit::VisibilityLevels,
+    mut emitter: crate::messenger_variant::MessengerVariant<'static>,
     execution_id: String,
 ) -> Result<PackagedWorkflowOutcome> {
     use crate::error::GoodError;
 
     let input = arg.get_payload()?;
-
-    let format = OutputFormat::from(flags);
-    let mut emitter = create_emitter(
-        &format,
-        marzano_messenger::output_mode::OutputMode::default(),
-        None,
-        false,
-        None,
-        None,
-        min_level,
-    )
-    .await?;
 
     emitter.start_workflow()?;
 

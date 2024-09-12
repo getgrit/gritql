@@ -4,9 +4,10 @@ use console::style;
 use serde::Serialize;
 use std::path::PathBuf;
 
-use crate::flags::GlobalFormatFlags;
+use crate::flags::{GlobalFormatFlags, OutputFormat};
 
 use crate::commands::apply_migration::{run_apply_migration, ApplyMigrationArgs};
+use crate::messenger_variant::create_emitter;
 use crate::workflows::fetch_remote_workflow;
 use marzano_messenger::emit::VisibilityLevels;
 
@@ -45,13 +46,23 @@ pub async fn run_upload_workflows(
     let execution_id =
         std::env::var("GRIT_EXECUTION_ID").unwrap_or_else(|_| uuid::Uuid::new_v4().to_string());
 
+    let format = OutputFormat::from(parent);
+    let emitter = create_emitter(
+        &format,
+        marzano_messenger::output_mode::OutputMode::default(),
+        None,
+        false,
+        None,
+        None,
+        VisibilityLevels::default(),
+    )
+    .await?;
     let result = run_apply_migration(
         workflow_info,
         vec![],
         None,
         apply_migration_args,
-        parent,
-        VisibilityLevels::default(),
+        emitter,
         execution_id,
     )
     .await?;

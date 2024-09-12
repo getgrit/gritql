@@ -10,6 +10,17 @@ pub struct SimpleLogMessage {
     pub step_id: Option<String>,
 }
 
+impl SimpleLogMessage {
+    pub fn new_error(message: String) -> Self {
+        SimpleLogMessage {
+            message,
+            level: AnalysisLogLevel::Error,
+            meta: None,
+            step_id: None,
+        }
+    }
+}
+
 /// Represents a raw log message that can be sent to the server,
 /// Some fields are double serialized to handle JSON columns
 #[derive(Debug, Serialize, Deserialize)]
