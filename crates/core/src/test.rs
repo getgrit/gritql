@@ -8841,6 +8841,48 @@ fn parses_java_constructor() {
 }
 
 #[test]
+fn matches_java_imports() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language java
+                |
+                |or {
+                |  `import $_` => `generic import`,
+                |  `import org.springframework.mock.$_` => `spring mock import`,
+                |  `import org.springframework.$_` => `spring import`,
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |package com.example.test;
+                |
+                |import org.springframework.mock.web.MockHttpServletRequest;
+                |import org.junit.Test;
+                |import org.junit.runner.RunWith;
+                |import org.springframework.mock.web.MockHttpServletRequest;
+                |"#
+            .trim_margin()
+            .unwrap()
+            .to_owned(),
+            expected: r#"
+                |package com.example.test;
+                |
+                |generic import
+                |spring mock import
+                |generic import
+                |spring mock import
+                |"#
+            .trim_margin()
+            .unwrap()
+            .to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn parses_method_modifier() {
     run_test_expected({
         TestArgExpected {
