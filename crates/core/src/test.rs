@@ -8848,9 +8848,10 @@ fn matches_java_imports() {
                 |language java
                 |
                 |or {
-                |  `import $_` => `generic import`,
-                |  `import org.springframework.mock.$_` => `spring mock import`,
-                |  `import org.springframework.$_` => `spring import`,
+                |   `import $import;` where {
+                |      $import <: contains `org.springframework`
+                |   } => `spring import`,
+                |  `import $_;` => `generic import`,
                 |}
                 |"#
             .trim_margin()
@@ -8861,7 +8862,7 @@ fn matches_java_imports() {
                 |import org.springframework.mock.web.MockHttpServletRequest;
                 |import org.junit.Test;
                 |import org.junit.runner.RunWith;
-                |import org.springframework.mock.web.MockHttpServletRequest;
+                |import org.springframework.mine.web.MockHttpServletRequest;
                 |"#
             .trim_margin()
             .unwrap()
@@ -8869,10 +8870,10 @@ fn matches_java_imports() {
             expected: r#"
                 |package com.example.test;
                 |
+                |spring import
                 |generic import
-                |spring mock import
                 |generic import
-                |spring mock import
+                |spring import
                 |"#
             .trim_margin()
             .unwrap()

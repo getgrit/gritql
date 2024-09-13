@@ -795,13 +795,13 @@ module.exports = grammar({
       seq(field('annotations', repeat($._annotation)), 'package', field('package', $._name), ';'),
 
     import_declaration: ($) =>
-      prec(PREC.DECL, seq(
+      seq(
         'import',
         optional('static'),
-        field('package', choice($._name, $.grit_metavariable)),
+        field('package', $._name),
         optional(seq('.', $.asterisk)),
         ';',
-      )),
+      ),
 
     asterisk: ($) => '*',
 
