@@ -3,9 +3,18 @@
   "version": "0.20.2",
   "description": "Java grammar for tree-sitter",
   "main": "bindings/node",
+  "types": "bindings/node",
   "keywords": [
     "parser",
     "java"
+  ],
+  "files": [
+    "grammar.js",
+    "binding.gyp",
+    "prebuilds/**",
+    "bindings/node/*",
+    "queries/*",
+    "src/**"
   ],
   "author": "Ayman Nadeem",
   "license": "MIT",
@@ -14,16 +23,28 @@
   },
   "homepage": "https://github.com/tree-sitter/tree-sitter-java#readme",
   "dependencies": {
-    "nan": "^2.14.1"
+    "node-addon-api": "^7.1.0",
+    "node-gyp-build": "^4.8.0"
+  },
+  "peerDependencies": {
+    "tree-sitter": "^0.21.0"
+  },
+  "peerDependenciesMeta": {
+    "tree_sitter": {
+      "optional": true
+    }
   },
   "devDependencies": {
-    "tree-sitter-cli": "^0.20.6"
+    "tree-sitter-cli": "^0.20.6",
+    "prebuildify": "^6.0.0"
   },
   "scripts": {
     "build": "tree-sitter generate && node-gyp rebuild",
     "test": "tree-sitter test && script/parse-examples",
     "test-windows": "tree-sitter test",
-    "build-test": "tree-sitter generate && node-gyp build && tree-sitter test"
+    "build-test": "tree-sitter generate && node-gyp build && tree-sitter test",
+    "install": "node-gyp-build",
+    "prebuildify": "prebuildify --napi --strip"
   },
   "repository": {
     "type": "git",
