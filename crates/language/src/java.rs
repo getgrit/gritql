@@ -62,6 +62,7 @@ impl Language for Java {
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
         &[
             ("", ""),
+            ("import ", ";"),
             ("GRIT_VAR = ", ";"),
             ("class GRIT_CLASS { ", " }"),
             ("class GRIT_CLASS { ", " GRIT_FUNCTION() {} }"),
