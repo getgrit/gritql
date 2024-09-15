@@ -394,7 +394,8 @@ async fn run_command(_use_tracing: bool) -> Result<()> {
     let cmd_span = span!(
         Level::INFO,
         "grit_marzano.run_command",
-        "grit.command" = command.as_str()
+        "grit.command" = command.as_str(),
+        "grit.args" = analytics_args.join(" ")
     );
 
     let runner = async move {

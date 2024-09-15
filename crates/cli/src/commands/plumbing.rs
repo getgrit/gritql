@@ -304,7 +304,13 @@ pub(crate) async fn run_plumbing(
             let execution_id = std::env::var("GRIT_EXECUTION_ID")
                 .unwrap_or_else(|_| uuid::Uuid::new_v4().to_string());
 
-            tracing::info!("Running workflow with execution_id: {}", execution_id);
+            let tenant_id = std::env::var("GRIT_TENANT_ID").unwrap_or_default();
+
+            tracing::info!(
+                "Running workflow with execution_id: {} in tenant {}",
+                execution_id,
+                tenant_id
+            );
 
             let format = OutputFormat::from(&parent);
             let mut emitter = create_emitter(
@@ -324,8 +330,9 @@ pub(crate) async fn run_plumbing(
                 .get_valid_auth()
                 .instrument(tracing::span!(
                     tracing::Level::INFO,
-                    "grit_marzano.auth",
+                    "grit_marzano.plumbing.auth",
                     "execution_id" = execution_id.as_str(),
+                    "tenant_id" = tenant_id.as_str(),
                 ))
                 .await
                 .ok();
@@ -337,8 +344,9 @@ pub(crate) async fn run_plumbing(
             )
             .instrument(tracing::span!(
                 tracing::Level::INFO,
-                "grit_marzano.find_workflow",
+                "grit_marzano.plumbing.find_workflow",
                 "execution_id" = execution_id.as_str(),
+                "tenant_id" = tenant_id.as_str(),
             ))
             .await
             .context("Failed to find workflow file")
@@ -370,8 +378,9 @@ pub(crate) async fn run_plumbing(
             )
             .instrument(tracing::span!(
                 tracing::Level::INFO,
-                "grit_marzano.run_workflow",
+                "grit_marzano.plumbing.run_workflow",
                 "execution_id" = execution_id.as_str(),
+                "tenant_id" = tenant_id.as_str(),
             ))
             .await?;
 
