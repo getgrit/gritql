@@ -304,6 +304,8 @@ pub(crate) async fn run_plumbing(
             let execution_id = std::env::var("GRIT_EXECUTION_ID")
                 .unwrap_or_else(|_| uuid::Uuid::new_v4().to_string());
 
+            tracing::info!("Running workflow with execution_id: {}", execution_id);
+
             let format = OutputFormat::from(&parent);
             let mut emitter = create_emitter(
                 &format,
