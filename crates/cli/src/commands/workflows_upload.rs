@@ -2,13 +2,14 @@ use anyhow::{bail, Result};
 use clap::Args;
 use console::style;
 use serde::Serialize;
+use std::env::current_dir;
 use std::path::PathBuf;
 
 use crate::flags::{GlobalFormatFlags, OutputFormat};
 
 use crate::commands::apply_migration::{run_apply_migration, ApplyMigrationArgs};
 use crate::messenger_variant::create_emitter;
-use crate::workflows::fetch_remote_workflow;
+use crate::workflows::{fetch_remote_workflow, find_workflow_file_from};
 use marzano_messenger::emit::VisibilityLevels;
 
 #[derive(Args, Debug, Serialize)]
@@ -20,14 +21,22 @@ pub struct WorkflowUploadArgs {
 }
 
 pub async fn run_upload_workflow(
-    _arg: &WorkflowUploadArgs,
+    arg: &WorkflowUploadArgs,
     parent: &GlobalFormatFlags,
 ) -> Result<String> {
     if parent.json || parent.jsonl {
         bail!("JSON output not supported for workflows");
     }
 
-    let workflow_path = PathBuf::from(&_arg.workflow_path);
+    let Some(workflow_info) =
+        find_workflow_file_from(current_dir()?, &arg.workflow_path, None).await
+    else {
+        bail!("Failed to find workflow {} to upload", arg.workflow_path);
+    };
+
+    let workflow_path = workflow_info.absolute_path().map_err(|e| {
+        anyhow::anyhow!("Failed to get absolute path for workflow to upload: {}", e)
+    })?;
     let workflow_info = fetch_remote_workflow(
         "https://storage.googleapis.com/grit-workflows-dev-workflow_definitions/upload_workflow.js",
         None,
@@ -38,7 +47,7 @@ pub async fn run_upload_workflow(
         input: Some(format!(
             r#"{{"workflow": "{}", "workflow_id": "{}" }}"#,
             workflow_path.display(),
-            _arg.workflow_id
+            arg.workflow_id
         )),
         ..Default::default()
     };
