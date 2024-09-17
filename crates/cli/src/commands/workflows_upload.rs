@@ -3,7 +3,6 @@ use clap::Args;
 use console::style;
 use serde::Serialize;
 use std::env::current_dir;
-use std::path::PathBuf;
 
 use crate::flags::{GlobalFormatFlags, OutputFormat};
 
