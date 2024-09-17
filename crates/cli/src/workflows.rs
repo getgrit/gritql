@@ -254,7 +254,7 @@ pub async fn run_remote_workflow(
     use marzano_gritmodule::fetcher::ModuleRepo;
     use std::time::Duration;
 
-    use crate::commands::workflows_upload::{run_upload_workflows, WorkflowsUploadArgs};
+    use crate::commands::workflows_upload::{run_upload_workflow, WorkflowUploadArgs};
 
     let mut updater = Updater::from_current_bin().await?;
     let cwd = std::env::current_dir()?;

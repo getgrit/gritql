@@ -12,15 +12,15 @@ use crate::workflows::fetch_remote_workflow;
 use marzano_messenger::emit::VisibilityLevels;
 
 #[derive(Args, Debug, Serialize)]
-pub struct WorkflowsUploadArgs {
+pub struct WorkflowUploadArgs {
     #[clap(index = 1)]
     pub workflow_path: String,
     #[clap(index = 2)]
     pub workflow_id: String,
 }
 
-pub async fn run_upload_workflows(
-    _arg: &WorkflowsUploadArgs,
+pub async fn run_upload_workflow(
+    _arg: &WorkflowUploadArgs,
     parent: &GlobalFormatFlags,
 ) -> Result<String> {
     if parent.json || parent.jsonl {
