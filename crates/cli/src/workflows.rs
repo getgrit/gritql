@@ -254,7 +254,7 @@ pub async fn run_remote_workflow(
     use marzano_gritmodule::fetcher::ModuleRepo;
     use std::time::Duration;
 
-    use crate::commands::workflows_upload::{run_upload_workflows, WorkflowsUploadArgs};
+    use crate::commands::workflows_upload::{run_upload_workflow, WorkflowUploadArgs};
 
     let mut updater = Updater::from_current_bin().await?;
     let cwd = std::env::current_dir()?;
@@ -267,8 +267,6 @@ pub async fn run_remote_workflow(
     pb.enable_steady_tick(Duration::from_millis(60));
 
     let auth = updater.get_valid_auth().await?;
-
-    pb.set_message("Launching workflow on Grit Cloud");
 
     let repo = ModuleRepo::from_dir(&cwd).await;
     let mut input = args.get_payload()?;
@@ -292,11 +290,21 @@ pub async fn run_remote_workflow(
         anyhow::bail!("No workflow ID provided");
     };
 
-    let upload_args = WorkflowsUploadArgs {
+    pb.set_message(format!(
+        "Uploading {} workflow to Grit Cloud",
+        pattern_or_workflow
+    ));
+    let upload_args = WorkflowUploadArgs {
         workflow_path: pattern_or_workflow,
         workflow_id: workflow_id.to_string(),
     };
-    let artifact_download_url = run_upload_workflows(&upload_args, &flags).await?;
+    let artifact_download_url = run_upload_workflow(&upload_args, &flags)
+        .await
+        .map_err(|e| {
+            pb.set_message("Failed to upload workflow");
+            pb.finish();
+            e
+        })?;
     input.insert("definition".to_string(), artifact_download_url.into());
 
     let settings =

@@ -102,7 +102,7 @@ use crate::commands::workflows::{WorkflowCommands, Workflows};
 #[cfg(feature = "workflows_v2")]
 use workflows_list::run_list_workflows;
 #[cfg(feature = "workflows_v2")]
-use workflows_upload::run_upload_workflows;
+use workflows_upload::run_upload_workflow;
 #[cfg(feature = "workflows_v2")]
 use workflows_watch::run_watch_workflow;
 
@@ -426,7 +426,7 @@ async fn run_command(_use_tracing: bool) -> Result<()> {
             Commands::Workflows(arg) => match arg.workflows_commands {
                 WorkflowCommands::List(arg) => run_list_workflows(&arg, &app.format_flags).await,
                 WorkflowCommands::Watch(arg) => run_watch_workflow(&arg, &app.format_flags).await,
-                WorkflowCommands::Upload(arg) => run_upload_workflows(&arg, &app.format_flags)
+                WorkflowCommands::Upload(arg) => run_upload_workflow(&arg, &app.format_flags)
                     .await
                     .map(|_| ()),
             },

@@ -132,6 +132,12 @@ impl WorkflowInfo {
         self.path.to_string_lossy()
     }
 
+    pub fn absolute_path(&self) -> Result<PathBuf> {
+        self.path
+            .canonicalize()
+            .map_err(|e| anyhow::anyhow!("Failed to get absolute path for workflow: {}", e))
+    }
+
     pub fn name(&self) -> &str {
         if self.path.file_name().unwrap().to_str().unwrap() == "index.ts" {
             self.path

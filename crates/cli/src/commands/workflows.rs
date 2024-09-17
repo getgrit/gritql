@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 use serde::Serialize;
 
 use super::{
-    workflows_list::WorkflowsListArgs, workflows_upload::WorkflowsUploadArgs,
+    workflows_list::WorkflowsListArgs, workflows_upload::WorkflowUploadArgs,
     workflows_watch::WorkflowWatchArgs,
 };
 
@@ -20,5 +20,5 @@ pub enum WorkflowCommands {
     #[clap(hide = true)]
     Watch(WorkflowWatchArgs),
     /// Upload a workflow
-    Upload(WorkflowsUploadArgs),
+    Upload(WorkflowUploadArgs),
 }

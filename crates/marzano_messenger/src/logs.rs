@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use marzano_core::api::{derive_log_level, AnalysisLog, AnalysisLogLevel};
 use serde::{Deserialize, Serialize};
 
@@ -26,7 +28,8 @@ impl SimpleLogMessage {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LogMessage<'a> {
     level: AnalysisLogLevel,
-    message: &'a str,
+    // We allow Cow to work around this: https://github.com/serde-rs/serde/issues/1413
+    message: Cow<'a, str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     meta: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -38,7 +41,7 @@ impl LogMessage<'_> {
         let meta = serde_json::to_string(&log).unwrap_or_default();
         LogMessage {
             level: derive_log_level(log),
-            message: &log.message,
+            message: Cow::Borrowed(&log.message),
             step_id: Some(step_id),
             meta: Some(meta),
         }
@@ -47,7 +50,7 @@ impl LogMessage<'_> {
     pub fn from_simple_log(log: &SimpleLogMessage) -> LogMessage<'_> {
         LogMessage {
             level: log.level,
-            message: &log.message,
+            message: Cow::Borrowed(&log.message),
             step_id: log.step_id.as_deref(),
             meta: log.meta.as_ref().map(|m| serde_json::to_string(m).unwrap()),
         }
@@ -69,5 +72,31 @@ impl<'a> TryFrom<LogMessage<'a>> for SimpleLogMessage {
             meta,
             step_id: log.step_id.map(|s| s.to_string()),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_deserialize_log_message_with_newlines() {
+        // Confirm workaround for https://github.com/serde-rs/serde/issues/1413
+        let json = r#"{
+            "level": "info",
+            "message": "This is a message\nwith multiple\nlines",
+            "meta": "{\"key\": \"value\"}",
+            "step_id": "step1"
+        }"#;
+
+        let log_message: LogMessage = serde_json::from_str(json).unwrap();
+
+        assert_eq!(log_message.level, AnalysisLogLevel::Info);
+        assert_eq!(
+            log_message.message,
+            "This is a message\nwith multiple\nlines"
+        );
+        assert_eq!(log_message.meta, Some("{\"key\": \"value\"}".to_string()));
+        assert_eq!(log_message.step_id, Some("step1"));
     }
 }
