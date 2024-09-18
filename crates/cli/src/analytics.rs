@@ -125,9 +125,6 @@ pub struct AnalyticsProperties {
 
 lazy_static! {
     pub static ref SEGMENT_WRITE_KEY: String = String::from("iWHCQWfroQzvbUKTJ9xlXB7U9YDQWnyD");
-    pub static ref POSTHOG_WRITE_KEY: String =
-        String::from("phc_ksrztn1ogPbqUSUf1qRjhoC6GMzpmBm7iqSNhVzvor5");
-    pub static ref POSTHOG_HOST: String = String::from("https://us.i.posthog.com/capture/");
 }
 
 #[derive(Serialize, Debug)]
@@ -204,6 +201,11 @@ pub async fn track_event(
         event: &analytics_event_name,
         properties,
     };
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .build()
+        .unwrap();
 
     //
     // https://segment.com/docs/connections/sources/catalog/libraries/server/http-api/#track
