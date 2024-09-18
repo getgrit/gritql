@@ -38,7 +38,6 @@ pub async fn run_upload_workflow(
         anyhow::anyhow!("Failed to get absolute path for workflow to upload: {}", e)
     })?;
 
-    // Check if GRIT_WORKFLOW_UPLOADER env variable is set
     let workflow_info = if let Ok(uploader_path) = std::env::var("GRIT_WORKFLOW_UPLOADER") {
         log::info!(
             "Using uploader path from environment variable: {}",
