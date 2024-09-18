@@ -9,6 +9,7 @@ mod github;
 mod jsonl;
 mod lister;
 mod messenger_variant;
+mod posthog;
 mod resolver;
 mod result_formatting;
 mod scan;

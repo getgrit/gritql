@@ -125,6 +125,9 @@ pub struct AnalyticsProperties {
 
 lazy_static! {
     pub static ref SEGMENT_WRITE_KEY: String = String::from("iWHCQWfroQzvbUKTJ9xlXB7U9YDQWnyD");
+    pub static ref POSTHOG_WRITE_KEY: String =
+        String::from("phc_ksrztn1ogPbqUSUf1qRjhoC6GMzpmBm7iqSNhVzvor5");
+    pub static ref POSTHOG_HOST: String = String::from("https://us.i.posthog.com/capture/");
 }
 
 #[derive(Serialize, Debug)]
