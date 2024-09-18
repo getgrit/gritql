@@ -1,6 +1,7 @@
 use anyhow::{bail, Result};
 use clap::Args;
 use console::style;
+use marzano_gritmodule::searcher::WorkflowInfo;
 use serde::Serialize;
 use std::env::current_dir;
 
@@ -36,11 +37,23 @@ pub async fn run_upload_workflow(
     let workflow_path = workflow_info.absolute_path().map_err(|e| {
         anyhow::anyhow!("Failed to get absolute path for workflow to upload: {}", e)
     })?;
-    let workflow_info = fetch_remote_workflow(
-        "https://storage.googleapis.com/grit-workflows-dev-workflow_definitions/upload_workflow.js",
-        None,
+
+    // Check if GRIT_WORKFLOW_UPLOADER env variable is set
+    let workflow_info = if let Ok(uploader_path) = std::env::var("GRIT_WORKFLOW_UPLOADER") {
+        log::info!(
+            "Using uploader path from environment variable: {}",
+            uploader_path
+        );
+        // Use the uploader path from the environment variable
+        WorkflowInfo::new(uploader_path.into())
+    } else {
+        // If not set, use the original workflow_path
+        fetch_remote_workflow(
+        "https://storage.googleapis.com/grit-workflows-prod-workflow_definitions/upload_workflow.js",
+            None,
     )
-    .await?;
+    .await?
+    };
 
     let apply_migration_args = ApplyMigrationArgs {
         input: Some(format!(
