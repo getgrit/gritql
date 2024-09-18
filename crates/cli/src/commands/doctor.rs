@@ -26,6 +26,13 @@ pub(crate) async fn run_doctor(_arg: DoctorArgs) -> Result<()> {
     info!("  OS: {}", target_os.yellow());
     info!("  Architecture: {}", target_arch.yellow());
 
+    let build_sha = option_env!("GRIT_BUILD_SHA");
+    if let Some(build_sha) = build_sha {
+        info!("  Build SHA: {}", build_sha.yellow());
+    } else {
+        info!("  Build SHA: unknown");
+    }
+
     let mut updater = Updater::from_current_bin().await?;
 
     info!("{}", "Configuration".bold());
