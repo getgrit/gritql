@@ -26,7 +26,7 @@ pub(crate) async fn run_doctor(_arg: DoctorArgs) -> Result<()> {
     info!("  OS: {}", target_os.yellow());
     info!("  Architecture: {}", target_arch.yellow());
 
-    let build_sha = option_env!("GRIT_BUILD_SHA");
+    let build_sha = option_env!("GITHUB_SHA");
     if let Some(build_sha) = build_sha {
         info!("  Build SHA: {}", build_sha.yellow());
     } else {
