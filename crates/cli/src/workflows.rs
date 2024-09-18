@@ -248,7 +248,7 @@ pub async fn run_remote_workflow(
     args: crate::commands::apply_migration::ApplyMigrationArgs,
     ranges: Option<Vec<FileDiff>>,
     flags: &crate::flags::GlobalFormatFlags,
-    progress: MultiProgress,
+    root_progress: indicatif::MultiProgress,
 ) -> Result<()> {
     use colored::Colorize;
     use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
@@ -261,7 +261,7 @@ pub async fn run_remote_workflow(
     let cwd = std::env::current_dir()?;
 
     let pb = ProgressBar::with_draw_target(Some(0), ProgressDrawTarget::stderr());
-    multi.add(pb);
+    let pb = root_progress.add(pb);
     pb.set_style(ProgressStyle::with_template(
         "{spinner}{prefix:.bold.dim} {wide_msg:.bold.dim}",
     )?);
