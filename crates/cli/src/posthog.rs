@@ -31,7 +31,7 @@ impl PostHogClient {
             .client
             .post(POSTHOG_HOST.to_string())
             .header(CONTENT_TYPE, "application/json")
-            .body(serde_json::to_string(&event).expect("unwrap here is safe"))
+            .json(&event)
             .send()
             .await?;
         if !res.status().is_success() {
