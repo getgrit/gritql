@@ -10,6 +10,7 @@ use std::{env, fmt, time::Duration};
 use uuid::Uuid;
 
 use crate::commands::Commands;
+use crate::posthog::PostHogClient;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum AnalyticsEventName {
@@ -129,8 +130,8 @@ lazy_static! {
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct SegmentPayload<'a> {
-    user_id: Option<String>,
+pub(crate) struct AnalyticsPayload<'a> {
+    pub user_id: Option<String>,
     ///
     /// Anonymous ID is used, as we don't
     /// actually know who the human behind
@@ -138,9 +139,9 @@ struct SegmentPayload<'a> {
     ///
     /// https://segment.com/docs/connections/spec/identify/#anonymous-id
     ///
-    anonymous_id: Uuid,
-    event: &'a AnalyticsEventName,
-    properties: AnalyticsProperties,
+    pub anonymous_id: Uuid,
+    pub event: &'a AnalyticsEventName,
+    pub properties: AnalyticsProperties,
 }
 
 pub async fn track_event_line(
@@ -195,41 +196,26 @@ pub async fn track_event(
         data: Some(analytics_event_data),
     };
 
-    let payload = SegmentPayload {
+    let payload = AnalyticsPayload {
         user_id,
         anonymous_id: installation_id,
         event: &analytics_event_name,
         properties,
     };
 
-    let client = reqwest::Client::builder()
+    let Ok(client) = reqwest::Client::builder()
         .timeout(Duration::from_secs(5))
         .build()
-        .unwrap();
+    else {
+        log::error!("Failed to create client");
+        return;
+    };
 
-    //
-    // https://segment.com/docs/connections/sources/catalog/libraries/server/http-api/#track
-    //
-    match reqwest::Client::new()
-        .post("https://api.segment.io/v1/track")
-        .basic_auth::<&String, &str>(&SEGMENT_WRITE_KEY, None)
-        .json(&payload)
-        .timeout(Duration::from_secs(5))
-        .send()
-        .await
-    {
-        Ok(response) => {
-            if !response.status().is_success() {
-                log::error!(
-                    "Failed to send event {}: {}",
-                    analytics_event_name,
-                    response.status()
-                );
-            }
-        }
-        Err(e) => {
-            log::error!("Failed to send event {}: {:#}", analytics_event_name, e);
-        }
+    let posthog = PostHogClient::new(client);
+
+    if let Err(e) = posthog.capture(payload).await {
+        log::error!("Failed to send event {}: {:#}", analytics_event_name, e);
+        return;
     }
 
     log::info!("Successfully sent event {}", analytics_event_name);
