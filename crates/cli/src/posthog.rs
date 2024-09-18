@@ -34,9 +34,18 @@ impl PostHogClient {
             .json(&event)
             .send()
             .await?;
-        if !res.status().is_success() {
-            let body = res.text().await.unwrap_or_else(|_| "Unable to read response body".to_string());
-            bail!("Failed to send event {}: {}\nResponse body: {}", event.event, res.status(), body);
+        let status = res.status();
+        if !status.is_success() {
+            let body = res
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unable to read response body".to_string());
+            bail!(
+                "Failed to send event {}: {}\nResponse body: {}",
+                event.event,
+                status,
+                body
+            );
         }
         Ok(())
     }
