@@ -248,6 +248,7 @@ pub async fn run_remote_workflow(
     args: crate::commands::apply_migration::ApplyMigrationArgs,
     ranges: Option<Vec<FileDiff>>,
     flags: &crate::flags::GlobalFormatFlags,
+    root_progress: indicatif::MultiProgress,
 ) -> Result<()> {
     use colored::Colorize;
     use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
@@ -260,6 +261,7 @@ pub async fn run_remote_workflow(
     let cwd = std::env::current_dir()?;
 
     let pb = ProgressBar::with_draw_target(Some(0), ProgressDrawTarget::stderr());
+    let pb = root_progress.add(pb);
     pb.set_style(ProgressStyle::with_template(
         "{spinner}{prefix:.bold.dim} {wide_msg:.bold.dim}",
     )?);
@@ -306,6 +308,8 @@ pub async fn run_remote_workflow(
             e
         })?;
     input.insert("definition".to_string(), artifact_download_url.into());
+
+    pb.set_message("Starting workflow");
 
     let settings =
         grit_cloud_client::RemoteWorkflowSettings::new(&workflow_id, &repo, input.into());

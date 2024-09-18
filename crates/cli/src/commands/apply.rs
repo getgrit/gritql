@@ -72,6 +72,7 @@ pub(crate) async fn run_apply(
                 args.apply_migration_args,
                 ranges,
                 flags,
+                multi,
             )
             .await;
         }
