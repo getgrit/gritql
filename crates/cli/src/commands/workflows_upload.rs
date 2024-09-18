@@ -48,9 +48,9 @@ pub async fn run_upload_workflow(
     } else {
         // If not set, use the original workflow_path
         fetch_remote_workflow(
-        "https://storage.googleapis.com/grit-workflows-prod-workflow_definitions/upload_workflow.js",
+"https://storage.googleapis.com/grit-workflows-prod-workflow_definitions/upload_workflow.js",
             None,
-    )
+)
     .await?
     };
 
