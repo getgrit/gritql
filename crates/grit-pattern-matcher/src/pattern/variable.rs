@@ -13,16 +13,17 @@ use core::fmt::Debug;
 use grit_util::{
     constants::GRIT_METAVARIABLE_PREFIX, error::GritResult, AnalysisLogs, ByteRange, Language,
 };
-use std::{
-    borrow::Cow,
-    collections::BTreeSet,
-};
+use std::{borrow::Cow, collections::BTreeSet};
+
+struct VariableScope {
+    scope: u16,
+    index: u16,
+}
 
 #[derive(Clone, Debug)]
 pub struct Variable {
     scope: u16,
     index: u16,
-    // loaded_location: Arc<AtomicU32>,
 }
 
 #[derive(Debug, Clone)]
@@ -46,11 +47,23 @@ impl Variable {
         }
     }
 
-    pub fn scope(&self) -> u16 {
+    /// Get the scope, if it's already initialized.
+    /// If you attempt to get the scope of an uninitialized variable, this will fail.
+    pub fn try_scope(&self) -> GritResult<u16> {
+        Ok(self.scope)
+    }
+
+    /// Get the index, if it's already initialized.
+    /// If you attempt to get the index of an uninitialized variable, this will fail.
+    pub fn try_index(&self) -> GritResult<u16> {
+        Ok(self.index)
+    }
+
+    pub fn scope<'a, 'b, Q: QueryContext>(&self, state: &'b mut State<'a, Q>) -> u16 {
         self.scope
     }
 
-    pub fn index(&self) -> u16 {
+    pub fn index<'a, 'b, Q: QueryContext>(&self, state: &'b mut State<'a, Q>) -> u16 {
         self.index
     }
 
@@ -59,7 +72,9 @@ impl Variable {
         state: &'b State<'a, Q>,
     ) -> GritResult<Option<PatternOrResolved<'a, 'b, Q>>> {
         let v = state.trace_var(self);
-        let content = &state.bindings[v.scope().into()].last().unwrap()[v.index().into()];
+        let content = &state.bindings[v.try_scope().unwrap().into()]
+            .last()
+            .unwrap()[v.try_index().unwrap().into()];
         if let Some(pattern) = content.pattern {
             Ok(Some(PatternOrResolved::Pattern(pattern)))
         } else if let Some(resolved) = &content.value {
@@ -73,7 +88,8 @@ impl Variable {
         state: &'b mut State<'a, Q>,
     ) -> GritResult<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
         let v = state.trace_var(self);
-        let content = &mut state.bindings[v.scope().into()].back_mut().unwrap()[v.index().into()];
+        let content =
+            &mut state.bindings[v.scope(state).into()].back_mut().unwrap()[v.index(state).into()];
         if let Some(pattern) = content.pattern {
             Ok(Some(PatternOrResolvedMut::Pattern(pattern)))
         } else if let Some(resolved) = &mut content.value {
@@ -88,15 +104,19 @@ impl Variable {
     }
 
     pub fn is_file_name(&self) -> bool {
-        self.scope() == GLOBAL_VARS_SCOPE_INDEX && self.index() as usize == FILENAME_INDEX
+        // self.scope(state) == GLOBAL_VARS_SCOPE_INDEX && self.index(state) as usize == FILENAME_INDEX
+        self.scope == GLOBAL_VARS_SCOPE_INDEX && self.index as usize == FILENAME_INDEX
     }
 
-    pub fn text<'a, Q: QueryContext>(
+    pub fn text<'a, 'b, Q: QueryContext>(
         &self,
-        state: &State<'a, Q>,
+        state: &'b State<'a, Q>,
         lang: &Q::Language<'a>,
     ) -> GritResult<Cow<'a, str>> {
-        state.bindings[self.scope().into()].last().unwrap()[self.index().into()].text(state, lang)
+        state.bindings[self.try_scope().unwrap().into()]
+            .last()
+            .unwrap()[self.try_index().unwrap().into()]
+        .text(state, lang)
     }
 
     fn execute_resolved<'a, Q: QueryContext>(
@@ -107,13 +127,15 @@ impl Variable {
     ) -> GritResult<Option<bool>> {
         let mut variable_mirrors: Vec<VariableMirror<Q>> = Vec::new();
         {
+            let scope = self.scope(state);
+            let index = self.index(state);
             let variable_content = &mut **(state
                 .bindings
-                .get_mut(self.scope().into())
+                .get_mut(scope.into())
                 .unwrap()
                 .back_mut()
                 .unwrap()
-                .get_mut(self.index().into())
+                .get_mut(index.into())
                 .unwrap());
             let value = &mut variable_content.value;
 
@@ -132,8 +154,8 @@ impl Variable {
                     value_history.push(ResolvedPattern::from_binding(binding.clone()));
                     variable_mirrors.extend(variable_content.mirrors.iter().map(|mirror| {
                         VariableMirror {
-                            scope: mirror.scope(),
-                            index: mirror.index(),
+                            scope: mirror.try_scope().unwrap(),
+                            index: mirror.try_index().unwrap(),
                             binding: binding.clone(),
                         }
                     }));
@@ -187,29 +209,32 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
         }
         // we only check the assignment if the variable is not bound already
         // otherwise, we assume that the assignment is correct
+        let scope = self.scope(state);
+        let index = self.index(state);
 
         // we do this convoluted check to avoid double-borrowing of state
         // via the variable_content variable
         let variable_content = &mut **(state
             .bindings
-            .get_mut(self.scope().into())
+            .get_mut(scope.into())
             .unwrap()
             .back_mut()
             .unwrap()
-            .get_mut(self.index().into())
+            .get_mut(index.into())
             .unwrap());
         if let Some(pattern) = variable_content.pattern {
             if !pattern.execute(resolved_pattern, state, context, logs)? {
                 return Ok(false);
             }
         }
+
         let variable_content = &mut **(state
             .bindings
-            .get_mut(self.scope().into())
+            .get_mut(scope.into())
             .unwrap()
             .back_mut()
             .unwrap()
-            .get_mut(self.index().into())
+            .get_mut(index.into())
             .unwrap());
         variable_content.value = Some(resolved_pattern.clone());
         variable_content

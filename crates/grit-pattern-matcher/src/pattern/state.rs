@@ -295,8 +295,8 @@ impl<'a, Q: QueryContext> State<'a, Q> {
     // https://stackoverflow.com/questions/61699010/rust-not-allowing-mutable-borrow-when-splitting-properly
     // https://doc.rust-lang.org/nomicon/borrow-splitting.html
     // todo split State in a sensible way.
-    pub fn get_name(&self, var: &Variable) -> &str {
-        &self.bindings[var.scope().into()].last().unwrap()[var.index().into()].name
+    pub fn get_name(&mut self, var: &Variable) -> &str {
+        &self.bindings[var.scope(self).into()].last().unwrap()[var.index(self).into()].name
     }
 
     /// Attempt to find a variable by name in any scope
@@ -337,9 +337,9 @@ impl<'a, Q: QueryContext> State<'a, Q> {
     }
 
     /// Trace a variable to the root binding
-    pub fn trace_var(&self, var: &Variable) -> Variable {
+    pub fn trace_var(&mut self, var: &Variable) -> Variable {
         if let Some(Pattern::Variable(v)) =
-            &self.bindings[var.scope().into()].last().unwrap()[var.index().into()].pattern
+            &self.bindings[var.scope(self).into()].last().unwrap()[var.index(self).into()].pattern
         {
             self.trace_var(v)
         } else {

@@ -44,7 +44,8 @@ impl<Q: QueryContext> Container<Q> {
         match self {
             Container::Variable(v) => {
                 let var = state.trace_var(v);
-                let content = &mut state.bindings[var.scope().into()].back_mut().unwrap()[var.index().into()];
+                let content = &mut state.bindings[var.scope(state).into()].back_mut().unwrap()
+                    [var.index(state).into()];
                 match content.pattern {
                     Some(Pattern::Accessor(a)) => a.set_resolved(state, lang, value),
                     Some(Pattern::ListIndex(l)) => l.set_resolved(state, lang, value),
