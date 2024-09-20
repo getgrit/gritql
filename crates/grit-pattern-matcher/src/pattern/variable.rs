@@ -48,11 +48,11 @@ impl Variable {
     }
 
     pub fn scope(&self) -> u16 {
-        self.scope().into()
+        self.scope
     }
 
     pub fn index(&self) -> u16 {
-        self.index().into()
+        self.index
     }
 
     pub fn get_pattern_or_resolved<'a, 'b, Q: QueryContext>(
