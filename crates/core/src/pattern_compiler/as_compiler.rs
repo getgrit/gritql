@@ -51,9 +51,9 @@ impl NodeCompiler for AsCompiler {
         let pattern = PatternCompiler::from_node(&pattern, context)?;
         let variable = VariableCompiler::from_node(&variable, context)?;
         Ok(Where::new(
-            Pattern::Variable(variable),
+            Pattern::Variable(variable.clone()),
             Predicate::Match(Box::new(Match::new(
-                Container::Variable(variable),
+                Container::Variable(variable.clone()),
                 Some(pattern),
             ))),
         ))

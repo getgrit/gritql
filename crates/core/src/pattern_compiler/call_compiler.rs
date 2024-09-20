@@ -128,10 +128,7 @@ impl NodeCompiler for CallCompiler {
                     )
                 })?;
             let args = match_args_to_params(kind, args, &collect_params(&info.parameters), lang)?;
-            Ok(Pattern::Call(Box::new(Call::new(
-                (info.index).to_owned(),
-                args,
-            ))))
+            Ok(Pattern::Call(Box::new(Call::new(info.index, args))))
         }
     }
 }

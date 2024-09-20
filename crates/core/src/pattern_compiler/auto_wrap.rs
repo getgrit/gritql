@@ -386,7 +386,7 @@ fn wrap_pattern_in_range<Q: QueryContext>(
         let range = file_range.range.clone();
         let range = PRange::from(range);
         let range_match = Predicate::Match(Box::new(Match::new(
-            Container::Variable(var),
+            Container::Variable(var.clone()),
             Some(Pattern::Range(range)),
         )));
         let file_match = Predicate::Match(Box::new(Match::new(
@@ -407,9 +407,9 @@ fn wrap_pattern_in_range<Q: QueryContext>(
         Predicate::Or(Box::new(PrOr::new(predicates))),
     )));
     let pattern = Pattern::Where(Box::new(Where::new(
-        Pattern::Variable(var),
+        Pattern::Variable(var.clone()),
         Predicate::Match(Box::new(Match::new(
-            Container::Variable(var),
+            Container::Variable(var.clone()),
             Some(pattern),
         ))),
     )));
@@ -423,9 +423,9 @@ fn wrap_pattern_in_contains<Q: QueryContext>(
 ) -> Result<Pattern<Q>> {
     let var = variable_from_name(var_name, context)?;
     let pattern = Pattern::Where(Box::new(Where::new(
-        Pattern::Variable(var),
+        Pattern::Variable(var.clone()),
         Predicate::Match(Box::new(Match::new(
-            Container::Variable(var),
+            Container::Variable(var.clone()),
             Some(pattern),
         ))),
     )));
