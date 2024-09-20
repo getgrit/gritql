@@ -81,11 +81,10 @@ impl<Q: QueryContext> Evaluator<Q> for Accumulate<Q> {
         if let Pattern::Variable(var) = &self.left {
             let var = state.trace_var(var);
             let append = ResolvedPattern::from_pattern(&self.right, state, context, logs)?;
-            let scope = var.try_scope().unwrap();
-            let index = var.try_scope().unwrap();
-            if let Some(base) = state.bindings[scope.into()].back_mut().unwrap()[index.into()]
-                .value
-                .as_mut()
+            if let Some(base) = state.bindings[var.scope().into()].back_mut().unwrap()
+                [var.index().into()]
+            .value
+            .as_mut()
             {
                 base.extend(append, &mut state.effects, context.language())?;
                 Ok(FuncEvaluation {
@@ -95,9 +94,7 @@ impl<Q: QueryContext> Evaluator<Q> for Accumulate<Q> {
             } else {
                 Err(GritPatternError::new(format!(
                     "Variable {} is not bound",
-                    state.bindings[var.scope(state).into()].last().unwrap()
-                        [var.index(state).into()]
-                    .name
+                    state.bindings[var.scope().into()].last().unwrap()[var.index().into()].name
                 )))
             }
         } else {
