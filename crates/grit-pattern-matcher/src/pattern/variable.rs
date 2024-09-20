@@ -13,13 +13,25 @@ use core::fmt::Debug;
 use grit_util::{
     constants::GRIT_METAVARIABLE_PREFIX, error::GritResult, AnalysisLogs, ByteRange, Language,
 };
-use std::{borrow::Cow, collections::BTreeSet};
+use std::{borrow::Cow, collections::BTreeSet, sync::OnceLock};
+
+#[derive(Debug, Clone)]
+struct VariableScope {
+    scope: u16,
+    index: u16,
+}
+
+#[derive(Debug, Clone)]
+enum VariableInternal {
+    /// Static variable, which is bound at compile time (ex. global variables)
+    Static(VariableScope),
+    /// Dynamic variable, which is bound at runtime (ex. function parameters)
+    Dynamic(OnceLock<VariableScope>),
+}
 
 #[derive(Clone, Debug)]
 pub struct Variable {
-    scope: u16,
-    index: u16,
-    // loaded_location: Arc<AtomicU32>,
+    internal: VariableInternal,
 }
 
 #[derive(Debug, Clone)]
@@ -38,8 +50,35 @@ struct VariableMirror<'a, Q: QueryContext> {
 impl Variable {
     pub fn new(scope: usize, index: usize) -> Self {
         Self {
-            scope: scope as u16,
-            index: index as u16,
+            internal: VariableInternal::Static(VariableScope {
+                scope: scope as u16,
+                index: index as u16,
+            }),
+        }
+    }
+
+    fn try_internal(&self) -> GritResult<&VariableScope> {
+        match &self.internal {
+            VariableInternal::Static(scope) => Ok(scope),
+            VariableInternal::Dynamic(lock) => {
+                lock.get()
+                    .ok_or(grit_util::error::GritPatternError::new_matcher(
+                        "variable not initialized",
+                    ))
+            }
+        }
+    }
+
+    pub fn get_internal<'a, 'b, Q: QueryContext>(
+        &self,
+        state: &'b mut State<'a, Q>,
+    ) -> GritResult<&VariableScope> {
+        match &self.internal {
+            VariableInternal::Static(internal) => Ok(internal),
+            VariableInternal::Dynamic(lock) => {
+                let internal = lock.get_or_init(|| VariableScope { scope: 0, index: 0 });
+                Ok(internal)
+            }
         }
     }
 
@@ -47,18 +86,14 @@ impl Variable {
     /// If the variable has not been bound to a scope, return an error.
     /// When possible, prefer to use `get_scope()` instead, which will initialize the variable's scope if it is not already bound.
     pub fn try_scope(&self) -> GritResult<u16> {
-        if self.scope == GLOBAL_VARS_SCOPE_INDEX {
-            Ok(self.scope)
-        } else {
-            panic!("variable not initialized");
-        }
+        Ok(self.try_internal()?.scope)
     }
 
     /// Try to get the index of the variable, if it has been bound to an index.
     /// If the variable has not been bound to an index, return an error.
     /// When possible, prefer to use `get_index()` instead, which will initialize the variable's index if it is not already bound.
     pub fn try_index(&self) -> GritResult<u16> {
-        Ok(self.index)
+        Ok(self.try_internal()?.index)
     }
 
     /// Get the scope of the variable, initializing it if it is not already bound.
@@ -66,7 +101,7 @@ impl Variable {
         &self,
         state: &'b mut State<'a, Q>,
     ) -> GritResult<u16> {
-        Ok(self.scope)
+        Ok(self.get_internal(state)?.scope)
     }
 
     /// Get the index of the variable, initializing it if it is not already bound.
@@ -74,7 +109,7 @@ impl Variable {
         &self,
         state: &'b mut State<'a, Q>,
     ) -> GritResult<u16> {
-        Ok(self.index)
+        Ok(self.get_internal(state)?.index)
     }
 
     pub fn get_pattern_or_resolved<'a, 'b, Q: QueryContext>(
@@ -115,7 +150,10 @@ impl Variable {
     }
 
     pub fn is_file_name(&self) -> bool {
-        self.scope == GLOBAL_VARS_SCOPE_INDEX && self.index as usize == FILENAME_INDEX
+        let VariableInternal::Static(scope) = &self.internal else {
+            return false;
+        };
+        scope.scope == GLOBAL_VARS_SCOPE_INDEX && scope.index as usize == FILENAME_INDEX
     }
 
     pub fn text<'a, Q: QueryContext>(
