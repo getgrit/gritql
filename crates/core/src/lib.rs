@@ -10,6 +10,8 @@ mod equivalence;
 mod foreign_function_definition;
 pub mod fs;
 mod inline_snippets;
+
+mod lazy;
 mod limits;
 pub mod marzano_binding;
 pub mod marzano_code_snippet;

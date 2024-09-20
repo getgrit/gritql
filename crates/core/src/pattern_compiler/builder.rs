@@ -20,8 +20,8 @@ use grit_pattern_matcher::{
         ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, NEW_FILES_INDEX, PROGRAM_INDEX,
     },
     pattern::{
-        And, GritFunctionDefinition, Pattern, PatternDefinition, Predicate, PredicateDefinition,
-        VariableSourceLocations, Where,
+        Accumulate, And, DynamicPattern, GritFunctionDefinition, Pattern, PatternDefinition,
+        Predicate, PredicateDefinition, Rewrite, VariableSourceLocations, Where,
     },
 };
 use grit_util::{AnalysisLogs, Ast, FileRange};
@@ -232,6 +232,18 @@ impl PatternBuilder {
     /// This is the primary way we progressively add patterns to the builder.
     pub fn wrap_with_condition(self, side_condition: Predicate<MarzanoQueryContext>) -> Self {
         let pattern = Pattern::Where(Box::new(Where::new(self.pattern, side_condition)));
+        Self { pattern, ..self }
+    }
+
+    /// Add a rewrite around the pattern
+    pub fn wrap_with_rewrite(self, replacement: DynamicPattern<MarzanoQueryContext>) -> Self {
+        let pattern = Pattern::Rewrite(Box::new(Rewrite::new(self.pattern, replacement, None)));
+        Self { pattern, ..self }
+    }
+
+    /// Wrap with accumulate
+    pub fn wrap_with_accumulate(self, other: Pattern<MarzanoQueryContext>) -> Self {
+        let pattern = Pattern::Accumulate(Box::new(Accumulate::new(self.pattern, other, None)));
         Self { pattern, ..self }
     }
 

@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use clap::{Args, Subcommand};
 use indicatif::MultiProgress;
 use marzano_gritmodule::config::{
@@ -8,18 +8,21 @@ use marzano_gritmodule::fetcher::KeepFetcherKind;
 use marzano_gritmodule::patterns_directory::PatternsDirectory;
 use marzano_gritmodule::searcher::find_grit_modules_dir;
 use marzano_gritmodule::utils::is_pattern_name;
-use marzano_messenger::emit::{ApplyDetails, VisibilityLevels};
+use marzano_messenger::emit::{ApplyDetails, Messager, VisibilityLevels};
 use serde::{Deserialize, Serialize};
 use std::env::current_dir;
 use std::io::{stdin, Read};
 use std::path::Path;
 use std::path::PathBuf;
+use tracing::Instrument as _;
 
 use crate::analytics::track_event_line;
 use crate::error::GoodError;
-use crate::flags::GlobalFormatFlags;
+use crate::flags::{GlobalFormatFlags, OutputFormat};
 use crate::lister::list_applyables;
+use crate::messenger_variant::create_emitter;
 use crate::resolver::{get_grit_files_from, resolve_from, Source};
+use crate::updater::Updater;
 
 use super::super::analytics::AnalyticsArgs;
 use super::apply_pattern::{run_apply_pattern, ApplyPatternArgs};
@@ -298,14 +301,66 @@ pub(crate) async fn run_plumbing(
         } => {
             let buffer = read_input(&shared_args)?;
 
-            let current_dir = current_dir()?;
+            let execution_id = std::env::var("GRIT_EXECUTION_ID")
+                .unwrap_or_else(|_| uuid::Uuid::new_v4().to_string());
 
-            let custom_workflow = marzano_gritmodule::searcher::find_workflow_file_from(
+            let tenant_id = std::env::var("GRIT_TENANT_ID").unwrap_or_default();
+
+            tracing::info!(
+                "Running workflow with execution_id: {} in tenant {}",
+                execution_id,
+                tenant_id
+            );
+
+            let format = OutputFormat::from(&parent);
+            let mut emitter = create_emitter(
+                &format,
+                marzano_messenger::output_mode::OutputMode::default(),
+                None,
+                false,
+                None,
+                None,
+                VisibilityLevels::default(),
+            )
+            .await?;
+
+            let current_dir = current_dir()?;
+            let mut updater = Updater::from_current_bin().await?;
+            let auth = updater
+                .get_valid_auth()
+                .instrument(tracing::span!(
+                    tracing::Level::INFO,
+                    "grit_marzano.plumbing.auth",
+                    "execution_id" = execution_id.as_str(),
+                    "tenant_id" = tenant_id.as_str(),
+                ))
+                .await
+                .ok();
+
+            let custom_workflow = match crate::workflows::find_workflow_file_from(
                 current_dir.clone(),
                 &definition,
+                auth,
             )
+            .instrument(tracing::span!(
+                tracing::Level::INFO,
+                "grit_marzano.plumbing.find_workflow",
+                "execution_id" = execution_id.as_str(),
+                "tenant_id" = tenant_id.as_str(),
+            ))
             .await
-            .unwrap();
+            .context("Failed to find workflow file")
+            {
+                Ok(workflow) => workflow,
+                Err(e) => {
+                    let log = marzano_messenger::SimpleLogMessage::new_error(format!(
+                        "Failed to find workflow file: {}",
+                        e
+                    ));
+                    emitter.emit_log(&log)?;
+                    return Err(e);
+                }
+            };
 
             super::apply_migration::run_apply_migration(
                 custom_workflow,
@@ -314,12 +369,22 @@ pub(crate) async fn run_plumbing(
                 super::apply_migration::ApplyMigrationArgs {
                     input: Some(buffer),
                     remote: false,
+                    workflow_id: None,
                     verbose: true,
+                    watch: false,
                 },
-                &parent,
-                VisibilityLevels::default(),
+                emitter,
+                execution_id.clone(),
             )
-            .await
+            .instrument(tracing::span!(
+                tracing::Level::INFO,
+                "grit_marzano.plumbing.run_workflow",
+                "execution_id" = execution_id.as_str(),
+                "tenant_id" = tenant_id.as_str(),
+            ))
+            .await?;
+
+            Ok(())
         }
     };
     // We want plumbing to always return a success code, even for "good" errors (failed checks, etc)

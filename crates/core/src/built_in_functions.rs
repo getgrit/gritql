@@ -39,7 +39,7 @@ pub type CallbackFn = dyn for<'a, 'b> Fn(
         &'b <crate::problem::MarzanoQueryContext as grit_pattern_matcher::context::QueryContext>::ResolvedPattern<'a>,
         &'a MarzanoContext<'a>,
         &mut State<'a, MarzanoQueryContext>,
-        &mut AnalysisLogs,
+        &mut AnalysisLogs
     ) -> Result<bool>
     + Send
     + Sync;

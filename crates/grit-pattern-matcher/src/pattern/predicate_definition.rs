@@ -38,8 +38,9 @@ impl<Q: QueryContext> PredicateDefinition<Q> {
         args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
-        state.reset_vars(self.scope, args);
+        let tracker = state.enter_scope(self.scope, args);
         let res = self.predicate.execute_func(state, context, logs)?;
+        state.exit_scope(tracker);
         Ok(res.predicator)
     }
 }

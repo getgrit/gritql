@@ -30,6 +30,8 @@ pub(crate) mod workflows;
 #[cfg(feature = "workflows_v2")]
 pub(crate) mod workflows_list;
 #[cfg(feature = "workflows_v2")]
+pub(crate) mod workflows_upload;
+#[cfg(feature = "workflows_v2")]
 pub(crate) mod workflows_watch;
 
 use crate::error::GoodError;
@@ -93,13 +95,14 @@ use std::io::Write;
 use std::process::{ChildStdin, Command, Stdio};
 use std::time::Instant;
 use std::{fmt, process::Child};
-use tracing::instrument;
 use version::VersionArgs;
 
 #[cfg(feature = "workflows_v2")]
 use crate::commands::workflows::{WorkflowCommands, Workflows};
 #[cfg(feature = "workflows_v2")]
 use workflows_list::run_list_workflows;
+#[cfg(feature = "workflows_v2")]
+use workflows_upload::run_upload_workflow;
 #[cfg(feature = "workflows_v2")]
 use workflows_watch::run_watch_workflow;
 
@@ -197,6 +200,7 @@ impl fmt::Display for Commands {
             Commands::Workflows(arg) => match arg.workflows_commands {
                 WorkflowCommands::List(_) => write!(f, "workflows list"),
                 WorkflowCommands::Watch(_) => write!(f, "workflows watch"),
+                WorkflowCommands::Upload(_) => write!(f, "workflows upload"),
             },
             Commands::Plumbing(_) => write!(f, "plumbing"),
             Commands::Version(_) => write!(f, "version"),
@@ -298,8 +302,38 @@ fn write_analytics_event(
     }
 }
 
-#[instrument]
-async fn run_command() -> Result<()> {
+fn setup_env_logger(app: &App, multi: &MultiProgress) {
+    let format: OutputFormat = (&app.format_flags).into();
+    let mut logger = env_logger::Builder::new();
+
+    let log_level = app.format_flags.log_level.unwrap_or(match &app.command {
+        Commands::Lsp(_) => LevelFilter::Off,
+        Commands::Plumbing(_) => LevelFilter::Off,
+        _ => LevelFilter::Info,
+    });
+
+    logger.filter_level(log_level);
+    logger.target(match format {
+        OutputFormat::Standard => env_logger::Target::Stdout,
+        OutputFormat::Transformed => env_logger::Target::Stderr,
+        OutputFormat::Json | OutputFormat::Jsonl => env_logger::Target::Stderr,
+        #[cfg(feature = "remote_redis")]
+        OutputFormat::Redis => env_logger::Target::Stderr,
+        #[cfg(feature = "remote_pubsub")]
+        OutputFormat::PubSub => env_logger::Target::Stderr,
+        #[cfg(feature = "server")]
+        OutputFormat::Combined => env_logger::Target::Stderr,
+    });
+    if !matches!(app.command, Commands::Plumbing(_)) {
+        logger.format(|buf, record| writeln!(buf, "{}", record.args()));
+    };
+    let logger = logger.build();
+    if let Err(e) = LogWrapper::new(multi.clone(), logger).try_init() {
+        eprintln!("Failed to initialize logger: {:?}", e);
+    }
+}
+
+async fn run_command(_use_tracing: bool) -> Result<()> {
     let app = App::parse();
     // Use this *only* for analytics, not for any other purpose.
     let analytics_args = std::env::args().collect::<Vec<_>>();
@@ -319,31 +353,21 @@ async fn run_command() -> Result<()> {
             Ok(Some(child)) => Some(child),
         };
 
-    let log_level = app.format_flags.log_level.unwrap_or(match &app.command {
-        Commands::Lsp(_) => LevelFilter::Off,
-        Commands::Plumbing(_) => LevelFilter::Off,
-        _ => LevelFilter::Info,
-    });
-    let format: OutputFormat = (&app.format_flags).into();
-    let mut logger = env_logger::Builder::new();
-    logger.filter_level(log_level);
-    logger.target(match format {
-        OutputFormat::Standard => env_logger::Target::Stdout,
-        OutputFormat::Transformed => env_logger::Target::Stderr,
-        OutputFormat::Json | OutputFormat::Jsonl => env_logger::Target::Stderr,
-        #[cfg(feature = "remote_redis")]
-        OutputFormat::Redis => env_logger::Target::Stderr,
-        #[cfg(feature = "remote_pubsub")]
-        OutputFormat::PubSub => env_logger::Target::Stderr,
-        #[cfg(feature = "server")]
-        OutputFormat::Combined => env_logger::Target::Stderr,
-    });
-    if !matches!(app.command, Commands::Plumbing(_)) {
-        logger.format(|buf, record| writeln!(buf, "{}", record.args()));
-    };
-    let logger = logger.build();
     let multi = MultiProgress::new();
-    LogWrapper::new(multi.clone(), logger).try_init().unwrap();
+
+    #[cfg(not(feature = "grit_tracing"))]
+    setup_env_logger(&app, &multi);
+    #[cfg(feature = "grit_tracing")]
+    if !_use_tracing {
+        setup_env_logger(&app, &multi);
+    } else if let Err(e) = tracing_log::log_tracer::Builder::new()
+        .ignore_all(vec!["rustls", "tonic", "mio", "hyper"])
+        .with_max_level(LevelFilter::Debug)
+        .init()
+    {
+        eprintln!("Failed to initialize LogTracer: {:?}", e);
+        setup_env_logger(&app, &multi)
+    }
 
     let command = app.command.to_string();
     let mut apply_details = ApplyDetails {
@@ -364,71 +388,93 @@ async fn run_command() -> Result<()> {
         _ => {
             updater.check_for_update().await?;
         }
-    }
-
-    let res = match app.command {
-        Commands::Apply(arg) => run_apply(arg, multi, &mut apply_details, &app.format_flags).await,
-        Commands::Check(arg) => run_check(arg, &app.format_flags, multi, false, None).await,
-        Commands::List(arg) => run_list_all(&arg, &app.format_flags).await,
-        Commands::Doctor(arg) => run_doctor(arg).await,
-        Commands::Auth(arg) => match arg.auth_commands {
-            AuthCommands::Login(arg) => run_login(arg).await,
-            AuthCommands::Logout(arg) => run_logout(arg).await,
-            AuthCommands::GetToken(arg) => run_get_token(arg).await,
-            AuthCommands::Refresh(arg) => run_refresh_auth(arg).await,
-        },
-        Commands::Lsp(arg) => run_lsp(arg).await,
-        Commands::Install(arg) => run_install(arg).await,
-        Commands::Init(arg) => run_init(arg).await,
-        Commands::Parse(arg) => run_parse(arg, app.format_flags, None).await,
-        Commands::Patterns(arg) => match arg.patterns_commands {
-            PatternCommands::List(arg) => run_patterns_list(arg, app.format_flags).await,
-            PatternCommands::Test(arg) => run_patterns_test(arg, app.format_flags).await,
-            PatternCommands::Edit(arg) => run_patterns_edit(arg).await,
-            PatternCommands::Describe(arg) => run_patterns_describe(arg).await,
-        },
-        #[cfg(feature = "workflows_v2")]
-        Commands::Workflows(arg) => match arg.workflows_commands {
-            WorkflowCommands::List(arg) => run_list_workflows(&arg, &app.format_flags).await,
-            WorkflowCommands::Watch(arg) => run_watch_workflow(&arg, &app.format_flags).await,
-        },
-        Commands::Plumbing(arg) => {
-            run_plumbing(arg, multi, &mut apply_details, app.format_flags).await
-        }
-        Commands::Version(arg) => run_version(arg).await,
-        #[cfg(feature = "docgen")]
-        Commands::Docgen(arg) => run_docgen(arg).await,
-        #[cfg(feature = "server")]
-        Commands::Server(arg) => cli_server::commands::run_server_command(arg).await,
-    };
-    let elapsed = start.elapsed();
-    let details = if command == "apply" {
-        Some(apply_details)
-    } else {
-        None
     };
 
-    let final_analytics_event = match res {
-        Ok(_) => AnalyticsEvent::Completed(CompletedEvent::from_res(elapsed, details)),
-
-        Err(_) => AnalyticsEvent::Errored(ErroredEvent::from_elapsed(elapsed)),
-    };
-
-    write_analytics_event(
-        analytics_child.as_mut().map(|c| c.stdin.as_mut().unwrap()),
-        &final_analytics_event,
+    #[cfg(feature = "grit_tracing")]
+    let cmd_span = span!(
+        Level::INFO,
+        "grit_marzano.run_command",
+        "grit.command" = command.as_str(),
+        "grit.args" = analytics_args.join(" ")
     );
 
-    // If we are in the foreground, wait for the analytics worker to finish
-    if is_telemetry_foregrounded() {
-        if let Some(mut child) = analytics_child {
-            log::info!("Waiting for analytics worker to finish");
-            let res = child.wait();
-            if let Err(e) = res {
-                log::info!("Failed to wait for analytics worker: {:?}", e);
+    let runner = async move {
+        let res = match app.command {
+            Commands::Apply(arg) => {
+                run_apply(arg, multi, &mut apply_details, &app.format_flags).await
+            }
+            Commands::Check(arg) => run_check(arg, &app.format_flags, multi, false, None).await,
+            Commands::List(arg) => run_list_all(&arg, &app.format_flags).await,
+            Commands::Doctor(arg) => run_doctor(arg).await,
+            Commands::Auth(arg) => match arg.auth_commands {
+                AuthCommands::Login(arg) => run_login(arg).await,
+                AuthCommands::Logout(arg) => run_logout(arg).await,
+                AuthCommands::GetToken(arg) => run_get_token(arg).await,
+                AuthCommands::Refresh(arg) => run_refresh_auth(arg).await,
+            },
+            Commands::Lsp(arg) => run_lsp(arg).await,
+            Commands::Install(arg) => run_install(arg).await,
+            Commands::Init(arg) => run_init(arg).await,
+            Commands::Parse(arg) => run_parse(arg, app.format_flags, None).await,
+            Commands::Patterns(arg) => match arg.patterns_commands {
+                PatternCommands::List(arg) => run_patterns_list(arg, app.format_flags).await,
+                PatternCommands::Test(arg) => run_patterns_test(arg, app.format_flags).await,
+                PatternCommands::Edit(arg) => run_patterns_edit(arg).await,
+                PatternCommands::Describe(arg) => run_patterns_describe(arg).await,
+            },
+            #[cfg(feature = "workflows_v2")]
+            Commands::Workflows(arg) => match arg.workflows_commands {
+                WorkflowCommands::List(arg) => run_list_workflows(&arg, &app.format_flags).await,
+                WorkflowCommands::Watch(arg) => run_watch_workflow(&arg, &app.format_flags).await,
+                WorkflowCommands::Upload(arg) => run_upload_workflow(&arg, &app.format_flags)
+                    .await
+                    .map(|_| ()),
+            },
+            Commands::Plumbing(arg) => {
+                run_plumbing(arg, multi, &mut apply_details, app.format_flags).await
+            }
+            Commands::Version(arg) => run_version(arg).await,
+            #[cfg(feature = "docgen")]
+            Commands::Docgen(arg) => run_docgen(arg).await,
+            #[cfg(feature = "server")]
+            Commands::Server(arg) => cli_server::commands::run_server_command(arg).await,
+        };
+        let elapsed = start.elapsed();
+        let details = if command == "apply" {
+            Some(apply_details)
+        } else {
+            None
+        };
+
+        let final_analytics_event = match res {
+            Ok(_) => AnalyticsEvent::Completed(CompletedEvent::from_res(elapsed, details)),
+
+            Err(_) => AnalyticsEvent::Errored(ErroredEvent::from_elapsed(elapsed)),
+        };
+
+        write_analytics_event(
+            analytics_child.as_mut().map(|c| c.stdin.as_mut().unwrap()),
+            &final_analytics_event,
+        );
+
+        // If we are in the foreground, wait for the analytics worker to finish
+        if is_telemetry_foregrounded() {
+            if let Some(mut child) = analytics_child {
+                log::info!("Waiting for analytics worker to finish");
+                let res = child.wait();
+                if let Err(e) = res {
+                    log::info!("Failed to wait for analytics worker: {:?}", e);
+                }
             }
         }
-    }
+
+        res
+    };
+
+    #[cfg(feature = "grit_tracing")]
+    let res = runner.instrument(cmd_span).await;
+    #[cfg(not(feature = "grit_tracing"))]
+    let res = runner.await;
 
     res
 }
@@ -551,7 +597,7 @@ pub async fn run_command_with_tracing() -> Result<()> {
             let res = async move {
                 event!(Level::INFO, "starting the CLI!");
 
-                let res = run_command().await;
+                let res = run_command(true).await;
 
                 event!(Level::INFO, "ending the CLI!");
 
@@ -568,7 +614,7 @@ pub async fn run_command_with_tracing() -> Result<()> {
     let subscriber = tracing::subscriber::NoSubscriber::new();
     tracing::subscriber::set_global_default(subscriber).expect("setting tracing default failed");
 
-    let res = run_command().await;
+    let res = run_command(false).await;
     if let Err(ref e) = res {
         if let Some(good) = e.downcast_ref::<GoodError>() {
             if let Some(msg) = &good.message {

@@ -53,7 +53,9 @@ impl<Q: QueryContext> FunctionDefinition<Q> for GritFunctionDefinition<Q> {
         args: &'a [Option<Pattern<Q>>],
         logs: &mut AnalysisLogs,
     ) -> GritResult<FuncEvaluation<Q>> {
-        state.reset_vars(self.scope, args);
-        self.function.execute_func(state, context, logs)
+        let tracker = state.enter_scope(self.scope, args);
+        let res = self.function.execute_func(state, context, logs);
+        state.exit_scope(tracker);
+        res
     }
 }

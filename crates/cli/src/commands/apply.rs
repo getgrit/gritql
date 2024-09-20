@@ -2,13 +2,12 @@ use anyhow::Result;
 use clap::Args;
 use indicatif::MultiProgress;
 
-use marzano_gritmodule::searcher::find_workflow_file_from;
+use crate::{flags::GlobalFormatFlags, messenger_variant::create_emitter, updater::Updater};
 use marzano_messenger::emit::ApplyDetails;
 use serde::Serialize;
 use std::env::current_dir;
 use std::path::PathBuf;
-
-use crate::flags::GlobalFormatFlags;
+use tracing::Instrument;
 
 #[cfg(feature = "workflows_v2")]
 use super::apply_migration::{run_apply_migration, ApplyMigrationArgs};
@@ -52,6 +51,9 @@ pub(crate) async fn run_apply(
 ) -> Result<()> {
     #[cfg(feature = "workflows_v2")]
     {
+        let execution_id =
+            std::env::var("GRIT_EXECUTION_ID").unwrap_or_else(|_| uuid::Uuid::new_v4().to_string());
+
         let current_dir = current_dir()?;
         let current_repo_root = marzano_gritmodule::fetcher::LocalRepo::from_dir(&current_dir)
             .await
@@ -69,21 +71,63 @@ pub(crate) async fn run_apply(
                 args.pattern_or_workflow,
                 args.apply_migration_args,
                 ranges,
+                flags,
+                multi,
             )
             .await;
         }
 
-        let custom_workflow = find_workflow_file_from(current_dir, &args.pattern_or_workflow).await;
+        let paths = args.paths.clone();
+
+        let mut updater = Updater::from_current_bin().await?;
+        let auth = updater
+            .get_valid_auth()
+            .instrument(tracing::span!(
+                tracing::Level::INFO,
+                "grit_marzano.auth",
+                "execution_id" = execution_id.as_str(),
+            ))
+            .await
+            .ok();
+
+        let custom_workflow =
+            crate::workflows::find_workflow_file_from(current_dir, &args.pattern_or_workflow, auth)
+                .instrument(tracing::span!(
+                    tracing::Level::INFO,
+                    "grit_marzano.find_workflow",
+                    "execution_id" = execution_id.as_str(),
+                ))
+                .await;
+
         if let Some(custom_workflow) = custom_workflow {
-            return run_apply_migration(
-                custom_workflow,
-                args.paths,
-                ranges,
-                args.apply_migration_args,
-                flags,
+            let format = crate::flags::OutputFormat::from(flags);
+            let emitter = create_emitter(
+                &format,
+                marzano_messenger::output_mode::OutputMode::default(),
+                None,
+                false,
+                None,
+                None,
                 args.apply_pattern_args.visibility,
             )
-            .await;
+            .await?;
+
+            run_apply_migration(
+                custom_workflow,
+                paths,
+                ranges,
+                args.apply_migration_args,
+                emitter,
+                execution_id.clone(),
+            )
+            .instrument(tracing::span!(
+                tracing::Level::INFO,
+                "grit_marzano.run_workflow",
+                "execution_id" = execution_id.as_str(),
+            ))
+            .await?;
+
+            return Ok(());
         }
     }
 

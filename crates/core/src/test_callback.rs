@@ -26,7 +26,7 @@ fn test_callback() {
     assert!(!callback_called.load(std::sync::atomic::Ordering::SeqCst));
 
     let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
-    builder = builder.matches_callback(Box::new(move |binding, context, state, _| {
+    builder = builder.matches_callback(Box::new(move |binding, context, state, _logs| {
         let text = binding
             .text(&state.files, context.language)
             .unwrap()

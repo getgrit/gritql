@@ -51,8 +51,10 @@ impl FunctionDefinition<MarzanoQueryContext> for ForeignFunctionDefinition {
         _context: &'a MarzanoContext<'a>,
         _args: &'a [Option<Pattern<MarzanoQueryContext>>],
         _logs: &mut AnalysisLogs,
-    ) -> Result<FuncEvaluation<MarzanoQueryContext>> {
-        bail!("External functions are not enabled in your environment")
+    ) -> GritResult<FuncEvaluation<MarzanoQueryContext>> {
+        Err(GritPatternError::new(
+            "External functions are not enabled in your environment",
+        ))
     }
 
     #[cfg(feature = "external_functions_common")]

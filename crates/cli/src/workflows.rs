@@ -3,17 +3,21 @@ use anyhow::Result;
 use console::style;
 use log::debug;
 use marzano_auth::env::{get_grit_api_url, ENV_VAR_GRIT_API_URL, ENV_VAR_GRIT_AUTH_TOKEN};
+use marzano_auth::info::AuthInfo;
+use marzano_gritmodule::config::REPO_CONFIG_DIR_NAME;
+use marzano_gritmodule::searcher::WorkflowInfo;
 use marzano_gritmodule::{fetcher::LocalRepo, searcher::find_grit_dir_from};
 use marzano_messenger::workflows::WorkflowMessenger;
 use marzano_messenger::{emit::Messager, workflows::PackagedWorkflowOutcome};
 use marzano_util::diff::FileDiff;
 use serde::Serialize;
 use serde_json::to_string;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::process::Stdio;
 use tempfile::NamedTempFile;
 use tokio::fs;
+use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
-use uuid::Uuid;
 
 pub static GRIT_REPO_URL_NAME: &str = "grit_repo_url";
 pub static GRIT_REPO_BRANCH_NAME: &str = "grit_branch";
@@ -37,6 +41,8 @@ pub struct WorkflowSettings {
 
 #[derive(Debug)]
 pub struct WorkflowInputs {
+    /// The workflow execution ID
+    pub execution_id: String,
     // If this is a custom workflow, this will be the path to the entrypoint
     pub workflow_entrypoint: String,
     /// Ranges to target, if any
@@ -52,12 +58,11 @@ pub struct WorkflowInputs {
 #[allow(unused_mut)]
 pub async fn run_bin_workflow<M>(mut emitter: M, mut arg: WorkflowInputs) -> Result<M>
 where
-    M: Messager + WorkflowMessenger + Send + 'static,
+    M: Messager + WorkflowMessenger + Send + Clone + 'static,
 {
     let cwd = std::env::current_dir()?;
 
-    let workflow_id =
-        std::env::var("GRIT_EXECUTION_ID").unwrap_or_else(|_| Uuid::new_v4().to_string());
+    let workflow_id = arg.execution_id.clone();
     let marzano_bin = std::env::current_exe()?;
 
     let mut updater = Updater::from_current_bin().await?;
@@ -65,11 +70,12 @@ where
 
     #[cfg(feature = "workflow_server")]
     let (server_addr, handle, shutdown_tx) = {
+        let server_emitter = emitter.clone();
         let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
         let socket = tokio::net::TcpListener::bind("0.0.0.0:0").await?;
         let server_addr = format!("http://{}", socket.local_addr()?).to_string();
-        let handle = grit_cloud_client::spawn_server_tasks(emitter, shutdown_rx, socket);
-        log::info!("Started local server at {}", server_addr);
+        let handle = grit_cloud_client::spawn_server_tasks(server_emitter, shutdown_rx, socket);
+        log::debug!("Started local server at {}", server_addr);
         (server_addr, handle, shutdown_tx)
     };
 
@@ -156,8 +162,51 @@ where
         .arg("--file")
         .arg(&tempfile_path)
         .kill_on_drop(true)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()
         .expect("Failed to start worker");
+
+    let stdout = final_child.stdout.take().expect("Failed to get stdout");
+    let stderr = final_child.stderr.take().expect("Failed to get stderr");
+
+    let mut stdout_reader = BufReader::new(stdout).lines();
+    let mut stderr_reader = BufReader::new(stderr).lines();
+
+    let mut stdout_emitter = emitter.clone();
+    let stdout_handle = tokio::spawn(async move {
+        while let Some(line) = stdout_reader.next_line().await.unwrap() {
+            let log = marzano_messenger::SimpleLogMessage {
+                level: marzano_core::api::AnalysisLogLevel::Info,
+                step_id: None,
+                message: line,
+                meta: Some(std::collections::HashMap::from([(
+                    "source".to_string(),
+                    serde_json::Value::String("stdout".to_string()),
+                )])),
+            };
+            if let Err(e) = stdout_emitter.emit_log(&log) {
+                log::error!("Error emitting log: {}", e);
+            }
+        }
+    });
+    let mut stderr_emitter = emitter.clone();
+    let stderr_handle = tokio::spawn(async move {
+        while let Some(line) = stderr_reader.next_line().await.unwrap() {
+            let log = marzano_messenger::SimpleLogMessage {
+                level: marzano_core::api::AnalysisLogLevel::Error,
+                step_id: None,
+                message: line,
+                meta: Some(std::collections::HashMap::from([(
+                    "source".to_string(),
+                    serde_json::Value::String("stderr".to_string()),
+                )])),
+            };
+            if let Err(e) = stderr_emitter.emit_log(&log) {
+                log::error!("Error emitting log: {}", e);
+            }
+        }
+    });
 
     let status = final_child.wait().await?;
 
@@ -167,6 +216,10 @@ where
         shutdown_tx.send(()).unwrap();
         handle.await?
     };
+
+    // Wait for the stdout and stderr readers to finish
+    stdout_handle.await?;
+    stderr_handle.await?;
 
     // Note the workflow may have already emitted its own conclusion - this is a fallback
     let fallback_outcome = if status.success() {
@@ -184,26 +237,31 @@ where
             data: None,
         }
     };
-    emitter.finish_workflow(&fallback_outcome)?;
+    emitter.finish_workflow(&fallback_outcome).await?;
 
     Ok(emitter)
 }
 
 #[cfg(feature = "remote_workflows")]
 pub async fn run_remote_workflow(
-    workflow_name: String,
+    pattern_or_workflow: String,
     args: crate::commands::apply_migration::ApplyMigrationArgs,
     ranges: Option<Vec<FileDiff>>,
+    flags: &crate::flags::GlobalFormatFlags,
+    root_progress: indicatif::MultiProgress,
 ) -> Result<()> {
     use colored::Colorize;
     use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
     use marzano_gritmodule::fetcher::ModuleRepo;
     use std::time::Duration;
 
+    use crate::commands::workflows_upload::{run_upload_workflow, WorkflowUploadArgs};
+
     let mut updater = Updater::from_current_bin().await?;
     let cwd = std::env::current_dir()?;
 
     let pb = ProgressBar::with_draw_target(Some(0), ProgressDrawTarget::stderr());
+    let pb = root_progress.add(pb);
     pb.set_style(ProgressStyle::with_template(
         "{spinner}{prefix:.bold.dim} {wide_msg:.bold.dim}",
     )?);
@@ -211,8 +269,6 @@ pub async fn run_remote_workflow(
     pb.enable_steady_tick(Duration::from_millis(60));
 
     let auth = updater.get_valid_auth().await?;
-
-    pb.set_message("Launching workflow on Grit Cloud");
 
     let repo = ModuleRepo::from_dir(&cwd).await;
     let mut input = args.get_payload()?;
@@ -232,13 +288,147 @@ pub async fn run_remote_workflow(
         }
     }
 
+    let Some(workflow_id) = args.workflow_id else {
+        anyhow::bail!("No workflow ID provided");
+    };
+
+    pb.set_message(format!(
+        "Uploading {} workflow to Grit Cloud",
+        pattern_or_workflow
+    ));
+    let upload_args = WorkflowUploadArgs {
+        workflow_path: pattern_or_workflow,
+        workflow_id: workflow_id.to_string(),
+    };
+    let artifact_download_url = run_upload_workflow(&upload_args, &flags)
+        .await
+        .map_err(|e| {
+            pb.set_message("Failed to upload workflow");
+            pb.finish();
+            e
+        })?;
+    input.insert("definition".to_string(), artifact_download_url.into());
+
+    pb.set_message("Starting workflow");
+
     let settings =
-        grit_cloud_client::RemoteWorkflowSettings::new(workflow_name, &repo, input.into());
-    let url = grit_cloud_client::run_remote_workflow(settings, &auth).await?;
+        grit_cloud_client::RemoteWorkflowSettings::new(&workflow_id, &repo, input.into());
+
+    let result = grit_cloud_client::run_remote_workflow(settings, &auth).await?;
 
     pb.finish_and_clear();
 
-    log::info!("Workflow started at: {}", url.bright_blue().underline());
+    log::info!(
+        "Workflow started at: {}",
+        result.url().bright_blue().underline()
+    );
+
+    if args.watch {
+        // Wait 1 seconds for the workflow to start
+        tokio::time::sleep(Duration::from_secs(1)).await;
+
+        let auth = updater.get_valid_auth().await?;
+
+        let format = crate::flags::OutputFormat::from(flags);
+        let emitter = crate::messenger_variant::create_emitter(
+            &format,
+            marzano_messenger::output_mode::OutputMode::default(),
+            None,
+            false,
+            None,
+            None,
+            marzano_messenger::emit::VisibilityLevels::default(),
+        )
+        .await?;
+
+        grit_cloud_client::watch_workflow(&result.execution_id, &auth, emitter).await?;
+
+        log::info!(
+            "Run this to watch this workflow again:\n  {}",
+            format!("grit workflows watch {}", &result.execution_id)
+                .bright_yellow()
+                .bold(),
+        );
+    }
 
     Ok(())
+}
+
+pub async fn fetch_remote_workflow(
+    workflow_path_or_name: &str,
+    auth: Option<AuthInfo>,
+) -> Result<WorkflowInfo> {
+    let temp_dir = tempfile::tempdir()?;
+    // Note: into_path is important here to prevent the temp_dir from being dropped
+    let temp_file_path = temp_dir.into_path().join("downloaded_workflow.ts");
+    let client = reqwest::Client::new();
+    let mut request = client.get(workflow_path_or_name);
+    if let Some(auth_info) = auth {
+        // Only inject auth if URL is from localhost or grit.io
+        if workflow_path_or_name.contains("localhost") || workflow_path_or_name.contains("grit.io")
+        {
+            request = request.header(
+                "Authorization",
+                format!("Bearer {}", auth_info.access_token),
+            );
+        }
+    }
+    let response = request.send().await?;
+
+    // Verify status code
+    if !response.status().is_success() {
+        return Err(anyhow::anyhow!(
+            "Failed to fetch remote workflow: {}
+    {}",
+            response.status(),
+            response.text().await?
+        ));
+    }
+
+    let content = response.text().await?;
+    fs_err::write(&temp_file_path, content)?;
+    Ok(WorkflowInfo::new(temp_file_path))
+}
+
+pub async fn find_workflow_file_from(
+    dir: PathBuf,
+    workflow_path_or_name: &str,
+    auth: Option<AuthInfo>,
+) -> Option<WorkflowInfo> {
+    if workflow_path_or_name.starts_with("http://") || workflow_path_or_name.starts_with("https://")
+    {
+        match fetch_remote_workflow(workflow_path_or_name, auth).await {
+            Ok(info) => return Some(info),
+            Err(e) => {
+                log::error!("Failed to fetch remote workflow: {}", e);
+            }
+        }
+    }
+
+    if workflow_path_or_name.ends_with(".js") || workflow_path_or_name.ends_with(".ts") {
+        let workflow_file_path = if Path::new(workflow_path_or_name).is_absolute() {
+            PathBuf::from(workflow_path_or_name)
+        } else {
+            dir.join(workflow_path_or_name)
+        };
+        if fs::metadata(&workflow_file_path).await.is_ok() {
+            return Some(WorkflowInfo::new(workflow_file_path));
+        }
+    }
+
+    let base_search_string = format!(
+        "{}/workflows/{}.ts",
+        REPO_CONFIG_DIR_NAME, workflow_path_or_name
+    );
+    let bundled_search_string = format!(
+        "{}/workflows/{}/index.ts",
+        REPO_CONFIG_DIR_NAME, workflow_path_or_name
+    );
+    let workflow_file = marzano_gritmodule::searcher::search(
+        dir,
+        &[base_search_string, bundled_search_string],
+        None,
+    )
+    .await;
+    workflow_file.map(|path| WorkflowInfo::new(PathBuf::from(path)))
 }

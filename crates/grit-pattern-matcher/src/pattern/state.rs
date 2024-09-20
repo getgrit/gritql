@@ -137,6 +137,7 @@ pub struct State<'a, Q: QueryContext> {
     pub effects: Vector<Effect<'a, Q>>,
     pub files: FileRegistry<'a, Q>,
     rng: rand::rngs::StdRng,
+    current_scope: usize,
 }
 
 fn get_top_level_effect_ranges<'a, Q: QueryContext>(
@@ -215,10 +216,15 @@ impl FilePtr {
     }
 }
 
+pub struct ScopeTracker {
+    previous_scope: usize,
+}
+
 impl<'a, Q: QueryContext> State<'a, Q> {
     pub fn new(bindings: VarRegistry<'a, Q>, registry: FileRegistry<'a, Q>) -> Self {
         Self {
             rng: rand::rngs::StdRng::seed_from_u64(32),
+            current_scope: 0,
             bindings,
             effects: vector![],
             files: registry,
@@ -237,7 +243,18 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         &mut self.rng
     }
 
-    pub(crate) fn reset_vars(&mut self, scope: usize, args: &'a [Option<Pattern<Q>>]) {
+    /// Enter a scope by copying the current scope and adding the new variables
+    /// When you are done with a scope, you *must* call exit_scope
+    ///
+    /// # Parameters
+    ///
+    /// * `scope` - The scope to enter
+    /// * `args` - The arguments to the scope
+    pub(crate) fn enter_scope(
+        &mut self,
+        scope: usize,
+        args: &'a [Option<Pattern<Q>>],
+    ) -> ScopeTracker {
         let old_scope = self.bindings[scope].last().unwrap();
         let new_scope: Vector<Box<VariableContent<Q>>> = old_scope
             .iter()
@@ -257,6 +274,17 @@ impl<'a, Q: QueryContext> State<'a, Q> {
             })
             .collect();
         self.bindings[scope].push_back(new_scope);
+
+        let old_scope_index = self.current_scope;
+        self.current_scope = scope;
+
+        ScopeTracker {
+            previous_scope: old_scope_index,
+        }
+    }
+
+    pub(crate) fn exit_scope(&mut self, tracker: ScopeTracker) {
+        self.current_scope = tracker.previous_scope;
     }
 
     // unfortunately these accessor functions are not as useful as they
@@ -286,6 +314,29 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         None
     }
 
+    pub fn register_var(&mut self, name: &str) -> Variable {
+        let var = Variable::new(self.current_scope, self.bindings[self.current_scope].len());
+        self.bindings[self.current_scope]
+            .push_back(vector![Box::new(VariableContent::new(name.to_string()))]);
+        var
+    }
+
+    /// Attempt to find a variable by name in the current scope
+    pub fn find_var_in_scope(&mut self, name: &str) -> Option<Variable> {
+        for (index, content) in self.bindings[self.current_scope]
+            .last()
+            .unwrap()
+            .iter()
+            .enumerate()
+        {
+            if content.name == name {
+                return Some(Variable::new(self.current_scope, index));
+            }
+        }
+        None
+    }
+
+    /// Trace a variable to the root binding
     pub fn trace_var(&self, var: &Variable) -> Variable {
         if let Some(Pattern::Variable(v)) =
             &self.bindings[var.scope().into()].last().unwrap()[var.index().into()].pattern

@@ -16,6 +16,7 @@ A high-level overview of tools you need to have installed:
 - Yarn package manager. You'll need [`yarn`](https://classic.yarnpkg.com/en/docs/install) (classic). Install v1.22.19 with `npm install --global yarn`.
 - Tree-Sitter CLI: provides [`tree-sitter`](https://github.com/tree-sitter/tree-sitter/tree/master/cli) binary for testing grammars. Install v0.22.2 with `npm install --global tree-sitter-cli`.
 - Terraform CLI. Install [`terraform`](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) with `brew tap hashicorp/tap && brew install hashicorp/tap/terraform`.
+- For snapshot testing review, you should install the cargo insta plugin: `curl -LsSf https://insta.rs/install.sh | sh` (https://insta.rs/docs/cli/)
 
 ## Building the Code
 

@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use marzano_core::api::MatchResult;
 use serde::{Deserialize, Serialize};
+use std::sync::OnceLock;
 
 use crate::emit::Messager;
 
@@ -63,26 +64,36 @@ pub struct WorkflowMatchResult {
 
 /// Status manager makes it easier to implement the required parts of the workflow status API
 /// It sets the status of the workflow the first time it's updated, and then ignores all further updates
+#[derive(Clone)]
 pub struct StatusManager {
-    status: Option<PackagedWorkflowOutcome>,
+    status: OnceLock<PackagedWorkflowOutcome>,
 }
 
 impl StatusManager {
     pub fn new() -> Self {
-        Self { status: None }
+        Self {
+            status: OnceLock::new(),
+        }
     }
 
+    /// Set the status of the workflow, but only if it hasn't been set before
     pub fn upsert(&mut self, outcome: &PackagedWorkflowOutcome) -> bool {
-        if self.status.is_none() {
-            self.status = Some(outcome.clone());
+        let did_set = self.status.set(outcome.clone());
+        // Ok(true) when we set the status ourselves, Err if it was already set
+        if did_set.is_ok() {
             return true;
         }
 
         false
     }
 
+    /// Get the status of the workflow, if it has been set
     pub fn get_workflow_status(&mut self) -> anyhow::Result<Option<&PackagedWorkflowOutcome>> {
-        Ok(self.status.as_ref())
+        if let Some(outcome) = self.status.get() {
+            return Ok(Some(outcome));
+        }
+
+        Ok(None)
     }
 }
 

@@ -1,5 +1,3 @@
-use crate::flags::GlobalFormatFlags;
-use crate::{flags::OutputFormat, messenger_variant::create_emitter};
 use marzano_messenger::emit::FlushableMessenger;
 
 #[cfg(not(feature = "workflows_v2"))]
@@ -8,6 +6,7 @@ use anyhow::Result;
 use clap::Args;
 use marzano_gritmodule::searcher::WorkflowInfo;
 use marzano_messenger::emit::Messager;
+use marzano_messenger::workflows::PackagedWorkflowOutcome;
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -26,9 +25,16 @@ pub struct ApplyMigrationArgs {
     #[clap(
         long,
         help_heading = "Workflow options",
-        help = "Run the workflow remotely on Grit Cloud"
+        help = "Run the workflow remotely on Grit Cloud",
+        requires = "workflow_id"
     )]
     pub(crate) remote: bool,
+    /// Workflow ID to set, only applicable when running remotely
+    #[clap(long, help_heading = "Workflow options", requires = "remote")]
+    pub(crate) workflow_id: Option<String>,
+    /// Watch the workflow for updates (only applicable when running remotely)
+    #[clap(long, help_heading = "Workflow options")]
+    pub(crate) watch: bool,
     /// Print verbose output
     #[clap(long)]
     pub(crate) verbose: bool,
@@ -63,30 +69,19 @@ pub(crate) async fn run_apply_migration(
     paths: Vec<PathBuf>,
     ranges: Option<Vec<marzano_util::diff::FileDiff>>,
     arg: ApplyMigrationArgs,
-    flags: &GlobalFormatFlags,
-    min_level: marzano_messenger::emit::VisibilityLevels,
-) -> Result<()> {
+    mut emitter: crate::messenger_variant::MessengerVariant<'static>,
+    execution_id: String,
+) -> Result<PackagedWorkflowOutcome> {
     use crate::error::GoodError;
 
     let input = arg.get_payload()?;
-
-    let format = OutputFormat::from(flags);
-    let mut emitter = create_emitter(
-        &format,
-        marzano_messenger::output_mode::OutputMode::default(),
-        None,
-        false,
-        None,
-        None,
-        min_level,
-    )
-    .await?;
 
     emitter.start_workflow()?;
 
     let mut emitter = run_bin_workflow(
         emitter,
         WorkflowInputs {
+            execution_id,
             verbose: arg.verbose,
             workflow_entrypoint: workflow.entrypoint().into(),
             paths,
@@ -99,13 +94,13 @@ pub(crate) async fn run_apply_migration(
     emitter.flush().await?;
 
     // Get the final workflow status from the emitter
-    if let Some(workflow_status) = emitter.get_workflow_status()? {
-        if !workflow_status.success {
-            anyhow::bail!(GoodError::new());
-        }
-    } else {
+    let Some(workflow_status) = emitter.get_workflow_status()? else {
         anyhow::bail!("Final workflow status not found");
+    };
+
+    if !workflow_status.success {
+        anyhow::bail!(GoodError::new());
     }
 
-    Ok(())
+    Ok(workflow_status.clone())
 }
