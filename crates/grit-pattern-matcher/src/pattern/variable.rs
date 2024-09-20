@@ -47,7 +47,11 @@ impl Variable {
     /// If the variable has not been bound to a scope, return an error.
     /// When possible, prefer to use `get_scope()` instead, which will initialize the variable's scope if it is not already bound.
     pub fn try_scope(&self) -> GritResult<u16> {
-        Ok(self.scope)
+        if self.scope == GLOBAL_VARS_SCOPE_INDEX {
+            Ok(self.scope)
+        } else {
+            panic!("variable not initialized");
+        }
     }
 
     /// Try to get the index of the variable, if it has been bound to an index.
@@ -62,7 +66,7 @@ impl Variable {
         &self,
         state: &'b mut State<'a, Q>,
     ) -> GritResult<u16> {
-        self.try_scope()
+        Ok(self.scope)
     }
 
     /// Get the index of the variable, initializing it if it is not already bound.
@@ -70,7 +74,7 @@ impl Variable {
         &self,
         state: &'b mut State<'a, Q>,
     ) -> GritResult<u16> {
-        self.try_index()
+        Ok(self.index)
     }
 
     pub fn get_pattern_or_resolved<'a, 'b, Q: QueryContext>(
@@ -111,8 +115,7 @@ impl Variable {
     }
 
     pub fn is_file_name(&self) -> bool {
-        self.try_scope().unwrap() == GLOBAL_VARS_SCOPE_INDEX
-            && self.try_index().unwrap() as usize == FILENAME_INDEX
+        self.scope == GLOBAL_VARS_SCOPE_INDEX && self.index as usize == FILENAME_INDEX
     }
 
     pub fn text<'a, Q: QueryContext>(
@@ -134,13 +137,15 @@ impl Variable {
     ) -> GritResult<Option<bool>> {
         let mut variable_mirrors: Vec<VariableMirror<Q>> = Vec::new();
         {
+            let scope = self.get_scope(state)?;
+            let index = self.get_index(state)?;
             let variable_content = &mut **(state
                 .bindings
-                .get_mut(self.try_scope().unwrap().into())
+                .get_mut(scope.into())
                 .unwrap()
                 .back_mut()
                 .unwrap()
-                .get_mut(self.try_index().unwrap().into())
+                .get_mut(index.into())
                 .unwrap());
             let value = &mut variable_content.value;
 
@@ -217,13 +222,15 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
 
         // we do this convoluted check to avoid double-borrowing of state
         // via the variable_content variable
+        let scope = self.get_scope(state)?;
+        let index = self.get_index(state)?;
         let variable_content = &mut **(state
             .bindings
-            .get_mut(self.try_scope().unwrap().into())
+            .get_mut(scope.into())
             .unwrap()
             .back_mut()
             .unwrap()
-            .get_mut(self.try_index().unwrap().into())
+            .get_mut(index.into())
             .unwrap());
         if let Some(pattern) = variable_content.pattern {
             if !pattern.execute(resolved_pattern, state, context, logs)? {
@@ -232,11 +239,11 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
         }
         let variable_content = &mut **(state
             .bindings
-            .get_mut(self.try_scope().unwrap().into())
+            .get_mut(scope.into())
             .unwrap()
             .back_mut()
             .unwrap()
-            .get_mut(self.try_index().unwrap().into())
+            .get_mut(index.into())
             .unwrap());
         variable_content.value = Some(resolved_pattern.clone());
         variable_content

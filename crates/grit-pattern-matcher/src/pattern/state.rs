@@ -296,7 +296,10 @@ impl<'a, Q: QueryContext> State<'a, Q> {
     // https://doc.rust-lang.org/nomicon/borrow-splitting.html
     // todo split State in a sensible way.
     pub fn get_name(&self, var: &Variable) -> &str {
-        &self.bindings[var.try_scope().unwrap().into()].last().unwrap()[var.try_index().unwrap().into()].name
+        &self.bindings[var.try_scope().unwrap().into()]
+            .last()
+            .unwrap()[var.try_index().unwrap().into()]
+        .name
     }
 
     /// Attempt to find a variable by name in any scope
@@ -338,8 +341,10 @@ impl<'a, Q: QueryContext> State<'a, Q> {
 
     /// Trace a variable to the root binding
     pub fn trace_var(&self, var: &Variable) -> Variable {
-        if let Some(Pattern::Variable(v)) =
-            &self.bindings[var.try_scope().unwrap().into()].last().unwrap()[var.try_index().unwrap().into()].pattern
+        if let Some(Pattern::Variable(v)) = &self.bindings[var.try_scope().unwrap().into()]
+            .last()
+            .unwrap()[var.try_index().unwrap().into()]
+        .pattern
         {
             self.trace_var(v)
         } else {
