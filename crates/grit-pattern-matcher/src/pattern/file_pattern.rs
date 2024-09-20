@@ -53,11 +53,11 @@ impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
         // Fill in the variables now - this is a bit of a hack
         state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
             .back_mut()
-            .unwrap()[PROGRAM_INDEX.into()]
+            .unwrap()[PROGRAM_INDEX]
         .value = Some(file.binding(&state.files));
         state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
             .back_mut()
-            .unwrap()[FILENAME_INDEX.into()]
+            .unwrap()[FILENAME_INDEX]
         .value = Some(file.name(&state.files));
         state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
             .back_mut()

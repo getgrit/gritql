@@ -334,7 +334,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
 
         let Some(new_files) = state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
             .last()
-            .and_then(|binding| binding[NEW_FILES_INDEX.into()].value.as_ref())
+            .and_then(|binding| binding[NEW_FILES_INDEX].value.as_ref())
             .and_then(ResolvedPattern::get_list_items)
         else {
             return Err(GritPatternError::new("Expected a list of files"));
@@ -378,7 +378,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
         state.effects = vector![];
         let the_new_files = state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
             .back_mut()
-            .unwrap()[NEW_FILES_INDEX.into()]
+            .unwrap()[NEW_FILES_INDEX]
         .as_mut();
         the_new_files.value = Some(ResolvedPattern::from_list_parts([].into_iter()));
         Ok(true)

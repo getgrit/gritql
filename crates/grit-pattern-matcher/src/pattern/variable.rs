@@ -16,7 +16,6 @@ use grit_util::{
 use std::{
     borrow::Cow,
     collections::BTreeSet,
-    sync::{atomic::AtomicU32, Arc},
 };
 
 #[derive(Clone, Debug)]
@@ -85,7 +84,7 @@ impl Variable {
     }
 
     pub fn file_name() -> Self {
-        Self::new(GLOBAL_VARS_SCOPE_INDEX.into(), FILENAME_INDEX.into())
+        Self::new(GLOBAL_VARS_SCOPE_INDEX.into(), FILENAME_INDEX)
     }
 
     pub fn is_file_name(&self) -> bool {
@@ -133,8 +132,8 @@ impl Variable {
                     value_history.push(ResolvedPattern::from_binding(binding.clone()));
                     variable_mirrors.extend(variable_content.mirrors.iter().map(|mirror| {
                         VariableMirror {
-                            scope: mirror.scope().into(),
-                            index: mirror.index().into(),
+                            scope: mirror.scope(),
+                            index: mirror.index(),
                             binding: binding.clone(),
                         }
                     }));
