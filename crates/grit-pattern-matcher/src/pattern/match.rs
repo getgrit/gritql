@@ -40,7 +40,7 @@ impl<Q: QueryContext> Evaluator<Q> for Match<Q> {
         match &self.val {
             Container::Variable(var) => {
                 let var = state.trace_var(var);
-                let var_content = &state.bindings[var.try_scope().into()].last().unwrap()[var.try_index().into()];
+                let var_content = &state.bindings[var.try_scope().unwrap().into()].last().unwrap()[var.try_index().unwrap().into()];
                 let predicator = if let Some(pattern) = &self.pattern {
                     if let Some(important_binding) = &var_content.value {
                         pattern.execute(&important_binding.clone(), state, context, logs)?

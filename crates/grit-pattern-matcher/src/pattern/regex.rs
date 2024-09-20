@@ -81,9 +81,9 @@ impl<Q: QueryContext> RegexPattern<Q> {
 
             // we should really be making the resolved pattern first, and using
             // variable execute, instead of reimplementing here.
-            let variable_content = &mut state.bindings[variable.try_scope().into()]
+            let variable_content = &mut state.bindings[variable.try_scope().unwrap().into()]
                 .back_mut()
-                .unwrap()[variable.try_index().into()];
+                .unwrap()[variable.try_index().unwrap().into()];
 
             if let Some(previous_value) = &variable_content.value {
                 if previous_value
@@ -111,9 +111,9 @@ impl<Q: QueryContext> RegexPattern<Q> {
                         return Ok(false);
                     }
                 }
-                let variable_content = &mut state.bindings[variable.try_scope().into()]
+                let variable_content = &mut state.bindings[variable.try_scope().unwrap().into()]
                     .back_mut()
-                    .unwrap()[variable.try_index().into()];
+                    .unwrap()[variable.try_index().unwrap().into()];
                 variable_content.set_value(res);
             }
         }

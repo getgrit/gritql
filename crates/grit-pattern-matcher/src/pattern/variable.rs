@@ -43,12 +43,34 @@ impl Variable {
         }
     }
 
-    pub fn try_scope(&self) -> u16 {
-        self.scope
+    /// Try to get the scope of the variable, if it has been bound to a scope.
+    /// If the variable has not been bound to a scope, return an error.
+    /// When possible, prefer to use `get_scope()` instead, which will initialize the variable's scope if it is not already bound.
+    pub fn try_scope(&self) -> GritResult<u16> {
+        Ok(self.scope)
     }
 
-    pub fn try_index(&self) -> u16 {
-        self.index
+    /// Try to get the index of the variable, if it has been bound to an index.
+    /// If the variable has not been bound to an index, return an error.
+    /// When possible, prefer to use `get_index()` instead, which will initialize the variable's index if it is not already bound.
+    pub fn try_index(&self) -> GritResult<u16> {
+        Ok(self.index)
+    }
+
+    /// Get the scope of the variable, initializing it if it is not already bound.
+    pub fn get_scope<'a, 'b, Q: QueryContext>(
+        &self,
+        state: &'b mut State<'a, Q>,
+    ) -> GritResult<u16> {
+        self.try_scope()
+    }
+
+    /// Get the index of the variable, initializing it if it is not already bound.
+    pub fn get_index<'a, 'b, Q: QueryContext>(
+        &self,
+        state: &'b mut State<'a, Q>,
+    ) -> GritResult<u16> {
+        self.try_index()
     }
 
     pub fn get_pattern_or_resolved<'a, 'b, Q: QueryContext>(
@@ -56,7 +78,9 @@ impl Variable {
         state: &'b State<'a, Q>,
     ) -> GritResult<Option<PatternOrResolved<'a, 'b, Q>>> {
         let v = state.trace_var(self);
-        let content = &state.bindings[v.try_scope().into()].last().unwrap()[v.try_index().into()];
+        let content = &state.bindings[v.try_scope().unwrap().into()]
+            .last()
+            .unwrap()[v.try_index().unwrap().into()];
         if let Some(pattern) = content.pattern {
             Ok(Some(PatternOrResolved::Pattern(pattern)))
         } else if let Some(resolved) = &content.value {
@@ -70,8 +94,9 @@ impl Variable {
         state: &'b mut State<'a, Q>,
     ) -> GritResult<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
         let v = state.trace_var(self);
-        let content =
-            &mut state.bindings[v.try_scope().into()].back_mut().unwrap()[v.try_index().into()];
+        let content = &mut state.bindings[v.try_scope().unwrap().into()]
+            .back_mut()
+            .unwrap()[v.try_index().unwrap().into()];
         if let Some(pattern) = content.pattern {
             Ok(Some(PatternOrResolvedMut::Pattern(pattern)))
         } else if let Some(resolved) = &mut content.value {
@@ -86,7 +111,8 @@ impl Variable {
     }
 
     pub fn is_file_name(&self) -> bool {
-        self.try_scope() == GLOBAL_VARS_SCOPE_INDEX && self.try_index() as usize == FILENAME_INDEX
+        self.try_scope().unwrap() == GLOBAL_VARS_SCOPE_INDEX
+            && self.try_index().unwrap() as usize == FILENAME_INDEX
     }
 
     pub fn text<'a, Q: QueryContext>(
@@ -94,8 +120,10 @@ impl Variable {
         state: &State<'a, Q>,
         lang: &Q::Language<'a>,
     ) -> GritResult<Cow<'a, str>> {
-        state.bindings[self.try_scope().into()].last().unwrap()[self.try_index().into()]
-            .text(state, lang)
+        state.bindings[self.try_scope().unwrap().into()]
+            .last()
+            .unwrap()[self.try_index().unwrap().into()]
+        .text(state, lang)
     }
 
     fn execute_resolved<'a, Q: QueryContext>(
@@ -108,11 +136,11 @@ impl Variable {
         {
             let variable_content = &mut **(state
                 .bindings
-                .get_mut(self.try_scope().into())
+                .get_mut(self.try_scope().unwrap().into())
                 .unwrap()
                 .back_mut()
                 .unwrap()
-                .get_mut(self.try_index().into())
+                .get_mut(self.try_index().unwrap().into())
                 .unwrap());
             let value = &mut variable_content.value;
 
@@ -131,8 +159,8 @@ impl Variable {
                     value_history.push(ResolvedPattern::from_binding(binding.clone()));
                     variable_mirrors.extend(variable_content.mirrors.iter().map(|mirror| {
                         VariableMirror {
-                            scope: mirror.try_scope(),
-                            index: mirror.try_index(),
+                            scope: mirror.try_scope().unwrap(),
+                            index: mirror.try_index().unwrap(),
                             binding: binding.clone(),
                         }
                     }));
@@ -191,11 +219,11 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
         // via the variable_content variable
         let variable_content = &mut **(state
             .bindings
-            .get_mut(self.try_scope().into())
+            .get_mut(self.try_scope().unwrap().into())
             .unwrap()
             .back_mut()
             .unwrap()
-            .get_mut(self.try_index().into())
+            .get_mut(self.try_index().unwrap().into())
             .unwrap());
         if let Some(pattern) = variable_content.pattern {
             if !pattern.execute(resolved_pattern, state, context, logs)? {
@@ -204,11 +232,11 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
         }
         let variable_content = &mut **(state
             .bindings
-            .get_mut(self.try_scope().into())
+            .get_mut(self.try_scope().unwrap().into())
             .unwrap()
             .back_mut()
             .unwrap()
-            .get_mut(self.try_index().into())
+            .get_mut(self.try_index().unwrap().into())
             .unwrap());
         variable_content.value = Some(resolved_pattern.clone());
         variable_content
