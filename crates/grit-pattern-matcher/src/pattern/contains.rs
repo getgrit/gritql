@@ -92,6 +92,10 @@ impl<Q: QueryContext> Matcher<Q> for Contains<Q> {
         context: &'a Q::ExecContext<'a>,
         logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
+        println!(
+            "executing contains: {:?}, {:?}",
+            resolved_pattern, self.contains
+        );
         if let Some(binding) = resolved_pattern.get_last_binding() {
             if let Some(node) = binding.as_node() {
                 execute_until(

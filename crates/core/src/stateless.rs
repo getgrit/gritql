@@ -60,7 +60,7 @@ mod tests {
     use marzano_language::target_language::TargetLanguage;
 
     use crate::{
-        pattern_compiler::{compiler::NodeCompilationContext, PatternBuilder},
+        pattern_compiler::{compiler::NodeCompilationContext, CompilationResult, PatternBuilder},
         stateless::StatelessCompilerContext,
     };
 
@@ -85,9 +85,9 @@ mod tests {
         let pattern = compiler.parse_snippet("console.log").unwrap();
 
         // Check how the traditional compiler compiles the same snippet
-        let builder = PatternBuilder::start_empty("`console.log`", language);
-
-        // parse_snippet_content(content, range.into(), context, false);
+        let builder =
+            PatternBuilder::start_empty("`console.log`", TargetLanguage::default()).unwrap();
+        let pattern2 = builder.compile(None, None, false).unwrap().root_pattern();
 
         assert_eq!(format!("{:?}", pattern), format!("{:?}", pattern2));
     }

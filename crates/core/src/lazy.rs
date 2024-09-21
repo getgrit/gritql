@@ -84,44 +84,37 @@ mod test {
     }
 
     #[test]
-    fn test_find_pattern_in_callback() {
+    fn test_find_pattern() {
         let src = r#"language js
 
-    `function $name($args) { $body }`"#;
+    function()"#;
         let mut parser = MarzanoGritParser::new().unwrap();
         let src_tree = parser
             .parse_file(src, Some(Path::new(DEFAULT_FILE_NAME)))
             .unwrap();
         let lang = TargetLanguage::from_tree(&src_tree).unwrap();
 
-        let valid_matches = Arc::new(AtomicUsize::new(0));
-        let valid_matches_clone = Arc::clone(&valid_matches);
+        let console_builder =
+            PatternBuilder::start_empty("call_expression()", TargetLanguage::default()).unwrap();
+        let console_pattern = console_builder
+            .compile(None, None, false)
+            .unwrap()
+            .root_pattern();
 
         let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
-        builder = builder.matches_callback(Box::new(move |binding, context, state, logs| {
-            println!(
-                "binding: {:?}",
-                binding.text(&state.files, context.language)
-            );
+        let builder = builder.matches(Pattern::Contains(Box::new(Contains::new(
+            console_pattern,
+            None,
+        ))));
 
-            let pattern = Pattern::Contains(Box::new(Contains::new(
-                StatelessCompilerContext::new(TargetLanguage::default())
-                    // console.log does not work yet
-                    .parse_snippet("console.log")?,
-                None,
-            )));
-
-            if binding.matches(&pattern, state, context, logs).unwrap() {
-                valid_matches_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            }
-
-            Ok(true)
-        }));
         let CompilationResult { problem, .. } = builder.compile(None, None, true).unwrap();
 
-        let test_files = vec![SyntheticFile::new(
-            "file.js".to_owned(),
-            r#"
+        println!("final pattern: {:?}", problem.pattern);
+
+        let test_files = vec![
+            SyntheticFile::new(
+                "file.js".to_owned(),
+                r#"
             function notHere() {
                 console.error("sam");
             }
@@ -129,10 +122,21 @@ mod test {
             function myLogger() {
                 console.log(name);
             }"#
-            .to_owned(),
-            true,
-        )];
-        let _results = run_on_test_files(&problem, &test_files);
-        assert_eq!(valid_matches.load(std::sync::atomic::Ordering::SeqCst), 1);
+                .to_owned(),
+                true,
+            ),
+            SyntheticFile::new(
+                "file.js".to_owned(),
+                r#"
+            function myLogger() {
+                console.error(name);
+            }"#
+                .to_owned(),
+                true,
+            ),
+        ];
+        let results = run_on_test_files(&problem, &test_files);
+        println!("results: {:?}", results);
+        assert_eq!(results.len(), 3);
     }
 }
