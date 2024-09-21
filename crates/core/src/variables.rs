@@ -52,9 +52,6 @@ fn register_variable_optional_range(
     location: Option<FileLocation>,
     context: &mut NodeCompilationContext,
 ) -> Result<Variable> {
-    if name == "$foo" {
-        panic!("Registering variable {:?}", name);
-    }
     let NodeCompilationContext {
         vars,
         vars_array,
