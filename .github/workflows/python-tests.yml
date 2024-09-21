@@ -26,6 +26,7 @@ jobs:
       - name: Install dependencies
         working-directory: python
         run: |
+          uv venv
           uv pip install .
 
       - name: Run tests
