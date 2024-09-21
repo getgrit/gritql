@@ -11,8 +11,6 @@ pub struct PatternDefinition<Q: QueryContext> {
     pub name: String,
     pub scope: usize,
     pub params: Vec<(String, Variable)>,
-    // this could just be a usize representing the len
-    pub local_vars: Vec<usize>,
     pub pattern: Pattern<Q>,
 }
 
@@ -21,14 +19,12 @@ impl<Q: QueryContext> PatternDefinition<Q> {
         name: String,
         scope: usize,
         params: Vec<(String, Variable)>,
-        local_vars: Vec<usize>,
         pattern: Pattern<Q>,
     ) -> Self {
         Self {
             name,
             scope,
             params,
-            local_vars,
             pattern,
         }
     }

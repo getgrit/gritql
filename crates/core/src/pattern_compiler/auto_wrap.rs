@@ -269,7 +269,6 @@ fn extract_limit_pattern<Q: QueryContext>(
                     b.pattern_def.name.clone(),
                     b.pattern_def.scope,
                     b.pattern_def.params.clone(),
-                    b.pattern_def.local_vars.clone(),
                     extracted.0,
                 ),
                 b.args.into_iter().flatten().collect(),
@@ -464,13 +463,8 @@ fn wrap_pattern_in_contains<Q: QueryContext>(
             Some(pattern),
         ))),
     )));
-    let pattern_definition = PatternDefinition::new(
-        "<bubble>".to_string(),
-        context.scope_index,
-        vec![],
-        context.vars.values().cloned().collect(),
-        pattern,
-    );
+    let pattern_definition =
+        PatternDefinition::new("<bubble>".to_string(), context.scope_index, vec![], pattern);
     let bubble = Pattern::Bubble(Box::new(Bubble::new(pattern_definition, vec![])));
     Ok(Pattern::Contains(Box::new(Contains::new(bubble, None))))
 }

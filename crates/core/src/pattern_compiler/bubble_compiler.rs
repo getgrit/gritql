@@ -51,13 +51,8 @@ impl NodeCompiler for BubbleCompiler {
             })
             .collect::<Result<Vec<Pattern<MarzanoQueryContext>>>>()?;
 
-        let pattern_def = PatternDefinition::new(
-            "<bubble>".to_string(),
-            local_scope_index,
-            params,
-            local_vars.values().cloned().collect(),
-            body,
-        );
+        let pattern_def =
+            PatternDefinition::new("<bubble>".to_string(), local_scope_index, params, body);
 
         Ok(Bubble::new(pattern_def, args))
     }

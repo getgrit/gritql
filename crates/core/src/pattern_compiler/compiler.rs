@@ -402,13 +402,7 @@ pub(crate) fn get_definitions(
             };
 
             let body = PatternCompiler::from_node(&bare_pattern, &mut local_context)?;
-            let pattern_def = PatternDefinition::new(
-                name.to_owned(),
-                scope_index,
-                vec![],
-                local_vars.values().cloned().collect(),
-                body,
-            );
+            let pattern_def = PatternDefinition::new(name.to_owned(), scope_index, vec![], body);
             pattern_definitions.push(pattern_def);
         }
     }

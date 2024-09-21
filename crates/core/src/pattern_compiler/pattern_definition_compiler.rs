@@ -42,13 +42,7 @@ impl NodeCompiler for PatternDefinitionCompiler {
             .child_by_field_name("body")
             .ok_or_else(|| anyhow!("missing body of patternDefinition"))?;
         let body = AndCompiler::from_node(&body, &mut context)?;
-        let pattern_def = PatternDefinition::new(
-            name.to_owned(),
-            scope_index,
-            params,
-            local_vars.values().cloned().collect(),
-            body,
-        );
+        let pattern_def = PatternDefinition::new(name.to_owned(), scope_index, params, body);
         Ok(pattern_def)
     }
 }
