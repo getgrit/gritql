@@ -74,7 +74,7 @@ impl PatternCompiler {
     pub(crate) fn from_snippet_node(
         node: NodeWithSource,
         context_range: ByteRange,
-        context: &mut dyn SnippetCompilationContext,
+        context: &mut SnippetCompilationContext,
         is_rhs: bool,
     ) -> Result<Pattern<MarzanoQueryContext>> {
         let snippet_start = node.node.start_byte() as usize;
@@ -85,7 +85,7 @@ impl PatternCompiler {
             node: NodeWithSource,
             context_range: ByteRange,
             range_map: &HashMap<ByteRange, ByteRange>,
-            context: &mut dyn SnippetCompilationContext,
+            context: &mut SnippetCompilationContext,
             is_rhs: bool,
         ) -> Result<Pattern<MarzanoQueryContext>> {
             let sort = node.node.kind_id();
@@ -323,7 +323,7 @@ fn implicit_metavariable_regex<Q: QueryContext>(
     node: &NodeWithSource,
     context_range: ByteRange,
     range_map: &HashMap<ByteRange, ByteRange>,
-    context: &mut dyn SnippetCompilationContext,
+    context: &mut SnippetCompilationContext,
 ) -> Result<Option<RegexPattern<Q>>> {
     let range = node.range();
     let offset = range.start_byte;
@@ -373,7 +373,7 @@ fn metavariable_descendent<Q: QueryContext>(
     node: &NodeWithSource,
     context_range: ByteRange,
     range_map: &HashMap<ByteRange, ByteRange>,
-    context: &mut dyn SnippetCompilationContext,
+    context: &mut SnippetCompilationContext,
     is_rhs: bool,
 ) -> Result<Option<Pattern<Q>>> {
     let mut cursor = node.walk();
@@ -472,7 +472,7 @@ fn text_to_var(
     range: ByteRange,
     context_range: ByteRange,
     range_map: &HashMap<ByteRange, ByteRange>,
-    context: &mut dyn SnippetCompilationContext,
+    context: &mut SnippetCompilationContext,
 ) -> Result<SnippetValues> {
     let name = context
         .get_lang()

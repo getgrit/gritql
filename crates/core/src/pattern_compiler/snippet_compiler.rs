@@ -75,14 +75,19 @@ impl NodeCompiler for LanguageSpecificSnippetCompiler {
             .strip_suffix('"')
             .ok_or_else(|| anyhow!("Unable to extract content from raw snippet: {source}"))?;
 
-        parse_snippet_content(content, range.into(), context, is_rhs)
+        parse_snippet_content(
+            content,
+            range.into(),
+            &mut SnippetCompilationContext::NodeCompiler(context),
+            is_rhs,
+        )
     }
 }
 
 pub(crate) fn dynamic_snippet_from_source(
     raw_source: &str,
     source_range: ByteRange,
-    context: &mut dyn SnippetCompilationContext,
+    context: &mut SnippetCompilationContext,
 ) -> Result<DynamicSnippet> {
     let source_string = raw_source
         .replace("\\n", "\n")
@@ -115,7 +120,7 @@ pub(crate) fn dynamic_snippet_from_source(
 pub(crate) fn parse_snippet_content(
     source: &str,
     range: ByteRange,
-    context: &mut dyn SnippetCompilationContext,
+    context: &mut SnippetCompilationContext,
     is_rhs: bool,
 ) -> Result<Pattern<MarzanoQueryContext>> {
     // we check for CURLY_VAR_REGEX in the content, and if found
