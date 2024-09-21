@@ -382,7 +382,7 @@ pub fn expand_paths(
 // For convenience, we even generate a few `PatternLanguage` methods now.
 macro_rules! generate_target_language {
     ($($language:ident),+) => {
-        #[derive(Debug, Clone)]
+        #[derive(Debug, Clone, Copy)]
         pub enum TargetLanguage {
             $($language($language)),+
         }
