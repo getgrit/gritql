@@ -10,6 +10,7 @@
   "scripts": {
     "test:wasm": "cd wasm-bindings && wasm-pack test --node",
     "test:watch": "nodemon --ext rs --exec \"cargo test --exclude grit-wasm-bindings\"",
-    "lint:clippy": "cargo clippy -- -D warnings"
+    "lint:clippy": "cargo clippy -- -D warnings",
+    "test:python": "cd python/gritql && pytest"
   }
 }

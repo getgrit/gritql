@@ -45,7 +45,7 @@ def find_install() -> Path:
         _debug(f"'grit' found in PATH at {grit_path}")
         return Path(grit_path)
 
-    platform = "apple-darwin" if sys.platform == "darwin" else "linux"
+    platform = "apple-darwin" if sys.platform == "darwin" else "unknown-linux-gnu"
 
     dir_name = _cache_dir() / "grit"
     install_dir = dir_name / ".install"
