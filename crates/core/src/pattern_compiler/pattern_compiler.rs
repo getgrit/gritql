@@ -45,7 +45,6 @@ use super::{
 use crate::problem::MarzanoQueryContext;
 use crate::{
     ast_node::{ASTNode, AstLeafNode},
-    variables::register_variable,
 };
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{

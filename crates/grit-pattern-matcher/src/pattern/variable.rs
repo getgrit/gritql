@@ -106,9 +106,9 @@ impl Variable {
         }
     }
 
-    fn get_internal<'a, 'b, Q: QueryContext>(
+    fn get_internal<Q: QueryContext>(
         &self,
-        state: &'b mut State<'a, Q>,
+        state: &mut State<'_, Q>,
     ) -> GritResult<&VariableScope> {
         match &self.internal {
             VariableInternal::Static(internal) => Ok(internal),
@@ -140,17 +140,17 @@ impl Variable {
     }
 
     /// Get the scope of the variable, initializing it if it is not already bound.
-    pub fn get_scope<'a, 'b, Q: QueryContext>(
+    pub fn get_scope<Q: QueryContext>(
         &self,
-        state: &'b mut State<'a, Q>,
+        state: &mut State<'_, Q>,
     ) -> GritResult<u16> {
         Ok(self.get_internal(state)?.scope)
     }
 
     /// Get the index of the variable, initializing it if it is not already bound.
-    pub fn get_index<'a, 'b, Q: QueryContext>(
+    pub fn get_index<Q: QueryContext>(
         &self,
-        state: &'b mut State<'a, Q>,
+        state: &mut State<'_, Q>,
     ) -> GritResult<u16> {
         Ok(self.get_internal(state)?.index)
     }

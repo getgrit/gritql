@@ -6,13 +6,11 @@ use super::{
 };
 use crate::{
     marzano_code_snippet::MarzanoCodeSnippet, problem::MarzanoQueryContext,
-    variables::register_variable,
 };
 use crate::{pattern_compiler::compiler::NodeCompilationContext, split_snippet::split_snippet};
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
-    constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
-    pattern::{DynamicPattern, DynamicSnippet, DynamicSnippetPart, Pattern, Variable},
+    pattern::{DynamicPattern, DynamicSnippet, DynamicSnippetPart, Pattern},
 };
 use grit_util::{AstNode, ByteRange, Language};
 use marzano_language::{

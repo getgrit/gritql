@@ -101,7 +101,7 @@ mod test {
         builder = builder.matches_callback(Box::new(move |binding, context, state, logs| {
             println!(
                 "binding: {:?}",
-                binding.text(&state.files, &context.language)
+                binding.text(&state.files, context.language)
             );
 
             let pattern = Pattern::Contains(Box::new(Contains::new(
