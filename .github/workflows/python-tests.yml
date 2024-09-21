@@ -27,7 +27,7 @@ jobs:
         working-directory: python
         run: |
           uv venv
-          uv pip install .
+          uv pip install '.[dev]'
 
       - name: Run tests
         working-directory: python
