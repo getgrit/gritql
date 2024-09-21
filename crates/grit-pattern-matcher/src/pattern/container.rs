@@ -43,8 +43,10 @@ impl<Q: QueryContext> Container<Q> {
     ) -> GritResult<bool> {
         match self {
             Container::Variable(v) => {
-                let var = state.trace_var(v);
-                let content = &mut state.bindings[var.try_scope().unwrap().into()].back_mut().unwrap()[var.try_index().unwrap().into()];
+                let var = state.trace_var_mut(v);
+                let content = &mut state.bindings[var.try_scope().unwrap().into()]
+                    .back_mut()
+                    .unwrap()[var.try_index().unwrap().into()];
                 match content.pattern {
                     Some(Pattern::Accessor(a)) => a.set_resolved(state, lang, value),
                     Some(Pattern::ListIndex(l)) => l.set_resolved(state, lang, value),

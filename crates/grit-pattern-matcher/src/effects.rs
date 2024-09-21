@@ -22,7 +22,7 @@ pub fn insert_effect<'a, Q: QueryContext>(
 ) -> GritResult<bool> {
     match left {
         PatternOrResolved::Pattern(Pattern::Variable(var)) => {
-            let var = state.trace_var(var);
+            let var = state.trace_var_mut(var);
             if let Some(base) = state.bindings[var.try_scope().unwrap().into()]
                 .back_mut()
                 .unwrap()[var.try_index().unwrap().into()]

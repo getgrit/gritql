@@ -175,7 +175,7 @@ impl Variable {
         &self,
         state: &'b mut State<'a, Q>,
     ) -> GritResult<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
-        let v = state.trace_var(self);
+        let v = state.trace_var_mut(self);
         let content = &mut state.bindings[v.try_scope().unwrap().into()]
             .back_mut()
             .unwrap()[v.try_index().unwrap().into()];
