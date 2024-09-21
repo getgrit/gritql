@@ -27,7 +27,7 @@ fn language() -> TSLanguage {
     tree_sitter_php::language_php_only().into()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct PhpOnly {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,

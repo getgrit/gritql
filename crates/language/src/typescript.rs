@@ -28,7 +28,7 @@ fn language() -> TSLanguage {
     tree_sitter_typescript::language_typescript().into()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct TypeScript {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,

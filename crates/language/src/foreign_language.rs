@@ -4,7 +4,7 @@ use std::{
     fmt::{Display, Formatter},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum ForeignLanguage {
     JavaScript,
 }

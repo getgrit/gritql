@@ -18,7 +18,7 @@ fn language() -> TSLanguage {
     tree_sitter_hcl::language().into()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Hcl {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,

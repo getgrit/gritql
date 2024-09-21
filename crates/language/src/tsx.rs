@@ -29,7 +29,7 @@ fn language() -> TSLanguage {
     tree_sitter_typescript::language_tsx().into()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Tsx {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,

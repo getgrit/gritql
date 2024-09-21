@@ -12,6 +12,7 @@ use crate::{
 
 /// As opposed to our standard StatelessCompiler,
 /// the StatelessCompiler can handle snippets without needing to maintain scopes
+#[derive(Clone)]
 pub struct StatelessCompilerContext {
     lang: TargetLanguage,
 }
@@ -58,10 +59,7 @@ impl SnippetCompilationContext for StatelessCompilerContext {
 mod tests {
     use marzano_language::target_language::TargetLanguage;
 
-    use crate::{
-        pattern_compiler::{PatternBuilder},
-        stateless::StatelessCompilerContext,
-    };
+    use crate::{pattern_compiler::PatternBuilder, stateless::StatelessCompilerContext};
 
     #[test]
     fn test_stateless_snippet_compiler_self_equivalence() {
