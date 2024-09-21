@@ -10,7 +10,7 @@ use super::{
     before_compiler::BeforeCompiler,
     bubble_compiler::BubbleCompiler,
     call_compiler::CallCompiler,
-    compiler::NodeCompilationContext,
+    compiler::{NodeCompilationContext, SnippetCompilationContext},
     constant_compiler::{
         BooleanConstantCompiler, FloatConstantCompiler, IntConstantCompiler, StringConstantCompiler,
     },
@@ -74,25 +74,25 @@ impl PatternCompiler {
     pub(crate) fn from_snippet_node(
         node: NodeWithSource,
         context_range: ByteRange,
-        context: &mut NodeCompilationContext,
+        context: &mut dyn SnippetCompilationContext,
         is_rhs: bool,
     ) -> Result<Pattern<MarzanoQueryContext>> {
         let snippet_start = node.node.start_byte() as usize;
-        let ranges = metavariable_ranges(&node, context.compilation.lang);
+        let ranges = metavariable_ranges(&node, context.get_lang());
         let range_map = metavariable_range_mapping(ranges, snippet_start);
 
         fn node_to_astnode(
             node: NodeWithSource,
             context_range: ByteRange,
             range_map: &HashMap<ByteRange, ByteRange>,
-            context: &mut NodeCompilationContext,
+            context: &mut dyn SnippetCompilationContext,
             is_rhs: bool,
         ) -> Result<Pattern<MarzanoQueryContext>> {
             let sort = node.node.kind_id();
             // probably safe to assume node is named, but just in case
             // maybe doesn't even matter, but is what I expect,
             // make this ann assertion?
-            let node_types = context.compilation.lang.node_types();
+            let node_types = context.get_lang().node_types();
             let metavariable =
                 metavariable_descendent(&node, context_range, range_map, context, is_rhs)?;
             if let Some(metavariable) = metavariable {
@@ -380,15 +380,15 @@ fn metavariable_descendent<Q: QueryContext>(
     node: &NodeWithSource,
     context_range: ByteRange,
     range_map: &HashMap<ByteRange, ByteRange>,
-    context: &mut NodeCompilationContext,
+    context: &mut dyn SnippetCompilationContext,
     is_rhs: bool,
 ) -> Result<Option<Pattern<Q>>> {
     let mut cursor = node.walk();
     loop {
         let node = cursor.node();
-        if context.compilation.lang.is_metavariable(&node) {
+        if context.get_lang().is_metavariable(&node) {
             let name = node.text()?;
-            if is_reserved_metavariable(name.trim(), Some(context.compilation.lang)) && !is_rhs {
+            if is_reserved_metavariable(name.trim(), Some(context.get_lang())) && !is_rhs {
                 bail!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", name.trim_start_matches(context.compilation.lang.metavariable_prefix_substitute()));
             }
             let range = node.byte_range();
@@ -479,11 +479,10 @@ fn text_to_var(
     range: ByteRange,
     context_range: ByteRange,
     range_map: &HashMap<ByteRange, ByteRange>,
-    context: &mut NodeCompilationContext,
+    context: &mut dyn SnippetCompilationContext,
 ) -> Result<SnippetValues> {
     let name = context
-        .compilation
-        .lang
+        .get_lang()
         .snippet_metavariable_to_grit_metavariable(name)
         .ok_or_else(|| anyhow!("metavariable |{}| not found in snippet", name))?;
     match name {
@@ -500,8 +499,7 @@ fn text_to_var(
                         .collect::<Vec<_>>()
                 )
             })?;
-            // let var = Variable::new_dynamic(&name);
-            let var = register_variable(&name, range + context_range.start, context)?;
+            let var = context.register_variable(&name, Some(range + context_range.start))?;
             Ok(SnippetValues::Variable(var))
         }
     }

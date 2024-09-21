@@ -12,6 +12,7 @@ use crate::{
     built_in_functions::BuiltIns,
     foreign_function_definition::ForeignFunctionDefinition,
     problem::{MarzanoQueryContext, Problem},
+    variables::{register_variable, register_variable_optional_range, FileLocation},
 };
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
@@ -43,11 +44,13 @@ use tracing::instrument;
 pub trait SnippetCompilationContext {
     fn get_lang(&self) -> &TargetLanguage;
 
-    fn register_variable(
+    fn register_snippet_variable(
         &mut self,
         name: &str,
         source_range: Option<ByteRange>,
     ) -> Result<DynamicSnippetPart>;
+
+    fn register_variable(&mut self, name: &str, range: Option<ByteRange>) -> Result<Variable>;
 }
 
 pub(crate) struct CompilationContext<'a> {
@@ -91,50 +94,49 @@ impl<'a> SnippetCompilationContext for NodeCompilationContext<'a> {
         self.compilation.lang
     }
 
-    fn register_variable(
+    fn register_snippet_variable(
         &mut self,
         name: &str,
         source_range: Option<ByteRange>,
     ) -> Result<DynamicSnippetPart> {
+        let Some(source_range) = source_range else {
+            bail!("source_range is required for registering a variable with the NodeCompilationContext");
+        };
         if let Some(registered_var_index) = self.vars.get(name) {
-            if let Some(source_range) = source_range {
-                self.vars_array[self.scope_index][*registered_var_index]
-                    .locations
-                    .insert(source_range);
-            }
+            self.vars_array[self.scope_index][*registered_var_index]
+                .locations
+                .insert(source_range);
             Ok(DynamicSnippetPart::Variable(Variable::new(
                 self.scope_index,
                 *registered_var_index,
             )))
         } else if let Some(global_var_index) = self.global_vars.get(name) {
             if self.compilation.file == DEFAULT_FILE_NAME {
-                if let Some(range) = source_range {
-                    self.vars_array[GLOBAL_VARS_SCOPE_INDEX as usize][*global_var_index]
-                        .locations
-                        .insert(range);
-                }
+                self.vars_array[GLOBAL_VARS_SCOPE_INDEX as usize][*global_var_index]
+                    .locations
+                    .insert(source_range);
             }
             Ok(DynamicSnippetPart::Variable(Variable::new(
                 GLOBAL_VARS_SCOPE_INDEX as usize,
                 *global_var_index,
             )))
         } else if name.starts_with("$GLOBAL_") {
-            let new_index = self.vars_array[GLOBAL_VARS_SCOPE_INDEX as usize].len();
-            self.vars_array[GLOBAL_VARS_SCOPE_INDEX as usize]
-                .push(VariableSourceLocations::default());
-            self.global_vars.insert(name.to_string(), new_index);
-            if let Some(range) = source_range {
-                self.vars_array[GLOBAL_VARS_SCOPE_INDEX as usize][new_index]
-                    .locations
-                    .insert(range);
-            }
-            Ok(DynamicSnippetPart::Variable(Variable::new(
-                GLOBAL_VARS_SCOPE_INDEX as usize,
-                new_index,
-            )))
+            let variable = register_variable(name, source_range, self)?;
+            Ok(DynamicSnippetPart::Variable(variable))
         } else {
             bail!("Could not find variable {name} in this context")
         }
+    }
+
+    fn register_variable(&mut self, name: &str, range: Option<ByteRange>) -> Result<Variable> {
+        register_variable_optional_range(
+            name,
+            range.map(|r| FileLocation {
+                range: r,
+                file_name: self.compilation.file,
+            }),
+            self,
+        )
     }
 }
 
