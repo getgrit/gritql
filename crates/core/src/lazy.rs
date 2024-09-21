@@ -25,7 +25,7 @@ mod test {
         }
     }
 
-    `console.log($foo)` as $bar"#;
+    `console.log($foo)` as $bar where $foo <: contains this_thing()"#;
         let mut parser = MarzanoGritParser::new().unwrap();
         let src_tree = parser
             .parse_file(src, Some(Path::new(DEFAULT_FILE_NAME)))
@@ -43,8 +43,8 @@ mod test {
             assert!(state.find_var_in_scope("$bar").is_some());
             assert!(state.find_var_in_scope("$dude").is_none());
             assert!(state.find_var_in_scope("$baz").is_none());
-            // let _registered_var = state.register_var("fuzz");
-            // assert!(state.find_var_in_scope("fuzz").is_some());
+            let _registered_var = state.register_var("fuzz");
+            assert!(state.find_var_in_scope("fuzz").is_some());
 
             let pattern = Pattern::Contains(Box::new(Contains::new(
                 Pattern::<MarzanoQueryContext>::StringConstant(StringConstant::new(

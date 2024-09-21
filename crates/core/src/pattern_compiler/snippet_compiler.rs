@@ -103,7 +103,14 @@ pub(crate) fn dynamic_snippet_from_source(
             source_range.start + byte_range.start,
             source_range.start + byte_range.start + var.len(),
         );
-        if let Some(var) = context.global_vars.get(var.as_ref()) {
+        if let Some(registered_var_index) = context.vars.get(var.as_ref()) {
+            context.vars_array[context.scope_index][*registered_var_index]
+                .locations
+                .insert(range);
+            parts.push(DynamicSnippetPart::Variable(Variable::new_dynamic(
+                var.as_ref(),
+            )))
+        } else if let Some(var) = context.global_vars.get(var.as_ref()) {
             if context.compilation.file == DEFAULT_FILE_NAME {
                 context.vars_array[GLOBAL_VARS_SCOPE_INDEX as usize][*var]
                     .locations
@@ -113,14 +120,6 @@ pub(crate) fn dynamic_snippet_from_source(
                 GLOBAL_VARS_SCOPE_INDEX as usize,
                 *var,
             )));
-        } else if let Some(registered_var_index) = context.vars.get(var.as_ref()) {
-            println!("REGISTER {} at {:?}", var, registered_var_index);
-            context.vars_array[context.scope_index][*registered_var_index]
-                .locations
-                .insert(range);
-            parts.push(DynamicSnippetPart::Variable(Variable::new_dynamic(
-                var.as_ref(),
-            )))
         } else if var.starts_with("$GLOBAL_") {
             let variable = register_variable(&var, range, context)?;
             parts.push(DynamicSnippetPart::Variable(variable));

@@ -102,8 +102,8 @@ fn register_variable_optional_range(
     });
 
     // if name == "$foo" {
-    // println!("Registering variable {}", name);
-    return Ok(Variable::new_dynamic(name));
+    //     println!("Registering variable {}", name);
+    //     return Ok(Variable::new_dynamic(name));
     // };
 
     Ok(Variable::new(scope_index as usize, index))

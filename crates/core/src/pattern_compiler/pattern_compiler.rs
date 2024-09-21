@@ -500,8 +500,8 @@ fn text_to_var(
                         .collect::<Vec<_>>()
                 )
             })?;
-            let var = Variable::new_dynamic(&name);
-            // let var = register_variable(&name, range + context_range.start, context)?;
+            // let var = Variable::new_dynamic(&name);
+            let var = register_variable(&name, range + context_range.start, context)?;
             Ok(SnippetValues::Variable(var))
         }
     }
