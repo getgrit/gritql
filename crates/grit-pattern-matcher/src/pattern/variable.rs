@@ -113,7 +113,6 @@ impl Variable {
         match &self.internal {
             VariableInternal::Static(internal) => Ok(internal),
             VariableInternal::Dynamic(lock) => {
-                println!("GET DYNAMIC: {:?}", lock.name);
                 let internal = lock.scope.get_or_init(|| {
                     let (scope, index) = state.register_var(&lock.name);
                     VariableScope {

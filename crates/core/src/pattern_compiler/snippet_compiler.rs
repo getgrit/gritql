@@ -118,10 +118,9 @@ pub(crate) fn dynamic_snippet_from_source(
             context.vars_array[context.scope_index][*registered_var_index]
                 .locations
                 .insert(range);
-            parts.push(DynamicSnippetPart::Variable(Variable::new(
-                context.scope_index,
-                *registered_var_index,
-            )));
+            parts.push(DynamicSnippetPart::Variable(Variable::new_dynamic(
+                var.as_ref(),
+            )))
         } else if var.starts_with("$GLOBAL_") {
             let variable = register_variable(&var, range, context)?;
             parts.push(DynamicSnippetPart::Variable(variable));

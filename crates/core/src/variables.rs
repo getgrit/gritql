@@ -52,6 +52,9 @@ fn register_variable_optional_range(
     location: Option<FileLocation>,
     context: &mut NodeCompilationContext,
 ) -> Result<Variable> {
+    if name == "$foo" {
+        panic!("Registering variable {:?}", name);
+    }
     let NodeCompilationContext {
         vars,
         vars_array,
@@ -100,9 +103,11 @@ fn register_variable_optional_range(
         file,
         locations,
     });
-    println!("Registering variable {}", name);
-    if name == "$foo" {
-        return Ok(Variable::new_dynamic(name));
-    }
+
+    // if name == "$foo" {
+    // println!("Registering variable {}", name);
+    return Ok(Variable::new_dynamic(name));
+    // };
+
     Ok(Variable::new(scope_index as usize, index))
 }

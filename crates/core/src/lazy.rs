@@ -25,7 +25,7 @@ mod test {
         }
     }
 
-    `console.log($foo)` as $bar where $foo <: contains this_thing()"#;
+    `console.log($foo)` as $bar"#;
         let mut parser = MarzanoGritParser::new().unwrap();
         let src_tree = parser
             .parse_file(src, Some(Path::new(DEFAULT_FILE_NAME)))
