@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use grit_pattern_matcher::pattern::{Contains, DynamicSnippetPart, Pattern, Variable};
+use grit_pattern_matcher::pattern::{DynamicSnippetPart, Pattern, Variable};
 use grit_util::ByteRange;
 use marzano_language::target_language::TargetLanguage;
 
@@ -59,7 +59,7 @@ mod tests {
     use marzano_language::target_language::TargetLanguage;
 
     use crate::{
-        pattern_compiler::{compiler::NodeCompilationContext, CompilationResult, PatternBuilder},
+        pattern_compiler::{PatternBuilder},
         stateless::StatelessCompilerContext,
     };
 
