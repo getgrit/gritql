@@ -15,7 +15,42 @@ use grit_util::FileRange;
 use log::debug;
 use std::collections::BTreeMap;
 
-pub(super) fn auto_wrap_pattern<Q: QueryContext>(
+// TODO: implement a floating bubble for this to work
+// pub(crate) fn auto_wrap_standalone_pattern<Q: QueryContext>(
+//     pattern: Pattern<Q>,
+//     pattern_definitions: &mut [PatternDefinition<Q>],
+//     context: &mut NodeCompilationContext,
+//     injected_limit: Option<usize>,
+// ) -> Result<Pattern<Q>> {
+//     let is_sequential = is_sequential(&pattern, pattern_definitions);
+//     let should_wrap_in_sequential = !is_sequential;
+//     let should_wrap_in_contains = should_autowrap(&pattern, pattern_definitions);
+//     let should_wrap_in_file = should_wrap_in_file(&pattern, pattern_definitions);
+//     let (pattern, extracted_limit) = if should_wrap_in_contains && should_wrap_in_file {
+//         extract_limit_pattern(pattern, pattern_definitions)
+//     } else {
+//         (pattern, None)
+//     };
+
+//     let first_wrap = if should_wrap_in_contains {
+//         wrap_pattern_in_contains(MATCH_VAR, pattern, context)?
+//     } else {
+//         pattern
+//     };
+//     let second_wrap = if should_wrap_in_file {
+//         wrap_pattern_in_file(first_wrap)?
+//     } else {
+//         first_wrap
+//     };
+
+//     if should_wrap_in_sequential {
+//         Ok(Pattern::Sequential(vec![Step { pattern }].into()))
+//     } else {
+//         Ok(pattern)
+//     }
+// }
+
+pub(crate) fn auto_wrap_pattern<Q: QueryContext>(
     pattern: Pattern<Q>,
     pattern_definitions: &mut [PatternDefinition<Q>],
     is_not_multifile: bool,
@@ -75,7 +110,7 @@ pub(super) fn auto_wrap_pattern<Q: QueryContext>(
     }
 }
 
-fn is_sequential<Q: QueryContext>(
+pub fn is_sequential<Q: QueryContext>(
     pattern: &Pattern<Q>,
     pattern_definitions: &[PatternDefinition<Q>],
 ) -> bool {
@@ -300,7 +335,7 @@ fn extract_limit_pattern<Q: QueryContext>(
     }
 }
 
-fn should_wrap_in_file<Q: QueryContext>(
+pub fn should_wrap_in_file<Q: QueryContext>(
     pattern: &Pattern<Q>,
     pattern_definitions: &[PatternDefinition<Q>],
 ) -> bool {

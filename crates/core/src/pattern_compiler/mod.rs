@@ -28,7 +28,7 @@ pub(crate) mod any_compiler;
 pub(crate) mod as_compiler;
 pub(crate) mod assignment_compiler;
 pub(crate) mod ast_node_compiler;
-mod auto_wrap;
+pub(crate) mod auto_wrap;
 pub(crate) mod back_tick_compiler;
 pub(crate) mod before_compiler;
 pub(crate) mod bubble_compiler;

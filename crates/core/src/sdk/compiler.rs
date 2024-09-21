@@ -12,19 +12,17 @@ use crate::{
 
 /// As opposed to our standard StatelessCompiler,
 /// the StatelessCompiler can handle snippets without needing to maintain scopes
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct StatelessCompilerContext {
     lang: TargetLanguage,
 }
 
 impl StatelessCompilerContext {
-    #[allow(dead_code)]
     pub fn new(lang: TargetLanguage) -> Self {
         Self { lang }
     }
 
     /// Parse a snippet of code and returns a pattern
-    #[allow(dead_code)]
     pub fn parse_snippet(&mut self, content: &str) -> Result<Pattern<MarzanoQueryContext>> {
         let range = ByteRange::new(0, content.len());
         let snippet = parse_snippet_content(content, range, self, false)?;

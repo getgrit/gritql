@@ -121,8 +121,7 @@ fn send(tx: &Sender<Vec<MatchResult>>, value: Vec<MatchResult>) {
 
 impl Problem {
     #[allow(clippy::too_many_arguments)]
-    pub(crate) fn new_from_tree(
-        tree: Tree,
+    pub(crate) fn new_from_pattern(
         pattern: Pattern<MarzanoQueryContext>,
         language: TargetLanguage,
         built_ins: BuiltIns,
@@ -151,7 +150,7 @@ impl Problem {
         let hash = hasher.finalize().into();
 
         Self {
-            tree: Some(tree),
+            tree: None,
             pattern,
             language,
             built_ins,
@@ -165,6 +164,38 @@ impl Problem {
             function_definitions,
             foreign_function_definitions,
         }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn new_from_tree(
+        tree: Tree,
+        pattern: Pattern<MarzanoQueryContext>,
+        language: TargetLanguage,
+        built_ins: BuiltIns,
+        is_multifile: bool,
+        has_limit: bool,
+        name: Option<String>,
+        variables: VariableLocations,
+        pattern_definitions: Vec<PatternDefinition<MarzanoQueryContext>>,
+        predicate_definitions: Vec<PredicateDefinition<MarzanoQueryContext>>,
+        function_definitions: Vec<GritFunctionDefinition<MarzanoQueryContext>>,
+        foreign_function_definitions: Vec<ForeignFunctionDefinition>,
+    ) -> Self {
+        let mut problem = Self::new_from_pattern(
+            pattern,
+            language,
+            built_ins,
+            is_multifile,
+            has_limit,
+            name,
+            variables,
+            pattern_definitions,
+            predicate_definitions,
+            function_definitions,
+            foreign_function_definitions,
+        );
+        problem.tree = Some(tree);
+        problem
     }
 
     fn build_and_execute_resolved_pattern(

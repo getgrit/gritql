@@ -35,7 +35,7 @@ use std::{collections::BTreeMap, path::Path, vec};
 /// Pattern Builder allows you to progressively compile a pattern.
 /// You always start with a source GritQL string, but additional patterns can be attached before the final query.
 pub struct PatternBuilder {
-    tree: Tree,
+    tree: Option<Tree>,
     pattern: Pattern<MarzanoQueryContext>,
     language: TargetLanguage,
     built_ins: BuiltIns,
@@ -75,6 +75,116 @@ impl PatternBuilder {
         )
     }
 
+    pub fn build_standard_global_vars() -> BTreeMap<String, usize> {
+        BTreeMap::from([
+            ("$new_files".to_owned(), NEW_FILES_INDEX),
+            ("$filename".to_owned(), FILENAME_INDEX),
+            ("$program".to_owned(), PROGRAM_INDEX),
+            ("$absolute_filename".to_owned(), ABSOLUTE_PATH_INDEX),
+        ])
+    }
+
+    // #[allow(clippy::too_many_arguments)]
+    // pub fn new_from_pattern(
+    //     pattern: Pattern<MarzanoQueryContext>,
+    //     libs: &BTreeMap<String, String>,
+    //     lang: TargetLanguage,
+    //     name: Option<String>,
+    //     grit_parser: &mut MarzanoGritParser,
+    //     custom_built_ins: Option<BuiltIns>,
+    // ) -> Result<Self> {
+    //     let mut built_ins = BuiltIns::get_built_in_functions();
+    //     if let Some(custom_built_ins) = custom_built_ins {
+    //         built_ins.extend_builtins(custom_built_ins)?;
+    //     }
+    //     let mut logs: AnalysisLogs = vec![].into();
+    //     let mut global_vars = Self::build_standard_global_vars();
+
+    //     let is_multifile = false;
+    //     let has_limit = false;
+
+    //     let pattern_definition_indices = BTreeMap::new();
+    //     let predicate_definition_indices = BTreeMap::new();
+    //     let function_definition_indices = BTreeMap::new();
+    //     let foreign_function_indices = BTreeMap::new();
+
+    //     let context = CompilationContext {
+    //         file: DEFAULT_FILE_NAME,
+    //         built_ins: &built_ins,
+    //         lang: &lang,
+    //         pattern_definition_info: &pattern_definition_indices,
+    //         predicate_definition_info: &predicate_definition_indices,
+    //         function_definition_info: &function_definition_indices,
+    //         foreign_function_definition_info: &foreign_function_indices,
+    //     };
+
+    //     let DefinitionOutput {
+    //         mut vars_array,
+    //         pattern_definitions,
+    //         predicate_definitions,
+    //         function_definitions,
+    //         foreign_function_definitions,
+    //     } = get_definitions(
+    //         &libs,
+    //         &root,
+    //         grit_parser,
+    //         &context,
+    //         &mut global_vars,
+    //         &mut logs,
+    //     )?;
+    //     let scope_index = vars_array.len();
+    //     vars_array.push(vec![]);
+    //     let mut vars = BTreeMap::new();
+
+    //     let mut node_context = NodeCompilationContext {
+    //         compilation: &context,
+    //         vars: &mut vars,
+    //         vars_array: &mut vars_array,
+    //         scope_index,
+    //         global_vars: &mut global_vars,
+    //         logs: &mut logs,
+    //     };
+
+    //     let pattern = if let Some(node) = root.child_by_field_name("pattern") {
+    //         PatternCompiler::from_node(&node, &mut node_context)?
+    //     } else {
+    //         let long_message = "No pattern found.
+    //     If you have written a pattern definition in the form `pattern myPattern() {{ }}`,
+    //     try calling it by adding `myPattern()` to the end of your file.
+    //     Check out the docs at https://docs.grit.io for help with writing patterns.";
+    //         bail!("{}", long_message);
+    //     };
+
+    //     Ok(Self {
+    //         tree: Some(src_tree),
+    //         pattern,
+    //         language: lang,
+    //         built_ins,
+    //         is_multifile,
+    //         has_limit,
+    //         name,
+
+    //         current_scope_index: scope_index,
+    //         vars,
+    //         vars_array,
+    //         global_vars,
+
+    //         pattern_definition_indices,
+    //         pattern_definitions,
+
+    //         predicate_definition_indices,
+    //         predicate_definitions,
+
+    //         function_definition_indices,
+    //         function_definitions,
+
+    //         foreign_function_indices,
+    //         foreign_function_definitions,
+
+    //         compilation_warnings: logs,
+    //     })
+    // }
+
     #[allow(clippy::too_many_arguments)]
     pub fn start(
         src: String,
@@ -96,12 +206,7 @@ impl PatternBuilder {
             built_ins.extend_builtins(custom_built_ins)?;
         }
         let mut logs: AnalysisLogs = vec![].into();
-        let mut global_vars = BTreeMap::from([
-            ("$new_files".to_owned(), NEW_FILES_INDEX),
-            ("$filename".to_owned(), FILENAME_INDEX),
-            ("$program".to_owned(), PROGRAM_INDEX),
-            ("$absolute_filename".to_owned(), ABSOLUTE_PATH_INDEX),
-        ]);
+        let mut global_vars = Self::build_standard_global_vars();
         let is_multifile = is_multifile(&root, libs, grit_parser)?;
         let has_limit = has_limit(&root, libs, grit_parser)?;
         let libs = filter_libs(libs, &src, grit_parser, !is_multifile)?;
@@ -160,7 +265,7 @@ impl PatternBuilder {
         };
 
         Ok(Self {
-            tree: src_tree,
+            tree: Some(src_tree),
             pattern,
             language: lang,
             built_ins,
@@ -285,8 +390,12 @@ impl PatternBuilder {
         } else {
             self
         };
+        let Some(tree) = target_builder.tree else {
+            bail!("Tree must be provided to compile a pattern");
+        };
+
         let problem = Problem::new_from_tree(
-            target_builder.tree,
+            tree,
             target_builder.pattern,
             target_builder.language,
             target_builder.built_ins,
