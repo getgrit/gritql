@@ -104,7 +104,7 @@ pub(crate) fn dynamic_snippet_from_source(
             source_range.start + byte_range.start,
             source_range.start + byte_range.start + var.len(),
         );
-        let part = context.register_variable(&var, Some(range))?;
+        let part = context.register_snippet_variable(&var, Some(range))?;
         parts.push(part);
         last = byte_range.end;
     }
@@ -149,7 +149,7 @@ pub(crate) fn parse_snippet_content(
                 "$_" => return Ok(Pattern::Underscore),
                 "^_" => return Ok(Pattern::Underscore),
                 name => {
-                    let var = register_variable(name, range, context)?;
+                    let var = context.register_variable(name, Some(range))?;
                     return Ok(Pattern::Variable(var));
                 }
             }
