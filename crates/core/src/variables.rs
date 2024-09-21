@@ -101,7 +101,15 @@ fn register_variable_optional_range(
         Ok(Variable::new(scope_index as usize, index))
     } else {
         // TODO: replicate VariableSourceLocations for local vars
-        // Ok(Variable::new_dynamic(name))
-        Ok(Variable::new(scope_index as usize, index))
+        let scope = &mut vars_array[*scope_index as usize];
+        let index = scope.len();
+        scope.push(VariableSourceLocations {
+            name: name.to_owned(),
+            file: DEFAULT_FILE_NAME.to_owned(),
+            locations: BTreeSet::new(),
+        });
+        let var = Variable::new(*scope_index as usize, index);
+
+        Ok(var)
     }
 }

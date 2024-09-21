@@ -13,7 +13,11 @@ use core::fmt::Debug;
 use grit_util::{
     constants::GRIT_METAVARIABLE_PREFIX, error::GritResult, AnalysisLogs, ByteRange, Language,
 };
-use std::{borrow::Cow, collections::BTreeSet, sync::OnceLock};
+use std::{
+    borrow::Cow,
+    collections::BTreeSet,
+    sync::{Arc, OnceLock},
+};
 
 #[derive(Debug, Clone)]
 struct VariableScope {
@@ -24,7 +28,8 @@ struct VariableScope {
 #[derive(Debug, Clone)]
 struct DynamicVariableInternal {
     name: String,
-    scope: OnceLock<VariableScope>,
+    // All copies of a variable should share the same scope/index
+    scope: Arc<OnceLock<VariableScope>>,
 }
 
 #[derive(Debug, Clone)]
@@ -69,7 +74,7 @@ impl Variable {
         Self {
             internal: VariableInternal::Dynamic(DynamicVariableInternal {
                 name: name.to_string(),
-                scope: OnceLock::new(),
+                scope: Arc::new(OnceLock::new()),
             }),
         }
     }
@@ -81,9 +86,10 @@ impl Variable {
                 let internal =
                     lock.scope
                         .get()
-                        .ok_or(grit_util::error::GritPatternError::new_matcher(
-                            "variable not initialized",
-                        ))?;
+                        .ok_or(grit_util::error::GritPatternError::new_matcher(format!(
+                            "variable {} not initialized",
+                            lock.name,
+                        )))?;
                 Ok(internal)
             }
         }
@@ -208,7 +214,7 @@ impl Variable {
                 "Scope: {:?}, Index: {:?}, bindings: {:?}",
                 scope,
                 index,
-                state.bindings[scope.into()].back_mut()
+                state.bindings.get_mut(scope.into())
             );
             let variable_content = &mut **(state
                 .bindings

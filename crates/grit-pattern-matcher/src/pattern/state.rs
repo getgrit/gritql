@@ -319,9 +319,10 @@ impl<'a, Q: QueryContext> State<'a, Q> {
 
     pub fn register_var(&mut self, name: &str) -> (usize, usize) {
         let scope = self.current_scope;
-        let index = self.bindings[self.current_scope].len();
-        self.bindings[self.current_scope]
-            .push_back(vector![Box::new(VariableContent::new(name.to_string()))]);
+        let the_scope = self.bindings[self.current_scope].back_mut().unwrap();
+        let index = the_scope.len();
+
+        the_scope.push_back(Box::new(VariableContent::new(name.to_string())));
         (scope, index)
     }
 
