@@ -1,6 +1,5 @@
 use super::{
-    compiler::{NodeCompilationContext, SnippetCompilationContext},
-    node_compiler::NodeCompiler,
+    compiler::NodeCompilationContext, node_compiler::NodeCompiler,
     snippet_compiler::parse_snippet_content,
 };
 use crate::problem::MarzanoQueryContext;
@@ -27,12 +26,7 @@ impl NodeCompiler for BackTickCompiler {
             .ok_or_else(|| anyhow!("Unable to extract content from snippet: {source}"))?
             .strip_suffix('`')
             .ok_or_else(|| anyhow!("Unable to extract content from snippet: {source}"))?;
-        parse_snippet_content(
-            content,
-            range.into(),
-            &mut SnippetCompilationContext::NodeCompiler(context),
-            is_rhs,
-        )
+        parse_snippet_content(content, range.into(), context, is_rhs)
     }
 }
 
@@ -58,11 +52,6 @@ impl NodeCompiler for RawBackTickCompiler {
             .ok_or_else(|| anyhow!("Unable to extract content from raw snippet: {}", source))?
             .strip_suffix('`')
             .ok_or_else(|| anyhow!("Unable to extract content from raw snippet: {}", source))?;
-        parse_snippet_content(
-            content,
-            range.into(),
-            &mut SnippetCompilationContext::NodeCompiler(context),
-            is_rhs,
-        )
+        parse_snippet_content(content, range.into(), context, is_rhs)
     }
 }
