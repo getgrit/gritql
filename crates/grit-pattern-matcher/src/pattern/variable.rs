@@ -11,7 +11,9 @@ use crate::{
 };
 use core::fmt::Debug;
 use grit_util::{
-    constants::GRIT_METAVARIABLE_PREFIX, error::GritResult, AnalysisLogs, ByteRange, Language,
+    constants::GRIT_METAVARIABLE_PREFIX,
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, ByteRange, Language,
 };
 use std::{
     borrow::Cow,
@@ -20,9 +22,18 @@ use std::{
 };
 
 #[derive(Debug, Clone)]
-struct VariableScope {
-    scope: u16,
-    index: u16,
+pub(crate) struct VariableScope {
+    pub(crate) scope: u16,
+    pub(crate) index: u16,
+}
+
+impl VariableScope {
+    pub fn new(scope: usize, index: usize) -> Self {
+        Self {
+            scope: scope as u16,
+            index: index as u16,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -82,16 +93,16 @@ impl Variable {
     fn try_internal(&self) -> GritResult<&VariableScope> {
         match &self.internal {
             VariableInternal::Static(scope) => Ok(scope),
-            VariableInternal::Dynamic(lock) => {
-                let internal =
-                    lock.scope
-                        .get()
-                        .ok_or(grit_util::error::GritPatternError::new_matcher(format!(
-                            "variable {} not initialized",
-                            lock.name,
-                        )))?;
-                Ok(internal)
-            }
+            VariableInternal::Dynamic(lock) => match lock.scope.get() {
+                Some(scope) => Ok(scope),
+                None => {
+                    println!("DYNAMIC VARIABLE NOT INITIALIZED: {:?}", lock.name);
+                    Err(GritPatternError::new_matcher(format!(
+                        "variable {} not initialized",
+                        lock.name,
+                    )))
+                }
+            },
         }
     }
 
@@ -210,12 +221,12 @@ impl Variable {
         {
             let scope = self.get_scope(state)?;
             let index = self.get_index(state)?;
-            println!(
-                "Scope: {:?}, Index: {:?}, bindings: {:?}",
-                scope,
-                index,
-                state.bindings.get_mut(scope.into())
-            );
+            // println!(
+            //     "Scope: {:?}, Index: {:?}, bindings: {:?}",
+            //     scope,
+            //     index,
+            //     state.bindings.get_mut(scope.into())
+            // );
             let variable_content = &mut **(state
                 .bindings
                 .get_mut(scope.into())

@@ -113,13 +113,14 @@ pub(crate) fn dynamic_snippet_from_source(
                 GLOBAL_VARS_SCOPE_INDEX as usize,
                 *var,
             )));
-        } else if let Some(var) = context.vars.get(var.as_ref()) {
-            context.vars_array[context.scope_index][*var]
+        } else if let Some(registered_var_index) = context.vars.get(var.as_ref()) {
+            println!("REGISTER {} at {:?}", var, registered_var_index);
+            context.vars_array[context.scope_index][*registered_var_index]
                 .locations
                 .insert(range);
             parts.push(DynamicSnippetPart::Variable(Variable::new(
                 context.scope_index,
-                *var,
+                *registered_var_index,
             )));
         } else if var.starts_with("$GLOBAL_") {
             let variable = register_variable(&var, range, context)?;

@@ -1,4 +1,8 @@
-use super::{patterns::Pattern, variable::Variable, variable_content::VariableContent};
+use super::{
+    patterns::Pattern,
+    variable::{Variable, VariableScope},
+    variable_content::VariableContent,
+};
 use crate::{
     binding::Binding,
     constants::MATCH_VAR,
@@ -307,10 +311,18 @@ impl<'a, Q: QueryContext> State<'a, Q> {
     ///
     /// If you have a Variable reference, use `trace_var` instead to find the latest binding
     pub fn find_var(&self, name: &str) -> Option<Variable> {
+        if let Some(scope) = self.find_var_scope(name) {
+            return Some(Variable::new(scope.scope as usize, scope.index as usize));
+        }
+        None
+    }
+
+    /// Find a variable's registered scope, by name in any scope
+    fn find_var_scope(&self, name: &str) -> Option<VariableScope> {
         for (scope_index, scope) in self.bindings.iter().enumerate().rev() {
             for (index, content) in scope.last().unwrap().iter().enumerate() {
                 if content.name == name {
-                    return Some(Variable::new(scope_index, index));
+                    return Some(VariableScope::new(scope_index, index));
                 }
             }
         }
@@ -318,6 +330,10 @@ impl<'a, Q: QueryContext> State<'a, Q> {
     }
 
     pub fn register_var(&mut self, name: &str) -> (usize, usize) {
+        if let Some(existing) = self.find_var_scope(name) {
+            return (existing.scope as usize, existing.index as usize);
+        };
+
         let scope = self.current_scope;
         let the_scope = self.bindings[self.current_scope].back_mut().unwrap();
         let index = the_scope.len();

@@ -100,5 +100,9 @@ fn register_variable_optional_range(
         file,
         locations,
     });
+    println!("Registering variable {}", name);
+    if name == "$foo" {
+        return Ok(Variable::new_dynamic(name));
+    }
     Ok(Variable::new(scope_index as usize, index))
 }
