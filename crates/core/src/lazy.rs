@@ -107,7 +107,7 @@ mod test {
             let pattern = Pattern::Contains(Box::new(Contains::new(
                 StatelessCompilerContext::new(TargetLanguage::default())
                     // console.log does not work yet
-                    .parse_snippet("name")?,
+                    .parse_snippet("console.log")?,
                 None,
             )));
 
