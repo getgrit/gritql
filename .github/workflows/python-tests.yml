@@ -24,11 +24,11 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
 
       - name: Install dependencies
-        working-directory: python/gritql
+        working-directory: python
         run: |
-          uv pip install -r pyproject.toml
+          uv pip install .
 
       - name: Run tests
-        working-directory: python/gritql
+        working-directory: python
         run: |
-          uv pip run pytest
+          uv run pytest
