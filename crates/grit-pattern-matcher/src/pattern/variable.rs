@@ -22,11 +22,17 @@ struct VariableScope {
 }
 
 #[derive(Debug, Clone)]
+struct DynamicVariableInternal {
+    name: String,
+    scope: OnceLock<VariableScope>,
+}
+
+#[derive(Debug, Clone)]
 enum VariableInternal {
     /// Static variable, which is bound at compile time (ex. global variables)
     Static(VariableScope),
     /// Dynamic variable, which is bound at runtime (ex. function parameters)
-    Dynamic(OnceLock<VariableScope>),
+    Dynamic(DynamicVariableInternal),
 }
 
 #[derive(Clone, Debug)]
@@ -48,6 +54,7 @@ struct VariableMirror<'a, Q: QueryContext> {
 }
 
 impl Variable {
+    /// Create a variable, where we already know the scope and index it will be bound to
     pub fn new(scope: usize, index: usize) -> Self {
         Self {
             internal: VariableInternal::Static(VariableScope {
@@ -57,26 +64,45 @@ impl Variable {
         }
     }
 
+    /// Create a dynamic variable, which will be bound to the first scope that uses it
+    pub fn new_dynamic(name: &str) -> Self {
+        Self {
+            internal: VariableInternal::Dynamic(DynamicVariableInternal {
+                name: name.to_string(),
+                scope: OnceLock::new(),
+            }),
+        }
+    }
+
     fn try_internal(&self) -> GritResult<&VariableScope> {
         match &self.internal {
             VariableInternal::Static(scope) => Ok(scope),
             VariableInternal::Dynamic(lock) => {
-                lock.get()
-                    .ok_or(grit_util::error::GritPatternError::new_matcher(
-                        "variable not initialized",
-                    ))
+                let internal =
+                    lock.scope
+                        .get()
+                        .ok_or(grit_util::error::GritPatternError::new_matcher(
+                            "variable not initialized",
+                        ))?;
+                Ok(internal)
             }
         }
     }
 
-    pub fn get_internal<'a, 'b, Q: QueryContext>(
+    fn get_internal<'a, 'b, Q: QueryContext>(
         &self,
         state: &'b mut State<'a, Q>,
     ) -> GritResult<&VariableScope> {
         match &self.internal {
             VariableInternal::Static(internal) => Ok(internal),
             VariableInternal::Dynamic(lock) => {
-                let internal = lock.get_or_init(|| VariableScope { scope: 0, index: 0 });
+                let internal = lock.scope.get_or_init(|| {
+                    let (scope, index) = state.register_var(&lock.name);
+                    VariableScope {
+                        scope: scope as u16,
+                        index: index as u16,
+                    }
+                });
                 Ok(internal)
             }
         }
@@ -177,6 +203,10 @@ impl Variable {
         {
             let scope = self.get_scope(state)?;
             let index = self.get_index(state)?;
+            println!(
+                "Scope: {:?}, Index: {:?}, bindings: {:?}",
+                scope, index, state.bindings
+            );
             let variable_content = &mut **(state
                 .bindings
                 .get_mut(scope.into())

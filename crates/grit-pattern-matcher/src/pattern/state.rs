@@ -317,11 +317,12 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         None
     }
 
-    pub fn register_var(&mut self, name: &str) -> Variable {
-        let var = Variable::new(self.current_scope, self.bindings[self.current_scope].len());
+    pub fn register_var(&mut self, name: &str) -> (usize, usize) {
+        let scope = self.current_scope;
+        let index = self.bindings[self.current_scope].len();
         self.bindings[self.current_scope]
             .push_back(vector![Box::new(VariableContent::new(name.to_string()))]);
-        var
+        (scope, index)
     }
 
     /// Attempt to find a variable by name in the current scope
