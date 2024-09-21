@@ -101,10 +101,5 @@ pub(crate) fn register_variable_optional_range(
         locations,
     });
 
-    // if name == "$foo" {
-    //     println!("Registering variable {}", name);
-    //     return Ok(Variable::new_dynamic(name));
-    // };
-
     Ok(Variable::new(scope_index as usize, index))
 }
