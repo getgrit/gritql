@@ -77,39 +77,28 @@ fn register_variable_optional_range(
         }
         return Ok(Variable::new(GLOBAL_VARS_SCOPE_INDEX as usize, *i));
     }
-    if name.starts_with("$GLOBAL_") || name.starts_with("^GLOBAL_") {
-        let name_map = global_vars;
-        let scope_index = GLOBAL_VARS_SCOPE_INDEX;
-        let scope = &mut vars_array[scope_index as usize];
-        let index = scope.len();
-        name_map.insert(name.to_owned(), index);
-
-        let (locations, file) = if let Some(FileLocation { range, file_name }) = location {
-            let mut set = BTreeSet::new();
-            set.insert(range);
-            (set, file_name.to_owned())
-        } else {
-            // this currently only comes up with the $match variable which we autowrap, and is not
-            // usually used by the user, but feels like this could potentially be a source of bugs
-            (BTreeSet::new(), DEFAULT_FILE_NAME.to_owned())
-        };
-        scope.push(VariableSourceLocations {
-            name: name.to_owned(),
-            file,
-            locations,
-        });
-        Ok(Variable::new(scope_index as usize, index))
+    let (name_map, scope_index) = if name.starts_with("$GLOBAL_") || name.starts_with("^GLOBAL_") {
+        (global_vars, GLOBAL_VARS_SCOPE_INDEX)
     } else {
-        // TODO: replicate VariableSourceLocations for local vars
-        let scope = &mut vars_array[*scope_index as usize];
-        let index = scope.len();
-        scope.push(VariableSourceLocations {
-            name: name.to_owned(),
-            file: DEFAULT_FILE_NAME.to_owned(),
-            locations: BTreeSet::new(),
-        });
-        let var = Variable::new(*scope_index as usize, index);
+        (vars, *scope_index as u16)
+    };
+    let scope = &mut vars_array[scope_index as usize];
+    let index = scope.len();
+    name_map.insert(name.to_owned(), index);
 
-        Ok(var)
-    }
+    let (locations, file) = if let Some(FileLocation { range, file_name }) = location {
+        let mut set = BTreeSet::new();
+        set.insert(range);
+        (set, file_name.to_owned())
+    } else {
+        // this currently only comes up with the $match variable which we autowrap, and is not
+        // usually used by the user, but feels like this could potentially be a source of bugs
+        (BTreeSet::new(), DEFAULT_FILE_NAME.to_owned())
+    };
+    scope.push(VariableSourceLocations {
+        name: name.to_owned(),
+        file,
+        locations,
+    });
+    Ok(Variable::new(scope_index as usize, index))
 }
