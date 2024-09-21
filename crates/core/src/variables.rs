@@ -101,6 +101,7 @@ fn register_variable_optional_range(
         Ok(Variable::new(scope_index as usize, index))
     } else {
         // TODO: replicate VariableSourceLocations for local vars
-        Ok(Variable::new_dynamic(name))
+        // Ok(Variable::new_dynamic(name))
+        Ok(Variable::new(scope_index as usize, index))
     }
 }
