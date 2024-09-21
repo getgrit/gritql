@@ -99,7 +99,6 @@ impl NodeCompiler for RewriteCompiler {
                 | Pattern::IntConstant(_)
                 | Pattern::FloatConstant(_)
                 | Pattern::BooleanConstant(_)
-                | Pattern::CodeSnippet(_)
                 | Pattern::Rewrite(_)
                 | Pattern::Log(_)
                 | Pattern::Range(_)
