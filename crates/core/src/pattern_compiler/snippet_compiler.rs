@@ -1,17 +1,16 @@
 use super::{
     back_tick_compiler::{BackTickCompiler, RawBackTickCompiler},
+    compiler::SnippetCompilationContext,
     pattern_compiler::PatternCompiler,
     NodeCompiler,
 };
 use crate::{
     marzano_code_snippet::MarzanoCodeSnippet, problem::MarzanoQueryContext,
-    variables::register_variable,
 };
 use crate::{pattern_compiler::compiler::NodeCompilationContext, split_snippet::split_snippet};
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
-    constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
-    pattern::{DynamicPattern, DynamicSnippet, DynamicSnippetPart, Pattern, Variable},
+    pattern::{DynamicPattern, DynamicSnippet, DynamicSnippetPart, Pattern},
 };
 use grit_util::{AstNode, ByteRange, Language};
 use marzano_language::{
@@ -81,7 +80,7 @@ impl NodeCompiler for LanguageSpecificSnippetCompiler {
 pub(crate) fn dynamic_snippet_from_source(
     raw_source: &str,
     source_range: ByteRange,
-    context: &mut NodeCompilationContext,
+    context: &mut dyn SnippetCompilationContext,
 ) -> Result<DynamicSnippet> {
     let source_string = raw_source
         .replace("\\n", "\n")
@@ -91,7 +90,7 @@ pub(crate) fn dynamic_snippet_from_source(
         .replace("\\\"", "\"")
         .replace("\\\\", "\\");
     let source = source_string.as_str();
-    let metavariables = split_snippet(source, context.compilation.lang);
+    let metavariables = split_snippet(source, context.get_lang());
     let mut parts = Vec::with_capacity(2 * metavariables.len() + 1);
     let mut last = 0;
     // Reverse the iterator so we go over the variables in ascending order.
@@ -103,30 +102,8 @@ pub(crate) fn dynamic_snippet_from_source(
             source_range.start + byte_range.start,
             source_range.start + byte_range.start + var.len(),
         );
-        if let Some(var) = context.vars.get(var.as_ref()) {
-            context.vars_array[context.scope_index][*var]
-                .locations
-                .insert(range);
-            parts.push(DynamicSnippetPart::Variable(Variable::new(
-                context.scope_index,
-                *var,
-            )));
-        } else if let Some(var) = context.global_vars.get(var.as_ref()) {
-            if context.compilation.file == DEFAULT_FILE_NAME {
-                context.vars_array[GLOBAL_VARS_SCOPE_INDEX as usize][*var]
-                    .locations
-                    .insert(range);
-            }
-            parts.push(DynamicSnippetPart::Variable(Variable::new(
-                GLOBAL_VARS_SCOPE_INDEX as usize,
-                *var,
-            )));
-        } else if var.starts_with("$GLOBAL_") {
-            let variable = register_variable(&var, range, context)?;
-            parts.push(DynamicSnippetPart::Variable(variable));
-        } else {
-            bail!("Could not find variable {var} in this context, for snippet {source}");
-        }
+        let part = context.register_snippet_variable(&var, Some(range))?;
+        parts.push(part);
         last = byte_range.end;
     }
     parts.push(DynamicSnippetPart::String(source[last..].to_string()));
@@ -136,7 +113,7 @@ pub(crate) fn dynamic_snippet_from_source(
 pub(crate) fn parse_snippet_content(
     source: &str,
     range: ByteRange,
-    context: &mut NodeCompilationContext,
+    context: &mut dyn SnippetCompilationContext,
     is_rhs: bool,
 ) -> Result<Pattern<MarzanoQueryContext>> {
     // we check for CURLY_VAR_REGEX in the content, and if found
@@ -149,8 +126,7 @@ pub(crate) fn parse_snippet_content(
     // string to "Handler", which will together combine into an
     // identifier.
     if context
-        .compilation
-        .lang
+        .get_lang()
         .metavariable_bracket_regex()
         .is_match(source)
     {
@@ -163,8 +139,7 @@ pub(crate) fn parse_snippet_content(
         }
     } else {
         if context
-            .compilation
-            .lang
+            .get_lang()
             .exact_variable_regex()
             .is_match(source.trim())
         {
@@ -172,12 +147,12 @@ pub(crate) fn parse_snippet_content(
                 "$_" => return Ok(Pattern::Underscore),
                 "^_" => return Ok(Pattern::Underscore),
                 name => {
-                    let var = register_variable(name, range, context)?;
+                    let var = context.register_variable(name, Some(range))?;
                     return Ok(Pattern::Variable(var));
                 }
             }
         }
-        let snippet_trees = context.compilation.lang.parse_snippet_contexts(source);
+        let snippet_trees = context.get_lang().parse_snippet_contexts(source);
         let snippet_nodes = nodes_from_indices(&snippet_trees);
         if snippet_nodes.is_empty() {
             // not checking if is_rhs. So could potentially

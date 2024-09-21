@@ -57,10 +57,16 @@ impl NodeCompiler for RewriteCompiler {
         }
         let right = match right {
             Pattern::Dynamic(r) => r,
-            Pattern::CodeSnippet(MarzanoCodeSnippet {
-                dynamic_snippet: Some(r),
-                ..
-            }) => r,
+            Pattern::CodeSnippet(cs) => {
+                if let Some(r) = cs.dynamic_snippet {
+                    r
+                } else {
+                   Err(anyhow!(
+                "right hand side of rewrite must be a resolvable code snippet, but found snippet without a pattern: {:?}",
+                cs
+                   ))?
+                }
+            },
             Pattern::Variable(v) => DynamicPattern::Variable(v),
             Pattern::Accessor(a) => DynamicPattern::Accessor(a),
             Pattern::ListIndex(a) => DynamicPattern::ListIndex(a),
@@ -93,7 +99,6 @@ impl NodeCompiler for RewriteCompiler {
                 | Pattern::IntConstant(_)
                 | Pattern::FloatConstant(_)
                 | Pattern::BooleanConstant(_)
-                | Pattern::CodeSnippet(_)
                 | Pattern::Rewrite(_)
                 | Pattern::Log(_)
                 | Pattern::Range(_)

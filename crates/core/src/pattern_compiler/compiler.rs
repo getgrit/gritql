@@ -12,12 +12,14 @@ use crate::{
     built_in_functions::BuiltIns,
     foreign_function_definition::ForeignFunctionDefinition,
     problem::{MarzanoQueryContext, Problem},
+    variables::{register_variable, register_variable_optional_range, FileLocation},
 };
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
-    constants::DEFAULT_FILE_NAME,
+    constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
     pattern::{
-        GritFunctionDefinition, PatternDefinition, PredicateDefinition, VariableSourceLocations,
+        DynamicSnippetPart, GritFunctionDefinition, PatternDefinition, PredicateDefinition,
+        Variable, VariableSourceLocations,
     },
 };
 use grit_util::{
@@ -38,6 +40,18 @@ use std::{
 
 #[cfg(feature = "grit_tracing")]
 use tracing::instrument;
+
+pub trait SnippetCompilationContext {
+    fn get_lang(&self) -> &TargetLanguage;
+
+    fn register_snippet_variable(
+        &mut self,
+        name: &str,
+        source_range: Option<ByteRange>,
+    ) -> Result<DynamicSnippetPart>;
+
+    fn register_variable(&mut self, name: &str, range: Option<ByteRange>) -> Result<Variable>;
+}
 
 pub(crate) struct CompilationContext<'a> {
     pub file: &'a str,
@@ -73,6 +87,57 @@ pub(crate) struct NodeCompilationContext<'a> {
     pub global_vars: &'a mut BTreeMap<String, usize>,
 
     pub logs: &'a mut AnalysisLogs,
+}
+
+impl<'a> SnippetCompilationContext for NodeCompilationContext<'a> {
+    fn get_lang(&self) -> &TargetLanguage {
+        self.compilation.lang
+    }
+
+    fn register_snippet_variable(
+        &mut self,
+        name: &str,
+        source_range: Option<ByteRange>,
+    ) -> Result<DynamicSnippetPart> {
+        let Some(source_range) = source_range else {
+            bail!("source_range is required for registering a variable with the NodeCompilationContext");
+        };
+        if let Some(registered_var_index) = self.vars.get(name) {
+            self.vars_array[self.scope_index][*registered_var_index]
+                .locations
+                .insert(source_range);
+            Ok(DynamicSnippetPart::Variable(Variable::new(
+                self.scope_index,
+                *registered_var_index,
+            )))
+        } else if let Some(global_var_index) = self.global_vars.get(name) {
+            if self.compilation.file == DEFAULT_FILE_NAME {
+                self.vars_array[GLOBAL_VARS_SCOPE_INDEX as usize][*global_var_index]
+                    .locations
+                    .insert(source_range);
+            }
+            Ok(DynamicSnippetPart::Variable(Variable::new(
+                GLOBAL_VARS_SCOPE_INDEX as usize,
+                *global_var_index,
+            )))
+        } else if name.starts_with("$GLOBAL_") {
+            let variable = register_variable(name, source_range, self)?;
+            Ok(DynamicSnippetPart::Variable(variable))
+        } else {
+            bail!("Could not find variable {name} in this context")
+        }
+    }
+
+    fn register_variable(&mut self, name: &str, range: Option<ByteRange>) -> Result<Variable> {
+        register_variable_optional_range(
+            name,
+            range.map(|r| FileLocation {
+                range: r,
+                file_name: self.compilation.file,
+            }),
+            self,
+        )
+    }
 }
 
 // this code looks wrong. Todo test to see if we correctly find duplicate

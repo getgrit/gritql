@@ -1,15 +1,17 @@
 #[cfg(test)]
 mod test {
-
+    use grit_pattern_matcher::pattern::ResolvedPattern;
     use grit_pattern_matcher::pattern::{Pattern, StringConstant};
     use grit_pattern_matcher::{constants::DEFAULT_FILE_NAME, pattern::Contains};
     use marzano_language::{grit_parser::MarzanoGritParser, target_language::TargetLanguage};
+    use std::sync::atomic::AtomicUsize;
     use std::{
         path::Path,
         sync::{atomic::AtomicBool, Arc},
     };
 
     use crate::problem::MarzanoQueryContext;
+    use crate::stateless::StatelessCompilerContext;
     use crate::{
         pattern_compiler::{CompilationResult, PatternBuilder},
         test_utils::{run_on_test_files, SyntheticFile},
@@ -79,5 +81,58 @@ mod test {
         )];
         let _results = run_on_test_files(&problem, &test_files);
         assert!(callback_called.load(std::sync::atomic::Ordering::SeqCst));
+    }
+
+    #[test]
+    fn test_find_pattern_in_callback() {
+        let src = r#"language js
+
+    `function $name($args) { $body }`"#;
+        let mut parser = MarzanoGritParser::new().unwrap();
+        let src_tree = parser
+            .parse_file(src, Some(Path::new(DEFAULT_FILE_NAME)))
+            .unwrap();
+        let lang = TargetLanguage::from_tree(&src_tree).unwrap();
+
+        let valid_matches = Arc::new(AtomicUsize::new(0));
+        let valid_matches_clone = Arc::clone(&valid_matches);
+
+        let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
+        builder = builder.matches_callback(Box::new(move |binding, context, state, logs| {
+            println!(
+                "binding: {:?}",
+                binding.text(&state.files, context.language)
+            );
+
+            let pattern = Pattern::Contains(Box::new(Contains::new(
+                StatelessCompilerContext::new(TargetLanguage::default())
+                    // console.log does not work yet
+                    .parse_snippet("name")?,
+                None,
+            )));
+
+            if binding.matches(&pattern, state, context, logs).unwrap() {
+                valid_matches_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            }
+
+            Ok(true)
+        }));
+        let CompilationResult { problem, .. } = builder.compile(None, None, true).unwrap();
+
+        let test_files = vec![SyntheticFile::new(
+            "file.js".to_owned(),
+            r#"
+            function notHere() {
+                console.error("sam");
+            }
+
+            function myLogger() {
+                console.log(name);
+            }"#
+            .to_owned(),
+            true,
+        )];
+        let _results = run_on_test_files(&problem, &test_files);
+        assert_eq!(valid_matches.load(std::sync::atomic::Ordering::SeqCst), 1);
     }
 }

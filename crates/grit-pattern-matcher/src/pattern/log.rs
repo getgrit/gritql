@@ -56,11 +56,13 @@ impl<Q: QueryContext> Log<Q> {
 
         if let Some(var) = &self.variable {
             let name = var.name.to_string();
-            let var = state.trace_var(&var.variable);
+            let var = state.trace_var_mut(&var.variable);
             if self.message.is_none() {
                 message.push_str(&format!("Logging {}\n", name));
             }
-            let var_content = &state.bindings[var.scope().into()].last().unwrap()[var.index().into()];
+            let var_content = &state.bindings[var.try_scope().unwrap().into()]
+                .last()
+                .unwrap()[var.try_index().unwrap().into()];
             let value = var_content.value.as_ref();
             let src = value
                 .map(|v| {

@@ -39,8 +39,10 @@ impl<Q: QueryContext> Evaluator<Q> for Match<Q> {
     ) -> GritResult<FuncEvaluation<Q>> {
         match &self.val {
             Container::Variable(var) => {
-                let var = state.trace_var(var);
-                let var_content = &state.bindings[var.scope().into()].last().unwrap()[var.index().into()];
+                let var = state.trace_var_mut(var);
+                let var_content = &state.bindings[var.try_scope().unwrap().into()]
+                    .last()
+                    .unwrap()[var.try_index().unwrap().into()];
                 let predicator = if let Some(pattern) = &self.pattern {
                     if let Some(important_binding) = &var_content.value {
                         pattern.execute(&important_binding.clone(), state, context, logs)?

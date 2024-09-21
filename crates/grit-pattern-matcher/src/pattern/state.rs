@@ -1,4 +1,8 @@
-use super::{patterns::Pattern, variable::Variable, variable_content::VariableContent};
+use super::{
+    patterns::Pattern,
+    variable::{Variable, VariableScope},
+    variable_content::VariableContent,
+};
 use crate::{
     binding::Binding,
     constants::MATCH_VAR,
@@ -296,7 +300,10 @@ impl<'a, Q: QueryContext> State<'a, Q> {
     // https://doc.rust-lang.org/nomicon/borrow-splitting.html
     // todo split State in a sensible way.
     pub fn get_name(&self, var: &Variable) -> &str {
-        &self.bindings[var.scope().into()].last().unwrap()[var.index().into()].name
+        &self.bindings[var.try_scope().unwrap().into()]
+            .last()
+            .unwrap()[var.try_index().unwrap().into()]
+        .name
     }
 
     /// Attempt to find a variable by name in any scope
@@ -304,21 +311,35 @@ impl<'a, Q: QueryContext> State<'a, Q> {
     ///
     /// If you have a Variable reference, use `trace_var` instead to find the latest binding
     pub fn find_var(&self, name: &str) -> Option<Variable> {
+        if let Some(scope) = self.find_var_scope(name) {
+            return Some(Variable::new(scope.scope as usize, scope.index as usize));
+        }
+        None
+    }
+
+    /// Find a variable's registered scope, by name in any scope
+    fn find_var_scope(&self, name: &str) -> Option<VariableScope> {
         for (scope_index, scope) in self.bindings.iter().enumerate().rev() {
             for (index, content) in scope.last().unwrap().iter().enumerate() {
                 if content.name == name {
-                    return Some(Variable::new(scope_index, index));
+                    return Some(VariableScope::new(scope_index, index));
                 }
             }
         }
         None
     }
 
-    pub fn register_var(&mut self, name: &str) -> Variable {
-        let var = Variable::new(self.current_scope, self.bindings[self.current_scope].len());
-        self.bindings[self.current_scope]
-            .push_back(vector![Box::new(VariableContent::new(name.to_string()))]);
-        var
+    pub fn register_var(&mut self, name: &str) -> (usize, usize) {
+        if let Some(existing) = self.find_var_scope(name) {
+            return (existing.scope as usize, existing.index as usize);
+        };
+
+        let scope = self.current_scope;
+        let the_scope = self.bindings[self.current_scope].back_mut().unwrap();
+        let index = the_scope.len();
+
+        the_scope.push_back(Box::new(VariableContent::new(name.to_string())));
+        (scope, index)
     }
 
     /// Attempt to find a variable by name in the current scope
@@ -337,14 +358,31 @@ impl<'a, Q: QueryContext> State<'a, Q> {
     }
 
     /// Trace a variable to the root binding
+    /// Where possible, prefer trace_var_mut
     pub fn trace_var(&self, var: &Variable) -> Variable {
-        if let Some(Pattern::Variable(v)) =
-            &self.bindings[var.scope().into()].last().unwrap()[var.index().into()].pattern
-        {
-            self.trace_var(v)
-        } else {
-            var.clone()
+        if let Ok(scope) = var.try_scope() {
+            if let Ok(index) = var.try_index() {
+                if let Some(Pattern::Variable(v)) =
+                    &self.bindings[scope.into()].last().unwrap()[index.into()].pattern
+                {
+                    return self.trace_var(v);
+                }
+            }
         }
+        var.clone()
+    }
+
+    pub fn trace_var_mut(&mut self, var: &Variable) -> Variable {
+        if let Ok(scope) = var.get_scope(self) {
+            if let Ok(index) = var.get_index(self) {
+                if let Some(Pattern::Variable(v)) =
+                    &self.bindings[scope.into()].last().unwrap()[index.into()].pattern
+                {
+                    return self.trace_var_mut(v);
+                }
+            }
+        }
+        var.clone()
     }
 
     pub fn bindings_history_to_ranges(

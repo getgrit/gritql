@@ -10,7 +10,7 @@ use super::{
     before_compiler::BeforeCompiler,
     bubble_compiler::BubbleCompiler,
     call_compiler::CallCompiler,
-    compiler::NodeCompilationContext,
+    compiler::{NodeCompilationContext, SnippetCompilationContext},
     constant_compiler::{
         BooleanConstantCompiler, FloatConstantCompiler, IntConstantCompiler, StringConstantCompiler,
     },
@@ -45,7 +45,6 @@ use super::{
 use crate::problem::MarzanoQueryContext;
 use crate::{
     ast_node::{ASTNode, AstLeafNode},
-    variables::register_variable,
 };
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
@@ -74,38 +73,36 @@ impl PatternCompiler {
     pub(crate) fn from_snippet_node(
         node: NodeWithSource,
         context_range: ByteRange,
-        context: &mut NodeCompilationContext,
+        context: &mut dyn SnippetCompilationContext,
         is_rhs: bool,
     ) -> Result<Pattern<MarzanoQueryContext>> {
         let snippet_start = node.node.start_byte() as usize;
-        let ranges = metavariable_ranges(&node, context.compilation.lang);
+        let ranges = metavariable_ranges(&node, context.get_lang());
         let range_map = metavariable_range_mapping(ranges, snippet_start);
 
         fn node_to_astnode(
             node: NodeWithSource,
             context_range: ByteRange,
             range_map: &HashMap<ByteRange, ByteRange>,
-            context: &mut NodeCompilationContext,
+            context: &mut dyn SnippetCompilationContext,
             is_rhs: bool,
         ) -> Result<Pattern<MarzanoQueryContext>> {
             let sort = node.node.kind_id();
             // probably safe to assume node is named, but just in case
             // maybe doesn't even matter, but is what I expect,
             // make this ann assertion?
-            let node_types = context.compilation.lang.node_types();
             let metavariable =
                 metavariable_descendent(&node, context_range, range_map, context, is_rhs)?;
             if let Some(metavariable) = metavariable {
                 return Ok(metavariable);
             }
+            let language = context.get_lang().clone();
+            let node_types = language.node_types();
+
             if node_types[sort as usize].is_empty() {
                 let content = node.text()?;
                 if (node.node.named_child_count() == 0)
-                    && context
-                        .compilation
-                        .lang
-                        .replaced_metavariable_regex()
-                        .is_match(&content)
+                    && language.replaced_metavariable_regex().is_match(&content)
                 {
                     let regex =
                         implicit_metavariable_regex(&node, context_range, range_map, context)?;
@@ -114,63 +111,58 @@ impl PatternCompiler {
                     }
                 }
                 return Ok(Pattern::AstLeafNode(AstLeafNode::new(
-                    sort,
-                    &content,
-                    context.compilation.lang,
+                    sort, &content, &language,
                 )?));
             }
             let fields: &Vec<Field> = &node_types[sort as usize];
-            let args =
-                fields
-                    .iter()
-                    .filter(|field| {
-                        let child_with_source = node
-                            .node
-                            .child_by_field_id(field.id())
-                            .map(|n| NodeWithSource::new(n, node.source));
-                        // Then check if it's an empty, optional field
-                        if context.compilation.lang.is_disregarded_snippet_field(
-                            sort,
-                            field.id(),
-                            &child_with_source,
-                        ) {
-                            return false;
-                        }
-                        // Otherwise compile it
-                        true
-                    })
-                    .map(|field| {
-                        let field_id = field.id();
-                        let mut nodes_list = node
-                            .named_children_by_field_id(field_id)
-                            .map(|n| node_to_astnode(n, context_range, range_map, context, is_rhs))
-                            .collect::<Result<Vec<Pattern<MarzanoQueryContext>>>>()?;
-                        if !field.multiple() {
-                            return Ok((
-                                field_id,
-                                false,
-                                nodes_list.pop().unwrap_or(Pattern::Dynamic(
-                                    DynamicPattern::Snippet(DynamicSnippet {
-                                        parts: vec![DynamicSnippetPart::String("".to_string())],
-                                    }),
-                                )),
-                            ));
-                        }
-                        if nodes_list.len() == 1
-                            && matches!(
-                                nodes_list.first(),
-                                Some(Pattern::Variable(_)) | Some(Pattern::Underscore)
-                            )
-                        {
-                            return Ok((field_id, true, nodes_list.pop().unwrap()));
-                        }
-                        Ok((
+            let args = fields
+                .iter()
+                .filter(|field| {
+                    let child_with_source = node
+                        .node
+                        .child_by_field_id(field.id())
+                        .map(|n| NodeWithSource::new(n, node.source));
+                    // Then check if it's an empty, optional field
+                    if language.is_disregarded_snippet_field(sort, field.id(), &child_with_source) {
+                        return false;
+                    }
+                    // Otherwise compile it
+                    true
+                })
+                .map(|field| {
+                    let field_id = field.id();
+                    let mut nodes_list = node
+                        .named_children_by_field_id(field_id)
+                        .map(|n| node_to_astnode(n, context_range, range_map, context, is_rhs))
+                        .collect::<Result<Vec<Pattern<MarzanoQueryContext>>>>()?;
+                    if !field.multiple() {
+                        return Ok((
                             field_id,
-                            true,
-                            Pattern::List(Box::new(List::new(nodes_list))),
-                        ))
-                    })
-                    .collect::<Result<Vec<(u16, bool, Pattern<MarzanoQueryContext>)>>>()?;
+                            false,
+                            nodes_list
+                                .pop()
+                                .unwrap_or(Pattern::Dynamic(DynamicPattern::Snippet(
+                                    DynamicSnippet {
+                                        parts: vec![DynamicSnippetPart::String("".to_string())],
+                                    },
+                                ))),
+                        ));
+                    }
+                    if nodes_list.len() == 1
+                        && matches!(
+                            nodes_list.first(),
+                            Some(Pattern::Variable(_)) | Some(Pattern::Underscore)
+                        )
+                    {
+                        return Ok((field_id, true, nodes_list.pop().unwrap()));
+                    }
+                    Ok((
+                        field_id,
+                        true,
+                        Pattern::List(Box::new(List::new(nodes_list))),
+                    ))
+                })
+                .collect::<Result<Vec<(u16, bool, Pattern<MarzanoQueryContext>)>>>()?;
             Ok(Pattern::AstNode(Box::new(ASTNode { sort, args })))
         }
         node_to_astnode(node, context_range, &range_map, context, is_rhs)
@@ -330,7 +322,7 @@ fn implicit_metavariable_regex<Q: QueryContext>(
     node: &NodeWithSource,
     context_range: ByteRange,
     range_map: &HashMap<ByteRange, ByteRange>,
-    context: &mut NodeCompilationContext,
+    context: &mut dyn SnippetCompilationContext,
 ) -> Result<Option<RegexPattern<Q>>> {
     let range = node.range();
     let offset = range.start_byte;
@@ -343,7 +335,7 @@ fn implicit_metavariable_regex<Q: QueryContext>(
     let mut variables: Vec<Variable> = vec![];
     let capture_string = "(.*)";
     let uncapture_string = ".*";
-    let variable_regex = context.compilation.lang.replaced_metavariable_regex();
+    let variable_regex = context.get_lang().replaced_metavariable_regex();
     for m in variable_regex.find_iter(node.source) {
         if last > m.start() as u32 {
             continue;
@@ -380,16 +372,16 @@ fn metavariable_descendent<Q: QueryContext>(
     node: &NodeWithSource,
     context_range: ByteRange,
     range_map: &HashMap<ByteRange, ByteRange>,
-    context: &mut NodeCompilationContext,
+    context: &mut dyn SnippetCompilationContext,
     is_rhs: bool,
 ) -> Result<Option<Pattern<Q>>> {
     let mut cursor = node.walk();
     loop {
         let node = cursor.node();
-        if context.compilation.lang.is_metavariable(&node) {
+        if context.get_lang().is_metavariable(&node) {
             let name = node.text()?;
-            if is_reserved_metavariable(name.trim(), Some(context.compilation.lang)) && !is_rhs {
-                bail!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", name.trim_start_matches(context.compilation.lang.metavariable_prefix_substitute()));
+            if is_reserved_metavariable(name.trim(), Some(context.get_lang())) && !is_rhs {
+                bail!("{} is a reserved metavariable name. For more information, check out the docs at https://docs.grit.io/language/patterns#metavariables.", name.trim_start_matches(context.get_lang().metavariable_prefix_substitute()));
             }
             let range = node.byte_range();
             return text_to_var(&name, range, context_range, range_map, context)
@@ -479,11 +471,10 @@ fn text_to_var(
     range: ByteRange,
     context_range: ByteRange,
     range_map: &HashMap<ByteRange, ByteRange>,
-    context: &mut NodeCompilationContext,
+    context: &mut dyn SnippetCompilationContext,
 ) -> Result<SnippetValues> {
     let name = context
-        .compilation
-        .lang
+        .get_lang()
         .snippet_metavariable_to_grit_metavariable(name)
         .ok_or_else(|| anyhow!("metavariable |{}| not found in snippet", name))?;
     match name {
@@ -500,7 +491,7 @@ fn text_to_var(
                         .collect::<Vec<_>>()
                 )
             })?;
-            let var = register_variable(&name, range + context_range.start, context)?;
+            let var = context.register_variable(&name, Some(range + context_range.start))?;
             Ok(SnippetValues::Variable(var))
         }
     }

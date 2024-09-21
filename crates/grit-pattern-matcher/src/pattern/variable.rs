@@ -11,18 +11,52 @@ use crate::{
 };
 use core::fmt::Debug;
 use grit_util::{
-    constants::GRIT_METAVARIABLE_PREFIX, error::GritResult, AnalysisLogs, ByteRange, Language,
+    constants::GRIT_METAVARIABLE_PREFIX,
+    error::{GritPatternError, GritResult},
+    AnalysisLogs, ByteRange, Language,
 };
 use std::{
     borrow::Cow,
     collections::BTreeSet,
+    sync::{Arc, OnceLock},
 };
+
+#[derive(Debug, Clone)]
+pub(crate) struct VariableScope {
+    pub(crate) scope: u16,
+    pub(crate) index: u16,
+}
+
+impl VariableScope {
+    pub fn new(scope: usize, index: usize) -> Self {
+        Self {
+            scope: scope as u16,
+            index: index as u16,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct DynamicVariableInternal {
+    name: String,
+    // All copies of a variable should share the same scope/index
+    scope: Arc<OnceLock<VariableScope>>,
+}
+
+#[derive(Debug, Clone)]
+enum VariableInternal {
+    /// Static variable, which is bound at compile time (ex. global variables).
+    /// These are slightly more efficient, and follow the traditional approach in Grit.
+    /// However, they require more direct control over scopes and indexes.
+    Static(VariableScope),
+    /// Dynamic variables are lazy, so we just need to register them by name.
+    /// They will then automatically be bound to the first scope that attempts to use them.
+    Dynamic(DynamicVariableInternal),
+}
 
 #[derive(Clone, Debug)]
 pub struct Variable {
-    scope: u16,
-    index: u16,
-    // loaded_location: Arc<AtomicU32>,
+    internal: VariableInternal,
 }
 
 #[derive(Debug, Clone)]
@@ -39,19 +73,85 @@ struct VariableMirror<'a, Q: QueryContext> {
 }
 
 impl Variable {
+    /// Create a variable, where we already know the scope and index it will be bound to
     pub fn new(scope: usize, index: usize) -> Self {
         Self {
-            scope: scope as u16,
-            index: index as u16,
+            internal: VariableInternal::Static(VariableScope {
+                scope: scope as u16,
+                index: index as u16,
+            }),
         }
     }
 
-    pub fn scope(&self) -> u16 {
-        self.scope
+    /// Create a dynamic variable, which will be bound to the first scope that uses it
+    ///
+    /// Warning: this is not stable or tested yet. This implementation is still incomplete.
+    pub fn new_dynamic(name: &str) -> Self {
+        Self {
+            internal: VariableInternal::Dynamic(DynamicVariableInternal {
+                name: name.to_string(),
+                scope: Arc::new(OnceLock::new()),
+            }),
+        }
     }
 
-    pub fn index(&self) -> u16 {
-        self.index
+    fn try_internal(&self) -> GritResult<&VariableScope> {
+        match &self.internal {
+            VariableInternal::Static(scope) => Ok(scope),
+            VariableInternal::Dynamic(lock) => match lock.scope.get() {
+                Some(scope) => Ok(scope),
+                None => {
+                    println!("DYNAMIC VARIABLE NOT INITIALIZED: {:?}", lock.name);
+                    Err(GritPatternError::new_matcher(format!(
+                        "variable {} not initialized",
+                        lock.name,
+                    )))
+                }
+            },
+        }
+    }
+
+    fn get_internal<Q: QueryContext>(
+        &self,
+        state: &mut State<'_, Q>,
+    ) -> GritResult<&VariableScope> {
+        match &self.internal {
+            VariableInternal::Static(internal) => Ok(internal),
+            VariableInternal::Dynamic(lock) => {
+                let internal = lock.scope.get_or_init(|| {
+                    let (scope, index) = state.register_var(&lock.name);
+                    VariableScope {
+                        scope: scope as u16,
+                        index: index as u16,
+                    }
+                });
+                Ok(internal)
+            }
+        }
+    }
+
+    /// Try to get the scope of the variable, if it has been bound to a scope.
+    /// If the variable has not been bound to a scope, return an error.
+    /// When possible, prefer to use `get_scope()` instead, which will initialize the variable's scope if it is not already bound.
+    pub fn try_scope(&self) -> GritResult<u16> {
+        Ok(self.try_internal()?.scope)
+    }
+
+    /// Try to get the index of the variable, if it has been bound to an index.
+    /// If the variable has not been bound to an index, return an error.
+    /// When possible, prefer to use `get_index()` instead, which will initialize the variable's index if it is not already bound.
+    pub fn try_index(&self) -> GritResult<u16> {
+        Ok(self.try_internal()?.index)
+    }
+
+    /// Get the scope of the variable, initializing it if it is not already bound.
+    pub fn get_scope<Q: QueryContext>(&self, state: &mut State<'_, Q>) -> GritResult<u16> {
+        Ok(self.get_internal(state)?.scope)
+    }
+
+    /// Get the index of the variable, initializing it if it is not already bound.
+    pub fn get_index<Q: QueryContext>(&self, state: &mut State<'_, Q>) -> GritResult<u16> {
+        Ok(self.get_internal(state)?.index)
     }
 
     pub fn get_pattern_or_resolved<'a, 'b, Q: QueryContext>(
@@ -59,7 +159,9 @@ impl Variable {
         state: &'b State<'a, Q>,
     ) -> GritResult<Option<PatternOrResolved<'a, 'b, Q>>> {
         let v = state.trace_var(self);
-        let content = &state.bindings[v.scope().into()].last().unwrap()[v.index().into()];
+        let content = &state.bindings[v.try_scope().unwrap().into()]
+            .last()
+            .unwrap()[v.try_index().unwrap().into()];
         if let Some(pattern) = content.pattern {
             Ok(Some(PatternOrResolved::Pattern(pattern)))
         } else if let Some(resolved) = &content.value {
@@ -72,8 +174,10 @@ impl Variable {
         &self,
         state: &'b mut State<'a, Q>,
     ) -> GritResult<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
-        let v = state.trace_var(self);
-        let content = &mut state.bindings[v.scope().into()].back_mut().unwrap()[v.index().into()];
+        let v = state.trace_var_mut(self);
+        let content = &mut state.bindings[v.try_scope().unwrap().into()]
+            .back_mut()
+            .unwrap()[v.try_index().unwrap().into()];
         if let Some(pattern) = content.pattern {
             Ok(Some(PatternOrResolvedMut::Pattern(pattern)))
         } else if let Some(resolved) = &mut content.value {
@@ -88,7 +192,10 @@ impl Variable {
     }
 
     pub fn is_file_name(&self) -> bool {
-        self.scope() == GLOBAL_VARS_SCOPE_INDEX && self.index() as usize == FILENAME_INDEX
+        let VariableInternal::Static(scope) = &self.internal else {
+            return false;
+        };
+        scope.scope == GLOBAL_VARS_SCOPE_INDEX && scope.index as usize == FILENAME_INDEX
     }
 
     pub fn text<'a, Q: QueryContext>(
@@ -96,7 +203,10 @@ impl Variable {
         state: &State<'a, Q>,
         lang: &Q::Language<'a>,
     ) -> GritResult<Cow<'a, str>> {
-        state.bindings[self.scope().into()].last().unwrap()[self.index().into()].text(state, lang)
+        state.bindings[self.try_scope().unwrap().into()]
+            .last()
+            .unwrap()[self.try_index().unwrap().into()]
+        .text(state, lang)
     }
 
     fn execute_resolved<'a, Q: QueryContext>(
@@ -107,13 +217,15 @@ impl Variable {
     ) -> GritResult<Option<bool>> {
         let mut variable_mirrors: Vec<VariableMirror<Q>> = Vec::new();
         {
+            let scope = self.get_scope(state)?;
+            let index = self.get_index(state)?;
             let variable_content = &mut **(state
                 .bindings
-                .get_mut(self.scope().into())
+                .get_mut(scope.into())
                 .unwrap()
                 .back_mut()
                 .unwrap()
-                .get_mut(self.index().into())
+                .get_mut(index.into())
                 .unwrap());
             let value = &mut variable_content.value;
 
@@ -132,8 +244,8 @@ impl Variable {
                     value_history.push(ResolvedPattern::from_binding(binding.clone()));
                     variable_mirrors.extend(variable_content.mirrors.iter().map(|mirror| {
                         VariableMirror {
-                            scope: mirror.scope(),
-                            index: mirror.index(),
+                            scope: mirror.try_scope().unwrap(),
+                            index: mirror.try_index().unwrap(),
                             binding: binding.clone(),
                         }
                     }));
@@ -190,13 +302,15 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
 
         // we do this convoluted check to avoid double-borrowing of state
         // via the variable_content variable
+        let scope = self.get_scope(state)?;
+        let index = self.get_index(state)?;
         let variable_content = &mut **(state
             .bindings
-            .get_mut(self.scope().into())
+            .get_mut(scope.into())
             .unwrap()
             .back_mut()
             .unwrap()
-            .get_mut(self.index().into())
+            .get_mut(index.into())
             .unwrap());
         if let Some(pattern) = variable_content.pattern {
             if !pattern.execute(resolved_pattern, state, context, logs)? {
@@ -205,11 +319,11 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
         }
         let variable_content = &mut **(state
             .bindings
-            .get_mut(self.scope().into())
+            .get_mut(scope.into())
             .unwrap()
             .back_mut()
             .unwrap()
-            .get_mut(self.index().into())
+            .get_mut(index.into())
             .unwrap());
         variable_content.value = Some(resolved_pattern.clone());
         variable_content

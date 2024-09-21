@@ -42,12 +42,12 @@ pub(crate) fn register_variable(
     )
 }
 
-struct FileLocation<'a> {
-    file_name: &'a str,
-    range: ByteRange,
+pub(crate) struct FileLocation<'a> {
+    pub file_name: &'a str,
+    pub range: ByteRange,
 }
 
-fn register_variable_optional_range(
+pub(crate) fn register_variable_optional_range(
     name: &str,
     location: Option<FileLocation>,
     context: &mut NodeCompilationContext,
@@ -100,5 +100,6 @@ fn register_variable_optional_range(
         file,
         locations,
     });
+
     Ok(Variable::new(scope_index as usize, index))
 }
