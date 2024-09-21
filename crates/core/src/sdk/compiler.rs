@@ -59,7 +59,7 @@ impl SnippetCompilationContext for StatelessCompilerContext {
 mod tests {
     use marzano_language::target_language::TargetLanguage;
 
-    use crate::{pattern_compiler::PatternBuilder, stateless::StatelessCompilerContext};
+    use crate::{pattern_compiler::PatternBuilder, sdk::compiler::StatelessCompilerContext};
 
     #[test]
     fn test_stateless_snippet_compiler_self_equivalence() {

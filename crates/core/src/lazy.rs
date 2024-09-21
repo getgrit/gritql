@@ -13,7 +13,7 @@ mod test {
     };
 
     use crate::problem::MarzanoQueryContext;
-    use crate::stateless::StatelessCompilerContext;
+    use crate::sdk::StatelessCompilerContext;
     use crate::{
         pattern_compiler::{CompilationResult, PatternBuilder},
         test_utils::{run_on_test_files, SyntheticFile},
