@@ -45,9 +45,12 @@ struct DynamicVariableInternal {
 
 #[derive(Debug, Clone)]
 enum VariableInternal {
-    /// Static variable, which is bound at compile time (ex. global variables)
+    /// Static variable, which is bound at compile time (ex. global variables).
+    /// These are slightly more efficient, and follow the traditional approach in Grit.
+    /// However, they require more direct control over scopes and indexes.
     Static(VariableScope),
-    /// Dynamic variable, which is bound at runtime (ex. function parameters)
+    /// Dynamic variables are lazy, so we just need to register them by name.
+    /// They will then automatically be bound to the first scope that attempts to use them.
     Dynamic(DynamicVariableInternal),
 }
 
@@ -81,6 +84,8 @@ impl Variable {
     }
 
     /// Create a dynamic variable, which will be bound to the first scope that uses it
+    ///
+    /// Warning: this is not stable or tested yet. This implementation is still incomplete.
     pub fn new_dynamic(name: &str) -> Self {
         Self {
             internal: VariableInternal::Dynamic(DynamicVariableInternal {
@@ -140,18 +145,12 @@ impl Variable {
     }
 
     /// Get the scope of the variable, initializing it if it is not already bound.
-    pub fn get_scope<Q: QueryContext>(
-        &self,
-        state: &mut State<'_, Q>,
-    ) -> GritResult<u16> {
+    pub fn get_scope<Q: QueryContext>(&self, state: &mut State<'_, Q>) -> GritResult<u16> {
         Ok(self.get_internal(state)?.scope)
     }
 
     /// Get the index of the variable, initializing it if it is not already bound.
-    pub fn get_index<Q: QueryContext>(
-        &self,
-        state: &mut State<'_, Q>,
-    ) -> GritResult<u16> {
+    pub fn get_index<Q: QueryContext>(&self, state: &mut State<'_, Q>) -> GritResult<u16> {
         Ok(self.get_internal(state)?.index)
     }
 
@@ -220,12 +219,6 @@ impl Variable {
         {
             let scope = self.get_scope(state)?;
             let index = self.get_index(state)?;
-            // println!(
-            //     "Scope: {:?}, Index: {:?}, bindings: {:?}",
-            //     scope,
-            //     index,
-            //     state.bindings.get_mut(scope.into())
-            // );
             let variable_content = &mut **(state
                 .bindings
                 .get_mut(scope.into())
