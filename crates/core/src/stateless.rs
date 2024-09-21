@@ -27,7 +27,6 @@ impl StatelessCompilerContext {
     pub fn parse_snippet(&mut self, content: &str) -> Result<Pattern<MarzanoQueryContext>> {
         let range = ByteRange::new(0, content.len());
         let snippet = parse_snippet_content(content, range, self, false)?;
-        println!("snippet: {:?}", snippet);
         Ok(snippet)
     }
 }
@@ -52,5 +51,46 @@ impl SnippetCompilationContext for StatelessCompilerContext {
             bail!("Global variables are not supported in stateless mode")
         }
         Ok(Variable::new_dynamic(name))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use marzano_language::target_language::TargetLanguage;
+
+    use crate::{
+        pattern_compiler::{PatternBuilder},
+        stateless::StatelessCompilerContext,
+    };
+
+    #[test]
+    fn test_stateless_snippet_compiler_self_equivalence() {
+        let language = TargetLanguage::default();
+        let mut compiler = StatelessCompilerContext::new(language);
+        let pattern = compiler.parse_snippet("console.log").unwrap();
+
+        // Second instance
+        let pattern2 = compiler.parse_snippet("console.log").unwrap();
+        println!("pattern: {:?}", pattern);
+        println!("pattern2: {:?}", pattern2);
+
+        assert_eq!(format!("{:?}", pattern), format!("{:?}", pattern2));
+    }
+
+    #[test]
+    fn test_stateless_snippet_compiler_equivalence() {
+        let language = TargetLanguage::from_string("js", None).unwrap();
+        let mut compiler = StatelessCompilerContext::new(language);
+        let pattern = compiler.parse_snippet("console.log(name)").unwrap();
+
+        // Check how the traditional compiler compiles the same snippet
+        let builder = PatternBuilder::start_empty(
+            "`console.log(name)`",
+            TargetLanguage::from_string("js", None).unwrap(),
+        )
+        .unwrap();
+        let pattern2 = builder.compile(None, None, false).unwrap().root_pattern();
+
+        assert_eq!(format!("{:?}", pattern), format!("{:?}", pattern2));
     }
 }

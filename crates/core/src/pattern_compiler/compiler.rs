@@ -18,8 +18,8 @@ use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
     constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
     pattern::{
-        DynamicSnippetPart, GritFunctionDefinition, PatternDefinition, PredicateDefinition,
-        Variable, VariableSourceLocations,
+        DynamicSnippetPart, GritFunctionDefinition, Pattern, PatternDefinition,
+        PredicateDefinition, Variable, VariableSourceLocations,
     },
 };
 use grit_util::{
@@ -636,6 +636,12 @@ fn find_definition_if_exists(
 pub struct CompilationResult {
     pub compilation_warnings: AnalysisLogs,
     pub problem: Problem,
+}
+
+impl CompilationResult {
+    pub fn root_pattern(self) -> Pattern<MarzanoQueryContext> {
+        self.problem.pattern
+    }
 }
 
 #[cfg_attr(

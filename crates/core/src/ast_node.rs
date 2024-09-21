@@ -65,6 +65,7 @@ impl Matcher<MarzanoQueryContext> for ASTNode {
         let Some(node) = binding.singleton() else {
             return Ok(false);
         };
+
         if binding.is_list() {
             return self.execute(
                 &ResolvedPattern::from_node_binding(node),
