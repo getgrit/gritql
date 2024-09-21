@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use grit_pattern_matcher::pattern::{DynamicSnippetPart, Pattern, Variable};
+use grit_pattern_matcher::pattern::{Contains, DynamicSnippetPart, Pattern, Variable};
 use grit_util::ByteRange;
 use marzano_language::target_language::TargetLanguage;
 
@@ -27,7 +27,6 @@ impl StatelessCompilerContext {
     pub fn parse_snippet(&mut self, content: &str) -> Result<Pattern<MarzanoQueryContext>> {
         let range = ByteRange::new(0, content.len());
         let snippet = parse_snippet_content(content, range, self, false)?;
-        println!("snippet: {:?}", snippet);
         Ok(snippet)
     }
 }
@@ -80,13 +79,16 @@ mod tests {
 
     #[test]
     fn test_stateless_snippet_compiler_equivalence() {
-        let language = TargetLanguage::default();
+        let language = TargetLanguage::from_string("js", None).unwrap();
         let mut compiler = StatelessCompilerContext::new(language);
-        let pattern = compiler.parse_snippet("console.log").unwrap();
+        let pattern = compiler.parse_snippet("console.log(name)").unwrap();
 
         // Check how the traditional compiler compiles the same snippet
-        let builder =
-            PatternBuilder::start_empty("`console.log`", TargetLanguage::default()).unwrap();
+        let builder = PatternBuilder::start_empty(
+            "`console.log(name)`",
+            TargetLanguage::from_string("js", None).unwrap(),
+        )
+        .unwrap();
         let pattern2 = builder.compile(None, None, false).unwrap().root_pattern();
 
         assert_eq!(format!("{:?}", pattern), format!("{:?}", pattern2));
