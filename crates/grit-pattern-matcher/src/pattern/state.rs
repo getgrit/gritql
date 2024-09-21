@@ -358,16 +358,31 @@ impl<'a, Q: QueryContext> State<'a, Q> {
     }
 
     /// Trace a variable to the root binding
+    /// Where possible, prefer trace_var_mut
     pub fn trace_var(&self, var: &Variable) -> Variable {
-        if let Some(Pattern::Variable(v)) = &self.bindings[var.try_scope().unwrap().into()]
-            .last()
-            .unwrap()[var.try_index().unwrap().into()]
-        .pattern
-        {
-            self.trace_var(v)
-        } else {
-            var.clone()
+        if let Ok(scope) = var.try_scope() {
+            if let Ok(index) = var.try_index() {
+                if let Some(Pattern::Variable(v)) =
+                    &self.bindings[scope.into()].last().unwrap()[index.into()].pattern
+                {
+                    return self.trace_var(v);
+                }
+            }
         }
+        var.clone()
+    }
+
+    pub fn trace_var_mut(&mut self, var: &Variable) -> Variable {
+        if let Ok(scope) = var.get_scope(self) {
+            if let Ok(index) = var.get_index(self) {
+                if let Some(Pattern::Variable(v)) =
+                    &self.bindings[scope.into()].last().unwrap()[index.into()].pattern
+                {
+                    return self.trace_var_mut(v);
+                }
+            }
+        }
+        var.clone()
     }
 
     pub fn bindings_history_to_ranges(

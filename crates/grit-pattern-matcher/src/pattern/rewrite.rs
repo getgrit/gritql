@@ -56,14 +56,16 @@ impl<Q: QueryContext> Rewrite<Q> {
             }
             None => {
                 if let Pattern::Variable(v) = &self.left {
-                    let var = state.trace_var(v);
+                    let var = state.trace_var_mut(v);
                     if let Some(VariableContent {
                         value: Some(content),
                         ..
                     }) = state
                         .bindings
                         .get(var.try_scope().unwrap().into())
-                        .and_then(|scope| scope.last().unwrap().get(var.try_index().unwrap().into()))
+                        .and_then(|scope| {
+                            scope.last().unwrap().get(var.try_index().unwrap().into())
+                        })
                         .cloned()
                         .map(|b| *b)
                     {
