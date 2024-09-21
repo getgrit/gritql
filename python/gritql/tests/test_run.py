@@ -24,5 +24,3 @@ def test_apply_pattern_with_grit_dir():
 
         assert apply_pattern('test_pattern', ['arg1'], grit_dir='/path/to/grit') == 0
         mock_run_cli.assert_called_once_with(['apply', 'test_pattern', 'arg1', '--grit-dir', '/path/to/grit'])
-
-# Add more tests as needed

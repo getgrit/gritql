@@ -24,9 +24,12 @@ def test_find_install_download_grit():
         assert isinstance(result, Path)
         assert result.name == 'marzano'
 
+        # Test the URL that is called
+        expected_url = "https://github.com/getgrit/gritql/releases/latest/download/marzano-x86_64-macos.tar.gz"
+        mock_client.return_value.__enter__.return_value.get.assert_called_once_with(expected_url, follow_redirects=True)
+
+
 def test_find_install_windows():
     with patch('sys.platform', 'win32'):
         with pytest.raises(CLIError, match="Windows is not supported yet"):
             find_install()
-
-# Add more tests for other functions in installer.py
