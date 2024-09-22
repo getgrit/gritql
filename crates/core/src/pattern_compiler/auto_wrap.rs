@@ -14,12 +14,6 @@ use grit_pattern_matcher::{
 use grit_util::FileRange;
 use log::debug;
 
-pub fn wrap_pattern_in_sequential(
-    pattern: Pattern<MarzanoQueryContext>,
-) -> Result<Pattern<MarzanoQueryContext>> {
-    Ok(Pattern::Sequential(vec![Step { pattern }].into()))
-}
-
 pub(crate) fn auto_wrap_pattern(
     pattern: Pattern<MarzanoQueryContext>,
     pattern_definitions: &mut [PatternDefinition<MarzanoQueryContext>],
