@@ -6,7 +6,7 @@ use super::{
 };
 use crate::{
     binding::Binding,
-    constants::{ABSOLUTE_PATH_INDEX, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX},
+    constants::{ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX},
     context::{ExecContext, QueryContext},
 };
 use core::fmt::Debug;
@@ -85,6 +85,9 @@ impl VariableSource {
 
     /// Get locations where the variable is referenced from the main pattern file
     pub fn get_main_locations(&self) -> Vec<ByteRange> {
+        if self.file != DEFAULT_FILE_NAME {
+            return vec![];
+        }
         self.locations.iter().cloned().collect()
     }
 
