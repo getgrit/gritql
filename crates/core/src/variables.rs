@@ -7,13 +7,6 @@ use grit_pattern_matcher::{
 use grit_util::ByteRange;
 use std::collections::BTreeSet;
 
-pub(crate) fn variable_from_name(
-    name: &str,
-    context: &mut NodeCompilationContext,
-) -> Result<Variable> {
-    register_variable_optional_range(name, None, context)
-}
-
 pub(crate) fn get_variables(
     params: &[(String, ByteRange)],
     context: &mut NodeCompilationContext,

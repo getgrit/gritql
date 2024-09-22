@@ -1,6 +1,6 @@
-use crate::{optimizer::hoist_files::extract_filename_pattern, variables::variable_from_name};
+use crate::optimizer::hoist_files::extract_filename_pattern;
 
-use super::compiler::{DefinitionInfo, NodeCompilationContext};
+use super::compiler::{DefinitionInfo, SnippetCompilationContext};
 use anyhow::Result;
 use grit_pattern_matcher::{
     constants::{GRIT_RANGE_VAR, MATCH_VAR},
@@ -59,7 +59,7 @@ pub(crate) fn auto_wrap_pattern<Q: QueryContext>(
     pattern_definitions: &mut [PatternDefinition<Q>],
     is_not_multifile: bool,
     file_ranges: Option<Vec<FileRange>>,
-    context: &mut NodeCompilationContext,
+    context: &mut dyn SnippetCompilationContext,
     injected_limit: Option<usize>,
 ) -> Result<Pattern<Q>> {
     let is_sequential = is_sequential(&pattern, pattern_definitions);
@@ -416,9 +416,9 @@ fn wrap_pattern_in_range<Q: QueryContext>(
     var_name: &str,
     pattern: Pattern<Q>,
     ranges: Vec<FileRange>,
-    context: &mut NodeCompilationContext,
+    context: &mut dyn SnippetCompilationContext,
 ) -> Result<Pattern<Q>> {
-    let var = variable_from_name(var_name, context)?;
+    let var = context.register_variable(var_name, None)?;
     let mut predicates = Vec::new();
     for file_range in ranges {
         let range = file_range.range.clone();
@@ -457,9 +457,9 @@ fn wrap_pattern_in_range<Q: QueryContext>(
 fn wrap_pattern_in_contains<Q: QueryContext>(
     var_name: &str,
     pattern: Pattern<Q>,
-    context: &mut NodeCompilationContext,
+    context: &mut dyn SnippetCompilationContext,
 ) -> Result<Pattern<Q>> {
-    let var = variable_from_name(var_name, context)?;
+    let var = context.register_variable(var_name, None)?;
     let pattern = Pattern::Where(Box::new(Where::new(
         Pattern::Variable(var.clone()),
         Predicate::Match(Box::new(Match::new(
