@@ -274,14 +274,17 @@ impl Variable {
         {
             let scope = self.get_scope(state)?;
             let index = self.get_index(state)?;
-            let variable_content = &mut **(state
+            let variable_content = state
                 .bindings
                 .get_mut(scope.into())
                 .unwrap()
                 .back_mut()
                 .unwrap()
-                .get_mut(index.into())
-                .unwrap());
+                .get_mut(index.into());
+            let Some(variable_content) = variable_content else {
+                return Ok(None);
+            };
+            let variable_content = &mut **(variable_content);
             let value = &mut variable_content.value;
 
             if let Some(var_side_resolve_pattern) = value {
@@ -359,14 +362,18 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
         // via the variable_content variable
         let scope = self.get_scope(state)?;
         let index = self.get_index(state)?;
-        let variable_content = &mut **(state
+        let variable_content = state
             .bindings
             .get_mut(scope.into())
             .unwrap()
             .back_mut()
             .unwrap()
-            .get_mut(index.into())
-            .unwrap());
+            .get_mut(index.into());
+        let Some(variable_content) = variable_content else {
+            return Ok(false);
+        };
+
+        let variable_content = &mut **(variable_content);
         if let Some(pattern) = variable_content.pattern {
             if !pattern.execute(resolved_pattern, state, context, logs)? {
                 return Ok(false);
