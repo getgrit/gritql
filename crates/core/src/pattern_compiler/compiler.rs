@@ -45,13 +45,18 @@ use tracing::instrument;
 pub trait SnippetCompilationContext {
     fn get_lang(&self) -> &TargetLanguage;
 
+    /// Register a variable that is part of a CodeSnippet
     fn register_snippet_variable(
         &mut self,
         name: &str,
         source_range: Option<ByteRange>,
     ) -> Result<DynamicSnippetPart>;
 
+    /// Register a variable generically
     fn register_variable(&mut self, name: &str, range: Option<ByteRange>) -> Result<Variable>;
+
+    /// Retrieves a pattern definition by name
+    fn get_pattern_definition(&self, name: &str) -> Option<&DefinitionInfo>;
 }
 
 pub(crate) struct CompilationContext<'a> {
@@ -136,6 +141,10 @@ impl<'a> SnippetCompilationContext for NodeCompilationContext<'a> {
             }),
             self,
         )
+    }
+
+    fn get_pattern_definition(&self, name: &str) -> Option<&DefinitionInfo> {
+        self.compilation.pattern_definition_info.get(name)
     }
 }
 

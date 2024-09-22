@@ -100,10 +100,7 @@ pub(crate) fn auto_wrap_pattern<Q: QueryContext>(
         } else {
             second_wrap
         };
-        wrap_pattern_in_before_and_after_each_file(
-            third_wrap,
-            context.compilation.pattern_definition_info,
-        )?
+        wrap_pattern_in_before_and_after_each_file(third_wrap, context)?
     } else {
         pattern
     };
@@ -467,10 +464,11 @@ fn wrap_pattern_in_contains<Q: QueryContext>(
             Some(pattern),
         ))),
     )));
-    let pattern_definition =
-        PatternDefinition::new("<bubble>".to_string(), context.scope_index, vec![], pattern);
-    let bubble = Pattern::Bubble(Box::new(Bubble::new(pattern_definition, vec![])));
-    Ok(Pattern::Contains(Box::new(Contains::new(bubble, None))))
+    panic!("not implemented");
+    // let pattern_definition =
+    //     PatternDefinition::new("<bubble>".to_string(), context.scope_index, vec![], pattern);
+    // let bubble = Pattern::Bubble(Box::new(Bubble::new(pattern_definition, vec![])));
+    // Ok(Pattern::Contains(Box::new(Contains::new(bubble, None))))
 }
 
 /// Wraps the pattern in a file pattern, so it can match directly against files
@@ -503,7 +501,7 @@ fn wrap_pattern_in_file<Q: QueryContext>(pattern: Pattern<Q>) -> Result<Pattern<
 
 pub(crate) fn wrap_pattern_in_before_and_after_each_file<Q: QueryContext>(
     pattern: Pattern<Q>,
-    pattern_definition_info: &BTreeMap<String, DefinitionInfo>,
+    context: &mut dyn SnippetCompilationContext,
 ) -> Result<Pattern<Q>> {
     let before_each_file = "before_each_file";
     let after_each_file = "after_each_file";
@@ -511,7 +509,7 @@ pub(crate) fn wrap_pattern_in_before_and_after_each_file<Q: QueryContext>(
     if let Some(DefinitionInfo {
         index,
         parameters: _,
-    }) = pattern_definition_info.get(before_each_file)
+    }) = context.get_pattern_definition(before_each_file)
     {
         all_steps.push(Pattern::Call(Box::new(Call::new(*index, vec![]))));
     }
@@ -520,7 +518,7 @@ pub(crate) fn wrap_pattern_in_before_and_after_each_file<Q: QueryContext>(
     if let Some(DefinitionInfo {
         index,
         parameters: _,
-    }) = pattern_definition_info.get(after_each_file)
+    }) = context.get_pattern_definition(after_each_file)
     {
         all_steps.push(Pattern::Call(Box::new(Call::new(*index, vec![]))));
     }

@@ -5,7 +5,8 @@ use marzano_language::target_language::TargetLanguage;
 
 use crate::{
     pattern_compiler::{
-        compiler::SnippetCompilationContext, snippet_compiler::parse_snippet_content,
+        compiler::{DefinitionInfo, SnippetCompilationContext},
+        snippet_compiler::parse_snippet_content,
     },
     problem::MarzanoQueryContext,
 };
@@ -51,13 +52,19 @@ impl SnippetCompilationContext for StatelessCompilerContext {
         }
         Ok(Variable::new_dynamic(name))
     }
+
+    fn get_pattern_definition(&self, _name: &str) -> Option<&DefinitionInfo> {
+        None
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use marzano_language::target_language::TargetLanguage;
 
-    use crate::{pattern_compiler::CompiledPatternBuilder, sdk::compiler::StatelessCompilerContext};
+    use crate::{
+        pattern_compiler::CompiledPatternBuilder, sdk::compiler::StatelessCompilerContext,
+    };
 
     #[test]
     fn test_stateless_snippet_compiler_self_equivalence() {
