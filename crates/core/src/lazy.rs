@@ -15,7 +15,7 @@ mod test {
     use crate::problem::MarzanoQueryContext;
     use crate::sdk::StatelessCompilerContext;
     use crate::{
-        pattern_compiler::{CompilationResult, PatternBuilder},
+        pattern_compiler::{CompilationResult, CompiledPatternBuilder},
         test_utils::{run_on_test_files, SyntheticFile},
     };
 
@@ -46,7 +46,7 @@ mod test {
 
         assert!(!callback_called.load(std::sync::atomic::Ordering::SeqCst));
 
-        let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
+        let mut builder = CompiledPatternBuilder::start_empty(src, lang).unwrap();
         builder = builder.matches_callback(Box::new(move |binding, context, state, logs| {
             assert!(state.find_var_in_scope("$foo").is_some());
             assert!(state.find_var_in_scope("$bar").is_some());
@@ -107,13 +107,13 @@ mod test {
         let matches_found = Arc::new(AtomicUsize::new(0));
         let matches_found_clone = Arc::clone(&matches_found);
 
-        let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
+        let mut builder = CompiledPatternBuilder::start_empty(src, lang).unwrap();
 
         builder = builder.matches_callback(Box::new(move |binding, context, state, logs| {
             let this_lang = TargetLanguage::from_string("js", None).unwrap();
 
             let console_builder =
-                PatternBuilder::start_empty("call_expression()", this_lang).unwrap();
+                CompiledPatternBuilder::start_empty("call_expression()", this_lang).unwrap();
             let console_pattern = console_builder
                 .compile(None, None, false)
                 .unwrap()
@@ -167,13 +167,14 @@ mod test {
         let matches_found = Arc::new(AtomicUsize::new(0));
         let matches_found_clone = Arc::clone(&matches_found);
 
-        let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
+        let mut builder = CompiledPatternBuilder::start_empty(src, lang).unwrap();
 
         builder = builder.matches_callback(Box::new(move |binding, context, state, logs| {
             let this_lang = TargetLanguage::from_string("js", None).unwrap();
 
             let console_builder =
-                PatternBuilder::start_empty("`console.log(name)`", this_lang.clone()).unwrap();
+                CompiledPatternBuilder::start_empty("`console.log(name)`", this_lang.clone())
+                    .unwrap();
             let console_pattern = console_builder
                 .compile(None, None, false)
                 .unwrap()

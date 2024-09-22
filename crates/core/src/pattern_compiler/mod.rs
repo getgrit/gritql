@@ -77,6 +77,6 @@ pub(crate) mod variable_compiler;
 pub(crate) mod where_compiler;
 pub(crate) mod within_compiler;
 
-pub use builder::PatternBuilder;
+pub use builder::CompiledPatternBuilder;
 pub use compiler::{src_to_problem_libs, CompilationResult};
 pub(crate) use node_compiler::NodeCompiler;

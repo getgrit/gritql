@@ -57,7 +57,7 @@ impl SnippetCompilationContext for StatelessCompilerContext {
 mod tests {
     use marzano_language::target_language::TargetLanguage;
 
-    use crate::{pattern_compiler::PatternBuilder, sdk::compiler::StatelessCompilerContext};
+    use crate::{pattern_compiler::CompiledPatternBuilder, sdk::compiler::StatelessCompilerContext};
 
     #[test]
     fn test_stateless_snippet_compiler_self_equivalence() {
@@ -80,7 +80,7 @@ mod tests {
         let pattern = compiler.parse_snippet("console.log(name)").unwrap();
 
         // Check how the traditional compiler compiles the same snippet
-        let builder = PatternBuilder::start_empty(
+        let builder = CompiledPatternBuilder::start_empty(
             "`console.log(name)`",
             TargetLanguage::from_string("js", None).unwrap(),
         )

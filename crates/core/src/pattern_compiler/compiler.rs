@@ -1,5 +1,5 @@
 use super::{
-    builder::PatternBuilder,
+    builder::CompiledPatternBuilder,
     function_definition_compiler::{
         ForeignFunctionDefinitionCompiler, GritFunctionDefinitionCompiler,
     },
@@ -396,7 +396,7 @@ pub(crate) fn get_definitions(
                 bail!("failed to get pattern name from definition in file {file}");
             };
 
-            let body = PatternCompiler::from_node(&bare_pattern, &mut local_context)?;
+            let body = CompiledPatternBuilder::from_node(&bare_pattern, &mut local_context)?;
             let pattern_def = PatternDefinition::new(name.to_owned(), scope_index, vec![], body);
             pattern_definitions.push(pattern_def);
         }
@@ -652,7 +652,8 @@ pub fn src_to_problem_libs(
     let mut parser = MarzanoGritParser::new()?;
     let src_tree = parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
     let lang = TargetLanguage::from_tree(&src_tree).unwrap_or(default_lang);
-    let builder = PatternBuilder::start(src, libs, lang, name, &mut parser, custom_built_ins)?;
+    let builder =
+        CompiledPatternBuilder::start(src, libs, lang, name, &mut parser, custom_built_ins)?;
     builder.compile(file_ranges, injected_limit, true)
 }
 
@@ -662,7 +663,7 @@ pub fn src_to_problem(src: String, default_lang: TargetLanguage) -> Result<Probl
     let src_tree = parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
     let lang = TargetLanguage::from_tree(&src_tree).unwrap_or(default_lang);
     let libs = BTreeMap::new();
-    let builder = PatternBuilder::start(src, &libs, lang, None, &mut parser, None)?;
+    let builder = CompiledPatternBuilder::start(src, &libs, lang, None, &mut parser, None)?;
     let CompilationResult { problem, .. } = builder.compile(None, None, false)?;
     Ok(problem)
 }

@@ -22,6 +22,10 @@ impl<Q: QueryContext> Contains<Q> {
     pub fn new(contains: Pattern<Q>, until: Option<Pattern<Q>>) -> Self {
         Self { contains, until }
     }
+
+    pub fn new_pattern(contains: Pattern<Q>, until: Option<Pattern<Q>>) -> Pattern<Q> {
+        Pattern::Contains(Box::new(Contains::new(contains, until)))
+    }
 }
 
 impl<Q: QueryContext> PatternName for Contains<Q> {

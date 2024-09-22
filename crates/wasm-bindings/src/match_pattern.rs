@@ -1,7 +1,7 @@
 use anyhow::Context;
 use grit_util::Language;
 use grit_util::{Ast, Position};
-use marzano_core::pattern_compiler::PatternBuilder;
+use marzano_core::pattern_compiler::CompiledPatternBuilder;
 use marzano_core::{
     api::{AnalysisLog, InputFile, MatchResult, PatternInfo},
     built_in_functions::BuiltIns,
@@ -106,7 +106,7 @@ pub async fn parse_input_files_internal(
     let injected_builtins: Option<BuiltIns> = None;
     #[cfg(feature = "ai_builtins")]
     let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
-    let builder = PatternBuilder::start(
+    let builder = CompiledPatternBuilder::start(
         pattern.clone(),
         &libs,
         lang,
@@ -233,7 +233,7 @@ async fn match_pattern_internal(
     let injected_builtins: Option<BuiltIns> = None;
     #[cfg(feature = "ai_builtins")]
     let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
-    let builder = PatternBuilder::start(pattern, &libs, lang, None, parser, injected_builtins)?;
+    let builder = CompiledPatternBuilder::start(pattern, &libs, lang, None, parser, injected_builtins)?;
     let CompilationResult {
         problem: pattern, ..
     } = builder.compile(None, None, true)?;

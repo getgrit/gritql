@@ -7,7 +7,7 @@ use std::{
 };
 
 use crate::{
-    pattern_compiler::{CompilationResult, PatternBuilder},
+    pattern_compiler::{CompilationResult, CompiledPatternBuilder},
     test_utils::{run_on_test_files, SyntheticFile},
 };
 
@@ -25,7 +25,7 @@ fn test_callback() {
 
     assert!(!callback_called.load(std::sync::atomic::Ordering::SeqCst));
 
-    let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
+    let mut builder = CompiledPatternBuilder::start_empty(src, lang).unwrap();
     builder = builder.matches_callback(Box::new(move |binding, context, state, _logs| {
         let text = binding
             .text(&state.files, context.language)

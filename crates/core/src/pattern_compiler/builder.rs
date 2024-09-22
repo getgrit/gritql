@@ -34,7 +34,7 @@ use std::{collections::BTreeMap, path::Path, vec};
 
 /// Pattern Builder allows you to progressively compile a pattern.
 /// You always start with a source GritQL string, but additional patterns can be attached before the final query.
-pub struct PatternBuilder {
+pub struct CompiledPatternBuilder {
     tree: Option<Tree>,
     pattern: Pattern<MarzanoQueryContext>,
     language: TargetLanguage,
@@ -63,7 +63,7 @@ pub struct PatternBuilder {
     compilation_warnings: AnalysisLogs,
 }
 
-impl PatternBuilder {
+impl CompiledPatternBuilder {
     pub fn start_empty(src: &str, lang: TargetLanguage) -> Result<Self> {
         Self::start(
             src.to_string(),
