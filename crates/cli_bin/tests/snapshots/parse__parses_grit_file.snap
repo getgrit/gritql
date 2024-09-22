@@ -5,18 +5,6 @@ expression: v
 __typename: PatternInfo
 messages: []
 variables:
-  - name: $new_files
-    scopedName: 0_0_$new_files
-    ranges: []
-  - name: $program
-    scopedName: 0_1_$program
-    ranges: []
-  - name: $filename
-    scopedName: 0_2_$filename
-    ranges: []
-  - name: $absolute_filename
-    scopedName: 0_3_$absolute_filename
-    ranges: []
   - name: $msg
     scopedName: 14_0_$msg
     ranges:
@@ -28,9 +16,6 @@ variables:
           column: 18
         startByte: 26
         endByte: 30
-  - name: $match
-    scopedName: 14_1_$match
-    ranges: []
 sourceFile: "language js\n\n`console.log($msg)`\n"
 parsedPattern: "[..]"
 valid: true
