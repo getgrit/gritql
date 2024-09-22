@@ -75,15 +75,6 @@ impl CompiledPatternBuilder {
         )
     }
 
-    pub fn build_standard_global_vars() -> BTreeMap<String, usize> {
-        BTreeMap::from([
-            ("$new_files".to_owned(), NEW_FILES_INDEX),
-            ("$filename".to_owned(), FILENAME_INDEX),
-            ("$program".to_owned(), PROGRAM_INDEX),
-            ("$absolute_filename".to_owned(), ABSOLUTE_PATH_INDEX),
-        ])
-    }
-
     #[allow(clippy::too_many_arguments)]
     pub fn start(
         src: String,
@@ -105,7 +96,7 @@ impl CompiledPatternBuilder {
             built_ins.extend_builtins(custom_built_ins)?;
         }
         let mut logs: AnalysisLogs = vec![].into();
-        let mut global_vars = Self::build_standard_global_vars();
+        let mut global_vars = build_standard_global_vars();
         let is_multifile = is_multifile(&root, libs, grit_parser)?;
         let has_limit = has_limit(&root, libs, grit_parser)?;
         let libs = filter_libs(libs, &src, grit_parser, !is_multifile)?;
@@ -313,4 +304,13 @@ impl CompiledPatternBuilder {
         };
         Ok(result)
     }
+}
+
+pub fn build_standard_global_vars() -> BTreeMap<String, usize> {
+    BTreeMap::from([
+        ("$new_files".to_owned(), NEW_FILES_INDEX),
+        ("$filename".to_owned(), FILENAME_INDEX),
+        ("$program".to_owned(), PROGRAM_INDEX),
+        ("$absolute_filename".to_owned(), ABSOLUTE_PATH_INDEX),
+    ])
 }
