@@ -367,7 +367,6 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
             .get_mut(index.into());
         let Some(variable_content) = variable_content else {
             logs.add_warning(None, format!("Variable not found in scope {:?}", scope));
-            panic!("Variable not found in scope {:?}", scope);
             return Ok(false);
         };
 
