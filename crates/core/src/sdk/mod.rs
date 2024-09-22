@@ -1,5 +1,6 @@
 mod compiler;
 mod language_sdk;
+mod pattern_sdk;
 mod test_js;
 
 pub(crate) use compiler::StatelessCompilerContext;
