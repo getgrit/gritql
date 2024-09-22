@@ -1,0 +1,39 @@
+name: Python Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "python/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "python/**"
+
+jobs:
+  test:
+    runs-on: "nscloud-ubuntu-22.04-amd64-4x16"
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Install dependencies
+        working-directory: python
+        run: |
+          uv venv
+          uv pip install '.[dev]'
+
+      - name: Run tests
+        working-directory: python
+        run: |
+          uv run pytest
