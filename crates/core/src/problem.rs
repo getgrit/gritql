@@ -20,7 +20,7 @@ use grit_pattern_matcher::{
     },
 };
 use grit_util::VariableMatch;
-use im::vector;
+use im::{vector, Vector};
 use log::error;
 use marzano_language::{language::Tree, target_language::TargetLanguage};
 use marzano_util::{
@@ -506,16 +506,10 @@ impl Problem {
         }
     }
 
-    /// Construct a context, only for testing
-    pub fn get_context<'a>(
-        &'a self,
-        context: &'a ExecutionContext,
-        owned_files: &'a FileOwners<Tree>,
-    ) -> (State<MarzanoQueryContext>, MarzanoContext<'a>) {
-        let file_registry: FileRegistry<MarzanoQueryContext> = FileRegistry::new_from_paths(vec![]);
-
-        let bindings = self
-            .variables
+    fn get_initial_bindings(
+        &self,
+    ) -> Vector<Vector<Vector<Box<VariableContent<MarzanoQueryContext>>>>> {
+        self.variables
             .locations
             .iter()
             .map(|scope| {
@@ -524,7 +518,18 @@ impl Problem {
                     .map(|s| Box::new(VariableContent::new(s.name().to_string())))
                     .collect()]
             })
-            .collect();
+            .collect()
+    }
+
+    /// Construct a context, only for testing
+    pub fn get_context<'a>(
+        &'a self,
+        context: &'a ExecutionContext,
+        owned_files: &'a FileOwners<Tree>,
+    ) -> (State<MarzanoQueryContext>, MarzanoContext<'a>) {
+        let file_registry: FileRegistry<MarzanoQueryContext> = FileRegistry::new_from_paths(vec![]);
+
+        let bindings = self.get_initial_bindings();
         let state = State::new(bindings, file_registry);
 
         (
@@ -569,17 +574,7 @@ impl Problem {
             self.name.clone(),
         );
 
-        let bindings = self
-            .variables
-            .locations
-            .iter()
-            .map(|scope| {
-                vector![scope
-                    .iter()
-                    .map(|s| Box::new(VariableContent::new(s.name().to_string())))
-                    .collect()]
-            })
-            .collect();
+        let bindings = self.get_initial_bindings();
 
         let file_registry = FileRegistry::new_from_paths(file_names);
         let mut state = State::new(bindings, file_registry);
