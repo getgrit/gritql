@@ -47,8 +47,6 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
     pub fn get_file_owner(&self, pointer: FilePtr) -> &'a FileOwner<Q::Tree<'a>> {
         #[cfg(debug_assertions)]
         {
-            println!("get file owner: {:?} from {:?}", pointer, self.owners);
-
             if pointer.file as usize >= self.owners.len() {
                 panic!(
                     "File index out of bounds: file={}, owners.len()={}",

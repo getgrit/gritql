@@ -6,7 +6,9 @@ use marzano_language::target_language::TargetLanguage;
 use crate::{
     built_in_functions::BuiltIns,
     pattern_compiler::{
-        auto_wrap::{auto_wrap_pattern, should_autowrap, should_wrap_in_file},
+        auto_wrap::{
+            auto_wrap_pattern, should_autowrap, should_wrap_in_file, wrap_pattern_in_sequential,
+        },
         compiler::VariableLocations,
         CompiledPatternBuilder,
     },
@@ -44,6 +46,8 @@ impl LanguageSdk {
         let mut pattern_definitions = vec![];
 
         let is_multifile = false;
+
+        let pattern = wrap_pattern_in_sequential(pattern)?;
 
         let problem = Problem::new_from_pattern(
             pattern,

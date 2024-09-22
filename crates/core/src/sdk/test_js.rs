@@ -8,19 +8,19 @@ mod tests {
     };
 
     #[test]
-    fn test_basic_contains() {
+    fn test_basic_file_contains() {
         let sdk = LanguageSdk::default();
 
-        let console = sdk.snippet("console.log('hello world')").unwrap();
+        let console = sdk.snippet("console.log").unwrap();
 
         let file = Pattern::File(Box::new(FilePattern::new(
             Pattern::Top,
-            Contains::new_pattern(Pattern::Top, None),
+            Contains::new_pattern(console, None),
         )));
 
         let results = run_on_test_files(
             &sdk.build(file).unwrap(),
-            &vec![SyntheticFile::new(
+            &[SyntheticFile::new(
                 "test.js".to_owned(),
                 "function() {
                     console.log('hello world');
@@ -29,6 +29,6 @@ mod tests {
                 true,
             )],
         );
-        assert_eq!(results.len(), 1);
+        assert_eq!(results.len(), 2);
     }
 }

@@ -50,6 +50,10 @@ use std::collections::BTreeMap;
 //     }
 // }
 
+pub fn wrap_pattern_in_sequential<Q: QueryContext>(pattern: Pattern<Q>) -> Result<Pattern<Q>> {
+    Ok(Pattern::Sequential(vec![Step { pattern }].into()))
+}
+
 pub(crate) fn auto_wrap_pattern<Q: QueryContext>(
     pattern: Pattern<Q>,
     pattern_definitions: &mut [PatternDefinition<Q>],
