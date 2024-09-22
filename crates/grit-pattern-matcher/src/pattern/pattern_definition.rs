@@ -9,7 +9,6 @@ use grit_util::{
     AnalysisLogs,
 };
 use rand::Rng as _;
-use std::sync::{Arc, OnceLock};
 
 #[derive(Clone, Debug)]
 pub enum PatternDefinitionInternal {

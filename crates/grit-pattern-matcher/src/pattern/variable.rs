@@ -18,7 +18,7 @@ use grit_util::{
 use std::{
     borrow::Cow,
     collections::BTreeSet,
-    sync::{Arc, Mutex, OnceLock, RwLock},
+    sync::{Arc, RwLock},
 };
 
 #[derive(Debug, Clone, Copy)]
