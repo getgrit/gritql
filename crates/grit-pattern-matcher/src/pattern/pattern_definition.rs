@@ -13,7 +13,7 @@ use rand::Rng as _;
 #[derive(Clone, Debug)]
 pub enum PatternDefinitionInternal {
     Static { scope: usize },
-    Dynamic {},
+    Dynamic,
 }
 
 #[derive(Clone, Debug)]
@@ -48,9 +48,7 @@ impl<Q: QueryContext> PatternDefinition<Q> {
             name: random_name,
             pattern,
             params,
-            internal: PatternDefinitionInternal::Dynamic {
-                // scope: Arc::new(OnceLock::new()),
-            },
+            internal: PatternDefinitionInternal::Dynamic,
         }
     }
 
