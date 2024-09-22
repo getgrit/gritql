@@ -8,23 +8,17 @@ use grit_util::{error::GritResult, AnalysisLogs};
 use std::sync::{Arc, OnceLock};
 
 #[derive(Clone, Debug)]
-pub enum PatternDefinitionInternal<Q: QueryContext> {
-    Static {
-        scope: usize,
-        params: Vec<(String, Variable)>,
-        pattern: Pattern<Q>,
-    },
-    Dynamic {
-        params: Vec<(String, Variable)>,
-        pattern: Pattern<Q>,
-        scope: Arc<OnceLock<usize>>,
-    },
+pub enum PatternDefinitionInternal {
+    Static { scope: usize },
+    Dynamic { scope: Arc<OnceLock<usize>> },
 }
 
 #[derive(Clone, Debug)]
 pub struct PatternDefinition<Q: QueryContext> {
     pub name: String,
-    internal: PatternDefinitionInternal<Q>,
+    pattern: Pattern<Q>,
+    params: Vec<(String, Variable)>,
+    internal: PatternDefinitionInternal,
 }
 
 impl<Q: QueryContext> PatternDefinition<Q> {
@@ -36,20 +30,18 @@ impl<Q: QueryContext> PatternDefinition<Q> {
     ) -> Self {
         Self {
             name,
-            internal: PatternDefinitionInternal::Static {
-                scope,
-                params,
-                pattern,
-            },
+            pattern,
+            params,
+            internal: PatternDefinitionInternal::Static { scope },
         }
     }
 
     pub fn new_dynamic(name: String, params: Vec<(String, Variable)>, pattern: Pattern<Q>) -> Self {
         Self {
             name,
+            pattern,
+            params,
             internal: PatternDefinitionInternal::Dynamic {
-                params,
-                pattern,
                 scope: Arc::new(OnceLock::new()),
             },
         }
@@ -57,25 +49,21 @@ impl<Q: QueryContext> PatternDefinition<Q> {
 
     pub fn try_scope(&self) -> GritResult<usize> {
         match &self.internal {
-            PatternDefinitionInternal::Static { scope, .. } => Ok(*scope),
-            PatternDefinitionInternal::Dynamic { scope, .. } => {
+            PatternDefinitionInternal::Static { scope } => Ok(*scope),
+            PatternDefinitionInternal::Dynamic { .. } => {
                 panic!("Dynamic pattern definition does not have a scope");
             }
         }
     }
 
-    pub fn replace_pattern(&mut self, pattern: Pattern<Q>) {
-        todo!("Not implemented")
-        // match &mut self.internal {
-        //     PatternDefinitionInternal::Static { pattern, .. } => *pattern = pattern,
-        //     PatternDefinitionInternal::Dynamic { pattern, .. } => *pattern = pattern,
-        // }
+    pub fn replace_pattern(&mut self, new_pattern: Pattern<Q>) {
+        self.pattern = new_pattern;
     }
 
     fn get_scope(&self, state: &mut State<'_, Q>) -> usize {
         match &self.internal {
-            PatternDefinitionInternal::Static { scope, .. } => *scope,
-            PatternDefinitionInternal::Dynamic { scope, .. } => {
+            PatternDefinitionInternal::Static { scope } => *scope,
+            PatternDefinitionInternal::Dynamic { scope } => {
                 *scope.get_or_init(|| state.register_pattern_definition(&self.name))
             }
         }
@@ -92,12 +80,7 @@ impl<Q: QueryContext> PatternDefinition<Q> {
         let scope = self.get_scope(state);
         let tracker = state.enter_scope(scope, args);
 
-        let pattern = match &self.internal {
-            PatternDefinitionInternal::Static { pattern, .. } => pattern,
-            PatternDefinitionInternal::Dynamic { pattern, .. } => pattern,
-        };
-
-        let res = pattern.execute(binding, state, context, logs);
+        let res = self.pattern.execute(binding, state, context, logs);
         state.exit_scope(tracker);
 
         let fn_state = state.bindings[scope].pop_back().unwrap();
@@ -109,16 +92,10 @@ impl<Q: QueryContext> PatternDefinition<Q> {
     }
 
     pub fn params(&self) -> &Vec<(String, Variable)> {
-        match &self.internal {
-            PatternDefinitionInternal::Static { params, .. } => params,
-            PatternDefinitionInternal::Dynamic { params, .. } => params,
-        }
+        &self.params
     }
 
     pub fn pattern(&self) -> &Pattern<Q> {
-        match &self.internal {
-            PatternDefinitionInternal::Static { pattern, .. } => pattern,
-            PatternDefinitionInternal::Dynamic { pattern, .. } => pattern,
-        }
+        &self.pattern
     }
 }

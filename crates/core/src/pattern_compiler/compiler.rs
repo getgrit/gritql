@@ -230,7 +230,7 @@ fn node_to_definition_info(
     Ok(())
 }
 
-pub(crate) struct DefinitionInfo {
+pub struct DefinitionInfo {
     pub(crate) index: usize,
     pub(crate) parameters: Vec<(String, ByteRange)>,
 }
