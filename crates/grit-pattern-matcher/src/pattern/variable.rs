@@ -59,11 +59,39 @@ pub struct Variable {
     internal: VariableInternal,
 }
 
+/// VariableSource is used to track the origin of a variable
+/// It can come from
 #[derive(Debug, Clone)]
-pub struct VariableSourceLocations {
-    pub name: String,
-    pub file: String,
-    pub locations: BTreeSet<ByteRange>,
+pub struct VariableSource {
+    name: String,
+    file: String,
+    locations: BTreeSet<ByteRange>,
+}
+
+impl VariableSource {
+    pub fn new(name: String, file: String) -> Self {
+        Self {
+            name,
+            file,
+            locations: BTreeSet::new(),
+        }
+    }
+
+    /// Register a location in a GritQL file where a variable is referenced
+    pub fn register_location(&mut self, location: ByteRange) -> GritResult<()> {
+        self.locations.insert(location);
+        Ok(())
+    }
+
+    /// Get locations where the variable is referenced from the main pattern file
+    pub fn get_main_locations(&self) -> Vec<ByteRange> {
+        self.locations.iter().cloned().collect()
+    }
+
+    /// Get the registered variable name
+    pub fn name(&self) -> &str {
+        &self.name
+    }
 }
 
 struct VariableMirror<'a, Q: QueryContext> {

@@ -521,7 +521,7 @@ impl Problem {
             .map(|scope| {
                 vector![scope
                     .iter()
-                    .map(|s| Box::new(VariableContent::new(s.name.clone())))
+                    .map(|s| Box::new(VariableContent::new(s.name().to_string())))
                     .collect()]
             })
             .collect();
@@ -576,7 +576,7 @@ impl Problem {
             .map(|scope| {
                 vector![scope
                     .iter()
-                    .map(|s| Box::new(VariableContent::new(s.name.clone())))
+                    .map(|s| Box::new(VariableContent::new(s.name().to_string())))
                     .collect()]
             })
             .collect();

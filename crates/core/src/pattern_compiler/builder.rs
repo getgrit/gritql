@@ -21,7 +21,7 @@ use grit_pattern_matcher::{
     },
     pattern::{
         Accumulate, And, DynamicPattern, GritFunctionDefinition, Pattern, PatternDefinition,
-        Predicate, PredicateDefinition, Rewrite, VariableSourceLocations, Where,
+        Predicate, PredicateDefinition, Rewrite, VariableSource, Where,
     },
 };
 use grit_util::{AnalysisLogs, Ast, FileRange};
@@ -45,7 +45,7 @@ pub struct PatternBuilder {
     vars: BTreeMap<String, usize>,
 
     current_scope_index: usize,
-    vars_array: Vec<Vec<VariableSourceLocations>>,
+    vars_array: Vec<Vec<VariableSource>>,
     global_vars: BTreeMap<String, usize>,
 
     pattern_definition_indices: BTreeMap<String, DefinitionInfo>,

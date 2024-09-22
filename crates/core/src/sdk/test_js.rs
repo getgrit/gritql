@@ -18,5 +18,6 @@ mod tests {
                 true,
             )],
         );
+        assert_eq!(results.len(), 1);
     }
 }

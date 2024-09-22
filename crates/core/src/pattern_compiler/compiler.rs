@@ -19,7 +19,7 @@ use grit_pattern_matcher::{
     constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
     pattern::{
         DynamicSnippetPart, GritFunctionDefinition, Pattern, PatternDefinition,
-        PredicateDefinition, Variable, VariableSourceLocations,
+        PredicateDefinition, Variable, VariableSource,
     },
 };
 use grit_util::{
@@ -74,7 +74,7 @@ pub(crate) struct NodeCompilationContext<'a> {
     /// The outer vector can be index using `scope_index`, while the individual
     /// variables in a scope can be indexed using the indices stored in `vars`
     /// and `global_vars`.
-    pub vars_array: &'a mut Vec<Vec<VariableSourceLocations>>,
+    pub vars_array: &'a mut Vec<Vec<VariableSource>>,
 
     /// Index of the local scope.
     ///
@@ -104,8 +104,7 @@ impl<'a> SnippetCompilationContext for NodeCompilationContext<'a> {
         };
         if let Some(registered_var_index) = self.vars.get(name) {
             self.vars_array[self.scope_index][*registered_var_index]
-                .locations
-                .insert(source_range);
+                .register_location(source_range)?;
             Ok(DynamicSnippetPart::Variable(Variable::new(
                 self.scope_index,
                 *registered_var_index,
@@ -113,8 +112,7 @@ impl<'a> SnippetCompilationContext for NodeCompilationContext<'a> {
         } else if let Some(global_var_index) = self.global_vars.get(name) {
             if self.compilation.file == DEFAULT_FILE_NAME {
                 self.vars_array[GLOBAL_VARS_SCOPE_INDEX as usize][*global_var_index]
-                    .locations
-                    .insert(source_range);
+                    .register_location(source_range)?;
             }
             Ok(DynamicSnippetPart::Variable(Variable::new(
                 GLOBAL_VARS_SCOPE_INDEX as usize,
@@ -338,7 +336,7 @@ fn node_to_definitions(
 }
 
 pub(crate) struct DefinitionOutput {
-    pub(crate) vars_array: Vec<Vec<VariableSourceLocations>>,
+    pub(crate) vars_array: Vec<Vec<VariableSource>>,
     pub(crate) pattern_definitions: Vec<PatternDefinition<MarzanoQueryContext>>,
     pub(crate) predicate_definitions: Vec<PredicateDefinition<MarzanoQueryContext>>,
     pub(crate) function_definitions: Vec<GritFunctionDefinition<MarzanoQueryContext>>,
@@ -362,11 +360,7 @@ pub(crate) fn get_definitions(
         global_vars
             .iter()
             .sorted_by(|x, y| Ord::cmp(x.1, y.1))
-            .map(|x| VariableSourceLocations {
-                name: x.0.clone(),
-                file: context.file.to_owned(),
-                locations: BTreeSet::new(),
-            })
+            .map(|x| VariableSource::new(x.0.clone(), context.file.to_owned()))
             .collect(),
     );
 
@@ -674,11 +668,11 @@ pub fn src_to_problem(src: String, default_lang: TargetLanguage) -> Result<Probl
 
 #[derive(Debug, Default)]
 pub struct VariableLocations {
-    pub(crate) locations: Vec<Vec<VariableSourceLocations>>,
+    pub(crate) locations: Vec<Vec<VariableSource>>,
 }
 
 impl VariableLocations {
-    pub(crate) fn new(locations: Vec<Vec<VariableSourceLocations>>) -> Self {
+    pub(crate) fn new(locations: Vec<Vec<VariableSource>>) -> Self {
         Self { locations }
     }
 
@@ -686,12 +680,12 @@ impl VariableLocations {
         let mut variables = vec![];
         for (i, scope) in self.locations.iter().enumerate() {
             for (j, var) in scope.iter().enumerate() {
-                if var.file == DEFAULT_FILE_NAME {
+                let locations = var.get_main_locations();
+                if !locations.is_empty() {
                     variables.push(VariableMatch {
-                        name: var.name.clone(),
-                        scoped_name: format!("{}_{}_{}", i, j, var.name),
-                        ranges: var
-                            .locations
+                        name: var.name().to_string(),
+                        scoped_name: format!("{}_{}_{}", i, j, var.name()),
+                        ranges: locations
                             .iter()
                             .map(|range| Range::from_byte_range(source, range))
                             .collect(),
