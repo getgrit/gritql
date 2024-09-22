@@ -396,7 +396,7 @@ pub(crate) fn get_definitions(
                 bail!("failed to get pattern name from definition in file {file}");
             };
 
-            let body = CompiledPatternBuilder::from_node(&bare_pattern, &mut local_context)?;
+            let body = PatternCompiler::from_node(&bare_pattern, &mut local_context)?;
             let pattern_def = PatternDefinition::new(name.to_owned(), scope_index, vec![], body);
             pattern_definitions.push(pattern_def);
         }
