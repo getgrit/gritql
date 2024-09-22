@@ -17,6 +17,7 @@ use crate::{
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
     constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
+    context::QueryContext,
     pattern::{
         DynamicSnippetPart, GritFunctionDefinition, Pattern, PatternDefinition,
         PredicateDefinition, Variable, VariableContent, VariableSource,
@@ -57,6 +58,12 @@ pub trait SnippetCompilationContext {
 
     /// Retrieves a pattern definition by name
     fn get_pattern_definition(&self, name: &str) -> Option<&DefinitionInfo>;
+
+    /// Create a bubble definition, in the current scope
+    fn register_ephemeral_pattern(
+        &mut self,
+        pattern: Pattern<MarzanoQueryContext>,
+    ) -> Result<PatternDefinition<MarzanoQueryContext>>;
 }
 
 pub(crate) struct CompilationContext<'a> {
@@ -145,6 +152,18 @@ impl<'a> SnippetCompilationContext for NodeCompilationContext<'a> {
 
     fn get_pattern_definition(&self, name: &str) -> Option<&DefinitionInfo> {
         self.compilation.pattern_definition_info.get(name)
+    }
+
+    fn register_ephemeral_pattern(
+        &mut self,
+        pattern: Pattern<MarzanoQueryContext>,
+    ) -> Result<PatternDefinition<MarzanoQueryContext>> {
+        Ok(PatternDefinition::new(
+            "<bubble>".to_string(),
+            self.scope_index,
+            vec![],
+            pattern,
+        ))
     }
 }
 
@@ -690,7 +709,9 @@ impl VariableLocations {
 
     pub(crate) fn from_globals(globals: BTreeMap<String, usize>) -> Self {
         Self {
-            locations: vec![globals.into_keys().map(|name| VariableSource::new_global(name))
+            locations: vec![globals
+                .into_keys()
+                .map(|name| VariableSource::new_global(name))
                 .collect()],
         }
     }

@@ -9,7 +9,7 @@ mod tests {
 
     #[test]
     fn test_basic_file_contains() {
-        let sdk = LanguageSdk::default();
+        let mut sdk = LanguageSdk::default();
 
         let console = sdk.snippet("console.log").unwrap();
 
@@ -20,15 +20,87 @@ mod tests {
 
         let results = run_on_test_files(
             &sdk.build(file).unwrap(),
-            &[SyntheticFile::new(
-                "test.js".to_owned(),
-                "function() {
+            &[
+                SyntheticFile::new(
+                    "test.js".to_owned(),
+                    "function() {
                     console.log('hello world');
                 }"
-                .to_owned(),
-                true,
-            )],
+                    .to_owned(),
+                    true,
+                ),
+                SyntheticFile::new(
+                    "bad.js".to_owned(),
+                    "function() {
+                    // no match here
+                }"
+                    .to_owned(),
+                    true,
+                ),
+            ],
         );
-        assert_eq!(results.len(), 2);
+        assert_eq!(results.len(), 3);
+    }
+
+    #[test]
+    fn test_basic_contains() {
+        let mut sdk = LanguageSdk::default();
+
+        let console = sdk.snippet("console.log").unwrap();
+
+        let file = Contains::new_pattern(console, None);
+
+        let results = run_on_test_files(
+            &sdk.build(file).unwrap(),
+            &[
+                SyntheticFile::new(
+                    "test.js".to_owned(),
+                    "function() {
+                    console.log('hello world');
+                }"
+                    .to_owned(),
+                    true,
+                ),
+                SyntheticFile::new(
+                    "bad.js".to_owned(),
+                    "function() {
+                    // no match here
+                }"
+                    .to_owned(),
+                    true,
+                ),
+            ],
+        );
+        println!("{:?}", results);
+        assert_eq!(results.len(), 3);
+    }
+
+    #[test]
+    fn test_basic_snippet() {
+        let mut sdk = LanguageSdk::default();
+
+        let results = run_on_test_files(
+            &sdk.build(sdk.snippet("console.log").unwrap()).unwrap(),
+            &[
+                SyntheticFile::new(
+                    "test.js".to_owned(),
+                    "function() {
+                    console.log('hello world');
+                }"
+                    .to_owned(),
+                    true,
+                ),
+                SyntheticFile::new(
+                    "bad.js".to_owned(),
+                    "function() {
+                    // no match here
+                }"
+                    .to_owned(),
+                    true,
+                ),
+            ],
+        );
+        println!("{:?}", results);
+        assert_eq!(results.len(), 3);
     }
 }

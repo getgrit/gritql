@@ -6,9 +6,7 @@ use marzano_language::target_language::TargetLanguage;
 use crate::{
     built_in_functions::BuiltIns,
     pattern_compiler::{
-        auto_wrap::{
-            wrap_pattern_in_sequential,
-        },
+        auto_wrap::{auto_wrap_pattern, wrap_pattern_in_sequential},
         compiler::VariableLocations,
         CompiledPatternBuilder,
     },
@@ -39,15 +37,22 @@ impl LanguageSdk {
         self.compiler.clone().parse_snippet(snippet)
     }
 
-    pub fn build(&self, pattern: Pattern<MarzanoQueryContext>) -> Result<Problem> {
+    pub fn build(&mut self, pattern: Pattern<MarzanoQueryContext>) -> Result<Problem> {
         let built_ins = BuiltIns::get_built_in_functions();
         let _logs: AnalysisLogs = vec![].into();
         let global_vars = CompiledPatternBuilder::build_standard_global_vars();
-        let pattern_definitions = vec![];
+        let mut pattern_definitions = vec![];
 
         let is_multifile = false;
 
-        let pattern = wrap_pattern_in_sequential(pattern)?;
+        let pattern = auto_wrap_pattern(
+            pattern,
+            &mut pattern_definitions,
+            !is_multifile,
+            None,
+            &mut self.compiler,
+            None,
+        )?;
 
         let problem = Problem::new_from_pattern(
             pattern,

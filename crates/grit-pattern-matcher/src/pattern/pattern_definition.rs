@@ -8,6 +8,7 @@ use grit_util::{
     error::{GritPatternError, GritResult},
     AnalysisLogs,
 };
+use rand::Rng as _;
 use std::sync::{Arc, OnceLock};
 
 #[derive(Clone, Debug)]
@@ -39,9 +40,13 @@ impl<Q: QueryContext> PatternDefinition<Q> {
         }
     }
 
-    pub fn new_dynamic(name: String, params: Vec<(String, Variable)>, pattern: Pattern<Q>) -> Self {
+    /// Create an unnamed ephemeral pattern
+    /// This is primarily useful for the bubble pattern, where we want to create a new scope
+    pub fn new_ephemeral(params: Vec<(String, Variable)>, pattern: Pattern<Q>) -> Self {
+        let random_name = format!("<bubble:{}>", rand::thread_rng().gen::<u32>());
+
         Self {
-            name,
+            name: random_name,
             pattern,
             params,
             internal: PatternDefinitionInternal::Dynamic {

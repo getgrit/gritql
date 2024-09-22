@@ -1,5 +1,8 @@
 use anyhow::{bail, Result};
-use grit_pattern_matcher::pattern::{DynamicSnippetPart, Pattern, Variable};
+use grit_pattern_matcher::{
+    context::QueryContext,
+    pattern::{DynamicSnippetPart, Pattern, PatternDefinition, Variable},
+};
 use grit_util::ByteRange;
 use marzano_language::target_language::TargetLanguage;
 
@@ -55,6 +58,13 @@ impl SnippetCompilationContext for StatelessCompilerContext {
 
     fn get_pattern_definition(&self, _name: &str) -> Option<&DefinitionInfo> {
         None
+    }
+
+    fn register_ephemeral_pattern(
+        &mut self,
+        pattern: Pattern<MarzanoQueryContext>,
+    ) -> Result<PatternDefinition<MarzanoQueryContext>> {
+        Ok(PatternDefinition::new_ephemeral(vec![], pattern))
     }
 }
 
