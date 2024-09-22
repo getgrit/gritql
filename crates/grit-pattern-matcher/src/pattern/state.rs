@@ -366,10 +366,9 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         None
     }
 
-    pub fn register_var(&mut self, name: &str) -> (usize, usize) {
+    pub(crate) fn register_var(&mut self, name: &str) -> VariableScope {
         if let Some(existing) = self.find_var_scope(name) {
-            println!("I ALREADY HAVE THIS VARIABLE: {:?}", existing);
-            return (existing.scope as usize, existing.index as usize);
+            return existing.clone();
         };
 
         let scope = self.current_scope;
@@ -377,8 +376,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         let index = the_scope.len();
 
         the_scope.push_back(Box::new(VariableContent::new(name.to_string())));
-        println!("I REGISTERED THIS VARIABLE: {:?}", the_scope[index]);
-        (scope, index)
+        VariableScope::new(scope, index)
     }
 
     /// Attempt to find a variable by name in the current scope

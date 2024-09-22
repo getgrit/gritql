@@ -49,6 +49,7 @@ enum VariableInternal {
     Static(VariableScope),
     /// Dynamic variables are lazy, so we just need to register them by name.
     /// They will then automatically be bound to the first scope that attempts to use them.
+    /// This should be avoided where possible, since it means names will likely overwrite each other across scopes.
     Dynamic(DynamicVariableInternal),
 }
 
@@ -143,7 +144,6 @@ impl Variable {
         Self {
             internal: VariableInternal::Dynamic(DynamicVariableInternal {
                 name: name.to_string(),
-                // scope: Arc::new(OnceLock::new()),
             }),
         }
     }
@@ -171,11 +171,8 @@ impl Variable {
         match &self.internal {
             VariableInternal::Static(internal) => Ok(*internal),
             VariableInternal::Dynamic(lock) => {
-                let (scope, index) = state.register_var(&lock.name);
-                Ok(VariableScope {
-                    scope: scope as u16,
-                    index: index as u16,
-                })
+                let scope = state.register_var(&lock.name);
+                Ok(scope)
             }
         }
     }

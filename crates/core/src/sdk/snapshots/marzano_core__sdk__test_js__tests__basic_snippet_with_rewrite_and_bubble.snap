@@ -1,0 +1,8 @@
+---
+source: crates/core/src/sdk/test_js.rs
+expression: rewrite.rewritten.content.as_deref().unwrap()
+---
+function() {
+                    replaced;
+                    replaced;
+                }

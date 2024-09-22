@@ -52,8 +52,6 @@ mod test {
             assert!(state.find_var_in_scope("$bar").is_some());
             assert!(state.find_var_in_scope("$dude").is_none());
             assert!(state.find_var_in_scope("$baz").is_none());
-            let _registered_var = state.register_var("fuzz");
-            assert!(state.find_var_in_scope("fuzz").is_some());
 
             let pattern = Pattern::Contains(Box::new(Contains::new(
                 Pattern::<MarzanoQueryContext>::StringConstant(StringConstant::new(
@@ -173,8 +171,7 @@ mod test {
             let this_lang = TargetLanguage::from_string("js", None).unwrap();
 
             let console_builder =
-                CompiledPatternBuilder::start_empty("`console.log(name)`", this_lang)
-                    .unwrap();
+                CompiledPatternBuilder::start_empty("`console.log(name)`", this_lang).unwrap();
             let console_pattern = console_builder
                 .compile(None, None, false)
                 .unwrap()
