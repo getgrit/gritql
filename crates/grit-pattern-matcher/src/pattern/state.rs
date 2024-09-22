@@ -45,6 +45,29 @@ pub struct FileRegistry<'a, Q: QueryContext> {
 
 impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
     pub fn get_file_owner(&self, pointer: FilePtr) -> &'a FileOwner<Q::Tree<'a>> {
+        #[cfg(debug_assertions)]
+        {
+            println!("get file owner: {:?} from {:?}", pointer, self.owners);
+
+            if pointer.file as usize >= self.owners.len() {
+                panic!(
+                    "File index out of bounds: file={}, owners.len()={}",
+                    pointer.file,
+                    self.owners.len()
+                );
+            }
+            let file_owners = &self.owners[pointer.file as usize];
+            if pointer.version as usize >= file_owners.len() {
+                let name = self.get_file_name(pointer);
+                panic!(
+                    "File ({}) does not have version ({}) available. Only {} versions available. Make sure load_file is called before accessing file owners.",
+                    name.to_string_lossy(),
+                    pointer.version,
+                    file_owners.len()
+                );
+            }
+        }
+
         self.owners[pointer.file as usize][pointer.version as usize]
     }
 
