@@ -1,6 +1,5 @@
 ---
 source: crates/core/src/sdk/test_js.rs
-assertion_line: 149
 expression: rewrite.rewritten.content.as_deref().unwrap()
 ---
 function() {
