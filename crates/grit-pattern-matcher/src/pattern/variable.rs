@@ -18,7 +18,7 @@ use grit_util::{
 use std::{
     borrow::Cow,
     collections::BTreeSet,
-    sync::{Arc, OnceLock},
+    sync::{Arc, Mutex, OnceLock, RwLock},
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -39,6 +39,9 @@ impl VariableScope {
 #[derive(Debug, Clone)]
 struct DynamicVariableInternal {
     name: String,
+    /// Track the last scope we registed this variable in
+    /// This is mainly just used for cases where we don't have state available
+    last_scope: Arc<RwLock<Option<VariableScope>>>,
 }
 
 #[derive(Debug, Clone)]
@@ -144,24 +147,23 @@ impl Variable {
         Self {
             internal: VariableInternal::Dynamic(DynamicVariableInternal {
                 name: name.to_string(),
+                last_scope: Arc::new(RwLock::new(None)),
             }),
         }
     }
 
-    fn try_internal(&self) -> GritResult<&VariableScope> {
+    fn try_internal(&self) -> GritResult<VariableScope> {
         match &self.internal {
-            VariableInternal::Static(scope) => Ok(scope),
+            VariableInternal::Static(scope) => Ok(*scope),
             VariableInternal::Dynamic(lock) => {
-                //     match lock.scope.get() {
-                //     Some(scope) => Ok(scope),
-                //     None => Err(GritPatternError::new_matcher(format!(
-                //         "variable {} not initialized",
-                //         lock.name,
-                //     ))),
-                // },
+                if let Ok(reader) = lock.last_scope.try_read() {
+                    if let Some(scope) = *reader {
+                        return Ok(scope);
+                    }
+                }
                 Err(GritPatternError::new_matcher(format!(
                     "variable {} not initialized",
-                    lock.name,
+                    lock.name
                 )))
             }
         }
@@ -172,6 +174,9 @@ impl Variable {
             VariableInternal::Static(internal) => Ok(*internal),
             VariableInternal::Dynamic(lock) => {
                 let scope = state.register_var(&lock.name);
+                if let Ok(mut writer) = lock.last_scope.write() {
+                    *writer = Some(scope);
+                }
                 Ok(scope)
             }
         }
