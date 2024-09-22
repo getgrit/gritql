@@ -284,7 +284,6 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         args: &'a [Option<Pattern<Q>>],
     ) -> ScopeTracker {
         let old_scope = self.bindings[scope].last().unwrap();
-        println!("ENTERING SCOPE {:?}", scope);
         let new_scope: Vector<Box<VariableContent<Q>>> = old_scope
             .iter()
             .enumerate()
@@ -320,9 +319,12 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         if let Some(scope) = self.pattern_scopes.get(name) {
             *scope
         } else {
-            let current_scope = self.current_scope;
-            self.pattern_scopes.insert(name.to_string(), current_scope);
-            current_scope
+            // The dynamic pattern definition is always in a *new* scope
+            let registered_scope = self.bindings.len();
+            self.bindings.push_back(vector![vector![]]);
+            self.pattern_scopes
+                .insert(name.to_string(), registered_scope);
+            registered_scope
         }
     }
 

@@ -14,7 +14,7 @@ use std::sync::{Arc, OnceLock};
 #[derive(Clone, Debug)]
 pub enum PatternDefinitionInternal {
     Static { scope: usize },
-    Dynamic { scope: Arc<OnceLock<usize>> },
+    Dynamic {},
 }
 
 #[derive(Clone, Debug)]
@@ -50,7 +50,7 @@ impl<Q: QueryContext> PatternDefinition<Q> {
             pattern,
             params,
             internal: PatternDefinitionInternal::Dynamic {
-                scope: Arc::new(OnceLock::new()),
+                // scope: Arc::new(OnceLock::new()),
             },
         }
     }
@@ -58,12 +58,9 @@ impl<Q: QueryContext> PatternDefinition<Q> {
     pub fn try_scope(&self) -> GritResult<usize> {
         match &self.internal {
             PatternDefinitionInternal::Static { scope } => Ok(*scope),
-            PatternDefinitionInternal::Dynamic { scope } => match scope.get() {
-                Some(scope) => Ok(*scope),
-                None => Err(GritPatternError::new_matcher(
-                    "Dynamic pattern definition not yet initialized",
-                )),
-            },
+            PatternDefinitionInternal::Dynamic {} => Err(GritPatternError::new(
+                "Dynamic pattern definitions do not have a scope",
+            )),
         }
     }
 
@@ -74,8 +71,8 @@ impl<Q: QueryContext> PatternDefinition<Q> {
     fn get_scope(&self, state: &mut State<'_, Q>) -> usize {
         match &self.internal {
             PatternDefinitionInternal::Static { scope } => *scope,
-            PatternDefinitionInternal::Dynamic { scope } => {
-                *scope.get_or_init(|| state.register_pattern_definition(&self.name))
+            PatternDefinitionInternal::Dynamic { .. } => {
+                state.register_pattern_definition(&self.name)
             }
         }
     }
