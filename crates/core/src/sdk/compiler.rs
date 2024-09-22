@@ -39,6 +39,10 @@ impl SnippetCompilationContext for StatelessCompilerContext {
         &self.lang
     }
 
+    fn register_match_variable(&mut self) -> Result<Variable> {
+        bail!("The $match variable is not supported in the stateless SDK")
+    }
+
     fn register_snippet_variable(
         &mut self,
         name: &str,

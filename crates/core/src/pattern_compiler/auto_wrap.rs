@@ -48,7 +48,7 @@ pub(crate) fn auto_wrap_pattern(
             pattern
         };
         let first_wrap = if should_wrap_in_contains {
-            wrap_pattern_in_contains(MATCH_VAR, pattern, context)?
+            wrap_pattern_in_contains(pattern, context)?
         } else {
             pattern
         };
@@ -419,18 +419,20 @@ fn wrap_pattern_in_range(
 }
 
 fn wrap_pattern_in_contains(
-    var_name: &str,
     pattern: Pattern<MarzanoQueryContext>,
     context: &mut dyn SnippetCompilationContext,
 ) -> Result<Pattern<MarzanoQueryContext>> {
-    // let var = context.register_variable(var_name, None)?;
-    // let pattern = Pattern::Where(Box::new(Where::new(
-    //     Pattern::Variable(var.clone()),
-    //     Predicate::Match(Box::new(Match::new(
-    //         Container::Variable(var.clone()),
-    //         Some(pattern),
-    //     ))),
-    // )));
+    let pattern = if let Ok(var) = context.register_match_variable() {
+        Pattern::Where(Box::new(Where::new(
+            Pattern::Variable(var.clone()),
+            Predicate::Match(Box::new(Match::new(
+                Container::Variable(var.clone()),
+                Some(pattern),
+            ))),
+        )))
+    } else {
+        pattern
+    };
 
     let pattern_definition = context.register_ephemeral_pattern(pattern)?;
     let bubble = Pattern::Bubble(Box::new(Bubble::new(pattern_definition, vec![])));

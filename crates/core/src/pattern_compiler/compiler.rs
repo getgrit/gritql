@@ -16,7 +16,7 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
-    constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
+    constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX, MATCH_VAR},
     context::QueryContext,
     pattern::{
         DynamicSnippetPart, GritFunctionDefinition, Pattern, PatternDefinition,
@@ -55,6 +55,10 @@ pub trait SnippetCompilationContext {
 
     /// Register a variable generically
     fn register_variable(&mut self, name: &str, range: Option<ByteRange>) -> Result<Variable>;
+
+    /// Register the special "$match" metavariable, which is primarily used for historical reasons
+    /// This slightly improves UX in the playground, but also can be a source of bugs
+    fn register_match_variable(&mut self) -> Result<Variable>;
 
     /// Retrieves a pattern definition by name
     fn get_pattern_definition(&self, name: &str) -> Option<&DefinitionInfo>;
@@ -105,6 +109,10 @@ pub(crate) struct NodeCompilationContext<'a> {
 impl<'a> SnippetCompilationContext for NodeCompilationContext<'a> {
     fn get_lang(&self) -> &TargetLanguage {
         self.compilation.lang
+    }
+
+    fn register_match_variable(&mut self) -> Result<Variable> {
+        self.register_variable(MATCH_VAR, None)
     }
 
     fn register_snippet_variable(
