@@ -260,7 +260,7 @@ impl<Q: QueryContext> Pattern<Q> {
                 let mut base = args_children(&c.args, definitions);
                 let def = definitions.get_pattern(c.index);
                 if let Some(def) = def {
-                    base.push(PatternOrPredicate::Pattern(&def.pattern()));
+                    base.push(PatternOrPredicate::Pattern(def.pattern()));
                 }
                 base
             }

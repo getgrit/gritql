@@ -1,6 +1,5 @@
 use anyhow::{bail, Result};
 use grit_pattern_matcher::{
-    context::QueryContext,
     pattern::{DynamicSnippetPart, Pattern, PatternDefinition, Variable},
 };
 use grit_util::ByteRange;

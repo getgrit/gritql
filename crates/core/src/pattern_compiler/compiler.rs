@@ -17,7 +17,6 @@ use crate::{
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
     constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX, MATCH_VAR},
-    context::QueryContext,
     pattern::{
         DynamicSnippetPart, GritFunctionDefinition, Pattern, PatternDefinition,
         PredicateDefinition, Variable, VariableContent, VariableSource,
@@ -719,7 +718,7 @@ impl VariableLocations {
         Self {
             locations: vec![globals
                 .into_keys()
-                .map(|name| VariableSource::new_global(name))
+                .map(VariableSource::new_global)
                 .collect()],
         }
     }

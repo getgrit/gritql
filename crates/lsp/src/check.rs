@@ -84,7 +84,7 @@ pub fn check_file(
         } = src_to_problem_libs(
             pattern.body.to_string(),
             pattern_libs,
-            language.clone(),
+            language,
             Some(pattern.local_name.to_string()),
             None,
             get_ai_built_in_functions_for_feature(),

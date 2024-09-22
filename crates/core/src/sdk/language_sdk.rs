@@ -6,9 +6,7 @@ use marzano_language::target_language::TargetLanguage;
 use crate::{
     built_in_functions::BuiltIns,
     pattern_compiler::{
-        auto_wrap::{auto_wrap_pattern, wrap_pattern_in_sequential},
-        compiler::VariableLocations,
-        CompiledPatternBuilder,
+        auto_wrap::auto_wrap_pattern, compiler::VariableLocations, CompiledPatternBuilder,
     },
     problem::{MarzanoQueryContext, Problem},
 };
