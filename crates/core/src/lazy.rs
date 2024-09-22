@@ -13,9 +13,9 @@ mod test {
     };
 
     use crate::problem::MarzanoQueryContext;
-    use crate::stateless::StatelessCompilerContext;
+    use crate::sdk::StatelessCompilerContext;
     use crate::{
-        pattern_compiler::{CompilationResult, PatternBuilder},
+        pattern_compiler::{CompilationResult, CompiledPatternBuilder},
         test_utils::{run_on_test_files, SyntheticFile},
     };
 
@@ -46,14 +46,12 @@ mod test {
 
         assert!(!callback_called.load(std::sync::atomic::Ordering::SeqCst));
 
-        let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
+        let mut builder = CompiledPatternBuilder::start_empty(src, lang).unwrap();
         builder = builder.matches_callback(Box::new(move |binding, context, state, logs| {
             assert!(state.find_var_in_scope("$foo").is_some());
             assert!(state.find_var_in_scope("$bar").is_some());
             assert!(state.find_var_in_scope("$dude").is_none());
             assert!(state.find_var_in_scope("$baz").is_none());
-            let _registered_var = state.register_var("fuzz");
-            assert!(state.find_var_in_scope("fuzz").is_some());
 
             let pattern = Pattern::Contains(Box::new(Contains::new(
                 Pattern::<MarzanoQueryContext>::StringConstant(StringConstant::new(
@@ -107,13 +105,13 @@ mod test {
         let matches_found = Arc::new(AtomicUsize::new(0));
         let matches_found_clone = Arc::clone(&matches_found);
 
-        let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
+        let mut builder = CompiledPatternBuilder::start_empty(src, lang).unwrap();
 
         builder = builder.matches_callback(Box::new(move |binding, context, state, logs| {
             let this_lang = TargetLanguage::from_string("js", None).unwrap();
 
             let console_builder =
-                PatternBuilder::start_empty("call_expression()", this_lang).unwrap();
+                CompiledPatternBuilder::start_empty("call_expression()", this_lang).unwrap();
             let console_pattern = console_builder
                 .compile(None, None, false)
                 .unwrap()
@@ -167,13 +165,13 @@ mod test {
         let matches_found = Arc::new(AtomicUsize::new(0));
         let matches_found_clone = Arc::clone(&matches_found);
 
-        let mut builder = PatternBuilder::start_empty(src, lang).unwrap();
+        let mut builder = CompiledPatternBuilder::start_empty(src, lang).unwrap();
 
         builder = builder.matches_callback(Box::new(move |binding, context, state, logs| {
             let this_lang = TargetLanguage::from_string("js", None).unwrap();
 
             let console_builder =
-                PatternBuilder::start_empty("`console.log(name)`", this_lang.clone()).unwrap();
+                CompiledPatternBuilder::start_empty("`console.log(name)`", this_lang).unwrap();
             let console_pattern = console_builder
                 .compile(None, None, false)
                 .unwrap()
@@ -188,7 +186,7 @@ mod test {
                 matches_found_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
 
                 // Ok we are operating on the right function, now verify more things
-                let mut compiler = StatelessCompilerContext::new(this_lang.clone());
+                let mut compiler = StatelessCompilerContext::new(this_lang);
                 let standalone_snippet = compiler.parse_snippet("console.log(name)").unwrap();
                 let standalone_contains = p_contains(standalone_snippet);
 

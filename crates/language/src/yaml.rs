@@ -22,7 +22,7 @@ fn built_in_language() -> TSLanguage {
     tree_sitter_yaml::language().into()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Yaml {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,

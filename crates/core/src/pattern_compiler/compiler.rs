@@ -1,5 +1,5 @@
 use super::{
-    builder::PatternBuilder,
+    builder::CompiledPatternBuilder,
     function_definition_compiler::{
         ForeignFunctionDefinitionCompiler, GritFunctionDefinitionCompiler,
     },
@@ -16,16 +16,17 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
-    constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
+    constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX, MATCH_VAR},
     pattern::{
         DynamicSnippetPart, GritFunctionDefinition, Pattern, PatternDefinition,
-        PredicateDefinition, Variable, VariableSourceLocations,
+        PredicateDefinition, Variable, VariableContent, VariableSource,
     },
 };
 use grit_util::{
     error::GritPatternError, traverse, AnalysisLogs, Ast, AstNode, ByteRange, FileRange, Order,
     Range, VariableMatch,
 };
+use im::{vector, Vector};
 use itertools::Itertools;
 use marzano_language::{
     self, grit_parser::MarzanoGritParser, language::Tree, target_language::TargetLanguage,
@@ -44,13 +45,28 @@ use tracing::instrument;
 pub trait SnippetCompilationContext {
     fn get_lang(&self) -> &TargetLanguage;
 
+    /// Register a variable that is part of a CodeSnippet
     fn register_snippet_variable(
         &mut self,
         name: &str,
         source_range: Option<ByteRange>,
     ) -> Result<DynamicSnippetPart>;
 
+    /// Register a variable generically
     fn register_variable(&mut self, name: &str, range: Option<ByteRange>) -> Result<Variable>;
+
+    /// Register the special "$match" metavariable, which is primarily used for historical reasons
+    /// This slightly improves UX in the playground, but also can be a source of bugs
+    fn register_match_variable(&mut self) -> Result<Variable>;
+
+    /// Retrieves a pattern definition by name
+    fn get_pattern_definition(&self, name: &str) -> Option<&DefinitionInfo>;
+
+    /// Create a bubble definition, in the current scope
+    fn register_ephemeral_pattern(
+        &mut self,
+        pattern: Pattern<MarzanoQueryContext>,
+    ) -> Result<PatternDefinition<MarzanoQueryContext>>;
 }
 
 pub(crate) struct CompilationContext<'a> {
@@ -74,7 +90,7 @@ pub(crate) struct NodeCompilationContext<'a> {
     /// The outer vector can be index using `scope_index`, while the individual
     /// variables in a scope can be indexed using the indices stored in `vars`
     /// and `global_vars`.
-    pub vars_array: &'a mut Vec<Vec<VariableSourceLocations>>,
+    pub vars_array: &'a mut Vec<Vec<VariableSource>>,
 
     /// Index of the local scope.
     ///
@@ -94,6 +110,10 @@ impl<'a> SnippetCompilationContext for NodeCompilationContext<'a> {
         self.compilation.lang
     }
 
+    fn register_match_variable(&mut self) -> Result<Variable> {
+        self.register_variable(MATCH_VAR, None)
+    }
+
     fn register_snippet_variable(
         &mut self,
         name: &str,
@@ -104,8 +124,7 @@ impl<'a> SnippetCompilationContext for NodeCompilationContext<'a> {
         };
         if let Some(registered_var_index) = self.vars.get(name) {
             self.vars_array[self.scope_index][*registered_var_index]
-                .locations
-                .insert(source_range);
+                .register_location(source_range)?;
             Ok(DynamicSnippetPart::Variable(Variable::new(
                 self.scope_index,
                 *registered_var_index,
@@ -113,8 +132,7 @@ impl<'a> SnippetCompilationContext for NodeCompilationContext<'a> {
         } else if let Some(global_var_index) = self.global_vars.get(name) {
             if self.compilation.file == DEFAULT_FILE_NAME {
                 self.vars_array[GLOBAL_VARS_SCOPE_INDEX as usize][*global_var_index]
-                    .locations
-                    .insert(source_range);
+                    .register_location(source_range)?;
             }
             Ok(DynamicSnippetPart::Variable(Variable::new(
                 GLOBAL_VARS_SCOPE_INDEX as usize,
@@ -137,6 +155,22 @@ impl<'a> SnippetCompilationContext for NodeCompilationContext<'a> {
             }),
             self,
         )
+    }
+
+    fn get_pattern_definition(&self, name: &str) -> Option<&DefinitionInfo> {
+        self.compilation.pattern_definition_info.get(name)
+    }
+
+    fn register_ephemeral_pattern(
+        &mut self,
+        pattern: Pattern<MarzanoQueryContext>,
+    ) -> Result<PatternDefinition<MarzanoQueryContext>> {
+        Ok(PatternDefinition::new(
+            "<bubble>".to_string(),
+            self.scope_index,
+            vec![],
+            pattern,
+        ))
     }
 }
 
@@ -222,7 +256,7 @@ fn node_to_definition_info(
     Ok(())
 }
 
-pub(crate) struct DefinitionInfo {
+pub struct DefinitionInfo {
     pub(crate) index: usize,
     pub(crate) parameters: Vec<(String, ByteRange)>,
 }
@@ -338,7 +372,7 @@ fn node_to_definitions(
 }
 
 pub(crate) struct DefinitionOutput {
-    pub(crate) vars_array: Vec<Vec<VariableSourceLocations>>,
+    pub(crate) vars_array: Vec<Vec<VariableSource>>,
     pub(crate) pattern_definitions: Vec<PatternDefinition<MarzanoQueryContext>>,
     pub(crate) predicate_definitions: Vec<PredicateDefinition<MarzanoQueryContext>>,
     pub(crate) function_definitions: Vec<GritFunctionDefinition<MarzanoQueryContext>>,
@@ -362,11 +396,7 @@ pub(crate) fn get_definitions(
         global_vars
             .iter()
             .sorted_by(|x, y| Ord::cmp(x.1, y.1))
-            .map(|x| VariableSourceLocations {
-                name: x.0.clone(),
-                file: context.file.to_owned(),
-                locations: BTreeSet::new(),
-            })
+            .map(|x| VariableSource::new(x.0.clone(), context.file.to_owned()))
             .collect(),
     );
 
@@ -402,13 +432,7 @@ pub(crate) fn get_definitions(
             };
 
             let body = PatternCompiler::from_node(&bare_pattern, &mut local_context)?;
-            let pattern_def = PatternDefinition::new(
-                name.to_owned(),
-                scope_index,
-                vec![],
-                local_vars.values().cloned().collect(),
-                body,
-            );
+            let pattern_def = PatternDefinition::new(name.to_owned(), scope_index, vec![], body);
             pattern_definitions.push(pattern_def);
         }
     }
@@ -663,7 +687,8 @@ pub fn src_to_problem_libs(
     let mut parser = MarzanoGritParser::new()?;
     let src_tree = parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
     let lang = TargetLanguage::from_tree(&src_tree).unwrap_or(default_lang);
-    let builder = PatternBuilder::start(src, libs, lang, name, &mut parser, custom_built_ins)?;
+    let builder =
+        CompiledPatternBuilder::start(src, libs, lang, name, &mut parser, custom_built_ins)?;
     builder.compile(file_ranges, injected_limit, true)
 }
 
@@ -673,31 +698,55 @@ pub fn src_to_problem(src: String, default_lang: TargetLanguage) -> Result<Probl
     let src_tree = parser.parse_file(&src, Some(Path::new(DEFAULT_FILE_NAME)))?;
     let lang = TargetLanguage::from_tree(&src_tree).unwrap_or(default_lang);
     let libs = BTreeMap::new();
-    let builder = PatternBuilder::start(src, &libs, lang, None, &mut parser, None)?;
+    let builder = CompiledPatternBuilder::start(src, &libs, lang, None, &mut parser, None)?;
     let CompilationResult { problem, .. } = builder.compile(None, None, false)?;
     Ok(problem)
 }
 
 #[derive(Debug, Default)]
 pub struct VariableLocations {
-    pub(crate) locations: Vec<Vec<VariableSourceLocations>>,
+    /// List of scopes, each scope with an array of variables
+    pub(crate) locations: Vec<Vec<VariableSource>>,
 }
 
 impl VariableLocations {
-    pub(crate) fn new(locations: Vec<Vec<VariableSourceLocations>>) -> Self {
+    pub(crate) fn new(locations: Vec<Vec<VariableSource>>) -> Self {
         Self { locations }
+    }
+
+    pub(crate) fn from_globals(globals: BTreeMap<String, usize>) -> Self {
+        Self {
+            locations: vec![globals
+                .into_keys()
+                .map(VariableSource::new_global)
+                .collect()],
+        }
+    }
+
+    pub(crate) fn initial_bindings(
+        &self,
+    ) -> Vector<Vector<Vector<Box<VariableContent<MarzanoQueryContext>>>>> {
+        self.locations
+            .iter()
+            .map(|scope| {
+                vector![scope
+                    .iter()
+                    .map(|s| Box::new(VariableContent::new(s.name().to_string())))
+                    .collect()]
+            })
+            .collect()
     }
 
     pub(crate) fn compiled_vars(&self, source: &str) -> Vec<VariableMatch> {
         let mut variables = vec![];
         for (i, scope) in self.locations.iter().enumerate() {
             for (j, var) in scope.iter().enumerate() {
-                if var.file == DEFAULT_FILE_NAME {
+                let locations = var.get_main_locations();
+                if !locations.is_empty() {
                     variables.push(VariableMatch {
-                        name: var.name.clone(),
-                        scoped_name: format!("{}_{}_{}", i, j, var.name),
-                        ranges: var
-                            .locations
+                        name: var.name().to_string(),
+                        scoped_name: format!("{}_{}_{}", i, j, var.name()),
+                        ranges: locations
                             .iter()
                             .map(|range| Range::from_byte_range(source, range))
                             .collect(),

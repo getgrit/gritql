@@ -20,7 +20,7 @@ fn language() -> TSLanguage {
     tree_sitter_md::inline_language().into()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct MarkdownInline {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,

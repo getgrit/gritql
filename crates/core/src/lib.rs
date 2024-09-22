@@ -10,7 +10,7 @@ mod equivalence;
 mod foreign_function_definition;
 pub mod fs;
 mod inline_snippets;
-mod stateless;
+pub mod sdk;
 
 mod lazy;
 mod limits;

@@ -6,7 +6,7 @@ use super::{
 };
 use crate::{
     binding::Binding,
-    constants::{ABSOLUTE_PATH_INDEX, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX},
+    constants::{ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX},
     context::{ExecContext, QueryContext},
 };
 use core::fmt::Debug;
@@ -18,10 +18,10 @@ use grit_util::{
 use std::{
     borrow::Cow,
     collections::BTreeSet,
-    sync::{Arc, OnceLock},
+    sync::{Arc, RwLock},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct VariableScope {
     pub(crate) scope: u16,
     pub(crate) index: u16,
@@ -39,8 +39,9 @@ impl VariableScope {
 #[derive(Debug, Clone)]
 struct DynamicVariableInternal {
     name: String,
-    // All copies of a variable should share the same scope/index
-    scope: Arc<OnceLock<VariableScope>>,
+    /// Track the last scope we registed this variable in
+    /// This is mainly just used for cases where we don't have state available
+    last_scope: Arc<RwLock<Option<VariableScope>>>,
 }
 
 #[derive(Debug, Clone)]
@@ -51,6 +52,7 @@ enum VariableInternal {
     Static(VariableScope),
     /// Dynamic variables are lazy, so we just need to register them by name.
     /// They will then automatically be bound to the first scope that attempts to use them.
+    /// This should be avoided where possible, since it means names will likely overwrite each other across scopes.
     Dynamic(DynamicVariableInternal),
 }
 
@@ -59,11 +61,66 @@ pub struct Variable {
     internal: VariableInternal,
 }
 
+/// VariableSource is used to track the origin of a variable
+/// It can come from
 #[derive(Debug, Clone)]
-pub struct VariableSourceLocations {
-    pub name: String,
-    pub file: String,
-    pub locations: BTreeSet<ByteRange>,
+pub enum VariableSource {
+    /// Compiled from a pattern
+    Compiled {
+        name: String,
+        file: String,
+        locations: BTreeSet<ByteRange>,
+    },
+    /// Global variable, which is not defined anywhere
+    Global { name: String },
+}
+
+impl VariableSource {
+    pub fn new(name: String, file: String) -> Self {
+        Self::Compiled {
+            name,
+            file,
+            locations: BTreeSet::new(),
+        }
+    }
+
+    pub fn new_global(name: String) -> Self {
+        Self::Global { name }
+    }
+
+    /// Register a location in a GritQL file where a variable is referenced
+    pub fn register_location(&mut self, location: ByteRange) -> GritResult<()> {
+        match self {
+            VariableSource::Compiled { locations, .. } => {
+                locations.insert(location);
+                Ok(())
+            }
+            VariableSource::Global { .. } => Ok(()),
+        }
+    }
+
+    /// Get locations where the variable is referenced from the main pattern file
+    pub fn get_main_locations(&self) -> Vec<ByteRange> {
+        if let VariableSource::Compiled {
+            locations, file, ..
+        } = self
+        {
+            if file != DEFAULT_FILE_NAME {
+                return vec![];
+            }
+            locations.iter().cloned().collect()
+        } else {
+            vec![]
+        }
+    }
+
+    /// Get the registered variable name
+    pub fn name(&self) -> &str {
+        match self {
+            VariableSource::Compiled { name, .. } => name,
+            VariableSource::Global { name } => name,
+        }
+    }
 }
 
 struct VariableMirror<'a, Q: QueryContext> {
@@ -90,42 +147,37 @@ impl Variable {
         Self {
             internal: VariableInternal::Dynamic(DynamicVariableInternal {
                 name: name.to_string(),
-                scope: Arc::new(OnceLock::new()),
+                last_scope: Arc::new(RwLock::new(None)),
             }),
         }
     }
 
-    fn try_internal(&self) -> GritResult<&VariableScope> {
+    fn try_internal(&self) -> GritResult<VariableScope> {
         match &self.internal {
-            VariableInternal::Static(scope) => Ok(scope),
-            VariableInternal::Dynamic(lock) => match lock.scope.get() {
-                Some(scope) => Ok(scope),
-                None => {
-                    println!("DYNAMIC VARIABLE NOT INITIALIZED: {:?}", lock.name);
-                    Err(GritPatternError::new_matcher(format!(
-                        "variable {} not initialized",
-                        lock.name,
-                    )))
+            VariableInternal::Static(scope) => Ok(*scope),
+            VariableInternal::Dynamic(lock) => {
+                if let Ok(reader) = lock.last_scope.try_read() {
+                    if let Some(scope) = *reader {
+                        return Ok(scope);
+                    }
                 }
-            },
+                Err(GritPatternError::new_matcher(format!(
+                    "variable {} not initialized",
+                    lock.name
+                )))
+            }
         }
     }
 
-    fn get_internal<Q: QueryContext>(
-        &self,
-        state: &mut State<'_, Q>,
-    ) -> GritResult<&VariableScope> {
+    fn get_internal<Q: QueryContext>(&self, state: &mut State<'_, Q>) -> GritResult<VariableScope> {
         match &self.internal {
-            VariableInternal::Static(internal) => Ok(internal),
+            VariableInternal::Static(internal) => Ok(*internal),
             VariableInternal::Dynamic(lock) => {
-                let internal = lock.scope.get_or_init(|| {
-                    let (scope, index) = state.register_var(&lock.name);
-                    VariableScope {
-                        scope: scope as u16,
-                        index: index as u16,
-                    }
-                });
-                Ok(internal)
+                let scope = state.register_var(&lock.name);
+                if let Ok(mut writer) = lock.last_scope.write() {
+                    *writer = Some(scope);
+                }
+                Ok(scope)
             }
         }
     }
@@ -219,14 +271,17 @@ impl Variable {
         {
             let scope = self.get_scope(state)?;
             let index = self.get_index(state)?;
-            let variable_content = &mut **(state
+            let variable_content = state
                 .bindings
                 .get_mut(scope.into())
                 .unwrap()
                 .back_mut()
                 .unwrap()
-                .get_mut(index.into())
-                .unwrap());
+                .get_mut(index.into());
+            let Some(variable_content) = variable_content else {
+                return Ok(None);
+            };
+            let variable_content = &mut **(variable_content);
             let value = &mut variable_content.value;
 
             if let Some(var_side_resolve_pattern) = value {
@@ -304,14 +359,23 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
         // via the variable_content variable
         let scope = self.get_scope(state)?;
         let index = self.get_index(state)?;
-        let variable_content = &mut **(state
+
+        let variable_content = state
             .bindings
             .get_mut(scope.into())
             .unwrap()
             .back_mut()
             .unwrap()
-            .get_mut(index.into())
-            .unwrap());
+            .get_mut(index.into());
+        let Some(variable_content) = variable_content else {
+            logs.add_warning(
+                None,
+                format!("Variable unexpectedly not found in scope {:?}", scope),
+            );
+            return Ok(false);
+        };
+
+        let variable_content = &mut **(variable_content);
         if let Some(pattern) = variable_content.pattern {
             if !pattern.execute(resolved_pattern, state, context, logs)? {
                 return Ok(false);

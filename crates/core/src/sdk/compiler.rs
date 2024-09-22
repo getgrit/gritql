@@ -1,29 +1,31 @@
 use anyhow::{bail, Result};
-use grit_pattern_matcher::pattern::{DynamicSnippetPart, Pattern, Variable};
+use grit_pattern_matcher::{
+    pattern::{DynamicSnippetPart, Pattern, PatternDefinition, Variable},
+};
 use grit_util::ByteRange;
 use marzano_language::target_language::TargetLanguage;
 
 use crate::{
     pattern_compiler::{
-        compiler::SnippetCompilationContext, snippet_compiler::parse_snippet_content,
+        compiler::{DefinitionInfo, SnippetCompilationContext},
+        snippet_compiler::parse_snippet_content,
     },
     problem::MarzanoQueryContext,
 };
 
 /// As opposed to our standard StatelessCompiler,
 /// the StatelessCompiler can handle snippets without needing to maintain scopes
+#[derive(Clone, Copy)]
 pub struct StatelessCompilerContext {
     lang: TargetLanguage,
 }
 
 impl StatelessCompilerContext {
-    #[allow(dead_code)]
     pub fn new(lang: TargetLanguage) -> Self {
         Self { lang }
     }
 
     /// Parse a snippet of code and returns a pattern
-    #[allow(dead_code)]
     pub fn parse_snippet(&mut self, content: &str) -> Result<Pattern<MarzanoQueryContext>> {
         let range = ByteRange::new(0, content.len());
         let snippet = parse_snippet_content(content, range, self, false)?;
@@ -34,6 +36,10 @@ impl StatelessCompilerContext {
 impl SnippetCompilationContext for StatelessCompilerContext {
     fn get_lang(&self) -> &TargetLanguage {
         &self.lang
+    }
+
+    fn register_match_variable(&mut self) -> Result<Variable> {
+        bail!("The $match variable is not supported in the stateless SDK")
     }
 
     fn register_snippet_variable(
@@ -52,6 +58,17 @@ impl SnippetCompilationContext for StatelessCompilerContext {
         }
         Ok(Variable::new_dynamic(name))
     }
+
+    fn get_pattern_definition(&self, _name: &str) -> Option<&DefinitionInfo> {
+        None
+    }
+
+    fn register_ephemeral_pattern(
+        &mut self,
+        pattern: Pattern<MarzanoQueryContext>,
+    ) -> Result<PatternDefinition<MarzanoQueryContext>> {
+        Ok(PatternDefinition::new_ephemeral(vec![], pattern))
+    }
 }
 
 #[cfg(test)]
@@ -59,8 +76,7 @@ mod tests {
     use marzano_language::target_language::TargetLanguage;
 
     use crate::{
-        pattern_compiler::{PatternBuilder},
-        stateless::StatelessCompilerContext,
+        pattern_compiler::CompiledPatternBuilder, sdk::compiler::StatelessCompilerContext,
     };
 
     #[test]
@@ -84,7 +100,7 @@ mod tests {
         let pattern = compiler.parse_snippet("console.log(name)").unwrap();
 
         // Check how the traditional compiler compiles the same snippet
-        let builder = PatternBuilder::start_empty(
+        let builder = CompiledPatternBuilder::start_empty(
             "`console.log(name)`",
             TargetLanguage::from_string("js", None).unwrap(),
         )

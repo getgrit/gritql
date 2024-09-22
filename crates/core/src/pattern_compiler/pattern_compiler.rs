@@ -96,7 +96,7 @@ impl PatternCompiler {
             if let Some(metavariable) = metavariable {
                 return Ok(metavariable);
             }
-            let language = context.get_lang().clone();
+            let language = *context.get_lang();
             let node_types = language.node_types();
 
             if node_types[sort as usize].is_empty() {

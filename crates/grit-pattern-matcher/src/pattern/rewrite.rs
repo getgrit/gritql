@@ -30,6 +30,18 @@ impl<Q: QueryContext> Rewrite<Q> {
         }
     }
 
+    pub fn new_pattern(
+        left: Pattern<Q>,
+        right: DynamicPattern<Q>,
+        annotation: Option<String>,
+    ) -> Pattern<Q> {
+        Pattern::Rewrite(Box::new(Rewrite {
+            left,
+            right,
+            annotation,
+        }))
+    }
+
     /**
      * Execute a rewrite rule, returning the new binding.
      *

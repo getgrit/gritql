@@ -120,8 +120,7 @@ pub use string_constant::StringConstant;
 pub use subtract::Subtract;
 pub use undefined::Undefined;
 pub use variable::{
-    get_absolute_file_name, get_file_name, is_reserved_metavariable, Variable,
-    VariableSourceLocations,
+    get_absolute_file_name, get_file_name, is_reserved_metavariable, Variable, VariableSource,
 };
 pub use variable_content::VariableContent;
 pub use within::Within;

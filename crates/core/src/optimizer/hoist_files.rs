@@ -137,7 +137,7 @@ pub fn extract_filename_pattern<Q: QueryContext>(
 
 impl<Q: QueryContext> FilenamePatternExtractor<Q> for Bubble<Q> {
     fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>> {
-        extract_filename_pattern(&self.pattern_def.pattern)
+        extract_filename_pattern(self.pattern_def.pattern())
     }
 }
 

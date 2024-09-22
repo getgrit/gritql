@@ -5,18 +5,6 @@ expression: "parsed_lines[0]"
 __typename: PatternInfo
 messages: []
 variables:
-  - name: $new_files
-    scopedName: 0_0_$new_files
-    ranges: []
-  - name: $program
-    scopedName: 0_1_$program
-    ranges: []
-  - name: $filename
-    scopedName: 0_2_$filename
-    ranges: []
-  - name: $absolute_filename
-    scopedName: 0_3_$absolute_filename
-    ranges: []
   - name: $body
     scopedName: 14_0_$body
     ranges:
@@ -28,9 +16,6 @@ variables:
           column: 21
         startByte: 15
         endByte: 20
-  - name: $match
-    scopedName: 14_1_$match
-    ranges: []
 sourceFile: "`function () { $body }`"
 parsedPattern: "[..]"
 valid: true

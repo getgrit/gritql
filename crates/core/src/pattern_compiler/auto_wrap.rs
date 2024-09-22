@@ -1,10 +1,9 @@
-use crate::{optimizer::hoist_files::extract_filename_pattern, variables::variable_from_name};
+use crate::{optimizer::hoist_files::extract_filename_pattern, problem::MarzanoQueryContext};
 
-use super::compiler::{DefinitionInfo, NodeCompilationContext};
+use super::compiler::{DefinitionInfo, SnippetCompilationContext};
 use anyhow::Result;
 use grit_pattern_matcher::{
-    constants::{GRIT_RANGE_VAR, MATCH_VAR},
-    context::QueryContext,
+    constants::{GRIT_RANGE_VAR},
     pattern::{
         And, Bubble, Call, Container, Contains, FilePattern, Includes, Limit, Match, Maybe,
         Pattern, PatternDefinition, PrAnd, PrOr, Predicate, Range as PRange, Rewrite, Step,
@@ -13,16 +12,15 @@ use grit_pattern_matcher::{
 };
 use grit_util::FileRange;
 use log::debug;
-use std::collections::BTreeMap;
 
-pub(super) fn auto_wrap_pattern<Q: QueryContext>(
-    pattern: Pattern<Q>,
-    pattern_definitions: &mut [PatternDefinition<Q>],
+pub(crate) fn auto_wrap_pattern(
+    pattern: Pattern<MarzanoQueryContext>,
+    pattern_definitions: &mut [PatternDefinition<MarzanoQueryContext>],
     is_not_multifile: bool,
     file_ranges: Option<Vec<FileRange>>,
-    context: &mut NodeCompilationContext,
+    context: &mut dyn SnippetCompilationContext,
     injected_limit: Option<usize>,
-) -> Result<Pattern<Q>> {
+) -> Result<Pattern<MarzanoQueryContext>> {
     let is_sequential = is_sequential(&pattern, pattern_definitions);
     let should_wrap_in_sequential = !is_sequential;
     let should_wrap_in_contains = should_autowrap(&pattern, pattern_definitions);
@@ -43,7 +41,7 @@ pub(super) fn auto_wrap_pattern<Q: QueryContext>(
             pattern
         };
         let first_wrap = if should_wrap_in_contains {
-            wrap_pattern_in_contains(MATCH_VAR, pattern, context)?
+            wrap_pattern_in_contains(pattern, context)?
         } else {
             pattern
         };
@@ -61,10 +59,7 @@ pub(super) fn auto_wrap_pattern<Q: QueryContext>(
         } else {
             second_wrap
         };
-        wrap_pattern_in_before_and_after_each_file(
-            third_wrap,
-            context.compilation.pattern_definition_info,
-        )?
+        wrap_pattern_in_before_and_after_each_file(third_wrap, context)?
     } else {
         pattern
     };
@@ -75,19 +70,19 @@ pub(super) fn auto_wrap_pattern<Q: QueryContext>(
     }
 }
 
-fn is_sequential<Q: QueryContext>(
-    pattern: &Pattern<Q>,
-    pattern_definitions: &[PatternDefinition<Q>],
+pub fn is_sequential(
+    pattern: &Pattern<MarzanoQueryContext>,
+    pattern_definitions: &[PatternDefinition<MarzanoQueryContext>],
 ) -> bool {
     match pattern {
         Pattern::Sequential(_) => true,
         Pattern::Where(w) => is_sequential(&w.pattern, pattern_definitions),
         Pattern::Maybe(m) => is_sequential(&m.pattern, pattern_definitions),
         Pattern::Rewrite(r) => is_sequential(&r.left, pattern_definitions),
-        Pattern::Bubble(b) => is_sequential(&b.pattern_def.pattern, pattern_definitions),
+        Pattern::Bubble(b) => is_sequential(b.pattern_def.pattern(), pattern_definitions),
         Pattern::Limit(l) => is_sequential(&l.pattern, pattern_definitions),
         Pattern::Call(call) => is_sequential(
-            &pattern_definitions[call.index].pattern,
+            pattern_definitions[call.index].pattern(),
             pattern_definitions,
         ),
         Pattern::AstNode(_)
@@ -140,9 +135,9 @@ fn is_sequential<Q: QueryContext>(
     }
 }
 
-pub(crate) fn should_autowrap<Q: QueryContext>(
-    pattern: &Pattern<Q>,
-    pattern_definitions: &[PatternDefinition<Q>],
+pub(crate) fn should_autowrap(
+    pattern: &Pattern<MarzanoQueryContext>,
+    pattern_definitions: &[PatternDefinition<MarzanoQueryContext>],
 ) -> bool {
     match pattern {
         Pattern::Contains(_) => false,
@@ -151,10 +146,10 @@ pub(crate) fn should_autowrap<Q: QueryContext>(
         Pattern::Where(w) => should_autowrap(&w.pattern, pattern_definitions),
         Pattern::Maybe(m) => should_autowrap(&m.pattern, pattern_definitions),
         Pattern::Rewrite(r) => should_autowrap(&r.left, pattern_definitions),
-        Pattern::Bubble(b) => should_autowrap(&b.pattern_def.pattern, pattern_definitions),
+        Pattern::Bubble(b) => should_autowrap(b.pattern_def.pattern(), pattern_definitions),
         Pattern::Limit(l) => should_autowrap(&l.pattern, pattern_definitions),
         Pattern::Call(call) => should_autowrap(
-            &pattern_definitions[call.index].pattern,
+            pattern_definitions[call.index].pattern(),
             pattern_definitions,
         ),
         Pattern::AstNode(_)
@@ -205,10 +200,10 @@ pub(crate) fn should_autowrap<Q: QueryContext>(
     }
 }
 
-fn extract_limit_pattern<Q: QueryContext>(
-    pattern: Pattern<Q>,
-    pattern_definitions: &mut [PatternDefinition<Q>],
-) -> (Pattern<Q>, Option<usize>) {
+fn extract_limit_pattern(
+    pattern: Pattern<MarzanoQueryContext>,
+    pattern_definitions: &mut [PatternDefinition<MarzanoQueryContext>],
+) -> (Pattern<MarzanoQueryContext>, Option<usize>) {
     match pattern {
         Pattern::Limit(limit) => (limit.pattern, Some(limit.limit)),
         Pattern::Where(w) => {
@@ -228,13 +223,13 @@ fn extract_limit_pattern<Q: QueryContext>(
             (pattern, extracted.1)
         }
         Pattern::Bubble(b) => {
-            let extracted = extract_limit_pattern(b.pattern_def.pattern, pattern_definitions);
+            let extracted =
+                extract_limit_pattern(b.pattern_def.pattern().clone(), pattern_definitions);
             let pattern = Pattern::Bubble(Box::new(Bubble::new(
                 PatternDefinition::new(
                     b.pattern_def.name.clone(),
-                    b.pattern_def.scope,
-                    b.pattern_def.params.clone(),
-                    b.pattern_def.local_vars.clone(),
+                    b.pattern_def.try_scope().unwrap(),
+                    b.pattern_def.params().clone(),
                     extracted.0,
                 ),
                 b.args.into_iter().flatten().collect(),
@@ -243,10 +238,10 @@ fn extract_limit_pattern<Q: QueryContext>(
         }
         Pattern::Call(call) => {
             let (new_pattern, extracted_limit) = extract_limit_pattern(
-                pattern_definitions[call.index].pattern.clone(),
+                pattern_definitions[call.index].pattern().clone(),
                 pattern_definitions,
             );
-            pattern_definitions[call.index].pattern = new_pattern;
+            pattern_definitions[call.index].replace_pattern(new_pattern);
             (Pattern::Call(call), extracted_limit)
         }
         Pattern::AstNode(_)
@@ -300,9 +295,9 @@ fn extract_limit_pattern<Q: QueryContext>(
     }
 }
 
-fn should_wrap_in_file<Q: QueryContext>(
-    pattern: &Pattern<Q>,
-    pattern_definitions: &[PatternDefinition<Q>],
+pub fn should_wrap_in_file(
+    pattern: &Pattern<MarzanoQueryContext>,
+    pattern_definitions: &[PatternDefinition<MarzanoQueryContext>],
 ) -> bool {
     match pattern {
         Pattern::File(_) => false,
@@ -311,10 +306,10 @@ fn should_wrap_in_file<Q: QueryContext>(
         Pattern::Where(w) => should_wrap_in_file(&w.pattern, pattern_definitions),
         Pattern::Maybe(m) => should_wrap_in_file(&m.pattern, pattern_definitions),
         Pattern::Rewrite(r) => should_wrap_in_file(&r.left, pattern_definitions),
-        Pattern::Bubble(b) => should_wrap_in_file(&b.pattern_def.pattern, pattern_definitions),
+        Pattern::Bubble(b) => should_wrap_in_file(b.pattern_def.pattern(), pattern_definitions),
         Pattern::Limit(l) => should_wrap_in_file(&l.pattern, pattern_definitions),
         Pattern::Call(call) => should_wrap_in_file(
-            &pattern_definitions[call.index].pattern,
+            pattern_definitions[call.index].pattern(),
             pattern_definitions,
         ),
         Pattern::And(a) => a
@@ -374,13 +369,13 @@ fn should_wrap_in_file<Q: QueryContext>(
     }
 }
 
-fn wrap_pattern_in_range<Q: QueryContext>(
+fn wrap_pattern_in_range(
     var_name: &str,
-    pattern: Pattern<Q>,
+    pattern: Pattern<MarzanoQueryContext>,
     ranges: Vec<FileRange>,
-    context: &mut NodeCompilationContext,
-) -> Result<Pattern<Q>> {
-    let var = variable_from_name(var_name, context)?;
+    context: &mut dyn SnippetCompilationContext,
+) -> Result<Pattern<MarzanoQueryContext>> {
+    let var = context.register_variable(var_name, None)?;
     let mut predicates = Vec::new();
     for file_range in ranges {
         let range = file_range.range.clone();
@@ -416,26 +411,23 @@ fn wrap_pattern_in_range<Q: QueryContext>(
     Ok(pattern)
 }
 
-fn wrap_pattern_in_contains<Q: QueryContext>(
-    var_name: &str,
-    pattern: Pattern<Q>,
-    context: &mut NodeCompilationContext,
-) -> Result<Pattern<Q>> {
-    let var = variable_from_name(var_name, context)?;
-    let pattern = Pattern::Where(Box::new(Where::new(
-        Pattern::Variable(var.clone()),
-        Predicate::Match(Box::new(Match::new(
-            Container::Variable(var.clone()),
-            Some(pattern),
-        ))),
-    )));
-    let pattern_definition = PatternDefinition::new(
-        "<bubble>".to_string(),
-        context.scope_index,
-        vec![],
-        context.vars.values().cloned().collect(),
-        pattern,
-    );
+fn wrap_pattern_in_contains(
+    pattern: Pattern<MarzanoQueryContext>,
+    context: &mut dyn SnippetCompilationContext,
+) -> Result<Pattern<MarzanoQueryContext>> {
+    let pattern = if let Ok(var) = context.register_match_variable() {
+        Pattern::Where(Box::new(Where::new(
+            Pattern::Variable(var.clone()),
+            Predicate::Match(Box::new(Match::new(
+                Container::Variable(var.clone()),
+                Some(pattern),
+            ))),
+        )))
+    } else {
+        pattern
+    };
+
+    let pattern_definition = context.register_ephemeral_pattern(pattern)?;
     let bubble = Pattern::Bubble(Box::new(Bubble::new(pattern_definition, vec![])));
     Ok(Pattern::Contains(Box::new(Contains::new(bubble, None))))
 }
@@ -458,7 +450,9 @@ fn wrap_pattern_in_contains<Q: QueryContext>(
 ///   }
 /// }
 /// ```
-fn wrap_pattern_in_file<Q: QueryContext>(pattern: Pattern<Q>) -> Result<Pattern<Q>> {
+fn wrap_pattern_in_file(
+    pattern: Pattern<MarzanoQueryContext>,
+) -> Result<Pattern<MarzanoQueryContext>> {
     let filename_pattern = extract_filename_pattern(&pattern)?.unwrap_or_else(|| {
         debug!("Optimization skipped: no filename pattern found, wrapping in top pattern");
         Pattern::Top
@@ -468,17 +462,17 @@ fn wrap_pattern_in_file<Q: QueryContext>(pattern: Pattern<Q>) -> Result<Pattern<
     Ok(pattern)
 }
 
-pub(crate) fn wrap_pattern_in_before_and_after_each_file<Q: QueryContext>(
-    pattern: Pattern<Q>,
-    pattern_definition_info: &BTreeMap<String, DefinitionInfo>,
-) -> Result<Pattern<Q>> {
+pub(crate) fn wrap_pattern_in_before_and_after_each_file(
+    pattern: Pattern<MarzanoQueryContext>,
+    context: &mut dyn SnippetCompilationContext,
+) -> Result<Pattern<MarzanoQueryContext>> {
     let before_each_file = "before_each_file";
     let after_each_file = "after_each_file";
     let mut all_steps = vec![];
     if let Some(DefinitionInfo {
         index,
         parameters: _,
-    }) = pattern_definition_info.get(before_each_file)
+    }) = context.get_pattern_definition(before_each_file)
     {
         all_steps.push(Pattern::Call(Box::new(Call::new(*index, vec![]))));
     }
@@ -487,7 +481,7 @@ pub(crate) fn wrap_pattern_in_before_and_after_each_file<Q: QueryContext>(
     if let Some(DefinitionInfo {
         index,
         parameters: _,
-    }) = pattern_definition_info.get(after_each_file)
+    }) = context.get_pattern_definition(after_each_file)
     {
         all_steps.push(Pattern::Call(Box::new(Call::new(*index, vec![]))));
     }

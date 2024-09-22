@@ -2,17 +2,10 @@ use crate::pattern_compiler::compiler::NodeCompilationContext;
 use anyhow::Result;
 use grit_pattern_matcher::{
     constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
-    pattern::{Variable, VariableSourceLocations},
+    pattern::{Variable, VariableSource},
 };
 use grit_util::ByteRange;
 use std::collections::BTreeSet;
-
-pub(crate) fn variable_from_name(
-    name: &str,
-    context: &mut NodeCompilationContext,
-) -> Result<Variable> {
-    register_variable_optional_range(name, None, context)
-}
 
 pub(crate) fn get_variables(
     params: &[(String, ByteRange)],
@@ -62,7 +55,7 @@ pub(crate) fn register_variable_optional_range(
 
     if let Some(i) = vars.get(name) {
         if let Some(FileLocation { range, .. }) = location {
-            vars_array[*scope_index][*i].locations.insert(range);
+            vars_array[*scope_index][*i].register_location(range)?;
         }
         return Ok(Variable::new(*scope_index, *i));
     }
@@ -70,9 +63,7 @@ pub(crate) fn register_variable_optional_range(
     if let Some(i) = global_vars.get(name) {
         if let Some(FileLocation { range, file_name }) = location {
             if file_name == DEFAULT_FILE_NAME {
-                vars_array[GLOBAL_VARS_SCOPE_INDEX as usize][*i]
-                    .locations
-                    .insert(range);
+                vars_array[GLOBAL_VARS_SCOPE_INDEX as usize][*i].register_location(range)?;
             }
         }
         return Ok(Variable::new(GLOBAL_VARS_SCOPE_INDEX as usize, *i));
@@ -95,11 +86,11 @@ pub(crate) fn register_variable_optional_range(
         // usually used by the user, but feels like this could potentially be a source of bugs
         (BTreeSet::new(), DEFAULT_FILE_NAME.to_owned())
     };
-    scope.push(VariableSourceLocations {
-        name: name.to_owned(),
-        file,
-        locations,
-    });
+    let mut source = VariableSource::new(name.to_owned(), file);
+    for location in locations {
+        source.register_location(location)?;
+    }
+    scope.push(source);
 
     Ok(Variable::new(scope_index as usize, index))
 }

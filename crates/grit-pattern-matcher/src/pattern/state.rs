@@ -45,6 +45,27 @@ pub struct FileRegistry<'a, Q: QueryContext> {
 
 impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
     pub fn get_file_owner(&self, pointer: FilePtr) -> &'a FileOwner<Q::Tree<'a>> {
+        #[cfg(debug_assertions)]
+        {
+            if pointer.file as usize >= self.owners.len() {
+                panic!(
+                    "File index out of bounds: file={}, owners.len()={}",
+                    pointer.file,
+                    self.owners.len()
+                );
+            }
+            let file_owners = &self.owners[pointer.file as usize];
+            if pointer.version as usize >= file_owners.len() {
+                let name = self.get_file_name(pointer);
+                panic!(
+                    "File ({}) does not have version ({}) available. Only {} versions available. Make sure load_file is called before accessing file owners.",
+                    name.to_string_lossy(),
+                    pointer.version,
+                    file_owners.len()
+                );
+            }
+        }
+
         self.owners[pointer.file as usize][pointer.version as usize]
     }
 
@@ -142,6 +163,8 @@ pub struct State<'a, Q: QueryContext> {
     pub files: FileRegistry<'a, Q>,
     rng: rand::rngs::StdRng,
     current_scope: usize,
+    // Track dynamic pattern scope names
+    pattern_scopes: HashMap<String, usize>,
 }
 
 fn get_top_level_effect_ranges<'a, Q: QueryContext>(
@@ -232,6 +255,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
             bindings,
             effects: vector![],
             files: registry,
+            pattern_scopes: HashMap::new(),
         }
     }
 
@@ -291,6 +315,19 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         self.current_scope = tracker.previous_scope;
     }
 
+    pub fn register_pattern_definition(&mut self, name: &str) -> usize {
+        if let Some(scope) = self.pattern_scopes.get(name) {
+            *scope
+        } else {
+            // The dynamic pattern definition is always in a *new* scope
+            let registered_scope = self.bindings.len();
+            self.bindings.push_back(vector![vector![]]);
+            self.pattern_scopes
+                .insert(name.to_string(), registered_scope);
+            registered_scope
+        }
+    }
+
     // unfortunately these accessor functions are not as useful as they
     // could be due to the inability of rust to split borrows across functions
     // within a function you could mutably borrow bindings, and immutably borrow
@@ -329,9 +366,9 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         None
     }
 
-    pub fn register_var(&mut self, name: &str) -> (usize, usize) {
+    pub(crate) fn register_var(&mut self, name: &str) -> VariableScope {
         if let Some(existing) = self.find_var_scope(name) {
-            return (existing.scope as usize, existing.index as usize);
+            return existing;
         };
 
         let scope = self.current_scope;
@@ -339,7 +376,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         let index = the_scope.len();
 
         the_scope.push_back(Box::new(VariableContent::new(name.to_string())));
-        (scope, index)
+        VariableScope::new(scope, index)
     }
 
     /// Attempt to find a variable by name in the current scope

@@ -15,7 +15,7 @@ use crate::sourcemap::EmbeddedSourceMap;
 pub type SortId = u16;
 pub type FieldId = u16;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct LeafNormalizer {
     sort: SortId,
     normalizer: fn(&str) -> Option<&str>,

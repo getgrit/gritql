@@ -113,10 +113,7 @@ impl NodeCompiler for StepCompiler {
                 }
             }
         }
-        let pattern = wrap_pattern_in_before_and_after_each_file(
-            pattern,
-            context.compilation.pattern_definition_info,
-        )?;
+        let pattern = wrap_pattern_in_before_and_after_each_file(pattern, context)?;
 
         Ok(Step::new(pattern))
     }

@@ -21,7 +21,7 @@ use grit_pattern_matcher::{
     },
     pattern::{
         Accumulate, And, DynamicPattern, GritFunctionDefinition, Pattern, PatternDefinition,
-        Predicate, PredicateDefinition, Rewrite, VariableSourceLocations, Where,
+        Predicate, PredicateDefinition, Rewrite, VariableSource, Where,
     },
 };
 use grit_util::{AnalysisLogs, Ast, FileRange};
@@ -34,8 +34,8 @@ use std::{collections::BTreeMap, path::Path, vec};
 
 /// Pattern Builder allows you to progressively compile a pattern.
 /// You always start with a source GritQL string, but additional patterns can be attached before the final query.
-pub struct PatternBuilder {
-    tree: Tree,
+pub struct CompiledPatternBuilder {
+    tree: Option<Tree>,
     pattern: Pattern<MarzanoQueryContext>,
     language: TargetLanguage,
     built_ins: BuiltIns,
@@ -45,7 +45,7 @@ pub struct PatternBuilder {
     vars: BTreeMap<String, usize>,
 
     current_scope_index: usize,
-    vars_array: Vec<Vec<VariableSourceLocations>>,
+    vars_array: Vec<Vec<VariableSource>>,
     global_vars: BTreeMap<String, usize>,
 
     pattern_definition_indices: BTreeMap<String, DefinitionInfo>,
@@ -63,7 +63,7 @@ pub struct PatternBuilder {
     compilation_warnings: AnalysisLogs,
 }
 
-impl PatternBuilder {
+impl CompiledPatternBuilder {
     pub fn start_empty(src: &str, lang: TargetLanguage) -> Result<Self> {
         Self::start(
             src.to_string(),
@@ -96,12 +96,7 @@ impl PatternBuilder {
             built_ins.extend_builtins(custom_built_ins)?;
         }
         let mut logs: AnalysisLogs = vec![].into();
-        let mut global_vars = BTreeMap::from([
-            ("$new_files".to_owned(), NEW_FILES_INDEX),
-            ("$filename".to_owned(), FILENAME_INDEX),
-            ("$program".to_owned(), PROGRAM_INDEX),
-            ("$absolute_filename".to_owned(), ABSOLUTE_PATH_INDEX),
-        ]);
+        let mut global_vars = build_standard_global_vars();
         let is_multifile = is_multifile(&root, libs, grit_parser)?;
         let has_limit = has_limit(&root, libs, grit_parser)?;
         let libs = filter_libs(libs, &src, grit_parser, !is_multifile)?;
@@ -160,7 +155,7 @@ impl PatternBuilder {
         };
 
         Ok(Self {
-            tree: src_tree,
+            tree: Some(src_tree),
             pattern,
             language: lang,
             built_ins,
@@ -285,8 +280,12 @@ impl PatternBuilder {
         } else {
             self
         };
+        let Some(tree) = target_builder.tree else {
+            bail!("Tree must be provided to compile a pattern");
+        };
+
         let problem = Problem::new_from_tree(
-            target_builder.tree,
+            tree,
             target_builder.pattern,
             target_builder.language,
             target_builder.built_ins,
@@ -305,4 +304,13 @@ impl PatternBuilder {
         };
         Ok(result)
     }
+}
+
+pub fn build_standard_global_vars() -> BTreeMap<String, usize> {
+    BTreeMap::from([
+        ("$new_files".to_owned(), NEW_FILES_INDEX),
+        ("$filename".to_owned(), FILENAME_INDEX),
+        ("$program".to_owned(), PROGRAM_INDEX),
+        ("$absolute_filename".to_owned(), ABSOLUTE_PATH_INDEX),
+    ])
 }

@@ -23,7 +23,7 @@ fn language() -> TSLanguage {
     tree_sitter_rust::language().into()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Rust {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,

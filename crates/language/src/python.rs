@@ -22,7 +22,7 @@ fn language() -> TSLanguage {
     tree_sitter_python::language().into()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Python {
     node_types: &'static [Vec<Field>],
     metavariable_sort: SortId,
