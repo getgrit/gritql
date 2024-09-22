@@ -22,15 +22,17 @@ pub struct LanguageSdk {
     compiler: StatelessCompilerContext,
 }
 
-impl LanguageSdk {
-    pub fn default() -> Self {
+impl Default for LanguageSdk {
+    fn default() -> Self {
         let language = TargetLanguage::from_string("js", None).unwrap();
         Self {
             compiler: StatelessCompilerContext::new(language),
             language,
         }
     }
+}
 
+impl LanguageSdk {
     pub fn snippet(&self, snippet: &str) -> Result<Pattern<MarzanoQueryContext>> {
         self.compiler.clone().parse_snippet(snippet)
     }
