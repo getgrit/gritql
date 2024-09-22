@@ -284,6 +284,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         args: &'a [Option<Pattern<Q>>],
     ) -> ScopeTracker {
         let old_scope = self.bindings[scope].last().unwrap();
+        println!("ENTERING SCOPE {:?}", scope);
         let new_scope: Vector<Box<VariableContent<Q>>> = old_scope
             .iter()
             .enumerate()
@@ -365,6 +366,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
 
     pub fn register_var(&mut self, name: &str) -> (usize, usize) {
         if let Some(existing) = self.find_var_scope(name) {
+            println!("I ALREADY HAVE THIS VARIABLE: {:?}", existing);
             return (existing.scope as usize, existing.index as usize);
         };
 
@@ -373,6 +375,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         let index = the_scope.len();
 
         the_scope.push_back(Box::new(VariableContent::new(name.to_string())));
+        println!("I REGISTERED THIS VARIABLE: {:?}", the_scope[index]);
         (scope, index)
     }
 

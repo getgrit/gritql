@@ -362,6 +362,11 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
         // via the variable_content variable
         let scope = self.get_scope(state)?;
         let index = self.get_index(state)?;
+
+        println!(
+            "I HAVE NO VARIABLE CONTENT: {:?} {:?}",
+            self, state.bindings
+        );
         let variable_content = state
             .bindings
             .get_mut(scope.into())

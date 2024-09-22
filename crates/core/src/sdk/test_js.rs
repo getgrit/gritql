@@ -164,8 +164,10 @@ mod tests {
             None,
         );
 
+        let pattern = &sdk.build(rewrite).unwrap();
+
         let results = run_on_test_files(
-            &sdk.build(rewrite).unwrap(),
+            pattern,
             &[
                 SyntheticFile::new(
                     "test.js".to_owned(),
