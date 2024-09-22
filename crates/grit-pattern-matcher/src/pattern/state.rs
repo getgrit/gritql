@@ -368,7 +368,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
 
     pub(crate) fn register_var(&mut self, name: &str) -> VariableScope {
         if let Some(existing) = self.find_var_scope(name) {
-            return existing.clone();
+            return existing;
         };
 
         let scope = self.current_scope;

@@ -7,7 +7,6 @@ use crate::{
     built_in_functions::BuiltIns,
     pattern_compiler::{
         auto_wrap::auto_wrap_pattern, build_standard_global_vars, compiler::VariableLocations,
-        CompiledPatternBuilder,
     },
     problem::{MarzanoQueryContext, Problem},
 };
