@@ -260,7 +260,7 @@ impl<Q: QueryContext> Pattern<Q> {
                 let mut base = args_children(&c.args, definitions);
                 let def = definitions.get_pattern(c.index);
                 if let Some(def) = def {
-                    base.push(PatternOrPredicate::Pattern(&def.pattern));
+                    base.push(PatternOrPredicate::Pattern(&def.pattern()));
                 }
                 base
             }
@@ -282,7 +282,7 @@ impl<Q: QueryContext> Pattern<Q> {
             Pattern::Files(f) => f.pattern.children(definitions),
             Pattern::Bubble(b) => {
                 let mut children = args_children(&b.args, definitions);
-                children.extend(b.pattern_def.pattern.children(definitions));
+                children.extend(b.pattern_def.pattern().children(definitions));
                 children
             }
             Pattern::Limit(l) => l.pattern.children(definitions),

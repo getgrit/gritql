@@ -312,6 +312,10 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         self.current_scope = tracker.previous_scope;
     }
 
+    pub fn register_pattern_definition(&mut self, name: &str) -> usize {
+        todo!("Not implemented")
+    }
+
     // unfortunately these accessor functions are not as useful as they
     // could be due to the inability of rust to split borrows across functions
     // within a function you could mutably borrow bindings, and immutably borrow

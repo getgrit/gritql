@@ -120,10 +120,10 @@ pub fn is_sequential<Q: QueryContext>(
         Pattern::Where(w) => is_sequential(&w.pattern, pattern_definitions),
         Pattern::Maybe(m) => is_sequential(&m.pattern, pattern_definitions),
         Pattern::Rewrite(r) => is_sequential(&r.left, pattern_definitions),
-        Pattern::Bubble(b) => is_sequential(&b.pattern_def.pattern, pattern_definitions),
+        Pattern::Bubble(b) => is_sequential(&b.pattern_def.pattern(), pattern_definitions),
         Pattern::Limit(l) => is_sequential(&l.pattern, pattern_definitions),
         Pattern::Call(call) => is_sequential(
-            &pattern_definitions[call.index].pattern,
+            &pattern_definitions[call.index].pattern(),
             pattern_definitions,
         ),
         Pattern::AstNode(_)
@@ -187,10 +187,10 @@ pub(crate) fn should_autowrap<Q: QueryContext>(
         Pattern::Where(w) => should_autowrap(&w.pattern, pattern_definitions),
         Pattern::Maybe(m) => should_autowrap(&m.pattern, pattern_definitions),
         Pattern::Rewrite(r) => should_autowrap(&r.left, pattern_definitions),
-        Pattern::Bubble(b) => should_autowrap(&b.pattern_def.pattern, pattern_definitions),
+        Pattern::Bubble(b) => should_autowrap(&b.pattern_def.pattern(), pattern_definitions),
         Pattern::Limit(l) => should_autowrap(&l.pattern, pattern_definitions),
         Pattern::Call(call) => should_autowrap(
-            &pattern_definitions[call.index].pattern,
+            &pattern_definitions[call.index].pattern(),
             pattern_definitions,
         ),
         Pattern::AstNode(_)
@@ -264,12 +264,13 @@ fn extract_limit_pattern<Q: QueryContext>(
             (pattern, extracted.1)
         }
         Pattern::Bubble(b) => {
-            let extracted = extract_limit_pattern(b.pattern_def.pattern, pattern_definitions);
+            let extracted =
+                extract_limit_pattern(b.pattern_def.pattern().clone(), pattern_definitions);
             let pattern = Pattern::Bubble(Box::new(Bubble::new(
                 PatternDefinition::new(
                     b.pattern_def.name.clone(),
-                    b.pattern_def.scope,
-                    b.pattern_def.params.clone(),
+                    b.pattern_def.try_scope().unwrap(),
+                    b.pattern_def.params().clone(),
                     extracted.0,
                 ),
                 b.args.into_iter().flatten().collect(),
@@ -278,10 +279,10 @@ fn extract_limit_pattern<Q: QueryContext>(
         }
         Pattern::Call(call) => {
             let (new_pattern, extracted_limit) = extract_limit_pattern(
-                pattern_definitions[call.index].pattern.clone(),
+                pattern_definitions[call.index].pattern().clone(),
                 pattern_definitions,
             );
-            pattern_definitions[call.index].pattern = new_pattern;
+            pattern_definitions[call.index].replace_pattern(new_pattern);
             (Pattern::Call(call), extracted_limit)
         }
         Pattern::AstNode(_)
@@ -346,10 +347,10 @@ pub fn should_wrap_in_file<Q: QueryContext>(
         Pattern::Where(w) => should_wrap_in_file(&w.pattern, pattern_definitions),
         Pattern::Maybe(m) => should_wrap_in_file(&m.pattern, pattern_definitions),
         Pattern::Rewrite(r) => should_wrap_in_file(&r.left, pattern_definitions),
-        Pattern::Bubble(b) => should_wrap_in_file(&b.pattern_def.pattern, pattern_definitions),
+        Pattern::Bubble(b) => should_wrap_in_file(&b.pattern_def.pattern(), pattern_definitions),
         Pattern::Limit(l) => should_wrap_in_file(&l.pattern, pattern_definitions),
         Pattern::Call(call) => should_wrap_in_file(
-            &pattern_definitions[call.index].pattern,
+            &pattern_definitions[call.index].pattern(),
             pattern_definitions,
         ),
         Pattern::And(a) => a
