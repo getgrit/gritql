@@ -6,14 +6,14 @@ use grit_pattern_matcher::{
     constants::{GRIT_RANGE_VAR, MATCH_VAR},
     context::QueryContext,
     pattern::{
-        And, Bubble, Call, Container, Contains, FilePattern, Includes, Limit, Match, Maybe,
+        And, Bubble, Call, Container, FilePattern, Includes, Limit, Match, Maybe,
         Pattern, PatternDefinition, PrAnd, PrOr, Predicate, Range as PRange, Rewrite, Step,
         StringConstant, Variable, Where,
     },
 };
 use grit_util::FileRange;
 use log::debug;
-use std::collections::BTreeMap;
+
 
 // TODO: implement a floating bubble for this to work
 // pub(crate) fn auto_wrap_standalone_pattern<Q: QueryContext>(
@@ -120,10 +120,10 @@ pub fn is_sequential<Q: QueryContext>(
         Pattern::Where(w) => is_sequential(&w.pattern, pattern_definitions),
         Pattern::Maybe(m) => is_sequential(&m.pattern, pattern_definitions),
         Pattern::Rewrite(r) => is_sequential(&r.left, pattern_definitions),
-        Pattern::Bubble(b) => is_sequential(&b.pattern_def.pattern(), pattern_definitions),
+        Pattern::Bubble(b) => is_sequential(b.pattern_def.pattern(), pattern_definitions),
         Pattern::Limit(l) => is_sequential(&l.pattern, pattern_definitions),
         Pattern::Call(call) => is_sequential(
-            &pattern_definitions[call.index].pattern(),
+            pattern_definitions[call.index].pattern(),
             pattern_definitions,
         ),
         Pattern::AstNode(_)
@@ -187,10 +187,10 @@ pub(crate) fn should_autowrap<Q: QueryContext>(
         Pattern::Where(w) => should_autowrap(&w.pattern, pattern_definitions),
         Pattern::Maybe(m) => should_autowrap(&m.pattern, pattern_definitions),
         Pattern::Rewrite(r) => should_autowrap(&r.left, pattern_definitions),
-        Pattern::Bubble(b) => should_autowrap(&b.pattern_def.pattern(), pattern_definitions),
+        Pattern::Bubble(b) => should_autowrap(b.pattern_def.pattern(), pattern_definitions),
         Pattern::Limit(l) => should_autowrap(&l.pattern, pattern_definitions),
         Pattern::Call(call) => should_autowrap(
-            &pattern_definitions[call.index].pattern(),
+            pattern_definitions[call.index].pattern(),
             pattern_definitions,
         ),
         Pattern::AstNode(_)
@@ -347,10 +347,10 @@ pub fn should_wrap_in_file<Q: QueryContext>(
         Pattern::Where(w) => should_wrap_in_file(&w.pattern, pattern_definitions),
         Pattern::Maybe(m) => should_wrap_in_file(&m.pattern, pattern_definitions),
         Pattern::Rewrite(r) => should_wrap_in_file(&r.left, pattern_definitions),
-        Pattern::Bubble(b) => should_wrap_in_file(&b.pattern_def.pattern(), pattern_definitions),
+        Pattern::Bubble(b) => should_wrap_in_file(b.pattern_def.pattern(), pattern_definitions),
         Pattern::Limit(l) => should_wrap_in_file(&l.pattern, pattern_definitions),
         Pattern::Call(call) => should_wrap_in_file(
-            &pattern_definitions[call.index].pattern(),
+            pattern_definitions[call.index].pattern(),
             pattern_definitions,
         ),
         Pattern::And(a) => a
@@ -458,7 +458,7 @@ fn wrap_pattern_in_contains<Q: QueryContext>(
     context: &mut dyn SnippetCompilationContext,
 ) -> Result<Pattern<Q>> {
     let var = context.register_variable(var_name, None)?;
-    let pattern = Pattern::Where(Box::new(Where::new(
+    let _pattern = Pattern::Where(Box::new(Where::new(
         Pattern::Variable(var.clone()),
         Predicate::Match(Box::new(Match::new(
             Container::Variable(var.clone()),

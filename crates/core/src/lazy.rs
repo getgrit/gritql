@@ -173,7 +173,7 @@ mod test {
             let this_lang = TargetLanguage::from_string("js", None).unwrap();
 
             let console_builder =
-                CompiledPatternBuilder::start_empty("`console.log(name)`", this_lang.clone())
+                CompiledPatternBuilder::start_empty("`console.log(name)`", this_lang)
                     .unwrap();
             let console_pattern = console_builder
                 .compile(None, None, false)
@@ -189,7 +189,7 @@ mod test {
                 matches_found_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
 
                 // Ok we are operating on the right function, now verify more things
-                let mut compiler = StatelessCompilerContext::new(this_lang.clone());
+                let mut compiler = StatelessCompilerContext::new(this_lang);
                 let standalone_snippet = compiler.parse_snippet("console.log(name)").unwrap();
                 let standalone_contains = p_contains(standalone_snippet);
 

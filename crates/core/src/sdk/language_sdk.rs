@@ -7,7 +7,7 @@ use crate::{
     built_in_functions::BuiltIns,
     pattern_compiler::{
         auto_wrap::{
-            auto_wrap_pattern, should_autowrap, should_wrap_in_file, wrap_pattern_in_sequential,
+            wrap_pattern_in_sequential,
         },
         compiler::VariableLocations,
         CompiledPatternBuilder,
@@ -40,10 +40,10 @@ impl LanguageSdk {
     }
 
     pub fn build(&self, pattern: Pattern<MarzanoQueryContext>) -> Result<Problem> {
-        let mut built_ins = BuiltIns::get_built_in_functions();
-        let mut logs: AnalysisLogs = vec![].into();
-        let mut global_vars = CompiledPatternBuilder::build_standard_global_vars();
-        let mut pattern_definitions = vec![];
+        let built_ins = BuiltIns::get_built_in_functions();
+        let _logs: AnalysisLogs = vec![].into();
+        let global_vars = CompiledPatternBuilder::build_standard_global_vars();
+        let pattern_definitions = vec![];
 
         let is_multifile = false;
 

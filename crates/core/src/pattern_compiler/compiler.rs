@@ -690,9 +690,7 @@ impl VariableLocations {
 
     pub(crate) fn from_globals(globals: BTreeMap<String, usize>) -> Self {
         Self {
-            locations: vec![globals
-                .into_iter()
-                .map(|(name, var)| VariableSource::new_global(name))
+            locations: vec![globals.into_keys().map(|name| VariableSource::new_global(name))
                 .collect()],
         }
     }

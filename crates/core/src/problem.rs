@@ -16,11 +16,11 @@ use grit_pattern_matcher::{
     file_owners::FileOwners,
     pattern::{
         FilePtr, FileRegistry, GritFunctionDefinition, Matcher, Pattern, PatternDefinition,
-        PredicateDefinition, ResolvedPattern, State, VariableContent,
+        PredicateDefinition, ResolvedPattern, State,
     },
 };
 use grit_util::VariableMatch;
-use im::{vector, Vector};
+
 use log::error;
 use marzano_language::{language::Tree, target_language::TargetLanguage};
 use marzano_util::{

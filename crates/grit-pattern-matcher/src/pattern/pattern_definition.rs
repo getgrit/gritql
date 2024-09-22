@@ -4,7 +4,10 @@ use super::{
     State,
 };
 use crate::context::QueryContext;
-use grit_util::{error::GritResult, AnalysisLogs};
+use grit_util::{
+    error::{GritPatternError, GritResult},
+    AnalysisLogs,
+};
 use std::sync::{Arc, OnceLock};
 
 #[derive(Clone, Debug)]
@@ -50,9 +53,12 @@ impl<Q: QueryContext> PatternDefinition<Q> {
     pub fn try_scope(&self) -> GritResult<usize> {
         match &self.internal {
             PatternDefinitionInternal::Static { scope } => Ok(*scope),
-            PatternDefinitionInternal::Dynamic { .. } => {
-                panic!("Dynamic pattern definition does not have a scope");
-            }
+            PatternDefinitionInternal::Dynamic { scope } => match scope.get() {
+                Some(scope) => Ok(*scope),
+                None => Err(GritPatternError::new_matcher(
+                    "Dynamic pattern definition not yet initialized",
+                )),
+            },
         }
     }
 
