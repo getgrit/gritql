@@ -19,13 +19,14 @@ use grit_pattern_matcher::{
     constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX},
     pattern::{
         DynamicSnippetPart, GritFunctionDefinition, Pattern, PatternDefinition,
-        PredicateDefinition, Variable, VariableSource,
+        PredicateDefinition, Variable, VariableContent, VariableSource,
     },
 };
 use grit_util::{
     error::GritPatternError, traverse, AnalysisLogs, Ast, AstNode, ByteRange, FileRange, Order,
     Range, VariableMatch,
 };
+use im::{vector, Vector};
 use itertools::Itertools;
 use marzano_language::{
     self, grit_parser::MarzanoGritParser, language::Tree, target_language::TargetLanguage,
@@ -668,12 +669,36 @@ pub fn src_to_problem(src: String, default_lang: TargetLanguage) -> Result<Probl
 
 #[derive(Debug, Default)]
 pub struct VariableLocations {
+    /// List of scopes, each scope with an array of variables
     pub(crate) locations: Vec<Vec<VariableSource>>,
 }
 
 impl VariableLocations {
     pub(crate) fn new(locations: Vec<Vec<VariableSource>>) -> Self {
         Self { locations }
+    }
+
+    pub(crate) fn from_globals(globals: BTreeMap<String, usize>) -> Self {
+        Self {
+            locations: vec![globals
+                .into_iter()
+                .map(|(name, var)| VariableSource::new_global(name))
+                .collect()],
+        }
+    }
+
+    pub(crate) fn initial_bindings(
+        &self,
+    ) -> Vector<Vector<Vector<Box<VariableContent<MarzanoQueryContext>>>>> {
+        self.locations
+            .iter()
+            .map(|scope| {
+                vector![scope
+                    .iter()
+                    .map(|s| Box::new(VariableContent::new(s.name().to_string())))
+                    .collect()]
+            })
+            .collect()
     }
 
     pub(crate) fn compiled_vars(&self, source: &str) -> Vec<VariableMatch> {

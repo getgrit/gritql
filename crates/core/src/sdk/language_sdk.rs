@@ -52,7 +52,7 @@ impl LanguageSdk {
             is_multifile,
             false,
             None,
-            VariableLocations::new(vec![]),
+            VariableLocations::from_globals(global_vars),
             pattern_definitions,
             vec![],
             vec![],

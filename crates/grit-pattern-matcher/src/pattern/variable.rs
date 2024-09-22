@@ -62,38 +62,62 @@ pub struct Variable {
 /// VariableSource is used to track the origin of a variable
 /// It can come from
 #[derive(Debug, Clone)]
-pub struct VariableSource {
-    name: String,
-    file: String,
-    locations: BTreeSet<ByteRange>,
+pub enum VariableSource {
+    /// Compiled from a pattern
+    Compiled {
+        name: String,
+        file: String,
+        locations: BTreeSet<ByteRange>,
+    },
+    /// Global variable, which is not defined anywhere
+    Global { name: String },
 }
 
 impl VariableSource {
     pub fn new(name: String, file: String) -> Self {
-        Self {
+        Self::Compiled {
             name,
             file,
             locations: BTreeSet::new(),
         }
     }
 
+    pub fn new_global(name: String) -> Self {
+        Self::Global { name }
+    }
+
     /// Register a location in a GritQL file where a variable is referenced
     pub fn register_location(&mut self, location: ByteRange) -> GritResult<()> {
-        self.locations.insert(location);
-        Ok(())
+        match self {
+            VariableSource::Compiled { locations, .. } => {
+                locations.insert(location);
+                Ok(())
+            }
+            VariableSource::Global { .. } => Ok(()),
+        }
     }
 
     /// Get locations where the variable is referenced from the main pattern file
     pub fn get_main_locations(&self) -> Vec<ByteRange> {
-        if self.file != DEFAULT_FILE_NAME {
-            return vec![];
+        if let VariableSource::Compiled {
+            locations, file, ..
+        } = self
+        {
+            if file != DEFAULT_FILE_NAME {
+                return vec![];
+            }
+            locations.iter().cloned().collect()
+        } else {
+            vec![]
         }
-        self.locations.iter().cloned().collect()
     }
 
     /// Get the registered variable name
     pub fn name(&self) -> &str {
-        &self.name
+        match self {
+            VariableSource::Compiled { name, .. } => name,
+            VariableSource::Global { name } => name,
+        }
     }
 }
 
