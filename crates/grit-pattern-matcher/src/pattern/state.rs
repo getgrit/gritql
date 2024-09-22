@@ -163,6 +163,8 @@ pub struct State<'a, Q: QueryContext> {
     pub files: FileRegistry<'a, Q>,
     rng: rand::rngs::StdRng,
     current_scope: usize,
+    // Track dynamic pattern scope names
+    pattern_scopes: HashMap<String, usize>,
 }
 
 fn get_top_level_effect_ranges<'a, Q: QueryContext>(
@@ -253,6 +255,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
             bindings,
             effects: vector![],
             files: registry,
+            pattern_scopes: HashMap::new(),
         }
     }
 
@@ -313,7 +316,13 @@ impl<'a, Q: QueryContext> State<'a, Q> {
     }
 
     pub fn register_pattern_definition(&mut self, name: &str) -> usize {
-        todo!("Not implemented")
+        if let Some(scope) = self.pattern_scopes.get(name) {
+            *scope
+        } else {
+            let current_scope = self.current_scope;
+            self.pattern_scopes.insert(name.to_string(), current_scope);
+            current_scope
+        }
     }
 
     // unfortunately these accessor functions are not as useful as they
