@@ -93,7 +93,6 @@ wasm_core = [
   "external_functions_ffi",
   "marzano-util/external_functions_ffi",
   "dep:wasm-bindgen",
-  "napi_or_wasm",
 ]
 grit_tracing = ["dep:tracing-opentelemetry"]
 language-parsers = ["marzano-language/builtin-parser"]
@@ -101,7 +100,5 @@ grit-parser = ["marzano-language/grit-parser"]
 absolute_filename = []
 non_wasm = ["absolute_filename"]
 test_utils = []
-# Shared features for napi and wasm
-napi_or_wasm = []
 
-napi = ["dep:napi", "dep:napi-derive", "napi_or_wasm"]
+napi = ["dep:napi", "dep:napi-derive"]

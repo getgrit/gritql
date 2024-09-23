@@ -135,11 +135,26 @@ impl UncompiledPatternBuilder {
     }
 }
 
+/// This implements the wasm version of the API
+#[cfg(feature = "wasm_core")]
+impl UncompiledPatternBuilder {
+    #[cfg(feature = "napi")]
+    pub fn new_snippet(text: String) -> Self {
+        UncompiledPatternBuilder {
+            pattern: UncompiledPattern::Snippet { text },
+        }
+    }
+
+    /// Filter this pattern to only match instances that contain the other pattern
+    pub fn contains(&self, other: &UncompiledPatternBuilder) -> Self {
+        self.contains_internal(other)
+    }
+}
+
 /// This implements features that should only be used from Napi
 #[cfg(feature = "napi")]
 #[napi]
 impl UncompiledPatternBuilder {
-    #[cfg(feature = "napi")]
     #[napi(factory, js_name = "new_snippet")]
     pub fn new_snippet(text: String) -> Self {
         UncompiledPatternBuilder {
