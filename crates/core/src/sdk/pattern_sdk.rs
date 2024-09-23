@@ -1,21 +1,23 @@
+use crate::api::FileMatchResult;
 use anyhow::Result;
 use grit_pattern_matcher::pattern::{And, Contains, Pattern};
-use marzano_language::target_language::TargetLanguage;
 use marzano_util::{rich_path::RichFile, runtime::ExecutionContext};
 use std::fmt::Debug;
 use std::sync::Arc;
 
 use crate::{
-    api::{InputFile, MatchResult},
+    api::MatchResult,
     built_in_functions::CallbackFn,
     problem::{MarzanoQueryContext, Problem},
 };
 
-use super::{binding::ResultBinding, LanguageSdk, StatelessCompilerContext};
+use super::{LanguageSdk, StatelessCompilerContext};
 
 #[cfg(feature = "wasm_core")]
 use wasm_bindgen::prelude::*;
 
+#[cfg(feature = "napi")]
+use super::binding::ResultBinding;
 #[cfg(feature = "napi")]
 use napi::bindgen_prelude::*;
 
@@ -157,8 +159,8 @@ impl UncompiledPatternBuilder {
     ) -> Self {
         let me = self.clone();
 
-        let inner_callback = SimpleCallback {
-            callback: Arc::new(move |binding, context, state, _logs| {
+        let inner_callback =
+            SimpleCallback::new(Arc::new(move |binding, context, state, _logs| {
                 let runtime = context
                     .runtime
                     .handle
@@ -171,8 +173,7 @@ impl UncompiledPatternBuilder {
                     .block_on(async { callback.call_async::<bool>(foreign_binding).await })?;
 
                 Ok(val)
-            }),
-        };
+            }));
         let callback_pattern = UncompiledPatternBuilder::new(UncompiledPattern::Callback {
             callback: inner_callback,
         });
@@ -190,19 +191,25 @@ impl UncompiledPatternBuilder {
         Ok(results)
     }
 
+    /// Run the pattern on a list of files and return the number of matching files found
     #[napi]
     pub async fn run_on_files(&self, files: Vec<RichFile>) -> napi::Result<u32> {
         let results = self
             .run_inner(files)
             .await
             .map_err(|e| Error::new(Status::GenericFailure, e.to_string()))?;
-        println!("results: {:?}", results);
-        Ok(results.len() as u32)
+        let mut matched_files = 0;
+        for result in results {
+            if result.is_match() {
+                matched_files += 1;
+            }
+        }
+        Ok(matched_files as u32)
     }
 
     /// Apply the query to a single file and return the modified file (if any)
     /// @param file The file to apply the query to
-    /// @returns The modified file (if any)
+    /// @returns The modified file (if it was modified)
     #[napi]
     pub async fn run_on_file(&self, file: RichFile) -> napi::Result<Option<RichFile>> {
         let results = self
@@ -210,18 +217,24 @@ impl UncompiledPatternBuilder {
             .await
             .map_err(|e| napi::Error::from_reason(format!("Error: {:?}", e)))?;
 
-        println!("results: {:?}", results);
-
-        let rewrite = results
-            .into_iter()
-            .find(|r| matches!(r, MatchResult::Rewrite(_)));
-
-        match rewrite {
-            Some(MatchResult::Rewrite(rewrite)) => Ok(Some(RichFile {
-                path: rewrite.rewritten.source_file,
-                content: rewrite.rewritten.content.unwrap_or_default(),
-            })),
-            _ => Ok(None),
+        for result in results {
+            match result {
+                MatchResult::RemoveFile(file) => {
+                    return Ok(Some(RichFile {
+                        path: file.file_name().to_string(),
+                        content: "".to_string(),
+                    }));
+                }
+                MatchResult::Rewrite(rewrite) => {
+                    return Ok(Some(RichFile {
+                        path: rewrite.file_name().to_string(),
+                        content: rewrite.content().unwrap_or_default().to_string(),
+                    }));
+                }
+                _ => {}
+            }
         }
+
+        Ok(None)
     }
 }

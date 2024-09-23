@@ -2307,6 +2307,8 @@ dependencies = [
  "marzano-externals",
  "marzano-language",
  "marzano-util",
+ "napi",
+ "napi-derive",
  "path-absolutize",
  "rand",
  "rayon",
