@@ -34,8 +34,8 @@ impl Default for LanguageSdk {
 
 impl LanguageSdk {
     pub fn compiler(&self) -> StatelessCompilerContext {
-        let mut compiler = StatelessCompilerContext::new(self.language);
-        compiler
+        
+        StatelessCompilerContext::new(self.language)
     }
 
     pub fn snippet(&self, snippet: &str) -> Result<Pattern<MarzanoQueryContext>> {

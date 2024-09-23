@@ -1,12 +1,10 @@
-use crate::api::FileMatchResult;
 use anyhow::Result;
 use grit_pattern_matcher::pattern::{And, Contains, Pattern};
-use marzano_util::{rich_path::RichFile, runtime::ExecutionContext};
+
 use std::fmt::Debug;
 use std::sync::Arc;
 
 use crate::{
-    api::MatchResult,
     built_in_functions::CallbackFn,
     problem::{MarzanoQueryContext, Problem},
 };
@@ -33,6 +31,7 @@ impl Debug for SimpleCallback {
 }
 
 impl SimpleCallback {
+    #[allow(unused)]
     fn new(callback: Arc<CallbackFn>) -> Self {
         SimpleCallback { callback }
     }
@@ -42,6 +41,7 @@ impl SimpleCallback {
 /// Late compilation allows us to reuse the same pattern across languages (where a snippet will ultimately be parsed differently
 /// It also allows the pattern to be used as a root pattern, or dynamically inside a function callback
 #[derive(Debug, Clone)]
+#[allow(unused)]
 enum UncompiledPattern {
     Contains {
         contains: Box<UncompiledPatternBuilder>,
@@ -66,6 +66,7 @@ pub struct UncompiledPatternBuilder {
 
 // Methods we can use in Rust, but are not exported directly to host languages
 impl UncompiledPatternBuilder {
+    #[allow(unused)]
     fn new(pattern: UncompiledPattern) -> Self {
         UncompiledPatternBuilder { pattern }
     }
@@ -101,10 +102,6 @@ impl UncompiledPatternBuilder {
                 ));
                 Ok(built_in)
             }
-            _ => Err(anyhow::anyhow!(
-                "Unsupported pattern type {:?}",
-                self.pattern
-            )),
         }
     }
 
@@ -121,6 +118,7 @@ impl UncompiledPatternBuilder {
 // This is the API that host languages will use
 #[cfg_attr(feature = "wasm_core", wasm_bindgen)]
 #[cfg_attr(feature = "napi", napi)]
+#[cfg(feature = "napi_or_wasm")]
 impl UncompiledPatternBuilder {
     #[napi(factory, js_name = "new_snippet")]
     pub fn new_snippet(text: String) -> Self {
