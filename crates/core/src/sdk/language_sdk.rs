@@ -33,12 +33,21 @@ impl Default for LanguageSdk {
 }
 
 impl LanguageSdk {
-    pub fn snippet(&self, snippet: &str) -> Result<Pattern<MarzanoQueryContext>> {
-        self.compiler.clone().parse_snippet(snippet)
+    pub fn compiler(&self) -> StatelessCompilerContext {
+        let mut compiler = StatelessCompilerContext::new(self.language);
+        compiler
     }
 
-    pub fn build(&mut self, pattern: Pattern<MarzanoQueryContext>) -> Result<Problem> {
-        let built_ins = BuiltIns::get_built_in_functions();
+    pub fn snippet(&self, snippet: &str) -> Result<Pattern<MarzanoQueryContext>> {
+        let mut compiler = self.compiler();
+        compiler.parse_snippet(snippet)
+    }
+
+    pub fn build(
+        &mut self,
+        built_ins: BuiltIns,
+        pattern: Pattern<MarzanoQueryContext>,
+    ) -> Result<Problem> {
         let _logs: AnalysisLogs = vec![].into();
         let global_vars = build_standard_global_vars();
         let mut pattern_definitions = vec![];

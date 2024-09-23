@@ -1,13 +1,17 @@
 use anyhow::Result;
-use grit_pattern_matcher::pattern::Pattern;
+use grit_pattern_matcher::pattern::{And, Contains, Pattern};
+use marzano_language::target_language::TargetLanguage;
 use marzano_util::{rich_path::RichFile, runtime::ExecutionContext};
+use std::fmt::Debug;
+use std::sync::Arc;
 
 use crate::{
     api::{InputFile, MatchResult},
+    built_in_functions::CallbackFn,
     problem::{MarzanoQueryContext, Problem},
 };
 
-use super::LanguageSdk;
+use super::{LanguageSdk, StatelessCompilerContext};
 
 #[cfg(feature = "wasm_core")]
 use wasm_bindgen::prelude::*;
@@ -15,30 +19,86 @@ use wasm_bindgen::prelude::*;
 #[cfg(feature = "napi")]
 use napi::bindgen_prelude::*;
 
+#[derive(Clone)]
+struct SimpleCallback {
+    callback: Arc<CallbackFn>,
+}
+
+impl Debug for SimpleCallback {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "SimpleCallback")
+    }
+}
+
+impl SimpleCallback {
+    fn new(callback: Arc<CallbackFn>) -> Self {
+        SimpleCallback { callback }
+    }
+}
+
 /// UncompiledPattern is used to build up complex patterns *before* building them
 /// Late compilation allows us to reuse the same pattern across languages (where a snippet will ultimately be parsed differently
 /// It also allows the pattern to be used as a root pattern, or dynamically inside a function callback
 #[derive(Debug, Clone)]
-pub enum UncompiledPattern {
-    Contains { contains: Box<UncompiledPattern> },
-    Snippet { text: String },
+enum UncompiledPattern {
+    Contains {
+        contains: Box<UncompiledPatternBuilder>,
+    },
+    Snippet {
+        text: String,
+    },
+    Callback {
+        callback: SimpleCallback,
+    },
+    And {
+        patterns: Vec<UncompiledPatternBuilder>,
+    },
 }
 
 #[cfg_attr(feature = "wasm_core", wasm_bindgen)]
 #[cfg_attr(feature = "napi", napi)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct UncompiledPatternBuilder {
     pattern: UncompiledPattern,
 }
 
 // Methods we can use in Rust, but are not exported directly to host languages
 impl UncompiledPatternBuilder {
-    fn compile(&self) -> Result<Pattern<MarzanoQueryContext>> {
-        match &self.pattern {
+    fn new(pattern: UncompiledPattern) -> Self {
+        UncompiledPatternBuilder { pattern }
+    }
+
+    fn compile(
+        self,
+        context: &mut StatelessCompilerContext,
+    ) -> Result<Pattern<MarzanoQueryContext>> {
+        match self.pattern {
             UncompiledPattern::Snippet { text } => {
                 let sdk = LanguageSdk::default();
-                let pattern = sdk.snippet(text)?;
+                let pattern = sdk.snippet(&text)?;
                 Ok(pattern)
+            }
+            UncompiledPattern::And { patterns } => {
+                let mut compiled: Vec<Pattern<MarzanoQueryContext>> = vec![];
+                for pattern in patterns {
+                    compiled.push(pattern.compile(context)?);
+                }
+                Ok(Pattern::And(Box::new(And::new(compiled))))
+            }
+            UncompiledPattern::Contains { contains } => {
+                let compiled = contains.compile(context)?;
+                // TODO: we probably want to auto-bubble?
+                Ok(Pattern::Contains(Box::new(Contains::new(compiled, None))))
+            }
+            UncompiledPattern::Callback { callback } => {
+                let built_in = context.built_ins.add_callback(Box::new(
+                    move |binding, context, state, logs| {
+                        println!("The callback was called here: {:?}", callback);
+                        let result = (callback.callback)(binding, context, state, logs)?;
+                        Ok(result)
+                    },
+                ));
+                Ok(built_in)
             }
             _ => Err(anyhow::anyhow!(
                 "Unsupported pattern type {:?}",
@@ -47,10 +107,12 @@ impl UncompiledPatternBuilder {
         }
     }
 
-    pub fn build(&self) -> Result<Problem> {
-        let compiled = self.compile()?;
+    pub fn build(self) -> Result<Problem> {
         let mut sdk = LanguageSdk::default();
-        let built = sdk.build(compiled)?;
+        let mut compiler = sdk.compiler();
+
+        let compiled = self.compile(&mut compiler)?;
+        let built = sdk.build(compiler.built_ins, compiled)?;
         Ok(built)
     }
 }
@@ -65,18 +127,57 @@ impl UncompiledPatternBuilder {
             pattern: UncompiledPattern::Snippet { text },
         }
     }
+
+    /// Filter this pattern to only match instances that contain the other pattern
+    #[napi(js_name = "contains")]
+    pub fn contains(&self, other: &UncompiledPatternBuilder) -> Self {
+        let me = self.clone();
+        let contains = UncompiledPatternBuilder::new(UncompiledPattern::Contains {
+            contains: Box::new(other.clone()),
+        });
+        UncompiledPatternBuilder {
+            pattern: UncompiledPattern::And {
+                patterns: vec![me, contains],
+            },
+        }
+    }
 }
 
 /// This implements features that should only be used from Napi
 #[cfg(feature = "napi")]
 #[napi]
 impl UncompiledPatternBuilder {
+    /// Filter the pattern to only match instances that match a provided callback
+    #[napi]
+    pub fn filter(
+        &self,
+        callback: napi::threadsafe_function::ThreadsafeFunction<
+            u32,
+            napi::threadsafe_function::ErrorStrategy::Fatal,
+        >,
+    ) -> Self {
+        let me = self.clone();
+
+        let callback = SimpleCallback {
+            callback: Arc::new(move |binding, context, state, _logs| {
+                println!("The callback was called");
+                Ok(true)
+            }),
+        };
+        let callback_pattern =
+            UncompiledPatternBuilder::new(UncompiledPattern::Callback { callback });
+
+        UncompiledPatternBuilder::new(UncompiledPattern::And {
+            patterns: vec![me, callback_pattern],
+        })
+    }
+
     async fn run_inner(
         &self,
         file_names: Vec<String>,
         file_contents: Vec<String>,
     ) -> Result<Vec<MatchResult>> {
-        let problem = self.build()?;
+        let problem = self.clone().build()?;
         let context = ExecutionContext::default();
         let files: Vec<RichFile> = file_names
             .into_iter()
@@ -86,6 +187,7 @@ impl UncompiledPatternBuilder {
         let results = problem.execute_files(files, &context);
         Ok(results)
     }
+
     #[napi]
     pub async fn run(
         &self,
