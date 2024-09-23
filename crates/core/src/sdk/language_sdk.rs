@@ -34,7 +34,6 @@ impl Default for LanguageSdk {
 
 impl LanguageSdk {
     pub fn compiler(&self) -> StatelessCompilerContext {
-        
         StatelessCompilerContext::new(self.language)
     }
 

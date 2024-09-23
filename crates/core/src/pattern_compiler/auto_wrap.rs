@@ -3,7 +3,7 @@ use crate::{optimizer::hoist_files::extract_filename_pattern, problem::MarzanoQu
 use super::compiler::{DefinitionInfo, SnippetCompilationContext};
 use anyhow::Result;
 use grit_pattern_matcher::{
-    constants::{GRIT_RANGE_VAR},
+    constants::GRIT_RANGE_VAR,
     pattern::{
         And, Bubble, Call, Container, Contains, FilePattern, Includes, Limit, Match, Maybe,
         Pattern, PatternDefinition, PrAnd, PrOr, Predicate, Range as PRange, Rewrite, Step,

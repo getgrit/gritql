@@ -42,10 +42,8 @@ use super::{
     where_compiler::WhereCompiler,
     within_compiler::WithinCompiler,
 };
+use crate::ast_node::{ASTNode, AstLeafNode};
 use crate::problem::MarzanoQueryContext;
-use crate::{
-    ast_node::{ASTNode, AstLeafNode},
-};
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
     context::QueryContext,

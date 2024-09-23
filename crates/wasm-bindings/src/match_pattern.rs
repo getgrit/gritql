@@ -190,7 +190,6 @@ async fn run_pattern_builder_internal(
     let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
     let pattern = pattern.build()?;
 
-
     let files: Vec<RichFile> = paths
         .into_iter()
         .zip(contents)
@@ -199,7 +198,6 @@ async fn run_pattern_builder_internal(
     let results = pattern.execute_files(files, &context);
     Ok(results)
 }
-
 
 #[wasm_bindgen(js_name = runPattern)]
 #[cfg(target_arch = "wasm32")]
@@ -219,8 +217,7 @@ pub async fn run_pattern(
     llm_api_bearer_token: String,
 ) -> Result<JsValue, JsError> {
     let result = match run_pattern_builder_internal(
-        pattern,
-        paths,
+        pattern, paths,
         contents,
         // lib_paths,
         // lib_contents,
@@ -234,8 +231,6 @@ pub async fn run_pattern(
     };
     Ok(serde_wasm_bindgen::to_value(&result)?)
 }
-
-
 
 #[cfg(target_arch = "wasm32")]
 async fn match_pattern_internal(
@@ -305,7 +300,8 @@ async fn match_pattern_internal(
     let injected_builtins: Option<BuiltIns> = None;
     #[cfg(feature = "ai_builtins")]
     let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
-    let builder = CompiledPatternBuilder::start(pattern, &libs, lang, None, parser, injected_builtins)?;
+    let builder =
+        CompiledPatternBuilder::start(pattern, &libs, lang, None, parser, injected_builtins)?;
     let CompilationResult {
         problem: pattern, ..
     } = builder.compile(None, None, true)?;
@@ -434,7 +430,6 @@ async fn setup_grit_parser() -> anyhow::Result<MarzanoGritParser> {
     parser.set_language(lang)?;
     Ok(MarzanoGritParser::from_initialized_ts_parser(parser))
 }
-
 
 async fn get_language(lang: PatternLanguage) -> anyhow::Result<TargetLanguage> {
     if lang.is_initialized() {

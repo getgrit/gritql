@@ -238,7 +238,7 @@ impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
             state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
                 .back_mut()
                 .unwrap()[FILENAME_INDEX]
-            .value = Some(file.name(&state.files));
+                .value = Some(file.name(&state.files));
         }
 
         match self {
