@@ -321,7 +321,7 @@ impl PatternLanguage {
 
     #[cfg(not(target_arch = "wasm32"))]
     pub fn to_target_with_ts_lang(self, _lang: TSLanguage) -> Result<TargetLanguage> {
-        unreachable!("to_target_with_ts_lang should only be called on wasm32")
+        anyhow::bail!("to_target_with_ts_lang should only be called on wasm32")
     }
 }
 

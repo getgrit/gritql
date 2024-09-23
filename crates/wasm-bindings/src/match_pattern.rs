@@ -168,6 +168,76 @@ pub async fn parse_input_files(
 }
 
 #[cfg(target_arch = "wasm32")]
+async fn run_pattern_builder_internal(
+    pattern: UncompiledPatternBuilder,
+    paths: Vec<String>,
+    contents: Vec<String>,
+) -> anyhow::Result<Vec<MatchResult>> {
+    console_error_panic_hook::set_once();
+
+    // TODO remove this line once initialize_tree_sitter function works
+    let _ = web_tree_sitter_sg::TreeSitter::init().await;
+
+    // We *must* initialize the language first
+    let our_lang = PatternLanguage::Tsx;
+    let lang = get_language(our_lang).await?;
+
+    let context = ExecutionContext::default();
+
+    #[cfg(not(feature = "ai_builtins"))]
+    let injected_builtins: Option<BuiltIns> = None;
+    #[cfg(feature = "ai_builtins")]
+    let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
+    let pattern = pattern.build()?;
+
+
+    let files: Vec<RichFile> = paths
+        .into_iter()
+        .zip(contents)
+        .map(|(p, c)| RichFile::new(p, c))
+        .collect();
+    let results = pattern.execute_files(files, &context);
+    Ok(results)
+}
+
+
+#[wasm_bindgen(js_name = runPattern)]
+#[cfg(target_arch = "wasm32")]
+pub async fn run_pattern(
+    pattern: UncompiledPatternBuilder,
+    // The paths of the files to match against.
+    paths: Vec<String>,
+    // The contents of the files to match against, in the same order as `paths`.
+    contents: Vec<String>,
+    // Library file names, for the language of the pattern.
+    lib_paths: Vec<String>,
+    // Library file contents, in the same order as `lib_paths`.
+    lib_contents: Vec<String>,
+    // LLM API base
+    llm_api_base: String,
+    // LLM API bearer token
+    llm_api_bearer_token: String,
+) -> Result<JsValue, JsError> {
+    let result = match run_pattern_builder_internal(
+        pattern,
+        paths,
+        contents,
+        // lib_paths,
+        // lib_contents,
+        // llm_api_base,
+        // llm_api_bearer_token,
+    )
+    .await
+    {
+        Ok(r) => r,
+        Err(e) => vec![error_to_log(e)],
+    };
+    Ok(serde_wasm_bindgen::to_value(&result)?)
+}
+
+
+
+#[cfg(target_arch = "wasm32")]
 async fn match_pattern_internal(
     pattern: String,
     paths: Vec<String>,
@@ -365,8 +435,8 @@ async fn setup_grit_parser() -> anyhow::Result<MarzanoGritParser> {
     Ok(MarzanoGritParser::from_initialized_ts_parser(parser))
 }
 
-async fn get_language_for_tree(tree: &Tree) -> anyhow::Result<TargetLanguage> {
-    let lang = PatternLanguage::from_tree(tree).unwrap_or_default();
+
+async fn get_language(lang: PatternLanguage) -> anyhow::Result<TargetLanguage> {
     if lang.is_initialized() {
         Ok(TargetLanguage::try_from(lang)?)
     } else {
@@ -385,6 +455,12 @@ async fn get_language_for_tree(tree: &Tree) -> anyhow::Result<TargetLanguage> {
         let ts_lang = get_cached_lang(&lang).await?;
         Ok(lang.to_target_with_ts_lang(ts_lang.clone())?)
     }
+}
+
+async fn get_language_for_tree(tree: &Tree) -> anyhow::Result<TargetLanguage> {
+    let lang = PatternLanguage::from_tree(tree).unwrap_or_default();
+    let lang = get_language(lang).await?;
+    Ok(lang)
 }
 
 fn pattern_language_to_path(lang: &PatternLanguage) -> anyhow::Result<String> {
@@ -427,7 +503,7 @@ async fn get_lang(parser_path: &str) -> anyhow::Result<TSLanguage> {
 
 #[cfg(not(target_arch = "wasm32"))]
 async fn get_lang(_path: &str) -> anyhow::Result<TSLanguage> {
-    unreachable!("get_lang should only be called on wasm32")
+    bail!("get_lang should only be called on wasm32")
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -461,7 +537,7 @@ fn get_lang_store(language: &PatternLanguage) -> anyhow::Result<&'static OnceLoc
 
 #[cfg(not(target_arch = "wasm32"))]
 fn get_lang_store(_language: &PatternLanguage) -> anyhow::Result<&'static OnceLock<TSLanguage>> {
-    unreachable!("get_lang_store should only be called on wasm32")
+    bail!("get_lang_store should only be called on wasm32")
 }
 
 #[cfg(test)]
