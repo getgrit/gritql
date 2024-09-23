@@ -1,5 +1,5 @@
 use anyhow::Result;
-use grit_pattern_matcher::pattern::Pattern;
+use grit_pattern_matcher::pattern::{Pattern, VariableSource};
 use grit_util::AnalysisLogs;
 use marzano_language::target_language::TargetLanguage;
 
@@ -69,7 +69,10 @@ impl LanguageSdk {
             is_multifile,
             false,
             None,
-            VariableLocations::from_globals(global_vars),
+            VariableLocations::new(vec![global_vars
+                .into_keys()
+                .map(VariableSource::new_global)
+                .collect()]),
             pattern_definitions,
             vec![],
             vec![],
