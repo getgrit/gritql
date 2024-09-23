@@ -1,6 +1,7 @@
 use grit_pattern_matcher::context::ExecContext;
 use grit_pattern_matcher::effects::insert_effect;
 use grit_pattern_matcher::pattern::PatternOrResolved;
+use grit_pattern_matcher::pattern::PatternOrResolvedMut;
 use grit_pattern_matcher::pattern::ResolvedPattern;
 use grit_pattern_matcher::pattern::State;
 
@@ -60,6 +61,14 @@ impl ResultBinding {
     }
 }
 
+/// Implement the core binding methods, that should be called by host methods.
+///
+/// For example:
+/// ```javascript
+/// function callback(binding, context) {
+///     console.log(binding.text());
+/// }
+/// ```
 #[napi]
 impl ResultBinding {
     /// Retrieves the stringified representation of the binding (ie. the actual source code)
@@ -114,25 +123,38 @@ impl ResultBinding {
     }
 }
 
-// Retrieve a variable's text value.
-// #[napi]
-// pub fn var(&self, _env: Env, name: String) -> Result<Option<String>> {
-//     let var = self.state.find_var(&name);
-//     let Some(var) = var else {
-//         return Ok(None);
-//     };
-//     let resolved = var
-//         .get_pattern_or_resolved(self.state)
-//         .map_err(|e| napi::Error::from_reason(format!("{:?}", e)))?;
-//     let Some(candidate) = resolved else {
-//         return Ok(None);
-//     };
-//     let PatternOrResolved::Resolved(resolved) = candidate else {
-//         return Err(napi::Error::from_reason("No resolved pattern found"));
-//     };
-//     let stringified_result = resolved
-//         .text(&self.state.files, self.context.language())
-//         .map_err(|e| napi::Error::from_reason(format!("{:?}", e)))?;
-//     let string = stringified_result.to_string();
-//     Ok(Some(string))
-// }
+/// Implement the core binding methods, that are technically attached to the binding but really belong to the surrounding scope.
+///
+/// For example:
+/// ```javascript
+/// function callback(binding, context) {
+///     const var = context.var("$foo");
+///     console.log(var.text());
+/// }
+#[napi]
+impl ResultBinding {
+    /// Retrieve a variable's text from the current scope.
+    /// @hidden This API is not stable yet.
+    #[napi]
+    pub fn find_var_text(&self, _env: Env, name: String) -> Result<Option<String>> {
+        let var = self.state.find_var(&name);
+        let Some(var) = var else {
+            return Ok(None);
+        };
+        let resolved = var
+            .get_pattern_or_resolved(self.state)
+            .map_err(|e| napi::Error::from_reason(format!("{:?}", e)))?;
+        let Some(candidate) = resolved else {
+            return Ok(None);
+        };
+        let PatternOrResolved::Resolved(resolved) = candidate else {
+            return Err(napi::Error::from_reason("No resolved pattern found"));
+        };
+        let stringified_result = resolved
+            .text(&self.state.files, self.context.language())
+            .map_err(|e| napi::Error::from_reason(format!("{:?}", e)))?;
+        let string = stringified_result.to_string();
+
+        Ok(Some(string))
+    }
+}

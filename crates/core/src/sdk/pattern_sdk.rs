@@ -151,7 +151,7 @@ impl UncompiledPatternBuilder {
     pub fn filter(
         &self,
         callback: napi::threadsafe_function::ThreadsafeFunction<
-            u32,
+            ResultBinding,
             napi::threadsafe_function::ErrorStrategy::Fatal,
         >,
     ) -> Self {
@@ -167,7 +167,8 @@ impl UncompiledPatternBuilder {
 
                 let foreign_binding = ResultBinding::new_unsafe(binding, context, state);
 
-                let val = runtime.block_on(async { callback.call_async::<bool>(1).await })?;
+                let val = runtime
+                    .block_on(async { callback.call_async::<bool>(foreign_binding).await })?;
 
                 Ok(val)
             }),
@@ -181,33 +182,46 @@ impl UncompiledPatternBuilder {
         })
     }
 
-    async fn run_inner(
-        &self,
-        file_names: Vec<String>,
-        file_contents: Vec<String>,
-    ) -> Result<Vec<MatchResult>> {
+    async fn run_inner(&self, files: Vec<RichFile>) -> Result<Vec<MatchResult>> {
         let problem = self.clone().build()?;
         let context = ExecutionContext::default();
-        let files: Vec<RichFile> = file_names
-            .into_iter()
-            .zip(file_contents.into_iter())
-            .map(|(path, content)| RichFile::new(path, content))
-            .collect();
+
         let results = problem.execute_files(files, &context);
         Ok(results)
     }
 
     #[napi]
-    pub async fn run(
-        &self,
-        file_names: Vec<String>,
-        file_contents: Vec<String>,
-    ) -> napi::Result<u32> {
+    pub async fn run_on_files(&self, files: Vec<RichFile>) -> napi::Result<u32> {
         let results = self
-            .run_inner(file_names, file_contents)
+            .run_inner(files)
             .await
             .map_err(|e| Error::new(Status::GenericFailure, e.to_string()))?;
         println!("results: {:?}", results);
         Ok(results.len() as u32)
+    }
+
+    /// Apply the query to a single file and return the modified file (if any)
+    /// @param file The file to apply the query to
+    /// @returns The modified file (if any)
+    #[napi]
+    pub async fn run_on_file(&self, file: RichFile) -> napi::Result<Option<RichFile>> {
+        let results = self
+            .run_inner(vec![file])
+            .await
+            .map_err(|e| napi::Error::from_reason(format!("Error: {:?}", e)))?;
+
+        println!("results: {:?}", results);
+
+        let rewrite = results
+            .into_iter()
+            .find(|r| matches!(r, MatchResult::Rewrite(_)));
+
+        match rewrite {
+            Some(MatchResult::Rewrite(rewrite)) => Ok(Some(RichFile {
+                path: rewrite.rewritten.source_file,
+                content: rewrite.rewritten.content.unwrap_or_default(),
+            })),
+            _ => Ok(None),
+        }
     }
 }
