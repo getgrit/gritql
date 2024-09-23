@@ -120,7 +120,7 @@ impl UncompiledPatternBuilder {
 #[cfg_attr(feature = "napi", napi)]
 #[cfg(feature = "napi_or_wasm")]
 impl UncompiledPatternBuilder {
-    #[napi(factory, js_name = "new_snippet")]
+    #[cfg_attr(feature = "napi", napi(factory, js_name = "new_snippet"))]
     pub fn new_snippet(text: String) -> Self {
         UncompiledPatternBuilder {
             pattern: UncompiledPattern::Snippet { text },
@@ -128,7 +128,7 @@ impl UncompiledPatternBuilder {
     }
 
     /// Filter this pattern to only match instances that contain the other pattern
-    #[napi(js_name = "contains")]
+    #[cfg_attr(feature = "napi", napi(js_name = "contains"))]
     pub fn contains(&self, other: &UncompiledPatternBuilder) -> Self {
         let me = self.clone();
         let contains = UncompiledPatternBuilder::new(UncompiledPattern::Contains {
