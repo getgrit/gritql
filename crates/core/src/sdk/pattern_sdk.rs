@@ -123,9 +123,9 @@ impl UncompiledPatternBuilder {
 // This is the API that host languages will use
 #[cfg_attr(feature = "wasm_core", wasm_bindgen)]
 #[cfg_attr(feature = "napi", napi)]
-#[cfg(feature = "napi_or_wasm")]
+#[cfg(any(feature = "napi", feature = "wasm_core"))]
 impl UncompiledPatternBuilder {
-    #[napi(factory, js_name = "new_snippet")]
+    #[cfg_attr(feature = "napi", napi(factory, js_name = "new_snippet"))]
     pub fn new_snippet(text: String) -> Self {
         UncompiledPatternBuilder {
             pattern: UncompiledPattern::Snippet { text },
@@ -133,7 +133,7 @@ impl UncompiledPatternBuilder {
     }
 
     /// Filter this pattern to only match instances that contain the other pattern
-    #[napi(factory, js_name = "new_snippet")]
+    #[cfg_attr(feature = "napi", napi(factory, js_name = "new_snippet"))]
     pub fn contains(&self, other: &UncompiledPatternBuilder) -> Self {
         let me = self.clone();
         let contains = UncompiledPatternBuilder::new(UncompiledPattern::Contains {
