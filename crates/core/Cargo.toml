@@ -43,6 +43,9 @@ getrandom = { version = "0.2.11", optional = true }
 lazy_static = { version = "1.4.0", optional = true }
 walkdir = { version = "2.3.3", optional = true }
 fs-err = { version = "2.11.0" }
+wasm-bindgen = { version = "0.2.89", features = [
+  "serde-serialize",
+], optional = true }
 
 
 [dev-dependencies]
@@ -84,6 +87,7 @@ wasm_core = [
   "external_functions_common",
   "external_functions_ffi",
   "marzano-util/external_functions_ffi",
+  "dep:wasm-bindgen",
 ]
 grit_tracing = ["dep:tracing-opentelemetry"]
 language-parsers = ["marzano-language/builtin-parser"]
