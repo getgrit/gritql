@@ -93,7 +93,6 @@ impl UncompiledPatternBuilder {
             UncompiledPattern::Callback { callback } => {
                 let built_in = context.built_ins.add_callback(Box::new(
                     move |binding, context, state, logs| {
-                        println!("The callback was called here: {:?}", callback);
                         let result = (callback.callback)(binding, context, state, logs)?;
                         Ok(result)
                     },
@@ -158,14 +157,22 @@ impl UncompiledPatternBuilder {
     ) -> Self {
         let me = self.clone();
 
-        let callback = SimpleCallback {
+        let inner_callback = SimpleCallback {
             callback: Arc::new(move |binding, context, state, _logs| {
-                println!("The callback was called");
-                Ok(true)
+                let runtime = context
+                    .runtime
+                    .handle
+                    .as_ref()
+                    .ok_or(anyhow::anyhow!("Async runtime required"))?;
+
+                let val = runtime.block_on(async { callback.call_async::<bool>(1).await })?;
+
+                Ok(val)
             }),
         };
-        let callback_pattern =
-            UncompiledPatternBuilder::new(UncompiledPattern::Callback { callback });
+        let callback_pattern = UncompiledPatternBuilder::new(UncompiledPattern::Callback {
+            callback: inner_callback,
+        });
 
         UncompiledPatternBuilder::new(UncompiledPattern::And {
             patterns: vec![me, callback_pattern],
