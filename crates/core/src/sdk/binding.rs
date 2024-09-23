@@ -101,8 +101,9 @@ impl ResultBinding {
     }
 
     /// Inserts the provided text after the binding.
+    /// The GritQL engine handles the insertion of the text in transformed output code.
     #[napi]
-    pub fn insert_after(&mut self, _env: Env, text: String) -> Result<()> {
+    pub fn append(&mut self, _env: Env, text: String) -> Result<()> {
         let left = PatternOrResolved::Resolved::<MarzanoQueryContext>(self.inner);
         let replacement = ResolvedPattern::from_string(text);
 
@@ -113,26 +114,25 @@ impl ResultBinding {
     }
 }
 
-
-    /// Retrieve a variable's text value.
-    // #[napi]
-    // pub fn var(&self, _env: Env, name: String) -> Result<Option<String>> {
-    //     let var = self.state.find_var(&name);
-    //     let Some(var) = var else {
-    //         return Ok(None);
-    //     };
-    //     let resolved = var
-    //         .get_pattern_or_resolved(self.state)
-    //         .map_err(|e| napi::Error::from_reason(format!("{:?}", e)))?;
-    //     let Some(candidate) = resolved else {
-    //         return Ok(None);
-    //     };
-    //     let PatternOrResolved::Resolved(resolved) = candidate else {
-    //         return Err(napi::Error::from_reason("No resolved pattern found"));
-    //     };
-    //     let stringified_result = resolved
-    //         .text(&self.state.files, self.context.language())
-    //         .map_err(|e| napi::Error::from_reason(format!("{:?}", e)))?;
-    //     let string = stringified_result.to_string();
-    //     Ok(Some(string))
-    // }
+// Retrieve a variable's text value.
+// #[napi]
+// pub fn var(&self, _env: Env, name: String) -> Result<Option<String>> {
+//     let var = self.state.find_var(&name);
+//     let Some(var) = var else {
+//         return Ok(None);
+//     };
+//     let resolved = var
+//         .get_pattern_or_resolved(self.state)
+//         .map_err(|e| napi::Error::from_reason(format!("{:?}", e)))?;
+//     let Some(candidate) = resolved else {
+//         return Ok(None);
+//     };
+//     let PatternOrResolved::Resolved(resolved) = candidate else {
+//         return Err(napi::Error::from_reason("No resolved pattern found"));
+//     };
+//     let stringified_result = resolved
+//         .text(&self.state.files, self.context.language())
+//         .map_err(|e| napi::Error::from_reason(format!("{:?}", e)))?;
+//     let string = stringified_result.to_string();
+//     Ok(Some(string))
+// }
