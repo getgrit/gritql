@@ -46,6 +46,11 @@ fs-err = { version = "2.11.0" }
 wasm-bindgen = { version = "0.2.89", features = [
   "serde-serialize",
 ], optional = true }
+napi = { version = "2.16.4", default-features = false, features = [
+  "napi8",
+  "async",
+], optional = true }
+napi-derive = { version = "2.12.2", optional = true }
 
 
 [dev-dependencies]
@@ -95,3 +100,4 @@ grit-parser = ["marzano-language/grit-parser"]
 absolute_filename = []
 non_wasm = ["absolute_filename"]
 test_utils = []
+napi = ["dep:napi", "dep:napi-derive"]

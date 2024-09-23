@@ -1,4 +1,9 @@
 #![deny(clippy::wildcard_enum_match_arm)]
+
+#[cfg(feature = "napi")]
+#[macro_use]
+extern crate napi_derive;
+
 pub mod analysis;
 pub mod api;
 pub mod ast_node;
