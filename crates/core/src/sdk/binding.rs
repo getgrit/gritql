@@ -14,14 +14,14 @@ use crate::problem::MarzanoQueryContext;
 /// Resolved bindings provide hooks for JavaScript code to interact with a bit of code that has been matched by a pattern.
 /// The binding corresponds to a specific piece of text, which can be further filtered against or modified inside a JavaScript callback.
 #[napi]
-pub struct QueryBinding {
+pub struct ResultBinding {
     inner: &'static MarzanoResolvedPattern<'static>,
     context: &'static MarzanoContext<'static>,
     state: &'static mut State<'static, MarzanoQueryContext>,
 }
 
 /// Internal implementation details, which we do not expose to host runtimes.
-impl QueryBinding {
+impl ResultBinding {
     pub fn new(
         inner: &'static MarzanoResolvedPattern<'static>,
         context: &'static MarzanoContext<'static>,
@@ -33,10 +33,35 @@ impl QueryBinding {
             state,
         }
     }
+
+    /// Create a new binding from pointer references
+    ///
+    /// SAFETY: This operation is inherently unsafe, as we cannot guarantee that the references live for the lifetime of the foreign object.
+    /// If you call this, you are responsible for warning users that the underlying data cannot be accessed outside the original lifetimes.
+    pub fn new_unsafe(
+        binding: &MarzanoResolvedPattern,
+        context: &MarzanoContext,
+        state: &mut State<MarzanoQueryContext>,
+    ) -> Self {
+        let inner_context: &'static MarzanoContext = unsafe { std::mem::transmute(context) };
+        let inner_state: &'static mut State<MarzanoQueryContext> =
+            unsafe { std::mem::transmute(state) };
+
+        let inner_binding: &'static MarzanoResolvedPattern =
+            unsafe { std::mem::transmute(binding) };
+
+        let js_binding = ResultBinding {
+            inner: inner_binding,
+            context: inner_context,
+            state: inner_state,
+        };
+
+        js_binding
+    }
 }
 
 #[napi]
-impl QueryBinding {
+impl ResultBinding {
     /// Retrieves the stringified representation of the binding (ie. the actual source code)
     #[napi]
     pub fn text(&self, _env: Env) -> Result<String> {

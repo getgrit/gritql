@@ -11,7 +11,7 @@ use crate::{
     problem::{MarzanoQueryContext, Problem},
 };
 
-use super::{LanguageSdk, StatelessCompilerContext};
+use super::{binding::ResultBinding, LanguageSdk, StatelessCompilerContext};
 
 #[cfg(feature = "wasm_core")]
 use wasm_bindgen::prelude::*;
@@ -164,6 +164,8 @@ impl UncompiledPatternBuilder {
                     .handle
                     .as_ref()
                     .ok_or(anyhow::anyhow!("Async runtime required"))?;
+
+                let foreign_binding = ResultBinding::new_unsafe(binding, context, state);
 
                 let val = runtime.block_on(async { callback.call_async::<bool>(1).await })?;
 
