@@ -50,6 +50,8 @@ static TOML_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static PHP_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static PHP_ONLY_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 
+pub use marzano_core::UncompiledPatternBuilder;
+
 #[wasm_bindgen(js_name = initializeTreeSitter)]
 pub async fn initialize_tree_sitter() -> Result<(), JsError> {
     web_tree_sitter_sg::TreeSitter::init().await
