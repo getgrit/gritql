@@ -2321,6 +2321,7 @@ dependencies = [
  "trim-margin",
  "uuid",
  "walkdir",
+ "wasm-bindgen",
 ]
 
 [[package]]

@@ -425,7 +425,7 @@ async fn get_lang(parser_path: &str) -> anyhow::Result<TSLanguage> {
 
 #[cfg(not(target_arch = "wasm32"))]
 async fn get_lang(_path: &str) -> anyhow::Result<TSLanguage> {
-    unreachable!()
+    unreachable!("get_lang should only be called on wasm32")
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -459,7 +459,7 @@ fn get_lang_store(language: &PatternLanguage) -> anyhow::Result<&'static OnceLoc
 
 #[cfg(not(target_arch = "wasm32"))]
 fn get_lang_store(_language: &PatternLanguage) -> anyhow::Result<&'static OnceLock<TSLanguage>> {
-    unreachable!()
+    unreachable!("get_lang_store should only be called on wasm32")
 }
 
 #[cfg(test)]
