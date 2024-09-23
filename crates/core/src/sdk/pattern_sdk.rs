@@ -122,7 +122,7 @@ impl UncompiledPatternBuilder {
     // We need indirection to deal with some Napi limitations
     #[inline]
     #[allow(unused)]
-    fn contains_core(&self, other: &UncompiledPatternBuilder) -> Self {
+    fn contains_internal(&self, other: &UncompiledPatternBuilder) -> Self {
         let me = self.clone();
         let contains = UncompiledPatternBuilder::new(UncompiledPattern::Contains {
             contains: Box::new(other.clone()),
@@ -150,7 +150,7 @@ impl UncompiledPatternBuilder {
     /// Filter this pattern to only match instances that contain the other pattern
     #[napi]
     pub fn contains(&self, other: &UncompiledPatternBuilder) -> Self {
-        self.contains_core(other)
+        self.contains_internal(other)
     }
 
     /// Filter the pattern to only match instances that match a provided callback
