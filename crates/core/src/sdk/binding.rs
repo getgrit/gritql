@@ -3,7 +3,6 @@ use grit_pattern_matcher::effects::insert_effect;
 use grit_pattern_matcher::pattern::PatternOrResolved;
 use grit_pattern_matcher::pattern::ResolvedPattern;
 use grit_pattern_matcher::pattern::State;
-use grit_pattern_matcher::pattern::Variable;
 
 use napi::{Env, Result};
 
