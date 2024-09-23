@@ -19,7 +19,6 @@ mod inline_snippets;
 #[cfg(any(feature = "napi", feature = "wasm_core"))]
 pub mod sdk;
 
-mod lazy;
 mod limits;
 pub mod marzano_binding;
 pub mod marzano_code_snippet;
