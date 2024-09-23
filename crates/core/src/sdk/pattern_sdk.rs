@@ -121,6 +121,7 @@ impl UncompiledPatternBuilder {
 
     // We need indirection to deal with some Napi limitations
     #[inline]
+    #[allow(unused)]
     fn contains_core(&self, other: &UncompiledPatternBuilder) -> Self {
         let me = self.clone();
         let contains = UncompiledPatternBuilder::new(UncompiledPattern::Contains {
