@@ -15,6 +15,8 @@ mod equivalence;
 mod foreign_function_definition;
 pub mod fs;
 mod inline_snippets;
+
+#[cfg(feature = "napi_or_wasm")]
 pub mod sdk;
 
 mod lazy;
@@ -35,6 +37,7 @@ mod text_unparser;
 pub mod tree_sitter_serde;
 mod variables;
 
+#[cfg(feature = "napi_or_wasm")]
 pub use sdk::UncompiledPatternBuilder;
 
 // getrandom is a deeply nested dependency used by many things eg. uuid

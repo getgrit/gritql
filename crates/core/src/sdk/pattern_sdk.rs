@@ -1,8 +1,13 @@
 use anyhow::Result;
 use grit_pattern_matcher::pattern::{And, Contains, Pattern};
+#[allow(unused_imports)]
+use marzano_util::{rich_path::RichFile, runtime::ExecutionContext};
 
 use std::fmt::Debug;
 use std::sync::Arc;
+
+#[allow(unused_imports)]
+use crate::api::{FileMatchResult, MatchResult};
 
 use crate::{
     built_in_functions::CallbackFn,
@@ -120,7 +125,7 @@ impl UncompiledPatternBuilder {
 #[cfg_attr(feature = "napi", napi)]
 #[cfg(feature = "napi_or_wasm")]
 impl UncompiledPatternBuilder {
-    #[cfg_attr(feature = "napi", napi(factory, js_name = "new_snippet"))]
+    #[napi(factory, js_name = "new_snippet")]
     pub fn new_snippet(text: String) -> Self {
         UncompiledPatternBuilder {
             pattern: UncompiledPattern::Snippet { text },
@@ -128,7 +133,7 @@ impl UncompiledPatternBuilder {
     }
 
     /// Filter this pattern to only match instances that contain the other pattern
-    #[cfg_attr(feature = "napi", napi(js_name = "contains"))]
+    #[napi(factory, js_name = "new_snippet")]
     pub fn contains(&self, other: &UncompiledPatternBuilder) -> Self {
         let me = self.clone();
         let contains = UncompiledPatternBuilder::new(UncompiledPattern::Contains {
