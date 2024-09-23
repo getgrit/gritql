@@ -125,16 +125,9 @@ impl UncompiledPatternBuilder {
 #[cfg_attr(feature = "napi", napi)]
 #[cfg(any(feature = "napi", feature = "wasm_core"))]
 impl UncompiledPatternBuilder {
-    #[cfg_attr(feature = "napi", napi(factory, js_name = "new_snippet"))]
-    pub fn new_snippet(text: String) -> Self {
-        UncompiledPatternBuilder {
-            pattern: UncompiledPattern::Snippet { text },
-        }
-    }
-
-    /// Filter this pattern to only match instances that contain the other pattern
-    #[cfg_attr(feature = "napi", napi(factory, js_name = "new_snippet"))]
-    pub fn contains(&self, other: &UncompiledPatternBuilder) -> Self {
+    // We need indirection to deal with some Napi limitations
+    #[inline]
+    fn contains_core(&self, other: &UncompiledPatternBuilder) -> Self {
         let me = self.clone();
         let contains = UncompiledPatternBuilder::new(UncompiledPattern::Contains {
             contains: Box::new(other.clone()),
@@ -151,6 +144,20 @@ impl UncompiledPatternBuilder {
 #[cfg(feature = "napi")]
 #[napi]
 impl UncompiledPatternBuilder {
+    #[cfg(feature = "napi")]
+    #[napi(factory, js_name = "new_snippet")]
+    pub fn new_snippet(text: String) -> Self {
+        UncompiledPatternBuilder {
+            pattern: UncompiledPattern::Snippet { text },
+        }
+    }
+
+    /// Filter this pattern to only match instances that contain the other pattern
+    #[napi]
+    pub fn contains(&self, other: &UncompiledPatternBuilder) -> Self {
+        self.contains_core(other)
+    }
+
     /// Filter the pattern to only match instances that match a provided callback
     #[napi]
     pub fn filter(
