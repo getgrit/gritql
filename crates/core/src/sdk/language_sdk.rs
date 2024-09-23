@@ -1,5 +1,5 @@
 use anyhow::Result;
-use grit_pattern_matcher::pattern::Pattern;
+use grit_pattern_matcher::pattern::{Pattern, VariableSource};
 use grit_util::AnalysisLogs;
 use marzano_language::target_language::TargetLanguage;
 
@@ -33,12 +33,20 @@ impl Default for LanguageSdk {
 }
 
 impl LanguageSdk {
-    pub fn snippet(&self, snippet: &str) -> Result<Pattern<MarzanoQueryContext>> {
-        self.compiler.clone().parse_snippet(snippet)
+    pub fn compiler(&self) -> StatelessCompilerContext {
+        StatelessCompilerContext::new(self.language)
     }
 
-    pub fn build(&mut self, pattern: Pattern<MarzanoQueryContext>) -> Result<Problem> {
-        let built_ins = BuiltIns::get_built_in_functions();
+    pub fn snippet(&self, snippet: &str) -> Result<Pattern<MarzanoQueryContext>> {
+        let mut compiler = self.compiler();
+        compiler.parse_snippet(snippet)
+    }
+
+    pub fn build(
+        &mut self,
+        built_ins: BuiltIns,
+        pattern: Pattern<MarzanoQueryContext>,
+    ) -> Result<Problem> {
         let _logs: AnalysisLogs = vec![].into();
         let global_vars = build_standard_global_vars();
         let mut pattern_definitions = vec![];
@@ -61,7 +69,10 @@ impl LanguageSdk {
             is_multifile,
             false,
             None,
-            VariableLocations::from_globals(global_vars),
+            VariableLocations::new(vec![global_vars
+                .into_keys()
+                .map(VariableSource::new_global)
+                .collect()]),
             pattern_definitions,
             vec![],
             vec![],

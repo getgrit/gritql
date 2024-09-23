@@ -379,7 +379,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
         let the_new_files = state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
             .back_mut()
             .unwrap()[NEW_FILES_INDEX]
-        .as_mut();
+            .as_mut();
         the_new_files.value = Some(ResolvedPattern::from_list_parts([].into_iter()));
         Ok(true)
     }

@@ -714,15 +714,6 @@ impl VariableLocations {
         Self { locations }
     }
 
-    pub(crate) fn from_globals(globals: BTreeMap<String, usize>) -> Self {
-        Self {
-            locations: vec![globals
-                .into_keys()
-                .map(VariableSource::new_global)
-                .collect()],
-        }
-    }
-
     pub(crate) fn initial_bindings(
         &self,
     ) -> Vector<Vector<Vector<Box<VariableContent<MarzanoQueryContext>>>>> {

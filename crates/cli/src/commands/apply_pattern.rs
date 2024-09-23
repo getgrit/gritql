@@ -366,7 +366,7 @@ pub(crate) async fn run_apply_pattern(
                             let lang = PatternLanguage::get_language(&body);
                             (lang, None, body)
                         } else {
-                            unreachable!()
+                            bail!("pattern should end with .grit or .md");
                         }
                     }
                     Err(_) => {

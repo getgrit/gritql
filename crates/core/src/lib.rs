@@ -1,4 +1,9 @@
 #![deny(clippy::wildcard_enum_match_arm)]
+
+#[cfg(feature = "napi")]
+#[macro_use]
+extern crate napi_derive;
+
 pub mod analysis;
 pub mod api;
 pub mod ast_node;
@@ -10,9 +15,10 @@ mod equivalence;
 mod foreign_function_definition;
 pub mod fs;
 mod inline_snippets;
+
+#[cfg(any(feature = "napi", feature = "wasm_core"))]
 pub mod sdk;
 
-mod lazy;
 mod limits;
 pub mod marzano_binding;
 pub mod marzano_code_snippet;
@@ -29,6 +35,9 @@ mod suppress;
 mod text_unparser;
 pub mod tree_sitter_serde;
 mod variables;
+
+#[cfg(any(feature = "napi", feature = "wasm_core"))]
+pub use sdk::UncompiledPatternBuilder;
 
 // getrandom is a deeply nested dependency used by many things eg. uuid
 // to get wasm working we needed to enable a feature for this crate, so

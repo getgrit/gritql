@@ -225,7 +225,7 @@ pub trait Messager: Send + Sync {
                                 *interactive = false;
                                 return Ok(false);
                             }
-                            _ => unreachable!(),
+                            _ => panic!("invalid selection received"),
                         }
                     } else {
                         self.track_accept(&r)?;

@@ -2307,6 +2307,8 @@ dependencies = [
  "marzano-externals",
  "marzano-language",
  "marzano-util",
+ "napi",
+ "napi-derive",
  "path-absolutize",
  "rand",
  "rayon",
@@ -2321,6 +2323,7 @@ dependencies = [
  "trim-margin",
  "uuid",
  "walkdir",
+ "wasm-bindgen",
 ]
 
 [[package]]

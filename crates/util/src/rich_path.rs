@@ -14,6 +14,7 @@ impl RichPath {
     }
 }
 
+#[cfg_attr(feature = "napi", napi_derive::napi(object))]
 #[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct RichFile {
     pub path: String,

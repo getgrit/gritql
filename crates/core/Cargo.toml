@@ -43,6 +43,15 @@ getrandom = { version = "0.2.11", optional = true }
 lazy_static = { version = "1.4.0", optional = true }
 walkdir = { version = "2.3.3", optional = true }
 fs-err = { version = "2.11.0" }
+wasm-bindgen = { version = "0.2.89", features = [
+  "serde-serialize",
+], optional = true }
+napi = { version = "2.16.4", default-features = false, features = [
+  "napi8",
+  "async",
+], optional = true }
+napi-derive = { version = "2.12.2", optional = true }
+
 
 [dev-dependencies]
 similar = "2.2.1"
@@ -83,6 +92,7 @@ wasm_core = [
   "external_functions_common",
   "external_functions_ffi",
   "marzano-util/external_functions_ffi",
+  "dep:wasm-bindgen",
 ]
 grit_tracing = ["dep:tracing-opentelemetry"]
 language-parsers = ["marzano-language/builtin-parser"]
@@ -90,3 +100,5 @@ grit-parser = ["marzano-language/grit-parser"]
 absolute_filename = []
 non_wasm = ["absolute_filename"]
 test_utils = []
+
+napi = ["dep:napi", "dep:napi-derive"]

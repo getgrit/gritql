@@ -4,14 +4,10 @@ use super::{
     pattern_compiler::PatternCompiler,
     NodeCompiler,
 };
-use crate::{
-    marzano_code_snippet::MarzanoCodeSnippet, problem::MarzanoQueryContext,
-};
+use crate::{marzano_code_snippet::MarzanoCodeSnippet, problem::MarzanoQueryContext};
 use crate::{pattern_compiler::compiler::NodeCompilationContext, split_snippet::split_snippet};
 use anyhow::{anyhow, bail, Result};
-use grit_pattern_matcher::{
-    pattern::{DynamicPattern, DynamicSnippet, DynamicSnippetPart, Pattern},
-};
+use grit_pattern_matcher::pattern::{DynamicPattern, DynamicSnippet, DynamicSnippetPart, Pattern};
 use grit_util::{AstNode, ByteRange, Language};
 use marzano_language::{
     language::{nodes_from_indices, MarzanoLanguage, SortId},

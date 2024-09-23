@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build:wasm": "wasm-pack build --target web --out-dir ./pkg/",
     "preview": "vite preview"
   },
   "devDependencies": {

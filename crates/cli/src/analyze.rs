@@ -341,7 +341,7 @@ where
                     if let ApplyInput::Virtual(my_input) = my_input {
                         compiled.execute_files_streaming(my_input.files, context, tx, cache_ref);
                     } else {
-                        unreachable!();
+                        panic!("apply_pattern should be called with paths or a virtual input");
                     }
                 }
             }

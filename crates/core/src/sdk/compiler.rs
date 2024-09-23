@@ -1,11 +1,10 @@
 use anyhow::{bail, Result};
-use grit_pattern_matcher::{
-    pattern::{DynamicSnippetPart, Pattern, PatternDefinition, Variable},
-};
+use grit_pattern_matcher::pattern::{DynamicSnippetPart, Pattern, PatternDefinition, Variable};
 use grit_util::ByteRange;
 use marzano_language::target_language::TargetLanguage;
 
 use crate::{
+    built_in_functions::BuiltIns,
     pattern_compiler::{
         compiler::{DefinitionInfo, SnippetCompilationContext},
         snippet_compiler::parse_snippet_content,
@@ -15,14 +14,17 @@ use crate::{
 
 /// As opposed to our standard StatelessCompiler,
 /// the StatelessCompiler can handle snippets without needing to maintain scopes
-#[derive(Clone, Copy)]
 pub struct StatelessCompilerContext {
     lang: TargetLanguage,
+    pub built_ins: BuiltIns,
 }
 
 impl StatelessCompilerContext {
     pub fn new(lang: TargetLanguage) -> Self {
-        Self { lang }
+        Self {
+            lang,
+            built_ins: BuiltIns::get_built_in_functions(),
+        }
     }
 
     /// Parse a snippet of code and returns a pattern

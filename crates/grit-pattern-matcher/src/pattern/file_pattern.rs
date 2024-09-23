@@ -54,11 +54,11 @@ impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
         state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
             .back_mut()
             .unwrap()[PROGRAM_INDEX]
-        .value = Some(file.binding(&state.files));
+            .value = Some(file.binding(&state.files));
         state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
             .back_mut()
             .unwrap()[FILENAME_INDEX]
-        .value = Some(file.name(&state.files));
+            .value = Some(file.name(&state.files));
         state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
             .back_mut()
             .unwrap()[ABSOLUTE_PATH_INDEX]
