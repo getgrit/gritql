@@ -118,13 +118,7 @@ impl UncompiledPatternBuilder {
         let built = sdk.build(compiler.built_ins, compiled)?;
         Ok(built)
     }
-}
 
-// This is the API that host languages will use
-#[cfg_attr(feature = "wasm_core", wasm_bindgen)]
-#[cfg_attr(feature = "napi", napi)]
-#[cfg(any(feature = "napi", feature = "wasm_core"))]
-impl UncompiledPatternBuilder {
     // We need indirection to deal with some Napi limitations
     #[inline]
     fn contains_core(&self, other: &UncompiledPatternBuilder) -> Self {
