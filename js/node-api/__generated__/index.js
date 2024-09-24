@@ -32,24 +32,24 @@ switch (platform) {
   case 'android':
     switch (arch) {
       case 'arm64':
-        localFileExisted = existsSync(join(__dirname, 'gritql.android-arm64.node'))
+        localFileExisted = existsSync(join(__dirname, 'grit-node-api.android-arm64.node'))
         try {
           if (localFileExisted) {
-            nativeBinding = require('./gritql.android-arm64.node')
+            nativeBinding = require('./grit-node-api.android-arm64.node')
           } else {
-            nativeBinding = require('@getgrit/gritql-android-arm64')
+            nativeBinding = require('@getgrit/node-api-android-arm64')
           }
         } catch (e) {
           loadError = e
         }
         break
       case 'arm':
-        localFileExisted = existsSync(join(__dirname, 'gritql.android-arm-eabi.node'))
+        localFileExisted = existsSync(join(__dirname, 'grit-node-api.android-arm-eabi.node'))
         try {
           if (localFileExisted) {
-            nativeBinding = require('./gritql.android-arm-eabi.node')
+            nativeBinding = require('./grit-node-api.android-arm-eabi.node')
           } else {
-            nativeBinding = require('@getgrit/gritql-android-arm-eabi')
+            nativeBinding = require('@getgrit/node-api-android-arm-eabi')
           }
         } catch (e) {
           loadError = e
@@ -63,13 +63,13 @@ switch (platform) {
     switch (arch) {
       case 'x64':
         localFileExisted = existsSync(
-          join(__dirname, 'gritql.win32-x64-msvc.node')
+          join(__dirname, 'grit-node-api.win32-x64-msvc.node')
         )
         try {
           if (localFileExisted) {
-            nativeBinding = require('./gritql.win32-x64-msvc.node')
+            nativeBinding = require('./grit-node-api.win32-x64-msvc.node')
           } else {
-            nativeBinding = require('@getgrit/gritql-win32-x64-msvc')
+            nativeBinding = require('@getgrit/node-api-win32-x64-msvc')
           }
         } catch (e) {
           loadError = e
@@ -77,13 +77,13 @@ switch (platform) {
         break
       case 'ia32':
         localFileExisted = existsSync(
-          join(__dirname, 'gritql.win32-ia32-msvc.node')
+          join(__dirname, 'grit-node-api.win32-ia32-msvc.node')
         )
         try {
           if (localFileExisted) {
-            nativeBinding = require('./gritql.win32-ia32-msvc.node')
+            nativeBinding = require('./grit-node-api.win32-ia32-msvc.node')
           } else {
-            nativeBinding = require('@getgrit/gritql-win32-ia32-msvc')
+            nativeBinding = require('@getgrit/node-api-win32-ia32-msvc')
           }
         } catch (e) {
           loadError = e
@@ -91,13 +91,13 @@ switch (platform) {
         break
       case 'arm64':
         localFileExisted = existsSync(
-          join(__dirname, 'gritql.win32-arm64-msvc.node')
+          join(__dirname, 'grit-node-api.win32-arm64-msvc.node')
         )
         try {
           if (localFileExisted) {
-            nativeBinding = require('./gritql.win32-arm64-msvc.node')
+            nativeBinding = require('./grit-node-api.win32-arm64-msvc.node')
           } else {
-            nativeBinding = require('@getgrit/gritql-win32-arm64-msvc')
+            nativeBinding = require('@getgrit/node-api-win32-arm64-msvc')
           }
         } catch (e) {
           loadError = e
@@ -108,23 +108,23 @@ switch (platform) {
     }
     break
   case 'darwin':
-    localFileExisted = existsSync(join(__dirname, 'gritql.darwin-universal.node'))
+    localFileExisted = existsSync(join(__dirname, 'grit-node-api.darwin-universal.node'))
     try {
       if (localFileExisted) {
-        nativeBinding = require('./gritql.darwin-universal.node')
+        nativeBinding = require('./grit-node-api.darwin-universal.node')
       } else {
-        nativeBinding = require('@getgrit/gritql-darwin-universal')
+        nativeBinding = require('@getgrit/node-api-darwin-universal')
       }
       break
     } catch {}
     switch (arch) {
       case 'x64':
-        localFileExisted = existsSync(join(__dirname, 'gritql.darwin-x64.node'))
+        localFileExisted = existsSync(join(__dirname, 'grit-node-api.darwin-x64.node'))
         try {
           if (localFileExisted) {
-            nativeBinding = require('./gritql.darwin-x64.node')
+            nativeBinding = require('./grit-node-api.darwin-x64.node')
           } else {
-            nativeBinding = require('@getgrit/gritql-darwin-x64')
+            nativeBinding = require('@getgrit/node-api-darwin-x64')
           }
         } catch (e) {
           loadError = e
@@ -132,13 +132,13 @@ switch (platform) {
         break
       case 'arm64':
         localFileExisted = existsSync(
-          join(__dirname, 'gritql.darwin-arm64.node')
+          join(__dirname, 'grit-node-api.darwin-arm64.node')
         )
         try {
           if (localFileExisted) {
-            nativeBinding = require('./gritql.darwin-arm64.node')
+            nativeBinding = require('./grit-node-api.darwin-arm64.node')
           } else {
-            nativeBinding = require('@getgrit/gritql-darwin-arm64')
+            nativeBinding = require('@getgrit/node-api-darwin-arm64')
           }
         } catch (e) {
           loadError = e
@@ -152,12 +152,12 @@ switch (platform) {
     if (arch !== 'x64') {
       throw new Error(`Unsupported architecture on FreeBSD: ${arch}`)
     }
-    localFileExisted = existsSync(join(__dirname, 'gritql.freebsd-x64.node'))
+    localFileExisted = existsSync(join(__dirname, 'grit-node-api.freebsd-x64.node'))
     try {
       if (localFileExisted) {
-        nativeBinding = require('./gritql.freebsd-x64.node')
+        nativeBinding = require('./grit-node-api.freebsd-x64.node')
       } else {
-        nativeBinding = require('@getgrit/gritql-freebsd-x64')
+        nativeBinding = require('@getgrit/node-api-freebsd-x64')
       }
     } catch (e) {
       loadError = e
@@ -168,26 +168,26 @@ switch (platform) {
       case 'x64':
         if (isMusl()) {
           localFileExisted = existsSync(
-            join(__dirname, 'gritql.linux-x64-musl.node')
+            join(__dirname, 'grit-node-api.linux-x64-musl.node')
           )
           try {
             if (localFileExisted) {
-              nativeBinding = require('./gritql.linux-x64-musl.node')
+              nativeBinding = require('./grit-node-api.linux-x64-musl.node')
             } else {
-              nativeBinding = require('@getgrit/gritql-linux-x64-musl')
+              nativeBinding = require('@getgrit/node-api-linux-x64-musl')
             }
           } catch (e) {
             loadError = e
           }
         } else {
           localFileExisted = existsSync(
-            join(__dirname, 'gritql.linux-x64-gnu.node')
+            join(__dirname, 'grit-node-api.linux-x64-gnu.node')
           )
           try {
             if (localFileExisted) {
-              nativeBinding = require('./gritql.linux-x64-gnu.node')
+              nativeBinding = require('./grit-node-api.linux-x64-gnu.node')
             } else {
-              nativeBinding = require('@getgrit/gritql-linux-x64-gnu')
+              nativeBinding = require('@getgrit/node-api-linux-x64-gnu')
             }
           } catch (e) {
             loadError = e
@@ -197,26 +197,26 @@ switch (platform) {
       case 'arm64':
         if (isMusl()) {
           localFileExisted = existsSync(
-            join(__dirname, 'gritql.linux-arm64-musl.node')
+            join(__dirname, 'grit-node-api.linux-arm64-musl.node')
           )
           try {
             if (localFileExisted) {
-              nativeBinding = require('./gritql.linux-arm64-musl.node')
+              nativeBinding = require('./grit-node-api.linux-arm64-musl.node')
             } else {
-              nativeBinding = require('@getgrit/gritql-linux-arm64-musl')
+              nativeBinding = require('@getgrit/node-api-linux-arm64-musl')
             }
           } catch (e) {
             loadError = e
           }
         } else {
           localFileExisted = existsSync(
-            join(__dirname, 'gritql.linux-arm64-gnu.node')
+            join(__dirname, 'grit-node-api.linux-arm64-gnu.node')
           )
           try {
             if (localFileExisted) {
-              nativeBinding = require('./gritql.linux-arm64-gnu.node')
+              nativeBinding = require('./grit-node-api.linux-arm64-gnu.node')
             } else {
-              nativeBinding = require('@getgrit/gritql-linux-arm64-gnu')
+              nativeBinding = require('@getgrit/node-api-linux-arm64-gnu')
             }
           } catch (e) {
             loadError = e
@@ -226,26 +226,26 @@ switch (platform) {
       case 'arm':
         if (isMusl()) {
           localFileExisted = existsSync(
-            join(__dirname, 'gritql.linux-arm-musleabihf.node')
+            join(__dirname, 'grit-node-api.linux-arm-musleabihf.node')
           )
           try {
             if (localFileExisted) {
-              nativeBinding = require('./gritql.linux-arm-musleabihf.node')
+              nativeBinding = require('./grit-node-api.linux-arm-musleabihf.node')
             } else {
-              nativeBinding = require('@getgrit/gritql-linux-arm-musleabihf')
+              nativeBinding = require('@getgrit/node-api-linux-arm-musleabihf')
             }
           } catch (e) {
             loadError = e
           }
         } else {
           localFileExisted = existsSync(
-            join(__dirname, 'gritql.linux-arm-gnueabihf.node')
+            join(__dirname, 'grit-node-api.linux-arm-gnueabihf.node')
           )
           try {
             if (localFileExisted) {
-              nativeBinding = require('./gritql.linux-arm-gnueabihf.node')
+              nativeBinding = require('./grit-node-api.linux-arm-gnueabihf.node')
             } else {
-              nativeBinding = require('@getgrit/gritql-linux-arm-gnueabihf')
+              nativeBinding = require('@getgrit/node-api-linux-arm-gnueabihf')
             }
           } catch (e) {
             loadError = e
@@ -255,26 +255,26 @@ switch (platform) {
       case 'riscv64':
         if (isMusl()) {
           localFileExisted = existsSync(
-            join(__dirname, 'gritql.linux-riscv64-musl.node')
+            join(__dirname, 'grit-node-api.linux-riscv64-musl.node')
           )
           try {
             if (localFileExisted) {
-              nativeBinding = require('./gritql.linux-riscv64-musl.node')
+              nativeBinding = require('./grit-node-api.linux-riscv64-musl.node')
             } else {
-              nativeBinding = require('@getgrit/gritql-linux-riscv64-musl')
+              nativeBinding = require('@getgrit/node-api-linux-riscv64-musl')
             }
           } catch (e) {
             loadError = e
           }
         } else {
           localFileExisted = existsSync(
-            join(__dirname, 'gritql.linux-riscv64-gnu.node')
+            join(__dirname, 'grit-node-api.linux-riscv64-gnu.node')
           )
           try {
             if (localFileExisted) {
-              nativeBinding = require('./gritql.linux-riscv64-gnu.node')
+              nativeBinding = require('./grit-node-api.linux-riscv64-gnu.node')
             } else {
-              nativeBinding = require('@getgrit/gritql-linux-riscv64-gnu')
+              nativeBinding = require('@getgrit/node-api-linux-riscv64-gnu')
             }
           } catch (e) {
             loadError = e
@@ -283,13 +283,13 @@ switch (platform) {
         break
       case 's390x':
         localFileExisted = existsSync(
-          join(__dirname, 'gritql.linux-s390x-gnu.node')
+          join(__dirname, 'grit-node-api.linux-s390x-gnu.node')
         )
         try {
           if (localFileExisted) {
-            nativeBinding = require('./gritql.linux-s390x-gnu.node')
+            nativeBinding = require('./grit-node-api.linux-s390x-gnu.node')
           } else {
-            nativeBinding = require('@getgrit/gritql-linux-s390x-gnu')
+            nativeBinding = require('@getgrit/node-api-linux-s390x-gnu')
           }
         } catch (e) {
           loadError = e
@@ -310,7 +310,6 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { UncompiledPatternBuilder, ResultBinding } = nativeBinding
+const { sum } = nativeBinding
 
-module.exports.UncompiledPatternBuilder = UncompiledPatternBuilder
-module.exports.ResultBinding = ResultBinding
+module.exports.sum = sum

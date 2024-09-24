@@ -9,3 +9,8 @@ use anyhow::Context;
 
 // Exported API
 pub use marzano_core::UncompiledPatternBuilder;
+
+#[napi]
+pub fn sum(a: i32, b: i32) -> Result<i32> {
+    Ok(a + b)
+}

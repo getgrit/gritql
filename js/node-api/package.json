@@ -1,10 +1,10 @@
 {
-  "name": "@getgrit/gritql",
+  "name": "@getgrit/node-api",
   "version": "0.0.0",
   "main": "__generated__/index.js",
   "types": "__generated__/index.d.ts",
   "napi": {
-    "name": "gritql",
+    "name": "grit-node-api",
     "triples": {}
   },
   "license": "UNLICENSED",

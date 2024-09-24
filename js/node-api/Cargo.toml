@@ -1,6 +1,6 @@
 [package]
 edition = "2021"
-name = "gritql_js"
+name = "grit-node-api"
 version = "0.0.0"
 
 [lib]

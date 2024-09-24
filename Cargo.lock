@@ -1434,6 +1434,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "grit-node-api"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "marzano-core",
+ "marzano-util",
+ "napi",
+ "napi-build",
+ "napi-derive",
+ "serde_json",
+]
+
+[[package]]
 name = "grit-pattern-matcher"
 version = "0.3.0"
 dependencies = [
@@ -1494,19 +1507,6 @@ dependencies = [
 name = "grit_cloud_client"
 version = "0.1.0"
 source = "git+https://github.com/getgrit/grit_cloud_client.git#7221ad63b697fd2c14e14a1872de602a7b3c135a"
-
-[[package]]
-name = "gritql_js"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "marzano-core",
- "marzano-util",
- "napi",
- "napi-build",
- "napi-derive",
- "serde_json",
-]
 
 [[package]]
 name = "h2"
