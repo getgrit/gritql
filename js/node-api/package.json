@@ -1,0 +1,22 @@
+{
+  "name": "@getgrit/gritql",
+  "version": "0.0.0",
+  "main": "__generated__/index.js",
+  "types": "__generated__/index.d.ts",
+  "napi": {
+    "name": "gritql",
+    "triples": {}
+  },
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.3"
+  },
+  "engines": {
+    "node": ">= 10"
+  },
+  "scripts": {
+    "build": "if [ -z \"$SKIP_BRIDGE\" ]; then RUSTFLAGS=\"-A warnings\" napi build --no-const-enum --platform --release --dts __generated__/index.d.ts --js __generated__/index.js && mv *.node __generated__; fi",
+    "test": "bun test",
+    "test:ci": "bun test --run"
+  }
+}

@@ -1,0 +1,43 @@
+[package]
+edition = "2021"
+name = "gritql_js"
+version = "0.0.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
+napi = { version = "2.16.4", default-features = false, features = [
+  "napi8",
+  "async",
+] }
+napi-derive = "2.12.2"
+anyhow = "1.0.70"
+serde_json = "1.0.113"
+
+
+marzano-gritmodule = { path = "../../crates/gritmodule" }
+marzano-core = { path = "../../vendor/gritql/crates/core", features = [
+  "non_wasm",
+  "napi",
+], default-features = false }
+grit-util = { path = "../../vendor/gritql/crates/grit-util", features = [] }
+grit-pattern-matcher = { path = "../../vendor/gritql/crates/grit-pattern-matcher", features = [
+] }
+marzano-language = { path = "../../vendor/gritql/crates/language", features = [
+  "finder",
+] }
+marzano-util = { path = "../../vendor/gritql/crates/util", features = ["napi"] }
+marzano-cli = { path = "../../vendor/gritql/crates/cli", features = [
+], default-features = false }
+grit_cloud_client = { path = "../../apps/marzano/grit_cloud_client", features = [
+] }
+marzano-auth = { path = "../../vendor/gritql/crates/auth", features = [
+], default-features = true }
+marzano_messenger = { path = "../../vendor/gritql/crates/marzano_messenger", features = [
+] }
+ai_builtins = { path = "../../apps/marzano/ai_builtins", features = [] }
+
+[build-dependencies]
+napi-build = "2.0.1"
