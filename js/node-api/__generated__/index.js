@@ -310,6 +310,9 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { sum } = nativeBinding
+const { UncompiledPatternBuilder, ResultBinding, sum, debugBuilder } = nativeBinding
 
+module.exports.UncompiledPatternBuilder = UncompiledPatternBuilder
+module.exports.ResultBinding = ResultBinding
 module.exports.sum = sum
+module.exports.debugBuilder = debugBuilder

@@ -3,7 +3,7 @@ import { expect, describe, it } from 'bun:test';
 const { UncompiledPatternBuilder } = require('../__generated__/grit-node-api.darwin-arm64.node');
 
 describe('Grit builder bindings', () => {
-  it.skip('can save text from the repo', async () => {
+  it('can save text from the repo', async () => {
     console.log('class', UncompiledPatternBuilder, UncompiledPatternBuilder.new_snippet);
     // const thing = new UncompiledPatternBuilder();
     // const query = UncompiledPatternBuilder.new_snippet('console.log');
