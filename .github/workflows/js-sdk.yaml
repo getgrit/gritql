@@ -7,8 +7,7 @@ on:
 
 jobs:
   test:
-    runs-on: "nscloud-ubuntu-22.04-amd64-4x16"
-
+    runs-on: namespace-profile-standard-ubuntu22-amd64
     steps:
       - name: clone code
         uses: namespacelabs/nscloud-checkout-action@v4
