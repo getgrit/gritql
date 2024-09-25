@@ -11,7 +11,7 @@ jobs:
     runs-on: namespace-profile-standard-ubuntu22-amd64
     steps:
       - name: clone code
-        uses: namespacelabs/nscloud-checkout-action@v4
+        uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: install Rust
