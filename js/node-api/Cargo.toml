@@ -21,6 +21,7 @@ marzano-core = { path = "../../crates/core", features = [
   "network_requests",
   "non_wasm",
   "napi",
+  "language-parsers",
 ], default-features = false }
 
 [build-dependencies]
