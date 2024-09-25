@@ -22,6 +22,9 @@ jobs:
       - uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
+      - name: install deps
+        working-directory: ./js/node-api
+        run: bun install
       - name: build Node API
         working-directory: ./js/node-api
         run: bun run build
