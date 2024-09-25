@@ -46,13 +46,14 @@ pub use sdk::UncompiledPatternBuilder;
 #[cfg(feature = "wasm_core")]
 use getrandom as _;
 #[cfg(test)]
-mod test_callback;
-#[cfg(test)]
-mod test_notebooks;
-
-#[cfg(test)]
 mod test;
 #[cfg(test)]
+mod test_callback;
+#[cfg(test)]
+mod test_errors;
+#[cfg(test)]
 mod test_files;
+#[cfg(test)]
+mod test_notebooks;
 #[cfg(any(test, feature = "test_utils"))]
 pub mod test_utils;

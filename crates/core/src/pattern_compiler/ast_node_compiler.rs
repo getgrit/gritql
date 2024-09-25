@@ -72,12 +72,21 @@ impl AstNodeCompiler {
                         .node_kind_for_id(sort)
                         .unwrap()
                         .to_string();
-                    anyhow!(
-                        "invalid field `{}` for node `{}`, valid fields are: {}",
-                        name,
-                        node_sort,
-                        node_field_names
-                    )
+                    if node_field_names.is_empty() {
+                        anyhow!(
+                            "invalid field `{}` for AST node `{}`. `{}` does not expose any fields.",
+                            name,
+                            node_sort,
+                            node_sort,
+                        )
+                    } else {
+                        anyhow!(
+                            "invalid field `{}` for AST node `{}`, valid fields are: {}",
+                            name,
+                            node_sort,
+                            node_field_names
+                        )
+                    }
                 })?;
 
             let field = node_fields.iter().find(|f| f.id() == id).ok_or_else(|| {
@@ -88,12 +97,21 @@ impl AstNodeCompiler {
                     .node_kind_for_id(sort)
                     .unwrap()
                     .to_string();
-                anyhow!(
-                    "invalid field `{}` for node `{}`, valid fields are: {}",
-                    name,
-                    node_sort,
-                    node_field_names
-                )
+                if node_field_names.is_empty() {
+                    anyhow!(
+                        "invalid field `{}` for AST node `{}`. `{}` does not expose any fields.",
+                        name,
+                        node_sort,
+                        node_sort
+                    )
+                } else {
+                    anyhow!(
+                        "invalid field `{}` for AST node `{}`, valid fields are: {}",
+                        name,
+                        node_sort,
+                        node_field_names
+                    )
+                }
             })?;
 
             let pattern = ListCompiler::from_node_in_context(&node, field, context, is_rhs)?;
