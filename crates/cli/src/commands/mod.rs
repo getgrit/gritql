@@ -556,6 +556,15 @@ fn get_otel_setup() -> Result<Option<Tracer>> {
         }
     }
 
+    let provider = opentelemetry_sdk::logs::LoggerProvider::builder()
+        .with_resource(Resource::new(vec![KeyValue::new(
+            "service.name",
+            "log-appender-tracing-example",
+        )]))
+        .with_simple_exporter(exporter)
+        .build();
+    // let layer = layer::OpenTelemetryTracingBridge::new(&provider);
+
     let tracer = opentelemetry_otlp::new_pipeline()
         .tracing()
         .with_exporter(exporter)
