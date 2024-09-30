@@ -58,7 +58,7 @@ use tracing::{event, span, Level};
 #[allow(unused_imports)]
 use tracing_subscriber::prelude::*;
 #[cfg(feature = "grit_tracing")]
-use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Registry};
 
 #[cfg(feature = "docgen")]
 pub(crate) mod docgen;
@@ -494,7 +494,7 @@ fn get_otel_key(env_name: &str) -> Option<String> {
 }
 
 #[cfg(feature = "grit_tracing")]
-fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::Logger)>> {
+fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::LoggerProvider)>> {
     let grafana_key = get_otel_key("GRAFANA_OTEL_KEY");
     let honeycomb_key = get_otel_key("HONEYCOMB_OTEL_KEY");
     let baselime_key = get_otel_key("BASELIME_OTEL_KEY");
@@ -588,7 +588,9 @@ fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::Logger)>>
         )
         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
-    Ok(Some((tracer, logger)))
+    let logger_provider = logger.provider().unwrap();
+
+    Ok(Some((tracer, logger_provider)))
 }
 
 pub async fn run_command_with_tracing() -> Result<()> {
@@ -613,23 +615,29 @@ pub async fn run_command_with_tracing() -> Result<()> {
             tracing::subscriber::set_global_default(subscriber)
                 .expect("setting tracing default failed");
 
-            let root_span = span!(Level::INFO, "grit_marzano.cli_command",);
+            // let log_provider = logger.provider().unwrap();
+            let trace_appender_layer = OpenTelemetryTracingBridge::new(&logger);
+            // let logger_provider = opentelemetry::logs::NoopLoggerProvider::new();
+            // let logger_provider = global::logger_provider();
+            // let logger_layer = OpenTelemetryTracingBridge::new(&logger_provider);
 
-            let res = async move {
-                event!(Level::INFO, "starting the CLI!");
+            // let root_span = span!(Level::INFO, "grit_marzano.cli_command",);
 
-                let res = run_command(true).await;
+            // let res = async move {
+            //     event!(Level::INFO, "starting the CLI!");
 
-                event!(Level::INFO, "ending the CLI!");
+            //     let res = run_command(true).await;
 
-                res
-            }
-            .instrument(root_span)
-            .await;
+            //     event!(Level::INFO, "ending the CLI!");
+
+            //     res
+            // }
+            // .instrument(root_span)
+            // .await;
 
             opentelemetry::global::shutdown_tracer_provider();
 
-            return res;
+            return Ok(());
         }
     }
     let subscriber = tracing::subscriber::NoSubscriber::new();

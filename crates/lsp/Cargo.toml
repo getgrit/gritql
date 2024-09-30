@@ -30,7 +30,8 @@ anyhow = { version = "1.0.70" }
 dashmap = { version = "5.5.3" }
 uuid = { version = "1.1", features = ["v4", "serde"] }
 tracing = { version = "0.1.40", default-features = false, features = [] }
-tracing-opentelemetry = { version = "0.22.0", optional = true, default-features = false, features = [] }
+tracing-opentelemetry = { version = "0.25.0", optional = true, default-features = false, features = [
+] }
 
 [dev-dependencies]
 tempfile = "3.8.1"
