@@ -1,6 +1,10 @@
 /// This file is a modified version of the opentelemetry-appender-tracing crate.
 /// We need to use this to bridge between the opentelemetry and the tracing crate.
 /// The opentelemetry-appender-tracing crate has version mismatch issues.
+/// Source: https://github.com/open-telemetry/opentelemetry-rust/blob/v0.22.1/opentelemetry-appender-tracing/src/layer.rs
+///
+/// Copyright The OpenTelemetry Authors
+/// Modified by Iuvo AI, Inc.
 use opentelemetry::{
     logs::{AnyValue, LogRecord, Logger, LoggerProvider, Severity},
     Key,
