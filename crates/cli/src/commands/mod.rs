@@ -552,6 +552,17 @@ fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::LoggerPro
 
     let client = reqwest::Client::new();
 
+    let mut resource_attrs = vec![
+        KeyValue::new("service.name", "grit_marzano".to_string()),
+        KeyValue::new("deployment.environment.name", env),
+    ];
+
+    if let Some(execution_id) = get_otel_key("GRIT_EXECUTION_ID") {
+        resource_attrs.push(KeyValue::new("grit.execution.id", execution_id));
+    }
+
+    let resource = Resource::new(resource_attrs);
+
     let logger = opentelemetry_otlp::new_pipeline()
         .logging()
         .with_exporter(
@@ -562,12 +573,7 @@ fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::LoggerPro
                 .with_endpoint(endpoint.clone())
                 .with_headers(headers.clone()),
         )
-        .with_log_config(
-            opentelemetry_sdk::logs::config().with_resource(Resource::new(vec![KeyValue::new(
-                "service.name",
-                format!("{}_grit_marzano", env),
-            )])),
-        )
+        .with_log_config(opentelemetry_sdk::logs::config().with_resource(resource.clone()))
         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
     let tracer = opentelemetry_otlp::new_pipeline()
@@ -580,12 +586,7 @@ fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::LoggerPro
                 .with_endpoint(endpoint)
                 .with_headers(headers),
         )
-        .with_trace_config(
-            trace::config().with_resource(Resource::new(vec![KeyValue::new(
-                "service.name",
-                format!("{}_grit_marzano", env),
-            )])),
-        )
+        .with_trace_config(trace::config().with_resource(resource))
         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
     let logger_provider = logger.provider().unwrap();
