@@ -636,7 +636,7 @@ pub async fn run_command_with_tracing() -> Result<()> {
 
             opentelemetry::global::shutdown_tracer_provider();
 
-            return Ok(res);
+            return res;
         }
     }
     let subscriber = tracing::subscriber::NoSubscriber::new();
