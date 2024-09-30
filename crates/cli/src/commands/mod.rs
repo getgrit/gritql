@@ -509,7 +509,7 @@ fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::LoggerPro
                     "No explicit OTLP key found, using default OTLP endpoint: {}",
                     endpoint
                 );
-                (endpoint, HashMap::new())
+                (Some(endpoint), None)
             } else {
                 #[cfg(feature = "server")]
                 eprintln!("No OTLP key found, tracing will be disabled");
@@ -525,13 +525,13 @@ fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::LoggerPro
             let headers =
                 HashMap::from([("Authorization".to_string(), format!("Basic {}", encoded))]);
             eprintln!("Using Grafana OTLP key for {}", env);
-            (endpoint, headers)
+            (Some(endpoint), Some(headers))
         }
         (_, Some(honeycomb_key), _, _) => {
             let endpoint = "https://api.honeycomb.io".to_string();
             let headers = HashMap::from([("x-honeycomb-team".to_string(), honeycomb_key)]);
             eprintln!("Using Honeycomb OTLP key for {}", env);
-            (endpoint, headers)
+            (Some(endpoint), Some(headers))
         }
         (_, _, Some(baselime_key), _) => {
             let endpoint = "https://otel.baselime.io/v1/".to_string();
@@ -540,13 +540,13 @@ fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::LoggerPro
                 ("x-baselime-dataset".to_string(), "otel".to_string()),
             ]);
             eprintln!("Using Baselime OTLP key for {}", env);
-            (endpoint, headers)
+            (Some(endpoint), Some(headers))
         }
         (_, _, _, Some(hyperdx_key)) => {
             let endpoint = "https://in-otel.hyperdx.io".to_string();
             let headers = HashMap::from([("authorization".to_string(), hyperdx_key)]);
             eprintln!("Using HyperDX OTLP key for {}", env);
-            (endpoint, headers)
+            (Some(endpoint), Some(headers))
         }
     };
 
@@ -563,29 +563,37 @@ fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::LoggerPro
 
     let resource = Resource::new(resource_attrs);
 
+    let mut logger_exporter = opentelemetry_otlp::new_exporter()
+        .http()
+        .with_http_client(client.clone())
+        .with_timeout(std::time::Duration::from_millis(500));
+    if let Some(endpoint) = &endpoint {
+        logger_exporter = logger_exporter.with_endpoint(endpoint.clone());
+    }
+    if let Some(headers) = &headers {
+        logger_exporter = logger_exporter.with_headers(headers.clone());
+    }
+
+    let mut tracer_exporter = opentelemetry_otlp::new_exporter()
+        .http()
+        .with_http_client(client.clone())
+        .with_timeout(std::time::Duration::from_millis(500));
+    if let Some(endpoint) = endpoint {
+        tracer_exporter = tracer_exporter.with_endpoint(endpoint);
+    }
+    if let Some(headers) = headers {
+        tracer_exporter = tracer_exporter.with_headers(headers);
+    }
+
     let logger = opentelemetry_otlp::new_pipeline()
         .logging()
-        .with_exporter(
-            opentelemetry_otlp::new_exporter()
-                .http()
-                .with_http_client(client.clone())
-                .with_timeout(std::time::Duration::from_millis(500))
-                .with_endpoint(endpoint.clone())
-                .with_headers(headers.clone()),
-        )
+        .with_exporter(logger_exporter)
         .with_log_config(opentelemetry_sdk::logs::config().with_resource(resource.clone()))
         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
     let tracer = opentelemetry_otlp::new_pipeline()
         .tracing()
-        .with_exporter(
-            opentelemetry_otlp::new_exporter()
-                .http()
-                .with_http_client(client)
-                .with_timeout(std::time::Duration::from_millis(500))
-                .with_endpoint(endpoint)
-                .with_headers(headers),
-        )
+        .with_exporter(tracer_exporter)
         .with_trace_config(trace::config().with_resource(resource))
         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 

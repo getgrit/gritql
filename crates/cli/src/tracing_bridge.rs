@@ -15,7 +15,7 @@ use opentelemetry::{
 use std::borrow::Cow;
 use tracing_subscriber::registry::LookupSpan;
 
-use tracing::{field::Field, Level, Metadata, Subscriber};
+use tracing::{field::Field, Level, Metadata};
 #[cfg(feature = "experimental_metadata_attributes")]
 use tracing_log::NormalizeEvent;
 use tracing_subscriber::Layer;

@@ -131,7 +131,6 @@ grit_tracing = [
   "dep:opentelemetry-otlp",
   "dep:opentelemetry",
   "dep:opentelemetry_sdk",
-  # "dep:opentelemetry-appender-tracing",
   "dep:tracing-opentelemetry",
   "dep:tracing-subscriber",
   "dep:tracing-log",
