@@ -494,12 +494,7 @@ fn get_otel_key(env_name: &str) -> Option<String> {
 }
 
 #[cfg(feature = "grit_tracing")]
-fn get_otel_setup() -> Result<Option<Tracer>> {
-    let mut exporter = opentelemetry_otlp::new_exporter()
-        .http()
-        .with_http_client(reqwest::Client::default())
-        .with_timeout(std::time::Duration::from_millis(500));
-
+fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::LoggerProvider)>> {
     let grafana_key = get_otel_key("GRAFANA_OTEL_KEY");
     let honeycomb_key = get_otel_key("HONEYCOMB_OTEL_KEY");
     let baselime_key = get_otel_key("BASELIME_OTEL_KEY");
@@ -507,13 +502,14 @@ fn get_otel_setup() -> Result<Option<Tracer>> {
 
     let env = get_otel_key("GRIT_DEPLOYMENT_ENV").unwrap_or_else(|| "prod".to_string());
 
-    match (grafana_key, honeycomb_key, baselime_key, hyperdx_key) {
+    let (endpoint, headers) = match (grafana_key, honeycomb_key, baselime_key, hyperdx_key) {
         (None, None, None, None) => {
             if let Some(endpoint) = get_otel_key("OTEL_EXPORTER_OTLP_ENDPOINT") {
                 eprintln!(
                     "No explicit OTLP key found, using default OTLP endpoint: {}",
                     endpoint
                 );
+                (Some(endpoint), None)
             } else {
                 #[cfg(feature = "server")]
                 eprintln!("No OTLP key found, tracing will be disabled");
@@ -525,57 +521,93 @@ fn get_otel_setup() -> Result<Option<Tracer>> {
             let instance_id = "665534";
             let encoded =
                 base64::encode_from_string(format!("{}:{}", instance_id, grafana_key).as_str())?;
-            exporter = exporter
-                .with_endpoint("https://otlp-gateway-prod-us-central-0.grafana.net/otlp")
-                .with_headers(HashMap::from([(
-                    "Authorization".into(),
-                    format!("Basic {}", encoded),
-                )]));
+            let endpoint = "https://otlp-gateway-prod-us-central-0.grafana.net/otlp".to_string();
+            let headers =
+                HashMap::from([("Authorization".to_string(), format!("Basic {}", encoded))]);
             eprintln!("Using Grafana OTLP key for {}", env);
+            (Some(endpoint), Some(headers))
         }
         (_, Some(honeycomb_key), _, _) => {
-            exporter = exporter
-                .with_endpoint("https://api.honeycomb.io")
-                .with_headers(HashMap::from([("x-honeycomb-team".into(), honeycomb_key)]));
+            let endpoint = "https://api.honeycomb.io".to_string();
+            let headers = HashMap::from([("x-honeycomb-team".to_string(), honeycomb_key)]);
             eprintln!("Using Honeycomb OTLP key for {}", env);
+            (Some(endpoint), Some(headers))
         }
         (_, _, Some(baselime_key), _) => {
-            exporter = exporter
-                .with_endpoint("https://otel.baselime.io/v1/")
-                .with_headers(HashMap::from([
-                    ("x-api-key".into(), baselime_key),
-                    ("x-baselime-dataset".into(), "otel".into()),
-                ]));
+            let endpoint = "https://otel.baselime.io/v1/".to_string();
+            let headers = HashMap::from([
+                ("x-api-key".to_string(), baselime_key),
+                ("x-baselime-dataset".to_string(), "otel".to_string()),
+            ]);
             eprintln!("Using Baselime OTLP key for {}", env);
+            (Some(endpoint), Some(headers))
         }
         (_, _, _, Some(hyperdx_key)) => {
-            exporter = exporter
-                .with_endpoint("https://in-otel.hyperdx.io")
-                .with_headers(HashMap::from([("authorization".into(), hyperdx_key)]));
+            let endpoint = "https://in-otel.hyperdx.io".to_string();
+            let headers = HashMap::from([("authorization".to_string(), hyperdx_key)]);
             eprintln!("Using HyperDX OTLP key for {}", env);
+            (Some(endpoint), Some(headers))
         }
+    };
+
+    let client = reqwest::Client::new();
+
+    let mut resource_attrs = vec![
+        KeyValue::new("service.name", "grit_marzano".to_string()),
+        KeyValue::new("deployment.environment.name", env),
+    ];
+
+    if let Some(execution_id) = get_otel_key("GRIT_EXECUTION_ID") {
+        resource_attrs.push(KeyValue::new("grit.execution.id", execution_id));
     }
+
+    let resource = Resource::new(resource_attrs);
+
+    let mut logger_exporter = opentelemetry_otlp::new_exporter()
+        .http()
+        .with_http_client(client.clone())
+        .with_timeout(std::time::Duration::from_millis(500));
+    if let Some(endpoint) = &endpoint {
+        logger_exporter = logger_exporter.with_endpoint(endpoint.clone());
+    }
+    if let Some(headers) = &headers {
+        logger_exporter = logger_exporter.with_headers(headers.clone());
+    }
+
+    let mut tracer_exporter = opentelemetry_otlp::new_exporter()
+        .http()
+        .with_http_client(client.clone())
+        .with_timeout(std::time::Duration::from_millis(500));
+    if let Some(endpoint) = endpoint {
+        tracer_exporter = tracer_exporter.with_endpoint(endpoint);
+    }
+    if let Some(headers) = headers {
+        tracer_exporter = tracer_exporter.with_headers(headers);
+    }
+
+    let logger = opentelemetry_otlp::new_pipeline()
+        .logging()
+        .with_exporter(logger_exporter)
+        .with_log_config(opentelemetry_sdk::logs::config().with_resource(resource.clone()))
+        .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
     let tracer = opentelemetry_otlp::new_pipeline()
         .tracing()
-        .with_exporter(exporter)
-        .with_trace_config(
-            trace::config().with_resource(Resource::new(vec![KeyValue::new(
-                "service.name",
-                format!("{}_grit_marzano", env),
-            )])),
-        )
+        .with_exporter(tracer_exporter)
+        .with_trace_config(trace::config().with_resource(resource))
         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
-    Ok(Some(tracer))
+    let logger_provider = logger.provider().unwrap();
+
+    Ok(Some((tracer, logger_provider)))
 }
 
 pub async fn run_command_with_tracing() -> Result<()> {
     #[cfg(feature = "grit_tracing")]
     {
-        let tracer = get_otel_setup()?;
+        let otel = get_otel_setup()?;
 
-        if let Some(tracer) = tracer {
+        if let Some((tracer, logger)) = otel {
             let env_filter = EnvFilter::try_from_default_env()
                 .unwrap_or(EnvFilter::new("TRACE"))
                 // Exclude noisy tokio stuff "h2::proto::streams::prioritize
@@ -586,7 +618,12 @@ pub async fn run_command_with_tracing() -> Result<()> {
                 .add_directive("hyper=off".parse().unwrap());
 
             let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
-            let subscriber = Registry::default().with(env_filter).with(telemetry);
+            let logger_layer = crate::tracing_bridge::OpenTelemetryTracingBridge::new(&logger);
+
+            let subscriber = Registry::default()
+                .with(env_filter)
+                .with(telemetry)
+                .with(logger_layer);
 
             global::set_text_map_propagator(TraceContextPropagator::new());
             tracing::subscriber::set_global_default(subscriber)
