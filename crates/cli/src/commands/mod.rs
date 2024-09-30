@@ -609,32 +609,34 @@ pub async fn run_command_with_tracing() -> Result<()> {
                 .add_directive("hyper=off".parse().unwrap());
 
             let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
-            let subscriber = Registry::default().with(env_filter).with(telemetry);
+            let logger_layer = crate::tracing_bridge::OpenTelemetryTracingBridge::new(&logger);
+
+            let subscriber = Registry::default()
+                .with(env_filter)
+                .with(telemetry)
+                .with(logger_layer);
 
             global::set_text_map_propagator(TraceContextPropagator::new());
             tracing::subscriber::set_global_default(subscriber)
                 .expect("setting tracing default failed");
 
-            let logger = opentelemetry::logs::NoopLoggerProvider::new();
-            let logger_layer = crate::tracing_bridge::OpenTelemetryTracingBridge::new(&logger);
+            let root_span = span!(Level::INFO, "grit_marzano.cli_command",);
 
-            // let root_span = span!(Level::INFO, "grit_marzano.cli_command",);
+            let res = async move {
+                event!(Level::INFO, "starting the CLI!");
 
-            // let res = async move {
-            //     event!(Level::INFO, "starting the CLI!");
+                let res = run_command(true).await;
 
-            //     let res = run_command(true).await;
+                event!(Level::INFO, "ending the CLI!");
 
-            //     event!(Level::INFO, "ending the CLI!");
-
-            //     res
-            // }
-            // .instrument(root_span)
-            // .await;
+                res
+            }
+            .instrument(root_span)
+            .await;
 
             opentelemetry::global::shutdown_tracer_provider();
 
-            return Ok(());
+            return Ok(res);
         }
     }
     let subscriber = tracing::subscriber::NoSubscriber::new();
