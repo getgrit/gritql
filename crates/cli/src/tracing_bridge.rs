@@ -6,9 +6,8 @@ use opentelemetry::{
     Key,
 };
 use std::borrow::Cow;
-use tracing_core::Level;
-#[cfg(feature = "experimental_metadata_attributes")]
-use tracing_core::Metadata;
+
+use tracing::{field::Field, Level, Metadata};
 #[cfg(feature = "experimental_metadata_attributes")]
 use tracing_log::NormalizeEvent;
 use tracing_subscriber::Layer;
@@ -16,8 +15,10 @@ use tracing_subscriber::Layer;
 const INSTRUMENTATION_LIBRARY_NAME: &str = "opentelemetry-appender-tracing";
 
 /// Visitor to record the fields from the event record.
-struct EventVisitor<'a, LR: LogRecord> {
-    log_record: &'a mut LR,
+#[derive(Default)]
+struct EventVisitor {
+    log_record_attributes: Vec<(Key, AnyValue)>,
+    log_record_body: Option<AnyValue>,
 }
 
 /// Logs from the log crate have duplicated attributes that we removed here.
@@ -40,76 +41,77 @@ fn get_filename(filepath: &str) -> &str {
     filepath
 }
 
-impl<'a, LR: LogRecord> EventVisitor<'a, LR> {
-    fn new(log_record: &'a mut LR) -> Self {
-        EventVisitor { log_record }
+impl EventVisitor {
+    fn visit_metadata(&mut self, meta: &Metadata) {
+        self.log_record_attributes
+            .push(("name".into(), meta.name().into()));
+
+        #[cfg(feature = "experimental_metadata_attributes")]
+        self.visit_experimental_metadata(meta);
     }
 
     #[cfg(feature = "experimental_metadata_attributes")]
     fn visit_experimental_metadata(&mut self, meta: &Metadata) {
+        self.log_record_attributes
+            .push(("log.target".into(), meta.target().to_owned().into()));
+
         if let Some(module_path) = meta.module_path() {
-            self.log_record.add_attribute(
-                Key::new("code.namespace"),
-                AnyValue::from(module_path.to_owned()),
-            );
+            self.log_record_attributes
+                .push(("code.namespace".into(), module_path.to_owned().into()));
         }
 
         if let Some(filepath) = meta.file() {
-            self.log_record.add_attribute(
-                Key::new("code.filepath"),
-                AnyValue::from(filepath.to_owned()),
-            );
-            self.log_record.add_attribute(
-                Key::new("code.filename"),
-                AnyValue::from(get_filename(filepath).to_owned()),
-            );
+            self.log_record_attributes
+                .push(("code.filepath".into(), filepath.to_owned().into()));
+            self.log_record_attributes.push((
+                "code.filename".into(),
+                get_filename(filepath).to_owned().into(),
+            ));
         }
 
         if let Some(line) = meta.line() {
-            self.log_record
-                .add_attribute(Key::new("code.lineno"), AnyValue::from(line));
+            self.log_record_attributes
+                .push(("code.lineno".into(), line.into()));
         }
+    }
+
+    fn push_to_otel_log_record(self, log_record: &mut LogRecord) {
+        log_record.body = self.log_record_body;
+        log_record.attributes = Some(self.log_record_attributes);
     }
 }
 
-impl<'a, LR: LogRecord> tracing::field::Visit for EventVisitor<'a, LR> {
+impl tracing::field::Visit for EventVisitor {
     fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
         #[cfg(feature = "experimental_metadata_attributes")]
         if is_duplicated_metadata(field.name()) {
             return;
         }
         if field.name() == "message" {
-            self.log_record.set_body(format!("{:?}", value).into());
+            self.log_record_body = Some(format!("{value:?}").into());
         } else {
-            self.log_record
-                .add_attribute(Key::new(field.name()), AnyValue::from(format!("{value:?}")));
+            self.log_record_attributes
+                .push((field.name().into(), format!("{value:?}").into()));
         }
     }
 
-    fn record_str(&mut self, field: &tracing_core::Field, value: &str) {
+    fn record_str(&mut self, field: &Field, value: &str) {
         #[cfg(feature = "experimental_metadata_attributes")]
         if is_duplicated_metadata(field.name()) {
             return;
         }
-        //TODO: Consider special casing "message" to populate body and document
-        // to users to use message field for log message, to avoid going to the
-        // record_debug, which has dyn dispatch, string allocation and
-        // formatting cost.
-
-        //TODO: Fix heap allocation. Check if lifetime of &str can be used
-        // to optimize sync exporter scenario.
-        self.log_record
-            .add_attribute(Key::new(field.name()), AnyValue::from(value.to_owned()));
+        self.log_record_attributes
+            .push((field.name().into(), value.to_owned().into()));
     }
 
-    fn record_bool(&mut self, field: &tracing_core::Field, value: bool) {
-        self.log_record
-            .add_attribute(Key::new(field.name()), AnyValue::from(value));
+    fn record_bool(&mut self, field: &Field, value: bool) {
+        self.log_record_attributes
+            .push((field.name().into(), value.into()));
     }
 
     fn record_f64(&mut self, field: &tracing::field::Field, value: f64) {
-        self.log_record
-            .add_attribute(Key::new(field.name()), AnyValue::from(value));
+        self.log_record_attributes
+            .push((field.name().into(), value.into()));
     }
 
     fn record_i64(&mut self, field: &tracing::field::Field, value: i64) {
@@ -117,8 +119,8 @@ impl<'a, LR: LogRecord> tracing::field::Visit for EventVisitor<'a, LR> {
         if is_duplicated_metadata(field.name()) {
             return;
         }
-        self.log_record
-            .add_attribute(Key::new(field.name()), AnyValue::from(value));
+        self.log_record_attributes
+            .push((field.name().into(), value.into()));
     }
 
     // TODO: Remaining field types from AnyValue : Bytes, ListAny, Boolean
@@ -140,10 +142,12 @@ where
 {
     pub fn new(provider: &P) -> Self {
         OpenTelemetryTracingBridge {
-            logger: provider
-                .logger_builder(INSTRUMENTATION_LIBRARY_NAME)
-                .with_version(Cow::Borrowed(env!("CARGO_PKG_VERSION")))
-                .build(),
+            logger: provider.versioned_logger(
+                INSTRUMENTATION_LIBRARY_NAME,
+                Some(Cow::Borrowed(env!("CARGO_PKG_VERSION"))),
+                None,
+                None,
+            ),
             _phantom: Default::default(),
         }
     }
@@ -162,34 +166,32 @@ where
     ) {
         #[cfg(feature = "experimental_metadata_attributes")]
         let normalized_meta = event.normalized_metadata();
-
         #[cfg(feature = "experimental_metadata_attributes")]
         let meta = normalized_meta.as_ref().unwrap_or_else(|| event.metadata());
 
         #[cfg(not(feature = "experimental_metadata_attributes"))]
         let meta = event.metadata();
 
-        let mut log_record = self.logger.create_log_record();
+        let mut log_record: LogRecord = LogRecord::default();
+        log_record.severity_number = Some(severity_of_level(meta.level()));
+        log_record.severity_text = Some(meta.level().to_string().into());
 
-        // TODO: Fix heap allocation
-        log_record.set_target(meta.target().to_string());
-        log_record.set_event_name(meta.name());
-        log_record.set_severity_number(severity_of_level(meta.level()));
-        log_record.set_severity_text(meta.level().as_str());
-        let mut visitor = EventVisitor::new(&mut log_record);
-        #[cfg(feature = "experimental_metadata_attributes")]
-        visitor.visit_experimental_metadata(meta);
+        // Not populating ObservedTimestamp, instead relying on OpenTelemetry
+        // API to populate it with current time.
+
+        let mut visitor = EventVisitor::default();
+        visitor.visit_metadata(meta);
         // Visit fields.
         event.record(&mut visitor);
+        visitor.push_to_otel_log_record(&mut log_record);
 
-        //emit record
         self.logger.emit(log_record);
     }
 
     #[cfg(feature = "logs_level_enabled")]
     fn event_enabled(
         &self,
-        _event: &tracing_core::Event<'_>,
+        _event: &Event<'_>,
         _ctx: tracing_subscriber::layer::Context<'_, S>,
     ) -> bool {
         let severity = severity_of_level(_event.metadata().level());
@@ -215,18 +217,11 @@ mod tests {
     use opentelemetry::trace::TracerProvider as _;
     use opentelemetry::trace::{TraceContextExt, TraceFlags, Tracer};
     use opentelemetry::{logs::AnyValue, Key};
-    use opentelemetry_sdk::logs::{LogRecord, LoggerProvider};
+    use opentelemetry_sdk::logs::LoggerProvider;
     use opentelemetry_sdk::testing::logs::InMemoryLogsExporter;
-    use opentelemetry_sdk::trace;
-    use opentelemetry_sdk::trace::{Sampler, TracerProvider};
+    use opentelemetry_sdk::trace::{config, Sampler, TracerProvider};
     use tracing::error;
     use tracing_subscriber::layer::SubscriberExt;
-
-    pub fn attributes_contains(log_record: &LogRecord, key: &Key, value: &AnyValue) -> bool {
-        log_record
-            .attributes_iter()
-            .any(|(k, v)| k == key && v == value)
-    }
 
     // cargo test --features=testing
     #[test]
@@ -265,48 +260,33 @@ mod tests {
         assert!(log.record.trace_context.is_none());
 
         // Validate attributes
+        let attributes: Vec<(Key, AnyValue)> = log
+            .record
+            .attributes
+            .clone()
+            .expect("Attributes are expected");
         #[cfg(not(feature = "experimental_metadata_attributes"))]
-        assert_eq!(log.record.attributes_iter().count(), 3);
+        assert_eq!(attributes.len(), 4);
         #[cfg(feature = "experimental_metadata_attributes")]
-        assert_eq!(log.record.attributes_iter().count(), 7);
-        assert!(attributes_contains(
-            &log.record,
-            &Key::new("event_id"),
-            &AnyValue::Int(20)
-        ));
-        assert!(attributes_contains(
-            &log.record,
-            &Key::new("user_name"),
-            &AnyValue::String("otel".into())
-        ));
-        assert!(attributes_contains(
-            &log.record,
-            &Key::new("user_email"),
-            &AnyValue::String("otel@opentelemetry.io".into())
-        ));
+        assert_eq!(attributes.len(), 9);
+        assert!(attributes.contains(&(Key::new("name"), "my-event-name".into())));
+        assert!(attributes.contains(&(Key::new("event_id"), 20.into())));
+        assert!(attributes.contains(&(Key::new("user_name"), "otel".into())));
+        assert!(attributes.contains(&(Key::new("user_email"), "otel@opentelemetry.io".into())));
         #[cfg(feature = "experimental_metadata_attributes")]
         {
-            assert!(attributes_contains(
-                &log.record,
-                &Key::new("code.filename"),
-                &AnyValue::String("layer.rs".into())
-            ));
-            assert!(attributes_contains(
-                &log.record,
-                &Key::new("code.namespace"),
-                &AnyValue::String("opentelemetry_appender_tracing::layer::tests".into())
-            ));
+            assert!(attributes.contains(&(Key::new("code.filename"), "layer.rs".into())));
+            assert!(attributes.contains(&(
+                Key::new("code.namespace"),
+                "opentelemetry_appender_tracing::layer::tests".into()
+            )));
             // The other 3 experimental_metadata_attributes are too unstable to check their value.
             // Ex.: The path will be different on a Windows and Linux machine.
             // Ex.: The line can change easily if someone makes changes in this source file.
-            let attributes_key: Vec<Key> = log
-                .record
-                .attributes_iter()
-                .map(|(key, _)| key.clone())
-                .collect();
+            let attributes_key: Vec<Key> = attributes.iter().map(|(key, _)| key.clone()).collect();
             assert!(attributes_key.contains(&Key::new("code.filepath")));
             assert!(attributes_key.contains(&Key::new("code.lineno")));
-            assert!(!attributes_key.contains(&Key::new("log.target")));
+            assert!(attributes_key.contains(&Key::new("log.target")));
         }
     }
 
@@ -327,7 +307,7 @@ mod tests {
 
         // setup tracing as well.
         let tracer_provider = TracerProvider::builder()
-            .with_config(trace::Config::default().with_sampler(Sampler::AlwaysOn))
+            .with_config(config().with_sampler(Sampler::AlwaysOn))
             .build();
         let tracer = tracer_provider.tracer("test-tracer");
 
@@ -377,48 +357,33 @@ mod tests {
         );
 
         // validate attributes.
+        let attributes: Vec<(Key, AnyValue)> = log
+            .record
+            .attributes
+            .clone()
+            .expect("Attributes are expected");
         #[cfg(not(feature = "experimental_metadata_attributes"))]
-        assert_eq!(log.record.attributes_iter().count(), 3);
+        assert_eq!(attributes.len(), 4);
         #[cfg(feature = "experimental_metadata_attributes")]
-        assert_eq!(log.record.attributes_iter().count(), 7);
-        assert!(attributes_contains(
-            &log.record,
-            &Key::new("event_id"),
-            &AnyValue::Int(20.into())
-        ));
-        assert!(attributes_contains(
-            &log.record,
-            &Key::new("user_name"),
-            &AnyValue::String("otel".into())
-        ));
-        assert!(attributes_contains(
-            &log.record,
-            &Key::new("user_email"),
-            &AnyValue::String("otel@opentelemetry.io".into())
-        ));
+        assert_eq!(attributes.len(), 9);
+        assert!(attributes.contains(&(Key::new("name"), "my-event-name".into())));
+        assert!(attributes.contains(&(Key::new("event_id"), 20.into())));
+        assert!(attributes.contains(&(Key::new("user_name"), "otel".into())));
+        assert!(attributes.contains(&(Key::new("user_email"), "otel@opentelemetry.io".into())));
         #[cfg(feature = "experimental_metadata_attributes")]
         {
-            assert!(attributes_contains(
-                &log.record,
-                &Key::new("code.filename"),
-                &AnyValue::String("layer.rs".into())
-            ));
-            assert!(attributes_contains(
-                &log.record,
-                &Key::new("code.namespace"),
-                &AnyValue::String("opentelemetry_appender_tracing::layer::tests".into())
-            ));
+            assert!(attributes.contains(&(Key::new("code.filename"), "layer.rs".into())));
+            assert!(attributes.contains(&(
+                Key::new("code.namespace"),
+                "opentelemetry_appender_tracing::layer::tests".into()
+            )));
             // The other 3 experimental_metadata_attributes are too unstable to check their value.
             // Ex.: The path will be different on a Windows and Linux machine.
             // Ex.: The line can change easily if someone makes changes in this source file.
-            let attributes_key: Vec<Key> = log
-                .record
-                .attributes_iter()
-                .map(|(key, _)| key.clone())
-                .collect();
+            let attributes_key: Vec<Key> = attributes.iter().map(|(key, _)| key.clone()).collect();
             assert!(attributes_key.contains(&Key::new("code.filepath")));
             assert!(attributes_key.contains(&Key::new("code.lineno")));
-            assert!(!attributes_key.contains(&Key::new("log.target")));
+            assert!(attributes_key.contains(&Key::new("log.target")));
         }
     }
 
@@ -458,33 +423,33 @@ mod tests {
         // Validate trace context is none.
         assert!(log.record.trace_context.is_none());
 
+        // Validate attributes
+        let attributes: Vec<(Key, AnyValue)> = log
+            .record
+            .attributes
+            .clone()
+            .expect("Attributes are expected");
+
         // Attributes can be polluted when we don't use this feature.
         #[cfg(feature = "experimental_metadata_attributes")]
-        assert_eq!(log.record.attributes_iter().count(), 4);
+        assert_eq!(attributes.len(), 6);
+
+        assert!(attributes.contains(&(Key::new("name"), "log event".into())));
 
         #[cfg(feature = "experimental_metadata_attributes")]
         {
-            assert!(attributes_contains(
-                &log.record,
-                &Key::new("code.filename"),
-                &AnyValue::String("layer.rs".into())
-            ));
-            assert!(attributes_contains(
-                &log.record,
-                &Key::new("code.namespace"),
-                &AnyValue::String("opentelemetry_appender_tracing::layer::tests".into())
-            ));
+            assert!(attributes.contains(&(Key::new("code.filename"), "layer.rs".into())));
+            assert!(attributes.contains(&(
+                Key::new("code.namespace"),
+                "opentelemetry_appender_tracing::layer::tests".into()
+            )));
             // The other 3 experimental_metadata_attributes are too unstable to check their value.
             // Ex.: The path will be different on a Windows and Linux machine.
             // Ex.: The line can change easily if someone makes changes in this source file.
-            let attributes_key: Vec<Key> = log
-                .record
-                .attributes_iter()
-                .map(|(key, _)| key.clone())
-                .collect();
+            let attributes_key: Vec<Key> = attributes.iter().map(|(key, _)| key.clone()).collect();
             assert!(attributes_key.contains(&Key::new("code.filepath")));
             assert!(attributes_key.contains(&Key::new("code.lineno")));
-            assert!(!attributes_key.contains(&Key::new("log.target")));
+            assert!(attributes_key.contains(&Key::new("log.target")));
         }
     }
 
@@ -506,7 +471,7 @@ mod tests {
 
         // setup tracing as well.
         let tracer_provider = TracerProvider::builder()
-            .with_config(trace::Config::default().with_sampler(Sampler::AlwaysOn))
+            .with_config(config().with_sampler(Sampler::AlwaysOn))
             .build();
         let tracer = tracer_provider.tracer("test-tracer");
 
@@ -555,33 +520,33 @@ mod tests {
             TraceFlags::SAMPLED
         );
 
+        // validate attributes.
+        let attributes: Vec<(Key, AnyValue)> = log
+            .record
+            .attributes
+            .clone()
+            .expect("Attributes are expected");
+
         // Attributes can be polluted when we don't use this feature.
         #[cfg(feature = "experimental_metadata_attributes")]
-        assert_eq!(log.record.attributes_iter().count(), 4);
+        assert_eq!(attributes.len(), 6);
+
+        assert!(attributes.contains(&(Key::new("name"), "log event".into())));
 
         #[cfg(feature = "experimental_metadata_attributes")]
         {
-            assert!(attributes_contains(
-                &log.record,
-                &Key::new("code.filename"),
-                &AnyValue::String("layer.rs".into())
-            ));
-            assert!(attributes_contains(
-                &log.record,
-                &Key::new("code.namespace"),
-                &AnyValue::String("opentelemetry_appender_tracing::layer::tests".into())
-            ));
+            assert!(attributes.contains(&(Key::new("code.filename"), "layer.rs".into())));
+            assert!(attributes.contains(&(
+                Key::new("code.namespace"),
+                "opentelemetry_appender_tracing::layer::tests".into()
+            )));
             // The other 3 experimental_metadata_attributes are too unstable to check their value.
             // Ex.: The path will be different on a Windows and Linux machine.
             // Ex.: The line can change easily if someone makes changes in this source file.
-            let attributes_key: Vec<Key> = log
-                .record
-                .attributes_iter()
-                .map(|(key, _)| key.clone())
-                .collect();
+            let attributes_key: Vec<Key> = attributes.iter().map(|(key, _)| key.clone()).collect();
             assert!(attributes_key.contains(&Key::new("code.filepath")));
             assert!(attributes_key.contains(&Key::new("code.lineno")));
-            assert!(!attributes_key.contains(&Key::new("log.target")));
+            assert!(attributes_key.contains(&Key::new("log.target")));
         }
     }
 }

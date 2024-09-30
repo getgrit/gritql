@@ -615,12 +615,8 @@ pub async fn run_command_with_tracing() -> Result<()> {
             tracing::subscriber::set_global_default(subscriber)
                 .expect("setting tracing default failed");
 
-            // let trace_appender_layer = OpenTelemetryTracingBridge::new(&logger);
-            // let logger_provider = opentelemetry::logs::NoopLoggerProvider::new();
-            // let logger_provider = global::logger_provider();
             let logger = opentelemetry::logs::NoopLoggerProvider::new();
-            let logger_layer =
-                opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge::new(&logger);
+            let logger_layer = crate::tracing_bridge::OpenTelemetryTracingBridge::new(&logger);
 
             // let root_span = span!(Level::INFO, "grit_marzano.cli_command",);
 
