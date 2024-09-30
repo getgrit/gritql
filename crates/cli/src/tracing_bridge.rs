@@ -185,7 +185,8 @@ where
         log_record.severity_text = Some(meta.level().to_string().into());
 
         // Extract the trace_id & span_id from the opentelemetry extension.
-        set_trace_context(&mut log_record, &_ctx);
+        // This isn't really working for us.
+        // set_trace_context(&mut log_record, &_ctx);
 
         // Not populating ObservedTimestamp, instead relying on OpenTelemetry
         // API to populate it with current time.
@@ -208,30 +209,6 @@ where
         let severity = severity_of_level(_event.metadata().level());
         self.logger
             .event_enabled(severity, _event.metadata().target())
-    }
-}
-
-fn set_trace_context<S>(log_record: &mut LogRecord, ctx: &tracing_subscriber::layer::Context<'_, S>)
-where
-    S: Subscriber + for<'a> LookupSpan<'a>,
-{
-    use opentelemetry::{
-        logs::TraceContext,
-        trace::{SpanContext, TraceFlags, TraceState},
-    };
-
-    if let Some((trace_id, span_id)) = ctx.lookup_current().and_then(|span| {
-        span.extensions()
-            .get::<tracing_opentelemetry::OtelData>()
-            .and_then(|ext| ext.builder.trace_id.zip(ext.builder.span_id))
-    }) {
-        log_record.trace_context = Some(TraceContext::from(&SpanContext::new(
-            trace_id,
-            span_id,
-            TraceFlags::default(),
-            false,
-            TraceState::default(),
-        )));
     }
 }
 
