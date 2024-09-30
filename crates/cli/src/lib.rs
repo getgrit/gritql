@@ -19,8 +19,8 @@ mod ux;
 #[cfg(feature = "workflows_v2")]
 mod workflows;
 
-#[cfg(feature = "tracing")]
-mod tracing_bridge;
+// #[cfg(feature = "tracing")]
+// mod tracing_bridge;
 
 // We use git2, which depends on openssl, which by-default wants to
 // dynamically link libopenssl. We explicitly depend on openssl to
