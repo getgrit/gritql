@@ -129,6 +129,48 @@ impl PatternLanguage {
         Self::from_string(lang, flavor.as_deref())
     }
 
+impl PatternLanguage {
+    pub fn from_string(name: &str, flavor: Option<&str>) -> Option<Self> {
+        match name {
+            "py" | "python" => Some(Self::Python),
+            "js" | "javascript" => match flavor {
+                Some("jsx") => Some(Self::Tsx),
+                Some("flow") => Some(Self::Tsx),
+                Some("FlowComments") => Some(Self::Tsx),
+                Some("typescript") => Some(Self::TypeScript),
+                Some("js_do_not_use") => Some(Self::JavaScript),
+                _ => Some(Self::Tsx),
+           },
+           "ts" | "typescript" => Some(Self::Typescript),
+           "html" => Some(Self::Html),
+           "css" => Some(Self::Css),
+           "json" => Some(Self::Json),
+           "java" => Some(Self::Java),
+           "cs" | "csharp" => Some(Self::CSharp),
+           "md" | "markdown" => match flavor {
+               Some("block") => Some(Self::MarkdownBlock),
+               Some("inline") => Some(Self::MarkdownInline),
+               _ => Some(Self::MarkdownInline),
+          },
+          "go" => Some(Self::Go),
+          "rs" | "rust" => Some(Self::Rust),
+          "rb" | "ruby" => Some(Self::Ruby),
+          "sol" | "solidity" => Some(Self::Solidity),
+          "hcl" | "tf" | "terraform" => Some(Self::Hcl),
+          "yml" | "yaml" => Some(Self::Yaml),
+          "sql" => Some(Self::Sql),
+          "vue" => Some(Self::Vue),
+          "toml" => Some(Self::Toml),
+          "php" => match flavor {
+              Some("html") => Some(Self::Php),
+              Some("only") => Some(self::PhpOnly),
+              _ => Some(Self::Php),
+          },
+          "universal" => Some(Self::Universal),
+          _ => None,
+        }
+    }
+    
     #[cfg(not(feature = "builtin-parser"))]
     pub fn get_language_with_parser(_parser: &mut MarzanoGritParser, _body: &str) -> Option<Self> {
         unimplemented!("grit_parser is unavailable when feature flag [builtin-parser] is off.")
@@ -147,7 +189,8 @@ impl PatternLanguage {
 
     pub fn from_string(name: &str, flavor: Option<&str>) -> Option<Self> {
         match name {
-            "js" => match flavor {
+            "py" | "python" => Some(Self::Python),
+            "js" | "javascript" => match flavor {
                 Some("jsx") => Some(Self::Tsx),
                 Some("flow") => Some(Self::Tsx),
                 Some("flowComments") => Some(Self::Tsx),
@@ -155,35 +198,34 @@ impl PatternLanguage {
                 Some("js_do_not_use") => Some(Self::JavaScript),
                 _ => Some(Self::Tsx),
             },
-            "html" => Some(Self::Html),
-            "css" => Some(Self::Css),
-            "json" => Some(Self::Json),
-            "java" => Some(Self::Java),
-            "csharp" => Some(Self::CSharp),
-            "markdown" => match flavor {
-                Some("block") => Some(Self::MarkdownBlock),
-                Some("inline") => Some(Self::MarkdownInline),
-                _ => Some(Self::MarkdownInline),
-            },
-            "ipynb" => Some(Self::Python),
-            "python" => Some(Self::Python),
-            "go" => Some(Self::Go),
-            "rust" => Some(Self::Rust),
-            "ruby" => Some(Self::Ruby),
-            "sol" | "solidity" => Some(Self::Solidity),
-            "hcl" => Some(Self::Hcl),
-            "yaml" => Some(Self::Yaml),
-            "sql" => Some(Self::Sql),
-            "vue" => Some(Self::Vue),
-            "toml" => Some(Self::Toml),
-            "php" => match flavor {
-                Some("html") => Some(Self::Php),
-                Some("only") => Some(Self::PhpOnly),
-                _ => Some(Self::Php),
-            },
-            "universal" => Some(Self::Universal),
-            _ => None,
-        }
+           "ts" | "typescript" => Some(Self::TypeScript),
+           "html" => Some(Self::Html),
+           "css" => Some(Self::Css),
+           "json" => Some(Self::Json),
+           "java" => Some(Self::Java),
+           "cs" | "csharp" => Some(Self::CSharp),
+           "md" | "markdown" => match flavor {
+               Some("block") => Some(Self::MarkdownBlock),
+               Some("inline") => Some(Self::MarkdownInline),
+               _ => Some(Self::MarkdownInline),
+           },
+          "go" => Some(Self::Go),
+          "rs" | "rust" => Some(Self::Rust),
+          "rb" | "ruby" => Some(Self::Ruby),
+          "sol" | "solidity" => Some(Self::Solidity),
+          "hcl" | "tf" | "terraform" => Some(Self::Hcl),
+          "yml" | "yaml" => Some(Self::Yaml),
+          "sql" => Some(Self::Sql),
+          "vue" => Some(Self::Vue),
+          "toml" => Some(Self::Toml),
+          "php" => match flavor {
+              Some("html") => Some(Self::Php),
+              Some("only") => Some(Self::PhpOnly),
+              _ => Some(Self::Php),
+          },
+          "universal" => Some(Self::Universal),
+          _ => None,
+       } 
     }
 
     fn get_file_extensions(&self) -> &'static [&'static str] {
@@ -245,6 +287,7 @@ impl PatternLanguage {
     }
 
     pub fn from_extension(extension: &str) -> Option<Self> {
+        Self::from_string(extension, None)
         match extension {
             "js" | "jsx" | "cjs" | "mjs" => Some(Self::Tsx),
             "ts" | "tsx" | "cts" | "mts" => Some(Self::Tsx),
@@ -822,4 +865,45 @@ mod tests {
         let other_comment = lang.extract_single_line_comment(other_text).unwrap();
         assert_eq!(other_comment, "this is a comment");
     }
+
+    #[test]
+    fn test_from_string_or_alias() {
+       assert_eq!(PatternLanguage::from_string_or_alias("py", None), Some(PatternLanguage::Python));
+       assert_eq!(PatternLanguage::from_string_or_alias("python", None), Some(PatternLanguage::Python));
+       assert_eq!(PatternLanguage::from_string_or_alias("js", None), Some(PatternLanguage::Tsx));
+       assert_eq!(PatternLanguage::from_string_or_alias("javascript", None), Some(PatternLanguage::Tsx));
+       assert_eq!(PatternLanguage::from_string_or_alias("ts", None), Some(PatternLanguage::TypeScript));
+       assert_eq!(PatternLanguage::from_string_or_alias("typescript", None), Some(PatternLanguage::TypeScript));
+       assert_eq!(PatternLanguage::from_string_or_alias("cs", None), Some(PatternLanguage::CSharp));
+       assert_eq!(PatternLanguage::from_string_or_alias("csharp", None), Some(PatternLanguage::CSharp));
+       assert_eq!(PatternLanguage::from_string_or_alias("md", None), Some(PatternLanguage::MarkdownInline));
+       assert_eq!(PatternLanguage::from_string_or_alias("markdown", None), Some(PatternLanguage::MarkdownInline));
+       assert_eq!(PatternLanguage::from_string_or_alias("rs", None), Some(PatternLanguage::Rust));
+       assert_eq!(PatternLanguage::from_string_or_alias("rust", None), Some(PatternLanguage::Rust));
+       assert_eq!(PatternLanguage::from_string_or_alias("rb", None), Some(PatternLanguage::Ruby));
+       assert_eq!(PatternLanguage::from_string_or_alias("ruby", None), Some(PatternLanguage::Ruby));
+       assert_eq!(PatternLanguage::from_string_or_alias("sol", None), Some(PatternLanguage::Solidity));
+       assert_eq!(PatternLanguage::from_string_or_alias("solidity", None), Some(PatternLanguage::Solidity));
+       assert_eq!(PatternLanguage::from_string_or_alias("tf", None), Some(PatternLanguage::Hcl));
+       assert_eq!(PatternLanguage::from_string_or_alias("hcl", None), Some(PatternLanguage::Hcl));
+       assert_eq!(PatternLanguage::from_string_or_alias("terraform", None), Some(PatternLanguage::Hcl));
+       assert_eq!(PatternLanguage::from_string_or_alias("yml", None), Some(PatternLanguage::Yaml));
+       assert_eq!(PatternLanguage::from_string_or_alias("yaml", None), Some(PatternLanguage::Yaml));
+       assert_eq!(PatternLanguage::from_string_or_alias("unknown", None), None);
+    }
+
+   #[test]
+   fn test_from_extension() {
+      assert_eq!(PatternLanguage::from_extension("py"), Some(PatternLanguage::Python));
+      assert_eq!(PatternLanguage::from_extension("js"), Some(PatternLanguage::Tsx));
+      assert_eq!(PatternLanguage::from_extension("ts"), Some(PatternLanguage::TypeScript));
+      assert_eq!(PatternLanguage::from_extension("cs"), Some(PatternLanguage::CSharp));
+      assert_eq!(PatternLanguage::from_extension("md"), Some(PatternLanguage::MarkdownInline));
+      assert_eq!(PatternLanguage::from_extension("rs"), Some(PatternLanguage::Rust));
+      assert_eq!(PatternLanguage::from_extension("rb"), Some(PatternLanguage::Ruby));
+      assert_eq!(PatternLanguage::from_extension("sol"), Some(PatternLanguage::Solidity));
+      assert_eq!(PatternLanguage::from_extension("tf"), Some(PatternLanguage::Hcl));
+      assert_eq!(PatternLanguage::from_extension("yml"), Some(PatternLanguage::Yaml));
+      assert_eq!(PatternLanguage::from_extension("unknown"), None);
+   }
 }
