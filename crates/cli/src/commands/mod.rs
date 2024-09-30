@@ -58,7 +58,7 @@ use tracing::{event, span, Level};
 #[allow(unused_imports)]
 use tracing_subscriber::prelude::*;
 #[cfg(feature = "grit_tracing")]
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Registry};
+use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 
 #[cfg(feature = "docgen")]
 pub(crate) mod docgen;

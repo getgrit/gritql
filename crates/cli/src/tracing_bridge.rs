@@ -3,6 +3,9 @@
 /// The opentelemetry-appender-tracing crate has version mismatch issues.
 /// Source: https://github.com/open-telemetry/opentelemetry-rust/blob/v0.22.1/opentelemetry-appender-tracing/src/layer.rs
 ///
+/// Includes the workaround for https://github.com/open-telemetry/opentelemetry-rust/issues/1378
+/// From https://github.com/open-telemetry/opentelemetry-rust/pull/1394
+///
 /// Copyright The OpenTelemetry Authors
 /// Modified by Iuvo AI, Inc.
 use opentelemetry::{
@@ -10,8 +13,9 @@ use opentelemetry::{
     Key,
 };
 use std::borrow::Cow;
+use tracing_subscriber::registry::LookupSpan;
 
-use tracing::{field::Field, Level, Metadata};
+use tracing::{field::Field, Level, Metadata, Subscriber};
 #[cfg(feature = "experimental_metadata_attributes")]
 use tracing_log::NormalizeEvent;
 use tracing_subscriber::Layer;
@@ -159,7 +163,7 @@ where
 
 impl<S, P, L> Layer<S> for OpenTelemetryTracingBridge<P, L>
 where
-    S: tracing::Subscriber,
+    S: tracing::Subscriber + for<'a> LookupSpan<'a>,
     P: LoggerProvider<Logger = L> + Send + Sync + 'static,
     L: Logger + Send + Sync + 'static,
 {
@@ -179,6 +183,9 @@ where
         let mut log_record: LogRecord = LogRecord::default();
         log_record.severity_number = Some(severity_of_level(meta.level()));
         log_record.severity_text = Some(meta.level().to_string().into());
+
+        // Extract the trace_id & span_id from the opentelemetry extension.
+        set_trace_context(&mut log_record, &_ctx);
 
         // Not populating ObservedTimestamp, instead relying on OpenTelemetry
         // API to populate it with current time.
@@ -201,6 +208,30 @@ where
         let severity = severity_of_level(_event.metadata().level());
         self.logger
             .event_enabled(severity, _event.metadata().target())
+    }
+}
+
+fn set_trace_context<S>(log_record: &mut LogRecord, ctx: &tracing_subscriber::layer::Context<'_, S>)
+where
+    S: Subscriber + for<'a> LookupSpan<'a>,
+{
+    use opentelemetry::{
+        logs::TraceContext,
+        trace::{SpanContext, TraceFlags, TraceState},
+    };
+
+    if let Some((trace_id, span_id)) = ctx.lookup_current().and_then(|span| {
+        span.extensions()
+            .get::<tracing_opentelemetry::OtelData>()
+            .and_then(|ext| ext.builder.trace_id.zip(ext.builder.span_id))
+    }) {
+        log_record.trace_context = Some(TraceContext::from(&SpanContext::new(
+            trace_id,
+            span_id,
+            TraceFlags::default(),
+            false,
+            TraceState::default(),
+        )));
     }
 }
 
