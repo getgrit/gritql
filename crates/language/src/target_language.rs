@@ -119,14 +119,29 @@ impl From<&TargetLanguage> for PatternLanguage {
 
 impl PatternLanguage {
     pub fn from_tree(tree: &Tree) -> Option<Self> {
-        let root = tree.root_node();
-        let langdecl = root.child_by_field_name("language")?;
-        let lang = langdecl.child_by_field_name("name")?;
-        let lang = lang.text().ok()?;
-        let lang = lang.trim();
-        let flavor = langdecl.child_by_field_name("flavor");
-        let flavor = flavor.as_ref().and_then(|f| f.text().ok());
-        Self::from_string(lang, flavor.as_deref())
+        let mut cursor = tree.walk();
+        let mut traverse = || {
+            loop {
+                let node = cursor.node();
+                if node.kind() == "languageSpecificSnippet" {
+                    if let Some(lang_node) = node.child_by_field_name("language") {
+                        if let Ok(lang_name) = lang_node.utf8_text(tree.source().as_bytes()) {
+                            return PatternLanguage::from_string(lang_name.trim(), None);
+                        }
+                    }
+                }
+                
+                if !cursor.goto_first_child() {
+                    while !cursor.goto_next_sibling() {
+                        if !cursor.goto_parent() {
+                            return None;
+                        }
+                    }
+                }
+            }
+        };
+
+        traverse()
     }
 
     #[cfg(not(feature = "builtin-parser"))]
