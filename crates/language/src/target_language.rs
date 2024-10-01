@@ -28,6 +28,7 @@ use crate::{
 };
 use anyhow::Result;
 use clap::ValueEnum;
+use grit_util::Order;
 use grit_util::{Ast, AstNode, ByteRange, CodeRange, Language, Parser, SnippetTree};
 use marzano_util::node_with_source::NodeWithSource;
 use regex::Regex;
@@ -120,13 +121,40 @@ impl From<&TargetLanguage> for PatternLanguage {
 impl PatternLanguage {
     pub fn from_tree(tree: &Tree) -> Option<Self> {
         let root = tree.root_node();
-        let langdecl = root.child_by_field_name("language")?;
-        let lang = langdecl.child_by_field_name("name")?;
-        let lang = lang.text().ok()?;
-        let lang = lang.trim();
-        let flavor = langdecl.child_by_field_name("flavor");
-        let flavor = flavor.as_ref().and_then(|f| f.text().ok());
-        Self::from_string(lang, flavor.as_deref())
+
+        // First, try to get the language from the language declaration
+        let lang_from_declaration = root.child_by_field_name("language").and_then(|langdecl| {
+            let lang = langdecl.child_by_field_name("name")?;
+            let lang = lang.text().ok()?;
+            let lang = lang.trim();
+            let flavor = langdecl.child_by_field_name("flavor");
+            let flavor = flavor.as_ref().and_then(|f| f.text().ok());
+            Self::from_string(lang, flavor.as_deref())
+        });
+
+        // If we found a language from the declaration, return it
+        if lang_from_declaration.is_some() {
+            return lang_from_declaration;
+        }
+
+        // If not, look for language-specific snippets in the pattern
+        let binding = tree.root_node();
+        let cursor = binding.walk();
+
+        for n in grit_util::traverse(cursor, Order::Pre)
+            .filter(|n| n.node.kind() == "languageSpecificSnippet")
+        {
+            let language = n.child_by_field_name("language");
+            if let Some(language) = language {
+                if let Ok(language) = language.text() {
+                    if let Some(language) = Self::from_string(&language, None) {
+                        return Some(language);
+                    }
+                }
+            }
+        }
+
+        None
     }
 
     #[cfg(not(feature = "builtin-parser"))]
@@ -821,5 +849,18 @@ mod tests {
         let other_text = "// this is a comment\nvariable \"name\" {}";
         let other_comment = lang.extract_single_line_comment(other_text).unwrap();
         assert_eq!(other_comment, "this is a comment");
+    }
+
+    #[test]
+    fn detect_language_from_snippet() {
+        let src = r#"go"package""#;
+        let mut parser = MarzanoGritParser::new().unwrap();
+        let src_tree = parser
+            .parse_file(src, Some(std::path::Path::new("test.go")))
+            .unwrap();
+        let lang = TargetLanguage::from_tree(&src_tree)
+            .unwrap()
+            .to_module_language();
+        assert_eq!(lang, PatternLanguage::Go);
     }
 }
