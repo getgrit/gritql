@@ -55,8 +55,13 @@ impl NodeCompiler for LanguageSpecificSnippetCompiler {
             .child_by_field_name("language")
             .ok_or_else(|| anyhow!("missing language of languageSpecificSnippet"))?;
         let lang_name = lang_node.text()?.trim().to_string();
-        let _snippet_lang = TargetLanguage::from_string(&lang_name, None)
+        let snippet_lang = TargetLanguage::from_string(&lang_name, None)
             .ok_or_else(|| anyhow!("invalid language: {lang_name}"))?;
+        
+        // Set the inferred language in the context
+        context.set_inferred_language(snippet_lang);
+
+        // Rest of the method remains the same
         let snippet_node = node
             .child_by_field_name("snippet")
             .ok_or_else(|| anyhow!("missing snippet of languageSpecificSnippet"))?;
@@ -86,7 +91,7 @@ pub(crate) fn dynamic_snippet_from_source(
         .replace("\\\"", "\"")
         .replace("\\\\", "\\");
     let source = source_string.as_str();
-    let metavariables = split_snippet(source, context.get_lang());
+    let metavariables = split_snippet(source, context.get_inferred_language().unwrap_or_else(|| context.get_lang()));
     let mut parts = Vec::with_capacity(2 * metavariables.len() + 1);
     let mut last = 0;
     // Reverse the iterator so we go over the variables in ascending order.
@@ -112,6 +117,9 @@ pub(crate) fn parse_snippet_content(
     context: &mut dyn SnippetCompilationContext,
     is_rhs: bool,
 ) -> Result<Pattern<MarzanoQueryContext>> {
+    let language = context.get_inferred_language().unwrap_or_else(|| context.get_lang());
+    // Use 'language' instead of 'context.get_lang()' in the rest of the function
+    
     // we check for CURLY_VAR_REGEX in the content, and if found
     // compile into a DynamicPattern, rather than a CodeSnippet.
     // This is because the syntax should only ever be necessary
@@ -121,8 +129,7 @@ pub(crate) fn parse_snippet_content(
     // $name does not correspond to a node, but rather prepends a
     // string to "Handler", which will together combine into an
     // identifier.
-    if context
-        .get_lang()
+    if language
         .metavariable_bracket_regex()
         .is_match(source)
     {
@@ -134,8 +141,7 @@ pub(crate) fn parse_snippet_content(
             bail!("bracketed metavariables are only allowed on the rhs of a snippet");
         }
     } else {
-        if context
-            .get_lang()
+        if language
             .exact_variable_regex()
             .is_match(source.trim())
         {
@@ -148,7 +154,7 @@ pub(crate) fn parse_snippet_content(
                 }
             }
         }
-        let snippet_trees = context.get_lang().parse_snippet_contexts(source);
+        let snippet_trees = language.parse_snippet_contexts(source);
         let snippet_nodes = nodes_from_indices(&snippet_trees);
         if snippet_nodes.is_empty() {
             // not checking if is_rhs. So could potentially

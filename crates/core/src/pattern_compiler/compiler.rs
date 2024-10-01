@@ -44,6 +44,8 @@ use tracing::instrument;
 
 pub trait SnippetCompilationContext {
     fn get_lang(&self) -> &TargetLanguage;
+    fn get_inferred_language(&self) -> Option<&TargetLanguage>; 
+    fn set_inferred_language(&mut self, language: TargetLanguage);
 
     /// Register a variable that is part of a CodeSnippet
     fn register_snippet_variable(
@@ -103,11 +105,21 @@ pub(crate) struct NodeCompilationContext<'a> {
     pub global_vars: &'a mut BTreeMap<String, usize>,
 
     pub logs: &'a mut AnalysisLogs,
+
+    pub inferred_language: Option<TargetLanguage>, // New field
 }
 
 impl<'a> SnippetCompilationContext for NodeCompilationContext<'a> {
     fn get_lang(&self) -> &TargetLanguage {
         self.compilation.lang
+    }
+
+    fn get_inferred_language(&self) -> Option<&TargetLanguage> {
+        self.inferred_language.as_ref()
+    }
+
+    fn set_inferred_language(&mut self, language: TargetLanguage) {
+        self.inferred_language = Some(language);
     }
 
     fn register_match_variable(&mut self) -> Result<Variable> {
@@ -410,6 +422,7 @@ pub(crate) fn get_definitions(
             scope_index: 0,
             global_vars,
             logs,
+            inferred_language: None, // Initialize the new inferred_language field
         };
 
         let tree = parser.parse_file(pattern, Some(Path::new(file)))?;
@@ -447,6 +460,7 @@ pub(crate) fn get_definitions(
             scope_index: 0,
             global_vars,
             logs,
+            inferred_language: None, // Initialize the new inferred_language field
         },
         &mut pattern_definitions,
         &mut predicate_definitions,

@@ -60,6 +60,7 @@ pub struct Problem {
     pub(crate) predicate_definitions: Vec<PredicateDefinition<MarzanoQueryContext>>,
     pub(crate) function_definitions: Vec<GritFunctionDefinition<MarzanoQueryContext>>,
     pub(crate) foreign_function_definitions: Vec<ForeignFunctionDefinition>,
+    pub inferred_language: Option<TargetLanguage>,  // New field for inferred language
 }
 
 impl Problem {
@@ -133,6 +134,7 @@ impl Problem {
         predicate_definitions: Vec<PredicateDefinition<MarzanoQueryContext>>,
         function_definitions: Vec<GritFunctionDefinition<MarzanoQueryContext>>,
         foreign_function_definitions: Vec<ForeignFunctionDefinition>,
+        inferred_language: Option<TargetLanguage>,  // New inferred language parameter
     ) -> Self {
         let mut hasher = Sha256::new();
         hasher.update(
@@ -163,6 +165,7 @@ impl Problem {
             predicate_definitions,
             function_definitions,
             foreign_function_definitions,
+            inferred_language,  // Set inferred language
         }
     }
 
@@ -180,6 +183,7 @@ impl Problem {
         predicate_definitions: Vec<PredicateDefinition<MarzanoQueryContext>>,
         function_definitions: Vec<GritFunctionDefinition<MarzanoQueryContext>>,
         foreign_function_definitions: Vec<ForeignFunctionDefinition>,
+        inferred_language: Option<TargetLanguage>,  // New inferred language parameter
     ) -> Self {
         let mut problem = Self::new_from_pattern(
             pattern,
@@ -193,6 +197,7 @@ impl Problem {
             predicate_definitions,
             function_definitions,
             foreign_function_definitions,
+            inferred_language,  // Pass inferred language
         );
         problem.tree = Some(tree);
         problem
@@ -527,7 +532,7 @@ impl Problem {
                 vec![],
                 owned_files,
                 &self.built_ins,
-                &self.language,
+                self.inferred_language.as_ref().unwrap_or(&self.language),  // Use inferred language
                 context,
                 self.name.clone(),
             ),
@@ -554,7 +559,7 @@ impl Problem {
             lazy_files,
             owned_files,
             &self.built_ins,
-            &self.language,
+            self.inferred_language.as_ref().unwrap_or(&self.language),
             context,
             self.name.clone(),
         );
