@@ -143,7 +143,6 @@ impl PatternLanguage {
 
         for n in traverse(cursor, Order::Pre).filter(|n| n.node.kind() == "languageSpecificSnippet")
         {
-            println!("{}", n.node.kind());
             let language = n.child_by_field_name("language");
             if let Some(language) = language {
                 if let Ok(language) = language.text() {
