@@ -28,8 +28,8 @@ use crate::{
 };
 use anyhow::Result;
 use clap::ValueEnum;
-use grit_util::{traverse, Ast, AstNode, ByteRange, CodeRange, Language, Parser, SnippetTree};
-use grit_util::{AstCursor, Order};
+use grit_util::Order;
+use grit_util::{Ast, AstNode, ByteRange, CodeRange, Language, Parser, SnippetTree};
 use marzano_util::node_with_source::NodeWithSource;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -141,7 +141,8 @@ impl PatternLanguage {
         let binding = tree.root_node();
         let cursor = binding.walk();
 
-        for n in traverse(cursor, Order::Pre).filter(|n| n.node.kind() == "languageSpecificSnippet")
+        for n in grit_util::traverse(cursor, Order::Pre)
+            .filter(|n| n.node.kind() == "languageSpecificSnippet")
         {
             let language = n.child_by_field_name("language");
             if let Some(language) = language {
