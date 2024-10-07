@@ -29,6 +29,7 @@ fn run_test_workflow() -> Result<()> {
     Ok(())
 }
 
+// Ensure we can list workflows from ~/.grit/workflows
 #[test]
 fn lists_user_workflow() -> Result<()> {
     let (_temp_dir, dir) = get_fixture("other_dir", false)?;
@@ -49,6 +50,34 @@ fn lists_user_workflow() -> Result<()> {
     let stdout = String::from_utf8(output.stdout)?;
     assert!(stdout.contains("goodbye"));
     assert!(stdout.contains("hello"));
+
+    Ok(())
+}
+
+// Ensure we can apply user workflows from ~/.grit/workflows
+#[test]
+fn applies_user_workflows() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("other_dir", false)?;
+    let (_user_config, user_dir) = get_fixture("user_pattern", false)?;
+    let user_grit_dir = user_dir.join(REPO_CONFIG_DIR_NAME);
+
+    let mut cmd = get_test_cmd()?;
+    cmd.current_dir(dir.as_path());
+    cmd.arg("apply")
+        .arg("hello")
+        .env("GRIT_USER_CONFIG", user_grit_dir);
+    let output = cmd.output()?;
+    println!("stdout: {:?}", String::from_utf8(output.stdout.clone())?);
+    println!("stderr: {:?}", String::from_utf8(output.stderr.clone())?);
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully"
+    );
+
+    let stdout = String::from_utf8(output.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    panic!("test not implemented");
 
     Ok(())
 }
