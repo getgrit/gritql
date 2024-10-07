@@ -40,7 +40,7 @@ fn lists_user_workflow() -> Result<()> {
     cmd.current_dir(dir.as_path());
     cmd.arg("workflows")
         .arg("list")
-        .env("GRIT_USER_CONFIG", user_grit_dir);
+        .env("TEST_ONLY_GRIT_USER_CONFIG", user_grit_dir);
     let output = cmd.output()?;
 
     println!("stdout: {:?}", String::from_utf8(output.stdout.clone())?);
@@ -70,7 +70,7 @@ fn applies_user_workflows() -> Result<()> {
     cmd.current_dir(dir.as_path());
     cmd.arg("apply")
         .arg("hello")
-        .env("GRIT_USER_CONFIG", user_grit_dir);
+        .env("TEST_ONLY_GRIT_USER_CONFIG", user_grit_dir);
     let output = cmd.output()?;
     println!("stdout: {:?}", String::from_utf8(output.stdout.clone())?);
     println!("stderr: {:?}", String::from_utf8(output.stderr.clone())?);

@@ -191,8 +191,9 @@ async fn dir_has_config(grit_parent_dir: PathBuf) -> bool {
 /// This will default to ~/.grit, but can be overridden with the GRIT_USER_CONFIG environment variable.
 pub fn find_user_grit_dir() -> Option<PathBuf> {
     // To avoid confusing tests with the developer's real user config, we have a special env var just for tests
-    #[cfg(test)]
-    {
+    // We use CARGO_PKG_VERSION as a way to determine if we are running in a test environment
+    // Note that #[cfg(test)] doesn't work here because we are in a different package and also want to test binaries.
+    if env::var("CARGO_PKG_VERSION").is_ok() {
         if let Ok(user_grit) = env::var("TEST_ONLY_GRIT_USER_CONFIG") {
             let user_path = PathBuf::from_str(&user_grit).unwrap();
             return Some(user_path);
