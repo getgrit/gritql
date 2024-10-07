@@ -31,7 +31,7 @@ fn run_test_workflow() -> Result<()> {
 
 #[test]
 fn lists_user_workflow() -> Result<()> {
-    let (_temp_dir, dir) = get_fixture("format", false)?;
+    let (_temp_dir, dir) = get_fixture("other_dir", false)?;
     let (_user_config, user_dir) = get_fixture("user_pattern", false)?;
     let user_grit_dir = user_dir.join(REPO_CONFIG_DIR_NAME);
 
@@ -47,9 +47,8 @@ fn lists_user_workflow() -> Result<()> {
     );
 
     let stdout = String::from_utf8(output.stdout)?;
-    println!("stdout: {:?}", stdout);
-
-    panic!("not implemented");
+    assert!(stdout.contains("goodbye"));
+    assert!(stdout.contains("hello"));
 
     Ok(())
 }
