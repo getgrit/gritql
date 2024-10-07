@@ -100,7 +100,7 @@ fn lists_user_patterns() -> Result<()> {
     list.arg("patterns")
         .arg("list")
         .current_dir(dir.clone())
-        .env("GRIT_USER_CONFIG", user_dir.join(REPO_CONFIG_DIR_NAME));
+        .env("TEST_ONLY_GRIT_USER_CONFIG", user_dir.join(REPO_CONFIG_DIR_NAME));
 
     let output = list.output()?;
     assert!(
@@ -128,7 +128,7 @@ fn filters_for_user_patterns() -> Result<()> {
         .arg("list")
         .arg("--source=user")
         .current_dir(dir.clone())
-        .env("GRIT_USER_CONFIG", user_dir.join(REPO_CONFIG_DIR_NAME));
+        .env("TEST_ONLY_GRIT_USER_CONFIG", user_dir.join(REPO_CONFIG_DIR_NAME));
 
     let output = list.output()?;
     assert!(

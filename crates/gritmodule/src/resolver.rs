@@ -51,9 +51,7 @@ pub async fn find_user_patterns() -> Result<Vec<ResolvedGritDefinition>> {
     let mut resolved_patterns: HashMap<String, HashMap<String, ResolvedGritDefinition>> =
         HashMap::new();
     let mut errored_patterns = HashMap::new();
-    if let Some(user_dir) = find_user_config_dir() {
-        let user_grit = user_dir.join(REPO_CONFIG_DIR_NAME);
-        let user_dir = user_dir.to_string_lossy().to_string();
+    if let Some(user_dir) = find_user_config_module() {
         let user_patterns = resolve_patterns_for_module(
             &None,
             &user_dir,
@@ -72,7 +70,7 @@ pub async fn find_user_patterns() -> Result<Vec<ResolvedGritDefinition>> {
                 let definition = ResolvedGritDefinition {
                     config: pattern.config,
                     module: DefinitionSource::Config(GritUserConfig {
-                        path: user_grit.clone(),
+                        path: user_dir.clone().into(),
                     }),
                     local_name: local_name.clone(),
                     body,
@@ -188,32 +186,43 @@ async fn dir_has_config(grit_parent_dir: PathBuf) -> bool {
     false
 }
 
-fn find_user_config_dir() -> Option<PathBuf> {
-    let user_dir = match env::var("GRIT_USER_CONFIG").ok() {
-        Some(user_grit) => {
+/// Find a user .grit directory
+///
+/// This will default to ~/.grit, but can be overridden with the GRIT_USER_CONFIG environment variable.
+pub fn find_user_grit_dir() -> Option<PathBuf> {
+    // To avoid confusing tests with the developer's real user config, we have a special env var just for tests
+    // We use CARGO_PKG_VERSION as a way to determine if we are running in a test environment
+    // Note that #[cfg(test)] doesn't work here because we are in a different package and also want to test binaries.
+    if env::var("CARGO_PKG_VERSION").is_ok() {
+        if let Ok(user_grit) = env::var("TEST_ONLY_GRIT_USER_CONFIG") {
             let user_path = PathBuf::from_str(&user_grit).unwrap();
-            Some(
-                user_path
-                    .parent()
-                    .map(|p| p.to_path_buf())
-                    .unwrap_or(user_path),
-            )
-        }
-        None => match get_my_home() {
-            Ok(user_dir) => user_dir,
-            Err(_) => None,
-        },
-    };
-    if let Some(user_dir) = user_dir {
-        let user_grit = user_dir.join(REPO_CONFIG_DIR_NAME);
-        if user_grit.exists() {
-            Some(user_dir)
+            return Some(user_path);
         } else {
-            None
+            return None;
         }
-    } else {
-        None
     }
+
+    if let Ok(user_grit) = env::var("GRIT_USER_CONFIG") {
+        let user_path = PathBuf::from_str(&user_grit).unwrap();
+        return Some(user_path);
+    }
+    let Ok(Some(user_dir)) = get_my_home() else {
+        return None;
+    };
+    let user_grit = user_dir.join(REPO_CONFIG_DIR_NAME);
+    if user_grit.exists() {
+        return Some(user_grit);
+    }
+    None
+}
+
+/// Finds the parent of the user '.grit' directory,
+/// which we can use as a "module" (repo), since gritmodules always expect a repo.
+fn find_user_config_module() -> Option<String> {
+    let user_grit = find_user_grit_dir()?;
+    let user_dir = user_grit.parent()?;
+    let user_dir = user_dir.to_string_lossy().to_string();
+    Some(user_dir)
 }
 
 pub async fn get_grit_files(
@@ -256,8 +265,7 @@ pub async fn get_grit_files(
         processed_modules.insert(provider_name);
     }
 
-    if let Some(user_dir) = find_user_config_dir() {
-        let user_dir = user_dir.to_string_lossy().to_string();
+    if let Some(user_dir) = find_user_config_module() {
         get_grit_files_for_module(&None, &user_dir, &mut grit_files, &mut processing_modules)
             .await?;
     }
@@ -315,9 +323,7 @@ pub async fn resolve_patterns(
         remote_references.insert(provider_name, res);
     }
 
-    if let Some(user_dir) = find_user_config_dir() {
-        let user_grit = user_dir.join(REPO_CONFIG_DIR_NAME);
-        let user_dir = user_dir.to_string_lossy().to_string();
+    if let Some(user_dir) = find_user_config_module() {
         let user_patterns = resolve_patterns_for_module(
             &None,
             &user_dir,
@@ -338,7 +344,7 @@ pub async fn resolve_patterns(
                     ResolvedGritDefinition {
                         config: pattern.config,
                         module: DefinitionSource::Config(GritUserConfig {
-                            path: user_grit.clone(),
+                            path: user_dir.clone().into(),
                         }),
                         local_name: local_name.clone(),
                         body,
