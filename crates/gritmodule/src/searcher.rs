@@ -7,7 +7,7 @@ use std::str::FromStr;
 use tokio::fs;
 
 use crate::markdown::GritDefinitionOverrides;
-use crate::resolver::find_user_config_dir;
+use crate::resolver::find_user_grit_dir;
 use crate::{
     config::{
         ModuleGritPattern, GRIT_GLOBAL_DIR_ENV, GRIT_MODULE_DIR, REPO_CONFIG_DIR_NAME,
@@ -165,9 +165,8 @@ pub async fn find_local_workflow_files(dir: PathBuf) -> Result<Vec<WorkflowInfo>
         Some(grit_dir) => find_workflow_files_in_grit_dir(PathBuf::from(grit_dir)).await?,
         None => return Ok(vec![]),
     };
-    let user_dir = find_user_config_dir();
+    let user_dir = find_user_grit_dir();
     if let Some(user_dir) = user_dir {
-        println!("user_dir: {}", user_dir.to_string_lossy());
         let user_list = find_workflow_files_in_grit_dir(user_dir).await?;
         list.extend(user_list);
     }

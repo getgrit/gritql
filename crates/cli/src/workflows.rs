@@ -433,6 +433,15 @@ pub async fn find_workflow_file_from(
         return Some(WorkflowInfo::new(PathBuf::from(path)));
     }
 
+    if let Some(user_grit) = marzano_gritmodule::resolver::find_user_grit_dir() {
+        let paths = get_workflow_paths(user_grit, workflow_path_or_name);
+
+        for path in paths {
+            if fs::metadata(&path).await.is_ok() {
+                return Some(WorkflowInfo::new(path));
+            }
+        }
+    }
     None
 }
 

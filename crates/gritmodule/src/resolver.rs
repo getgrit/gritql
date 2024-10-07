@@ -189,7 +189,7 @@ async fn dir_has_config(grit_parent_dir: PathBuf) -> bool {
 /// Find a user .grit directory
 ///
 /// This will default to ~/.grit, but can be overridden with the GRIT_USER_CONFIG environment variable.
-pub(crate) fn find_user_config_dir() -> Option<PathBuf> {
+pub fn find_user_grit_dir() -> Option<PathBuf> {
     if let Ok(user_grit) = env::var("GRIT_USER_CONFIG") {
         let user_path = PathBuf::from_str(&user_grit).unwrap();
         return Some(user_path);
@@ -207,7 +207,7 @@ pub(crate) fn find_user_config_dir() -> Option<PathBuf> {
 /// Finds the parent of the user '.grit' directory,
 /// which we can use as a "module" (repo), since gritmodules always expect a repo.
 fn find_user_config_module() -> Option<String> {
-    let user_grit = find_user_config_dir()?;
+    let user_grit = find_user_grit_dir()?;
     let user_dir = user_grit.parent()?;
     let user_dir = user_dir.to_string_lossy().to_string();
     Some(user_dir)
