@@ -56,6 +56,7 @@ fn lists_user_workflow() -> Result<()> {
 
 // Ensure we can apply user workflows from ~/.grit/workflows
 #[test]
+#[ignore = "No auth token is available in CI"]
 fn applies_user_workflows() -> Result<()> {
     let (_temp_dir, dir) = get_fixture("other_dir", false)?;
     let (_user_config, user_dir) = get_fixture("user_pattern", false)?;
