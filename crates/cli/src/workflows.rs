@@ -390,6 +390,13 @@ pub async fn fetch_remote_workflow(
     Ok(WorkflowInfo::new(temp_file_path))
 }
 
+/// Find a workflow file by its name or path, from a given current directory.
+///
+/// This handles fetching from:
+/// - Remote URLs (starting with https)
+/// - Explicit workflow paths, anywhere on the local filesystem
+/// - Named workflows (ex. "hello" will find `.grit/workflows/hello.ts` in the current directory)
+/// - Named workflows from user config (ex. "hello" will find `~/.grit/workflows/hello.ts`)
 pub async fn find_workflow_file_from(
     dir: PathBuf,
     workflow_path_or_name: &str,
@@ -416,19 +423,28 @@ pub async fn find_workflow_file_from(
         }
     }
 
-    let base_search_string = format!(
-        "{}/workflows/{}.ts",
-        REPO_CONFIG_DIR_NAME, workflow_path_or_name
-    );
-    let bundled_search_string = format!(
-        "{}/workflows/{}/index.ts",
-        REPO_CONFIG_DIR_NAME, workflow_path_or_name
-    );
-    let workflow_file = marzano_gritmodule::searcher::search(
-        dir,
-        &[base_search_string, bundled_search_string],
-        None,
-    )
-    .await;
-    workflow_file.map(|path| WorkflowInfo::new(PathBuf::from(path)))
+    let paths = get_workflow_paths(dir.join(REPO_CONFIG_DIR_NAME), workflow_path_or_name)
+        .iter()
+        .map(|p| p.to_string_lossy().to_string())
+        .collect::<Vec<String>>();
+
+    let workflow_file = marzano_gritmodule::searcher::search(dir, &paths, None).await;
+    if let Some(path) = workflow_file {
+        return Some(WorkflowInfo::new(PathBuf::from(path)));
+    }
+
+    None
+}
+
+fn get_workflow_paths(grit_dir: PathBuf, workflow_path_or_name: &str) -> Vec<PathBuf> {
+    let mut base_search_string = grit_dir.clone();
+    base_search_string.push("workflows");
+    base_search_string.push(format!("{}.ts", workflow_path_or_name));
+
+    let mut bundled_search_string = grit_dir;
+    bundled_search_string.push("workflows");
+    bundled_search_string.push(workflow_path_or_name);
+    bundled_search_string.push("index.ts");
+
+    vec![base_search_string, bundled_search_string]
 }
