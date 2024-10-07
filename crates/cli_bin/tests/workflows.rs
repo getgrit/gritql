@@ -35,24 +35,21 @@ fn lists_user_workflow() -> Result<()> {
     let (_user_config, user_dir) = get_fixture("user_pattern", false)?;
     let user_grit_dir = user_dir.join(REPO_CONFIG_DIR_NAME);
 
-    let mut lst_cmd = get_test_cmd()?;
-    apply_cmd.current_dir(dir.as_path());
-    apply_cmd
-        .arg("apply")
-        .arg("very_special_console_log")
-        .arg("whitespace.js")
+    let mut cmd = get_test_cmd()?;
+    cmd.current_dir(dir.as_path());
+    cmd.arg("workflows")
+        .arg("list")
         .env("GRIT_USER_CONFIG", user_grit_dir);
-    let output = apply_cmd.output()?;
+    let output = cmd.output()?;
     assert!(
         output.status.success(),
         "Command didn't finish successfully"
     );
 
     let stdout = String::from_utf8(output.stdout)?;
-    assert!(stdout.contains("Processed 1 files and found 1 matches"));
+    println!("stdout: {:?}", stdout);
 
-    let content: String = fs_err::read_to_string(dir.join("whitespace.js"))?;
-    assert_snapshot!(content);
+    panic!("not implemented");
 
     Ok(())
 }

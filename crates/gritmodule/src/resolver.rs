@@ -188,7 +188,7 @@ async fn dir_has_config(grit_parent_dir: PathBuf) -> bool {
     false
 }
 
-fn find_user_config_dir() -> Option<PathBuf> {
+pub(crate) fn find_user_config_dir() -> Option<PathBuf> {
     let user_dir = match env::var("GRIT_USER_CONFIG").ok() {
         Some(user_grit) => {
             let user_path = PathBuf::from_str(&user_grit).unwrap();
