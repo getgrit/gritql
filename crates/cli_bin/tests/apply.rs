@@ -2224,7 +2224,7 @@ fn applies_user_pattern() -> Result<()> {
         .arg("apply")
         .arg("very_special_console_log")
         .arg("whitespace.js")
-        .env("GRIT_USER_CONFIG", user_grit_dir);
+        .env("TEST_ONLY_GRIT_USER_CONFIG", user_grit_dir);
     let output = apply_cmd.output()?;
     assert!(
         output.status.success(),
