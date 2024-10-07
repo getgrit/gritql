@@ -192,11 +192,16 @@ async fn dir_has_config(grit_parent_dir: PathBuf) -> bool {
 pub fn find_user_grit_dir() -> Option<PathBuf> {
     // To avoid confusing tests with the developer's real user config, we have a special env var just for tests
     #[cfg(test)]
-    let grit_user_config_str = "TEST_ONLY_GRIT_USER_CONFIG";
-    #[cfg(not(test))]
-    let grit_user_config_str = "GRIT_USER_CONFIG";
+    {
+        if let Ok(user_grit) = env::var("TEST_ONLY_GRIT_USER_CONFIG") {
+            let user_path = PathBuf::from_str(&user_grit).unwrap();
+            return Some(user_path);
+        } else {
+            return None;
+        }
+    }
 
-    if let Ok(user_grit) = env::var(grit_user_config_str) {
+    if let Ok(user_grit) = env::var("GRIT_USER_CONFIG") {
         let user_path = PathBuf::from_str(&user_grit).unwrap();
         return Some(user_path);
     }

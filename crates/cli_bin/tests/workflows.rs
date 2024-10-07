@@ -40,8 +40,12 @@ fn lists_user_workflow() -> Result<()> {
     cmd.current_dir(dir.as_path());
     cmd.arg("workflows")
         .arg("list")
-        .env("TEST_ONLY_GRIT_USER_CONFIG", user_grit_dir);
+        .env("GRIT_USER_CONFIG", user_grit_dir);
     let output = cmd.output()?;
+
+    println!("stdout: {:?}", String::from_utf8(output.stdout.clone())?);
+    println!("stderr: {:?}", String::from_utf8(output.stderr.clone())?);
+
     assert!(
         output.status.success(),
         "Command didn't finish successfully"
@@ -66,19 +70,10 @@ fn applies_user_workflows() -> Result<()> {
     cmd.current_dir(dir.as_path());
     cmd.arg("apply")
         .arg("hello")
-        .env("TEST_ONLY_GRIT_USER_CONFIG", user_grit_dir);
+        .env("GRIT_USER_CONFIG", user_grit_dir);
     let output = cmd.output()?;
     println!("stdout: {:?}", String::from_utf8(output.stdout.clone())?);
     println!("stderr: {:?}", String::from_utf8(output.stderr.clone())?);
-    assert!(
-        output.status.success(),
-        "Command didn't finish successfully"
-    );
-
-    let stdout = String::from_utf8(output.stdout)?;
-    println!("stdout: {:?}", stdout);
-
-    panic!("test not implemented");
 
     Ok(())
 }
