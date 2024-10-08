@@ -29,6 +29,34 @@ fn run_test_workflow() -> Result<()> {
     Ok(())
 }
 
+#[test]
+fn lists_user_workflow_only_once() -> Result<()> {
+    let (_user_config, user_dir) = get_fixture("user_pattern", false)?;
+    let user_grit_dir = user_dir.join(REPO_CONFIG_DIR_NAME);
+
+    let mut cmd = get_test_cmd()?;
+    cmd.current_dir(user_dir.as_path());
+    cmd.arg("workflows")
+        .arg("list")
+        .env("TEST_ONLY_GRIT_USER_CONFIG", user_grit_dir);
+    let output = cmd.output()?;
+
+    println!("stdout: {:?}", String::from_utf8(output.stdout.clone())?);
+    println!("stderr: {:?}", String::from_utf8(output.stderr.clone())?);
+
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully"
+    );
+
+    let stdout = String::from_utf8(output.stdout)?;
+
+    let occurrences = stdout.matches("hello").count();
+    assert_eq!(occurrences, 1, "hello does not appear exactly once");
+
+    Ok(())
+}
+
 // Ensure we can list workflows from ~/.grit/workflows
 #[test]
 fn lists_user_workflow() -> Result<()> {
