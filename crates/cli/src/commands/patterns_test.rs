@@ -65,10 +65,12 @@ pub async fn get_marzano_pattern_test_results(
             if let PatternLanguage::Universal = chosen_lang {
                 return Ok(None);
             }
-            let libs = libs.get_language_directory_or_default(lang)?;
+            let libs = libs.get_language_directory_or_default(lang)
+                .context(format!("Failed to find language directory for pattern {}. Ensure the language is supported and correctly configured.", pattern.local_name.clone().unwrap_or_default()))?;
+
             let rich_pattern = resolver
                 .make_pattern(&pattern.body, pattern.local_name.clone())
-                .unwrap_or_else(|_| panic!("Failed to parse pattern {}", pattern.body));
+                .context(format!("Failed to parse pattern {}", pattern.body))?;
 
             let compiled = rich_pattern
                 .compile(&libs, None, None, None)
@@ -126,7 +128,6 @@ pub async fn get_marzano_pattern_test_results(
                         };
                         return Ok(Some(report));
                     }
-                    // TODO: this is super hacky, replace with thiserror! codes
                     if e.to_string().contains("No pattern found") {
                         Ok(None)
                     } else {
@@ -141,10 +142,8 @@ pub async fn get_marzano_pattern_test_results(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    // Filter out the None values
     let mut test_report = test_reports.into_iter().flatten().collect::<Vec<_>>();
 
-    // Now let's attempt formatting the results that need it
     for (lang, lang_results) in unformatted_results.into_iter() {
         let formatted_expected = format_rich_files(
             &lang,
@@ -227,7 +226,6 @@ pub async fn get_marzano_pattern_test_results(
             info!("✓ All {} samples passed.", total);
         }
         OutputFormat::Json => {
-            // Collect the test reports
             let mut sample_results = final_results
                 .values()
                 .map(|r| {
@@ -262,12 +260,12 @@ pub(crate) async fn run_patterns_test(
     arg: PatternsTestArgs,
     flags: GlobalFormatFlags,
 ) -> Result<()> {
-    let (mut patterns, _) = resolve_from_cwd(&Source::Local).await?;
-    let libs = get_grit_files_from_flags_or_cwd(&flags).await?;
+    let (mut patterns, _) = resolve_from_cwd(&Source::Local).await
+        .context("Failed to resolve patterns from the current directory. Ensure you are in the right directory.")?;
 
     if arg.filter.is_some() {
         let filter = arg.filter.as_ref().unwrap();
-        let regex = regex::Regex::new(filter)?;
+        let regex = regex::Regex::new(filter).context(format!("Invalid regex filter: '{}'. Please check your filter syntax.", filter))?;
         patterns = patterns
             .into_iter()
             .filter(|p| regex.is_match(&p.local_name))
@@ -334,7 +332,6 @@ async fn test_modified_path(
     }
     let modified_file_path = modified_file_path.to_string_lossy().to_string();
 
-    //temporary fix, until notify crate adds support for ignoring paths
     for path in &ignore_path {
         if modified_file_path.contains(path) {
             return Ok(());
@@ -427,15 +424,11 @@ async fn enable_watch_mode(
     output: OutputFormat,
 ) -> Result<()> {
     let path = Path::new(".grit");
-    // setup debouncer
     let (tx, rx) = std::sync::mpsc::channel();
-    // notify backend configuration
     let backend_config = notify::Config::default().with_poll_interval(Duration::from_millis(10));
-    // debouncer configuration
     let debouncer_config = Config::default()
         .with_timeout(Duration::from_millis(10))
         .with_notify_config(backend_config);
-    // select backend via fish operator, here PollWatcher backend
     let mut debouncer = new_debouncer_opt::<_, notify::PollWatcher>(debouncer_config, tx)?;
 
     debouncer.watcher().watch(path, RecursiveMode::Recursive)?;
@@ -446,7 +439,6 @@ async fn enable_watch_mode(
         .map(|p| (p.local_name.as_ref().unwrap(), p))
         .collect::<HashMap<_, _>>();
 
-    // event processing
     for result in rx {
         match result {
             Ok(event) => {
@@ -527,8 +519,6 @@ async fn get_modified_and_deleted_patterns(
         .map(|p| p.local_name.as_ref().unwrap())
         .collect::<Vec<_>>();
 
-    //modified_patterns = patterns which are updated/edited or newly created.
-    //deleted_patterns = patterns which are deleted. Only remaining dependents of deleted_patterns should gets tested.
     let mut deleted_patterns = <Vec<GritPatternTestInfo>>::new();
     for pattern in testable_patterns {
         if pattern.config.path.as_ref().unwrap() == modified_path
@@ -553,7 +543,6 @@ enum TestOutcome {
 struct TestReport {
     outcome: TestOutcome,
     message: Option<String>,
-    /// Sample test details
     samples: Vec<SampleTestResult>,
 }
 
@@ -576,7 +565,6 @@ fn update_results(
         }
         info!("{} {}", '✓', pattern_name);
 
-        // After replacing the first sample in a file, the offset of the second file will have changed.
         let mut byte_offset: isize = 0;
 
         for result in results {
