@@ -3,7 +3,7 @@ use ignore::Walk;
 use std::borrow::Cow;
 use std::path::Path;
 use std::path::PathBuf;
-use std::str::FromStr;
+
 use tokio::fs;
 
 use crate::markdown::GritDefinitionOverrides;
@@ -241,7 +241,6 @@ pub async fn find_repo_root_from(dir: PathBuf) -> Result<Option<String>> {
 pub async fn find_grit_modules_dir(dir: PathBuf) -> Result<PathBuf> {
     let grit_dir = find_grit_dir_from(dir).await;
     if let Some(grit_dir) = grit_dir {
-        let grit_dir = PathBuf::from(grit_dir);
         let grit_modules_dir = grit_dir.join(GRIT_MODULE_DIR);
         if grit_modules_dir.exists() {
             return Ok(grit_modules_dir);
@@ -283,7 +282,10 @@ mod tests {
         let config_file = find_grit_dir_from(PathBuf::from("fixtures/searcher/dir/nested"))
             .await
             .unwrap();
-        assert_eq!(config_file, "fixtures/searcher/dir/nested/.grit");
+        assert_eq!(
+            config_file,
+            PathBuf::from("fixtures/searcher/dir/nested/.grit")
+        );
     }
 
     #[tokio::test]
@@ -291,7 +293,10 @@ mod tests {
         let config_file = find_grit_dir_from(PathBuf::from("fixtures/searcher/another/nested"))
             .await
             .unwrap();
-        assert_eq!(config_file, "fixtures/searcher/another/.grit");
+        assert_eq!(
+            config_file,
+            PathBuf::from("fixtures/searcher/another/.grit")
+        );
     }
 
     #[tokio::test]
@@ -326,6 +331,6 @@ mod tests {
         Repository::clone(&remote, temp_dir.path()).unwrap();
         let config_file = find_grit_dir_from(temp_dir.path().into()).await;
         let exp_grit = temp_dir.path().join(".grit");
-        assert_eq!(config_file.unwrap(), exp_grit.to_str().unwrap());
+        assert_eq!(config_file.unwrap(), exp_grit);
     }
 }

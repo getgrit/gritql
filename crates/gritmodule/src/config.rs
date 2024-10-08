@@ -9,7 +9,7 @@ use std::{
     path::{Path, PathBuf},
     vec::Vec,
 };
-use std::{env, fmt, io::ErrorKind, str::FromStr};
+use std::{env, fmt, io::ErrorKind};
 use tokio::{fs, io::AsyncWriteExt};
 use tracing::instrument;
 
