@@ -8,5 +8,27 @@ import os
 import openai
 from flask import Flask, redirect, render_template, request, url_for
 
+import pytest
+
+def test_language_option_inline_pattern_apply():
+    # Set up the test environment and arguments
+    args = ["grit", "patterns", "list", "--lang", "python"]
+    expected_patterns = ["pattern1", "pattern2"]  # Example expected patterns for Python
+
+    # Run the command with the language argument
+    result = run_command(args)
+
+    # Assert that the output contains the expected patterns for the specified language
+    for pattern in expected_patterns:
+        assert pattern in result.output
+
+app = Flask(__name__)
+openai.api_key = dotenv.fetch("OPENAI_API_KEY")
+```
+
+<required_end>
+
+```
+</required_end>
 app = Flask(__name__)
 openai.api_key = dotenv.fetch("OPENAI_API_KEY")

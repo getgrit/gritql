@@ -33,9 +33,13 @@ impl Listable for ResolvedGritDefinition {
         normal_tags.extend(more_tags);
         normal_tags
     }
-}
 
 pub(crate) async fn run_patterns_list(arg: ListArgs, parent: GlobalFormatFlags) -> Result<()> {
     let (resolved, curr_repo) = resolve_from_flags_or_cwd(&parent, &arg.source).await?;
-    list_applyables(false, false, resolved, arg.level, &parent, curr_repo).await
+    let filtered_resolved: Vec<_> = if let Some(ref lang) = arg.lang {
+        resolved.into_iter().filter(|pattern| pattern.language().map_or(false, |l| l == lang)).collect()
+    } else {
+        resolved
+    };
+    list_applyables(false, false, filtered_resolved, arg.level, &parent, curr_repo).await
 }
