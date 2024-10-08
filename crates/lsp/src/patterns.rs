@@ -1,5 +1,3 @@
-use std::{path::PathBuf, str::FromStr};
-
 use anyhow::{Context, Result};
 use marzano_gritmodule::{
     config::{get_stdlib_modules, ResolvedGritDefinition, REPO_CONFIG_DIR_NAME},
