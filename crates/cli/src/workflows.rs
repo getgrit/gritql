@@ -130,7 +130,7 @@ where
         cwd,
         continue_on_failure: false,
         paths: arg.paths,
-        grit_dir,
+        grit_dir: grit_dir.map(|p| p.to_string_lossy().to_string()),
         verbose: arg.verbose,
         workflow_entrypoint: Some(arg.workflow_entrypoint),
         payload: vec![serde_json::Value::Object(arg.input)],

@@ -92,14 +92,14 @@ pub async fn search(
     current_path: PathBuf,
     config_file_names: &[String],
     stop_file: Option<&str>,
-) -> Option<String> {
+) -> Option<PathBuf> {
     let mut current_dir = current_path;
 
     loop {
         for config_file_name in config_file_names {
             let config_file = current_dir.join(config_file_name);
             if fs::metadata(&config_file).await.is_ok() {
-                return Some(config_file.to_str().unwrap().to_string());
+                return Some(config_file);
             }
         }
 
@@ -162,10 +162,13 @@ impl WorkflowInfo {
 pub async fn find_local_workflow_files(dir: PathBuf) -> Result<Vec<WorkflowInfo>> {
     let grit_dir = find_grit_dir_from(dir).await;
     let mut list = match grit_dir {
-        Some(grit_dir) => find_workflow_files_in_grit_dir(PathBuf::from(grit_dir)).await?,
+        Some(grit_dir) => find_workflow_files_in_grit_dir(grit_dir).await?,
         None => return Ok(vec![]),
     };
     let user_dir = find_user_grit_dir();
+    // if user_dir.map() {
+    //     return Ok(list);
+    // }
     if let Some(user_dir) = user_dir {
         let user_list = find_workflow_files_in_grit_dir(user_dir).await?;
         list.extend(user_list);
@@ -198,24 +201,23 @@ async fn find_workflow_files_in_grit_dir(grit_dir: PathBuf) -> Result<Vec<Workfl
     Ok(result)
 }
 
-pub async fn find_grit_dir_from(dir: PathBuf) -> Option<String> {
+pub async fn find_grit_dir_from(dir: PathBuf) -> Option<PathBuf> {
     search(dir, &[REPO_CONFIG_DIR_NAME.to_string()], Some(".git")).await
 }
 
-pub async fn find_git_dir_from(dir: PathBuf) -> Option<String> {
+pub async fn find_git_dir_from(dir: PathBuf) -> Option<PathBuf> {
     search(dir, &[".git".to_string()], None).await
 }
 
 pub async fn find_repo_root_from(dir: PathBuf) -> Result<Option<String>> {
     let git_dir = find_git_dir_from(dir).await;
-    if let Some(git_dir) = git_dir {
-        let git_path = PathBuf::from_str(&git_dir).unwrap();
+    if let Some(git_path) = git_dir {
         Ok(Some(
             git_path
                 .parent()
                 .context(format!(
                     "Unable to find repo root dir as parent of {}",
-                    git_dir
+                    git_path.to_string_lossy()
                 ))?
                 .to_string_lossy()
                 .to_string(),
