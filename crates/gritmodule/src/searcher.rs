@@ -166,7 +166,7 @@ pub async fn find_local_workflow_files(dir: PathBuf) -> Result<Vec<WorkflowInfo>
         None => return Ok(vec![]),
     };
     let user_dir = find_user_grit_dir();
-    // if user_dir.map() {
+    // if user_dir == grit_dir {
     //     return Ok(list);
     // }
     if let Some(user_dir) = user_dir {
