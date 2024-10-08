@@ -130,7 +130,7 @@ where
         cwd,
         continue_on_failure: false,
         paths: arg.paths,
-        grit_dir,
+        grit_dir: grit_dir.map(|p| p.to_string_lossy().to_string()),
         verbose: arg.verbose,
         workflow_entrypoint: Some(arg.workflow_entrypoint),
         payload: vec![serde_json::Value::Object(arg.input)],
@@ -430,7 +430,7 @@ pub async fn find_workflow_file_from(
 
     let workflow_file = marzano_gritmodule::searcher::search(dir, &paths, None).await;
     if let Some(path) = workflow_file {
-        return Some(WorkflowInfo::new(PathBuf::from(path)));
+        return Some(WorkflowInfo::new(path));
     }
 
     if let Some(user_grit) = marzano_gritmodule::resolver::find_user_grit_dir() {

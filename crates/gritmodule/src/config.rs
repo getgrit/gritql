@@ -9,7 +9,7 @@ use std::{
     path::{Path, PathBuf},
     vec::Vec,
 };
-use std::{env, fmt, io::ErrorKind, str::FromStr};
+use std::{env, fmt, io::ErrorKind};
 use tokio::{fs, io::AsyncWriteExt};
 use tracing::instrument;
 
@@ -403,21 +403,20 @@ pub async fn init_config_from_path<T: FetcherType>(
 ) -> Result<ConfigSource> {
     let existing_config = find_grit_dir_from(cwd.clone()).await;
     let config_path = match existing_config {
-        Some(config) => PathBuf::from_str(&config).unwrap(),
+        Some(config) => config,
         None => {
             if !create_local {
                 return init_global_grit_modules::<T>(None).await;
             }
-            let git_dir = match find_git_dir_from(cwd).await {
+            let git_path = match find_git_dir_from(cwd).await {
                 Some(dir) => dir,
                 None => {
                     return init_global_grit_modules::<T>(None).await;
                 }
             };
-            let git_path = PathBuf::from_str(&git_dir).unwrap();
             let repo_root = git_path.parent().context(format!(
                 "Unable to find repo root dir as parent of {}",
-                git_dir
+                git_path.display()
             ))?;
             let grit_dir = repo_root.join(REPO_CONFIG_DIR_NAME);
             let default_config = r#"version: 0.0.1

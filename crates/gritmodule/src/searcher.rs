@@ -3,7 +3,7 @@ use ignore::Walk;
 use std::borrow::Cow;
 use std::path::Path;
 use std::path::PathBuf;
-use std::str::FromStr;
+
 use tokio::fs;
 
 use crate::markdown::GritDefinitionOverrides;
@@ -92,14 +92,14 @@ pub async fn search(
     current_path: PathBuf,
     config_file_names: &[String],
     stop_file: Option<&str>,
-) -> Option<String> {
+) -> Option<PathBuf> {
     let mut current_dir = current_path;
 
     loop {
         for config_file_name in config_file_names {
             let config_file = current_dir.join(config_file_name);
             if fs::metadata(&config_file).await.is_ok() {
-                return Some(config_file.to_str().unwrap().to_string());
+                return Some(config_file);
             }
         }
 
@@ -161,11 +161,25 @@ impl WorkflowInfo {
 
 pub async fn find_local_workflow_files(dir: PathBuf) -> Result<Vec<WorkflowInfo>> {
     let grit_dir = find_grit_dir_from(dir).await;
-    let mut list = match grit_dir {
-        Some(grit_dir) => find_workflow_files_in_grit_dir(PathBuf::from(grit_dir)).await?,
-        None => return Ok(vec![]),
-    };
     let user_dir = find_user_grit_dir();
+    let is_user_dir_the_grit_dir = match (&user_dir, &grit_dir) {
+        (Some(user_dir), Some(grit_dir)) => {
+            let user_dir = user_dir.canonicalize()?;
+            let grit_dir = grit_dir.canonicalize()?;
+            user_dir == grit_dir
+        }
+        _ => false,
+    };
+
+    let mut list = match grit_dir {
+        Some(grit_dir) => find_workflow_files_in_grit_dir(grit_dir).await?,
+        None => vec![],
+    };
+
+    if is_user_dir_the_grit_dir {
+        return Ok(list);
+    }
+
     if let Some(user_dir) = user_dir {
         let user_list = find_workflow_files_in_grit_dir(user_dir).await?;
         list.extend(user_list);
@@ -198,24 +212,23 @@ async fn find_workflow_files_in_grit_dir(grit_dir: PathBuf) -> Result<Vec<Workfl
     Ok(result)
 }
 
-pub async fn find_grit_dir_from(dir: PathBuf) -> Option<String> {
+pub async fn find_grit_dir_from(dir: PathBuf) -> Option<PathBuf> {
     search(dir, &[REPO_CONFIG_DIR_NAME.to_string()], Some(".git")).await
 }
 
-pub async fn find_git_dir_from(dir: PathBuf) -> Option<String> {
+pub async fn find_git_dir_from(dir: PathBuf) -> Option<PathBuf> {
     search(dir, &[".git".to_string()], None).await
 }
 
 pub async fn find_repo_root_from(dir: PathBuf) -> Result<Option<String>> {
     let git_dir = find_git_dir_from(dir).await;
-    if let Some(git_dir) = git_dir {
-        let git_path = PathBuf::from_str(&git_dir).unwrap();
+    if let Some(git_path) = git_dir {
         Ok(Some(
             git_path
                 .parent()
                 .context(format!(
                     "Unable to find repo root dir as parent of {}",
-                    git_dir
+                    git_path.to_string_lossy()
                 ))?
                 .to_string_lossy()
                 .to_string(),
@@ -228,7 +241,6 @@ pub async fn find_repo_root_from(dir: PathBuf) -> Result<Option<String>> {
 pub async fn find_grit_modules_dir(dir: PathBuf) -> Result<PathBuf> {
     let grit_dir = find_grit_dir_from(dir).await;
     if let Some(grit_dir) = grit_dir {
-        let grit_dir = PathBuf::from(grit_dir);
         let grit_modules_dir = grit_dir.join(GRIT_MODULE_DIR);
         if grit_modules_dir.exists() {
             return Ok(grit_modules_dir);
@@ -270,7 +282,10 @@ mod tests {
         let config_file = find_grit_dir_from(PathBuf::from("fixtures/searcher/dir/nested"))
             .await
             .unwrap();
-        assert_eq!(config_file, "fixtures/searcher/dir/nested/.grit");
+        assert_eq!(
+            config_file,
+            PathBuf::from("fixtures/searcher/dir/nested/.grit")
+        );
     }
 
     #[tokio::test]
@@ -278,7 +293,10 @@ mod tests {
         let config_file = find_grit_dir_from(PathBuf::from("fixtures/searcher/another/nested"))
             .await
             .unwrap();
-        assert_eq!(config_file, "fixtures/searcher/another/.grit");
+        assert_eq!(
+            config_file,
+            PathBuf::from("fixtures/searcher/another/.grit")
+        );
     }
 
     #[tokio::test]
@@ -313,6 +331,6 @@ mod tests {
         Repository::clone(&remote, temp_dir.path()).unwrap();
         let config_file = find_grit_dir_from(temp_dir.path().into()).await;
         let exp_grit = temp_dir.path().join(".grit");
-        assert_eq!(config_file.unwrap(), exp_grit.to_str().unwrap());
+        assert_eq!(config_file.unwrap(), exp_grit);
     }
 }

@@ -755,7 +755,7 @@ pub async fn find_and_resolve_grit_dir(
     };
 
     match existing_config {
-        Some(config) => get_grit_files_from_known_grit_dir(&PathBuf::from(config), vec![]).await,
+        Some(config) => get_grit_files_from_known_grit_dir(&config, vec![]).await,
         None => match global_dir {
             Some(global_dir) => {
                 let stdlib_modules = get_stdlib_modules();

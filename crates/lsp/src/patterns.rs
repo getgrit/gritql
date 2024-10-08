@@ -1,5 +1,3 @@
-use std::{path::PathBuf, str::FromStr};
-
 use anyhow::{Context, Result};
 use marzano_gritmodule::{
     config::{get_stdlib_modules, ResolvedGritDefinition, REPO_CONFIG_DIR_NAME},
@@ -20,11 +18,10 @@ pub async fn prep_grit_modules(
     let existing_config = find_grit_dir_from(file_path).await;
     let stdlib_modules = get_stdlib_modules();
     let grit_parent = match existing_config {
-        Some(config) => {
-            let config_path = PathBuf::from_str(&config).unwrap();
+        Some(config_path) => {
             let parent = config_path.parent().context(format!(
                 "Unable to find parent of .grit directory at {}",
-                config
+                config_path.display()
             ))?;
             parent.to_path_buf()
         }

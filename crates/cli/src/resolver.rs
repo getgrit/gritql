@@ -3,7 +3,7 @@ use colored::Colorize;
 use core::fmt;
 use log::{info, warn};
 use serde::Serialize;
-use std::{collections::HashMap, path::PathBuf, str::FromStr};
+use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::{Context, Result};
 use marzano_gritmodule::{
@@ -101,19 +101,18 @@ pub async fn resolve_from(
     let stdlib_modules = get_stdlib_modules();
 
     match existing_config {
-        Some(config) => {
-            let config_path = PathBuf::from_str(&config).unwrap();
-            let grit_parent = PathBuf::from(config_path.parent().context(format!(
+        Some(config_path) => {
+            let grit_parent = config_path.parent().context(format!(
                 "Unable to find parent of .grit directory at {}",
-                config
-            ))?);
-            let parent_str = &grit_parent.to_string_lossy().to_string();
+                config_path.display()
+            ))?;
+            let parent_str = grit_parent.to_string_lossy();
             let repo = ModuleRepo::from_dir(&config_path).await;
             let resolved = match source {
-                Source::Local => find_local_patterns(&repo, parent_str).await?,
+                Source::Local => find_local_patterns(&repo, &parent_str).await?,
                 Source::All => {
                     let (resolved, errored_patterns) =
-                        resolve_patterns(&repo, parent_str, Some(stdlib_modules)).await?;
+                        resolve_patterns(&repo, &parent_str, Some(stdlib_modules)).await?;
                     log_errored_patterns(&errored_patterns);
                     resolved
                 }
