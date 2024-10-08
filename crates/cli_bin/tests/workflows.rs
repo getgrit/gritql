@@ -108,7 +108,6 @@ fn lists_user_workflows_with_empty_repo() -> Result<()> {
     );
 
     let stdout = String::from_utf8(output.stdout)?;
-    assert!(stdout.contains("goodbye"));
     assert!(stdout.contains("hello"));
 
     Ok(())

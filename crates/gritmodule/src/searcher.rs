@@ -161,14 +161,25 @@ impl WorkflowInfo {
 
 pub async fn find_local_workflow_files(dir: PathBuf) -> Result<Vec<WorkflowInfo>> {
     let grit_dir = find_grit_dir_from(dir).await;
+    let user_dir = find_user_grit_dir();
+    let is_user_dir_the_grit_dir = match (&user_dir, &grit_dir) {
+        (Some(user_dir), Some(grit_dir)) => {
+            let user_dir = user_dir.canonicalize()?;
+            let grit_dir = grit_dir.canonicalize()?;
+            user_dir == grit_dir
+        }
+        _ => false,
+    };
+
     let mut list = match grit_dir {
         Some(grit_dir) => find_workflow_files_in_grit_dir(grit_dir).await?,
-        None => return Ok(vec![]),
+        None => vec![],
     };
-    let user_dir = find_user_grit_dir();
-    // if user_dir == grit_dir {
-    //     return Ok(list);
-    // }
+
+    if is_user_dir_the_grit_dir {
+        return Ok(list);
+    }
+
     if let Some(user_dir) = user_dir {
         let user_list = find_workflow_files_in_grit_dir(user_dir).await?;
         list.extend(user_list);
