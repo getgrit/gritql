@@ -7,7 +7,6 @@ use super::{
 };
 use crate::{binding::Binding, constant::Constant, context::QueryContext, effects::Effect};
 use grit_util::{error::GritResult, AnalysisLogs, ByteRange, CodeRange, Range};
-use im::Vector;
 use itertools::Itertools;
 use std::{
     borrow::Cow,
@@ -104,7 +103,7 @@ pub trait ResolvedPattern<'a, Q: QueryContext>: Clone + Debug + PartialEq {
     fn extend(
         &mut self,
         with: Q::ResolvedPattern<'a>,
-        effects: &mut Vector<Effect<'a, Q>>,
+        effects: &mut Vec<Effect<'a, Q>>,
         language: &Q::Language<'a>,
     ) -> GritResult<()>;
 
@@ -297,7 +296,7 @@ impl<'a, Q: QueryContext> LazyBuiltIn<'a, Q> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct JoinFn<'a, Q: QueryContext> {
-    pub list: Vector<Q::ResolvedPattern<'a>>,
+    pub list: Vec<Q::ResolvedPattern<'a>>,
     separator: String,
 }
 

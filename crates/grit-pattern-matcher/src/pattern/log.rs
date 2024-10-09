@@ -60,9 +60,9 @@ impl<Q: QueryContext> Log<Q> {
             if self.message.is_none() {
                 message.push_str(&format!("Logging {}\n", name));
             }
-            let var_content = &state.bindings[var.try_scope().unwrap().into()]
+            let var_content = &state.bindings[var.try_scope().unwrap() as usize]
                 .last()
-                .unwrap()[var.try_index().unwrap().into()];
+                .unwrap()[var.try_index().unwrap() as usize];
             let value = var_content.value.as_ref();
             let src = value
                 .map(|v| {

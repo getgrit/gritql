@@ -6,7 +6,6 @@ use grit_pattern_matcher::{
     pattern::{FileRegistry, ResolvedPattern},
 };
 use grit_util::{error::GritResult, AnalysisLogs, Ast, CodeRange, Language};
-use im::Vector;
 use std::collections::HashMap;
 use std::ops::Range;
 use std::path::{Path, PathBuf};
@@ -28,7 +27,7 @@ type EffectOutcome = (
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn apply_effects<'a, Q: QueryContext>(
     code: &'a Q::Tree<'a>,
-    effects: Vector<Effect<'a, Q>>,
+    effects: Vec<Effect<'a, Q>>,
     files: &FileRegistry<'a, Q>,
     the_filename: &Path,
     new_filename: &mut PathBuf,

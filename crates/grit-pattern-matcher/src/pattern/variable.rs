@@ -211,9 +211,9 @@ impl Variable {
         state: &'b State<'a, Q>,
     ) -> GritResult<Option<PatternOrResolved<'a, 'b, Q>>> {
         let v = state.trace_var(self);
-        let content = &state.bindings[v.try_scope().unwrap().into()]
+        let content = &state.bindings[v.try_scope().unwrap() as usize]
             .last()
-            .unwrap()[v.try_index().unwrap().into()];
+            .unwrap()[v.try_index().unwrap() as usize];
         if let Some(pattern) = content.pattern {
             Ok(Some(PatternOrResolved::Pattern(pattern)))
         } else if let Some(resolved) = &content.value {
@@ -227,9 +227,9 @@ impl Variable {
         state: &'b mut State<'a, Q>,
     ) -> GritResult<Option<PatternOrResolvedMut<'a, 'b, Q>>> {
         let v = state.trace_var_mut(self);
-        let content = &mut state.bindings[v.try_scope().unwrap().into()]
-            .back_mut()
-            .unwrap()[v.try_index().unwrap().into()];
+        let content = &mut state.bindings[v.try_scope().unwrap() as usize]
+            .last_mut()
+            .unwrap()[v.try_index().unwrap() as usize];
         if let Some(pattern) = content.pattern {
             Ok(Some(PatternOrResolvedMut::Pattern(pattern)))
         } else if let Some(resolved) = &mut content.value {
@@ -255,10 +255,10 @@ impl Variable {
         state: &State<'a, Q>,
         lang: &Q::Language<'a>,
     ) -> GritResult<Cow<'a, str>> {
-        state.bindings[self.try_scope().unwrap().into()]
+        state.bindings[self.try_scope().unwrap() as usize]
             .last()
-            .unwrap()[self.try_index().unwrap().into()]
-        .text(state, lang)
+            .unwrap()[self.try_index().unwrap() as usize]
+            .text(state, lang)
     }
 
     fn execute_resolved<'a, Q: QueryContext>(
@@ -273,11 +273,11 @@ impl Variable {
             let index = self.get_index(state)?;
             let variable_content = state
                 .bindings
-                .get_mut(scope.into())
+                .get_mut(scope as usize)
                 .unwrap()
-                .back_mut()
+                .last_mut()
                 .unwrap()
-                .get_mut(index.into());
+                .get_mut(index as usize);
             let Some(variable_content) = variable_content else {
                 return Ok(None);
             };
@@ -317,11 +317,11 @@ impl Variable {
         for mirror in variable_mirrors {
             let mirror_content = &mut **(state
                 .bindings
-                .get_mut(mirror.scope.into())
+                .get_mut(mirror.scope as usize)
                 .unwrap()
-                .back_mut()
+                .last_mut()
                 .unwrap()
-                .get_mut(mirror.index.into())
+                .get_mut(mirror.index as usize)
                 .unwrap());
             if let Some(value) = &mut mirror_content.value {
                 if value.is_binding() {
@@ -362,11 +362,11 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
 
         let variable_content = state
             .bindings
-            .get_mut(scope.into())
+            .get_mut(scope as usize)
             .unwrap()
-            .back_mut()
+            .last_mut()
             .unwrap()
-            .get_mut(index.into());
+            .get_mut(index as usize);
         let Some(variable_content) = variable_content else {
             logs.add_warning(
                 None,
@@ -383,11 +383,11 @@ impl<Q: QueryContext> Matcher<Q> for Variable {
         }
         let variable_content = &mut **(state
             .bindings
-            .get_mut(scope.into())
+            .get_mut(scope as usize)
             .unwrap()
-            .back_mut()
+            .last_mut()
             .unwrap()
-            .get_mut(index.into())
+            .get_mut(index as usize)
             .unwrap());
         variable_content.value = Some(resolved_pattern.clone());
         variable_content
@@ -401,7 +401,7 @@ pub fn get_absolute_file_name<'a, Q: QueryContext>(
     state: &State<'a, Q>,
     lang: &Q::Language<'a>,
 ) -> GritResult<String> {
-    let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
+    let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX as usize]
         .last()
         .unwrap()[ABSOLUTE_PATH_INDEX]
         .value
@@ -416,7 +416,7 @@ pub fn get_file_name<'a, Q: QueryContext>(
     state: &State<'a, Q>,
     lang: &Q::Language<'a>,
 ) -> GritResult<String> {
-    let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
+    let file = state.bindings[GLOBAL_VARS_SCOPE_INDEX as usize]
         .last()
         .unwrap()[FILENAME_INDEX]
         .value

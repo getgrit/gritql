@@ -51,20 +51,20 @@ impl<Q: QueryContext> Matcher<Q> for FilePattern<Q> {
             .execute(&file.name(&state.files), state, context, logs)?;
 
         // Fill in the variables now - this is a bit of a hack
-        state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
-            .back_mut()
+        state.bindings[GLOBAL_VARS_SCOPE_INDEX as usize]
+            .last_mut()
             .unwrap()[PROGRAM_INDEX]
             .value = Some(file.binding(&state.files));
-        state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
-            .back_mut()
+        state.bindings[GLOBAL_VARS_SCOPE_INDEX as usize]
+            .last_mut()
             .unwrap()[FILENAME_INDEX]
             .value = Some(file.name(&state.files));
-        state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
-            .back_mut()
+        state.bindings[GLOBAL_VARS_SCOPE_INDEX as usize]
+            .last_mut()
             .unwrap()[ABSOLUTE_PATH_INDEX]
             .value = Some(file.name(&state.files));
-        state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
-            .back_mut()
+        state.bindings[GLOBAL_VARS_SCOPE_INDEX as usize]
+            .last_mut()
             .unwrap()[ABSOLUTE_PATH_INDEX]
             .value = Some(file.absolute_path(&state.files, context.language())?);
 

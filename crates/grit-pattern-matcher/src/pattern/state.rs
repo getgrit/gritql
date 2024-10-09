@@ -16,7 +16,6 @@ use grit_util::{
     error::{GritPatternError, GritResult},
     AnalysisLogs, CodeRange, Range, VariableMatch,
 };
-use im::{vector, Vector};
 use rand::SeedableRng;
 use std::ops::Range as StdRange;
 use std::{collections::HashMap, path::PathBuf};
@@ -40,7 +39,7 @@ pub struct FileRegistry<'a, Q: QueryContext> {
     /// Original file paths, for lazy loading
     file_paths: Vec<&'a PathBuf>,
     /// The actual FileOwner, which has the full file available
-    owners: Vector<Vector<&'a FileOwner<Q::Tree<'a>>>>,
+    owners: Vec<Vec<&'a FileOwner<Q::Tree<'a>>>>,
 }
 
 impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
@@ -100,7 +99,7 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
     pub fn new_from_paths(file_paths: Vec<&'a PathBuf>) -> Self {
         Self {
             version_count: file_paths.iter().map(|_| 0).collect(),
-            owners: file_paths.iter().map(|_| vector![]).collect(),
+            owners: file_paths.iter().map(|_| Vec::new()).collect(),
             file_paths,
         }
     }
@@ -135,19 +134,19 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
         }
     }
 
-    pub fn files(&self) -> &Vector<Vector<&'a FileOwner<Q::Tree<'a>>>> {
+    pub fn files(&self) -> &Vec<Vec<&'a FileOwner<Q::Tree<'a>>>> {
         &self.owners
     }
 
     pub fn push_revision(&mut self, pointer: &FilePtr, file: &'a FileOwner<Q::Tree<'a>>) {
         self.version_count[pointer.file as usize] += 1;
-        self.owners[pointer.file as usize].push_back(file)
+        self.owners[pointer.file as usize].push(file)
     }
 
     pub fn push_new_file(&mut self, file: &'a FileOwner<Q::Tree<'a>>) -> FilePtr {
         self.version_count.push(1);
         self.file_paths.push(&file.name);
-        self.owners.push_back(vector![file]);
+        self.owners.push(vec![file]);
         FilePtr {
             file: (self.owners.len() - 1) as u16,
             version: 0,
@@ -159,7 +158,7 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
 #[derive(Clone, Debug)]
 pub struct State<'a, Q: QueryContext> {
     pub bindings: VarRegistry<'a, Q>,
-    pub effects: Vector<Effect<'a, Q>>,
+    pub effects: Vec<Effect<'a, Q>>,
     pub files: FileRegistry<'a, Q>,
     rng: rand::rngs::StdRng,
     current_scope: usize,
@@ -253,7 +252,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
             rng: rand::rngs::StdRng::seed_from_u64(32),
             current_scope: 0,
             bindings,
-            effects: vector![],
+            effects: vec![],
             files: registry,
             pattern_scopes: HashMap::new(),
         }
@@ -284,7 +283,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         args: &'a [Option<Pattern<Q>>],
     ) -> ScopeTracker {
         let old_scope = self.bindings[scope].last().unwrap();
-        let new_scope: Vector<Box<VariableContent<Q>>> = old_scope
+        let new_scope: Vec<Box<VariableContent<Q>>> = old_scope
             .iter()
             .enumerate()
             .map(|(index, content)| {
@@ -301,7 +300,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
                 })
             })
             .collect();
-        self.bindings[scope].push_back(new_scope);
+        self.bindings[scope].push(new_scope);
 
         let old_scope_index = self.current_scope;
         self.current_scope = scope;
@@ -321,7 +320,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         } else {
             // The dynamic pattern definition is always in a *new* scope
             let registered_scope = self.bindings.len();
-            self.bindings.push_back(vector![vector![]]);
+            self.bindings.push(vec![vec![]]);
             self.pattern_scopes
                 .insert(name.to_string(), registered_scope);
             registered_scope
@@ -337,10 +336,10 @@ impl<'a, Q: QueryContext> State<'a, Q> {
     // https://doc.rust-lang.org/nomicon/borrow-splitting.html
     // todo split State in a sensible way.
     pub fn get_name(&self, var: &Variable) -> &str {
-        &self.bindings[var.try_scope().unwrap().into()]
+        &self.bindings[var.try_scope().unwrap() as usize]
             .last()
-            .unwrap()[var.try_index().unwrap().into()]
-        .name
+            .unwrap()[var.try_index().unwrap() as usize]
+            .name
     }
 
     /// Attempt to find a variable by name in any scope
@@ -372,10 +371,10 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         };
 
         let scope = self.current_scope;
-        let the_scope = self.bindings[self.current_scope].back_mut().unwrap();
+        let the_scope = self.bindings[self.current_scope].last_mut().unwrap();
         let index = the_scope.len();
 
-        the_scope.push_back(Box::new(VariableContent::new(name.to_string())));
+        the_scope.push(Box::new(VariableContent::new(name.to_string())));
         VariableScope::new(scope, index)
     }
 
@@ -400,7 +399,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         if let Ok(scope) = var.try_scope() {
             if let Ok(index) = var.try_index() {
                 if let Some(Pattern::Variable(v)) =
-                    &self.bindings[scope.into()].last().unwrap()[index.into()].pattern
+                    &self.bindings[scope as usize].last().unwrap()[index as usize].pattern
                 {
                     return self.trace_var(v);
                 }
@@ -413,7 +412,7 @@ impl<'a, Q: QueryContext> State<'a, Q> {
         if let Ok(scope) = var.get_scope(self) {
             if let Ok(index) = var.get_index(self) {
                 if let Some(Pattern::Variable(v)) =
-                    &self.bindings[scope.into()].last().unwrap()[index.into()].pattern
+                    &self.bindings[scope as usize].last().unwrap()[index as usize].pattern
                 {
                     return self.trace_var_mut(v);
                 }
@@ -469,4 +468,4 @@ impl<'a, Q: QueryContext> State<'a, Q> {
     }
 }
 
-pub type VarRegistry<'a, P> = Vector<Vector<Vector<Box<VariableContent<'a, P>>>>>;
+pub type VarRegistry<'a, P> = Vec<Vec<Vec<Box<VariableContent<'a, P>>>>>;
