@@ -67,7 +67,5 @@ fn test_runs_from_read_only_dir() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    panic!("test failed");
-
     Ok(())
 }
