@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::common::{get_fixture, get_test_cmd};
+use crate::common::get_fixture;
 use anyhow::Result;
 use assert_cmd::{cargo::cargo_bin, Command};
 use insta::assert_snapshot;
@@ -61,7 +61,7 @@ fn runs_doctor_from_read_only_dir() -> Result<()> {
 
 #[test]
 fn fails_stdlib_pattern_without_grit_config() -> Result<()> {
-    let (_temp_dir, fixture_dir) = get_fixture("stdlib", false)?;
+    let (_temp_dir, fixture_dir) = get_fixture("ro_file", false)?;
 
     let (_install_dir, bin_path) = prepare_read_only_install()?;
 
@@ -88,7 +88,7 @@ fn fails_stdlib_pattern_without_grit_config() -> Result<()> {
 
 #[test]
 fn run_stdlib_pattern_with_local_grit_config() -> Result<()> {
-    let (_temp_dir, fixture_dir) = get_fixture("stdlib", false)?;
+    let (_temp_dir, fixture_dir) = get_fixture("ro_file", false)?;
 
     let (_install_dir, bin_path) = prepare_read_only_install()?;
 
