@@ -338,9 +338,13 @@ async fn run_command(_use_tracing: bool) -> Result<()> {
     // Use this *only* for analytics, not for any other purpose.
     let analytics_args = std::env::args().collect::<Vec<_>>();
 
+    println!("we got here!");
+
     // Create and save installation ID if needed
     let mut updater = Updater::from_current_bin().await?;
     updater.dump().await?;
+
+    println!("we got here 2!");
 
     let mut analytics_child =
         match maybe_spawn_analytics_worker(&app.command, &analytics_args, &updater) {

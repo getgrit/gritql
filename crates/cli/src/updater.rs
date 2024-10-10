@@ -145,7 +145,7 @@ const KEYGEN_ACCOUNT: &str = "custodian-dev";
 
 #[derive(Debug)]
 pub struct Updater {
-    pub manifest_path: PathBuf,
+    pub manifest_path: Option<PathBuf>,
     pub install_path: PathBuf,
     bin_path: PathBuf,
     pub global_grit_path: PathBuf,
@@ -176,7 +176,7 @@ impl Updater {
 
         if let Ok(manifest) = read_manifest(&manifest_path).await {
             return Ok(Self {
-                manifest_path,
+                manifest_path: Some(manifest_path),
                 bin_path: install_path.join("bin"),
                 global_grit_path: install_path.join(REPO_CONFIG_DIR_NAME),
                 install_path,
@@ -191,10 +191,19 @@ impl Updater {
 
         let bin_path = install_path.join("bin");
         // Make sure it exists
-        async_fs::create_dir_all(&bin_path).await?;
+        if let Err(e) = async_fs::create_dir_all(&bin_path).await {
+            log::error!(
+                "Failed to create updater manifest, auto-updates will be disabled: {}",
+                e
+            );
+            return Err(anyhow::anyhow!(
+                "Failed to create updater manifest, auto-updates will be disabled: {}",
+                e
+            ));
+        }
         let global_grit_path = install_path.join(REPO_CONFIG_DIR_NAME);
         let updater = Self {
-            manifest_path: install_path.join(MANIFEST_FILE),
+            manifest_path: Some(install_path.join(MANIFEST_FILE)),
             install_path,
             bin_path,
             global_grit_path,
@@ -375,7 +384,10 @@ impl Updater {
 
     /// Dump the manifest to the manifest file
     pub async fn dump(&self) -> Result<()> {
-        let mut manifest_file = File::create(&self.manifest_path).await?;
+        let Some(manifest_path) = &self.manifest_path else {
+            return Ok(());
+        };
+        let mut manifest_file = File::create(&manifest_path).await?;
         let manifest = Manifest {
             binaries: self.binaries.clone(),
             #[cfg(feature = "updater")]

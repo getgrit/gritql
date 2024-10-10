@@ -39,10 +39,14 @@ pub(crate) async fn run_doctor(_arg: DoctorArgs) -> Result<()> {
     info!("{}", "Configuration".bold());
 
     let manifest_path = &updater.manifest_path;
-    info!(
-        "  Expected location: {}",
-        format!("{}", manifest_path.display()).underline().yellow()
-    );
+    if let Some(manifest_path) = manifest_path {
+        info!(
+            "  Expected location: {}",
+            format!("{}", manifest_path.display()).underline().yellow()
+        );
+    } else {
+        info!("  No install manifest found");
+    }
 
     let cwd = std::env::current_dir()?;
     let config = init_config_from_path::<KeepFetcherKind>(cwd.clone(), false).await?;
