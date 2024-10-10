@@ -85,7 +85,7 @@ impl<'a> MarzanoResolvedPattern<'a> {
                     snippets.push(ResolvedSnippet::Text(" ".into()));
                 }
                 snippets.pop();
-                Ok(snippets.into())
+                Ok(snippets)
             }
             MarzanoResolvedPattern::Map(map) => {
                 let mut snippets = Vec::new();
@@ -97,7 +97,7 @@ impl<'a> MarzanoResolvedPattern<'a> {
                 }
                 snippets.pop();
                 snippets.push(ResolvedSnippet::Text("}".into()));
-                Ok(snippets.into())
+                Ok(snippets)
             }
             MarzanoResolvedPattern::File(_) => Err(GritPatternError::new(
                 "cannot convert ResolvedPattern::File to ResolvedSnippet",
@@ -412,7 +412,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 }
             }
         }
-        Ok(Self::Snippets(parts.into()))
+        Ok(Self::Snippets(parts))
     }
 
     fn from_dynamic_pattern(
@@ -448,7 +448,7 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
                 for element in &list.elements {
                     elements.push(Self::from_dynamic_pattern(element, state, context, logs)?);
                 }
-                Ok(Self::List(elements.into()))
+                Ok(Self::List(elements))
             }
             DynamicPattern::Snippet(snippet) => {
                 Self::from_dynamic_snippet(snippet, state, context, logs)

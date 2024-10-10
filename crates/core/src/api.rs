@@ -112,9 +112,7 @@ impl MatchResult {
         }
     }
 
-    pub(crate) fn file_to_match_result(
-        file: &Vec<&FileOwner<Tree>>,
-    ) -> Result<Option<MatchResult>> {
+    pub(crate) fn file_to_match_result(file: &[&FileOwner<Tree>]) -> Result<Option<MatchResult>> {
         if file.is_empty() {
             bail!("cannot have file with no versions")
         } else if file.len() == 1 {
