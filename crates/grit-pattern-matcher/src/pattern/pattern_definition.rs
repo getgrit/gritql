@@ -88,8 +88,8 @@ impl<Q: QueryContext> PatternDefinition<Q> {
         let res = self.pattern.execute(binding, state, context, logs);
         state.exit_scope(tracker);
 
-        let fn_state = state.bindings[scope].pop_back().unwrap();
-        let cur_fn_state = state.bindings[scope].back_mut().unwrap();
+        let fn_state = state.bindings[scope].pop().unwrap();
+        let cur_fn_state = state.bindings[scope].last_mut().unwrap();
         for (cur, last) in cur_fn_state.iter_mut().zip(fn_state) {
             cur.value_history.extend(last.value_history)
         }

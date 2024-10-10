@@ -23,21 +23,21 @@ pub fn insert_effect<'a, Q: QueryContext>(
     match left {
         PatternOrResolved::Pattern(Pattern::Variable(var)) => {
             let var = state.trace_var_mut(var);
-            if let Some(base) = state.bindings[var.try_scope().unwrap().into()]
-                .back_mut()
-                .unwrap()[var.try_index().unwrap().into()]
-            .value
-            .as_mut()
+            if let Some(base) = state.bindings[var.try_scope().unwrap() as usize]
+                .last_mut()
+                .unwrap()[var.try_index().unwrap() as usize]
+                .value
+                .as_mut()
             {
                 base.extend(replacement, &mut state.effects, context.language())?;
                 Ok(true)
             } else {
                 Err(GritPatternError::new(format!(
                     "Variable {} is not bound",
-                    state.bindings[var.try_scope().unwrap().into()]
+                    state.bindings[var.try_scope().unwrap() as usize]
                         .last()
-                        .unwrap()[var.try_index().unwrap().into()]
-                    .name
+                        .unwrap()[var.try_index().unwrap() as usize]
+                        .name
                 )))
             }
         }

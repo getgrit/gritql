@@ -565,7 +565,7 @@ impl Problem {
         let mut state = State::new(bindings, file_registry);
 
         let the_new_files = state.bindings[GLOBAL_VARS_SCOPE_INDEX as usize]
-            .back_mut()
+            .last_mut()
             .unwrap()[NEW_FILES_INDEX]
             .as_mut();
         the_new_files.value = Some(MarzanoResolvedPattern::from_list_parts([].into_iter()));

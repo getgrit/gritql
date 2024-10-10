@@ -74,9 +74,9 @@ impl<Q: QueryContext> Rewrite<Q> {
                         ..
                     }) = state
                         .bindings
-                        .get(var.try_scope().unwrap().into())
+                        .get(var.try_scope().unwrap() as usize)
                         .and_then(|scope| {
-                            scope.last().unwrap().get(var.try_index().unwrap().into())
+                            scope.last().unwrap().get(var.try_index().unwrap() as usize)
                         })
                         .cloned()
                         .map(|b| *b)

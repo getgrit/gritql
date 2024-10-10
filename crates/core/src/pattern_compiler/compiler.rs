@@ -26,7 +26,6 @@ use grit_util::{
     error::GritPatternError, traverse, AnalysisLogs, Ast, AstNode, ByteRange, FileRange, Order,
     Range, VariableMatch,
 };
-use im::{vector, Vector};
 use itertools::Itertools;
 use marzano_language::{
     self, grit_parser::MarzanoGritParser, language::Tree, target_language::TargetLanguage,
@@ -716,11 +715,11 @@ impl VariableLocations {
 
     pub(crate) fn initial_bindings(
         &self,
-    ) -> Vector<Vector<Vector<Box<VariableContent<MarzanoQueryContext>>>>> {
+    ) -> Vec<Vec<Vec<Box<VariableContent<MarzanoQueryContext>>>>> {
         self.locations
             .iter()
             .map(|scope| {
-                vector![scope
+                vec![scope
                     .iter()
                     .map(|s| Box::new(VariableContent::new(s.name().to_string())))
                     .collect()]

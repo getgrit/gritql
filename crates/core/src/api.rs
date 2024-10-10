@@ -3,7 +3,6 @@ use anyhow::{bail, Result};
 use grit_pattern_matcher::file_owners::FileOwner;
 pub use grit_util::ByteRange;
 use grit_util::{AnalysisLog as GritAnalysisLog, Ast, Position, Range, VariableMatch};
-use im::Vector;
 use marzano_language::grit_ts_node::grit_node_types;
 use marzano_language::language::{MarzanoLanguage, Tree};
 use serde::{Deserialize, Serialize};
@@ -113,9 +112,7 @@ impl MatchResult {
         }
     }
 
-    pub(crate) fn file_to_match_result(
-        file: &Vector<&FileOwner<Tree>>,
-    ) -> Result<Option<MatchResult>> {
+    pub(crate) fn file_to_match_result(file: &[&FileOwner<Tree>]) -> Result<Option<MatchResult>> {
         if file.is_empty() {
             bail!("cannot have file with no versions")
         } else if file.len() == 1 {
@@ -136,8 +133,8 @@ impl MatchResult {
             }
         } else {
             return Ok(Some(MatchResult::Rewrite(Rewrite::file_to_rewrite(
-                file.front().unwrap(),
-                file.back().unwrap(),
+                file.first().unwrap(),
+                file.last().unwrap(),
             )?)));
         }
     }

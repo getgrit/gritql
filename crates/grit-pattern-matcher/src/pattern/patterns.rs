@@ -235,8 +235,8 @@ impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
         logs: &mut AnalysisLogs,
     ) -> GritResult<bool> {
         if let Some(file) = binding.get_file() {
-            state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
-                .back_mut()
+            state.bindings[GLOBAL_VARS_SCOPE_INDEX as usize]
+                .last_mut()
                 .unwrap()[FILENAME_INDEX]
                 .value = Some(file.name(&state.files));
         }

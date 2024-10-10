@@ -22,7 +22,6 @@ use grit_util::{
     error::{GritPatternError, GritResult},
     AnalysisLogs, Ast, FileOrigin, InputRanges, MatchRanges,
 };
-use im::vector;
 use marzano_language::{
     language::{MarzanoLanguage, Tree},
     target_language::TargetLanguage,
@@ -332,7 +331,7 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
             };
         }
 
-        let Some(new_files) = state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
+        let Some(new_files) = state.bindings[GLOBAL_VARS_SCOPE_INDEX as usize]
             .last()
             .and_then(|binding| binding[NEW_FILES_INDEX].value.as_ref())
             .and_then(ResolvedPattern::get_list_items)
@@ -375,9 +374,9 @@ impl<'a> ExecContext<'a, MarzanoQueryContext> for MarzanoContext<'a> {
             let _ = state.files.push_new_file(self.files().last().unwrap());
         }
 
-        state.effects = vector![];
-        let the_new_files = state.bindings[GLOBAL_VARS_SCOPE_INDEX.into()]
-            .back_mut()
+        state.effects = vec![];
+        let the_new_files = state.bindings[GLOBAL_VARS_SCOPE_INDEX as usize]
+            .last_mut()
             .unwrap()[NEW_FILES_INDEX]
             .as_mut();
         the_new_files.value = Some(ResolvedPattern::from_list_parts([].into_iter()));

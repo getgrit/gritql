@@ -13,7 +13,6 @@ use grit_pattern_matcher::{
     },
 };
 use grit_util::{AnalysisLogs, CodeRange, Language};
-use im::Vector;
 use itertools::Itertools;
 use rand::prelude::SliceRandom;
 use rand::Rng;
@@ -422,10 +421,10 @@ fn distinct_fn<'a>(
     let list = args.into_iter().next().unwrap();
     match list {
         Some(MarzanoResolvedPattern::List(list)) => {
-            let mut unique_list = Vector::new();
+            let mut unique_list = Vec::new();
             for item in list {
                 if !unique_list.contains(&item) {
-                    unique_list.push_back(item);
+                    unique_list.push(item);
                 }
             }
             Ok(MarzanoResolvedPattern::List(unique_list))
@@ -433,11 +432,11 @@ fn distinct_fn<'a>(
         Some(MarzanoResolvedPattern::Binding(binding)) => match binding.last() {
             Some(b) => {
                 if let Some(list_items) = b.list_items() {
-                    let mut unique_list = Vector::new();
+                    let mut unique_list = Vec::new();
                     for item in list_items {
                         let resolved = ResolvedPattern::from_node_binding(item);
                         if !unique_list.contains(&resolved) {
-                            unique_list.push_back(resolved);
+                            unique_list.push(resolved);
                         }
                     }
                     Ok(MarzanoResolvedPattern::List(unique_list))
