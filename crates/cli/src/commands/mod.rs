@@ -340,7 +340,12 @@ async fn run_command(_use_tracing: bool) -> Result<()> {
 
     // Create and save installation ID if needed
     let mut updater = Updater::from_current_bin().await?;
-    updater.dump().await?;
+    if let Err(e) = updater.dump().await {
+        log::error!(
+            "Failed to save manifest, auto-updates will be disabled: {}",
+            e
+        );
+    }
 
     let mut analytics_child =
         match maybe_spawn_analytics_worker(&app.command, &analytics_args, &updater) {

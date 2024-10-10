@@ -190,8 +190,7 @@ impl Updater {
         }
 
         let bin_path = install_path.join("bin");
-        // Make sure it exists
-        async_fs::create_dir_all(&bin_path).await?;
+
         let global_grit_path = install_path.join(REPO_CONFIG_DIR_NAME);
         let updater = Self {
             manifest_path: install_path.join(MANIFEST_FILE),
@@ -324,8 +323,20 @@ impl Updater {
             app_name: app.get_base_name(),
         });
         updater.configure_version_specifier(axoupdater::UpdateRequest::LatestMaybePrerelease);
+
+        let our_bin = &self.install_path.join("bin");
+
+        // Make sure it exists
+        if let Err(e) = async_fs::create_dir_all(&our_bin).await {
+            return Err(anyhow::anyhow!(
+                "Failed to prepare install dir at {}: {}",
+                &our_bin.display(),
+                e
+            ));
+        }
+
         // add bin/ since axoupdater wants to know where bins go
-        updater.set_install_dir(&self.install_path.join("bin").to_string_lossy());
+        updater.set_install_dir(&our_bin.to_string_lossy());
         match updater.run().await {
             Ok(result) => {
                 if let Some(outcome) = result {
@@ -375,7 +386,13 @@ impl Updater {
 
     /// Dump the manifest to the manifest file
     pub async fn dump(&self) -> Result<()> {
-        let mut manifest_file = File::create(&self.manifest_path).await?;
+        let mut manifest_file =
+            File::create(&self.manifest_path)
+                .await
+                .context(anyhow::anyhow!(
+                    "Failed to create manifest file at {}",
+                    self.manifest_path.display()
+                ))?;
         let manifest = Manifest {
             binaries: self.binaries.clone(),
             #[cfg(feature = "updater")]

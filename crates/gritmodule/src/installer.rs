@@ -22,7 +22,7 @@ pub async fn install_default_stdlib(
                 }
                 Err(err) => {
                     bail!(
-                        "Failed to fetch standard library grit module {}: {}",
+                        "Failed to fetch standard library grit module {}. Try running `grit init` first to create a local .grit directory.\n\nOriginal error:{}",
                         stdlib.full_name,
                         err.to_string()
                     )

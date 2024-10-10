@@ -1,0 +1,7 @@
+---
+source: crates/cli_bin/tests/filesystem.rs
+expression: content
+---
+// This will be deleted
+
+// This should be an empty file now
