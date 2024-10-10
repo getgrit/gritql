@@ -190,17 +190,7 @@ impl Updater {
         }
 
         let bin_path = install_path.join("bin");
-        // Make sure it exists
-        if let Err(e) = async_fs::create_dir_all(&bin_path).await {
-            log::error!(
-                "Failed to create updater manifest, auto-updates will be disabled: {}",
-                e
-            );
-            return Err(anyhow::anyhow!(
-                "Failed to create updater manifest, auto-updates will be disabled: {}",
-                e
-            ));
-        }
+
         let global_grit_path = install_path.join(REPO_CONFIG_DIR_NAME);
         let updater = Self {
             manifest_path: Some(install_path.join(MANIFEST_FILE)),
@@ -333,8 +323,20 @@ impl Updater {
             app_name: app.get_base_name(),
         });
         updater.configure_version_specifier(axoupdater::UpdateRequest::LatestMaybePrerelease);
+
+        let our_bin = &self.install_path.join("bin");
+
+        // Make sure it exists
+        if let Err(e) = async_fs::create_dir_all(&our_bin).await {
+            return Err(anyhow::anyhow!(
+                "Failed to prepare install dir at {}: {}",
+                &our_bin.display(),
+                e
+            ));
+        }
+
         // add bin/ since axoupdater wants to know where bins go
-        updater.set_install_dir(&self.install_path.join("bin").to_string_lossy());
+        updater.set_install_dir(&our_bin.to_string_lossy());
         match updater.run().await {
             Ok(result) => {
                 if let Some(outcome) = result {

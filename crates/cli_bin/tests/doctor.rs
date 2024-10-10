@@ -54,26 +54,18 @@ fn test_runs_from_read_only_dir() -> Result<()> {
     let mut cmd = Command::new(dest_path);
     cmd.arg("doctor");
 
-    // List files in temp dir, recursively
-    let mut stack = vec![temp_dir.path().to_path_buf()];
+    let output = cmd.output()?;
 
-    while let Some(current_dir) = stack.pop() {
-        for entry in fs::read_dir(&current_dir)? {
-            let entry = entry?;
-            println!("entry: {}", entry.path().display());
-            if entry.path().is_dir() {
-                stack.push(entry.path());
-            }
-        }
-    }
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    println!("stderr: {}", stderr);
 
-    let stderr = cmd.output()?.stderr;
-    let stderr_str = String::from_utf8_lossy(&stderr);
-    println!("stderr: {}", stderr_str);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    println!("stdout: {}", stdout);
 
-    let stdout = cmd.output()?.stdout;
-    let stdout_str = String::from_utf8_lossy(&stdout);
-    println!("stdout: {}", stdout_str);
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully"
+    );
 
     panic!("test failed");
 
