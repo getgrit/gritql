@@ -108,6 +108,7 @@ fn match_pattern_libs(
 
     let pattern =
         src_to_problem_libs(pattern, libs, default_language, None, None, None, None)?.problem;
+    println!("PATTERN: {:?}", pattern);
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), src.to_owned()), context);
     let mut execution_result = ExecutionResult {
         input_file_debug_text: "".to_string(),
@@ -2399,6 +2400,68 @@ fn python_easy_sub() {
             |        return [insight.insight_key for insight in insights]"#
                 .trim_margin()
                 .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn tsx_type_context() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |engine marzano(0.1)
+                |language js
+                |
+                |`function matchingMethod($_): $type {
+                | $body
+                |}` where {
+                |    $type <: `Array` => `Array<string>`
+                |}"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+            |function matchingMethod(bob): Array {
+            |  console.log("ok")
+            |}"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+            |function matchingMethod(bob): Array<string> {
+            |  console.log("ok")
+            |}"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+#[test]
+fn python_type_context() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |engine marzano(0.1)
+                |language python
+                |
+                |`def matching_method($_) -> $type:
+                | $body` where {
+                |    $type <: `List` => `List[str]`
+                |}"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+            |def matching_method(bob) -> List:
+            |  print("ok")
+            |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+            |def matching_method(bob) -> List[str]:
+            |  print("ok")
+            |"#
+            .trim_margin()
+            .unwrap(),
         }
     })
     .unwrap();
