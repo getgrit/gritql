@@ -21,6 +21,10 @@ impl NodeCompiler for WithinCompiler {
             .child_by_field_name("pattern")
             .ok_or_else(|| anyhow!("missing pattern of pattern within"))?;
         let within = PatternCompiler::from_node(&within, context)?;
-        Ok(Within::new(within))
+        let until = node
+            .child_by_field_name("until")
+            .map(|n| PatternCompiler::from_node(&n, context))
+            .transpose()?;
+        Ok(Within::new(within, until))
     }
 }

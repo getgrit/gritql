@@ -13,6 +13,9 @@ use crate::{
 #[derive(Args, Debug, Serialize)]
 pub struct ListArgs {
     /// List only at or above an enforcement level.
+    /// List only items targeting a specific language.
+    #[clap(long = "language", alias = "lang")]
+    pub lang: Option<String>,
     #[clap(long = "level")]
     pub level: Option<EnforcementLevel>,
     /// List items from a specific source.
