@@ -10,11 +10,12 @@ use grit_util::{error::GritResult, AnalysisLogs, AstNode};
 #[derive(Debug, Clone)]
 pub struct Within<Q: QueryContext> {
     pub pattern: Pattern<Q>,
+    until: Option<Pattern<Q>>,
 }
 
 impl<Q: QueryContext> Within<Q> {
-    pub fn new(pattern: Pattern<Q>) -> Self {
-        Self { pattern }
+    pub fn new(pattern: Pattern<Q>, until: Option<Pattern<Q>>) -> Self {
+        Self { pattern, until }
     }
 }
 
@@ -50,15 +51,21 @@ impl<Q: QueryContext> Matcher<Q> for Within<Q> {
         };
         for n in node.ancestors() {
             let state = cur_state.clone();
-            if self.pattern.execute(
-                &ResolvedPattern::from_node_binding(n),
-                &mut cur_state,
-                context,
-                logs,
-            )? {
+            let resolved = ResolvedPattern::from_node_binding(n);
+            if self
+                .pattern
+                .execute(&resolved, &mut cur_state, context, logs)?
+            {
                 did_match = true;
+                // We still traverse upwards, so side effects can be applied to all ancestors
             } else {
                 cur_state = state;
+
+                if let Some(until) = &self.until {
+                    if until.execute(&resolved, &mut cur_state, context, logs)? {
+                        break;
+                    }
+                }
             }
         }
         if did_match {

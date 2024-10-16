@@ -7399,6 +7399,56 @@ fn simple_until() {
 }
 
 #[test]
+fn within_until() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |contains bubble `foo($x)` => `bar($x)` where {
+                |   $x <: within `wrapped($_)` until `stop($_)`
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |// not match:
+                |foo(10)
+                |// this will match, since it is inside a wrapped
+                |wrapped(() => {
+                |   foo(11)
+                |})
+                |// this will not match, since the wrap is outside the stop
+                |wrapped(() => {
+                |   stop(() => {
+                |      foo(12)
+                |   })
+                |})
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |// not match:
+                |foo(10)
+                |// this will match, since it is inside a wrapped
+                |wrapped(() => {
+                |   bar(11)
+                |})
+                |// this will not match, since the wrap is outside the stop
+                |wrapped(() => {
+                |   stop(() => {
+                |      foo(12)
+                |   })
+                |})
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn capitalize_no_args() {
     let pattern = r#"
         |language js
