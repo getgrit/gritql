@@ -21,7 +21,7 @@ jobs:
       BUILD_PLATFORM: amd64
     steps:
       - name: clone code
-        uses: namespacelabs/nscloud-checkout-action@v4
+        uses: namespacelabs/nscloud-checkout-action@v5
         with:
           submodules: recursive
       - name: Install Protoc
@@ -75,7 +75,7 @@ jobs:
       id-token: "write"
     steps:
       - name: clone code
-        uses: namespacelabs/nscloud-checkout-action@v4
+        uses: namespacelabs/nscloud-checkout-action@v5
         with:
           submodules: recursive
       - name: install Rust
@@ -99,7 +99,7 @@ jobs:
     runs-on: namespace-profile-standard-ubuntu22-amd64
     steps:
       - name: clone code
-        uses: namespacelabs/nscloud-checkout-action@v4
+        uses: namespacelabs/nscloud-checkout-action@v5
         with:
           submodules: recursive
       - name: install Rust

@@ -12,7 +12,7 @@ jobs:
     runs-on: namespace-profile-standard-ubuntu22-amd64
     steps:
       - name: clone code
-        uses: namespacelabs/nscloud-checkout-action@v4
+        uses: namespacelabs/nscloud-checkout-action@v5
         with:
           submodules: recursive
       - name: Install Protoc
