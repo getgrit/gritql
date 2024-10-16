@@ -57,7 +57,7 @@ impl<Q: QueryContext> Matcher<Q> for Within<Q> {
                 .execute(&resolved, &mut cur_state, context, logs)?
             {
                 did_match = true;
-                break;
+                // We still traverse upwards, so side effects can be applied to all ancestors
             } else {
                 cur_state = state;
 
