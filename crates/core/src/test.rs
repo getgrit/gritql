@@ -7406,7 +7406,7 @@ fn within_until() {
                 |language js
                 |
                 |contains bubble `foo($x)` => `bar($x)` where {
-                |   $x <: within `wrapped($x)` until `stop($_)`
+                |   $x <: within `wrapped($_)` until `stop($_)`
                 |}
                 |"#
             .trim_margin()
