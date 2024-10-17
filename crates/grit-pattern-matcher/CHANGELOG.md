@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0](https://github.com/getgrit/gritql/compare/grit-pattern-matcher-v0.4.0...grit-pattern-matcher-v0.5.0) - 2024-10-17
+
+### Added
+
+- add within until ([#540](https://github.com/getgrit/gritql/pull/540))
+
 ## [0.4.0](https://github.com/getgrit/gritql/compare/grit-pattern-matcher-v0.3.0...grit-pattern-matcher-v0.4.0) - 2024-10-10
 
 ### Added
