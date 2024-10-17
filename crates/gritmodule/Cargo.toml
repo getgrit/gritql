@@ -23,7 +23,7 @@ serde_yaml = { version = "0.9.25" }
 anyhow = { version = "1.0.70" }
 futures = { version = "0.3.29" }
 rand = { version = "0.8.5" }
-git2 = { version = "0.17.2", default-features = false, features = [
+git2 = { version = "0.19.0", default-features = false, features = [
   "vendored-openssl",
 ] }
 lazy_static = { version = "1.4.0" }

@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, bail, Result};
-use git2::Repository;
+use git2::{build::RepoBuilder, FetchOptions, Repository};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
@@ -271,7 +271,12 @@ fn clone_repo<'a>(
         None => repo.remote.to_string(),
     };
 
-    match Repository::clone(&remote, target_dir) {
+    let mut cloner = RepoBuilder::new();
+    let mut options = FetchOptions::new();
+    options.depth(1);
+    cloner.fetch_options(options);
+
+    match cloner.clone(&remote, target_dir) {
         Ok(_) => {}
         Err(e) => {
             if !target_dir.exists() {
@@ -445,6 +450,30 @@ mod tests {
                 .to_str()
                 .unwrap()
         );
+    }
+
+    #[test]
+    fn shallow_clone() {
+        let dir = tempdir().unwrap();
+        let fetcher = CleanFetcher::new(dir.path().to_path_buf(), None);
+        let repo = ModuleRepo {
+            host: "github.com".to_string(),
+            full_name: "getgrit/stdlib".to_string(),
+            remote: "http://github.com/getgrit/stdlib.git".to_string(),
+            provider_name: "github.com/getgrit/stdlib".to_string(),
+        };
+        let gritmodule_dir = fetcher.fetch_grit_module(&repo).unwrap();
+        let module_dir = dir.path().join("github.com/getgrit/stdlib");
+        assert_eq!(gritmodule_dir, module_dir.to_str().unwrap());
+        let output = std::process::Command::new("git")
+            .arg("rev-parse")
+            .arg("--is-shallow-repository")
+            .current_dir(&module_dir)
+            .output()
+            .expect("Failed to execute git command");
+
+        let is_shallow = String::from_utf8_lossy(&output.stdout).trim() == "true";
+        assert!(is_shallow, "Repository is not shallow");
     }
 
     #[test]
