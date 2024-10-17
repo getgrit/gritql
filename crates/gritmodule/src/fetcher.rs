@@ -448,6 +448,26 @@ mod tests {
     }
 
     #[test]
+    fn shallow_clone() {
+        let dir = tempdir().unwrap();
+        let fetcher = CleanFetcher::new(dir.path().to_path_buf(), None);
+        let repo = ModuleRepo {
+            host: "github.com".to_string(),
+            full_name: "getgrit/stdlib".to_string(),
+            remote: "http://github.com/getgrit/stdlib.git".to_string(),
+            provider_name: "github.com/getgrit/stdlib".to_string(),
+        };
+        let gritmodule_dir = fetcher.fetch_grit_module(&repo).unwrap();
+        assert_eq!(
+            gritmodule_dir,
+            dir.path()
+                .join("github.com/getgrit/stdlib")
+                .to_str()
+                .unwrap()
+        );
+    }
+
+    #[test]
     fn module_repo_from_https_remote() {
         let remote = "https://github.com/getgrit/rewriter.git";
         let repo = ModuleRepo::from_remote(remote).unwrap();
