@@ -2821,6 +2821,68 @@ def renamed(name):
     Ok(())
 }
 
+/// simple stdin example from documentation
+#[test]
+fn apply_stdin_simple() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
+
+    let input_file = r#"console.log(hello)"#;
+    let expected_output = r#"console.log(goodbye)"#;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`hello` => `goodbye`")
+        .arg("--stdin")
+        .arg("--lang")
+        .arg("js")
+        .current_dir(&fixture_dir);
+
+    cmd.write_stdin(String::from_utf8(input_file.into())?);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command should have succeeded");
+    assert!(stdout.contains(expected_output));
+
+    Ok(())
+}
+
+/// simple stdin example from documentation, but using a language alias
+#[test]
+fn apply_stdin_with_lang_alias() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
+
+    let input_file = r#"console.log(hello)"#;
+    let expected_output = r#"console.log(goodbye)"#;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`hello` => `goodbye`")
+        .arg("--stdin")
+        .arg("--lang")
+        .arg("javascript")
+        .current_dir(&fixture_dir);
+
+    cmd.write_stdin(String::from_utf8(input_file.into())?);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command should have succeeded");
+    assert!(stdout.contains(expected_output));
+
+    Ok(())
+}
+
 /// Ban multiple stdin paths
 #[test]
 fn apply_stdin_two_paths() -> Result<()> {
