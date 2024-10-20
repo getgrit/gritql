@@ -27,6 +27,7 @@ use crate::{
     yaml::Yaml,
 };
 use anyhow::Result;
+use clap::builder::{MapValueParser, PossibleValuesParser, TypedValueParser};
 use clap::ValueEnum;
 use grit_util::Order;
 use grit_util::{Ast, AstNode, ByteRange, CodeRange, Language, Parser, SnippetTree};
@@ -81,6 +82,17 @@ pub enum PatternLanguage {
     #[value(skip)]
     Universal,
 }
+
+// https://github.com/getgrit/gritql/issues/445
+// add any more language aliases here
+// you don't need to add the primary name, nor the extensions
+static LANGUAGE_ALIASES: &[(PatternLanguage, &'static [&'static str])] = &[
+    (PatternLanguage::JavaScript, &["javascript"]),
+    (PatternLanguage::TypeScript, &["typescript"]),
+    (PatternLanguage::Tsx, &["flow"]),
+    (PatternLanguage::Sql, &["mysql", "postgresql"]),
+    (PatternLanguage::PhpOnly, &["phponly"]),
+];
 
 impl fmt::Display for PatternLanguage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -171,6 +183,88 @@ impl PatternLanguage {
     pub fn get_language(src: &str) -> Option<Self> {
         let mut parser = MarzanoGritParser::new().unwrap();
         Self::get_language_with_parser(&mut parser, src)
+    }
+
+    fn get_aliases(&self) -> &'static [&'static str] {
+        for (variant, aliases) in LANGUAGE_ALIASES {
+            if variant == self {
+                return aliases;
+            }
+        }
+        &[]
+    }
+
+    fn map_value(s: String) -> Self {
+        if let Some(lang) = Self::from_string(&s, None) {
+            return lang;
+        }
+        if let Some(lang) = Self::from_extension(&s) {
+            return lang;
+        }
+        let s = s.to_lowercase();
+        for (variant, aliases) in LANGUAGE_ALIASES {
+            for alias in *aliases {
+                if *alias == s {
+                    return *variant;
+                }
+            }
+        }
+        Self::Universal
+    }
+
+    fn possible_values() -> Vec<&'static str> {
+        let mut unique_variants = std::collections::HashSet::new();
+        let mut ordered_variants = Vec::new();
+        for lang in PatternLanguage::enumerate() {
+            let lang_name = lang.to_str();
+            if unique_variants.insert(lang_name) {
+                ordered_variants.push(lang_name);
+            }
+            let aliases = lang.get_aliases();
+            for alias in aliases {
+                if unique_variants.insert(alias) {
+                    ordered_variants.push(alias);
+                }
+            }
+            for ext in lang.get_file_extensions() {
+                if unique_variants.insert(ext) {
+                    ordered_variants.push(ext);
+                }
+            }
+        }
+        ordered_variants
+    }
+
+    pub fn value_parser() -> MapValueParser<PossibleValuesParser, fn(String) -> Self> {
+        PossibleValuesParser::new(Self::possible_values()).map(|s| Self::map_value(s))
+    }
+
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            PatternLanguage::JavaScript => "javascript",
+            PatternLanguage::TypeScript => "typescript",
+            PatternLanguage::Tsx => "js",
+            PatternLanguage::Html => "html",
+            PatternLanguage::Css => "css",
+            PatternLanguage::Json => "json",
+            PatternLanguage::Java => "java",
+            PatternLanguage::CSharp => "csharp",
+            PatternLanguage::Python => "python",
+            PatternLanguage::MarkdownBlock => "markdown",
+            PatternLanguage::MarkdownInline => "markdowninline",
+            PatternLanguage::Go => "go",
+            PatternLanguage::Rust => "rust",
+            PatternLanguage::Ruby => "ruby",
+            PatternLanguage::Solidity => "solidity",
+            PatternLanguage::Hcl => "hcl",
+            PatternLanguage::Yaml => "yaml",
+            PatternLanguage::Sql => "sql",
+            PatternLanguage::Vue => "vue",
+            PatternLanguage::Toml => "toml",
+            PatternLanguage::Php => "php",
+            PatternLanguage::PhpOnly => "phponly",
+            PatternLanguage::Universal => "universal",
+        }
     }
 
     pub fn from_string(name: &str, flavor: Option<&str>) -> Option<Self> {

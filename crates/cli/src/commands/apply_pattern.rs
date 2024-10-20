@@ -159,7 +159,7 @@ pub struct ApplyPatternArgs {
     #[clap(long)]
     ai: bool,
     /// Change the default language to use for the pattern (if unset, JavaScript is used by default)
-    #[clap(long = "language", alias = "lang")]
+    #[clap(long = "language", alias = "lang", value_parser = PatternLanguage::value_parser())]
     pub language: Option<PatternLanguage>,
 }
 
