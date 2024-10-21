@@ -66,7 +66,7 @@ fn test_rayon_parallelism() {
     let last_task = Arc::new(AtomicUsize::new(0));
 
     fn run_task(task: usize, last_task: Arc<AtomicUsize>) {
-        if task == 4 {
+        if (4..8).contains(&task) {
             std::thread::sleep(std::time::Duration::from_millis(3000));
         }
         std::thread::sleep(std::time::Duration::from_millis(10));
@@ -110,7 +110,7 @@ fn test_rayon_parallelism() {
 
     // The thread version is fast, because once one thread is blocked on the slow task no more work is queued for it
     // The other threads finish the rest of the tasks before that thread wakes up
-    assert_eq!(last_task.load(std::sync::atomic::Ordering::SeqCst), 4);
+    assert!((4..8).contains(&last_task.load(std::sync::atomic::Ordering::SeqCst)));
     // We should take under 3.1 seconds
     assert!(duration_threads < std::time::Duration::from_millis(3100));
 }
