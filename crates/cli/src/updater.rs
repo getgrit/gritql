@@ -95,16 +95,6 @@ impl SupportedApp {
             SupportedApp::WorkflowRunner => "GRIT_WORKFLOW_RUNNER".to_string(),
         }
     }
-
-    pub fn from_all_app(app: AllApp) -> Option<Self> {
-        match app {
-            AllApp::Marzano => Some(SupportedApp::Marzano),
-            AllApp::Gouda => Some(SupportedApp::Gouda),
-            #[cfg(feature = "workflows_v2")]
-            AllApp::WorkflowRunner => Some(SupportedApp::WorkflowRunner),
-            _ => None,
-        }
-    }
 }
 
 impl fmt::Display for SupportedApp {
