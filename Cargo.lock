@@ -338,18 +338,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "buildkite-test-collector"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd8993dedbe03bc57baa45173765bd366ab54b029759cf78358d28d5d68d41d3"
-dependencies = [
- "serde",
- "serde_json",
- "ureq",
- "uuid",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.15.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2213,7 +2201,6 @@ dependencies = [
  "ai_builtins",
  "anyhow",
  "axoupdater",
- "buildkite-test-collector",
  "chrono",
  "clap",
  "clap-markdown",
@@ -4595,8 +4582,6 @@ dependencies = [
  "rustls 0.22.2",
  "rustls-pki-types",
  "rustls-webpki",
- "serde",
- "serde_json",
  "url",
  "webpki-roots",
 ]

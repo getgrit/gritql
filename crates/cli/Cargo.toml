@@ -94,7 +94,6 @@ openssl = { version = "0.10", features = ["vendored"] }
 
 [dev-dependencies]
 trim-margin = "0.1.0"
-buildkite-test-collector = "0.1.1"
 similar = "2.2.1"
 reqwest = { version = "0.11.22", features = ["blocking", "json"] }
 marzano-test-utils = { path = "../test_utils" }
