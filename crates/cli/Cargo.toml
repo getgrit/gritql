@@ -156,5 +156,6 @@ grit_beta = [
   "remote_workflows",
   "workflow_server",
   # "grit_timing",
+  # "grit_tracing",
 ]
 grit_timing = []

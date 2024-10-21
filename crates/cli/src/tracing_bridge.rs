@@ -167,11 +167,7 @@ where
     P: LoggerProvider<Logger = L> + Send + Sync + 'static,
     L: Logger + Send + Sync + 'static,
 {
-    fn on_event(
-        &self,
-        event: &tracing::Event<'_>,
-        _ctx: tracing_subscriber::layer::Context<'_, S>,
-    ) {
+    fn on_event(&self, event: &tracing::Event<'_>, ctx: tracing_subscriber::layer::Context<'_, S>) {
         #[cfg(feature = "experimental_metadata_attributes")]
         let normalized_meta = event.normalized_metadata();
         #[cfg(feature = "experimental_metadata_attributes")]
@@ -186,7 +182,24 @@ where
 
         // Extract the trace_id & span_id from the opentelemetry extension.
         // This isn't really working for us.
-        // set_trace_context(&mut log_record, &_ctx);
+        if let Some((trace_id, span_id)) = ctx.lookup_current().and_then(|span| {
+            span.extensions()
+                .get::<tracing_opentelemetry::OtelData>()
+                .and_then(|ext| ext.builder.trace_id.zip(ext.builder.span_id))
+        }) {
+            log_record.trace_context = Some(opentelemetry::logs::TraceContext::from(
+                &opentelemetry::trace::SpanContext::new(
+                    trace_id,
+                    span_id,
+                    opentelemetry::trace::TraceFlags::default(),
+                    false,
+                    opentelemetry::trace::TraceState::default(),
+                ),
+            ));
+            eprintln!("trace_id: {:?}, span_id: {:?}", trace_id, span_id);
+        } else {
+            eprintln!("No trace_id or span_id found");
+        }
 
         // Not populating ObservedTimestamp, instead relying on OpenTelemetry
         // API to populate it with current time.
