@@ -563,7 +563,9 @@ fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::LoggerPro
     ];
 
     if let Some(execution_id) = get_otel_key("GRIT_EXECUTION_ID") {
-        resource_attrs.push(KeyValue::new("grit.execution.id", execution_id));
+        resource_attrs.push(KeyValue::new("grit.execution.id", execution_id.clone()));
+        // This is required by dash0 and other providers to treat each instance as a separate resource.
+        resource_attrs.push(KeyValue::new("service.instance.id", execution_id));
     }
 
     let resource = Resource::new(resource_attrs);
