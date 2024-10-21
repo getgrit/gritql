@@ -31,7 +31,7 @@ indicatif-log-bridge = { version = "0.2.1" }
 colored = { version = "2.0.4" }
 log = { version = "0.4.19" }
 env_logger = { version = "0.10.0" }
-git2 = { version = "0.19.0" }
+git2 = { version = "0.19.0", features = ["vendored-libgit2"] }
 regex = { version = "1.7.3" }
 grit-util = { path = "../grit-util" }
 marzano-core = { path = "../core", features = [
