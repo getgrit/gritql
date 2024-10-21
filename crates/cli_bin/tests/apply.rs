@@ -2883,6 +2883,36 @@ fn apply_stdin_with_lang_alias() -> Result<()> {
     Ok(())
 }
 
+/// simple stdin example from documentation, but using a language alias
+#[test]
+fn apply_stdin_with_invalid_lang_alias() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
+
+    let input_file = r#"console.log(hello)"#;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`hello` => `goodbye`")
+        .arg("--stdin")
+        .arg("--lang")
+        .arg("markdowninline")
+        .current_dir(&fixture_dir);
+
+    cmd.write_stdin(String::from_utf8(input_file.into())?);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(!result.status.success(), "Command should have failed");
+    assert!(stderr.contains("markdowninline"));
+
+    Ok(())
+}
+
 /// Ban multiple stdin paths
 #[test]
 fn apply_stdin_two_paths() -> Result<()> {
