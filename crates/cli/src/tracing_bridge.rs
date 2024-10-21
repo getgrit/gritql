@@ -184,12 +184,28 @@ where
         log_record.severity_number = Some(severity_of_level(meta.level()));
         log_record.severity_text = Some(meta.level().to_string().into());
 
-        // Extract the trace_id & span_id from the opentelemetry extension.
-        // This isn't really working for us.
-        // set_trace_context(&mut log_record, &_ctx);
+        // Extract the trace_id & span_id from *tracing*, which propagates across async boundaries better
+        use opentelemetry::trace::TraceContextExt;
+        use tracing_opentelemetry::OpenTelemetrySpanExt;
+        let s = tracing::Span::current().context();
 
-        // Not populating ObservedTimestamp, instead relying on OpenTelemetry
-        // API to populate it with current time.
+        if s.has_active_span() {
+            let sr = s.span();
+            let sc = sr.span_context();
+            let trace_id = sc.trace_id();
+            let span_id = sc.span_id();
+            log_record.trace_context = Some(opentelemetry::logs::TraceContext::from(
+                &opentelemetry::trace::SpanContext::new(
+                    trace_id,
+                    span_id,
+                    opentelemetry::trace::TraceFlags::default(),
+                    false,
+                    opentelemetry::trace::TraceState::default(),
+                ),
+            ));
+        } else {
+            // eprintln!("no active span");
+        }
 
         let mut visitor = EventVisitor::default();
         visitor.visit_metadata(meta);
