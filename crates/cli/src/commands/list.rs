@@ -19,7 +19,7 @@ pub struct ListArgs {
     #[clap(long = "source", default_value = "all", value_enum)]
     pub source: Source,
     /// List only items targeting a specific language.
-    #[clap(long = "language", alias = "lang", value_parser = PatternLanguage::value_parser())]
+    #[clap(long = "language", alias = "lang")]
     pub language: Option<PatternLanguage>,
 }
 

@@ -27,7 +27,6 @@ use crate::{
     yaml::Yaml,
 };
 use anyhow::Result;
-use clap::builder::{MapValueParser, PossibleValuesParser, TypedValueParser};
 use clap::ValueEnum;
 use grit_util::Order;
 use grit_util::{Ast, AstNode, ByteRange, CodeRange, Language, Parser, SnippetTree};
@@ -46,16 +45,16 @@ use std::path::PathBuf;
 #[cfg(feature = "finder")]
 use std::str::FromStr;
 
-#[derive(ValueEnum, Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[clap(rename_all = "lower")]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+// #[clap(rename_all = "lower")]
 #[serde(rename_all = "lowercase")]
 pub enum PatternLanguage {
-    #[value(skip)]
+    // #[value(skip)]
     JavaScript,
-    #[value(skip)]
+    // #[value(skip)]
     TypeScript,
     #[default]
-    #[value(name = "js")]
+    // #[value(name = "js")]
     #[serde(rename = "js")]
     Tsx,
     Html,
@@ -64,9 +63,9 @@ pub enum PatternLanguage {
     Java,
     CSharp,
     Python,
-    #[value(name = "markdown")]
+    // #[value(name = "markdown")]
     MarkdownBlock,
-    #[value(skip)]
+    // #[value(skip)]
     MarkdownInline,
     Go,
     Rust,
@@ -79,20 +78,9 @@ pub enum PatternLanguage {
     Toml,
     Php,
     PhpOnly,
-    #[value(skip)]
+    // #[value(skip)]
     Universal,
 }
-
-// https://github.com/getgrit/gritql/issues/445
-// add any more language aliases here
-// you don't need to add the primary name, nor the extensions
-static LANGUAGE_ALIASES: &[(PatternLanguage, &'static [&'static str])] = &[
-    (PatternLanguage::JavaScript, &["javascript"]),
-    (PatternLanguage::TypeScript, &["typescript"]),
-    (PatternLanguage::Tsx, &["flow"]),
-    (PatternLanguage::Sql, &["mysql", "postgresql"]),
-    (PatternLanguage::PhpOnly, &["phponly"]),
-];
 
 impl fmt::Display for PatternLanguage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -127,6 +115,91 @@ impl fmt::Display for PatternLanguage {
 impl From<&TargetLanguage> for PatternLanguage {
     fn from(value: &TargetLanguage) -> Self {
         value.to_module_language()
+    }
+}
+
+// see: https://github.com/clap-rs/clap/issues/4416
+impl ValueEnum for PatternLanguage {
+    // we need to implement the skip variants here ourselves now
+    fn value_variants<'a>() -> &'a [Self] {
+        &[
+            Self::Tsx,
+            Self::Html,
+            Self::Css,
+            Self::Json,
+            Self::Java,
+            Self::CSharp,
+            Self::Python,
+            Self::MarkdownBlock,
+            Self::Go,
+            Self::Rust,
+            Self::Ruby,
+            Self::Solidity,
+            Self::Hcl,
+            Self::Yaml,
+            Self::Sql,
+            Self::Vue,
+            Self::Toml,
+            Self::Php,
+            Self::PhpOnly,
+        ]
+    }
+
+    // https://github.com/getgrit/gritql/issues/445
+    // add any more language aliases here
+    // we need to implement the lowercase/rename transformations here ourselves now
+    fn to_possible_value<'a>(&self) -> Option<clap::builder::PossibleValue> {
+        match self {
+            Self::JavaScript => Some(clap::builder::PossibleValue::new("js").alias("javascript")),
+            Self::TypeScript => Some(clap::builder::PossibleValue::new("ts").alias("typescript")),
+            Self::Tsx => Some(
+                clap::builder::PossibleValue::new("js")
+                    .alias("ts")
+                    .alias("jsx")
+                    .alias("tsx")
+                    .alias("flow")
+                    .alias("javascript")
+                    .alias("typescript"),
+            ),
+            Self::Html => Some(clap::builder::PossibleValue::new("html")),
+            Self::Css => Some(clap::builder::PossibleValue::new("css")),
+            Self::Json => Some(clap::builder::PossibleValue::new("json")),
+            Self::Java => Some(clap::builder::PossibleValue::new("java")),
+            Self::CSharp => Some(clap::builder::PossibleValue::new("csharp").alias("cs")),
+            Self::Python => Some(clap::builder::PossibleValue::new("python").alias("py")),
+            Self::MarkdownBlock => Some(clap::builder::PossibleValue::new("markdown").alias("md")),
+            Self::MarkdownInline => Some(clap::builder::PossibleValue::new("markdown").alias("md")),
+            Self::Go => Some(clap::builder::PossibleValue::new("go")),
+            Self::Rust => Some(clap::builder::PossibleValue::new("rust").alias("rs")),
+            Self::Ruby => Some(clap::builder::PossibleValue::new("ruby").alias("rb")),
+            Self::Solidity => Some(clap::builder::PossibleValue::new("solidity").alias("sol")),
+            Self::Hcl => Some(
+                clap::builder::PossibleValue::new("hcl")
+                    .alias("tf")
+                    .alias("tfvars"),
+            ),
+            Self::Yaml => Some(clap::builder::PossibleValue::new("yaml").alias("yml")),
+            Self::Sql => Some(
+                clap::builder::PossibleValue::new("sql")
+                    .alias("mysql")
+                    .alias("postgresql"),
+            ),
+            Self::Vue => Some(clap::builder::PossibleValue::new("vue")),
+            Self::Toml => Some(clap::builder::PossibleValue::new("toml")),
+            Self::Php => Some(
+                clap::builder::PossibleValue::new("php")
+                    .alias("phps")
+                    .alias("phtml")
+                    .alias("pht"),
+            ),
+            Self::PhpOnly => Some(
+                clap::builder::PossibleValue::new("phponly")
+                    .alias("phps")
+                    .alias("phtml")
+                    .alias("pht"),
+            ),
+            Self::Universal => Some(clap::builder::PossibleValue::new("universal")),
+        }
     }
 }
 
@@ -185,44 +258,6 @@ impl PatternLanguage {
         Self::get_language_with_parser(&mut parser, src)
     }
 
-    fn get_aliases(&self) -> &'static [&'static str] {
-        for (variant, aliases) in LANGUAGE_ALIASES {
-            if variant == self {
-                return aliases;
-            }
-        }
-        &[]
-    }
-
-    fn possible_values() -> Vec<&'static str> {
-        let mut unique_variants = std::collections::HashSet::new();
-        let mut ordered_variants = Vec::new();
-        for lang in PatternLanguage::enumerate() {
-            // needed to convert String to &'static str
-            let lang_name: &'static str = Box::leak(lang.to_string().into_boxed_str());
-            if unique_variants.insert(lang_name) {
-                ordered_variants.push(lang_name);
-            }
-            let aliases = lang.get_aliases();
-            for alias in aliases {
-                if unique_variants.insert(alias) {
-                    ordered_variants.push(alias);
-                }
-            }
-            for ext in lang.get_file_extensions() {
-                if unique_variants.insert(ext) {
-                    ordered_variants.push(ext);
-                }
-            }
-        }
-        ordered_variants
-    }
-
-    pub fn value_parser() -> MapValueParser<PossibleValuesParser, fn(String) -> Self> {
-        PossibleValuesParser::new(Self::possible_values())
-            .map(|s| Self::from_string(&s, None).unwrap())
-    }
-
     pub fn from_string(name: &str, flavor: Option<&str>) -> Option<Self> {
         let lang = match name {
             "js" => match flavor {
@@ -269,10 +304,12 @@ impl PatternLanguage {
             return Some(lang);
         }
         let name = name.to_lowercase();
-        for (variant, aliases) in LANGUAGE_ALIASES {
-            for alias in *aliases {
-                if *alias == name {
-                    return Some(*variant);
+        for lang in PatternLanguage::enumerate() {
+            if let Some(possible_value) = lang.to_possible_value() {
+                for alias in possible_value.get_name_and_aliases() {
+                    if alias == name {
+                        return Some(lang);
+                    }
                 }
             }
         }
