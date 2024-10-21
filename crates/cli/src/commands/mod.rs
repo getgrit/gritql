@@ -593,9 +593,7 @@ fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::LoggerPro
     let logger = opentelemetry_otlp::new_pipeline()
         .logging()
         .with_exporter(logger_exporter)
-        .with_log_config(
-            opentelemetry_sdk::logs::BatchConfig::default().with_resource(resource.clone()),
-        )
+        .with_log_config(opentelemetry_sdk::logs::config().with_resource(resource.clone()))
         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
     let tracer = opentelemetry_otlp::new_pipeline()
@@ -614,97 +612,46 @@ pub async fn run_command_with_tracing() -> Result<()> {
     {
         let otel = get_otel_setup()?;
 
-        // use opentelemetry::trace::FutureExt;
-        // use opentelemetry::trace::TraceContextExt;
-        // use opentelemetry::trace::Tracer;
-        // use opentelemetry_appender_tracing::layer;
-        // use opentelemetry_sdk::logs::LoggerProvider;
-        // use opentelemetry_sdk::trace::TracerProvider;
-        // use opentelemetry_stdout as stdout;
-        // use tracing::info;
-        // use tracing_subscriber::layer::SubscriberExt;
-        // use tracing_subscriber::Registry;
+        if let Some((tracer, logger)) = otel {
+            let env_filter = EnvFilter::try_from_default_env()
+                .unwrap_or(EnvFilter::new("TRACE"))
+                // Exclude noisy tokio stuff "h2::proto::streams::prioritize
+                .add_directive("h2=off".parse().unwrap())
+                // This is also noisy
+                .add_directive("axum::serve=DEBUG".parse().unwrap())
+                // We don't want to trace the tracing library itself
+                .add_directive("hyper=off".parse().unwrap());
 
-        // Create a new OpenTelemetry trace pipeline that prints to stdout
-        let tracer_provider = TracerProvider::builder()
-            .with_simple_exporter(stdout::SpanExporter::default())
-            .build();
-        global::set_tracer_provider(tracer_provider);
+            let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
+            let logger_layer = crate::tracing_bridge::OpenTelemetryTracingBridge::new(&logger);
 
-        let tracing_layer = tracing_opentelemetry::layer();
+            let subscriber = Registry::default()
+                .with(env_filter)
+                .with(telemetry)
+                .with(logger_layer);
 
-        let log_provider = LoggerProvider::builder()
-            .with_simple_exporter(stdout::LogExporter::default())
-            .build();
+            global::set_text_map_propagator(TraceContextPropagator::new());
+            tracing::subscriber::set_global_default(subscriber)
+                .expect("setting tracing default failed");
 
-        //let log_layer = layer::OpenTelemetryTracingBridge::new(&log_provider);
-        let log_layer = layer::OpenTelemetryTracingBridge::new(&log_provider);
+            let root_span = span!(Level::INFO, "grit_marzano.cli_command",);
 
-        let subscriber = Registry::default().with(tracing_layer).with(log_layer);
-        tracing::subscriber::set_global_default(subscriber)
-            .expect("setting tracing default failed");
+            let res = async move {
+                event!(Level::INFO, "starting the CLI!");
 
-        // let root_span = span!(Level::INFO, "grit_marzano.run_command");
+                let res = run_command(true).await;
 
-        // tracing::subscriber::with_default(subscriber, || {
-        // Spans will be sent to the configured OpenTelemetry exporter
-        let tracer = global::tracer("dash0");
+                event!(Level::INFO, "ending the CLI!");
 
-        // let root_span = span!(Level::INFO, "grit_marzano.run_command");
-        let root_span = tracer.start("grit_marzano.run_command");
-
-        // Perform some async work with this span as the currently active parent.
-        run_command(true)
-            .with_context(opentelemetry::Context::current_with_span(root_span))
+                res
+            }
+            .instrument(root_span)
             .await;
 
-        log::info!("ending the CLI!");
+            opentelemetry::global::shutdown_tracer_provider();
 
-        // });
-
-        // Spans will be sent to the configured OpenTelemetry exporter
-        // let res = async move {
-        //     event!(Level::INFO, "starting the CLI!");
-
-        //     let res = run_command(true).await;
-
-        //     event!(Level::INFO, "ending the CLI!");
-
-        //     res
-        // }
-        // .instrument(root_span)
-        // .await;
-
-        return Ok(());
-
-        // if let Some((tracer, logger)) = otel {
-        //     let env_filter = EnvFilter::try_from_default_env()
-        //         .unwrap_or(EnvFilter::new("TRACE"))
-        //         // Exclude noisy tokio stuff "h2::proto::streams::prioritize
-        //         .add_directive("h2=off".parse().unwrap())
-        //         // This is also noisy
-        //         .add_directive("axum::serve=DEBUG".parse().unwrap())
-        //         // We don't want to trace the tracing library itself
-        //         .add_directive("hyper=off".parse().unwrap());
-
-        //     let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
-        //     let logger_layer = opentelemOpenTelemetryTracingBridge::new(&logger);
-
-        //     let subscriber = Registry::default()
-        //         .with(env_filter)
-        //         .with(telemetry)
-        //         .with(logger_layer);
-
-        //     global::set_text_map_propagator(TraceContextPropagator::new());
-
-        //     // tracer.in_span("app_init", res);
-
-        //     // let res = async move { res }
-
-        //     opentelemetry::global::shutdown_tracer_provider();
-
-        //     return res;
-        // }
+            return res;
+        }
     }
     let subscriber = tracing::subscriber::NoSubscriber::new();
     tracing::subscriber::set_global_default(subscriber).expect("setting tracing default failed");
