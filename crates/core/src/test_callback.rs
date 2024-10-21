@@ -76,8 +76,10 @@ fn test_rayon_parallelism() {
 
     // Try a parallel iterator
     let start_par_iter = std::time::Instant::now();
-    tasks.clone().into_par_iter().for_each(|task| {
-        run_task(task, last_task.clone());
+    pool.scope(|_| {
+        tasks.clone().into_par_iter().for_each(|task| {
+            run_task(task, last_task.clone());
+        });
     });
 
     let duration_par_iter = start_par_iter.elapsed();
@@ -92,7 +94,7 @@ fn test_rayon_parallelism() {
 
     // Also try spawning threads manually
     let start_threads = std::time::Instant::now();
-    rayon::scope(|s| {
+    pool.scope(|s| {
         for task in tasks.clone() {
             let last_task_clone = Arc::clone(&last_task);
             s.spawn(move |_s| {
