@@ -38,6 +38,7 @@ use crate::error::GoodError;
 
 #[cfg(feature = "grit_tracing")]
 use marzano_util::base64;
+use opentelemetry::global::ObjectSafeTracerProvider;
 #[cfg(feature = "grit_tracing")]
 use opentelemetry::{global, KeyValue};
 #[cfg(feature = "grit_tracing")]
@@ -499,7 +500,12 @@ fn get_otel_key(env_name: &str) -> Option<String> {
 }
 
 #[cfg(feature = "grit_tracing")]
-fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::LoggerProvider)>> {
+fn get_otel_setup() -> Result<
+    Option<(
+        opentelemetry_sdk::trace::TracerProvider,
+        opentelemetry_sdk::logs::LoggerProvider,
+    )>,
+> {
     let grafana_key = get_otel_key("GRAFANA_OTEL_KEY");
     let honeycomb_key = get_otel_key("HONEYCOMB_OTEL_KEY");
     let baselime_key = get_otel_key("BASELIME_OTEL_KEY");
@@ -593,23 +599,24 @@ fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::LoggerPro
     let logger = opentelemetry_otlp::new_pipeline()
         .logging()
         .with_exporter(logger_exporter)
-        .with_log_config(opentelemetry_sdk::logs::config().with_resource(resource.clone()))
+        // .with_log_config(
+        //     opentelemetry_sdk::logs::BatchConfig::default().with_resource(resource.clone()),
+        // )
         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
     let tracer = opentelemetry_otlp::new_pipeline()
         .tracing()
         .with_exporter(tracer_exporter)
-        .with_trace_config(trace::config().with_resource(resource))
+        .with_trace_config(trace::Config::default().with_resource(resource))
         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
-    let logger_provider = logger.provider().unwrap();
-
-    Ok(Some((tracer, logger_provider)))
+    Ok(Some((tracer, logger)))
 }
 
 pub async fn run_command_with_tracing() -> Result<()> {
     #[cfg(feature = "grit_tracing")]
     {
+        use opentelemetry::trace::TracerProvider;
         let otel = get_otel_setup()?;
 
         if let Some((tracer, logger)) = otel {
@@ -622,17 +629,23 @@ pub async fn run_command_with_tracing() -> Result<()> {
                 // We don't want to trace the tracing library itself
                 .add_directive("hyper=off".parse().unwrap());
 
+            let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+                .with_simple_exporter(opentelemetry_stdout::SpanExporter::default())
+                .build();
+            let tracer = provider.tracer("readme_example");
+
             let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
-            let logger_layer = crate::tracing_bridge::OpenTelemetryTracingBridge::new(&logger);
 
-            let subscriber = Registry::default()
-                .with(env_filter)
-                .with(telemetry)
-                .with(logger_layer);
+            // let logger_layer = crate::tracing_bridge::OpenTelemetryTracingBridge::new(&logger);
 
-            global::set_text_map_propagator(TraceContextPropagator::new());
-            tracing::subscriber::set_global_default(subscriber)
-                .expect("setting tracing default failed");
+            // let subscriber = Registry::default()
+            //     .with(env_filter)
+            //     .with(telemetry)
+            //     .with(logger_layer);
+
+            // global::set_text_map_propagator(TraceContextPropagator::new());
+            // tracing::subscriber::set_global_default(subscriber)
+            //     .expect("setting tracing default failed");
 
             let root_span = span!(Level::INFO, "grit_marzano.cli_command",);
 
