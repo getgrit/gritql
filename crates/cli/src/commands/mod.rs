@@ -499,132 +499,131 @@ fn get_otel_key(env_name: &str) -> Option<String> {
 }
 
 #[cfg(feature = "grit_tracing")]
-// fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::LoggerProvider)>> {
-//     let grafana_key = get_otel_key("GRAFANA_OTEL_KEY");
-//     let honeycomb_key = get_otel_key("HONEYCOMB_OTEL_KEY");
-//     let baselime_key = get_otel_key("BASELIME_OTEL_KEY");
-//     let hyperdx_key = get_otel_key("HYPERDX_OTEL_KEY");
+fn get_otel_setup() -> Result<Option<(Tracer, opentelemetry_sdk::logs::LoggerProvider)>> {
+    let grafana_key = get_otel_key("GRAFANA_OTEL_KEY");
+    let honeycomb_key = get_otel_key("HONEYCOMB_OTEL_KEY");
+    let baselime_key = get_otel_key("BASELIME_OTEL_KEY");
+    let hyperdx_key = get_otel_key("HYPERDX_OTEL_KEY");
 
-//     let env = get_otel_key("GRIT_DEPLOYMENT_ENV").unwrap_or_else(|| "prod".to_string());
+    let env = get_otel_key("GRIT_DEPLOYMENT_ENV").unwrap_or_else(|| "prod".to_string());
 
-//     let (endpoint, headers) = match (grafana_key, honeycomb_key, baselime_key, hyperdx_key) {
-//         (None, None, None, None) => {
-//             if let Some(endpoint) = get_otel_key("OTEL_EXPORTER_OTLP_ENDPOINT") {
-//                 eprintln!(
-//                     "No explicit OTLP key found, using default OTLP endpoint: {}",
-//                     endpoint
-//                 );
-//                 (Some(endpoint), None)
-//             } else {
-//                 #[cfg(feature = "server")]
-//                 eprintln!("No OTLP key found, tracing will be disabled");
-//                 return Ok(None);
-//             }
-//         }
+    let (endpoint, headers) = match (grafana_key, honeycomb_key, baselime_key, hyperdx_key) {
+        (None, None, None, None) => {
+            if let Some(endpoint) = get_otel_key("OTEL_EXPORTER_OTLP_ENDPOINT") {
+                eprintln!(
+                    "No explicit OTLP key found, using default OTLP endpoint: {}",
+                    endpoint
+                );
+                (Some(endpoint), None)
+            } else {
+                #[cfg(feature = "server")]
+                eprintln!("No OTLP key found, tracing will be disabled");
+                return Ok(None);
+            }
+        }
 
-//         (Some(grafana_key), _, _, _) => {
-//             let instance_id = "665534";
-//             let encoded =
-//                 base64::encode_from_string(format!("{}:{}", instance_id, grafana_key).as_str())?;
-//             let endpoint = "https://otlp-gateway-prod-us-central-0.grafana.net/otlp".to_string();
-//             let headers =
-//                 HashMap::from([("Authorization".to_string(), format!("Basic {}", encoded))]);
-//             eprintln!("Using Grafana OTLP key for {}", env);
-//             (Some(endpoint), Some(headers))
-//         }
-//         (_, Some(honeycomb_key), _, _) => {
-//             let endpoint = "https://api.honeycomb.io".to_string();
-//             let headers = HashMap::from([("x-honeycomb-team".to_string(), honeycomb_key)]);
-//             eprintln!("Using Honeycomb OTLP key for {}", env);
-//             (Some(endpoint), Some(headers))
-//         }
-//         (_, _, Some(baselime_key), _) => {
-//             let endpoint = "https://otel.baselime.io/v1/".to_string();
-//             let headers = HashMap::from([
-//                 ("x-api-key".to_string(), baselime_key),
-//                 ("x-baselime-dataset".to_string(), "otel".to_string()),
-//             ]);
-//             eprintln!("Using Baselime OTLP key for {}", env);
-//             (Some(endpoint), Some(headers))
-//         }
-//         (_, _, _, Some(hyperdx_key)) => {
-//             let endpoint = "https://in-otel.hyperdx.io".to_string();
-//             let headers = HashMap::from([("authorization".to_string(), hyperdx_key)]);
-//             eprintln!("Using HyperDX OTLP key for {}", env);
-//             (Some(endpoint), Some(headers))
-//         }
-//     };
+        (Some(grafana_key), _, _, _) => {
+            let instance_id = "665534";
+            let encoded =
+                base64::encode_from_string(format!("{}:{}", instance_id, grafana_key).as_str())?;
+            let endpoint = "https://otlp-gateway-prod-us-central-0.grafana.net/otlp".to_string();
+            let headers =
+                HashMap::from([("Authorization".to_string(), format!("Basic {}", encoded))]);
+            eprintln!("Using Grafana OTLP key for {}", env);
+            (Some(endpoint), Some(headers))
+        }
+        (_, Some(honeycomb_key), _, _) => {
+            let endpoint = "https://api.honeycomb.io".to_string();
+            let headers = HashMap::from([("x-honeycomb-team".to_string(), honeycomb_key)]);
+            eprintln!("Using Honeycomb OTLP key for {}", env);
+            (Some(endpoint), Some(headers))
+        }
+        (_, _, Some(baselime_key), _) => {
+            let endpoint = "https://otel.baselime.io/v1/".to_string();
+            let headers = HashMap::from([
+                ("x-api-key".to_string(), baselime_key),
+                ("x-baselime-dataset".to_string(), "otel".to_string()),
+            ]);
+            eprintln!("Using Baselime OTLP key for {}", env);
+            (Some(endpoint), Some(headers))
+        }
+        (_, _, _, Some(hyperdx_key)) => {
+            let endpoint = "https://in-otel.hyperdx.io".to_string();
+            let headers = HashMap::from([("authorization".to_string(), hyperdx_key)]);
+            eprintln!("Using HyperDX OTLP key for {}", env);
+            (Some(endpoint), Some(headers))
+        }
+    };
 
-//     let client = reqwest::Client::new();
+    let client = reqwest::Client::new();
 
-//     let mut resource_attrs = vec![
-//         KeyValue::new("service.name", "grit_marzano".to_string()),
-//         KeyValue::new("deployment.environment.name", env),
-//     ];
+    let mut resource_attrs = vec![
+        KeyValue::new("service.name", "grit_marzano".to_string()),
+        KeyValue::new("deployment.environment.name", env),
+    ];
 
-//     if let Some(execution_id) = get_otel_key("GRIT_EXECUTION_ID") {
-//         resource_attrs.push(KeyValue::new("grit.execution.id", execution_id));
-//     }
+    if let Some(execution_id) = get_otel_key("GRIT_EXECUTION_ID") {
+        resource_attrs.push(KeyValue::new("grit.execution.id", execution_id));
+    }
 
-//     let resource = Resource::new(resource_attrs);
+    let resource = Resource::new(resource_attrs);
 
-//     let mut logger_exporter = opentelemetry_otlp::new_exporter()
-//         .http()
-//         .with_http_client(client.clone())
-//         .with_timeout(std::time::Duration::from_millis(500));
-//     if let Some(endpoint) = &endpoint {
-//         logger_exporter = logger_exporter.with_endpoint(endpoint.clone());
-//     }
-//     if let Some(headers) = &headers {
-//         logger_exporter = logger_exporter.with_headers(headers.clone());
-//     }
+    let mut logger_exporter = opentelemetry_otlp::new_exporter()
+        .http()
+        .with_http_client(client.clone())
+        .with_timeout(std::time::Duration::from_millis(500));
+    if let Some(endpoint) = &endpoint {
+        logger_exporter = logger_exporter.with_endpoint(endpoint.clone());
+    }
+    if let Some(headers) = &headers {
+        logger_exporter = logger_exporter.with_headers(headers.clone());
+    }
 
-//     let mut tracer_exporter = opentelemetry_otlp::new_exporter()
-//         .http()
-//         .with_http_client(client.clone())
-//         .with_timeout(std::time::Duration::from_millis(500));
-//     if let Some(endpoint) = endpoint {
-//         tracer_exporter = tracer_exporter.with_endpoint(endpoint);
-//     }
-//     if let Some(headers) = headers {
-//         tracer_exporter = tracer_exporter.with_headers(headers);
-//     }
+    let mut tracer_exporter = opentelemetry_otlp::new_exporter()
+        .http()
+        .with_http_client(client.clone())
+        .with_timeout(std::time::Duration::from_millis(500));
+    if let Some(endpoint) = endpoint {
+        tracer_exporter = tracer_exporter.with_endpoint(endpoint);
+    }
+    if let Some(headers) = headers {
+        tracer_exporter = tracer_exporter.with_headers(headers);
+    }
 
-//     let logger = opentelemetry_otlp::new_pipeline()
-//         .logging()
-//         .with_exporter(logger_exporter)
-//         .with_log_config(
-//             opentelemetry_sdk::logs::BatchConfig::default().with_resource(resource.clone()),
-//         )
-//         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+    let logger = opentelemetry_otlp::new_pipeline()
+        .logging()
+        .with_exporter(logger_exporter)
+        .with_log_config(
+            opentelemetry_sdk::logs::BatchConfig::default().with_resource(resource.clone()),
+        )
+        .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
-//     let tracer = opentelemetry_otlp::new_pipeline()
-//         .tracing()
-//         .with_exporter(tracer_exporter)
-//         .with_trace_config(trace::config().with_resource(resource))
-//         .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+    let tracer = opentelemetry_otlp::new_pipeline()
+        .tracing()
+        .with_exporter(tracer_exporter)
+        .with_trace_config(trace::config().with_resource(resource))
+        .install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
-//     let logger_provider = logger.provider().unwrap();
+    let logger_provider = logger.provider().unwrap();
 
-//     Ok(Some((tracer, logger_provider)))
-// }
+    Ok(Some((tracer, logger_provider)))
+}
 
 pub async fn run_command_with_tracing() -> Result<()> {
     #[cfg(feature = "grit_tracing")]
     {
-        // let otel = get_otel_setup()?;
+        let otel = get_otel_setup()?;
 
-        use opentelemetry::global;
-        use opentelemetry::trace::FutureExt;
-        use opentelemetry::trace::TraceContextExt;
-        use opentelemetry::trace::Tracer;
-        use opentelemetry_appender_tracing::layer;
-        use opentelemetry_sdk::logs::LoggerProvider;
-        use opentelemetry_sdk::trace::TracerProvider;
-        use opentelemetry_stdout as stdout;
-        use tracing::info;
-        use tracing_subscriber::layer::SubscriberExt;
-        use tracing_subscriber::Registry;
+        // use opentelemetry::trace::FutureExt;
+        // use opentelemetry::trace::TraceContextExt;
+        // use opentelemetry::trace::Tracer;
+        // use opentelemetry_appender_tracing::layer;
+        // use opentelemetry_sdk::logs::LoggerProvider;
+        // use opentelemetry_sdk::trace::TracerProvider;
+        // use opentelemetry_stdout as stdout;
+        // use tracing::info;
+        // use tracing_subscriber::layer::SubscriberExt;
+        // use tracing_subscriber::Registry;
 
         // Create a new OpenTelemetry trace pipeline that prints to stdout
         let tracer_provider = TracerProvider::builder()
