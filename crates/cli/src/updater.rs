@@ -140,8 +140,6 @@ async fn read_manifest(manifest_path: &PathBuf) -> Result<Manifest> {
 }
 
 const MANIFEST_FILE: &str = "manifests.json";
-const KEYGEN_API: &str = "https://api.keygen.sh/";
-const KEYGEN_ACCOUNT: &str = "custodian-dev";
 
 #[derive(Debug)]
 pub struct Updater {
@@ -538,26 +536,6 @@ impl Updater {
         bail!("Attempted to install {} but could not find it", app);
     }
 
-    pub async fn sync_manifest_version(&mut self, app: SupportedApp) -> Result<Option<String>> {
-        let app_string = app.get_base_name();
-        let release = match self.binaries.get(&app_string) {
-            Some(app_manifest) => app_manifest.release.clone(),
-            None => None,
-        };
-        if release.is_none() {
-            return Ok(None);
-        }
-        let info_url = release_details_relative_url(release.as_ref().unwrap());
-        let manifest = fetch_manifest(&info_url, app).await?;
-        if manifest.version.is_none() || manifest.release.is_none() {
-            return Ok(None);
-        }
-        let version = manifest.version.clone();
-        self.set_app_version(app, manifest.version.unwrap(), manifest.release.unwrap())?;
-        self.dump().await?;
-        Ok(version)
-    }
-
     fn set_app_version(
         &mut self,
         app: SupportedApp,
@@ -623,38 +601,6 @@ async fn check_release_axo(
     }
     let new_version = updater.query_new_version().await?.map(|v| v.to_string());
     Ok(new_version)
-}
-
-async fn fetch_manifest(relative_url: &str, app: SupportedApp) -> Result<AppManifest> {
-    let client = reqwest::Client::builder().build()?;
-    let url = format!("{}{}", KEYGEN_API, relative_url);
-    let res = client.get(url).send().await?.text().await?;
-    let json_data: serde_json::Value = serde_json::from_str(&res).unwrap();
-
-    let version = if let Some(version) = json_data["data"]
-        .get("attributes")
-        .and_then(|attributes| attributes.get("version"))
-    {
-        version.as_str().unwrap().to_string()
-    } else {
-        bail!("Could not find version");
-    };
-
-    let release = if let Some(id) = json_data["data"].get("id") {
-        id.as_str().unwrap().to_string()
-    } else {
-        bail!("Could not find release");
-    };
-
-    Ok(AppManifest {
-        name: AllApp::from_supported_app(app),
-        release: Some(release),
-        version: Some(version),
-    })
-}
-
-fn release_details_relative_url(release: &str) -> String {
-    format!("/v1/accounts/{}/releases/{}", KEYGEN_ACCOUNT, release)
 }
 
 #[cfg(test)]

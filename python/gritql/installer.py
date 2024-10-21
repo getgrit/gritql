@@ -12,11 +12,6 @@ from pathlib import Path
 
 import httpx
 
-# handles downloading the Grit CL if not found already
-
-KEYGEN_ACCOUNT = "custodian-dev"
-
-
 def _cache_dir() -> Path:
     xdg = os.environ.get("XDG_CACHE_HOME")
     if xdg is not None:
