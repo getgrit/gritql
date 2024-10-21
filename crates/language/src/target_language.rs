@@ -198,7 +198,8 @@ impl PatternLanguage {
         let mut unique_variants = std::collections::HashSet::new();
         let mut ordered_variants = Vec::new();
         for lang in PatternLanguage::enumerate() {
-            let lang_name = lang.to_str();
+            // needed to convert String to &'static str
+            let lang_name: &'static str = Box::leak(lang.to_string().into_boxed_str());
             if unique_variants.insert(lang_name) {
                 ordered_variants.push(lang_name);
             }
@@ -220,34 +221,6 @@ impl PatternLanguage {
     pub fn value_parser() -> MapValueParser<PossibleValuesParser, fn(String) -> Self> {
         PossibleValuesParser::new(Self::possible_values())
             .map(|s| Self::from_string(&s, None).unwrap())
-    }
-
-    pub fn to_str(&self) -> &'static str {
-        match self {
-            PatternLanguage::JavaScript => "javascript",
-            PatternLanguage::TypeScript => "typescript",
-            PatternLanguage::Tsx => "js",
-            PatternLanguage::Html => "html",
-            PatternLanguage::Css => "css",
-            PatternLanguage::Json => "json",
-            PatternLanguage::Java => "java",
-            PatternLanguage::CSharp => "csharp",
-            PatternLanguage::Python => "python",
-            PatternLanguage::MarkdownBlock => "markdown",
-            PatternLanguage::MarkdownInline => "markdowninline",
-            PatternLanguage::Go => "go",
-            PatternLanguage::Rust => "rust",
-            PatternLanguage::Ruby => "ruby",
-            PatternLanguage::Solidity => "solidity",
-            PatternLanguage::Hcl => "hcl",
-            PatternLanguage::Yaml => "yaml",
-            PatternLanguage::Sql => "sql",
-            PatternLanguage::Vue => "vue",
-            PatternLanguage::Toml => "toml",
-            PatternLanguage::Php => "php",
-            PatternLanguage::PhpOnly => "phponly",
-            PatternLanguage::Universal => "universal",
-        }
     }
 
     pub fn from_string(name: &str, flavor: Option<&str>) -> Option<Self> {
