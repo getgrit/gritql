@@ -194,24 +194,6 @@ impl PatternLanguage {
         &[]
     }
 
-    fn map_value(s: String) -> Self {
-        if let Some(lang) = Self::from_string(&s, None) {
-            return lang;
-        }
-        if let Some(lang) = Self::from_extension(&s) {
-            return lang;
-        }
-        let s = s.to_lowercase();
-        for (variant, aliases) in LANGUAGE_ALIASES {
-            for alias in *aliases {
-                if *alias == s {
-                    return *variant;
-                }
-            }
-        }
-        Self::Universal
-    }
-
     fn possible_values() -> Vec<&'static str> {
         let mut unique_variants = std::collections::HashSet::new();
         let mut ordered_variants = Vec::new();
@@ -236,7 +218,8 @@ impl PatternLanguage {
     }
 
     pub fn value_parser() -> MapValueParser<PossibleValuesParser, fn(String) -> Self> {
-        PossibleValuesParser::new(Self::possible_values()).map(|s| Self::map_value(s))
+        PossibleValuesParser::new(Self::possible_values())
+            .map(|s| Self::from_string(&s, None).unwrap())
     }
 
     pub fn to_str(&self) -> &'static str {
@@ -268,7 +251,7 @@ impl PatternLanguage {
     }
 
     pub fn from_string(name: &str, flavor: Option<&str>) -> Option<Self> {
-        match name {
+        let lang = match name {
             "js" => match flavor {
                 Some("jsx") => Some(Self::Tsx),
                 Some("flow") => Some(Self::Tsx),
@@ -305,7 +288,22 @@ impl PatternLanguage {
             },
             "universal" => Some(Self::Universal),
             _ => None,
+        };
+        if let Some(lang) = lang {
+            return Some(lang);
         }
+        if let Some(lang) = Self::from_extension(name) {
+            return Some(lang);
+        }
+        let name = name.to_lowercase();
+        for (variant, aliases) in LANGUAGE_ALIASES {
+            for alias in *aliases {
+                if *alias == name {
+                    return Some(*variant);
+                }
+            }
+        }
+        None
     }
 
     fn get_file_extensions(&self) -> &'static [&'static str] {
