@@ -38,9 +38,7 @@ jobs:
           unzip terraform_1.6.0_linux_amd64.zip
           chmod +x terraform
           sudo mv terraform /usr/local/bin/
-      - name: install dependencies
-        run: |
-          cargo install buildkite-test-collector
+
       - name: setup node.js environment
         uses: actions/setup-node@v3
       - name: Install prettier

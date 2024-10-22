@@ -34,7 +34,7 @@ pub(crate) async fn run_doctor(_arg: DoctorArgs) -> Result<()> {
         info!("  Build SHA: unknown");
     }
 
-    let mut updater = Updater::from_current_bin().await?;
+    let updater = Updater::from_current_bin().await?;
 
     info!("{}", "Configuration".bold());
 
@@ -131,12 +131,6 @@ pub(crate) async fn run_doctor(_arg: DoctorArgs) -> Result<()> {
                 "grit install".bold().blue()
             );
             continue;
-        }
-        let manifest = existing_manifests.get(&name).unwrap();
-        if manifest.version.is_none() {
-            if let Some(supported) = SupportedApp::from_all_app(manifest.name.clone()) {
-                updater.sync_manifest_version(supported).await?;
-            }
         }
     }
 
