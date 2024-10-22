@@ -27,6 +27,7 @@ use crate::{
     yaml::Yaml,
 };
 use anyhow::Result;
+use clap::builder::PossibleValue;
 use clap::ValueEnum;
 use grit_util::Order;
 use grit_util::{Ast, AstNode, ByteRange, CodeRange, Language, Parser, SnippetTree};
@@ -145,61 +146,16 @@ impl ValueEnum for PatternLanguage {
         ]
     }
 
-    // https://github.com/getgrit/gritql/issues/445
-    // add any more language aliases here
     // we need to implement the lowercase/rename transformations here ourselves now
-    fn to_possible_value<'a>(&self) -> Option<clap::builder::PossibleValue> {
-        match self {
-            Self::JavaScript => Some(clap::builder::PossibleValue::new("js").alias("javascript")),
-            Self::TypeScript => Some(clap::builder::PossibleValue::new("ts").alias("typescript")),
-            Self::Tsx => Some(
-                clap::builder::PossibleValue::new("js")
-                    .alias("ts")
-                    .alias("jsx")
-                    .alias("tsx")
-                    .alias("flow")
-                    .alias("javascript")
-                    .alias("typescript"),
-            ),
-            Self::Html => Some(clap::builder::PossibleValue::new("html")),
-            Self::Css => Some(clap::builder::PossibleValue::new("css")),
-            Self::Json => Some(clap::builder::PossibleValue::new("json")),
-            Self::Java => Some(clap::builder::PossibleValue::new("java")),
-            Self::CSharp => Some(clap::builder::PossibleValue::new("csharp").alias("cs")),
-            Self::Python => Some(clap::builder::PossibleValue::new("python").alias("py")),
-            Self::MarkdownBlock => Some(clap::builder::PossibleValue::new("markdown").alias("md")),
-            Self::MarkdownInline => Some(clap::builder::PossibleValue::new("markdown").alias("md")),
-            Self::Go => Some(clap::builder::PossibleValue::new("go")),
-            Self::Rust => Some(clap::builder::PossibleValue::new("rust").alias("rs")),
-            Self::Ruby => Some(clap::builder::PossibleValue::new("ruby").alias("rb")),
-            Self::Solidity => Some(clap::builder::PossibleValue::new("solidity").alias("sol")),
-            Self::Hcl => Some(
-                clap::builder::PossibleValue::new("hcl")
-                    .alias("tf")
-                    .alias("tfvars"),
-            ),
-            Self::Yaml => Some(clap::builder::PossibleValue::new("yaml").alias("yml")),
-            Self::Sql => Some(
-                clap::builder::PossibleValue::new("sql")
-                    .alias("mysql")
-                    .alias("postgresql"),
-            ),
-            Self::Vue => Some(clap::builder::PossibleValue::new("vue")),
-            Self::Toml => Some(clap::builder::PossibleValue::new("toml")),
-            Self::Php => Some(
-                clap::builder::PossibleValue::new("php")
-                    .alias("phps")
-                    .alias("phtml")
-                    .alias("pht"),
-            ),
-            Self::PhpOnly => Some(
-                clap::builder::PossibleValue::new("phponly")
-                    .alias("phps")
-                    .alias("phtml")
-                    .alias("pht"),
-            ),
-            Self::Universal => Some(clap::builder::PossibleValue::new("universal")),
-        }
+    // but we use fmt / .to_string() to do so
+    fn to_possible_value<'a>(&self) -> Option<PossibleValue> {
+        // needed to convert String to &'static str
+        let lang_name: &'static str = Box::leak(self.to_string().into_boxed_str());
+        Some(
+            PossibleValue::new(lang_name)
+                .aliases(self.get_file_extensions())
+                .aliases(self.get_lang_aliases()),
+        )
     }
 }
 
@@ -305,15 +261,25 @@ impl PatternLanguage {
         }
         let name = name.to_lowercase();
         for lang in PatternLanguage::enumerate() {
-            if let Some(possible_value) = lang.to_possible_value() {
-                for alias in possible_value.get_name_and_aliases() {
-                    if alias == name {
-                        return Some(lang);
-                    }
+            for alias in lang.get_lang_aliases() {
+                if *alias == name {
+                    return Some(lang);
                 }
             }
         }
         None
+    }
+
+    // https://github.com/getgrit/gritql/issues/445
+    // add any more language aliases here
+    fn get_lang_aliases(&self) -> &'static [&'static str] {
+        match self {
+            PatternLanguage::JavaScript => &["javascript"],
+            PatternLanguage::TypeScript => &["typescript"],
+            PatternLanguage::Tsx => &["javascript", "typescript", "flow"],
+            PatternLanguage::Sql => &["mysql", "postgresql"],
+            _ => &[],
+        }
     }
 
     fn get_file_extensions(&self) -> &'static [&'static str] {
