@@ -15170,3 +15170,80 @@ fn or_file() {
     })
     .unwrap();
 }
+
+#[test]
+fn jsx_string_equivalence() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |`"users_import"` => `"edited"`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |// this case is simple:
+                |var x = "users_import"
+                |// but JSX is more complex:
+                |function MyComponent() {
+                |   return (<OtherComponent value={"users_import"}>Hello World</OtherComponent>);
+                |}
+                |// especially when used as an attribute directly:
+                |function MyComponentTwo() {
+                |   return (<OtherComponent value="users_import">Hello World</OtherComponent>);
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |// this case is simple:
+                |var x = "edited"
+                |// but JSX is more complex:
+                |function MyComponent() {
+                |   return (<OtherComponent value={"edited"}>Hello World</OtherComponent>);
+                |}
+                |// especially when used as an attribute directly:
+                |function MyComponentTwo() {
+                |   return (<OtherComponent value="edited">Hello World</OtherComponent>);
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+// https://github.com/getgrit/gritql/issues/531
+mod test_high_level_equivalence {
+    use super::*;
+
+    #[test]
+    fn parses_correctly() {
+        let pattern_src = r#"
+            |engine marzano(0.1)
+            |language js
+            |
+            |`"hello"`
+            |"#
+        .trim_margin()
+        .unwrap();
+
+        let pattern = src_to_problem_libs(
+            pattern_src.to_string(),
+            &BTreeMap::new(),
+            TargetLanguage::default(),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .problem;
+
+        println!("{:?}", pattern);
+
+        panic!("not implemented");
+    }
+}

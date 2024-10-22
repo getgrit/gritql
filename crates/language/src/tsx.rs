@@ -4,8 +4,9 @@ use crate::{
         js_like_is_metavariable, jslike_check_replacements, MarzanoJsLikeParser,
     },
     language::{
-        check_disregarded_field_map, fields_for_nodes, kind_and_field_id_for_field_map, Field,
-        FieldExpectation, MarzanoLanguage, NodeTypes, SortId, TSLanguage, Tree,
+        check_disregarded_field_map, fields_for_nodes, kind_and_field_id_for_field_map,
+        normalize_identity, Field, FieldExpectation, LeafNormalizer, MarzanoLanguage, NodeTypes,
+        SortId, TSLanguage, Tree,
     },
 };
 use grit_util::{AstNode, ByteRange, Language, Parser, Replacement};
@@ -17,6 +18,7 @@ static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static STATEMENT_SORTS: OnceLock<Vec<SortId>> = OnceLock::new();
 static DISREGARDED_SNIPPET_FIELDS: OnceLock<Vec<FieldExpectation>> = OnceLock::new();
+static EQUIVALENT_LEAF_NODES: OnceLock<Vec<Vec<LeafNormalizer>>> = OnceLock::new();
 
 #[cfg(not(feature = "builtin-parser"))]
 fn language() -> TSLanguage {
@@ -53,6 +55,21 @@ impl Tsx {
         });
 
         let statement_sorts = STATEMENT_SORTS.get_or_init(|| js_like_get_statement_sorts(language));
+
+        // let equivalent_leaf_nodes = EQUIVALENT_LEAF_NODES.get_or_init(|| {
+        //     vec![vec![
+        //         LeafNormalizer::new(
+        //             language.id_for_node_kind("_jsx_string", true),
+        //             normalize_identity,
+        //         ),
+        //         // LeafNormalizer::new(
+        //         //     language.id_for_node_kind("double_quote_scalar", true),
+        //         //     normalize_double_quote_string,
+        //         // ),
+        //     ]]
+        // });
+
+        // println!("{:#?}", equivalent_leaf_nodes);
 
         Self {
             node_types,
