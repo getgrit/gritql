@@ -47,15 +47,11 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
-// #[clap(rename_all = "lower")]
 #[serde(rename_all = "lowercase")]
 pub enum PatternLanguage {
-    // #[value(skip)]
     JavaScript,
-    // #[value(skip)]
     TypeScript,
     #[default]
-    // #[value(name = "js")]
     #[serde(rename = "js")]
     Tsx,
     Html,
@@ -64,9 +60,7 @@ pub enum PatternLanguage {
     Java,
     CSharp,
     Python,
-    // #[value(name = "markdown")]
     MarkdownBlock,
-    // #[value(skip)]
     MarkdownInline,
     Go,
     Rust,
@@ -79,7 +73,6 @@ pub enum PatternLanguage {
     Toml,
     Php,
     PhpOnly,
-    // #[value(skip)]
     Universal,
 }
 
