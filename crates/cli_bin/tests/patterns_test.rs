@@ -181,6 +181,32 @@ fn fails_recursion() -> Result<()> {
 }
 
 #[test]
+fn fails_to_find_non_existent_file() -> Result<()> {
+    let (_temp_dir, temp_fixture_path) = get_fixture("patterns_test", false)?;
+    let test_yaml_path = temp_fixture_path.join(".grit/grit.yaml");
+    // Update it to a config with a non-existent file
+    let yaml_str = r#"
+version: 0.0.1
+patterns:
+  - file: patterns/non_existent.md
+"#;
+    fs::write(&test_yaml_path, yaml_str)?;
+    thread::sleep(Duration::from_secs(3));
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("patterns").arg("test").current_dir(&temp_fixture_path);
+    let output = cmd.output()?;
+    let stdout = String::from_utf8(output.stdout)?;
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stdout: {}", stdout);
+    println!("stderr: {}", stderr);
+
+    assert!(stderr.contains("Failed to find pattern at .grit/patterns/non_existent.md. Does it exist?"));
+
+    Ok(())
+}
+
+#[test]
 fn test_multifile_fails_if_unchanged_file_has_incorrect_expected() -> Result<()> {
     let (_temp_dir, fixture_dir) = get_fixture("test_multifile_fail", true)?;
 
