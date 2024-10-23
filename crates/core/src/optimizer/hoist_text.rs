@@ -42,7 +42,57 @@ fn extract_pattern_text<Q: QueryContext>(pattern: &Pattern<Q>) -> Result<Option<
         Pattern::AstLeafNode(node) => Ok(node
             .text()
             .map(|s| Pattern::StringConstant(StringConstant::new(s.to_string())))),
-        _ => Ok(None),
+        Pattern::AstNode(_)
+        | Pattern::List(_)
+        | Pattern::ListIndex(_)
+        | Pattern::Map(_)
+        | Pattern::Accessor(_)
+        | Pattern::Call(_)
+        | Pattern::Regex(_)
+        | Pattern::File(_)
+        | Pattern::Files(_)
+        | Pattern::Bubble(_)
+        | Pattern::Limit(_)
+        | Pattern::CallBuiltIn(_)
+        | Pattern::CallFunction(_)
+        | Pattern::CallForeignFunction(_)
+        | Pattern::CallbackPattern(_)
+        | Pattern::Assignment(_)
+        | Pattern::Accumulate(_)
+        | Pattern::And(_)
+        | Pattern::Or(_)
+        | Pattern::Maybe(_)
+        | Pattern::Any(_)
+        | Pattern::Not(_)
+        | Pattern::If(_)
+        | Pattern::Undefined
+        | Pattern::Top
+        | Pattern::Bottom
+        | Pattern::Underscore
+        | Pattern::IntConstant(_)
+        | Pattern::FloatConstant(_)
+        | Pattern::BooleanConstant(_)
+        | Pattern::Dynamic(_)
+        | Pattern::Variable(_)
+        | Pattern::Rewrite(_)
+        | Pattern::Log(_)
+        | Pattern::Range(_)
+        | Pattern::Contains(_)
+        | Pattern::Includes(_)
+        | Pattern::Within(_)
+        | Pattern::After(_)
+        | Pattern::Before(_)
+        | Pattern::Where(_)
+        | Pattern::Some(_)
+        | Pattern::Every(_)
+        | Pattern::Add(_)
+        | Pattern::Subtract(_)
+        | Pattern::Multiply(_)
+        | Pattern::Divide(_)
+        | Pattern::Modulo(_)
+        | Pattern::Dots
+        | Pattern::Sequential(_)
+        | Pattern::Like(_) => Ok(None),
     }
 }
 
