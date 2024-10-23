@@ -98,10 +98,17 @@ pub async fn get_patterns_from_file(
     ext: PatternFileExt,
     overrides: GritDefinitionOverrides,
 ) -> Result<Vec<ModuleGritPattern>> {
-    let repo_root = find_repo_root_from(path.clone()).await?;
-    let content = fs::read_to_string(&path).await?;
+    let path_str = path.to_string_lossy();
+    let repo_root = find_repo_root_from(path.clone()).await.context(format!(
+        "Failed to find repository root from path {}",
+        path_str
+    ))?;
+    let content = fs::read_to_string(&path).await.context(format!(
+        "Failed to find pattern at {}. Does it exist?",
+        extract_relative_path(&path_str, &repo_root)
+    ))?;
     let mut file = RichFile {
-        path: path.to_string_lossy().to_string(),
+        path: path_str.to_string(),
         content,
     };
     ext.get_patterns(&mut file, &source_module, &repo_root, overrides)
