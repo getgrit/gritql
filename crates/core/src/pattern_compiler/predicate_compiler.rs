@@ -47,9 +47,7 @@ impl NodeCompiler for PredicateCompiler {
             "predicateEqual" => Ok(Predicate::Equal(Box::new(EqualCompiler::from_node(
                 node, context,
             )?))),
-            "predicateCall" => Ok(Predicate::Call(Box::new(PrCallCompiler::from_node(
-                node, context,
-            )?))),
+            "predicateCall" => Ok(PrCallCompiler::from_node(node, context)?),
             "booleanConstant" => match node.text()?.trim() {
                 "true" => Ok(Predicate::True),
                 "false" => Ok(Predicate::False),

@@ -5,7 +5,7 @@ use super::{
 use crate::{built_in_functions::BuiltIns, problem::MarzanoQueryContext};
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::pattern::{
-    Call, CallForeignFunction, CallFunction, FilePattern, Pattern, PrCall,
+    Call, CallBuiltIn, CallForeignFunction, CallFunction, FilePattern, Pattern, PrCall, Predicate,
 };
 use grit_util::{AstNode, ByteRange, Language};
 use itertools::Itertools;
@@ -37,6 +37,10 @@ impl NodeCompiler for CallCompiler {
             .iter()
             .find(|b| b.name == kind)
         {
+            if !built_in.position.is_pattern() {
+                bail!("function {kind} cannot be called as a pattern");
+            }
+
             Some(built_in.params.iter().map(|s| s.to_string()).collect_vec())
         } else if let Some(info) = context.compilation.function_definition_info.get(kind) {
             Some(collect_params(&info.parameters))
@@ -136,7 +140,7 @@ impl NodeCompiler for CallCompiler {
 pub(crate) struct PrCallCompiler;
 
 impl NodeCompiler for PrCallCompiler {
-    type TargetPattern = PrCall<MarzanoQueryContext>;
+    type TargetPattern = Predicate<MarzanoQueryContext>;
 
     fn from_node_with_rhs(
         node: &NodeWithSource,
@@ -148,7 +152,26 @@ impl NodeCompiler for PrCallCompiler {
             .ok_or_else(|| anyhow!("missing pattern, predicate, or sort name"))?;
         let name = name.text()?;
         let name = name.trim();
-        let named_args_count = node.named_children_by_field_name("named_args").count();
+
+        if let Some((index, built_in)) = context
+            .compilation
+            .built_ins
+            .get_built_ins()
+            .iter()
+            .enumerate()
+            .find(|(_, built_in)| built_in.name == name)
+        {
+            if !built_in.position.is_predicate() {
+                bail!("function {name} cannot be called as a predicate");
+            }
+
+            let params = built_in.params.iter().map(|s| s.to_string()).collect_vec();
+            let args = args_from_params(node, context, name, params)?;
+            return Ok(Predicate::CallBuiltIn(Box::new(CallBuiltIn::new(
+                index, name, args,
+            ))));
+        }
+
         let info = if let Some(info) = context.compilation.predicate_definition_info.get(name) {
             info
         } else if let Some(info) = context.compilation.function_definition_info.get(name) {
@@ -156,19 +179,29 @@ impl NodeCompiler for PrCallCompiler {
         } else {
             bail!("predicate or function definition not found: {name}. Try running grit init.");
         };
-        let params = collect_params(&info.parameters);
-        let expected_params = Some(params.clone());
-        let named_args = node.named_children_by_field_name("named_args");
-        let named_args =
-            node_to_args_pairs(named_args, context.compilation.lang, name, &expected_params)?;
-        let args = named_args_to_hash_map(named_args, context)?;
-        if args.len() != named_args_count {
-            return Err(anyhow!("duplicate named args for invocation of {name}"));
-        }
 
-        let args = match_args_to_params(name, args, &params, context.compilation.lang)?;
-        Ok(PrCall::new(info.index, args))
+        let args = args_from_params(node, context, name, collect_params(&info.parameters))?;
+        Ok(Predicate::Call(Box::new(PrCall::new(info.index, args))))
     }
+}
+
+fn args_from_params(
+    node: &NodeWithSource<'_>,
+    context: &mut NodeCompilationContext,
+    name: &str,
+    params: Vec<String>,
+) -> Result<Vec<Option<Pattern<MarzanoQueryContext>>>> {
+    let expected_params = Some(params.clone());
+    let named_args = node.named_children_by_field_name("named_args");
+    let named_args =
+        node_to_args_pairs(named_args, context.compilation.lang, name, &expected_params)?;
+    let args = named_args_to_hash_map(named_args, context)?;
+    let named_args_count = node.named_children_by_field_name("named_args").count();
+    if args.len() != named_args_count {
+        bail!("duplicate named args for invocation of {name}");
+    }
+
+    match_args_to_params(name, args, &params, context.compilation.lang)
 }
 
 fn collect_params(parameters: &[(String, ByteRange)]) -> Vec<String> {

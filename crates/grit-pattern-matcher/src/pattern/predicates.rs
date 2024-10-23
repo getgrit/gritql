@@ -15,7 +15,7 @@ use super::{
     r#if::PrIf,
     r#match::Match,
     rewrite::Rewrite,
-    State,
+    CallBuiltIn, State,
 };
 use crate::context::QueryContext;
 use core::fmt::Debug;
@@ -24,6 +24,7 @@ use grit_util::{error::GritResult, AnalysisLogs};
 #[derive(Debug, Clone)]
 pub enum Predicate<Q: QueryContext> {
     Call(Box<PrCall<Q>>),
+    CallBuiltIn(Box<CallBuiltIn<Q>>),
     Not(Box<PrNot<Q>>),
     If(Box<PrIf<Q>>),
     True,
@@ -45,6 +46,7 @@ impl<Q: QueryContext> PatternName for Predicate<Q> {
     fn name(&self) -> &'static str {
         match self {
             Predicate::Call(call) => call.name(),
+            Predicate::CallBuiltIn(call_built_in) => call_built_in.name(),
             Predicate::Not(not) => not.name(),
             Predicate::If(if_) => if_.name(),
             Predicate::True => "TRUE",
@@ -73,6 +75,9 @@ impl<Q: QueryContext> Evaluator<Q> for Predicate<Q> {
     ) -> GritResult<FuncEvaluation<Q>> {
         match self {
             Predicate::Call(call) => call.execute_func(state, context, logs),
+            Predicate::CallBuiltIn(call_built_in) => {
+                call_built_in.execute_func(state, context, logs)
+            }
             Predicate::Or(or) => or.execute_func(state, context, logs),
             Predicate::And(and) => and.execute_func(state, context, logs),
             Predicate::Maybe(maybe) => maybe.execute_func(state, context, logs),

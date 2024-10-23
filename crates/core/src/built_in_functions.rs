@@ -47,6 +47,7 @@ pub struct BuiltInFunction {
     pub name: &'static str,
     pub params: Vec<&'static str>,
     pub(crate) func: Box<CallableFn>,
+    pub(crate) position: BuiltInFunctionPosition,
 }
 
 impl BuiltInFunction {
@@ -61,7 +62,22 @@ impl BuiltInFunction {
     }
 
     pub fn new(name: &'static str, params: Vec<&'static str>, func: Box<CallableFn>) -> Self {
-        Self { name, params, func }
+        Self {
+            name,
+            params,
+            func,
+            position: BuiltInFunctionPosition::Pattern,
+        }
+    }
+
+    pub fn as_predicate(mut self) -> Self {
+        self.position = BuiltInFunctionPosition::Pattern;
+        self
+    }
+
+    pub fn as_predicate_or_pattern(mut self) -> Self {
+        self.position = BuiltInFunctionPosition::Both;
+        self
     }
 }
 
@@ -71,6 +87,23 @@ impl std::fmt::Debug for BuiltInFunction {
             .field("name", &self.name)
             .field("params", &self.params)
             .finish()
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum BuiltInFunctionPosition {
+    Pattern,
+    Predicate,
+    Both,
+}
+
+impl BuiltInFunctionPosition {
+    pub fn is_pattern(&self) -> bool {
+        matches!(self, Self::Pattern | Self::Both)
+    }
+
+    pub fn is_predicate(&self) -> bool {
+        matches!(self, Self::Predicate | Self::Both)
     }
 }
 
@@ -108,10 +141,7 @@ impl BuiltIns {
         let params = &built_ins.built_ins[index].params;
         let mut pattern_params = Vec::with_capacity(args.len());
         for param in params.iter() {
-            match args.remove(&(lang.metavariable_prefix().to_owned() + param)) {
-                Some(p) => pattern_params.push(Some(p)),
-                None => pattern_params.push(None),
-            }
+            pattern_params.push(args.remove(&(lang.metavariable_prefix().to_owned() + param)));
         }
         Ok(CallBuiltIn::new(index, name, pattern_params))
     }

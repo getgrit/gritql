@@ -83,6 +83,14 @@ impl<Q: QueryContext> Predicate<Q> {
                 }
                 base
             }
+            Predicate::CallBuiltIn(call_built_in) => {
+                let mut base = args_children(&call_built_in.args, definitions);
+                let def = definitions.get_predicate(call_built_in.index);
+                if let Some(def) = def {
+                    base.push(PatternOrPredicate::Predicate(&def.predicate));
+                }
+                base
+            }
             Predicate::Not(not) => vec![PatternOrPredicate::Predicate(&not.predicate)],
             Predicate::If(if_) => vec![
                 PatternOrPredicate::Predicate(&if_.if_),

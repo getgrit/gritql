@@ -397,7 +397,10 @@ impl<Q: QueryContext> BodyPatternExtractor<Q> for Predicate<Q> {
             }
 
             // These are more complicated, implement carefully
-            Predicate::Call(_) | Predicate::Not(_) | Predicate::Equal(_) => Ok(None),
+            Predicate::Call(_)
+            | Predicate::CallBuiltIn(_)
+            | Predicate::Not(_)
+            | Predicate::Equal(_) => Ok(None),
         }
     }
 }
