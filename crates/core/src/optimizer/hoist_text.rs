@@ -452,6 +452,8 @@ mod test {
         let results = run_on_test_files(&pattern, &test_files);
         println!("{:?}", results);
         assert!(results.iter().any(|r| r.is_match()));
+
+        // We should have 2 analysis logs, one for each file that was actually traversed
         assert_eq!(
             results
                 .iter()
