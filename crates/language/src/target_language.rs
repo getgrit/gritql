@@ -27,6 +27,7 @@ use crate::{
     yaml::Yaml,
 };
 use anyhow::Result;
+use clap::builder::PossibleValue;
 use clap::ValueEnum;
 use grit_util::Order;
 use grit_util::{Ast, AstNode, ByteRange, CodeRange, Language, Parser, SnippetTree};
@@ -45,16 +46,12 @@ use std::path::PathBuf;
 #[cfg(feature = "finder")]
 use std::str::FromStr;
 
-#[derive(ValueEnum, Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[clap(rename_all = "lower")]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum PatternLanguage {
-    #[value(skip)]
     JavaScript,
-    #[value(skip)]
     TypeScript,
     #[default]
-    #[value(name = "js")]
     #[serde(rename = "js")]
     Tsx,
     Html,
@@ -63,9 +60,7 @@ pub enum PatternLanguage {
     Java,
     CSharp,
     Python,
-    #[value(name = "markdown")]
     MarkdownBlock,
-    #[value(skip)]
     MarkdownInline,
     Go,
     Rust,
@@ -78,7 +73,6 @@ pub enum PatternLanguage {
     Toml,
     Php,
     PhpOnly,
-    #[value(skip)]
     Universal,
 }
 
@@ -115,6 +109,46 @@ impl fmt::Display for PatternLanguage {
 impl From<&TargetLanguage> for PatternLanguage {
     fn from(value: &TargetLanguage) -> Self {
         value.to_module_language()
+    }
+}
+
+// see: https://github.com/clap-rs/clap/issues/4416
+impl ValueEnum for PatternLanguage {
+    // we need to implement the skip variants here ourselves now
+    fn value_variants<'a>() -> &'a [Self] {
+        &[
+            Self::Tsx,
+            Self::Html,
+            Self::Css,
+            Self::Json,
+            Self::Java,
+            Self::CSharp,
+            Self::Python,
+            Self::MarkdownBlock,
+            Self::Go,
+            Self::Rust,
+            Self::Ruby,
+            Self::Solidity,
+            Self::Hcl,
+            Self::Yaml,
+            Self::Sql,
+            Self::Vue,
+            Self::Toml,
+            Self::Php,
+            Self::PhpOnly,
+        ]
+    }
+
+    // we need to implement the lowercase/rename transformations here ourselves now
+    // but we use fmt / .to_string() to do so
+    fn to_possible_value<'a>(&self) -> Option<PossibleValue> {
+        // needed to convert String to &'static str
+        let lang_name: &'static str = Box::leak(self.to_string().into_boxed_str());
+        Some(
+            PossibleValue::new(lang_name)
+                .aliases(self.get_file_extensions())
+                .aliases(self.get_lang_aliases()),
+        )
     }
 }
 
@@ -174,7 +208,7 @@ impl PatternLanguage {
     }
 
     pub fn from_string(name: &str, flavor: Option<&str>) -> Option<Self> {
-        match name {
+        let lang = match name {
             "js" => match flavor {
                 Some("jsx") => Some(Self::Tsx),
                 Some("flow") => Some(Self::Tsx),
@@ -211,6 +245,33 @@ impl PatternLanguage {
             },
             "universal" => Some(Self::Universal),
             _ => None,
+        };
+        if let Some(lang) = lang {
+            return Some(lang);
+        }
+        if let Some(lang) = Self::from_extension(name) {
+            return Some(lang);
+        }
+        let name = name.to_lowercase();
+        for lang in PatternLanguage::enumerate() {
+            for alias in lang.get_lang_aliases() {
+                if *alias == name {
+                    return Some(lang);
+                }
+            }
+        }
+        None
+    }
+
+    // https://github.com/getgrit/gritql/issues/445
+    // add any more language aliases here
+    fn get_lang_aliases(&self) -> &'static [&'static str] {
+        match self {
+            PatternLanguage::JavaScript => &["javascript"],
+            PatternLanguage::TypeScript => &["typescript"],
+            PatternLanguage::Tsx => &["javascript", "typescript", "flow"],
+            PatternLanguage::Sql => &["mysql", "postgresql"],
+            _ => &[],
         }
     }
 
