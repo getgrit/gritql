@@ -357,23 +357,52 @@ mod test {
     use marzano_language::target_language::TargetLanguage;
 
     use crate::{
+        api::MatchResult,
         pattern_compiler::src_to_problem_libs,
         test_utils::{run_on_test_files, SyntheticFile},
     };
 
     #[test]
-    fn test_basic_file_contains() {
-        let pattern_src = r#"
-        file(body=contains bubble `console.log($_)`)
-        "#;
+    fn test_basic_file_includes_no_parse() {
         let libs = BTreeMap::new();
 
-        let matching_src = r#"
+        // All together now
+        let test_files = vec![
+            SyntheticFile::new(
+                "target.js".to_owned(),
+                r#"
         console.log("Hello, world!");
-        "#;
+        "#
+                .to_owned(),
+                true,
+            ),
+            SyntheticFile::new(
+                "do_not_traverse.js".to_owned(),
+                r#"
+                // this does not include the magic word
+                "#
+                .to_owned(),
+                true,
+            ),
+            SyntheticFile::new(
+                "do_traverse.js".to_owned(),
+                r#"
+                // this does mention console, but it does not match
+                "#
+                .to_owned(),
+                true,
+            ),
+        ];
 
+        // Test with a pattern that short circuits the contains callback
         let pattern = src_to_problem_libs(
-            pattern_src.to_string(),
+            r#"
+        file($name, $body) where {
+            $body <: includes "console",
+            log(message="This is a message, it should only appear once", variable=$name)
+        }
+        "#
+            .to_string(),
             &libs,
             TargetLanguage::default(),
             None,
@@ -383,20 +412,15 @@ mod test {
         )
         .unwrap()
         .problem;
-
-        // All together now
-        let test_files = vec![
-            SyntheticFile::new("target.js".to_owned(), matching_src.to_owned(), true),
-            SyntheticFile::new(
-                "do_not_read.js".to_owned(),
-                "// this is not a matching file".to_owned(),
-                false,
-            ),
-        ];
         let results = run_on_test_files(&pattern, &test_files);
-
-        // Confirm we have 2 DoneFiles and 1 match
-        assert_eq!(results.len(), 3);
+        println!("{:?}", results);
         assert!(results.iter().any(|r| r.is_match()));
+        assert_eq!(
+            results
+                .iter()
+                .filter(|r| matches!(r, MatchResult::AnalysisLog(_)))
+                .count(),
+            2
+        );
     }
 }

@@ -28,6 +28,8 @@ impl FileOwnerCompiler {
         else {
             return Ok(None);
         };
+        // println!("PARSE IT NOW for {}", name.display());
+        // panic!("parse time please...");
 
         if new_map.is_some() {
             tree.source_map = new_map;
