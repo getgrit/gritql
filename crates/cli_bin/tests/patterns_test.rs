@@ -194,14 +194,18 @@ patterns:
     thread::sleep(Duration::from_secs(3));
 
     let mut cmd = get_test_cmd()?;
-    cmd.arg("patterns").arg("test").current_dir(&temp_fixture_path);
+    cmd.arg("patterns")
+        .arg("test")
+        .current_dir(&temp_fixture_path);
     let output = cmd.output()?;
     let stdout = String::from_utf8(output.stdout)?;
     let stderr = String::from_utf8(output.stderr)?;
     println!("stdout: {}", stdout);
     println!("stderr: {}", stderr);
 
-    assert!(stderr.contains("Failed to find pattern at .grit/patterns/non_existent.md. Does it exist?"));
+    assert!(
+        stderr.contains("Failed to find pattern at .grit/patterns/non_existent.md. Does it exist?")
+    );
 
     Ok(())
 }
