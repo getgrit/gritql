@@ -265,7 +265,7 @@ impl Variable {
         let Ok(scope) = self.try_scope() else {
             return false;
         };
-        scope < 2
+        scope == 1
     }
 
     pub fn text<'a, Q: QueryContext>(
