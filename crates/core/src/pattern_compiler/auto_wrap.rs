@@ -463,7 +463,7 @@ fn wrap_pattern_in_file(
         Pattern::Top
     });
 
-    let pattern = if let Some(file_body_pattern) = extract_body_pattern(&pattern)? {
+    let pattern = if let Some(file_body_pattern) = extract_body_pattern(&pattern, true)? {
         Pattern::File(Box::new(FilePattern::new(
             filename_pattern,
             Pattern::And(Box::new(And::new(vec![file_body_pattern, pattern]))),

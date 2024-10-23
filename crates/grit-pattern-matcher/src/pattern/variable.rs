@@ -260,6 +260,14 @@ impl Variable {
         scope.scope == GLOBAL_VARS_SCOPE_INDEX && scope.index as usize == PROGRAM_INDEX
     }
 
+    /// We auto-insert a $match variable during auto-wrap, which we can usually treat as being usable in the program body
+    pub fn is_probably_match(&self) -> bool {
+        let Ok(scope) = self.try_scope() else {
+            return false;
+        };
+        scope == 1
+    }
+
     pub fn text<'a, Q: QueryContext>(
         &self,
         state: &State<'a, Q>,
