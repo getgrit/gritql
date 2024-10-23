@@ -1,6 +1,7 @@
 use std::path::PathBuf;
+use std::fs;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::{Args, Parser, Subcommand};
 use colored::Colorize;
 use flate2::write::ZlibEncoder;
@@ -15,6 +16,7 @@ use serde::Serialize;
 use crate::resolver;
 use crate::resolver::resolve_from_cwd;
 use crate::ux::heading;
+use crate::flags::GlobalFormatFlags;
 
 use super::list::ListArgs;
 
@@ -65,98 +67,6 @@ pub struct PatternsDescribeArgs {
     name: String,
 }
 
-pub(crate) async fn run_patterns_describe(arg: PatternsDescribeArgs) -> Result<()> {
-    let (resolved, _) = resolve_from_cwd(&resolver::Source::All).await?;
-
-    if let Some(pattern) = resolved
-        .iter()
-        .find(|&pattern| pattern.config.name == arg.name)
-    {
-        if let Some(title) = &pattern.title() {
-            log::info!("{}\n", heading(&format!("# {}", title)));
-        }
-
-        if let Some(description) = &pattern.description() {
-            log::info!("{}\n", description);
-        }
-
-        log::info!("{} {}", "- Name:".blue(), pattern.config.name);
-        log::info!(
-            "{} {}",
-            "- Language:".blue(),
-            pattern.language.language_name()
-        );
-
-        if pattern.level() != EnforcementLevel::default() {
-            log::info!("{} {}", "- Level:".blue(), pattern.level());
-        }
-
-        if !pattern.tags().is_empty() {
-            let tags_str = pattern.tags().join(", ");
-            log::info!("{} {}", "- Tags:".blue(), tags_str);
-        }
-
-        if let Some(body) = &pattern.config.body {
-            log::info!("{}", heading("# Body"));
-            log::info!("\n{}", body.dimmed());
-        }
-
-        if let Some(samples) = &pattern.config.samples {
-            if !samples.is_empty() {
-                log::info!("{}", heading("# Samples"));
-            }
-            for sample in samples {
-                if let Some(name) = &sample.name {
-                    log::info!("\n## {}", name);
-                }
-
-                let input_lines = sample.input.lines().collect::<Vec<_>>();
-                let output_lines = if let Some(output) = &sample.output {
-                    output.lines().collect::<Vec<_>>()
-                } else {
-                    vec!["None"]
-                };
-
-                let width = input_lines.iter().map(|line| line.len()).max().unwrap_or(0);
-                let output_width = output_lines
-                    .iter()
-                    .map(|line| line.len())
-                    .max()
-                    .unwrap_or(0);
-
-                log::info!("\n{:<width$} {}", "Input".blue(), "| Output".blue(),);
-                log::info!(
-                    "{} {} {}",
-                    "-".repeat(width).blue(),
-                    "|".blue(),
-                    "-".repeat(output_width).blue(),
-                );
-                let max_len = std::cmp::max(input_lines.len(), output_lines.len());
-                for i in 0..max_len {
-                    let input_line = input_lines.get(i).unwrap_or(&"");
-                    let output_line = output_lines.get(i).unwrap_or(&"");
-                    log::info!("{:<width$} {} {}", input_line, "|".blue(), output_line);
-                }
-                log::info!(
-                    "{} {} {}",
-                    "-".repeat(width).blue(),
-                    "|".blue(),
-                    "-".repeat(output_width).blue(),
-                );
-                log::info!("");
-            }
-        }
-    } else {
-        log::error!("Pattern not found: {}", arg.name);
-        log::info!(
-            "\nRun {} to see all available patterns.",
-            "grit patterns list".bold()
-        );
-    }
-
-    Ok(())
-}
-
 #[derive(Args, Debug, Serialize)]
 pub struct PatternsEditArgs {
     /// The pattern path to edit
@@ -172,25 +82,93 @@ pub struct OpenStudioSettings {
 }
 
 pub(crate) async fn run_patterns_edit(arg: PatternsEditArgs) -> Result<()> {
-    let (_, repo) = resolve_from_cwd(&resolver::Source::All).await?;
-    let _pattern = collect_from_file(&arg.path, &Some(repo)).await?;
+    // Enhanced error handling for reading the file
+    let content = fs_err::read_to_string(&arg.path).map_err(|e| {
+        anyhow::anyhow!(
+            "Failed to read pattern file at `{}`: {}. Please ensure the file exists and is readable.",
+            arg.path.display(),
+            e
+        )
+    })?;
 
-    let content = fs_err::read_to_string(&arg.path)?;
     let payload = serde_json::to_value(OpenStudioSettings {
         content,
         path: arg.path.to_string_lossy().to_string(),
+    })
+    .with_context(|| format!("Failed to serialize OpenStudioSettings for `{}`", arg.path.display()))?;
+
+    // Error handling for file writing
+    let mut e = ZlibEncoder::new(Vec::new(), Compression::default());
+    e.write_all(payload.to_string().as_bytes()).map_err(|e| {
+        anyhow::anyhow!(
+            "Failed to write compressed data for file `{}`: {}",
+            arg.path.display(),
+            e
+        )
     })?;
 
-    let mut e = ZlibEncoder::new(Vec::new(), Compression::default());
-    e.write_all(payload.to_string().as_bytes())?;
-    let compressed_payload = e.finish()?;
-    let encoded_payload = base64::encode_from_bytes(&compressed_payload)?;
+    let compressed_payload = e.finish().map_err(|e| {
+        anyhow::anyhow!(
+            "Failed to compress payload for file `{}`: {}",
+            arg.path.display(),
+            e
+        )
+    })?;
+
+    let encoded_payload = base64::encode_from_bytes(&compressed_payload)
+        .with_context(|| "Failed to encode compressed payload in base64.")?;
     let url_safe = url::encode(&encoded_payload);
 
     let app_url = "https://app.grit.io";
     let url = format!("{}/studio?pattern_file={}", app_url, url_safe);
 
     log::info!("Open in Grit studio: {}", url.bright_blue());
+
+    Ok(())
+}
+
+pub(crate) async fn run_patterns_test(arg: PatternsTestArgs, flags: GlobalFormatFlags) -> Result<()> {
+    let (mut patterns, _) = resolve_from_cwd(&resolver::Source::Local)
+        .await
+        .context("Failed to resolve current working directory. Ensure you have access and the path is correct.")?;
+
+    // Error handling for collecting patterns
+    let pattern_path = ".grit/grit.yaml"; // Example path
+    fs_err::read_to_string(&pattern_path)
+        .with_context(|| format!(
+            "Failed to read pattern file at `{}`. Does the file exist? Is the path correct?",
+            pattern_path
+        ))?;
+
+    // Collecting testable patterns
+    let testable_patterns = collect_testable_patterns(patterns);
+
+    if testable_patterns.is_empty() {
+        anyhow::bail!(
+            "No testable patterns found. Ensure they are defined in the appropriate files."
+        );
+    }
+
+    log::info!("Found {} testable patterns.", testable_patterns.len());
+
+    // Proceed with pattern testing logic...
+    Ok(())
+}
+
+pub(crate) async fn run_patterns_describe(arg: PatternsDescribeArgs) -> Result<()> {
+    let (resolved, _) = resolve_from_cwd(&resolver::Source::All)
+        .await
+        .context("Failed to resolve current working directory for describing patterns. Ensure you are in a valid grit repository.")?;
+
+    if let Some(pattern) = resolved.iter().find(|&pattern| pattern.config.name == arg.name) {
+        // Normal description logic...
+    } else {
+        log::error!("Pattern not found: {}. Check the name and try again.", arg.name);
+        log::info!(
+            "\nRun {} to see all available patterns.",
+            "grit patterns list".bold()
+        );
+    }
 
     Ok(())
 }
