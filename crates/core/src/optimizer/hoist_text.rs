@@ -106,7 +106,6 @@ pub fn extract_body_pattern<Q: QueryContext>(
     pattern: &Pattern<Q>,
     matching_body: bool,
 ) -> Result<Option<Pattern<Q>>> {
-    println!("extract? {:?} {}", pattern, matching_body);
     match pattern {
         Pattern::Variable(_)
         | Pattern::CodeSnippet(_)
@@ -117,7 +116,14 @@ pub fn extract_body_pattern<Q: QueryContext>(
         | Pattern::StringConstant(_)
         | Pattern::AstLeafNode(_)
         | Pattern::IntConstant(_)
-        | Pattern::Bottom => Ok(Some(Pattern::Top)),
+        | Pattern::Bottom => {
+            if matching_body {
+                if let Some(text) = extract_pattern_text(pattern)? {
+                    return Ok(Some(Pattern::Includes(Box::new(Includes::new(text)))));
+                }
+            }
+            Ok(Some(Pattern::Top))
+        }
 
         // Traversing downwards, collecting patterns
         Pattern::Contains(c) => {
@@ -263,17 +269,11 @@ impl<Q: QueryContext> BodyPatternExtractor<Q> for Where<Q> {
     fn extract_body_pattern(&self, matching_body: bool) -> Result<Option<Pattern<Q>>> {
         let pattern = extract_body_pattern(&self.pattern, matching_body)?.unwrap_or(Pattern::Top);
 
-        // If it is our special $match variable then we should treat it as the body
-        let is_body_pattern = if let Pattern::Variable(v) = &pattern {
-            v.is_program()
-        } else {
-            false
-        };
-
         let predicate_pattern = self
             .side_condition
             .extract_body_pattern(false)?
             .unwrap_or(Pattern::Top);
+
         Ok(Some(Pattern::And(Box::new(And::new(vec![
             pattern,
             predicate_pattern,
@@ -336,18 +336,16 @@ impl<Q: QueryContext> BodyPatternExtractor<Q> for Predicate<Q> {
             Predicate::Match(m) => {
                 match &m.val {
                     grit_pattern_matcher::pattern::Container::Variable(var) => {
-                        if var.is_program() {
+                        if var.is_program() || var.is_probably_match() {
                             match &m.pattern {
                                 Some(pattern) => {
                                     // This is the key line of this entire file
                                     if is_safe_to_hoist(pattern)? {
                                         let body_pattern = extract_body_pattern(pattern, true)?;
+
                                         if let Some(body_pattern) = body_pattern {
                                             return Ok(Some(body_pattern));
                                         }
-                                        return Ok(None);
-                                    } else {
-                                        return Ok(None);
                                     }
                                 }
                                 None => {}
@@ -475,7 +473,7 @@ mod test {
         println!("Pattern: {:?}", pattern);
 
         let results = run_on_test_files(&pattern, &test_files);
-        println!("{:?}", results);
+        println!("Results: {:?}", results);
         assert!(results.iter().any(|r| r.is_match()));
 
         // We should have 2 analysis logs, one for each file that was actually traversed
@@ -539,7 +537,9 @@ mod test {
         .unwrap()
         .problem;
 
-        println!("Pattern: {:?}", pattern);
+        // This is our hacky way to make sure something was hoisted
+        let formatted = format!("pattern: {:?}", pattern);
+        assert!(formatted.contains("includes: Or(Or { patterns: [StringConstant("));
 
         let results = run_on_test_files(&pattern, &test_files);
         println!("{:?}", results);
