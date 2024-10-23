@@ -182,16 +182,7 @@ fn fails_recursion() -> Result<()> {
 
 #[test]
 fn fails_to_find_non_existent_file() -> Result<()> {
-    let (_temp_dir, temp_fixture_path) = get_fixture("patterns_test", false)?;
-    let test_yaml_path = temp_fixture_path.join(".grit/grit.yaml");
-    // Update it to a config with a non-existent file
-    let yaml_str = r#"
-version: 0.0.1
-patterns:
-  - file: patterns/non_existent.md
-"#;
-    fs::write(&test_yaml_path, yaml_str)?;
-    thread::sleep(Duration::from_secs(3));
+    let (_temp_dir, temp_fixture_path) = get_fixture("pattern_non_existent", false)?;
 
     let mut cmd = get_test_cmd()?;
     cmd.arg("patterns")
