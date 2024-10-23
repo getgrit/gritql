@@ -379,6 +379,7 @@ impl<Q: QueryContext> BodyPatternExtractor<Q> for Predicate<Q> {
     }
 }
 
+#[cfg(test)]
 mod test {
     use std::collections::BTreeMap;
 
