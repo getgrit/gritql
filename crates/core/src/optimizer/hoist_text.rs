@@ -1,20 +1,53 @@
 use anyhow::Result;
 use grit_pattern_matcher::{
     context::QueryContext,
-    pattern::{And, Any, Bubble, Contains, Includes, Or, Pattern, Predicate, Where},
+    pattern::{
+        And, Any, Bubble, Contains, Includes, Or, Pattern, Predicate, StringConstant, Where,
+    },
 };
 
-trait FilenamePatternExtractor<Q: QueryContext> {
-    fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>>;
+use super::hoist_files::is_safe_to_hoist;
+use grit_pattern_matcher::pattern::AstLeafNodePattern;
+use grit_pattern_matcher::pattern::CodeSnippet;
+
+/// This file implements an optimization pass to look for *string* identifiers that the pattern is searching for
+/// If any are found, we "hoist" them to skip parsing/traversing files entirely and instead just look for the text
+/// Searching inside text is more optimized than matching on the AST
+///
+/// Note this is moslty copied from hoist_files.rs, we can DRY it later if a 3rd optimizer is added.
+
+trait BodyPatternExtractor<Q: QueryContext> {
+    fn extract_body_pattern(&self) -> Result<Option<Pattern<Q>>>;
 }
 
-/// Given a pattern, construct a new pattern that reflects any filename predicates found
-/// If analysis cannot be done reliably, returns None
-pub fn extract_filename_pattern<Q: QueryContext>(
-    pattern: &Pattern<Q>,
-) -> Result<Option<Pattern<Q>>> {
+/// Extracts the *text* patterns from a pattern
+/// This should produce a pattern we could use for includes
+fn extract_pattern_text<Q: QueryContext>(pattern: &Pattern<Q>) -> Result<Option<Pattern<Q>>> {
     match pattern {
-        // Once we hit a leaf node that is *not* matched against the filename, we can't go any further
+        Pattern::StringConstant(_) => Ok(Some(pattern.clone())),
+        Pattern::CodeSnippet(snippet) => {
+            let patterns: Vec<_> = snippet
+                .patterns()
+                .map(|p| extract_pattern_text(p))
+                .collect::<Result<Vec<_>>>()?;
+
+            if patterns.iter().any(|p| p.is_none()) {
+                return Ok(None);
+            }
+
+            let patterns = patterns.into_iter().map(|p| p.unwrap()).collect();
+
+            Ok(Some(Pattern::Or(Box::new(Or::new(patterns)))))
+        }
+        Pattern::AstLeafNode(node) => Ok(node
+            .text()
+            .map(|s| Pattern::StringConstant(StringConstant::new(s.to_string())))),
+        _ => Ok(None),
+    }
+}
+
+pub fn extract_body_pattern<Q: QueryContext>(pattern: &Pattern<Q>) -> Result<Option<Pattern<Q>>> {
+    match pattern {
         Pattern::Variable(_)
         | Pattern::CodeSnippet(_)
         | Pattern::Range(_)
@@ -27,81 +60,81 @@ pub fn extract_filename_pattern<Q: QueryContext>(
         | Pattern::Bottom => Ok(Some(Pattern::Top)),
 
         // Traversing downwards, collecting patterns
-        Pattern::Contains(c) => c.extract_filename_pattern(),
-        Pattern::Bubble(b) => b.extract_filename_pattern(),
-        Pattern::Where(w) => w.extract_filename_pattern(),
-        Pattern::Rewrite(rw) => extract_filename_pattern(&rw.left),
-        Pattern::Includes(inc) => extract_filename_pattern(&inc.includes),
-        Pattern::Every(every) => extract_filename_pattern(&every.pattern),
-        Pattern::Within(within) => extract_filename_pattern(&within.pattern),
-        Pattern::After(a) => extract_filename_pattern(&a.after),
-        Pattern::Before(b) => extract_filename_pattern(&b.before),
+        Pattern::Contains(c) => c.extract_body_pattern(),
+        Pattern::Bubble(b) => b.extract_body_pattern(),
+        Pattern::Where(w) => w.extract_body_pattern(),
+        Pattern::Rewrite(rw) => extract_body_pattern(&rw.left),
+        Pattern::Includes(inc) => extract_body_pattern(&inc.includes),
+        Pattern::Every(every) => extract_body_pattern(&every.pattern),
+        Pattern::Within(within) => extract_body_pattern(&within.pattern),
+        Pattern::After(a) => extract_body_pattern(&a.after),
+        Pattern::Before(b) => extract_body_pattern(&b.before),
 
         // Mirror existing logic
         Pattern::Maybe(_) => Ok(Some(Pattern::Top)),
         Pattern::And(target) => {
-            let Some(patterns) = extract_filename_patterns_from_patterns(&target.patterns)? else {
+            let Some(patterns) = extract_body_patterns_from_patterns(&target.patterns)? else {
                 return Ok(None);
             };
             Ok(Some(Pattern::And(Box::new(And::new(patterns)))))
         }
         Pattern::Or(target) => {
-            let Some(patterns) = extract_filename_patterns_from_patterns(&target.patterns)? else {
+            let Some(patterns) = extract_body_patterns_from_patterns(&target.patterns)? else {
                 return Ok(None);
             };
             Ok(Some(Pattern::Or(Box::new(Or::new(patterns)))))
         }
         Pattern::Any(target) => {
-            let Some(patterns) = extract_filename_patterns_from_patterns(&target.patterns)? else {
+            let Some(patterns) = extract_body_patterns_from_patterns(&target.patterns)? else {
                 return Ok(None);
             };
             Ok(Some(Pattern::Any(Box::new(Any::new(patterns)))))
         }
-        Pattern::Some(some) => extract_filename_pattern(&some.pattern),
+        Pattern::Some(some) => extract_body_pattern(&some.pattern),
 
         Pattern::Log(_) => Ok(Some(Pattern::Top)),
 
         Pattern::Add(add) => {
-            let Some(lhs) = extract_filename_pattern(&add.lhs)? else {
+            let Some(lhs) = extract_body_pattern(&add.lhs)? else {
                 return Ok(None);
             };
-            let Some(rhs) = extract_filename_pattern(&add.rhs)? else {
+            let Some(rhs) = extract_body_pattern(&add.rhs)? else {
                 return Ok(None);
             };
             Ok(Some(Pattern::And(Box::new(And::new(vec![lhs, rhs])))))
         }
         Pattern::Subtract(sub) => {
-            let Some(lhs) = extract_filename_pattern(&sub.lhs)? else {
+            let Some(lhs) = extract_body_pattern(&sub.lhs)? else {
                 return Ok(None);
             };
-            let Some(rhs) = extract_filename_pattern(&sub.rhs)? else {
+            let Some(rhs) = extract_body_pattern(&sub.rhs)? else {
                 return Ok(None);
             };
             Ok(Some(Pattern::And(Box::new(And::new(vec![lhs, rhs])))))
         }
         Pattern::Multiply(target) => {
-            let Some(lhs) = extract_filename_pattern(&target.lhs)? else {
+            let Some(lhs) = extract_body_pattern(&target.lhs)? else {
                 return Ok(None);
             };
-            let Some(rhs) = extract_filename_pattern(&target.rhs)? else {
+            let Some(rhs) = extract_body_pattern(&target.rhs)? else {
                 return Ok(None);
             };
             Ok(Some(Pattern::And(Box::new(And::new(vec![lhs, rhs])))))
         }
         Pattern::Divide(target) => {
-            let Some(lhs) = extract_filename_pattern(&target.lhs)? else {
+            let Some(lhs) = extract_body_pattern(&target.lhs)? else {
                 return Ok(None);
             };
-            let Some(rhs) = extract_filename_pattern(&target.rhs)? else {
+            let Some(rhs) = extract_body_pattern(&target.rhs)? else {
                 return Ok(None);
             };
             Ok(Some(Pattern::And(Box::new(And::new(vec![lhs, rhs])))))
         }
         Pattern::Modulo(target) => {
-            let Some(lhs) = extract_filename_pattern(&target.lhs)? else {
+            let Some(lhs) = extract_body_pattern(&target.lhs)? else {
                 return Ok(None);
             };
-            let Some(rhs) = extract_filename_pattern(&target.rhs)? else {
+            let Some(rhs) = extract_body_pattern(&target.rhs)? else {
                 return Ok(None);
             };
             Ok(Some(Pattern::And(Box::new(And::new(vec![lhs, rhs])))))
@@ -135,30 +168,30 @@ pub fn extract_filename_pattern<Q: QueryContext>(
     }
 }
 
-impl<Q: QueryContext> FilenamePatternExtractor<Q> for Bubble<Q> {
-    fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>> {
-        extract_filename_pattern(self.pattern_def.pattern())
+impl<Q: QueryContext> BodyPatternExtractor<Q> for Bubble<Q> {
+    fn extract_body_pattern(&self) -> Result<Option<Pattern<Q>>> {
+        extract_body_pattern(self.pattern_def.pattern())
     }
 }
 
-impl<Q: QueryContext> FilenamePatternExtractor<Q> for Contains<Q> {
-    fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>> {
-        extract_filename_pattern(&self.contains)
+impl<Q: QueryContext> BodyPatternExtractor<Q> for Contains<Q> {
+    fn extract_body_pattern(&self) -> Result<Option<Pattern<Q>>> {
+        extract_body_pattern(&self.contains)
     }
 }
 
-impl<Q: QueryContext> FilenamePatternExtractor<Q> for Includes<Q> {
-    fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>> {
-        extract_filename_pattern(&self.includes)
+impl<Q: QueryContext> BodyPatternExtractor<Q> for Includes<Q> {
+    fn extract_body_pattern(&self) -> Result<Option<Pattern<Q>>> {
+        extract_body_pattern(&self.includes)
     }
 }
 
-impl<Q: QueryContext> FilenamePatternExtractor<Q> for Where<Q> {
-    fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>> {
-        let pattern = extract_filename_pattern(&self.pattern)?.unwrap_or(Pattern::Top);
+impl<Q: QueryContext> BodyPatternExtractor<Q> for Where<Q> {
+    fn extract_body_pattern(&self) -> Result<Option<Pattern<Q>>> {
+        let pattern = extract_body_pattern(&self.pattern)?.unwrap_or(Pattern::Top);
         let predicate_pattern = self
             .side_condition
-            .extract_filename_pattern()?
+            .extract_body_pattern()?
             .unwrap_or(Pattern::Top);
         Ok(Some(Pattern::And(Box::new(And::new(vec![
             pattern,
@@ -167,13 +200,12 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Where<Q> {
     }
 }
 
-/// Given a list of patterns, extract the filename patterns from each of them
-fn extract_filename_patterns_from_patterns<Q: QueryContext>(
-    predicates: &[Pattern<Q>],
+fn extract_body_patterns_from_patterns<Q: QueryContext>(
+    in_patterns: &[Pattern<Q>],
 ) -> Result<Option<Vec<Pattern<Q>>>> {
     let mut patterns = vec![];
-    for p in predicates {
-        let pattern = extract_filename_pattern(p)?;
+    for p in in_patterns {
+        let pattern = extract_body_pattern(p)?;
         if let Some(pattern) = pattern {
             patterns.push(pattern);
         } else {
@@ -183,13 +215,12 @@ fn extract_filename_patterns_from_patterns<Q: QueryContext>(
     Ok(Some(patterns))
 }
 
-/// Given a list of predicates, extract the filename patterns from each of them
 fn extract_patterns_from_predicates<Q: QueryContext>(
     predicates: &[Predicate<Q>],
 ) -> Result<Option<Vec<Pattern<Q>>>> {
     let mut patterns = vec![];
     for p in predicates {
-        let pattern = p.extract_filename_pattern()?;
+        let pattern = p.extract_body_pattern()?;
         if let Some(pattern) = pattern {
             patterns.push(pattern);
         } else {
@@ -199,8 +230,8 @@ fn extract_patterns_from_predicates<Q: QueryContext>(
     Ok(Some(patterns))
 }
 
-impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
-    fn extract_filename_pattern(&self) -> Result<Option<Pattern<Q>>> {
+impl<Q: QueryContext> BodyPatternExtractor<Q> for Predicate<Q> {
+    fn extract_body_pattern(&self) -> Result<Option<Pattern<Q>>> {
         match self {
             Predicate::And(target) => {
                 let Some(patterns) = extract_patterns_from_predicates(&target.predicates)? else {
@@ -223,12 +254,73 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
             Predicate::Match(m) => {
                 match &m.val {
                     grit_pattern_matcher::pattern::Container::Variable(var) => {
-                        if var.is_file_name() {
+                        if var.is_program() {
                             match &m.pattern {
                                 Some(pattern) => {
                                     // This is the key line of this entire file
                                     if is_safe_to_hoist(pattern)? {
-                                        return Ok(Some(pattern.clone()));
+                                        let modified_pattern = match pattern {
+                                            Pattern::Contains(c) => {
+                                                let text = extract_pattern_text(&c.contains)?;
+                                                text.map(|text| {
+                                                    Pattern::Includes(Box::new(Includes::new(text)))
+                                                })
+                                            }
+                                            Pattern::AstNode(_)
+                                            | Pattern::List(_)
+                                            | Pattern::ListIndex(_)
+                                            | Pattern::Map(_)
+                                            | Pattern::Accessor(_)
+                                            | Pattern::Call(_)
+                                            | Pattern::Regex(_)
+                                            | Pattern::File(_)
+                                            | Pattern::Files(_)
+                                            | Pattern::Bubble(_)
+                                            | Pattern::Limit(_)
+                                            | Pattern::CallBuiltIn(_)
+                                            | Pattern::CallFunction(_)
+                                            | Pattern::CallForeignFunction(_)
+                                            | Pattern::CallbackPattern(_)
+                                            | Pattern::Assignment(_)
+                                            | Pattern::Accumulate(_)
+                                            | Pattern::And(_)
+                                            | Pattern::Or(_)
+                                            | Pattern::Maybe(_)
+                                            | Pattern::Any(_)
+                                            | Pattern::Not(_)
+                                            | Pattern::If(_)
+                                            | Pattern::Undefined
+                                            | Pattern::Top
+                                            | Pattern::Bottom
+                                            | Pattern::Underscore
+                                            | Pattern::StringConstant(_)
+                                            | Pattern::AstLeafNode(_)
+                                            | Pattern::IntConstant(_)
+                                            | Pattern::FloatConstant(_)
+                                            | Pattern::BooleanConstant(_)
+                                            | Pattern::Dynamic(_)
+                                            | Pattern::CodeSnippet(_)
+                                            | Pattern::Variable(_)
+                                            | Pattern::Rewrite(_)
+                                            | Pattern::Log(_)
+                                            | Pattern::Range(_)
+                                            | Pattern::Includes(_)
+                                            | Pattern::Within(_)
+                                            | Pattern::After(_)
+                                            | Pattern::Before(_)
+                                            | Pattern::Where(_)
+                                            | Pattern::Some(_)
+                                            | Pattern::Every(_)
+                                            | Pattern::Add(_)
+                                            | Pattern::Subtract(_)
+                                            | Pattern::Multiply(_)
+                                            | Pattern::Divide(_)
+                                            | Pattern::Modulo(_)
+                                            | Pattern::Dots
+                                            | Pattern::Sequential(_)
+                                            | Pattern::Like(_) => None,
+                                        };
+                                        return Ok(modified_pattern);
                                     } else {
                                         return Ok(None);
                                     }
@@ -243,7 +335,7 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
                 };
 
                 match &m.pattern {
-                    Some(pattern) => extract_filename_pattern(pattern),
+                    Some(pattern) => extract_body_pattern(pattern),
                     // TODO: is this right? Why do we ever have an empty pattern?
                     None => Ok(None),
                 }
@@ -252,7 +344,7 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
                 Ok(Some(Pattern::Top))
             }
 
-            Predicate::Rewrite(rw) => extract_filename_pattern(&rw.left),
+            Predicate::Rewrite(rw) => extract_body_pattern(&rw.left),
             Predicate::Log(_) => Ok(Some(Pattern::Top)),
 
             // If we hit a leaf predicate that is *not* a match, stop traversing - it is always true
@@ -266,13 +358,13 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
             // Either we need both the condition and the left to be true
             // OR we need the right to be true
             Predicate::If(target) => {
-                let Some(condition) = target.if_.extract_filename_pattern()? else {
+                let Some(condition) = target.if_.extract_body_pattern()? else {
                     return Ok(None);
                 };
-                let Some(then) = target.then.extract_filename_pattern()? else {
+                let Some(then) = target.then.extract_body_pattern()? else {
                     return Ok(None);
                 };
-                let Some(else_) = target.else_.extract_filename_pattern()? else {
+                let Some(else_) = target.else_.extract_body_pattern()? else {
                     return Ok(None);
                 };
                 Ok(Some(Pattern::Or(Box::new(Or::new(vec![
@@ -284,70 +376,6 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
             // These are more complicated, implement carefully
             Predicate::Call(_) | Predicate::Not(_) | Predicate::Equal(_) => Ok(None),
         }
-    }
-}
-
-// Check if a filename pattern is safe to hoist.
-// This is not a great implementation, but it's a start.
-// I think a better approach will actually be to introduce a Pattern::FailOpen idea where if any errors are encountered when resolving
-// a pattern, we can just assume it's true. This will allow us to hoist more patterns without worrying about unbound variables.
-fn is_safe_to_hoist<Q: QueryContext>(pattern: &Pattern<Q>) -> Result<bool> {
-    match pattern {
-        Pattern::Includes(inc) => is_safe_to_hoist(&inc.includes),
-        Pattern::StringConstant(_) => Ok(true),
-        // This is conservative, but it's a start
-        Pattern::AstNode(_)
-        | Pattern::List(_)
-        | Pattern::ListIndex(_)
-        | Pattern::Map(_)
-        | Pattern::Accessor(_)
-        | Pattern::Call(_)
-        | Pattern::Regex(_)
-        | Pattern::File(_)
-        | Pattern::Files(_)
-        | Pattern::Bubble(_)
-        | Pattern::Limit(_)
-        | Pattern::CallBuiltIn(_)
-        | Pattern::CallFunction(_)
-        | Pattern::CallForeignFunction(_)
-        | Pattern::CallbackPattern(_)
-        | Pattern::Assignment(_)
-        | Pattern::Accumulate(_)
-        | Pattern::And(_)
-        | Pattern::Or(_)
-        | Pattern::Maybe(_)
-        | Pattern::Any(_)
-        | Pattern::Not(_)
-        | Pattern::If(_)
-        | Pattern::Undefined
-        | Pattern::Top
-        | Pattern::Bottom
-        | Pattern::Underscore
-        | Pattern::AstLeafNode(_)
-        | Pattern::IntConstant(_)
-        | Pattern::FloatConstant(_)
-        | Pattern::BooleanConstant(_)
-        | Pattern::Dynamic(_)
-        | Pattern::CodeSnippet(_)
-        | Pattern::Variable(_)
-        | Pattern::Rewrite(_)
-        | Pattern::Log(_)
-        | Pattern::Range(_)
-        | Pattern::Contains(_)
-        | Pattern::Within(_)
-        | Pattern::After(_)
-        | Pattern::Before(_)
-        | Pattern::Where(_)
-        | Pattern::Some(_)
-        | Pattern::Every(_)
-        | Pattern::Add(_)
-        | Pattern::Subtract(_)
-        | Pattern::Multiply(_)
-        | Pattern::Divide(_)
-        | Pattern::Modulo(_)
-        | Pattern::Dots
-        | Pattern::Sequential(_)
-        | Pattern::Like(_) => Ok(false),
     }
 }
 
@@ -372,6 +400,7 @@ mod test {
                 "target.js".to_owned(),
                 r#"
         console.log("Hello, world!");
+        funcify()
         "#
                 .to_owned(),
                 true,
@@ -380,6 +409,7 @@ mod test {
                 "do_not_traverse.js".to_owned(),
                 r#"
                 // this does not include the magic word
+                funcify()
                 "#
                 .to_owned(),
                 true,
@@ -388,6 +418,7 @@ mod test {
                 "do_traverse.js".to_owned(),
                 r#"
                 // this does mention console, but it does not match
+                funcify()
                 "#
                 .to_owned(),
                 true,
@@ -397,9 +428,11 @@ mod test {
         // Test with a pattern that short circuits the contains callback
         let pattern = src_to_problem_libs(
             r#"
-        file($name, $body) where {
-            $body <: includes "console",
-            log(message="This is a message, it should only appear once", variable=$name)
+        `funcify` where {
+            // all 3 files *do* include funcify, so a naive implementation would log for all 3
+            log(message="This was reached"),
+            // but the hoisting of this condition ensures we don't actually traverse all 3
+            $program <: contains `console`
         }
         "#
             .to_string(),
@@ -412,6 +445,9 @@ mod test {
         )
         .unwrap()
         .problem;
+
+        println!("Pattern: {:?}", pattern);
+
         let results = run_on_test_files(&pattern, &test_files);
         println!("{:?}", results);
         assert!(results.iter().any(|r| r.is_match()));
