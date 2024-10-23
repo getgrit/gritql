@@ -1,4 +1,7 @@
-use crate::{optimizer::hoist_files::extract_filename_pattern, problem::MarzanoQueryContext};
+use crate::{
+    optimizer::{hoist_files::extract_filename_pattern, hoist_text::extract_body_pattern},
+    problem::MarzanoQueryContext,
+};
 
 use super::compiler::{DefinitionInfo, SnippetCompilationContext};
 use anyhow::Result;
@@ -433,7 +436,9 @@ fn wrap_pattern_in_contains(
 }
 
 /// Wraps the pattern in a file pattern, so it can match directly against files
-/// This also handles optimizing the pattern to avoid unnecessary file loading by hoisting $filename matches
+/// This also handles optimizing the pattern:
+/// - avoid unnecessary file loading by hoisting $filename matches
+/// - attempt to inject pure text matches through "includes"
 ///
 /// For example:
 /// ```grit
@@ -458,7 +463,14 @@ fn wrap_pattern_in_file(
         Pattern::Top
     });
 
-    let pattern = Pattern::File(Box::new(FilePattern::new(filename_pattern, pattern)));
+    let pattern = if let Some(file_body_pattern) = extract_body_pattern(&pattern)? {
+        Pattern::File(Box::new(FilePattern::new(
+            filename_pattern,
+            Pattern::And(Box::new(And::new(vec![file_body_pattern, pattern]))),
+        )))
+    } else {
+        Pattern::File(Box::new(FilePattern::new(filename_pattern, pattern)))
+    };
     Ok(pattern)
 }
 

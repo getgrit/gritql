@@ -287,14 +287,19 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
     }
 }
 
-// Check if a filename pattern is safe to hoist.
+// Check if a pattern is safe to hoist.
 // This is not a great implementation, but it's a start.
 // I think a better approach will actually be to introduce a Pattern::FailOpen idea where if any errors are encountered when resolving
 // a pattern, we can just assume it's true. This will allow us to hoist more patterns without worrying about unbound variables.
-fn is_safe_to_hoist<Q: QueryContext>(pattern: &Pattern<Q>) -> Result<bool> {
+pub(crate) fn is_safe_to_hoist<Q: QueryContext>(pattern: &Pattern<Q>) -> Result<bool> {
     match pattern {
         Pattern::Includes(inc) => is_safe_to_hoist(&inc.includes),
         Pattern::StringConstant(_) => Ok(true),
+        Pattern::Contains(c) => is_safe_to_hoist(&c.contains),
+
+        // We probably want to do some deeper analysis here
+        Pattern::CodeSnippet(_snippet) => Ok(true),
+
         // This is conservative, but it's a start
         Pattern::AstNode(_)
         | Pattern::List(_)
@@ -328,12 +333,10 @@ fn is_safe_to_hoist<Q: QueryContext>(pattern: &Pattern<Q>) -> Result<bool> {
         | Pattern::FloatConstant(_)
         | Pattern::BooleanConstant(_)
         | Pattern::Dynamic(_)
-        | Pattern::CodeSnippet(_)
         | Pattern::Variable(_)
         | Pattern::Rewrite(_)
         | Pattern::Log(_)
         | Pattern::Range(_)
-        | Pattern::Contains(_)
         | Pattern::Within(_)
         | Pattern::After(_)
         | Pattern::Before(_)

@@ -6,7 +6,10 @@ use super::{
 };
 use crate::{
     binding::Binding,
-    constants::{ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX},
+    constants::{
+        ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX,
+        PROGRAM_INDEX,
+    },
     context::{ExecContext, QueryContext},
 };
 use core::fmt::Debug;
@@ -248,6 +251,13 @@ impl Variable {
             return false;
         };
         scope.scope == GLOBAL_VARS_SCOPE_INDEX && scope.index as usize == FILENAME_INDEX
+    }
+
+    pub fn is_program(&self) -> bool {
+        let VariableInternal::Static(scope) = &self.internal else {
+            return false;
+        };
+        scope.scope == GLOBAL_VARS_SCOPE_INDEX && scope.index as usize == PROGRAM_INDEX
     }
 
     pub fn text<'a, Q: QueryContext>(
