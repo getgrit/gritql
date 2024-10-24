@@ -2,7 +2,11 @@
 source: crates/cli_bin/tests/apply.rs
 expression: stdout
 ---
-file3.nopy: ERROR (code: 410) - Skipped file3.nopy since it is not a python file
+file3.nopy
+    -class MyClass(object): ...
+    +class MyClass(): ...
+    
+
 file2.pyi
     -class MyClass(object): ...
     +class MyClass(): ...
@@ -13,4 +17,4 @@ file1.py
     +class MyClass(): ...
     
 
-Processed 3 files and found 2 matches
+Processed 3 files and found 3 matches

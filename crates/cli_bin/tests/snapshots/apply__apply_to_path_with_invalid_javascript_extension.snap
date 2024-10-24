@@ -2,5 +2,12 @@
 source: crates/cli_bin/tests/apply.rs
 expression: stdout
 ---
-file4.js.py: ERROR (code: 410) - Skipped file4.js.py since it is not a js file
-Processed 1 files and found 0 matches
+file4.js.py
+    -const mine = (object) => {
+    -    return String(object) + 'is mine';
+    +const mine = () => {
+    +    return String() + 'is mine';
+     };
+    
+
+Processed 1 files and found 2 matches
