@@ -1,0 +1,6 @@
+---
+source: crates/cli_bin/tests/apply.rs
+expression: stdout
+---
+file4.js.py: ERROR (code: 410) - Skipped file4.js.py since it is not a js file
+Processed 1 files and found 0 matches

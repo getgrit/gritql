@@ -2942,6 +2942,33 @@ fn apply_to_path_with_invalid_python_extension() -> Result<()> {
     Ok(())
 }
 
+/// test that we can apply to a path with an invalid javascript extension
+/// see https://github.com/getgrit/gritql/issues/485
+#[test]
+fn apply_to_path_with_invalid_javascript_extension() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("invalid_extensions", false)?;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`object` => ``")
+        .arg("file4.js.py")
+        .arg("--lang=js")
+        .arg("--force")
+        .current_dir(&fixture_dir);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command failed");
+    assert_snapshot!(stdout);
+
+    Ok(())
+}
+
 /// Ban multiple stdin paths
 #[test]
 fn apply_stdin_two_paths() -> Result<()> {
