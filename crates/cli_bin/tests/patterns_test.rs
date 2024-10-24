@@ -181,6 +181,27 @@ fn fails_recursion() -> Result<()> {
 }
 
 #[test]
+fn fails_to_find_non_existent_file() -> Result<()> {
+    let (_temp_dir, temp_fixture_path) = get_fixture("pattern_non_existent", false)?;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("patterns")
+        .arg("test")
+        .current_dir(&temp_fixture_path);
+    let output = cmd.output()?;
+    let stdout = String::from_utf8(output.stdout)?;
+    let stderr = String::from_utf8(output.stderr)?;
+    println!("stdout: {}", stdout);
+    println!("stderr: {}", stderr);
+
+    assert!(
+        stderr.contains("Failed to find pattern at .grit/patterns/non_existent.md. Does it exist?")
+    );
+
+    Ok(())
+}
+
+#[test]
 fn test_multifile_fails_if_unchanged_file_has_incorrect_expected() -> Result<()> {
     let (_temp_dir, fixture_dir) = get_fixture("test_multifile_fail", true)?;
 

@@ -1,0 +1,3 @@
+version: 0.0.1
+patterns:
+  - file: patterns/non_existent.md
