@@ -193,9 +193,7 @@ where
     let (found_count, disk_paths) = match my_input {
         ApplyInput::Disk(ref my_input) => {
             let (file_paths_tx, file_paths_rx) = channel();
-            for &file in my_input.paths.iter() {
-                file_paths_tx.send(file.clone()).unwrap();
-            }
+
             let file_walker = emit_error!(
                 owned_emitter,
                 &arg.visibility,
@@ -205,50 +203,6 @@ where
             for file in file_walker {
                 let file = emit_error!(owned_emitter, &arg.visibility, file);
                 if file.file_type().unwrap().is_dir() {
-                    continue;
-                }
-                if !&compiled.language.match_extension(
-                    file.path()
-                        .extension()
-                        .unwrap_or_default()
-                        .to_str()
-                        .unwrap_or_default(),
-                ) {
-                    processed.fetch_add(1, Ordering::SeqCst);
-                    let path_string = file.path().to_string_lossy().to_string();
-                    if !my_input.paths.contains(&file.path().to_path_buf()) {
-                        let log = MatchResult::AnalysisLog(AnalysisLog {
-                            level: 410,
-                            message: format!(
-                                "Skipped {} since it is not a {} file",
-                                path_string,
-                                &compiled.language.to_string()
-                            ),
-                            position: Position::first(),
-                            file: path_string.to_string(),
-                            engine_id: "marzano".to_string(),
-                            range: None,
-                            syntax_tree: None,
-                            source: None,
-                        });
-                        let done_file = MatchResult::DoneFile(DoneFile {
-                            relative_file_path: path_string,
-                            has_results: Some(false),
-                            file_hash: None,
-                            from_cache: false,
-                        });
-                        emitter.handle_results(
-                            vec![log, done_file],
-                            details,
-                            arg.dry_run,
-                            arg.format,
-                            &mut interactive,
-                            None,
-                            Some(processed),
-                            None,
-                            &compiled.language,
-                        );
-                    }
                     continue;
                 }
                 file_paths_tx.send(file.path().to_path_buf()).unwrap();
