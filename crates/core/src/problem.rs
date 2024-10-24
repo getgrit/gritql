@@ -608,3 +608,4 @@ impl QueryContext for MarzanoQueryContext {
     type File<'a> = MarzanoFile<'a>;
     type Tree<'a> = Tree;
 }
+
