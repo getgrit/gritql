@@ -78,7 +78,6 @@ fn extract_pattern_text<Q: QueryContext>(pattern: &Pattern<Q>) -> Result<Option<
         | Pattern::Dynamic(_)
         | Pattern::Variable(_)
         | Pattern::Rewrite(_)
-        | Pattern::Log(_)
         | Pattern::Range(_)
         | Pattern::Contains(_)
         | Pattern::Includes(_)
@@ -171,7 +170,9 @@ pub fn extract_body_pattern<Q: QueryContext>(
         }
         Pattern::Some(some) => extract_body_pattern(&some.pattern, matching_body),
 
-        Pattern::Log(_) => Ok(Some(Pattern::Top)),
+        Pattern::CallBuiltIn(call_built_in) if call_built_in.name == "log" => {
+            Ok(Some(Pattern::Top))
+        }
 
         Pattern::Add(add) => {
             let Some(lhs) = extract_body_pattern(&add.lhs, matching_body)? else {
@@ -368,7 +369,9 @@ impl<Q: QueryContext> BodyPatternExtractor<Q> for Predicate<Q> {
             }
 
             Predicate::Rewrite(rw) => extract_body_pattern(&rw.left, false),
-            Predicate::Log(_) => Ok(Some(Pattern::Top)),
+            Predicate::CallBuiltIn(call_built_in) if call_built_in.name == "log" => {
+                Ok(Some(Pattern::Top))
+            }
 
             // If we hit a leaf predicate that is *not* a match, stop traversing - it is always true
             Predicate::True => Ok(Some(Pattern::Top)),
@@ -397,7 +400,10 @@ impl<Q: QueryContext> BodyPatternExtractor<Q> for Predicate<Q> {
             }
 
             // These are more complicated, implement carefully
-            Predicate::Call(_) | Predicate::Not(_) | Predicate::Equal(_) => Ok(None),
+            Predicate::Call(_)
+            | Predicate::CallBuiltIn(_)
+            | Predicate::Not(_)
+            | Predicate::Equal(_) => Ok(None),
         }
     }
 }

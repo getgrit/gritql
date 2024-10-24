@@ -25,7 +25,6 @@ use super::{
     limit::Limit,
     list::List,
     list_index::ListIndex,
-    log::Log,
     map::GritMap,
     maybe::Maybe,
     modulo::Modulo,
@@ -119,7 +118,6 @@ pub enum Pattern<Q: QueryContext> {
     CodeSnippet(Q::CodeSnippet),
     Variable(Variable),
     Rewrite(Box<Rewrite<Q>>),
-    Log(Box<Log<Q>>),
     Range(PRange),
     Contains(Box<Contains<Q>>),
     Includes(Box<Includes<Q>>),
@@ -204,7 +202,6 @@ impl<Q: QueryContext> PatternName for Pattern<Q> {
             Pattern::Any(any) => any.name(),
             Pattern::CodeSnippet(code_snippet) => code_snippet.name(),
             Pattern::Rewrite(rewrite) => rewrite.name(),
-            Pattern::Log(log) => log.name(),
             Pattern::Range(range) => range.name(),
             Pattern::Contains(contains) => contains.name(),
             Pattern::Includes(includes) => includes.name(),
@@ -294,7 +291,6 @@ impl<Q: QueryContext> Matcher<Q> for Pattern<Q> {
                 code_snippet.execute(binding, state, context, logs)
             }
             Pattern::Rewrite(rewrite) => rewrite.execute(binding, state, context, logs),
-            Pattern::Log(log) => log.execute(binding, state, context, logs),
             Pattern::Range(range) => range.execute(binding, state, context, logs),
             Pattern::Contains(contains) => contains.execute(binding, state, context, logs),
             Pattern::Includes(includes) => includes.execute(binding, state, context, logs),

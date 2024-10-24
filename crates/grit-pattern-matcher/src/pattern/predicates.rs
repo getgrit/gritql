@@ -6,7 +6,6 @@ use super::{
     call::PrCall,
     equal::Equal,
     functions::{Evaluator, FuncEvaluation},
-    log::Log,
     maybe::PrMaybe,
     not::PrNot,
     or::PrOr,
@@ -15,7 +14,7 @@ use super::{
     r#if::PrIf,
     r#match::Match,
     rewrite::Rewrite,
-    State,
+    CallBuiltIn, State,
 };
 use crate::context::QueryContext;
 use core::fmt::Debug;
@@ -24,6 +23,7 @@ use grit_util::{error::GritResult, AnalysisLogs};
 #[derive(Debug, Clone)]
 pub enum Predicate<Q: QueryContext> {
     Call(Box<PrCall<Q>>),
+    CallBuiltIn(Box<CallBuiltIn<Q>>),
     Not(Box<PrNot<Q>>),
     If(Box<PrIf<Q>>),
     True,
@@ -33,7 +33,6 @@ pub enum Predicate<Q: QueryContext> {
     Maybe(Box<PrMaybe<Q>>),
     Any(Box<PrAny<Q>>),
     Rewrite(Box<Rewrite<Q>>),
-    Log(Log<Q>),
     Match(Box<Match<Q>>),
     Equal(Box<Equal<Q>>),
     Assignment(Box<Assignment<Q>>),
@@ -45,6 +44,7 @@ impl<Q: QueryContext> PatternName for Predicate<Q> {
     fn name(&self) -> &'static str {
         match self {
             Predicate::Call(call) => call.name(),
+            Predicate::CallBuiltIn(call_built_in) => call_built_in.name(),
             Predicate::Not(not) => not.name(),
             Predicate::If(if_) => if_.name(),
             Predicate::True => "TRUE",
@@ -54,7 +54,6 @@ impl<Q: QueryContext> PatternName for Predicate<Q> {
             Predicate::Maybe(maybe) => maybe.name(),
             Predicate::Any(any) => any.name(),
             Predicate::Rewrite(rewrite) => rewrite.name(),
-            Predicate::Log(log) => log.name(),
             Predicate::Match(match_) => match_.name(),
             Predicate::Equal(equal) => equal.name(),
             Predicate::Assignment(assignment) => assignment.name(),
@@ -73,12 +72,14 @@ impl<Q: QueryContext> Evaluator<Q> for Predicate<Q> {
     ) -> GritResult<FuncEvaluation<Q>> {
         match self {
             Predicate::Call(call) => call.execute_func(state, context, logs),
+            Predicate::CallBuiltIn(call_built_in) => {
+                call_built_in.execute_func(state, context, logs)
+            }
             Predicate::Or(or) => or.execute_func(state, context, logs),
             Predicate::And(and) => and.execute_func(state, context, logs),
             Predicate::Maybe(maybe) => maybe.execute_func(state, context, logs),
             Predicate::Any(any) => any.execute_func(state, context, logs),
             Predicate::Rewrite(rewrite) => rewrite.execute_func(state, context, logs),
-            Predicate::Log(log) => log.execute_func(state, context, logs),
             Predicate::Match(match_) => match_.execute_func(state, context, logs),
             Predicate::Equal(equal) => equal.execute_func(state, context, logs),
             Predicate::True => Ok(FuncEvaluation {

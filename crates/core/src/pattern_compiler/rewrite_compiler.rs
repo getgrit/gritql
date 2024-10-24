@@ -100,7 +100,6 @@ impl NodeCompiler for RewriteCompiler {
                 | Pattern::FloatConstant(_)
                 | Pattern::BooleanConstant(_)
                 | Pattern::Rewrite(_)
-                | Pattern::Log(_)
                 | Pattern::Range(_)
                 | Pattern::Contains(_)
                 | Pattern::Includes(_)

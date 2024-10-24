@@ -1,7 +1,7 @@
 use super::{
     functions::GritCall,
     patterns::{Pattern, PatternName},
-    State,
+    Evaluator, FuncEvaluation, ResolvedPattern, State,
 };
 use crate::context::{ExecContext, QueryContext};
 use grit_util::{error::GritResult, AnalysisLogs};
@@ -34,6 +34,21 @@ impl<Q: QueryContext> GritCall<Q> for CallBuiltIn<Q> {
         logs: &mut AnalysisLogs,
     ) -> GritResult<Q::ResolvedPattern<'a>> {
         context.call_built_in(self, context, state, logs)
+    }
+}
+
+impl<Q: QueryContext> Evaluator<Q> for CallBuiltIn<Q> {
+    fn execute_func<'a>(
+        &'a self,
+        state: &mut State<'a, Q>,
+        context: &'a Q::ExecContext<'a>,
+        logs: &mut AnalysisLogs,
+    ) -> GritResult<FuncEvaluation<Q>> {
+        let resolved = self.call(state, context, logs)?;
+        Ok(FuncEvaluation {
+            predicator: resolved.is_truthy(state, context.language())?,
+            ret_val: Some(resolved),
+        })
     }
 }
 

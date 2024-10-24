@@ -93,7 +93,6 @@ fn execute<'a, Q: QueryContext>(
         | Pattern::CodeSnippet(_)
         | Pattern::Variable(_)
         | Pattern::Rewrite(_)
-        | Pattern::Log(_)
         | Pattern::Range(_)
         | Pattern::Contains(_)
         | Pattern::Includes(_)

@@ -83,6 +83,14 @@ impl<Q: QueryContext> Predicate<Q> {
                 }
                 base
             }
+            Predicate::CallBuiltIn(call_built_in) => {
+                let mut base = args_children(&call_built_in.args, definitions);
+                let def = definitions.get_predicate(call_built_in.index);
+                if let Some(def) = def {
+                    base.push(PatternOrPredicate::Predicate(&def.predicate));
+                }
+                base
+            }
             Predicate::Not(not) => vec![PatternOrPredicate::Predicate(&not.predicate)],
             Predicate::If(if_) => vec![
                 PatternOrPredicate::Predicate(&if_.if_),
@@ -100,11 +108,6 @@ impl<Q: QueryContext> Predicate<Q> {
                 res.push(PatternOrPredicate::Pattern(&rewrite.left));
                 res
             }
-            Predicate::Log(log) => log
-                .message
-                .iter()
-                .map(PatternOrPredicate::Pattern)
-                .collect(),
             Predicate::Match(match_) => match_
                 .pattern
                 .iter()
@@ -340,7 +343,6 @@ impl<Q: QueryContext> Pattern<Q> {
                     PatternOrPredicate::DynamicPattern(&r.right),
                 ]
             }
-            Pattern::Log(l) => l.message.iter().map(PatternOrPredicate::Pattern).collect(),
             Pattern::Range(_) => Vec::new(),
             Pattern::Contains(c) => c
                 .until

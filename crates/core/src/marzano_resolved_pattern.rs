@@ -594,7 +594,6 @@ impl<'a> ResolvedPattern<'a, MarzanoQueryContext> for MarzanoResolvedPattern<'a>
             | Pattern::Underscore
             | Pattern::AstLeafNode(_)
             | Pattern::Rewrite(_)
-            | Pattern::Log(_)
             | Pattern::Range(_)
             | Pattern::Contains(_)
             | Pattern::Includes(_)

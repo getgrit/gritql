@@ -8,11 +8,11 @@ use grit_pattern_matcher::{
     constant::Constant,
     context::ExecContext,
     pattern::{
-        get_absolute_file_name, CallBuiltIn, CallbackPattern, JoinFn, LazyBuiltIn, Pattern,
-        ResolvedPattern, ResolvedSnippet, State,
+        get_absolute_file_name, get_file_name, CallBuiltIn, CallbackPattern, JoinFn, LazyBuiltIn,
+        Pattern, ResolvedPattern, ResolvedSnippet, State,
     },
 };
-use grit_util::{AnalysisLogs, CodeRange, Language};
+use grit_util::{AnalysisLogBuilder, AnalysisLogs, CodeRange, Language};
 use itertools::Itertools;
 use rand::prelude::SliceRandom;
 use rand::Rng;
@@ -47,6 +47,7 @@ pub struct BuiltInFunction {
     pub name: &'static str,
     pub params: Vec<&'static str>,
     pub(crate) func: Box<CallableFn>,
+    pub(crate) position: BuiltInFunctionPosition,
 }
 
 impl BuiltInFunction {
@@ -61,7 +62,22 @@ impl BuiltInFunction {
     }
 
     pub fn new(name: &'static str, params: Vec<&'static str>, func: Box<CallableFn>) -> Self {
-        Self { name, params, func }
+        Self {
+            name,
+            params,
+            func,
+            position: BuiltInFunctionPosition::Pattern,
+        }
+    }
+
+    pub fn as_predicate(mut self) -> Self {
+        self.position = BuiltInFunctionPosition::Predicate;
+        self
+    }
+
+    pub fn as_predicate_or_pattern(mut self) -> Self {
+        self.position = BuiltInFunctionPosition::Both;
+        self
     }
 }
 
@@ -71,6 +87,23 @@ impl std::fmt::Debug for BuiltInFunction {
             .field("name", &self.name)
             .field("params", &self.params)
             .finish()
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum BuiltInFunctionPosition {
+    Pattern,
+    Predicate,
+    Both,
+}
+
+impl BuiltInFunctionPosition {
+    pub fn is_pattern(&self) -> bool {
+        matches!(self, Self::Pattern | Self::Both)
+    }
+
+    pub fn is_predicate(&self) -> bool {
+        matches!(self, Self::Predicate | Self::Both)
     }
 }
 
@@ -108,10 +141,7 @@ impl BuiltIns {
         let params = &built_ins.built_ins[index].params;
         let mut pattern_params = Vec::with_capacity(args.len());
         for param in params.iter() {
-            match args.remove(&(lang.metavariable_prefix().to_owned() + param)) {
-                Some(p) => pattern_params.push(Some(p)),
-                None => pattern_params.push(None),
-            }
+            pattern_params.push(args.remove(&(lang.metavariable_prefix().to_owned() + param)));
         }
         Ok(CallBuiltIn::new(index, name, pattern_params))
     }
@@ -179,6 +209,8 @@ impl BuiltIns {
             BuiltInFunction::new("shuffle", vec!["list"], Box::new(shuffle_fn)),
             BuiltInFunction::new("random", vec!["floor", "ceiling"], Box::new(random_fn)),
             BuiltInFunction::new("split", vec!["string", "separator"], Box::new(split_fn)),
+            BuiltInFunction::new("log", vec!["message", "variable"], Box::new(log_fn))
+                .as_predicate_or_pattern(),
         ]
         .into()
     }
@@ -545,4 +577,59 @@ fn ai_fn_placeholder<'a>(
     _logs: &mut AnalysisLogs,
 ) -> Result<MarzanoResolvedPattern<'a>> {
     bail!("AI features are not supported in your GritQL distribution. Please upgrade to the Enterprise version to use AI features.")
+}
+
+fn log_fn<'a>(
+    args: &'a [Option<Pattern<MarzanoQueryContext>>],
+    context: &'a MarzanoContext<'a>,
+    state: &mut State<'a, MarzanoQueryContext>,
+    logs: &mut AnalysisLogs,
+) -> Result<MarzanoResolvedPattern<'a>> {
+    let mut message = args[0]
+        .as_ref()
+        .map(|message| {
+            MarzanoResolvedPattern::from_pattern(message, state, context, logs)
+                .and_then(|resolved| resolved.text(&state.files, context.language))
+                .map(|user_message| format!("{user_message}\n"))
+        })
+        .transpose()?
+        .unwrap_or_default();
+
+    let mut log_builder = AnalysisLogBuilder::default();
+    let file = get_file_name(state, context.language())?;
+    #[allow(clippy::unnecessary_cast)]
+    log_builder.level(441 as u16).file(file);
+
+    if let Some(Some(Pattern::Variable(variable))) = args.get(1) {
+        let var = state.trace_var_mut(variable);
+        let var_content = &state.bindings[var.try_scope().unwrap() as usize]
+            .last()
+            .unwrap()[var.try_index().unwrap() as usize];
+        let value = var_content.value.as_ref();
+
+        let src = value
+            .map(|v| {
+                v.text(&state.files, context.language())
+                    .map(|s| s.to_string())
+            })
+            .unwrap_or(Ok("Variable has no source".to_string()))?;
+        log_builder.source(src);
+
+        let node = value.and_then(|v| v.get_last_binding());
+        // todo add support for other types of bindings
+        if let Some(node) = node {
+            if let Some(position) = node.position(context.language()) {
+                log_builder.range(position);
+            }
+            if let Some(syntax_tree) = node.get_sexp() {
+                log_builder.syntax_tree(syntax_tree);
+            }
+        } else {
+            message.push_str("attempted to log a non-node binding, such bindings don't have syntax tree or range\n")
+        }
+    }
+    log_builder.message(message);
+    logs.push(log_builder.build()?);
+
+    Ok(MarzanoResolvedPattern::Constant(Constant::Boolean(true)))
 }
