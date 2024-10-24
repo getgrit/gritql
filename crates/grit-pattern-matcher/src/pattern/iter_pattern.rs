@@ -108,11 +108,6 @@ impl<Q: QueryContext> Predicate<Q> {
                 res.push(PatternOrPredicate::Pattern(&rewrite.left));
                 res
             }
-            Predicate::Log(log) => log
-                .message
-                .iter()
-                .map(PatternOrPredicate::Pattern)
-                .collect(),
             Predicate::Match(match_) => match_
                 .pattern
                 .iter()
@@ -348,7 +343,6 @@ impl<Q: QueryContext> Pattern<Q> {
                     PatternOrPredicate::DynamicPattern(&r.right),
                 ]
             }
-            Pattern::Log(l) => l.message.iter().map(PatternOrPredicate::Pattern).collect(),
             Pattern::Range(_) => Vec::new(),
             Pattern::Contains(c) => c
                 .until

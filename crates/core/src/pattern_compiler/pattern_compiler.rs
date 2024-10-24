@@ -229,9 +229,9 @@ impl NodeCompiler for PatternCompiler {
             "rewrite" => Ok(Pattern::Rewrite(Box::new(
                 RewriteCompiler::from_node_with_rhs(node, context, is_rhs)?,
             ))),
-            "log" => Ok(Pattern::Log(Box::new(LogCompiler::from_node_with_rhs(
-                node, context, is_rhs,
-            )?))),
+            "log" => Ok(Pattern::CallBuiltIn(Box::new(
+                LogCompiler::from_node_with_rhs(node, context, is_rhs)?,
+            ))),
             "range" => Ok(Pattern::Range(RangeCompiler::from_node_with_rhs(
                 node, context, is_rhs,
             )?)),

@@ -59,7 +59,9 @@ pub fn extract_filename_pattern<Q: QueryContext>(
         }
         Pattern::Some(some) => extract_filename_pattern(&some.pattern),
 
-        Pattern::Log(_) => Ok(Some(Pattern::Top)),
+        Pattern::CallBuiltIn(call_built_in) if call_built_in.name == "log" => {
+            Ok(Some(Pattern::Top))
+        }
 
         Pattern::Add(add) => {
             let Some(lhs) = extract_filename_pattern(&add.lhs)? else {
@@ -253,7 +255,9 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
             }
 
             Predicate::Rewrite(rw) => extract_filename_pattern(&rw.left),
-            Predicate::Log(_) => Ok(Some(Pattern::Top)),
+            Predicate::CallBuiltIn(call_built_in) if call_built_in.name == "log" => {
+                Ok(Some(Pattern::Top))
+            }
 
             // If we hit a leaf predicate that is *not* a match, stop traversing - it is always true
             Predicate::True => Ok(Some(Pattern::Top)),
@@ -338,7 +342,6 @@ pub(crate) fn is_safe_to_hoist<Q: QueryContext>(pattern: &Pattern<Q>) -> Result<
         | Pattern::Dynamic(_)
         | Pattern::Variable(_)
         | Pattern::Rewrite(_)
-        | Pattern::Log(_)
         | Pattern::Range(_)
         | Pattern::Within(_)
         | Pattern::After(_)

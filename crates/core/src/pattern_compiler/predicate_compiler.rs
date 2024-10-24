@@ -40,7 +40,9 @@ impl NodeCompiler for PredicateCompiler {
             "predicateRewrite" => Ok(Predicate::Rewrite(Box::new(RewriteCompiler::from_node(
                 node, context,
             )?))),
-            "log" => Ok(Predicate::Log(LogCompiler::from_node(node, context)?)),
+            "log" => Ok(Predicate::CallBuiltIn(Box::new(LogCompiler::from_node(
+                node, context,
+            )?))),
             "predicateMatch" => Ok(Predicate::Match(Box::new(MatchCompiler::from_node(
                 node, context,
             )?))),

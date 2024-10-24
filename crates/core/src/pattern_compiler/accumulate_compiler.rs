@@ -66,7 +66,6 @@ impl NodeCompiler for AccumulateCompiler {
             | Pattern::BooleanConstant(_)
             | Pattern::CodeSnippet(_)
             | Pattern::Rewrite(_)
-            | Pattern::Log(_)
             | Pattern::Range(_)
             | Pattern::Contains(_)
             | Pattern::Includes(_)

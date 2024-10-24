@@ -61,7 +61,6 @@ impl NodeCompiler for StepCompiler {
             | Pattern::CodeSnippet(_)
             | Pattern::Variable(_)
             | Pattern::Rewrite(_)
-            | Pattern::Log(_)
             | Pattern::Range(_)
             | Pattern::Within(_)
             | Pattern::After(_)
