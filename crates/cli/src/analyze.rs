@@ -193,7 +193,9 @@ where
     let (found_count, disk_paths) = match my_input {
         ApplyInput::Disk(ref my_input) => {
             let (file_paths_tx, file_paths_rx) = channel();
-
+            for &file in my_input.paths.iter() {
+                file_paths_tx.send(file.clone()).unwrap();
+            }
             let file_walker = emit_error!(
                 owned_emitter,
                 &arg.visibility,
@@ -205,10 +207,6 @@ where
                 if file.file_type().unwrap().is_dir() {
                     continue;
                 }
-                if my_input.paths.contains(&file.path().to_path_buf()) {
-                    file_paths_tx.send(file.path().to_path_buf()).unwrap();
-                    continue;
-                }
                 if !&compiled.language.match_extension(
                     file.path()
                         .extension()
@@ -218,7 +216,7 @@ where
                 ) {
                     processed.fetch_add(1, Ordering::SeqCst);
                     let path_string = file.path().to_string_lossy().to_string();
-                    if my_input.paths.contains(&file.path().to_path_buf()) {
+                    if !my_input.paths.contains(&file.path().to_path_buf()) {
                         let log = MatchResult::AnalysisLog(AnalysisLog {
                             level: 410,
                             message: format!(
