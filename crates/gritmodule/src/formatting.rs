@@ -185,31 +185,24 @@ async fn format_temp_dir(dir: &TempDir, languages: Vec<&PatternLanguage>) -> Res
     if languages.contains(&&PatternLanguage::Tsx)
         || languages.contains(&&PatternLanguage::JavaScript)
         || languages.contains(&&PatternLanguage::TypeScript)
+        || languages.contains(&&PatternLanguage::Json)
     {
-        let output = Command::new("npx")
-            // npx has an interactive prompt asking if you want to install the package if it isn't installed.
-            // we pass `--yes` to avoid the interactive prompt
-            .arg("--yes")
-            .arg("prettier")
-            .arg("--parser")
-            .arg("babel-ts")
+        log::debug!("Formatting with biome");
+        let output = Command::new("biome")
+            .arg("format")
             .arg("--write")
             .arg(dir.path().join("**/*"))
             .output()
             .await?;
-
-        log::debug!("prettier output: {:?}", output);
-    }
-
-    if languages.contains(&&PatternLanguage::Json)
-        || languages.contains(&&PatternLanguage::Html)
+        log::debug!("biome output: {:?}", output)
+    } else if languages.contains(&&PatternLanguage::Html)
         || languages.contains(&&PatternLanguage::Css)
         || languages.contains(&&PatternLanguage::MarkdownBlock)
         || languages.contains(&&PatternLanguage::MarkdownInline)
         || languages.contains(&&PatternLanguage::Yaml)
     {
-        info!("Formatting with prettier into {}", dir.path().display());
-        Command::new("npx")
+        log::debug!("Formatting with prettier");
+        let output = Command::new("npx")
             // npx has an interactive prompt asking if you want to install the package if it isn't installed.
             // we pass `--yes` to avoid the interactive prompt
             .arg("--yes")
@@ -218,6 +211,7 @@ async fn format_temp_dir(dir: &TempDir, languages: Vec<&PatternLanguage>) -> Res
             .arg(dir.path().join("**/*"))
             .output()
             .await?;
+        log::debug!("prettier output: {:?}", output);
     }
 
     Ok(())
