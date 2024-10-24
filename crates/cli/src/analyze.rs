@@ -212,7 +212,6 @@ where
                         .to_str()
                         .unwrap_or_default(),
                 ) {
-                    processed.fetch_add(1, Ordering::SeqCst);
                     let path_string = file.path().to_string_lossy().to_string();
                     if my_input.paths.contains(&file.path().to_path_buf()) {
                         let log = MatchResult::AnalysisLog(AnalysisLog {
