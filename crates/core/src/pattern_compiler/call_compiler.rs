@@ -3,7 +3,7 @@ use super::{
     node_compiler::NodeCompiler, pattern_compiler::PatternCompiler,
 };
 use crate::{built_in_functions::BuiltIns, problem::MarzanoQueryContext};
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Error, Result};
 use grit_pattern_matcher::pattern::{
     Call, CallBuiltIn, CallForeignFunction, CallFunction, FilePattern, Pattern, PrCall, Predicate,
 };
@@ -195,7 +195,14 @@ fn args_from_params(
     let named_args = node.named_children_by_field_name("named_args");
     let named_args =
         node_to_args_pairs(named_args, context.compilation.lang, name, &expected_params)?;
-    let args = named_args_to_hash_map(named_args, context)?;
+    let args: BTreeMap<String, Pattern<MarzanoQueryContext>> = named_args
+        .into_iter()
+        .map(|(name, node)| {
+            let pattern = PatternCompiler::from_node_with_rhs(&node, context, true)?;
+            Ok((name, pattern))
+        })
+        .collect::<Result<_, Error>>()?;
+
     let named_args_count = node.named_children_by_field_name("named_args").count();
     if args.len() != named_args_count {
         bail!("duplicate named args for invocation of {name}");
@@ -217,7 +224,7 @@ fn match_args_to_params(
     for (arg, _) in args.iter() {
         if !params.contains(arg) {
             bail!(
-                format!("attempting to call pattern {name}, with invalid parameter {arg}. Valid parameters are: ") +
+                format!("attempting to call pattern or function {name}, with invalid parameter {arg}. Valid parameters are: ") +
                 &params
                     .iter()
                     .map(|p| p.strip_prefix(language.metavariable_prefix()).unwrap_or(p))
@@ -254,16 +261,10 @@ fn node_to_args_pairs<'a>(
         .map(|(i, node)| {
             if let Some(var) = node.child_by_field_name("variable") {
                 let name = var.text()?;
-                let name = name.trim();
-                let name = match name
-                    .strip_prefix(lang.metavariable_prefix()) {
-                        Some(stripped) => if expected_params.as_ref().is_some_and(|e| !e.contains(&name.to_string()) && !e.contains(&stripped.to_string())) {
-                            None
-                        } else {
-                            Some(stripped)
-                        },
-                        None => None,
-                    }
+                let name = name
+                    .trim()
+                    .strip_prefix(lang.metavariable_prefix())
+                    .filter(|stripped| !expected_params.as_ref().is_some_and(|e| !e.iter().any(|e| e == &name || e == stripped)))
                     .or_else(|| match expected_params {
                         Some(params) => params.get(i).map(|p| p.strip_prefix(lang.metavariable_prefix()).unwrap_or(p)),
                         None => None,

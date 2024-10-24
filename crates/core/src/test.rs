@@ -1,16 +1,21 @@
 use crate::pattern_compiler::src_to_problem_libs;
 use anyhow::{anyhow, Context, Result};
 use api::MatchResult;
-use grit_util::{Range, VariableMatch};
+use built_in_functions::{BuiltInFunction, BuiltIns};
+use grit_pattern_matcher::constant::Constant;
+use grit_pattern_matcher::pattern::{Pattern, ResolvedPattern, State};
+use grit_util::{AnalysisLogs, Range, VariableMatch};
 use insta::{assert_debug_snapshot, assert_snapshot};
 use lazy_static::lazy_static;
 use marzano_auth::env::ENV_VAR_GRIT_API_URL;
 use marzano_auth::testing::get_testing_auth_info;
+use marzano_context::MarzanoContext;
 use marzano_language::language::MarzanoLanguage;
 use marzano_language::target_language::{PatternLanguage, TargetLanguage};
+use marzano_resolved_pattern::MarzanoResolvedPattern;
 use marzano_util::rich_path::RichFile;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
-use problem::Problem;
+use problem::{MarzanoQueryContext, Problem};
 use similar::{ChangeTag, TextDiff};
 use std::collections::{BTreeMap, HashMap};
 use std::{env, path::Path, path::PathBuf};
@@ -70,7 +75,7 @@ fn match_pattern_one_file(
     default_language: TargetLanguage,
 ) -> Result<ExecutionResult> {
     let libs = BTreeMap::new();
-    match_pattern_libs(pattern, &libs, file, src, default_language)
+    match_pattern_libs(pattern, &libs, file, src, default_language, None)
 }
 
 pub(crate) fn create_test_context() -> Result<ExecutionContext> {
@@ -102,12 +107,21 @@ fn match_pattern_libs(
     file: &str,
     src: &str,
     default_language: TargetLanguage,
+    custom_built_ins: Option<BuiltIns>,
 ) -> Result<ExecutionResult> {
     let default_context = ExecutionContext::default();
     let context = TEST_EXECUTION_CONTEXT.as_ref().unwrap_or(&default_context);
 
-    let pattern =
-        src_to_problem_libs(pattern, libs, default_language, None, None, None, None)?.problem;
+    let pattern = src_to_problem_libs(
+        pattern,
+        libs,
+        default_language,
+        None,
+        None,
+        custom_built_ins,
+        None,
+    )?
+    .problem;
     let results = pattern.execute_file(&RichFile::new(file.to_owned(), src.to_owned()), context);
     let mut execution_result = ExecutionResult {
         input_file_debug_text: "".to_string(),
@@ -177,6 +191,13 @@ struct TestArgExpectedWithNewFile {
     expected: String,
     new_file_name: String,
     new_file_body: String,
+}
+
+struct TestArgExpectedWithCustomBuiltIns {
+    pattern: String,
+    source: String,
+    expected: String,
+    built_ins: BuiltIns,
 }
 
 fn get_fixtures_root() -> Result<PathBuf> {
@@ -346,7 +367,7 @@ fn run_test_expected_libs(arg: TestArgExpectedWithLibs) -> Result<()> {
     for (i, pattern) in arg.lib_patterns.iter().enumerate() {
         libs.insert(format!("TestPattern-{}", i).to_owned(), pattern.to_owned());
     }
-    let result = match_pattern_libs(pattern, &libs, "test-file.tsx", &source, js_lang)?;
+    let result = match_pattern_libs(pattern, &libs, "test-file.tsx", &source, js_lang, None)?;
     validate_execution_result(result, arg.expected)
 }
 
@@ -400,6 +421,20 @@ fn run_test_expected_with_new_file(arg: TestArgExpectedWithNewFile) -> Result<()
         )
     }
     Ok(())
+}
+fn run_test_expected_custom_built_ins(arg: TestArgExpectedWithCustomBuiltIns) -> Result<()> {
+    let pattern = arg.pattern;
+    let js_lang: TargetLanguage = PatternLanguage::Tsx.try_into().unwrap();
+    let source = arg.source;
+    let result = match_pattern_libs(
+        pattern,
+        &BTreeMap::new(),
+        "test-file.tsx",
+        &source,
+        js_lang,
+        Some(arg.built_ins),
+    )?;
+    validate_execution_result(result, arg.expected)
 }
 
 pub fn run_test_match(arg: TestArg) -> Result<()> {
@@ -6504,6 +6539,46 @@ fn test_eager_builtin() {
             .unwrap(),
             source: r#"foo(of(bar))"#.to_string(),
             expected: r#"changed(of(bar))"#.to_string(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn test_predicate_builtin() {
+    fn is_alpha_fn<'a>(
+        args: &'a [Option<Pattern<MarzanoQueryContext>>],
+        context: &'a MarzanoContext<'a>,
+        state: &mut State<'a, MarzanoQueryContext>,
+        logs: &mut AnalysisLogs,
+    ) -> Result<MarzanoResolvedPattern<'a>> {
+        let args = MarzanoResolvedPattern::from_patterns(args, state, context, logs)?;
+
+        let Some(Some(resolved_pattern)) = args.first() else {
+            return Err(anyhow!("is_alpha takes 1 argument"));
+        };
+        let text = resolved_pattern.text(&state.files, context.language)?;
+        let is_alpha = text.as_ref().chars().all(char::is_alphabetic);
+
+        Ok(ResolvedPattern::from_constant(Constant::Boolean(is_alpha)))
+    }
+
+    run_test_expected_custom_built_ins({
+        TestArgExpectedWithCustomBuiltIns {
+            pattern: r#"
+                |`const $CON = $VAL;` => `const PREFIX_$CON = $VAL;` where {
+                |  is_alpha($CON)
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"const A = 1;\nconst B_2 = 2;"#.to_string(),
+            expected: r#"const PREFIX_A = 1;\nconst B_2 = 2;"#.to_string(),
+            built_ins: vec![
+                BuiltInFunction::new("is_alpha", vec!["text"], Box::new(is_alpha_fn))
+                    .as_predicate(),
+            ]
+            .into(),
         }
     })
     .unwrap();
