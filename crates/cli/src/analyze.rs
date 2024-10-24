@@ -205,6 +205,10 @@ where
                 if file.file_type().unwrap().is_dir() {
                     continue;
                 }
+                if my_input.paths.contains(&file.path().to_path_buf()) {
+                    file_paths_tx.send(file.path().to_path_buf()).unwrap();
+                    continue;
+                }
                 if !&compiled.language.match_extension(
                     file.path()
                         .extension()
