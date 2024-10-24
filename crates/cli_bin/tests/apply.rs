@@ -2969,6 +2969,34 @@ fn apply_to_path_with_invalid_javascript_extension() -> Result<()> {
     Ok(())
 }
 
+/// test that we show an 'Error parsing source code' when we try to apply
+/// to a path which contains the wrong language as specified in the lang flag
+/// see https://github.com/getgrit/gritql/issues/485
+#[test]
+fn apply_to_path_with_invalid_lang() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("invalid_extensions", false)?;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`object` => ``")
+        .arg("file4.js.py")
+        .arg("--lang=py")
+        .arg("--force")
+        .current_dir(&fixture_dir);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command failed");
+    assert_snapshot!(stdout);
+
+    Ok(())
+}
+
 /// Ban multiple stdin paths
 #[test]
 fn apply_stdin_two_paths() -> Result<()> {
