@@ -3,7 +3,7 @@ use super::{
     node_compiler::NodeCompiler, pattern_compiler::PatternCompiler,
 };
 use crate::{built_in_functions::BuiltIns, problem::MarzanoQueryContext};
-use anyhow::{anyhow, bail, Error, Result};
+use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::pattern::{
     Call, CallBuiltIn, CallForeignFunction, CallFunction, FilePattern, Pattern, PrCall, Predicate,
 };
@@ -67,7 +67,7 @@ impl NodeCompiler for CallCompiler {
                 named_args, sort, context, is_rhs,
             )?)));
         }
-        let mut args = named_args_to_hash_map(named_args, context)?;
+        let mut args = named_args_to_prefixed_map(named_args, context)?;
         if args.len() != named_args_count {
             return Err(anyhow!("duplicate named args for invocation of {}", kind));
         }
@@ -166,7 +166,7 @@ impl NodeCompiler for PrCallCompiler {
             }
 
             let params = built_in.params.iter().map(|s| s.to_string()).collect_vec();
-            let args = args_from_params(node, context, name, params)?;
+            let args = args_from_params(node, context, name, params, named_args_to_map)?;
             return Ok(Predicate::CallBuiltIn(Box::new(CallBuiltIn::new(
                 index, name, args,
             ))));
@@ -180,7 +180,8 @@ impl NodeCompiler for PrCallCompiler {
             bail!("predicate or function definition not found: {name}. Try running grit init.");
         };
 
-        let args = args_from_params(node, context, name, collect_params(&info.parameters))?;
+        let params = collect_params(&info.parameters);
+        let args = args_from_params(node, context, name, params, named_args_to_prefixed_map)?;
         Ok(Predicate::Call(Box::new(PrCall::new(info.index, args))))
     }
 }
@@ -190,19 +191,16 @@ fn args_from_params(
     context: &mut NodeCompilationContext,
     name: &str,
     params: Vec<String>,
+    args_to_map: impl Fn(
+        Vec<(String, NodeWithSource)>,
+        &mut NodeCompilationContext,
+    ) -> Result<BTreeMap<String, Pattern<MarzanoQueryContext>>>,
 ) -> Result<Vec<Option<Pattern<MarzanoQueryContext>>>> {
     let expected_params = Some(params.clone());
     let named_args = node.named_children_by_field_name("named_args");
     let named_args =
         node_to_args_pairs(named_args, context.compilation.lang, name, &expected_params)?;
-    let args: BTreeMap<String, Pattern<MarzanoQueryContext>> = named_args
-        .into_iter()
-        .map(|(name, node)| {
-            let pattern = PatternCompiler::from_node_with_rhs(&node, context, true)?;
-            Ok((name, pattern))
-        })
-        .collect::<Result<_, Error>>()?;
-
+    let args = args_to_map(named_args, context)?;
     let named_args_count = node.named_children_by_field_name("named_args").count();
     if args.len() != named_args_count {
         bail!("duplicate named args for invocation of {name}");
@@ -235,19 +233,31 @@ fn match_args_to_params(
     Ok(params.iter().map(|param| args.remove(param)).collect())
 }
 
-fn named_args_to_hash_map(
+fn named_args_to_map(
     named_args: Vec<(String, NodeWithSource)>,
     context: &mut NodeCompilationContext,
 ) -> Result<BTreeMap<String, Pattern<MarzanoQueryContext>>> {
-    let mut args = BTreeMap::new();
-    for (name, node) in named_args {
-        let pattern = PatternCompiler::from_node_with_rhs(&node, context, true)?;
-        args.insert(
-            context.compilation.lang.metavariable_prefix().to_owned() + &name,
-            pattern,
-        );
-    }
-    Ok(args)
+    named_args
+        .into_iter()
+        .map(|(name, node)| {
+            let pattern = PatternCompiler::from_node_with_rhs(&node, context, true)?;
+            Ok((name, pattern))
+        })
+        .collect()
+}
+
+fn named_args_to_prefixed_map(
+    named_args: Vec<(String, NodeWithSource)>,
+    context: &mut NodeCompilationContext,
+) -> Result<BTreeMap<String, Pattern<MarzanoQueryContext>>> {
+    named_args
+        .into_iter()
+        .map(|(name, node)| {
+            let pattern = PatternCompiler::from_node_with_rhs(&node, context, true)?;
+            let name = context.compilation.lang.metavariable_prefix().to_owned() + &name;
+            Ok((name, pattern))
+        })
+        .collect()
 }
 
 fn node_to_args_pairs<'a>(
