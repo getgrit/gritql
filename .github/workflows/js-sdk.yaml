@@ -1,0 +1,33 @@
+name: JavaScript SDK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: namespace-profile-standard-ubuntu22-amd64
+    steps:
+      - name: clone code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2023-11-16
+          override: true
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - name: install deps
+        working-directory: ./js/node-api
+        run: bun install
+      - name: build Node API
+        working-directory: ./js/node-api
+        run: bun run build
+      - name: test Node API
+        working-directory: ./js/node-api
+        run: bun test
