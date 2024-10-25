@@ -27,6 +27,7 @@ use marzano_auth::env::{get_env_auth, get_grit_api_url};
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum AllApp {
+    Grit,
     Marzano,
     Cli,
     Timekeeper, // Our copy of Temporalite
@@ -48,6 +49,7 @@ impl fmt::Display for AllApp {
             AllApp::Yeast => write!(f, "yeast"),
             AllApp::WorkflowRunner => write!(f, "workflow-runner"),
             AllApp::Gouda => write!(f, "gouda"),
+            AllApp::Grit => write!(f, "grit"),
         }
     }
 }
@@ -55,7 +57,7 @@ impl fmt::Display for AllApp {
 impl AllApp {
     fn from_supported_app(app: SupportedApp) -> Self {
         match app {
-            SupportedApp::Marzano => AllApp::Marzano,
+            SupportedApp::Grit => AllApp::Grit,
             #[cfg(feature = "workflows_v2")]
             SupportedApp::WorkflowRunner => AllApp::WorkflowRunner,
             SupportedApp::Gouda => AllApp::Gouda,
@@ -66,7 +68,7 @@ impl AllApp {
 // Allowed modern apps
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, clap::ValueEnum)]
 pub enum SupportedApp {
-    Marzano,
+    Grit,
     Gouda,
     #[cfg(feature = "workflows_v2")]
     WorkflowRunner,
@@ -75,12 +77,12 @@ pub enum SupportedApp {
 impl SupportedApp {
     // Apps to install for a default "install" command
     pub fn is_default_app(&self) -> bool {
-        matches!(self, SupportedApp::Marzano)
+        matches!(self, SupportedApp::Grit)
     }
 
     pub fn get_base_name(&self) -> String {
         match self {
-            SupportedApp::Marzano => "marzano".to_string(),
+            SupportedApp::Grit => "grit".to_string(),
             SupportedApp::Gouda => "gouda".to_string(),
             #[cfg(feature = "workflows_v2")]
             SupportedApp::WorkflowRunner => "workflow-runner".to_string(),
@@ -89,7 +91,7 @@ impl SupportedApp {
 
     fn get_env_name(&self) -> String {
         match self {
-            SupportedApp::Marzano => "GRIT_MARZANO_PATH".to_string(),
+            SupportedApp::Grit => "GRIT_MARZANO_PATH".to_string(),
             SupportedApp::Gouda => "GRIT_GOUDA_PATH".to_string(),
             #[cfg(feature = "workflows_v2")]
             SupportedApp::WorkflowRunner => "GRIT_WORKFLOW_RUNNER".to_string(),
@@ -198,7 +200,7 @@ impl Updater {
     // Apps to check for updates
     pub fn get_apps() -> Vec<SupportedApp> {
         vec![
-            SupportedApp::Marzano,
+            SupportedApp::Grit,
             SupportedApp::Gouda,
             #[cfg(feature = "workflows_v2")]
             SupportedApp::WorkflowRunner,
@@ -611,7 +613,7 @@ mod tests {
         | {
         |    "installPath":"/Users/morgante/.nvm/versions/node/v16.19.0/",
         |    "binaries":{
-        |        "marzano":{"name":"marzano","version":"0.1.0-alpha.1689744085325","release":"02c4911d-1b38-41e0-b350-57de7b850744"},
+        |        "grit":{"name":"grit","version":"0.1.0-alpha.1689744085325","release":"02c4911d-1b38-41e0-b350-57de7b850744"},
         |        "yeast":{"name":"yeast","version":"0.0.1-alpha.1687311119164","release":"744cc867-ae03-497f-b82a-ee6a4a57e90e"},
         |        "engine":{"name":"engine","version":"0.0.1-alpha.1687311092626","release":"1a24e0a9-c118-4522-a797-0a17f514be6c"},
         |        "cli":{"name":"cli","version":"0.15.5-alpha.1689138129000","release":"f401cc02-a183-4058-afb8-0cd81e4035d1"}
@@ -630,11 +632,11 @@ mod tests {
         assert_eq!(updater.binaries.len(), 4); // there are 4 binaries in the manifest
 
         // Get the version of the marzano binary
-        let marzano_version = updater._get_app_version(SupportedApp::Marzano)?;
+        let marzano_version = updater._get_app_version(SupportedApp::Grit)?;
         assert_eq!(marzano_version, "0.1.0-alpha.1689744085325");
 
         // Get the release date of the cli binary
-        let marzano_release_date = updater._get_app_release_date(SupportedApp::Marzano)?;
+        let marzano_release_date = updater._get_app_release_date(SupportedApp::Grit)?;
         assert_eq!(
             marzano_release_date,
             DateTime::<Utc>::from_naive_utc_and_offset(
@@ -657,7 +659,7 @@ mod tests {
 
         // Set the marzano version
         updater.set_app_version(
-            SupportedApp::Marzano,
+            SupportedApp::Grit,
             "0.0.1-alpha.1687311119164".to_string(),
             "744cc867-ae03-497f-b82a-ee6a4a57e90e".to_string(),
         )?;
@@ -671,7 +673,7 @@ mod tests {
         assert_eq!(new_updater.binaries.len(), 1);
 
         // Get the version of the marzano binary
-        let marzano_version = new_updater._get_app_version(SupportedApp::Marzano)?;
+        let marzano_version = new_updater._get_app_version(SupportedApp::Grit)?;
         assert_eq!(marzano_version, "0.0.1-alpha.1687311119164");
 
         Ok(())
@@ -686,21 +688,21 @@ mod tests {
 
         // Set the existing version
         updater.set_app_version(
-            SupportedApp::Marzano,
+            SupportedApp::Grit,
             "0.0.1-alpha.1687311119164".to_string(),
             "744cc867-ae03-497f-b82a-ee6a4a57e90e".to_string(),
         )?;
 
-        updater.install_latest(SupportedApp::Marzano).await?;
+        updater.install_latest(SupportedApp::Grit).await?;
 
         let manifest = async_fs::read_to_string(updater.manifest_path.clone()).await?;
 
         let parsed_manifest = serde_json::from_str::<serde_json::Value>(&manifest)?;
 
-        let marzano_name = parsed_manifest["binaries"]["marzano"]["name"]
+        let marzano_name = parsed_manifest["binaries"]["grit"]["name"]
             .as_str()
             .expect("install_path binaries marzano name should be a string");
-        assert_eq!(marzano_name, "marzano");
+        assert_eq!(marzano_name, "grit");
 
         Ok(())
     }
