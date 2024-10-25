@@ -44,7 +44,7 @@ fi
 # Calculate the bin path relative to the repo path
 script_dir="$(dirname "$(readlink -f "$0")")"
 fixtures_dir="${script_dir}/../fixtures"
-bin_path="${script_dir}/../../../../../target/release/marzano"
+bin_path="${script_dir}/../../../../../target/release/grit"
 
 # Create a temp directory for the repo
 temp_repo_path=$(mktemp -d)

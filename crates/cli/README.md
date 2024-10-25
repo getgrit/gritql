@@ -24,7 +24,7 @@ cargo test
 
 ## Building
 
-Note that the built binary is relative to the _workspace_ root. It will be at `../../../target/release/marzano`.
+Note that the built binary is relative to the _workspace_ root. It will be at `../../../target/release/grit`.
 
 ```
 yarn build

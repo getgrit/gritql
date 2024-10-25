@@ -1,5 +1,5 @@
 [package]
-name = "marzano"
+name = "grit"
 version = "0.1.0"
 edition = "2021"
 description = "GritQL is a query language for searching, linting, and modifying code"
@@ -68,7 +68,3 @@ npm-package = "cli"
 # the homebrew package should have this name
 formula = "grit"
 display-name = "grit"
-
-[package.metadata.dist.bin-aliases]
-# all installers should ensure marzano can also be run as "grit"
-marzano = ["grit"]

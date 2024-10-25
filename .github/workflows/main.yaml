@@ -123,4 +123,4 @@ jobs:
       - name: test stdlib
         working-directory: ./stdlib
         run: |
-          ../target/release/marzano patterns test --exclude ai
+          ../target/release/grit patterns test --exclude ai
