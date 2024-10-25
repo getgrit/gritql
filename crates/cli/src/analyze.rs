@@ -205,14 +205,14 @@ where
                 if file.file_type().unwrap().is_dir() {
                     continue;
                 }
-                if !&compiled.language.match_extension(
-                    file.path()
+                if !my_input.paths.contains(&file.path().to_path_buf()) {
+                    let ext = file
+                        .path()
                         .extension()
                         .unwrap_or_default()
                         .to_str()
-                        .unwrap_or_default(),
-                ) {
-                    if !my_input.paths.contains(&file.path().to_path_buf()) {
+                        .unwrap_or_default();
+                    if !&compiled.language.match_extension(ext) {
                         // only skip the file if it was discovered by the walker
                         // don't skip if it was explicitly passed in as a path
                         // https://github.com/getgrit/gritql/issues/485
