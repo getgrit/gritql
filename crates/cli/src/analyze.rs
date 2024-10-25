@@ -205,6 +205,10 @@ where
                 if file.file_type().unwrap().is_dir() {
                     continue;
                 }
+                if my_input.paths.contains(&file.path().to_path_buf()) {
+                    file_paths_tx.send(file.path().to_path_buf()).unwrap();
+                    continue;
+                }
                 if !&compiled.language.match_extension(
                     file.path()
                         .extension()
@@ -212,7 +216,6 @@ where
                         .to_str()
                         .unwrap_or_default(),
                 ) {
-                    processed.fetch_add(1, Ordering::SeqCst);
                     let path_string = file.path().to_string_lossy().to_string();
                     if my_input.paths.contains(&file.path().to_path_buf()) {
                         let log = MatchResult::AnalysisLog(AnalysisLog {
