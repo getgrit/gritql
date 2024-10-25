@@ -2937,7 +2937,14 @@ fn apply_to_path_with_invalid_python_extension() -> Result<()> {
     println!("stdout: {:?}", stdout);
 
     assert!(result.status.success(), "Command failed");
-    assert_snapshot!(stdout);
+    // Read back the file3.nopy file to ensure it was processed
+    let target_file = fixture_dir.join("file3.nopy");
+    let content: String = fs_err::read_to_string(target_file)?;
+    assert_snapshot!(content);
+
+    // ensure we don't get the old error message:
+    assert!(!stdout.contains("file3.nopy: ERROR (code: 410)"));
+    assert!(stdout.contains("Processed 3 files and found 3 matches"));
 
     Ok(())
 }
@@ -2964,7 +2971,12 @@ fn apply_to_path_with_invalid_javascript_extension() -> Result<()> {
     println!("stdout: {:?}", stdout);
 
     assert!(result.status.success(), "Command failed");
-    assert_snapshot!(stdout);
+    // Read back the file4.js.py file to ensure it was processed
+    let target_file = fixture_dir.join("file4.js.py");
+    let content: String = fs_err::read_to_string(target_file)?;
+    assert_snapshot!(content);
+
+    assert!(stdout.contains("Processed 1 files and found 2 matches"));
 
     Ok(())
 }
@@ -2992,7 +3004,14 @@ fn apply_to_path_with_invalid_lang() -> Result<()> {
     println!("stdout: {:?}", stdout);
 
     assert!(result.status.success(), "Command failed");
-    assert_snapshot!(stdout);
+    // Read back the file4.js.py file to ensure it was processed
+    let target_file = fixture_dir.join("file4.js.py");
+    let content: String = fs_err::read_to_string(target_file)?;
+    assert_snapshot!(content);
+
+    // we should get an error message about the wrong language / Error parsing source code
+    assert!(stdout.contains("file4.js.py: ERROR (code: 300) - Error parsing source code at 1:7 in file4.js.py. This may cause otherwise applicable queries to not match."));
+    assert!(stdout.contains("Processed 1 files and found 2 matches"));
 
     Ok(())
 }
