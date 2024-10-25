@@ -1,0 +1,7 @@
+---
+source: crates/cli_bin/tests/apply.rs
+expression: content
+---
+const mine = () => {
+    return String() + 'is mine';
+};
