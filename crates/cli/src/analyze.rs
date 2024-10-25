@@ -18,7 +18,7 @@ use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 use marzano_core::built_in_functions::BuiltIns;
 use marzano_core::pattern_compiler::{src_to_problem_libs, CompilationResult};
 use marzano_core::{
-    api::{AnalysisLog, DoneFile, MatchResult},
+    api::{AnalysisLog, MatchResult},
     problem::Problem,
 };
 use marzano_language::target_language::PatternLanguage;
@@ -205,10 +205,6 @@ where
                 if file.file_type().unwrap().is_dir() {
                     continue;
                 }
-                if my_input.paths.contains(&file.path().to_path_buf()) {
-                    file_paths_tx.send(file.path().to_path_buf()).unwrap();
-                    continue;
-                }
                 if !&compiled.language.match_extension(
                     file.path()
                         .extension()
@@ -216,41 +212,12 @@ where
                         .to_str()
                         .unwrap_or_default(),
                 ) {
-                    let path_string = file.path().to_string_lossy().to_string();
-                    if my_input.paths.contains(&file.path().to_path_buf()) {
-                        let log = MatchResult::AnalysisLog(AnalysisLog {
-                            level: 410,
-                            message: format!(
-                                "Skipped {} since it is not a {} file",
-                                path_string,
-                                &compiled.language.to_string()
-                            ),
-                            position: Position::first(),
-                            file: path_string.to_string(),
-                            engine_id: "marzano".to_string(),
-                            range: None,
-                            syntax_tree: None,
-                            source: None,
-                        });
-                        let done_file = MatchResult::DoneFile(DoneFile {
-                            relative_file_path: path_string,
-                            has_results: Some(false),
-                            file_hash: None,
-                            from_cache: false,
-                        });
-                        emitter.handle_results(
-                            vec![log, done_file],
-                            details,
-                            arg.dry_run,
-                            arg.format,
-                            &mut interactive,
-                            None,
-                            Some(processed),
-                            None,
-                            &compiled.language,
-                        );
+                    if !my_input.paths.contains(&file.path().to_path_buf()) {
+                        // only skip the file if it was discovered by the walker
+                        // don't skip if it was explicitly passed in as a path
+                        // https://github.com/getgrit/gritql/issues/485
+                        continue;
                     }
-                    continue;
                 }
                 file_paths_tx.send(file.path().to_path_buf()).unwrap();
             }
