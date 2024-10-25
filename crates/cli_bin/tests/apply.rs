@@ -2922,9 +2922,9 @@ fn apply_to_path_with_invalid_python_extension() -> Result<()> {
     let mut cmd = get_test_cmd()?;
     cmd.arg("apply")
         .arg("`object` => ``")
-        .arg("file1.py")
-        .arg("file2.pyi")
-        .arg("file3.nopy")
+        .arg("some_folder/file1.py")
+        .arg("some_folder/file2.pyi")
+        .arg("some_folder/file3.nopy")
         .arg("--lang=py")
         .arg("--force")
         .current_dir(&fixture_dir);
@@ -2938,7 +2938,7 @@ fn apply_to_path_with_invalid_python_extension() -> Result<()> {
 
     assert!(result.status.success(), "Command failed");
     // Read back the file3.nopy file to ensure it was processed
-    let target_file = fixture_dir.join("file3.nopy");
+    let target_file = fixture_dir.join("some_folder/file3.nopy");
     let content: String = fs_err::read_to_string(target_file)?;
     assert_snapshot!(content);
 
@@ -2958,7 +2958,7 @@ fn apply_to_path_with_invalid_javascript_extension() -> Result<()> {
     let mut cmd = get_test_cmd()?;
     cmd.arg("apply")
         .arg("`object` => ``")
-        .arg("file4.js.py")
+        .arg("some_folder/file4.js.py")
         .arg("--lang=js")
         .arg("--force")
         .current_dir(&fixture_dir);
@@ -2972,7 +2972,7 @@ fn apply_to_path_with_invalid_javascript_extension() -> Result<()> {
 
     assert!(result.status.success(), "Command failed");
     // Read back the file4.js.py file to ensure it was processed
-    let target_file = fixture_dir.join("file4.js.py");
+    let target_file = fixture_dir.join("some_folder/file4.js.py");
     let content: String = fs_err::read_to_string(target_file)?;
     assert_snapshot!(content);
 
@@ -2991,7 +2991,7 @@ fn apply_to_path_with_invalid_lang() -> Result<()> {
     let mut cmd = get_test_cmd()?;
     cmd.arg("apply")
         .arg("`object` => ``")
-        .arg("file4.js.py")
+        .arg("some_folder/file4.js.py")
         .arg("--lang=py")
         .arg("--force")
         .current_dir(&fixture_dir);
@@ -3005,12 +3005,12 @@ fn apply_to_path_with_invalid_lang() -> Result<()> {
 
     assert!(result.status.success(), "Command failed");
     // Read back the file4.js.py file to ensure it was processed
-    let target_file = fixture_dir.join("file4.js.py");
+    let target_file = fixture_dir.join("some_folder/file4.js.py");
     let content: String = fs_err::read_to_string(target_file)?;
     assert_snapshot!(content);
 
     // we should get an error message about the wrong language / Error parsing source code
-    assert!(stdout.contains("file4.js.py: ERROR (code: 300) - Error parsing source code at 1:7 in file4.js.py. This may cause otherwise applicable queries to not match."));
+    assert!(stdout.contains("some_folder/file4.js.py: ERROR (code: 300) - Error parsing source code at 1:7 in some_folder/file4.js.py. This may cause otherwise applicable queries to not match."));
     assert!(stdout.contains("Processed 1 files and found 2 matches"));
 
     Ok(())
