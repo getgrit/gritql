@@ -2913,6 +2913,144 @@ fn apply_stdin_with_invalid_lang_alias() -> Result<()> {
     Ok(())
 }
 
+/// test that we can apply to a folder which contains valid and invalid python extensions
+/// see https://github.com/getgrit/gritql/issues/485
+#[test]
+fn apply_to_folder_with_invalid_python_extension() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("invalid_extensions", false)?;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`object` => ``")
+        .arg("some_folder")
+        .arg("--lang=py")
+        .arg("--force")
+        .current_dir(&fixture_dir);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command failed");
+    // Read back the file3.nopy file to ensure it was processed
+    let target_file = fixture_dir.join("some_folder/file3.nopy");
+    let content: String = fs_err::read_to_string(target_file)?;
+    assert_snapshot!(content);
+
+    // ensure we don't get the old error message:
+    assert!(!stdout.contains("file3.nopy: ERROR (code: 410)"));
+    assert!(stdout.contains("some_folder/file4.js.py: ERROR (code: 300) - Error parsing source code at 1:7 in some_folder/file4.js.py. This may cause otherwise applicable queries to not match"));
+    assert!(stdout.contains("Processed 3 files and found 4 matches"));
+
+    Ok(())
+}
+
+/// test that we can apply to a path with an invalid python extension
+/// see https://github.com/getgrit/gritql/issues/485
+#[test]
+fn apply_to_path_with_invalid_python_extension() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("invalid_extensions", false)?;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`object` => ``")
+        .arg("some_folder/file1.py")
+        .arg("some_folder/file2.pyi")
+        .arg("some_folder/file3.nopy")
+        .arg("--lang=py")
+        .arg("--force")
+        .current_dir(&fixture_dir);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command failed");
+    // Read back the file3.nopy file to ensure it was processed
+    let target_file = fixture_dir.join("some_folder/file3.nopy");
+    let content: String = fs_err::read_to_string(target_file)?;
+    assert_snapshot!(content);
+
+    // ensure we don't get the old error message:
+    assert!(!stdout.contains("file3.nopy: ERROR (code: 410)"));
+    assert!(stdout.contains("Processed 3 files and found 3 matches"));
+
+    Ok(())
+}
+
+/// test that we can apply to a path with an invalid javascript extension
+/// see https://github.com/getgrit/gritql/issues/485
+#[test]
+fn apply_to_path_with_invalid_javascript_extension() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("invalid_extensions", false)?;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`object` => ``")
+        .arg("some_folder/file4.js.py")
+        .arg("--lang=js")
+        .arg("--force")
+        .current_dir(&fixture_dir);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command failed");
+    // Read back the file4.js.py file to ensure it was processed
+    let target_file = fixture_dir.join("some_folder/file4.js.py");
+    let content: String = fs_err::read_to_string(target_file)?;
+    assert_snapshot!(content);
+
+    assert!(stdout.contains("Processed 1 files and found 2 matches"));
+
+    Ok(())
+}
+
+/// test that we show an 'Error parsing source code' when we try to apply
+/// to a path which contains the wrong language as specified in the lang flag
+/// see https://github.com/getgrit/gritql/issues/485
+#[test]
+fn apply_to_path_with_invalid_lang() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("invalid_extensions", false)?;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`object` => ``")
+        .arg("some_folder/file4.js.py")
+        .arg("--lang=py")
+        .arg("--force")
+        .current_dir(&fixture_dir);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command failed");
+    // Read back the file4.js.py file to ensure it was processed
+    let target_file = fixture_dir.join("some_folder/file4.js.py");
+    let content: String = fs_err::read_to_string(target_file)?;
+    assert_snapshot!(content);
+
+    // we should get an error message about the wrong language / Error parsing source code
+    assert!(stdout.contains("some_folder/file4.js.py: ERROR (code: 300) - Error parsing source code at 1:7 in some_folder/file4.js.py. This may cause otherwise applicable queries to not match."));
+    assert!(stdout.contains("Processed 1 files and found 2 matches"));
+
+    Ok(())
+}
+
 /// Ban multiple stdin paths
 #[test]
 fn apply_stdin_two_paths() -> Result<()> {
