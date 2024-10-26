@@ -22,10 +22,10 @@ def test_find_install_download_grit_macos():
 
         result = find_install()
         assert isinstance(result, Path)
-        assert result.name == 'marzano'
+        assert result.name == 'grit'
 
         # Test the URL that is called
-        expected_url = "https://github.com/getgrit/gritql/releases/latest/download/marzano-aarch64-apple-darwin.tar.gz"
+        expected_url = "https://github.com/getgrit/gritql/releases/latest/download/grit-aarch64-apple-darwin.tar.gz"
         mock_client.return_value.__enter__.return_value.get.assert_called_once_with(expected_url, follow_redirects=True)
 
 def test_find_install_download_grit_linux():
@@ -43,10 +43,10 @@ def test_find_install_download_grit_linux():
 
         result = find_install()
         assert isinstance(result, Path)
-        assert result.name == 'marzano'
+        assert result.name == 'grit'
 
         # Test the URL that is called
-        expected_url = "https://github.com/getgrit/gritql/releases/latest/download/marzano-x86_64-unknown-linux-gnu.tar.gz"
+        expected_url = "https://github.com/getgrit/gritql/releases/latest/download/grit-x86_64-unknown-linux-gnu.tar.gz"
         mock_client.return_value.__enter__.return_value.get.assert_called_once_with(expected_url, follow_redirects=True)
 
 def test_find_install_windows():
