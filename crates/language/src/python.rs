@@ -79,7 +79,7 @@ impl Language for Python {
 
     fn check_replacements(&self, n: NodeWithSource<'_>, replacements: &mut Vec<Replacement>) {
         if n.node.is_error() {
-            if n.text().is_ok_and(|t| t == "->") {
+            if n.text().is_ok_and(|t| t == "->") || n.text().is_ok_and(|t| t == ",") {
                 replacements.push(Replacement::new(n.range(), ""));
             }
             return;

@@ -12272,6 +12272,66 @@ fn trailing_comma_import_from_python_with_alias() {
     .unwrap();
 }
 
+// refer to https://github.com/getgrit/gritql/issues/416
+#[test]
+fn trailing_comma_after_argument_removal() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                language python
+                `TaskMetadata($args)` where {
+                        $args <: contains `n_samples=$_` => .
+                    }
+                "#.to_owned(),
+            source: r#"
+                TaskMetadata(
+                    description="Parallel news titles from the Tbilisi City Hall website (https://tbilisi.gov.ge/).",
+                    main_score="f1", domains=["News"],
+                    text_creation="created",
+                    n_samples={_EVAL_SPLIT: 1820},
+                    reference="https://huggingface.co/datasets/jupyterjazz/tbilisi-city-hall-titles"
+                )
+            "#
+                .to_owned(),
+            expected: r#"
+                TaskMetadata(
+                    description="Parallel news titles from the Tbilisi City Hall website (https://tbilisi.gov.ge/).",
+                    main_score="f1", domains=["News"],
+                    text_creation="created",
+
+                    reference="https://huggingface.co/datasets/jupyterjazz/tbilisi-city-hall-titles"
+                )
+            "#
+                .to_owned(),
+        }
+    })
+    .unwrap();
+}
+
+/// Same as above test, but ensures the behavior doesn't depend on line breaks
+#[test]
+fn trailing_comma_after_argument_removal_one_line() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                language python
+                `TaskMetadata($args)` where {
+                        $args <: contains `n_samples=$_` => .
+                    }
+                "#.to_owned(),
+            source: r#"
+                TaskMetadata(description="Parallel news titles from the Tbilisi City Hall website (https://tbilisi.gov.ge/).", main_score="f1", domains=["News"], text_creation="created", n_samples={_EVAL_SPLIT: 1820}, reference="https://huggingface.co/datasets/jupyterjazz/tbilisi-city-hall-titles")
+            "#
+                .to_owned(),
+            expected: r#"
+                TaskMetadata(description="Parallel news titles from the Tbilisi City Hall website (https://tbilisi.gov.ge/).", main_score="f1", domains=["News"], text_creation="created",   reference="https://huggingface.co/datasets/jupyterjazz/tbilisi-city-hall-titles")
+            "#
+                .to_owned(),
+        }
+    })
+    .unwrap();
+}
+
 #[test]
 fn python_orphaned_from_imports() {
     run_test_expected({
