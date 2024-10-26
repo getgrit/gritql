@@ -6,7 +6,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-version = "0.1.5"
+version = "0.2.0"
 dependencies = ["typer>=0.9.0", "httpx>=0.18.2"]
 
 [project.optional-dependencies]
@@ -15,7 +15,7 @@ dev = ["pytest>=7.0"]
 
 [tool.poetry]
 name = "gritql"
-version = "0.1.5"
+version = "0.2.0"
 description = "Python bindings for GritQL"
 authors = ["Grit <developers@grit.io>"]
 license = "MIT"
