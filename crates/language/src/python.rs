@@ -89,7 +89,7 @@ impl Language for Python {
             // https://github.com/getgrit/gritql/issues/416 multi line example
             if let Some(prev) = n.node.prev_sibling() {
                 let empty = prev.range().end_byte() == prev.range().start_byte();
-                if prev.kind() == "identifier" && empty {
+                if empty {
                     replacements.push(Replacement::new(n.range(), ""));
                     return;
                 }
