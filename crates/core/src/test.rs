@@ -12324,7 +12324,7 @@ fn trailing_comma_after_argument_removal_one_line() {
             "#
                 .to_owned(),
             expected: r#"
-                TaskMetadata(description="Parallel news titles from the Tbilisi City Hall website (https://tbilisi.gov.ge/).", main_score="f1", domains=["News"], text_creation="created",   reference="https://huggingface.co/datasets/jupyterjazz/tbilisi-city-hall-titles")
+                TaskMetadata(description="Parallel news titles from the Tbilisi City Hall website (https://tbilisi.gov.ge/).", main_score="f1", domains=["News"], text_creation="created",  reference="https://huggingface.co/datasets/jupyterjazz/tbilisi-city-hall-titles")
             "#
                 .to_owned(),
         }

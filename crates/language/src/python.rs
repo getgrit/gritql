@@ -79,10 +79,21 @@ impl Language for Python {
 
     fn check_replacements(&self, n: NodeWithSource<'_>, replacements: &mut Vec<Replacement>) {
         if n.node.is_error() {
+            // https://github.com/getgrit/gritql/issues/416 single line example
             if n.text().is_ok_and(|t| t == "->") || n.text().is_ok_and(|t| t == ",") {
                 replacements.push(Replacement::new(n.range(), ""));
             }
             return;
+        }
+        if n.node.kind() == "," {
+            // https://github.com/getgrit/gritql/issues/416 multi line example
+            if let Some(prev) = n.node.prev_sibling() {
+                let empty = prev.range().end_byte() == prev.range().start_byte();
+                if prev.kind() == "identifier" && empty {
+                    replacements.push(Replacement::new(n.range(), ""));
+                    return;
+                }
+            }
         }
         if n.node.kind() == "import_from_statement" {
             if let Some(name_field) = n.node.child_by_field_name("name") {
