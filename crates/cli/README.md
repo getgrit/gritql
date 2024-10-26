@@ -3,7 +3,7 @@
 ```
 cargo build
 cargo install --path .
-marzano --help
+grit --help
 ```
 
 ## Usage
@@ -11,7 +11,7 @@ marzano --help
 1. check to run a pattern on a file
 
    ```
-   marzano check --pattern=test_jsx.grit test_jsx.js
+   grit check --pattern=test_jsx.grit test_jsx.js
    ```
 
 ## Tests
