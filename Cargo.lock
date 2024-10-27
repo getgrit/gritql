@@ -2159,6 +2159,7 @@ dependencies = [
  "assert_cmd",
  "fs-err",
  "fs_extra",
+ "git2",
  "insta",
  "marzano-cli",
  "marzano-gritmodule",

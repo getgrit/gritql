@@ -37,6 +37,7 @@ tracing-subscriber = { version = "0.3", default-features = false, optional = tru
 serde_json = "1.0.96"
 tempfile = "3.1"
 rayon = "1.8.0"
+git2 = "0.19.0"
 insta = { version = "1.30.0", features = ["yaml", "redactions", "filters"] }
 predicates = "3.0.3"
 fs_extra = "1.3"

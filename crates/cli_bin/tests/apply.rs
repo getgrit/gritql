@@ -6,6 +6,7 @@ use anyhow::bail;
 use anyhow::{anyhow, Result};
 use assert_cmd::Command;
 use common::get_test_cmd;
+use git2::Repository;
 use insta::{assert_snapshot, assert_yaml_snapshot};
 use marzano_gritmodule::config::{
     CONFIG_FILE_NAMES, GRIT_GLOBAL_DIR_ENV, GRIT_MODULE_DIR, REPO_CONFIG_DIR_NAME,
@@ -2913,6 +2914,80 @@ fn apply_stdin_with_invalid_lang_alias() -> Result<()> {
     Ok(())
 }
 
+/// test that we can apply to a folder which contains multiple nested .gitignore files
+/// see https://github.com/getgrit/gritql/issues/539
+#[test]
+fn apply_to_folder_with_nested_gitignore() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("nested_gitignore", false)?;
+    // make sure the .git files are in place which defines the highest level folder to be considered
+    Repository::init(&fixture_dir)?;
+
+    // root .gitignore has *.rst and *.pyi and file3.py
+    // src .gitignore has !module1/*.pyi and !module2/*.rst
+    // src/module1 .gitignore has !*.rst
+    // src/module2 .gitignore has file1.py and !file3.py
+
+    // in this folder we should process file1.py and file2.pyi BUT NOT file3.py
+    let module1 = fixture_dir.join("src/module1");
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`object` => ``")
+        .arg(".")
+        .arg("--lang=py")
+        .arg("--force")
+        .current_dir(&module1);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command failed");
+    // Read back the file1.pyi file to ensure it was processed
+    let target_file = fixture_dir.join("src/module1/file2.pyi");
+    let content: String = fs_err::read_to_string(target_file)?;
+    assert_snapshot!(content);
+
+    // ensure we process the correct number of files:
+    assert!(stdout.contains("file1.py"));
+    assert!(stdout.contains("file2.pyi"));
+    assert!(!stdout.contains("file3.py"));
+    assert!(stdout.contains("Processed 2 files and found 2 matches"));
+
+    // in this folder we should ONLY process file3.py and NOT file2.pyi NOR file1.py
+    let module2 = fixture_dir.join("src/module2");
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg("`object` => ``")
+        .arg(".")
+        .arg("--lang=py")
+        .arg("--force")
+        .current_dir(&module2);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command failed");
+    // Read back the file1.pyi file to ensure it was NOT processed
+    let target_file = fixture_dir.join("src/module2/file2.pyi");
+    let content: String = fs_err::read_to_string(target_file)?;
+    assert_snapshot!(content);
+
+    // ensure we process the correct number of files:
+    assert!(!stdout.contains("file1.py"));
+    assert!(!stdout.contains("file2.pyi"));
+    assert!(stdout.contains("file3.py"));
+    assert!(stdout.contains("Processed 1 files and found 1 matches"));
+
+    Ok(())
+}
+
 /// test that we can apply to a folder which contains valid and invalid python extensions
 /// see https://github.com/getgrit/gritql/issues/485
 #[test]
@@ -2935,7 +3010,7 @@ fn apply_to_folder_with_invalid_python_extension() -> Result<()> {
     println!("stdout: {:?}", stdout);
 
     assert!(result.status.success(), "Command failed");
-    // Read back the file3.nopy file to ensure it was processed
+    // Read back the file3.nopy file to ensure it was NOT processed
     let target_file = fixture_dir.join("some_folder/file3.nopy");
     let content: String = fs_err::read_to_string(target_file)?;
     assert_snapshot!(content);
