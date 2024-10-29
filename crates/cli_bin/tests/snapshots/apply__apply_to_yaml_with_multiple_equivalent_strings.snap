@@ -1,0 +1,10 @@
+---
+source: crates/cli_bin/tests/apply.rs
+expression: content
+---
+# https://github.com/actions/runner-images/blob/main/README.md#available-images
+steps:
+  - 'ubuntu-22.04'
+  - 'ubuntu-22.04'
+  - 'ubuntu-22.04'
+  - something random
