@@ -72,6 +72,7 @@ impl Matcher<MarzanoQueryContext> for MarzanoCodeSnippet {
             // use equivalence classes to match 'ubuntu-latest' and "ubuntu-latest" in yaml
             // i.e. to match string_scalar, single_quote_scalar, and double_quote_scalar
             // see https://github.com/getgrit/gritql/issues/394
+            #[allow(clippy::wildcard_enum_match_arm)]
             match p {
                 Pattern::AstLeafNode(p) => p.is_equivalent_class(kind_id),
                 _ => false, // TODO: handle other pattern types?
