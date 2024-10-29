@@ -64,11 +64,19 @@ impl Matcher<MarzanoQueryContext> for MarzanoCodeSnippet {
             return Ok(false);
         };
 
-        if let Some((_, pattern)) = self
-            .patterns
-            .iter()
-            .find(|(id, _)| *id == node.node.kind_id())
-        {
+        if let Some((_, pattern)) = self.patterns.iter().find(|(id, p)| {
+            let kind_id = node.node.kind_id();
+            if *id == kind_id {
+                return true;
+            }
+            // use equivalence classes to match 'ubuntu-latest' and "ubuntu-latest" in yaml
+            // i.e. to match string_scalar, single_quote_scalar, and double_quote_scalar
+            // see https://github.com/getgrit/gritql/issues/394
+            match p {
+                Pattern::AstLeafNode(p) => p.is_equivalent_class(kind_id),
+                _ => false, // TODO: handle other pattern types?
+            }
+        }) {
             pattern.execute(resolved, state, context, logs)
         } else {
             Ok(false)
