@@ -64,11 +64,70 @@ impl Matcher<MarzanoQueryContext> for MarzanoCodeSnippet {
             return Ok(false);
         };
 
-        if let Some((_, pattern)) = self
-            .patterns
-            .iter()
-            .find(|(id, _)| *id == node.node.kind_id())
-        {
+        if let Some((_, pattern)) = self.patterns.iter().find(|(id, p)| {
+            let kind_id = node.node.kind_id();
+            if *id == kind_id {
+                return true;
+            }
+            // use equivalence classes to match 'ubuntu-latest' and "ubuntu-latest" in yaml
+            // i.e. to match string_scalar, single_quote_scalar, and double_quote_scalar
+            // see https://github.com/getgrit/gritql/issues/394
+            match p {
+                Pattern::AstLeafNode(p) => p.is_equivalent_class(kind_id),
+                Pattern::AstNode(_) => false,
+                Pattern::Some(_) => false,
+                Pattern::Every(_) => false,
+                Pattern::List(_) => false,
+                Pattern::ListIndex(_) => false,
+                Pattern::Map(_) => false,
+                Pattern::Accessor(_) => false,
+                Pattern::Call(_) => false,
+                Pattern::Regex(_) => false,
+                Pattern::File(_) => false,
+                Pattern::Files(_) => false,
+                Pattern::Bubble(_) => false,
+                Pattern::Limit(_) => false,
+                Pattern::CallBuiltIn(_) => false,
+                Pattern::CallFunction(_) => false,
+                Pattern::CallForeignFunction(_) => false,
+                Pattern::CallbackPattern(_) => false,
+                Pattern::Assignment(_) => false,
+                Pattern::Accumulate(_) => false,
+                Pattern::StringConstant(_) => false,
+                Pattern::IntConstant(_) => false,
+                Pattern::FloatConstant(_) => false,
+                Pattern::BooleanConstant(_) => false,
+                Pattern::Variable(_) => false,
+                Pattern::Add(_) => false,
+                Pattern::Subtract(_) => false,
+                Pattern::Multiply(_) => false,
+                Pattern::Divide(_) => false,
+                Pattern::Modulo(_) => false,
+                Pattern::And(_) => false,
+                Pattern::Or(_) => false,
+                Pattern::Maybe(_) => false,
+                Pattern::Any(_) => false,
+                Pattern::CodeSnippet(_) => false,
+                Pattern::Rewrite(_) => false,
+                Pattern::Range(_) => false,
+                Pattern::Contains(_) => false,
+                Pattern::Includes(_) => false,
+                Pattern::Within(_) => false,
+                Pattern::After(_) => false,
+                Pattern::Before(_) => false,
+                Pattern::Where(_) => false,
+                Pattern::Undefined => false,
+                Pattern::Top => false,
+                Pattern::Underscore => false,
+                Pattern::Bottom => false,
+                Pattern::Not(_) => false,
+                Pattern::If(_) => false,
+                Pattern::Dots => false,
+                Pattern::Dynamic(_) => false,
+                Pattern::Sequential(_) => false,
+                Pattern::Like(_) => false,
+            }
+        }) {
             pattern.execute(resolved, state, context, logs)
         } else {
             Ok(false)

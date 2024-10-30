@@ -149,6 +149,12 @@ impl AstLeafNode {
             text: text.to_owned(),
         })
     }
+    pub fn is_equivalent_class(&self, sort: SortId) -> bool {
+        if let Some(e) = &self.equivalence_class {
+            return e.contains(sort);
+        }
+        false
+    }
 }
 
 impl AstLeafNodePattern<MarzanoQueryContext> for AstLeafNode {

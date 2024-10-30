@@ -51,6 +51,9 @@ impl LeafEquivalenceClass {
                     .is_some_and(|s| s == self.representative)
             })
     }
+    pub fn contains(&self, sort: SortId) -> bool {
+        self.class.iter().any(|c| c.sort == sort)
+    }
     pub(crate) fn new(
         representative: &str,
         sort: SortId,
@@ -118,6 +121,10 @@ pub(crate) fn normalize_identity(s: &str) -> Option<&str> {
 
 pub(crate) fn normalize_double_quote_string(s: &str) -> Option<&str> {
     s.strip_prefix('"')?.strip_suffix('"')
+}
+
+pub(crate) fn normalize_single_quote_string(s: &str) -> Option<&str> {
+    s.strip_prefix('\'')?.strip_suffix('\'')
 }
 
 pub(crate) fn kind_and_field_id_for_field_map(

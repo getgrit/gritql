@@ -1,6 +1,7 @@
 use crate::language::{
-    fields_for_nodes, normalize_double_quote_string, normalize_identity, Field,
-    LeafEquivalenceClass, LeafNormalizer, MarzanoLanguage, NodeTypes, SortId, TSLanguage,
+    fields_for_nodes, normalize_double_quote_string, normalize_identity,
+    normalize_single_quote_string, Field, LeafEquivalenceClass, LeafNormalizer, MarzanoLanguage,
+    NodeTypes, SortId, TSLanguage,
 };
 use grit_util::Language;
 use marzano_util::node_with_source::NodeWithSource;
@@ -44,6 +45,10 @@ impl Yaml {
                 LeafNormalizer::new(
                     language.id_for_node_kind("double_quote_scalar", true),
                     normalize_double_quote_string,
+                ),
+                LeafNormalizer::new(
+                    language.id_for_node_kind("single_quote_scalar", true),
+                    normalize_single_quote_string,
                 ),
             ]]
         });
@@ -145,6 +150,18 @@ mod tests {
     #[test]
     fn simple_yaml() {
         let snippet = "- foo:";
+        let lang = Yaml::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        for node in &nodes {
+            print_node(&node.node)
+        }
+        assert!(!nodes.is_empty());
+    }
+
+    #[test]
+    fn simple_strings() {
+        let snippet = "steps:\n  - runs_on: \"ubuntu-latest\"\n  - runs_on: 'ubuntu-latest'\n  - runs_on: ubuntu-latest";
         let lang = Yaml::new(None);
         let snippets = lang.parse_snippet_contexts(snippet);
         let nodes = nodes_from_indices(&snippets);
