@@ -3124,6 +3124,33 @@ fn toml_table_rename() {
 }
 
 #[test]
+fn simple_kotlin() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language kotlin
+                |`"Hello, World!"` => `"Hello, Marzano!"`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |fun main(args: Array<String>) {
+                |    println("Hello, World!")
+                |}"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |fun main(args: Array<String>) {
+                |    println("Hello, Marzano!")
+                |}"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn multi_args_snippet() {
     run_test_match({
         TestArg {
