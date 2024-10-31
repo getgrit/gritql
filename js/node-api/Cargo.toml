@@ -1,0 +1,28 @@
+[package]
+edition = "2021"
+name = "grit-node-api"
+version = "0.0.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
+napi = { version = "2.16.4", default-features = false, features = [
+  "napi8",
+  "async",
+] }
+napi-derive = "2.12.2"
+anyhow = "1.0.70"
+serde_json = "1.0.113"
+
+marzano-util = { path = "../../crates/util", features = ["napi"] }
+marzano-core = { path = "../../crates/core", features = [
+  "network_requests",
+  "non_wasm",
+  "napi",
+  "language-parsers",
+], default-features = false }
+
+[build-dependencies]
+napi-build = "2.0.1"
