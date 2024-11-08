@@ -48,6 +48,7 @@ const PREC = {
   LAMBDA_LITERAL: 0,
   RETURN_OR_THROW: 0,
   COMMENT: 0,
+  GRIT_METAVARIABLE: 100,
 };
 const DEC_DIGITS = token(sep1(/[0-9]+/, /_+/));
 const HEX_DIGITS = token(sep1(/[0-9a-fA-F]+/, /_+/));
@@ -237,7 +238,7 @@ module.exports = grammar({
       $._class_parameters
     ),
 
-    class_body: $ => seq("{", optional($._class_member_declarations), "}"),
+    class_body: $ => seq("{", optional(choice($._class_member_declarations, $.grit_metavariable)), "}"),
 
     _class_parameters: $ => seq(
       "(",
@@ -444,7 +445,7 @@ module.exports = grammar({
     enum_class_body: $ => seq(
       "{",
       optional($._enum_entries),
-      optional(seq(";", optional($._class_member_declarations))),
+      optional(seq(";", optional(choice($._class_member_declarations, $.grit_metavariable)))),
       "}"
     ),
 
@@ -553,7 +554,8 @@ module.exports = grammar({
           $._loop_statement,
           $._expression
         )
-      )
+      ),
+      $.grit_metavariable,
     ),
 
     label: $ => token(seq(
@@ -762,12 +764,13 @@ module.exports = grammar({
       $.real_literal,
       $.null_literal,
       $.long_literal,
-      $.unsigned_literal
+      $.unsigned_literal,
+      $.grit_metavariable,
     ),
 
     string_literal: $ => seq(
       $._string_start,
-      repeat(choice($.string_content, $._interpolation)),
+      choice($.grit_metavariable, repeat(choice($.string_content, $._interpolation))),
       $._string_end,
     ),
 
@@ -1230,6 +1233,7 @@ module.exports = grammar({
 
     _escaped_identifier: $ => /\\[tbrn'"\\$]/,
 
+    grit_metavariable: ($) => token(prec(PREC.grit_metavariable, choice("µ...", /µ[a-zA-Z_][a-zA-Z0-9_]*/))),
   }
 });
 
