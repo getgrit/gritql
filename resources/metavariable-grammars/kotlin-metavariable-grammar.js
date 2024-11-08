@@ -111,6 +111,8 @@ module.exports = grammar({
     [$.type_modifiers],
     // ambiguity between associating type modifiers
     [$.not_nullable_type],
+    // grit_metavariable conflicts
+    [$._statement, $._literal_constant],
   ],
 
   externals: $ => [
@@ -1233,7 +1235,7 @@ module.exports = grammar({
 
     _escaped_identifier: $ => /\\[tbrn'"\\$]/,
 
-    grit_metavariable: ($) => token(prec(PREC.grit_metavariable, choice("µ...", /µ[a-zA-Z_][a-zA-Z0-9_]*/))),
+    grit_metavariable: ($) => token(prec(PREC.GRIT_METAVARIABLE, choice("µ...", /µ[a-zA-Z_][a-zA-Z0-9_]*/))),
   }
 });
 
