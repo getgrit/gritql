@@ -50,6 +50,7 @@ const allLanguages = [
   "java",
   "javascript",
   "json",
+  "kotlin",
   "markdown",
   "python",
   "ruby",
@@ -119,7 +120,7 @@ const copyMyBuild = async (c, lang, dest) =>
   );
 
 const treeSitterGenerate = async (dir, buildWasm = true) => {
-  const andMaybeBuildWasm = buildWasm ? "&& tree-sitter build-wasm " : "";
+  const andMaybeBuildWasm = buildWasm ? "&& tree-sitter build --wasm " : "";
   await execPromise(
     `tree-sitter generate ${andMaybeBuildWasm} && echo "Generated grammar for ${dir}"`,
     path.join(LANGUAGE_METAVARIABLES_DIR, `tree-sitter-${dir}`)
