@@ -1,4 +1,5 @@
 {
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/grammar.schema.json",
   "name": "kotlin",
   "word": "_alpha_identifier",
   "rules": {
@@ -607,8 +608,17 @@
           "type": "CHOICE",
           "members": [
             {
-              "type": "SYMBOL",
-              "name": "_class_member_declarations"
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_class_member_declarations"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "grit_metavariable"
+                }
+              ]
             },
             {
               "type": "BLANK"
@@ -2047,8 +2057,17 @@
                   "type": "CHOICE",
                   "members": [
                     {
-                      "type": "SYMBOL",
-                      "name": "_class_member_declarations"
+                      "type": "CHOICE",
+                      "members": [
+                        {
+                          "type": "SYMBOL",
+                          "name": "_class_member_declarations"
+                        },
+                        {
+                          "type": "SYMBOL",
+                          "name": "grit_metavariable"
+                        }
+                      ]
                     },
                     {
                       "type": "BLANK"
@@ -2628,6 +2647,10 @@
               ]
             }
           ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "grit_metavariable"
         }
       ]
     },
@@ -3816,6 +3839,10 @@
         {
           "type": "SYMBOL",
           "name": "unsigned_literal"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "grit_metavariable"
         }
       ]
     },
@@ -3827,20 +3854,29 @@
           "name": "_string_start"
         },
         {
-          "type": "REPEAT",
-          "content": {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "string_content"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "_interpolation"
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "grit_metavariable"
+            },
+            {
+              "type": "REPEAT",
+              "content": {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "string_content"
+                  },
+                  {
+                    "type": "SYMBOL",
+                    "name": "_interpolation"
+                  }
+                ]
               }
-            ]
-          }
+            }
+          ]
         },
         {
           "type": "SYMBOL",
@@ -6234,6 +6270,26 @@
     "_escaped_identifier": {
       "type": "PATTERN",
       "value": "\\\\[tbrn'\"\\\\$]"
+    },
+    "grit_metavariable": {
+      "type": "TOKEN",
+      "content": {
+        "type": "PREC",
+        "value": 100,
+        "content": {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "µ..."
+            },
+            {
+              "type": "PATTERN",
+              "value": "µ[a-zA-Z_][a-zA-Z0-9_]*"
+            }
+          ]
+        }
+      }
     }
   },
   "extras": [
@@ -6354,6 +6410,10 @@
     ],
     [
       "not_nullable_type"
+    ],
+    [
+      "_statement",
+      "_literal_constant"
     ]
   ],
   "precedences": [],

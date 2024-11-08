@@ -68,6 +68,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -355,6 +359,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -550,6 +558,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -732,6 +744,10 @@
         },
         {
           "type": "equality_expression",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -1019,6 +1035,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -1170,6 +1190,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "object_declaration",
           "named": true
         },
@@ -1314,6 +1338,10 @@
         },
         {
           "type": "function_type",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -1509,6 +1537,10 @@
         },
         {
           "type": "equality_expression",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -1710,6 +1742,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -1878,6 +1914,10 @@
         },
         {
           "type": "equality_expression",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -2114,6 +2154,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -2304,6 +2348,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -2448,6 +2496,10 @@
         },
         {
           "type": "equality_expression",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -2626,6 +2678,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -2797,6 +2853,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -2932,6 +2992,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "object_declaration",
           "named": true
         },
@@ -3047,6 +3111,10 @@
         },
         {
           "type": "equality_expression",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -3222,6 +3290,10 @@
         },
         {
           "type": "function_type",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -3442,6 +3514,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -3618,6 +3694,10 @@
         },
         {
           "type": "equality_expression",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -3946,6 +4026,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -4193,6 +4277,10 @@
             "named": true
           },
           {
+            "type": "grit_metavariable",
+            "named": true
+          },
+          {
             "type": "hex_literal",
             "named": true
           },
@@ -4428,6 +4516,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -4603,6 +4695,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -4771,6 +4867,10 @@
         },
         {
           "type": "equality_expression",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -4950,6 +5050,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -5123,6 +5227,10 @@
         },
         {
           "type": "equality_expression",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -5434,6 +5542,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -5602,6 +5714,10 @@
         },
         {
           "type": "equality_expression",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -6008,6 +6124,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -6238,6 +6358,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -6410,6 +6534,10 @@
         },
         {
           "type": "equality_expression",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -6612,6 +6740,10 @@
         },
         {
           "type": "getter",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -6830,6 +6962,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -7001,6 +7137,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -7169,6 +7309,10 @@
         },
         {
           "type": "equality_expression",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -7361,6 +7505,7 @@
   {
     "type": "source_file",
     "named": true,
+    "root": true,
     "fields": {},
     "children": {
       "multiple": true,
@@ -7456,6 +7601,10 @@
         },
         {
           "type": "getter",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -7666,6 +7815,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -7865,6 +8018,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -7999,6 +8156,10 @@
       "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "grit_metavariable",
+          "named": true
+        },
         {
           "type": "interpolated_expression",
           "named": true
@@ -8521,6 +8682,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -8756,6 +8921,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -8977,6 +9146,10 @@
           "named": true
         },
         {
+          "type": "grit_metavariable",
+          "named": true
+        },
+        {
           "type": "hex_literal",
           "named": true
         },
@@ -9153,6 +9326,10 @@
         },
         {
           "type": "equality_expression",
+          "named": true
+        },
+        {
+          "type": "grit_metavariable",
           "named": true
         },
         {
@@ -9419,6 +9596,10 @@
     "named": false
   },
   {
+    "type": "?",
+    "named": false
+  },
+  {
     "type": "?.",
     "named": false
   },
@@ -9573,6 +9754,10 @@
   {
     "type": "get",
     "named": false
+  },
+  {
+    "type": "grit_metavariable",
+    "named": true
   },
   {
     "type": "hex_literal",
