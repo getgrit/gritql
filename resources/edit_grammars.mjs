@@ -52,16 +52,16 @@ const allLanguages = [
   "json",
   "kotlin",
   "markdown",
+  "php",
   "python",
   "ruby",
   "rust",
   "solidity",
   "sql",
-  "typescript",
-  "yaml",
   "toml",
+  "typescript",
   "vue",
-  "php",
+  "yaml",
 ];
 
 // For these languages, copyMvGrammar is optional

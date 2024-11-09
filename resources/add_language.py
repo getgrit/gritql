@@ -171,7 +171,7 @@ def main(args: Namespace):
     1. patch the metavariable grammar to include $.grit_metavariable anywhere we want to substitute a metavariable
     2. add `tree-sitter-{language}` to crates/language/Cargo.toml [dependencies] and [features.builtin-parser]
     3. add `pub mod {language};` to crates/language/src/lib.rs
-    4. add `use crate::{language}::{language_title_case}` to crates/language/src/target_language.rs
+    4. add `use crate::{language}::{language_title_case}` to crates/language/src/target_language.rs and add it to all enums and match statements
     5. test cases for {language} in crates/core/src/test.rs
     """)
 

@@ -68,6 +68,7 @@ pub mod java;
 pub mod javascript;
 mod js_like;
 pub mod json;
+pub mod kotlin;
 pub mod language;
 pub mod markdown_block;
 pub mod markdown_inline;
