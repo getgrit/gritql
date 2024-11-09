@@ -172,7 +172,8 @@ def main(args: Namespace):
     2. add `tree-sitter-{language}` to crates/language/Cargo.toml [dependencies] and [features.builtin-parser]
     3. add `pub mod {language};` to crates/language/src/lib.rs
     4. add `use crate::{language}::{language_title_case}` to crates/language/src/target_language.rs and add it to all enums and match statements
-    5. test cases for {language} in crates/core/src/test.rs
+    5. add {language} to the `PatternsDirectory` struct in crates/gritmodule/src/patterns_directory.rs add it to all match statements
+    6. add test cases for {language} in crates/core/src/test.rs
     """)
 
 

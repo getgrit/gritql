@@ -13,6 +13,7 @@ pub struct PatternsDirectory {
     css: BTreeMap<String, String>,
     json: BTreeMap<String, String>,
     java: BTreeMap<String, String>,
+    kotlin: BTreeMap<String, String>,
     c_sharp: BTreeMap<String, String>,
     python: BTreeMap<String, String>,
     markdown_block: BTreeMap<String, String>,
@@ -70,6 +71,7 @@ impl PatternsDirectory {
             css: BTreeMap::new(),
             json: BTreeMap::new(),
             java: BTreeMap::new(),
+            kotlin: BTreeMap::new(),
             c_sharp: BTreeMap::new(),
             python: BTreeMap::new(),
             markdown_block: BTreeMap::new(),
@@ -102,6 +104,7 @@ impl PatternsDirectory {
             PatternLanguage::Css => &mut self.css,
             PatternLanguage::Json => &mut self.json,
             PatternLanguage::Java => &mut self.java,
+            PatternLanguage::Kotlin => &mut self.kotlin,
             PatternLanguage::CSharp => &mut self.c_sharp,
             PatternLanguage::Python => &mut self.python,
             PatternLanguage::MarkdownBlock => &mut self.markdown_block,
@@ -131,6 +134,7 @@ impl PatternsDirectory {
             PatternLanguage::Css => &self.css,
             PatternLanguage::Json => &self.json,
             PatternLanguage::Java => &self.java,
+            PatternLanguage::Kotlin => &self.kotlin,
             PatternLanguage::CSharp => &self.c_sharp,
             PatternLanguage::Python => &self.python,
             PatternLanguage::MarkdownBlock => &self.markdown_block,
@@ -242,6 +246,8 @@ impl PatternsDirectory {
         self.json = other.json;
         other.java.extend(mem::take(&mut self.java));
         self.java = other.java;
+        other.kotlin.extend(mem::take(&mut self.kotlin));
+        self.kotlin = other.kotlin;
         other.c_sharp.extend(mem::take(&mut self.c_sharp));
         self.c_sharp = other.c_sharp;
         other.python.extend(mem::take(&mut self.python));
