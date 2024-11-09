@@ -117,6 +117,7 @@ mod tests {{
 def main(args: Namespace):
     """Automate the process of adding a new language to the gritql metavariable-grammars."""
     language = args.language.lower()
+    language_upper_case = language.upper()
     language_title_case = language.title()
     language_rs = LANGUAGE_TEMPLATE_RS.format(
         language=language, language_title_case=language_title_case
@@ -172,8 +173,10 @@ def main(args: Namespace):
     2. add `tree-sitter-{language}` to crates/language/Cargo.toml [dependencies] and [features.builtin-parser]
     3. add `pub mod {language};` to crates/language/src/lib.rs
     4. add `use crate::{language}::{language_title_case}` to crates/language/src/target_language.rs and add it to all enums and match statements
-    5. add {language} to the `PatternsDirectory` struct in crates/gritmodule/src/patterns_directory.rs add it to all match statements
-    6. add test cases for {language} in crates/core/src/test.rs
+    5. add {language} to the `PatternsDirectory` struct in crates/gritmodule/src/patterns_directory.rs and add it to all match statements
+    6. add {language_title_case} to all match statements in crates/lsp/src/language.rs
+    7. add {language_upper_case}_LANGUAGE as a static in crates/wasm-bindings/src/match_pattern.rs and add it to all match statements
+    8. add test cases for {language} in crates/core/src/test.rs
     """)
 
 
