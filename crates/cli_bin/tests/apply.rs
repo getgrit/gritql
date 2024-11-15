@@ -3146,6 +3146,72 @@ fn apply_to_yaml_with_multiple_equivalent_strings() -> Result<()> {
     Ok(())
 }
 
+/// test that we can apply to a kotlin file containing equivalent strings
+/// but with different formatting/representations (double quotes vs triple double quotes)
+#[test]
+fn apply_to_kotlin_with_multiple_equivalent_strings() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("kotlin_examples", false)?;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg(r#"`"ubuntu-latest"` => `"ubuntu-22.04"`"#)
+        .arg("build.kt")
+        .arg("--lang=kotlin")
+        .arg("--force")
+        .current_dir(&fixture_dir);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command failed");
+    // Read back the build.yml file to ensure it was processed correctly
+    let target_file = fixture_dir.join("build.kt");
+    let content: String = fs_err::read_to_string(target_file)?;
+    assert_snapshot!(content);
+
+    // ensure all equivalent strings were replaced
+    assert!(stdout.contains("Processed 1 files and found 2 matches"));
+
+    Ok(())
+}
+
+/// test that we can apply to a python file containing equivalent strings
+/// but with different formatting/representations (single quotes vs double quotes vs triple double quotes)
+#[test]
+fn apply_to_python_with_multiple_equivalent_strings() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("python_examples", false)?;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg(r#"`"ubuntu-latest"` => `"ubuntu-22.04"`"#)
+        .arg("build.py")
+        .arg("--lang=python")
+        .arg("--force")
+        .current_dir(&fixture_dir);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command failed");
+    // Read back the build.yml file to ensure it was processed correctly
+    let target_file = fixture_dir.join("build.py");
+    let content: String = fs_err::read_to_string(target_file)?;
+    assert_snapshot!(content);
+
+    // ensure all equivalent strings were replaced
+    assert!(stdout.contains("Processed 1 files and found 4 matches"));
+
+    Ok(())
+}
+
 /// Ban multiple stdin paths
 #[test]
 fn apply_stdin_two_paths() -> Result<()> {
