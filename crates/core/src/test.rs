@@ -3151,6 +3151,365 @@ fn simple_kotlin() {
 }
 
 #[test]
+fn import_metavariable_kotlin() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language kotlin
+                |`import kotlin.math.$var` => `import my_math.$var`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"import kotlin.math.PI"#.to_string(),
+            expected: r#"import my_math.PI"#.to_string(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn kotlin_replace_binding_pattern_kind() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language kotlin
+                |
+                |`binding_pattern_kind()` => `var`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |fun main() {
+                |   val name = "Hello"
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |fun main() {
+                |   var name = "Hello"
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn simple_metavariable_kotlin() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language kotlin
+                |`println($name)` => `println("Hello, Marzano!")`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |fun main(args: Array<String>) {
+                |    println("Hello, World!")
+                |}"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |fun main(args: Array<String>) {
+                |    println("Hello, Marzano!")
+                |}"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn apply_replace_list_item_kotlin() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language kotlin
+                |`"Apple"` => `"Pear"`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |fun main(args: Array<String>) {
+                |    val fruits = listOf("Apple", "Banana", "Cherry")
+                |    for (fruit in fruits) {
+                |        println(fruit)
+                |    }
+                |}"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |fun main(args: Array<String>) {
+                |    val fruits = listOf("Pear", "Banana", "Cherry")
+                |    for (fruit in fruits) {
+                |        println(fruit)
+                |    }
+                |}"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn apply_append_list_item_kotlin() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language kotlin
+                |`val fruits = listOf($langs)` where { $langs += `"Pear"`}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |fun main(args: Array<String>) {
+                |    val fruits = listOf("Apple", "Banana", "Cherry")
+                |    for (fruit in fruits) {
+                |        println(fruit)
+                |    }
+                |}"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |fun main(args: Array<String>) {
+                |    val fruits = listOf("Apple", "Banana", "Cherry", "Pear")
+                |    for (fruit in fruits) {
+                |        println(fruit)
+                |    }
+                |}"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn kotlin_match_string_literal() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                |language kotlin
+                |
+                |`var name = ^name`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |var name = "Marzano"
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn kotlin_replace_string_literal() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language kotlin
+                |
+                |`var name = $name` => `var name = "Marzano"`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |fun main() {
+                |   var name = "Hello"
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |fun main() {
+                |   var name = "Marzano"
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn python_replace_string_literal() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language python
+                |
+                |`name = $name` => `name = "Marzano"`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |def main():
+                |   name = "Hello"
+                |
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |def main():
+                |   name = "Marzano"
+                |
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn java_replace_string_literal() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language java
+                |
+                |`public String name = $name;` => `public String name = "Marzano";`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |public class Main {
+                |    public String name = "Hello";
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |public class Main {
+                |    public String name = "Marzano";
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn kotlin_match_simple_assignment() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                |language kotlin
+                |
+                |`val key = ^value`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"val key = "value""#.to_string(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn python_match_simple_assignment() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                |language python
+                |
+                |`key = $value`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"key = "value""#.to_string(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn javascript_match_simple_assignment() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                |language js
+                |
+                |`const key = $value`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"const key = "value""#.to_string(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn kotlin_multi_args_snippet() {
+    run_test_match({
+        TestArg {
+            pattern: r#"
+                |language kotlin
+                |
+                |`arrayOf($args)`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |arrayOf(1, 2, 3)
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn kotlin_includes_any() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language kotlin
+                |
+                |`println($_)` as $haystack where {
+                |   $haystack <: includes any { "Hello", "handsome" }
+                |} => `println("Goodbye world!")`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |println("Hello world!");
+                |println("Hello handsome!");
+                |println("But not me, handsome.");
+                |println("Hi, Hello world!");
+                |println("Just not this....");
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |println("Goodbye world!");
+                |println("Goodbye world!");
+                |println("Goodbye world!");
+                |println("Goodbye world!");
+                |println("Just not this....");
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn multi_args_snippet() {
     run_test_match({
         TestArg {
