@@ -146,7 +146,7 @@ def main(args: Namespace):
     with open(grammar_js_path, "w") as f:
         f.write(updated_grammar_js)
 
-    # check if tree-sitter is installed:
+    # check if node is installed:
     try:
         output = check_output(["node", "--version"], cwd=repo_path).decode().strip()
         print("using", output)
