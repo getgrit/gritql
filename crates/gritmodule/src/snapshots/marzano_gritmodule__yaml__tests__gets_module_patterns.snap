@@ -11,9 +11,15 @@ expression: patterns
     tags: ~
     samples: ~
     path: ""
-    position:
-      line: 3
-      column: 11
+    range:
+      start:
+        line: 3
+        column: 11
+      end:
+        line: 3
+        column: 11
+      startByte: 35
+      endByte: 35
     raw: ~
   module:
     host: github.com
@@ -30,9 +36,15 @@ expression: patterns
     tags: ~
     samples: ~
     path: ""
-    position:
-      line: 5
-      column: 11
+    range:
+      start:
+        line: 5
+        column: 11
+      end:
+        line: 5
+        column: 11
+      startByte: 85
+      endByte: 85
     raw: ~
   module:
     host: github.com
@@ -49,9 +61,15 @@ expression: patterns
     tags: ~
     samples: ~
     path: ""
-    position:
-      line: 7
-      column: 11
+    range:
+      start:
+        line: 7
+        column: 11
+      end:
+        line: 7
+        column: 11
+      startByte: 151
+      endByte: 151
     raw: ~
   module:
     host: github.com
@@ -68,9 +86,15 @@ expression: patterns
     tags: ~
     samples: ~
     path: ""
-    position:
-      line: 9
-      column: 11
+    range:
+      start:
+        line: 9
+        column: 11
+      end:
+        line: 9
+        column: 11
+      startByte: 217
+      endByte: 217
     raw: ~
   module: ~
   local_name: remove_console_error

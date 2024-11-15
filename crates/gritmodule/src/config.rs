@@ -1,5 +1,5 @@
 use anyhow::Context;
-use grit_util::{Position, Range};
+use grit_util::Range;
 use log::info;
 use marzano_core::api::EnforcementLevel;
 use marzano_language::{grit_parser::MarzanoGritParser, target_language::PatternLanguage};
@@ -101,7 +101,7 @@ pub struct GritDefinitionConfig {
     pub kind: Option<DefinitionKind>,
     pub samples: Option<Vec<GritPatternSample>>,
     pub path: String,
-    pub position: Option<Position>,
+    pub range: Option<Range>,
     pub raw: Option<RawGritDefinition>,
 }
 
@@ -114,7 +114,7 @@ impl GritDefinitionConfig {
             kind: serialized.kind,
             samples: serialized.samples,
             path,
-            position: None,
+            range: None,
             raw: None,
         }
     }

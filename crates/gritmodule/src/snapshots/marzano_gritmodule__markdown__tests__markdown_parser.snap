@@ -33,9 +33,15 @@ expression: patterns
           startByte: 368
           endByte: 414
     path: no_debugger.md
-    position:
-      line: 9
-      column: 1
+    range:
+      start:
+        line: 9
+        column: 1
+      end:
+        line: 13
+        column: 1
+      startByte: 193
+      endByte: 252
     raw:
       format: markdown
       content: "---\ntitle: Remove `debugger` statement\ntags: [fix]\n---\n\nThe code in production should not contain a `debugger`. It causes the browser to stop executing the code and open the debugger.\n\n```grit\nengine marzano(0.1)\nlanguage js\n\ndebugger_statement() => .\n```\n\n## Remove debbuger\n\n```javascript\nfunction isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}\n```\n\n```typescript\nfunction isTruthy(x) {\n  return Boolean(x);\n}\n```\n"

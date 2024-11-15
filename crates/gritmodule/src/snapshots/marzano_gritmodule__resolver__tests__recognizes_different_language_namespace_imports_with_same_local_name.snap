@@ -11,9 +11,15 @@ expression: resolved_patterns
     tags: ~
     samples: ~
     path: ".grit/.gritmodules/github.com/fakeorg/js/.grit/patterns/importing.grit"
-    position:
-      line: 4
-      column: 9
+    range:
+      start:
+        line: 4
+        column: 9
+      end:
+        line: 4
+        column: 38
+      startByte: 41
+      endByte: 70
     raw: ~
   module:
     type: Module
@@ -35,9 +41,15 @@ expression: resolved_patterns
     tags: ~
     samples: ~
     path: ".grit/.gritmodules/github.com/fakeorg/python/.grit/patterns/importing.grit"
-    position:
-      line: 4
-      column: 9
+    range:
+      start:
+        line: 4
+        column: 9
+      end:
+        line: 4
+        column: 38
+      startByte: 45
+      endByte: 74
     raw: ~
   module:
     type: Module

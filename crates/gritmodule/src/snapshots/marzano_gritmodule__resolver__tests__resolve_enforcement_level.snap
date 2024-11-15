@@ -11,9 +11,15 @@ expression: resolved_patterns
     tags: ~
     samples: ~
     path: ".grit/grit.yaml"
-    position:
-      line: 3
-      column: 11
+    range:
+      start:
+        line: 3
+        column: 11
+      end:
+        line: 3
+        column: 11
+      startByte: 35
+      endByte: 35
     raw: ~
   module:
     type: Module
@@ -35,9 +41,15 @@ expression: resolved_patterns
     tags: ~
     samples: ~
     path: ".grit/grit.yaml"
-    position:
-      line: 15
-      column: 11
+    range:
+      start:
+        line: 15
+        column: 11
+      end:
+        line: 15
+        column: 11
+      startByte: 266
+      endByte: 266
     raw: ~
   module:
     type: Module
@@ -59,9 +71,15 @@ expression: resolved_patterns
     tags: ~
     samples: ~
     path: ".grit/grit.yaml"
-    position:
-      line: 8
-      column: 11
+    range:
+      start:
+        line: 8
+        column: 11
+      end:
+        line: 8
+        column: 11
+      startByte: 135
+      endByte: 135
     raw: ~
   module:
     type: Module

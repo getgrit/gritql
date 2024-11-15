@@ -478,8 +478,8 @@ impl LanguageServer for GritServer {
             return Ok(None);
         };
         let url = Url::parse(definition.url(&our_repo, &root_path).as_str()).unwrap();
-        let definition_position = match &definition.config.position {
-            Some(position) => convert_grit_position_to_lsp_position(position),
+        let definition_position = match &definition.config.range {
+            Some(range) => convert_grit_position_to_lsp_position(&range.start),
             None => {
                 return Ok(None);
             }

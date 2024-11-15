@@ -7,7 +7,7 @@ use crate::{
     parser::extract_relative_file_path,
 };
 use anyhow::{anyhow, bail, Result};
-use grit_util::{Ast, AstNode, Position};
+use grit_util::{Ast, AstNode, Position, Range};
 use marzano_language::{grit_parser::MarzanoGritParser, target_language::PatternLanguage};
 use marzano_util::rich_path::RichFile;
 use std::collections::HashMap;
@@ -59,9 +59,17 @@ pub fn get_patterns_from_grit(
                 }
                 None => plain_body.to_string(),
             };
-            let position = Position::new(
-                name_node.node.start_position().row() + 1,
-                name_node.node.start_position().column() + 1,
+            let range = Range::new(
+                Position::new(
+                    name_node.node.start_position().row() + 1,
+                    name_node.node.start_position().column() + 1,
+                ),
+                Position::new(
+                    name_node.node.end_position().row() + 1,
+                    name_node.node.end_position().column() + 1,
+                ),
+                name_node.node.start_byte(),
+                name_node.node.end_byte(),
             );
 
             let module_grit_pattern = ModuleGritPattern {
@@ -70,7 +78,7 @@ pub fn get_patterns_from_grit(
                     body: Some(body.to_string()),
                     kind,
                     path: extract_relative_file_path(file, root),
-                    position: Some(position),
+                    range: Some(range),
                     meta: GritPatternMetadata {
                         tags: if is_public {
                             None

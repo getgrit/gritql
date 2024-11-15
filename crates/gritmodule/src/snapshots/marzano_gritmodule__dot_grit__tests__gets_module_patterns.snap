@@ -11,9 +11,15 @@ expression: patterns
     tags: ~
     samples: ~
     path: ""
-    position:
-      line: 12
-      column: 9
+    range:
+      start:
+        line: 12
+        column: 9
+      end:
+        line: 12
+        column: 27
+      startByte: 120
+      endByte: 138
     raw: ~
   module: ~
   local_name: no_tests_with_only
@@ -26,9 +32,15 @@ expression: patterns
     tags: ~
     samples: ~
     path: ""
-    position:
-      line: 18
-      column: 9
+    range:
+      start:
+        line: 18
+        column: 9
+      end:
+        line: 18
+        column: 27
+      startByte: 235
+      endByte: 253
     raw: ~
   module: ~
   local_name: no_tests_with_skip
@@ -41,9 +53,15 @@ expression: patterns
     tags: ~
     samples: ~
     path: ""
-    position:
-      line: 4
-      column: 9
+    range:
+      start:
+        line: 4
+        column: 9
+      end:
+        line: 4
+        column: 24
+      startByte: 41
+      endByte: 56
     raw: ~
   module: ~
   local_name: test_identifier

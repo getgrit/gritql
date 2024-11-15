@@ -11,9 +11,15 @@ expression: resolved_patterns
     tags: ~
     samples: ~
     path: ".grit/.gritmodules/github.com/custodian-sample-org/testrepo-A/.grit/grit.yaml"
-    position:
-      line: 9
-      column: 11
+    range:
+      start:
+        line: 9
+        column: 11
+      end:
+        line: 9
+        column: 11
+      startByte: 203
+      endByte: 203
     raw: ~
   module:
     type: Module
@@ -35,9 +41,15 @@ expression: resolved_patterns
     tags: ~
     samples: ~
     path: ".grit/.gritmodules/github.com/custodian-sample-org/testrepo-A/.grit/grit.yaml"
-    position:
-      line: 11
-      column: 11
+    range:
+      start:
+        line: 11
+        column: 11
+      end:
+        line: 11
+        column: 11
+      startByte: 274
+      endByte: 274
     raw: ~
   module:
     type: Module
@@ -59,9 +71,15 @@ expression: resolved_patterns
     tags: ~
     samples: ~
     path: ".grit/.gritmodules/github.com/custodian-sample-org/testrepo-B/.grit/grit.yaml"
-    position:
-      line: 3
-      column: 11
+    range:
+      start:
+        line: 3
+        column: 11
+      end:
+        line: 3
+        column: 11
+      startByte: 35
+      endByte: 35
     raw: ~
   module:
     type: Module

@@ -1413,6 +1413,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "grit"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "assert_cmd",
+ "fs-err",
+ "fs_extra",
+ "insta",
+ "marzano-cli",
+ "marzano-gritmodule",
+ "marzano-util",
+ "ntest",
+ "opentelemetry",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
+ "predicates",
+ "rayon",
+ "regex",
+ "reqwest 0.11.24",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "grit-pattern-matcher"
 version = "0.5.0"
 dependencies = [
@@ -2149,34 +2177,6 @@ dependencies = [
  "proc-macro-utils",
  "proc-macro2",
  "quote",
-]
-
-[[package]]
-name = "marzano"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "assert_cmd",
- "fs-err",
- "fs_extra",
- "insta",
- "marzano-cli",
- "marzano-gritmodule",
- "marzano-util",
- "ntest",
- "opentelemetry",
- "opentelemetry-otlp",
- "opentelemetry_sdk",
- "predicates",
- "rayon",
- "regex",
- "reqwest 0.11.24",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
 ]
 
 [[package]]
