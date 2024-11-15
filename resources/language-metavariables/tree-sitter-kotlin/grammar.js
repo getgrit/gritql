@@ -117,12 +117,6 @@ module.exports = grammar({
     [$._declaration, $.simple_identifier],
     [$._primary_expression, $.simple_identifier],
     [$._declaration, $._primary_expression, $.simple_identifier],
-    // [$._statement, $._literal_constant],
-    // [$.value_arguments, $._literal_constant],
-    // [$._literal_constant, $._lexical_identifier],
-    // [$._statement, $._literal_constant, $._lexical_identifier],
-    // [$.value_arguments, $._literal_constant, $._lexical_identifier],
-    // [$.function_value_parameters, $._lexical_identifier],
   ],
 
   externals: $ => [
@@ -780,8 +774,6 @@ module.exports = grammar({
       $.unsigned_literal,
     ),
 
-    // Patch the metavariable grammar to include $.grit_metavariable anywhere we want to substitute a metavariable.
-    // This is usually at least $identifier and $literal.
     string_literal: $ => seq(
       $._string_start,
       field('fragment',
@@ -1111,8 +1103,6 @@ module.exports = grammar({
     // Identifiers
     // ==========
 
-    // Patch the metavariable grammar to include $.grit_metavariable anywhere we want to substitute a metavariable.
-    // This is usually at least $identifier and $literal.
     simple_identifier: $ => choice(
       $.grit_metavariable,
       $._lexical_identifier,
