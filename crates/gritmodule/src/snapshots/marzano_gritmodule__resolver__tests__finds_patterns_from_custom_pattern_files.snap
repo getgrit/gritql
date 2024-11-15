@@ -11,9 +11,15 @@ expression: resolved_patterns
     tags: ~
     samples: ~
     path: ".grit/grit.yaml"
-    position:
-      line: 7
-      column: 11
+    range:
+      start:
+        line: 7
+        column: 11
+      end:
+        line: 7
+        column: 11
+      startByte: 182
+      endByte: 182
     raw: ~
   module:
     type: Module
@@ -35,9 +41,15 @@ expression: resolved_patterns
     tags: ~
     samples: []
     path: ".grit/../docs/guides/new-name.md"
-    position:
-      line: 6
-      column: 1
+    range:
+      start:
+        line: 6
+        column: 1
+      end:
+        line: 9
+        column: 1
+      startByte: 84
+      endByte: 101
     raw:
       format: markdown
       content: "# This pattern has a different name in the config.\n\nIt still works though!\n\n```grit\n\n`foo` => `bar`\n\n```\n"
@@ -163,9 +175,15 @@ expression: resolved_patterns
           endByte: 1262
         output_range: ~
     path: ".grit/../docs/guides/something.md"
-    position:
-      line: 10
-      column: 1
+    range:
+      start:
+        line: 10
+        column: 1
+      end:
+        line: 20
+        column: 1
+      startByte: 198
+      endByte: 648
     raw:
       format: markdown
       content: "---\ntitle: Compare `null` using  `===` or `!==`\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\ntags: #good\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n```\n\n```\n\n## `$val == null` => `$val === null`\n\n```javascript\nif (val == null) {\n  done();\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null`\n\n```javascript\nif (val != null) {\n  done();\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while`\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null`\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null`\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
@@ -291,9 +309,15 @@ expression: resolved_patterns
           endByte: 1262
         output_range: ~
     path: ".grit/../docs/guides/version_5_upgrade.md"
-    position:
-      line: 10
-      column: 1
+    range:
+      start:
+        line: 10
+        column: 1
+      end:
+        line: 20
+        column: 1
+      startByte: 198
+      endByte: 648
     raw:
       format: markdown
       content: "---\ntitle: Compare `null` using  `===` or `!==`\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\ntags: #good\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n```\n\n```\n\n## `$val == null` => `$val === null`\n\n```javascript\nif (val == null) {\n  done();\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null`\n\n```javascript\nif (val != null) {\n  done();\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while`\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null`\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null`\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"

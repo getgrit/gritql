@@ -7,7 +7,7 @@ use crate::{
 };
 use anyhow::{bail, Context, Result};
 use fs_err::OpenOptions;
-use grit_util::{traverse, Ast, Order, Position};
+use grit_util::{traverse, Ast, Order, Range};
 use marzano_core::analysis::defines_itself;
 use marzano_core::api::EnforcementLevel;
 use marzano_language::grit_parser::MarzanoGritParser;
@@ -30,7 +30,7 @@ fn parse_metadata(yaml_content: &str) -> Result<GritPatternMetadata> {
 #[derive(Debug)]
 struct MarkdownBody {
     body: String,
-    position: Position,
+    range: Range,
     section_heading: String,
     section_level: u32,
     /// Track the samples which have already been matched together
@@ -108,7 +108,7 @@ pub fn get_patterns_from_md(
             if current_code_block_language == Some(std::borrow::Cow::Borrowed("grit")) {
                 let definition = MarkdownBody {
                     body: content.to_string(),
-                    position: n.range().start,
+                    range: n.range(),
                     section_heading: current_heading.1.clone(),
                     section_level: current_heading.0,
                     samples: Vec::new(),
@@ -232,7 +232,7 @@ js"hello world"
                     kind: Some(DefinitionKind::Pattern),
                     samples: Some(p.samples),
                     path: relative_path.clone(),
-                    position: Some(p.position),
+                    range: Some(p.range),
                     raw: Some(RawGritDefinition {
                         content: src.to_string(),
                         format: crate::parser::PatternFileExt::Md,

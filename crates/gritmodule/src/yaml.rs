@@ -1,6 +1,6 @@
 use anyhow::{bail, Result};
 use futures::{future::BoxFuture, FutureExt as _};
-use grit_util::Position;
+use grit_util::{Position, Range};
 use marzano_util::rich_path::RichFile;
 use std::{
     collections::HashSet,
@@ -72,7 +72,13 @@ pub fn get_patterns_from_yaml<'a>(
         for pattern in config.patterns.iter_mut() {
             pattern.kind = Some(DefinitionKind::Pattern);
             let offset = file.content.find(&pattern.name).unwrap_or(0);
-            pattern.position = Some(Position::from_byte_index(&file.content, offset));
+            let start = Position::from_byte_index(&file.content, offset);
+            pattern.range = Some(Range::new(
+                start,
+                start,
+                offset.try_into().unwrap(),
+                offset.try_into().unwrap(),
+            ));
         }
 
         let patterns: Result<Vec<_>> = config

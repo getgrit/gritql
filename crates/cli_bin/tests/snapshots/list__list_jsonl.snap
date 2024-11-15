@@ -11,9 +11,15 @@ expression: parsed_patterns
     tags: ~
     samples: ~
     path: ".grit/patterns/other.grit"
-    position:
-      line: 18
-      column: 9
+    range:
+      start:
+        line: 18
+        column: 9
+      end:
+        line: 18
+        column: 22
+      startByte: 322
+      endByte: 335
     raw: ~
   module:
     type: Module
@@ -35,9 +41,15 @@ expression: parsed_patterns
     tags: ~
     samples: ~
     path: ".grit/patterns/other.grit"
-    position:
-      line: 5
-      column: 9
+    range:
+      start:
+        line: 5
+        column: 9
+      end:
+        line: 5
+        column: 21
+      startByte: 75
+      endByte: 87
     raw: ~
   module:
     type: Module
@@ -59,9 +71,15 @@ expression: parsed_patterns
     tags: ~
     samples: ~
     path: ".grit/patterns/other.grit"
-    position:
-      line: 1
-      column: 9
+    range:
+      start:
+        line: 1
+        column: 9
+      end:
+        line: 1
+        column: 21
+      startByte: 8
+      endByte: 20
     raw: ~
   module:
     type: Module
@@ -83,9 +101,15 @@ expression: parsed_patterns
     tags: ~
     samples: ~
     path: ".grit/patterns/other.grit"
-    position:
-      line: 9
-      column: 9
+    range:
+      start:
+        line: 9
+        column: 9
+      end:
+        line: 9
+        column: 24
+      startByte: 142
+      endByte: 157
     raw: ~
   module:
     type: Module
@@ -196,9 +220,15 @@ expression: parsed_patterns
           endByte: 1380
         output_range: ~
     path: ".grit/patterns/broken_pattern.md"
-    position:
-      line: 10
-      column: 1
+    range:
+      start:
+        line: 10
+        column: 1
+      end:
+        line: 20
+        column: 1
+      startByte: 198
+      endByte: 648
     raw:
       format: markdown
       content: "---\ntitle: Compare `null` using  `===` or `!==`\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\ntags: #good\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n## `$val == null` => `$val === null` to change\n\n```javascript\nif (val == null) {\n  done();\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n  console.log(\"This should be removed by grit patterns test --update\");\n}\n\n```\n\n## `$val != null` => `$val !== null` not channge\n\n```javascript\nif (val != null) {\n  done();\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while` not change\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null` not change\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null` not change\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
@@ -313,9 +343,15 @@ expression: parsed_patterns
           endByte: 1447
         output_range: ~
     path: ".grit/patterns/multiple_broken_patterns.md"
-    position:
-      line: 9
-      column: 1
+    range:
+      start:
+        line: 9
+        column: 1
+      end:
+        line: 19
+        column: 1
+      startByte: 212
+      endByte: 662
     raw:
       format: markdown
       content: "---\ntitle: Compare `null` using  `===` or `!==`\ntags: [\"good\", \"exclude2\"]\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n## `$val == null` => `$val === null` to change\n\n```javascript\nif (val == null) {\n  done();\n  cnonsole.log(\"This should be added to the output by patterns test --update\");\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` to channge\n\n```javascript\nif (val != null) {\n  done();\n  console.log(\"This should be added as well\");\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while` not change\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null` not change\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null` not change\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
@@ -428,9 +464,15 @@ expression: parsed_patterns
           endByte: 1263
         output_range: ~
     path: ".grit/patterns/no_eq_null.md"
-    position:
-      line: 10
-      column: 1
+    range:
+      start:
+        line: 10
+        column: 1
+      end:
+        line: 20
+        column: 1
+      startByte: 209
+      endByte: 659
     raw:
       format: markdown
       content: "---\ntitle: Compare `null` using  `===` or `!==`\n---\n\nComparing to `null` needs a type-checking operator (=== or !==), to avoid incorrect results when the value is `undefined`.\n\ntags: #good, #exclude1\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n// We use the syntax-tree node binary_expression to capture all expressions where $a and $b are operated on by \"==\" or \"!=\".\n// This code takes advantage of Grit's allowing us to nest rewrites inside match conditions and to match syntax-tree fields on patterns.\nbinary_expression($operator, $left, $right) where {\n    $operator <: or  { \"==\" => `===` , \"!=\" => `!==` },\n    or { $left <: `null`, $right <: `null`}\n}\n\n```\n\n## `$val == null` => `$val === null`\n\n```javascript\nif (val == null) {\n  done();\n}\n```\n\n```typescript\nif (val === null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null`\n\n```javascript\nif (val != null) {\n  done();\n}\n```\n\n```typescript\nif (val !== null) {\n  done();\n}\n```\n\n## `$val != null` => `$val !== null` into `while`\n\n```javascript\nwhile (val != null) {\n  did();\n}\n```\n\n```typescript\nwhile (val !== null) {\n  did();\n}\n```\n\n## Do not change `$val === null`\n\n```javascript\nif (val === null) {\n  done();\n}\n```\n\n## Do not change `$val !== null`\n\n```\nwhile (val !== null) {\n  doSomething();\n}\n```\n"
@@ -454,9 +496,15 @@ expression: parsed_patterns
     tags: ~
     samples: ~
     path: ".grit/grit.yml"
-    position:
-      line: 3
-      column: 11
+    range:
+      start:
+        line: 3
+        column: 11
+      end:
+        line: 3
+        column: 11
+      startByte: 35
+      endByte: 35
     raw: ~
   module:
     type: Module

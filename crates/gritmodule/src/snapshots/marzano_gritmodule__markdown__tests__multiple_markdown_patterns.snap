@@ -53,9 +53,15 @@ expression: patterns
           startByte: 410
           endByte: 456
     path: no_debugger.md
-    position:
-      line: 7
-      column: 1
+    range:
+      start:
+        line: 7
+        column: 1
+      end:
+        line: 11
+        column: 1
+      startByte: 86
+      endByte: 145
     raw:
       format: markdown
       content: "\nThis is a single Markdown file with multiple grit patterns.\n\n## Pattern one\n\n```grit\nengine marzano(0.1)\nlanguage js\n\ndebugger_statement() => .\n```\n\nExample:\n\n```javascript\nfunction isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}\n```\n\n```typescript\nfunction isTruthy(x) {\n  return Boolean(x);\n}\n```\n\n### Test case 2\n\n```javascript\nfunction isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}\n```\n\n```typescript\nfunction isTruthy(x) {\n  return Boolean(x);\n}\n```\n\n## Pattern two\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n`console.log($_)` => .\n```\n\n### Test case 3 - non matching.\n\n```javascript\nfunction isTruthy(x) {\n  console.error(\"Hello\");\n  return Boolean(x);\n}\n```\n\n### Test case 4\n\n```javascript\nfunction isTruthy(x) {\n  console.log(\"Hello\");\n  return Boolean(x);\n}\n```\n\n```typescript\nfunction isTruthy(x) {\n  return Boolean(x);\n}\n```\n"
@@ -104,9 +110,15 @@ expression: patterns
           startByte: 790
           endByte: 836
     path: no_debugger.md
-    position:
-      line: 46
-      column: 1
+    range:
+      start:
+        line: 46
+        column: 1
+      end:
+        line: 50
+        column: 1
+      startByte: 485
+      endByte: 541
     raw:
       format: markdown
       content: "\nThis is a single Markdown file with multiple grit patterns.\n\n## Pattern one\n\n```grit\nengine marzano(0.1)\nlanguage js\n\ndebugger_statement() => .\n```\n\nExample:\n\n```javascript\nfunction isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}\n```\n\n```typescript\nfunction isTruthy(x) {\n  return Boolean(x);\n}\n```\n\n### Test case 2\n\n```javascript\nfunction isTruthy(x) {\n  debugger;\n  return Boolean(x);\n}\n```\n\n```typescript\nfunction isTruthy(x) {\n  return Boolean(x);\n}\n```\n\n## Pattern two\n\n```grit\nengine marzano(0.1)\nlanguage js\n\n`console.log($_)` => .\n```\n\n### Test case 3 - non matching.\n\n```javascript\nfunction isTruthy(x) {\n  console.error(\"Hello\");\n  return Boolean(x);\n}\n```\n\n### Test case 4\n\n```javascript\nfunction isTruthy(x) {\n  console.log(\"Hello\");\n  return Boolean(x);\n}\n```\n\n```typescript\nfunction isTruthy(x) {\n  return Boolean(x);\n}\n```\n"
