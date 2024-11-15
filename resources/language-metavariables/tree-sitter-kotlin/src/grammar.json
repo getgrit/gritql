@@ -311,6 +311,10 @@
       "members": [
         {
           "type": "SYMBOL",
+          "name": "grit_metavariable"
+        },
+        {
+          "type": "SYMBOL",
           "name": "class_declaration"
         },
         {
@@ -608,17 +612,8 @@
           "type": "CHOICE",
           "members": [
             {
-              "type": "CHOICE",
-              "members": [
-                {
-                  "type": "SYMBOL",
-                  "name": "_class_member_declarations"
-                },
-                {
-                  "type": "SYMBOL",
-                  "name": "grit_metavariable"
-                }
-              ]
+              "type": "SYMBOL",
+              "name": "_class_member_declarations"
             },
             {
               "type": "BLANK"
@@ -2057,17 +2052,8 @@
                   "type": "CHOICE",
                   "members": [
                     {
-                      "type": "CHOICE",
-                      "members": [
-                        {
-                          "type": "SYMBOL",
-                          "name": "_class_member_declarations"
-                        },
-                        {
-                          "type": "SYMBOL",
-                          "name": "grit_metavariable"
-                        }
-                      ]
+                      "type": "SYMBOL",
+                      "name": "_class_member_declarations"
                     },
                     {
                       "type": "BLANK"
@@ -2647,10 +2633,6 @@
               ]
             }
           ]
-        },
-        {
-          "type": "SYMBOL",
-          "name": "grit_metavariable"
         }
       ]
     },
@@ -3748,6 +3730,10 @@
         {
           "type": "SYMBOL",
           "name": "jump_expression"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "grit_metavariable"
         }
       ]
     },
@@ -3839,10 +3825,6 @@
         {
           "type": "SYMBOL",
           "name": "unsigned_literal"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "grit_metavariable"
         }
       ]
     },
@@ -3854,29 +3836,33 @@
           "name": "_string_start"
         },
         {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "grit_metavariable"
-            },
-            {
-              "type": "REPEAT",
-              "content": {
-                "type": "CHOICE",
-                "members": [
-                  {
-                    "type": "SYMBOL",
-                    "name": "string_content"
-                  },
-                  {
-                    "type": "SYMBOL",
-                    "name": "_interpolation"
-                  }
-                ]
+          "type": "FIELD",
+          "name": "fragment",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "grit_metavariable"
+              },
+              {
+                "type": "REPEAT",
+                "content": {
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "string_content"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "_interpolation"
+                    }
+                  ]
+                }
               }
-            }
-          ]
+            ]
+          }
         },
         {
           "type": "SYMBOL",
@@ -5473,6 +5459,10 @@
       "members": [
         {
           "type": "SYMBOL",
+          "name": "grit_metavariable"
+        },
+        {
+          "type": "SYMBOL",
           "name": "_lexical_identifier"
         },
         {
@@ -6412,8 +6402,17 @@
       "not_nullable_type"
     ],
     [
-      "_statement",
-      "_literal_constant"
+      "_declaration",
+      "simple_identifier"
+    ],
+    [
+      "_primary_expression",
+      "simple_identifier"
+    ],
+    [
+      "_declaration",
+      "_primary_expression",
+      "simple_identifier"
     ]
   ],
   "precedences": [],

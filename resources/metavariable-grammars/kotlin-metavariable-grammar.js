@@ -55,6 +55,8 @@ const HEX_DIGITS = token(sep1(/[0-9a-fA-F]+/, /_+/));
 const BIN_DIGITS = token(sep1(/[01]/, /_+/));
 const REAL_EXPONENT = token(seq(/[eE]/, optional(/[+-]/), DEC_DIGITS));
 
+/// <reference types="tree-sitter-cli/dsl" />
+
 module.exports = grammar({
   name: "kotlin",
 
@@ -112,7 +114,9 @@ module.exports = grammar({
     // ambiguity between associating type modifiers
     [$.not_nullable_type],
     // grit_metavariable conflicts
-    [$._statement, $._literal_constant],
+    [$._declaration, $.simple_identifier],
+    [$._primary_expression, $.simple_identifier],
+    [$._declaration, $._primary_expression, $.simple_identifier],
   ],
 
   externals: $ => [
@@ -192,6 +196,7 @@ module.exports = grammar({
     ),
 
     _declaration: $ => choice(
+      $.grit_metavariable,
       $.class_declaration,
       $.object_declaration,
       $.function_declaration,
@@ -205,7 +210,7 @@ module.exports = grammar({
       // simpler to accept them here.
       $.getter,
       $.setter,
-      $.type_alias
+      $.type_alias,
     ),
 
     // ==========
@@ -240,7 +245,7 @@ module.exports = grammar({
       $._class_parameters
     ),
 
-    class_body: $ => seq("{", optional(choice($._class_member_declarations, $.grit_metavariable)), "}"),
+    class_body: $ => seq("{", optional($._class_member_declarations), "}"),
 
     _class_parameters: $ => seq(
       "(",
@@ -313,7 +318,7 @@ module.exports = grammar({
       $._declaration,
       $.companion_object,
       $.anonymous_initializer,
-      $.secondary_constructor
+      $.secondary_constructor,
     ),
 
     anonymous_initializer: $ => seq("init", $._block),
@@ -447,7 +452,7 @@ module.exports = grammar({
     enum_class_body: $ => seq(
       "{",
       optional($._enum_entries),
-      optional(seq(";", optional(choice($._class_member_declarations, $.grit_metavariable)))),
+      optional(seq(";", optional($._class_member_declarations))),
       "}"
     ),
 
@@ -557,7 +562,6 @@ module.exports = grammar({
           $._expression
         )
       ),
-      $.grit_metavariable,
     ),
 
     label: $ => token(seq(
@@ -620,7 +624,7 @@ module.exports = grammar({
     _expression: $ => choice(
       $._unary_expression,
       $._binary_expression,
-      $._primary_expression
+      $._primary_expression,
     ),
 
     // Unary expressions
@@ -750,7 +754,8 @@ module.exports = grammar({
       $.if_expression,
       $.when_expression,
       $.try_expression,
-      $.jump_expression
+      $.jump_expression,
+      $.grit_metavariable,
     ),
 
     parenthesized_expression: $ => seq("(", $._expression, ")"),
@@ -767,12 +772,15 @@ module.exports = grammar({
       $.null_literal,
       $.long_literal,
       $.unsigned_literal,
-      $.grit_metavariable,
     ),
 
     string_literal: $ => seq(
       $._string_start,
-      choice($.grit_metavariable, repeat(choice($.string_content, $._interpolation))),
+      field('fragment',
+        choice(
+          $.grit_metavariable,
+          repeat(choice($.string_content, $._interpolation))
+        )),
       $._string_end,
     ),
 
@@ -1096,6 +1104,7 @@ module.exports = grammar({
     // ==========
 
     simple_identifier: $ => choice(
+      $.grit_metavariable,
       $._lexical_identifier,
       "expect",
       "data",
