@@ -180,4 +180,30 @@ mod tests {
         let nodes = nodes_from_indices(&snippets);
         assert!(!nodes.is_empty());
     }
+
+    #[test]
+    fn assignment_snippet() {
+        let snippet = r#"const key = $value"#;
+        let lang = JavaScript::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        println!("nodes: {:#?}", nodes);
+        nodes.iter().for_each(|n| {
+            n.print_node_tree();
+        });
+        assert!(!nodes.is_empty());
+    }
+
+    #[test]
+    fn array_snippet() {
+        let snippet = r#"const fruits = ["Apple", "Banana", "Cherry"]"#;
+        let lang = JavaScript::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        println!("{:?}", nodes);
+        nodes.iter().for_each(|n| {
+            n.print_node_tree();
+        });
+        assert!(!nodes.is_empty());
+    }
 }

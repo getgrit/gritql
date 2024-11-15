@@ -64,6 +64,7 @@ impl Language for Kotlin {
         &[
             ("", ""),
             ("import ", ""),
+            ("var GRIT_VAR = ", ""),
             ("val GRIT_VAR = ", ""),
             ("const val GRIT_VAR = ", ""),
             ("class GRIT_CLASS { ", " }"),
@@ -71,6 +72,7 @@ impl Language for Kotlin {
             ("GRIT_FN(", ") {}"),
             ("fun GRIT_FN(", ") {}"),
             ("fun GRIT_FN(GRIT_ARG:", ") {}"),
+            ("fun GRIT_FN(GRIT_ARG", ") {}"),
         ]
     }
 }
@@ -96,12 +98,106 @@ mod tests {
     use super::*;
 
     #[test]
-    fn pair_snippet() {
-        let snippet = "import kotlin.math.PI";
+    fn import_snippet() {
+        let snippet = r#"import kotlin.math.$var"#;
         let lang = Kotlin::new(None);
         let snippets = lang.parse_snippet_contexts(snippet);
         let nodes = nodes_from_indices(&snippets);
-        println!("{:?}", nodes);
+        println!("nodes: {:#?}", nodes);
+        nodes.iter().for_each(|n| {
+            n.print_node_tree();
+        });
+        assert!(!nodes.is_empty());
+    }
+
+    #[test]
+    fn assignment_snippet() {
+        let snippet = r#"val key = $value"#;
+        let lang = Kotlin::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        println!("nodes: {:#?}", nodes);
+        nodes.iter().for_each(|n| {
+            n.print_node_tree();
+        });
+        assert!(!nodes.is_empty());
+    }
+
+    #[test]
+    fn kv_snippet() {
+        let snippet = "$key: $value";
+        let lang = Kotlin::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        println!("nodes: {:#?}", nodes);
+        nodes.iter().for_each(|n| {
+            n.print_node_tree();
+        });
+        assert!(!nodes.is_empty());
+    }
+
+    #[test]
+    fn fun_snippet() {
+        let snippet = "fun add(a: Int, b: Int): Int = a + b";
+        let lang = Kotlin::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        println!("nodes: {:#?}", nodes);
+        nodes.iter().for_each(|n| {
+            n.print_node_tree();
+        });
+        assert!(!nodes.is_empty());
+    }
+
+    #[test]
+    fn array_snippet() {
+        let snippet = "val numbers = arrayOf(1, 2, 3, 4, 5)";
+        let lang = Kotlin::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        println!("nodes: {:#?}", nodes);
+        nodes.iter().for_each(|n| {
+            n.print_node_tree();
+        });
+        assert!(!nodes.is_empty());
+    }
+
+    #[test]
+    fn list_snippet() {
+        let snippet = r#"val fruits = listOf("Apple", "Banana", "Cherry")"#;
+        let lang = Kotlin::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        println!("nodes: {:#?}", nodes);
+        nodes.iter().for_each(|n| {
+            n.print_node_tree();
+        });
+        assert!(!nodes.is_empty());
+    }
+
+    #[test]
+    fn kotlin_map_snippet() {
+        let snippet = r#"val immutableMap = mapOf("key1" to "value1", "key2" to "value2")"#;
+        let lang = Kotlin::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        println!("nodes: {:#?}", nodes);
+        nodes.iter().for_each(|n| {
+            n.print_node_tree();
+        });
+        assert!(!nodes.is_empty());
+    }
+
+    #[test]
+    fn kotlin_string_literal() {
+        let snippet = r#"val greeting = "Hello, World!""#;
+        let lang = Kotlin::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        println!("nodes: {:#?}", nodes);
+        nodes.iter().for_each(|n| {
+            n.print_node_tree();
+        });
         assert!(!nodes.is_empty());
     }
 }
