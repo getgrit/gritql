@@ -135,11 +135,11 @@ mod tests {
         let before = r#"
 // This is a large file with multiple sections
 fn second_function() {
-    let mut total = 0;
+ let mut total = 0;
     for i in 0..10 {
         total += i;
     }
-    println!("Total: {}", total);
+  println!("Total: {}", total);
 }
 
 fn third_function() {
