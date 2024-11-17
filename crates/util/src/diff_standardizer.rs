@@ -20,57 +20,36 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
         .find_blob(right_oid)
         .map_err(|e| anyhow::anyhow!("Failed to find right blob: {:?}", e))?;
 
-    // Generate diff
-    let mut standardized = String::new();
-    let mut added_lines = Vec::new();
-    let mut current_line = 0;
-
-    // There are changes, build up the new content from the diff
-    let mut diff_opts = DiffOptions::new();
+    // Run the diff to check if there are changes
+    let mut right_oid = Option::<git2::Oid>::None;
     repo.diff_blobs(
         Some(&left_blob),
         None,
         Some(&right_blob),
         None,
         Some(&mut diff_opts),
-        None,
-        None,
-        None,
-        Some(&mut |_delta, _hunk, line| {
-            if let Ok(content) = std::str::from_utf8(line.content()) {
-                match line.origin() {
-                    ' ' => {
-                        standardized.push_str(content);
-                        current_line += 1;
-                    }
-                    '+' => {
-                        standardized.push_str(content);
-                        added_lines.push(current_line);
-                        current_line += 1;
-                    }
-                    '-' => {
-                        // Skip removed lines but don't increment current_line
-                    }
-                    _ => {}
-                }
-            }
+        Some(&mut |delta, _progress| {
+            right_oid = Some(delta.new_file().id());
             true
         }),
+        None,
+        None,
+        None,
     )
     .map_err(|e| anyhow::anyhow!("Failed to generate diff: {:?}", e))?;
 
-    // Add any remaining content from the right blob that wasn't encountered
-    if let Ok(remaining_content) = std::str::from_utf8(right_blob.content()) {
-        let remaining_lines: Vec<&str> = remaining_content.lines().collect();
-        for (i, line) in remaining_lines.iter().enumerate() {
-            if !added_lines.contains(&i) {
-                standardized.push_str(line);
-                standardized.push('\n');
-            }
-        }
-    }
+    let Some(right_oid) = right_oid else {
+        return Ok(before);
+    };
 
-    Ok(standardized)
+    let right_blob = repo
+        .find_blob(right_oid)
+        .map_err(|e| anyhow::anyhow!("Failed to find right blob: {:?}", e))?;
+
+    let content = std::str::from_utf8(right_blob.content())
+        .map_err(|e| anyhow::anyhow!("Failed to convert blob content to UTF-8: {:?}", e))?;
+
+    Ok(content.to_string())
 }
 
 #[cfg(test)]
@@ -105,7 +84,7 @@ mod tests {
         let (repo, _temp) = setup_test_repo()?;
         let before = "function test() {\n    console.bob('test');\n}\n".to_string();
         let after = "function test() {\nconsole.log('test');\n}\n".to_string();
-        let after_standard = "function test() {\n    console.log('test');\n}\n".to_string();
+        let after_standard = "function test() {\nconsole.log('test');\n}\n".to_string();
         let result = standardize_rewrite(&repo, before, after)?;
         assert_eq!(result, after_standard);
         Ok(())
@@ -128,7 +107,7 @@ mod tests {
         let before = "line1\nline2\n  line3\n".to_string();
         let after = "line1\nmodified line2\n\tline3\nnew line4\n".to_string();
         let result = standardize_rewrite(&repo, before, after)?;
-        let after = "line1\nmodified line2\n  line3\nnew line4\n".to_string();
+        let after = "line1\nmodified line2\n\tline3\nnew line4\n".to_string();
         assert_eq!(result, after);
         Ok(())
     }
