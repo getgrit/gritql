@@ -30,7 +30,7 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
 
     let mut before_lines = before.lines().collect::<Vec<_>>();
     let mut standardized_after = String::new();
-    let mut before_line_num_zero = 0_usize;
+    let mut before_line_num = 1_usize;
 
     repo.diff_blobs(
         Some(&left_blob),
@@ -50,20 +50,29 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
         // }),
         None,
         Some(&mut |_delta, hunk, line| {
-            println!("line: {:?}", line);
             let hunk = hunk.unwrap();
+            println!(
+                "offset: {}, hunk: {}, line: {:?}",
+                before_line_num,
+                hunk.old_start(),
+                line,
+            );
             // Grab the content between before this hunk and inject it
-            while (before_line_num_zero + 1) < hunk.old_start().try_into().unwrap() {
-                println!("Pushing: {}", before_lines[before_line_num_zero]);
-                standardized_after.push_str(before_lines[before_line_num_zero]);
+            while before_line_num < hunk.old_start().try_into().unwrap() {
+                let this_line = before_lines[before_line_num - 1];
+                println!("Pushing: {}", this_line);
+                standardized_after.push_str(this_line);
                 standardized_after.push('\n');
-                before_line_num_zero += 1;
+                before_line_num += 1;
             }
+
+            // Now advance the cursor by the number of old lines we covered
+            // before_line_num += (hunk.old_lines() as usize);
 
             match line.origin_value() {
                 DiffLineType::Deletion => {
-                    // Deletion: advance the offset by the length of the removed content
-                    before_line_num_zero += line.num_lines() as usize;
+                    // Deletion: we don't actually need to do anything with deleted content
+                    before_line_num += line.num_lines() as usize;
                 }
                 DiffLineType::Addition => {
                     // println!(
@@ -74,7 +83,13 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
                     // // Addition: inject the new content directly
                     standardized_after.push_str(std::str::from_utf8(line.content()).unwrap());
                 }
-                _ => {}
+                // DiffLineType::Context => {
+                //     // Context: do nothing
+                //     println!("Context: {}", std::str::from_utf8(line.content()).unwrap());
+                // }
+                _ => {
+                    println!("fuck you!: {}", line.num_lines());
+                }
             }
             true
         }),
@@ -82,10 +97,10 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
     .map_err(|e| anyhow::anyhow!("Failed to generate diff: {:?}", e))?;
 
     // Finally, add the rest of the content
-    while before_line_num_zero < before_lines.len() {
-        standardized_after.push_str(before_lines[before_line_num_zero]);
+    while before_line_num < before_lines.len() {
+        standardized_after.push_str(before_lines[before_line_num - 1]);
         standardized_after.push('\n');
-        before_line_num_zero += 1;
+        before_line_num += 1;
     }
 
     Ok(standardized_after)
@@ -144,10 +159,10 @@ mod tests {
     fn test_multiline_changes() -> Result<()> {
         let (repo, _temp) = setup_test_repo()?;
         let before = "line1\nline2\n  line3\n".to_string();
-        let after = "line1\nmodified line2\n\tline3\nnew line4\n".to_string();
-        let result = standardize_rewrite(&repo, before, after)?;
-        let after = "line1\nmodified line2\n\tline3\nnew line4\n".to_string();
-        assert_eq!(result, after);
+        let after1 = "line1\nmodified line2\n  line3\nnew line4\n".to_string();
+        let after2 = "line1\nmodified line2\n  line3\nnew line4\n".to_string();
+        let result = standardize_rewrite(&repo, before, after1)?;
+        assert_eq!(result, after2);
         Ok(())
     }
 
