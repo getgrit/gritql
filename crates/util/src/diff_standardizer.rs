@@ -9,14 +9,49 @@ use similar::{ChangeTag, TextDiff};
 
 /// Given a before and after for a file, edit the *after* to not include any spurious changes
 pub fn standardize_rewrite(before: String, after: String) -> Result<String> {
-    let diff = TextDiff::from_lines(&before, &after);
+    let mut differ = TextDiff::configure();
+    differ.algorithm(similar::Algorithm::Myers);
+    let diff = differ.diff_lines(&before, &after);
     let mut standardized_after = String::new();
 
-    for change in diff.iter_all_changes() {
-        match change.tag() {
-            ChangeTag::Delete => {} // Skip deleted lines
-            ChangeTag::Equal | ChangeTag::Insert => {
-                standardized_after.push_str(change.value());
+    for op in diff.ops() {
+        match op.tag() {
+            similar::DiffTag::Equal | similar::DiffTag::Insert => {
+                for line in diff.iter_changes(op) {
+                    standardized_after.push_str(line.value());
+                }
+            }
+            similar::DiffTag::Delete => {
+                // Simply skip deleted lines
+            }
+            similar::DiffTag::Replace => {
+                let mut before_cache = Option::None;
+                for line in diff.iter_changes(op) {
+                    match line.tag() {
+                        ChangeTag::Delete => {
+                            before_cache = Some(line.value());
+                        }
+                        ChangeTag::Insert => {
+                            let value = line.value();
+                            if let Some(before) = before_cache {
+                                if before.trim() == value.trim() {
+                                    // skip whitespace-only changes
+                                    standardized_after.push_str(before);
+                                } else {
+                                    // Otherwise, include the line
+                                    standardized_after.push_str(value);
+                                }
+                            } else {
+                                standardized_after.push_str(value);
+                            }
+                            before_cache = None;
+                        }
+                        ChangeTag::Equal => {
+                            standardized_after.push_str(line.value());
+                            before_cache = None;
+                        }
+                    }
+                }
             }
         }
     }
@@ -144,14 +179,15 @@ fn third_function() {
 
     // Finally print the result
     println!("The total is: {}", total);
-}"#
+}
+"#
         .to_string();
 
         let after = r#"fn main() {
     let mut total = 0;
     println!("The total is: {}", total);
 }
-    "#
+"#
         .to_string();
 
         let result = standardize_rewrite(before, after.clone())?;
