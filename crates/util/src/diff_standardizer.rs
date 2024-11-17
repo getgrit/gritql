@@ -1,17 +1,16 @@
 /* ================================================================================
 
-       getMulti.
+    getMulti.
 
 ================================================================================ */
 
 use anyhow::Result;
-use git2::{DiffOptions, Repository};
+use git2::{Delta, DiffOptions, Repository};
 
 /// Given a before and after for a file, edit the *after* to not include any spurious changes
 pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> Result<String> {
     let mut diff_opts = DiffOptions::new();
     diff_opts.ignore_whitespace(true);
-    diff_opts.indent_heuristic(true);
     diff_opts.ignore_whitespace_change(true);
 
     let left_oid = repo
@@ -41,8 +40,14 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
             true
         }),
         None,
-        None,
-        None,
+        Some(&mut |delta, _progress| {
+            println!("delta: {:?}, progress: {:?}", delta, _progress);
+            true
+        }),
+        Some(&mut |delta, _hunk, line| {
+            println!("line: {:?}", line);
+            true
+        }),
     )
     .map_err(|e| anyhow::anyhow!("Failed to generate diff: {:?}", e))?;
 
@@ -179,6 +184,38 @@ fn third_function() {
 
         assert_snapshot!(result);
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_code_removal() -> Result<()> {
+        let (repo, _temp) = setup_test_repo()?;
+        let before = r#"fn main() {
+    // First we do some setup
+    let mut total = 0;
+
+    // Then we do a big calculation
+    for i in 0..100 {
+        if i % 2 == 0 {
+            total += i;
+        } else {
+            total -= i;
+        }
+    }
+
+    // Finally print the result
+    println!("The total is: {}", total);
+}"#
+        .to_string();
+
+        let after = r#"fn main() {
+    let mut total = 0;
+    println!("The total is: {}", total);
+}"#
+        .to_string();
+
+        let result = standardize_rewrite(&repo, before, after.clone())?;
+        assert_eq!(result, after);
         Ok(())
     }
 }
