@@ -5,13 +5,14 @@
 ================================================================================ */
 
 use anyhow::Result;
-use git2::{Delta, DiffOptions, Repository};
+use git2::{Delta, DiffLineType, DiffOptions, Repository};
 
 /// Given a before and after for a file, edit the *after* to not include any spurious changes
 pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> Result<String> {
     let mut diff_opts = DiffOptions::new();
     diff_opts.ignore_whitespace(true);
     diff_opts.ignore_whitespace_change(true);
+    diff_opts.context_lines(0);
 
     let left_oid = repo
         .blob(before.as_bytes())
@@ -27,42 +28,65 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
         .find_blob(right_oid)
         .map_err(|e| anyhow::anyhow!("Failed to find right blob: {:?}", e))?;
 
-    // Run the diff to check if there are changes
-    let mut right_oid = Option::<git2::Oid>::None;
+    let mut before_lines = before.lines().collect::<Vec<_>>();
+    let mut standardized_after = String::new();
+    let mut before_line_num = 0 as usize;
+
     repo.diff_blobs(
         Some(&left_blob),
         None,
         Some(&right_blob),
         None,
         Some(&mut diff_opts),
-        Some(&mut |delta, _progress| {
-            right_oid = Some(delta.new_file().id());
-            true
-        }),
+        // Some(&mut |delta, _progress| {
+        //     right_oid = Some(delta.new_file().id());
+        //     true
+        // }),
         None,
-        Some(&mut |delta, _progress| {
-            println!("delta: {:?}, progress: {:?}", delta, _progress);
-            true
-        }),
-        Some(&mut |delta, _hunk, line| {
-            println!("line: {:?}", line);
+        None,
+        // Some(&mut |delta, _progress| {
+        //     println!("delta: {:?}, progress: {:?}", delta, _progress);
+        //     true
+        // }),
+        None,
+        Some(&mut |_delta, hunk, line| {
+            let hunk = hunk.unwrap();
+            // Grab the content between before this hunk and inject it
+            while before_line_num < hunk.old_start().try_into().unwrap() {
+                standardized_after.push_str(before_lines[before_line_num]);
+                standardized_after.push('\n');
+                before_line_num += 1;
+            }
+
+            match line.origin_value() {
+                DiffLineType::Deletion => {
+                    // Deletion: advance the offset by the length of the removed content
+                    before_line_num += 1;
+                }
+                DiffLineType::Addition => {
+                    // println!(
+                    //     "INJECTING: {} onto {}",
+                    //     std::str::from_utf8(line.content()).unwrap(),
+                    //     standardized_after
+                    // );
+                    // // Addition: inject the new contnent directly
+                    // standardized_after.push_str(std::str::from_utf8(line.content()).unwrap());
+                }
+                _ => {}
+            }
             true
         }),
     )
     .map_err(|e| anyhow::anyhow!("Failed to generate diff: {:?}", e))?;
 
-    let Some(right_oid) = right_oid else {
-        return Ok(before);
-    };
+    // Finally, add the rest of the content
+    while before_line_num < before_lines.len() {
+        standardized_after.push_str(before_lines[before_line_num]);
+        standardized_after.push('\n');
+        before_line_num += 1;
+    }
 
-    let right_blob = repo
-        .find_blob(right_oid)
-        .map_err(|e| anyhow::anyhow!("Failed to find right blob: {:?}", e))?;
-
-    let content = std::str::from_utf8(right_blob.content())
-        .map_err(|e| anyhow::anyhow!("Failed to convert blob content to UTF-8: {:?}", e))?;
-
-    Ok(content.to_string())
+    Ok(standardized_after)
 }
 
 #[cfg(test)]
@@ -97,7 +121,7 @@ mod tests {
         let (repo, _temp) = setup_test_repo()?;
         let before = "function test() {\n    console.bob('test');\n}\n".to_string();
         let after = "function test() {\nconsole.log('test');\n}\n".to_string();
-        let after_standard = "function test() {\nconsole.log('test');\n}\n".to_string();
+        let after_standard = "function test() {console.log('test');\n}\n".to_string();
         let result = standardize_rewrite(&repo, before, after)?;
         assert_eq!(result, after_standard);
         Ok(())
@@ -216,6 +240,50 @@ fn third_function() {
 
         let result = standardize_rewrite(&repo, before, after.clone())?;
         assert_eq!(result, after);
+        Ok(())
+    }
+
+    #[test]
+    fn test_remove_early_add_late() -> Result<()> {
+        let (repo, _td) = setup_test_repo()?;
+
+        let before = r#"
+// this starts us off
+
+fn first_function() {
+    println!("This will be removed");
+    println!("This will also be removed");
+}
+
+fn middle_function() {
+    // This stays the same
+    println!("Hello");
+}
+
+fn last_function() {
+    println!("Original");
+}
+
+// This is other content"#;
+
+        let after = r#"
+// this starts us off
+
+fn middle_function() {
+    // This stays the same
+    println!("Hello");
+}
+
+fn last_function() {
+    println!("Original");
+    println!("New line added here");
+    println!("And another one");
+}
+
+// This is other content"#;
+
+        let result = standardize_rewrite(&repo, before.to_string(), after.to_string())?;
+        assert_snapshot!(result);
         Ok(())
     }
 }
