@@ -39,6 +39,7 @@ git2 = { version = "0.19.0", default-features = false, features = [
   "https",
 ] }
 tempfile = { version = "3.1" }
+similar = { version = "2.2.1" }
 
 
 napi = { version = "2.16.4", default-features = false, features = [

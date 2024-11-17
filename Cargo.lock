@@ -2419,6 +2419,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "similar",
  "tempfile",
  "tokio",
  "tree-sitter-facade-sg",
