@@ -2407,7 +2407,6 @@ dependencies = [
  "base64 0.21.7",
  "fs-err",
  "futures",
- "git2",
  "grit-util",
  "http 0.2.12",
  "ignore",
@@ -2420,7 +2419,6 @@ dependencies = [
  "serde_json",
  "sha2",
  "similar",
- "tempfile",
  "tokio",
  "tree-sitter-facade-sg",
 ]
