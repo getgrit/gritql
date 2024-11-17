@@ -10,3 +10,7 @@ pub mod print_node;
 pub mod rich_path;
 pub mod runtime;
 pub mod url;
+
+mod diff_standardizer;
+
+pub use diff_standardizer::standardize_rewrite;

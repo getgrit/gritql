@@ -56,7 +56,7 @@ pub struct ExecutionContext {
     pub ignore_limit_pattern: bool,
 }
 
-#[cfg(not(feature = "network_requests_common"))]
+#[cfg(not(any(test, feature = "network_requests_common")))]
 #[derive(Clone, Debug)]
 pub struct ExecutionContext {
     llm_api: Option<LanguageModelAPI>,

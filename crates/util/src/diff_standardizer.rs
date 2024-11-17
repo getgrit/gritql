@@ -1,32 +1,11 @@
-use git2::DiffOptions;
-use marzano_util::diff::{parse_modified_ranges, FileDiff};
-use tempfile::tempdir;
 use anyhow::Result;
-
-pub fn parse_unified_diff(contents: String) -> Result<Vec<FileDiff>> {
-    let parsed = parse_modified_ranges(&contents)
-        .map_err(|e| anyhow::anyhow!("{:?}", e))?;
-    Ok(parsed)
-}
+use git2::{DiffOptions, Repository};
+use tempfile::tempdir;
 
 /// Given a before and after for a file, edit the *after* to not include any spurious changes
-pub fn standardize_rewrite(before: String, after: String) -> Result<String> {
+pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> Result<String> {
     let mut diff_opts = DiffOptions::new();
     diff_opts.ignore_whitespace(true);
-
-    // Create a temporary directory for the repository
-    let temp_dir = tempdir()
-        .map_err(|e| anyhow::anyhow!("Failed to create temp directory: {:?}", e))?;
-
-    // Create blobs for diffing
-    let repo = git2::Repository::init_opts(
-        temp_dir.path(),
-        &git2::RepositoryInitOptions::new()
-            .bare(true)
-            .initial_head("main"),
-    )
-    .map_err(|e| anyhow::anyhow!("Failed to create temp repo: {:?}", e))?;
-
     let left_oid = repo
         .blob(before.as_bytes())
         .map_err(|e| anyhow::anyhow!("Failed to create left blob: {:?}", e))?;
@@ -86,11 +65,23 @@ mod tests {
     use super::*;
     use insta::assert_snapshot;
 
+    fn setup_test_repo() -> Result<(Repository, tempfile::TempDir)> {
+        let temp_dir = tempdir()?;
+        let repo = Repository::init_opts(
+            temp_dir.path(),
+            &git2::RepositoryInitOptions::new()
+                .bare(true)
+                .initial_head("main"),
+        )?;
+        Ok((repo, temp_dir))
+    }
+
     #[test]
     fn test_basic_rewrite() -> Result<()> {
+        let (repo, _temp) = setup_test_repo()?;
         let before = "Hello world\n".to_string();
         let after = "Hello Rust\n".to_string();
-        let result = standardize_rewrite(before, after)?;
+        let result = standardize_rewrite(&repo, before, after)?;
         assert_eq!(result, "Hello Rust\n");
         assert_snapshot!(result);
         Ok(())
@@ -98,9 +89,10 @@ mod tests {
 
     #[test]
     fn test_whitespace_handling() -> Result<()> {
+        let (repo, _temp) = setup_test_repo()?;
         let before = "function test() {\n    console.log('test');\n}\n".to_string();
         let after = "function test(){\nconsole.log('test');\n}\n".to_string();
-        let result = standardize_rewrite(before, after)?;
+        let result = standardize_rewrite(&repo, before, after)?;
         assert_eq!(result, "function test(){\nconsole.log('test');\n}\n");
         assert_snapshot!(result);
         Ok(())
@@ -108,9 +100,10 @@ mod tests {
 
     #[test]
     fn test_empty_files() -> Result<()> {
+        let (repo, _temp) = setup_test_repo()?;
         let before = "".to_string();
         let after = "".to_string();
-        let result = standardize_rewrite(before, after)?;
+        let result = standardize_rewrite(&repo, before, after)?;
         assert_eq!(result, "");
         assert_snapshot!(result);
         Ok(())
@@ -118,9 +111,10 @@ mod tests {
 
     #[test]
     fn test_multiline_changes() -> Result<()> {
+        let (repo, _temp) = setup_test_repo()?;
         let before = "line1\nline2\nline3\n".to_string();
         let after = "line1\nmodified line2\nline3\nnew line4\n".to_string();
-        let result = standardize_rewrite(before, after)?;
+        let result = standardize_rewrite(&repo, before, after)?;
         assert_eq!(result, "line1\nmodified line2\nline3\nnew line4\n");
         assert_snapshot!(result);
         Ok(())
@@ -128,8 +122,9 @@ mod tests {
 
     #[test]
     fn test_no_changes() -> Result<()> {
+        let (repo, _temp) = setup_test_repo()?;
         let content = "unchanged content\n".to_string();
-        let result = standardize_rewrite(content.clone(), content)?;
+        let result = standardize_rewrite(&repo, content.clone(), content)?;
         assert_eq!(result, "unchanged content\n");
         assert_snapshot!(result);
         Ok(())
@@ -137,6 +132,7 @@ mod tests {
 
     #[test]
     fn test_mixed_changes_in_large_file() -> Result<()> {
+        let (repo, _temp) = setup_test_repo()?;
         let before = r#"
 // This is a large file with multiple sections
 
@@ -189,7 +185,7 @@ fn third_function() {
 "#
         .to_string();
 
-        let result = standardize_rewrite(before, after)?;
+        let result = standardize_rewrite(&repo, before, after)?;
 
         // The result should:
         // 1. Keep first_function exactly the same

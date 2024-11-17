@@ -1,0 +1,8 @@
+---
+source: crates/util/src/diff_standardizer.rs
+expression: result
+---
+line1
+modified line2
+line3
+new line4
