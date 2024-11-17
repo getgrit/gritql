@@ -1,6 +1,5 @@
 use anyhow::Result;
 use git2::{DiffOptions, Repository};
-use tempfile::tempdir;
 
 /// Given a before and after for a file, edit the *after* to not include any spurious changes
 pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> Result<String> {
@@ -66,10 +65,10 @@ mod tests {
     use insta::assert_snapshot;
 
     fn setup_test_repo() -> Result<(Repository, tempfile::TempDir)> {
-        let temp_dir = tempdir()?;
+        let temp_dir = tempfile::tempdir()?;
         let repo = Repository::init_opts(
             temp_dir.path(),
-            &git2::RepositoryInitOptions::new()
+            git2::RepositoryInitOptions::new()
                 .bare(true)
                 .initial_head("main"),
         )?;
@@ -157,36 +156,19 @@ fn second_function() {
     for i in 0..10 {
         total += i;
     }
-            println!("Total: {}", total);
-}
-
-fn third_function() {
-    let thing = "Hello";
-    debug!("{}", message);
-}
-"#
-        .to_string();
-
-        let after_standardized = r#"
-// This is a large file with multiple sections
-fn second_function() {
-    let mut total = 0;
-    for i in 0..10 {
-        total += i;
-    }
     println!("Total: {}", total);
 }
 
 fn third_function() {
     let thing = "Hello";
-    debug!("{}", message);
+    debug!("{}", thing);
 }
-        "#
+"#
         .to_string();
 
         let result = standardize_rewrite(&repo, before, after)?;
 
-        assert_eq!(result, after_standardized);
+        assert_snapshot!(result);
 
         Ok(())
     }

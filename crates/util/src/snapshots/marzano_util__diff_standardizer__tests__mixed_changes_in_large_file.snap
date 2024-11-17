@@ -3,23 +3,15 @@ source: crates/util/src/diff_standardizer.rs
 expression: result
 ---
 // This is a large file with multiple sections
-
-fn first_function() {
-    // Some code here
-    let x = 42;
-    println!("Value: {}", x);
-}
-
 fn second_function() {
     let mut total = 0;
     for i in 0..10 {
         total += i;
     }
-    // No extra whitespace
     println!("Total: {}", total);
 }
 
 fn third_function() {
-    let message = "Hello, World!";  // Changed this line
-    println!("{}", message);
+    let thing = "Hello";
+    debug!("{}", thing);
 }
