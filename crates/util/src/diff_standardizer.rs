@@ -1,3 +1,9 @@
+/* ================================================================================
+
+       getMulti.
+
+================================================================================ */
+
 use anyhow::Result;
 use git2::{DiffOptions, Repository};
 
@@ -5,6 +11,8 @@ use git2::{DiffOptions, Repository};
 pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> Result<String> {
     let mut diff_opts = DiffOptions::new();
     diff_opts.ignore_whitespace(true);
+    diff_opts.indent_heuristic(true);
+    diff_opts.ignore_whitespace_change(true);
 
     let left_oid = repo
         .blob(before.as_bytes())
