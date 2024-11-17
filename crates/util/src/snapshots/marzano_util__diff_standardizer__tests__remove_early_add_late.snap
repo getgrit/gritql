@@ -1,0 +1,18 @@
+---
+source: crates/util/src/diff_standardizer.rs
+expression: result
+---
+// this starts us off
+
+fn middle_function() {
+    // This stays the same
+    println!("Hello");
+}
+
+fn last_function() {
+    println!("New line added here");
+    println!("And another one");
+    println!("Original");
+}
+
+// This is other content

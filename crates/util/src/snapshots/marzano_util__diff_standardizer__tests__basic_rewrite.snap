@@ -1,0 +1,5 @@
+---
+source: crates/util/src/diff_standardizer.rs
+expression: result
+---
+Hello Rust

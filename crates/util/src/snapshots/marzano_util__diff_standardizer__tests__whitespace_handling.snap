@@ -1,0 +1,7 @@
+---
+source: crates/util/src/diff_standardizer.rs
+expression: result
+---
+function test(){
+console.log('test');
+}

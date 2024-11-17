@@ -1,0 +1,21 @@
+---
+source: crates/util/src/diff_standardizer.rs
+expression: result
+---
+/* ================================================================================
+
+       getMulti.
+
+================================================================================ */
+fn second_function() {
+ let mut total = 0;
+    for i in 0..10 {
+        total += i;
+    }
+  println!("Total: {}", total);
+}
+
+fn third_function() {
+    let thing = "Hello";
+    debug!("{}", thing);
+}
