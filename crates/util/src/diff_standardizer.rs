@@ -133,7 +133,11 @@ mod tests {
     fn test_mixed_changes_in_large_file() -> Result<()> {
         let (repo, _temp) = setup_test_repo()?;
         let before = r#"
-// This is a large file with multiple sections
+/* ================================================================================
+
+      getMulti.
+
+================================================================================ */
 fn second_function() {
  let mut total = 0;
     for i in 0..10 {
@@ -150,7 +154,11 @@ fn third_function() {
         .to_string();
 
         let after = r#"
-// This is a large file with multiple sections
+/* ================================================================================
+
+    getMulti.
+
+================================================================================ */
 fn second_function() {
     let mut total = 0;
     for i in 0..10 {
