@@ -28,9 +28,10 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
         .find_blob(right_oid)
         .map_err(|e| anyhow::anyhow!("Failed to find right blob: {:?}", e))?;
 
-    let mut before_lines = before.lines().collect::<Vec<_>>();
+    let before_lines = before.lines().collect::<Vec<_>>();
     let mut standardized_after = String::new();
     let mut before_line_num = 1_usize;
+    let mut pending_additions: Vec<(usize, String)> = Vec::new();
 
     repo.diff_blobs(
         Some(&left_blob),
@@ -38,69 +39,100 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
         Some(&right_blob),
         None,
         Some(&mut diff_opts),
-        // Some(&mut |delta, _progress| {
-        //     right_oid = Some(delta.new_file().id());
-        //     true
-        // }),
         None,
         None,
-        // Some(&mut |delta, _progress| {
-        //     println!("delta: {:?}, progress: {:?}", delta, _progress);
-        //     true
-        // }),
         None,
         Some(&mut |_delta, hunk, line| {
             let hunk = hunk.unwrap();
+            println!("\n=== Processing Hunk ===");
             println!(
-                "offset: {}, hunk: {}, line: {:?}",
+                "Current before_line_num: {}, Hunk old_start: {}, old_lines: {}, new_lines: {}",
                 before_line_num,
                 hunk.old_start(),
-                line,
+                hunk.old_lines(),
+                hunk.new_lines()
             );
-            // Grab the content between before this hunk and inject it
-            while before_line_num < hunk.old_start().try_into().unwrap() {
+            println!(
+                "Hunk header: {}",
+                std::str::from_utf8(hunk.header()).unwrap()
+            );
+
+            let hunk_start: usize = hunk.old_start().try_into().unwrap();
+
+            // Copy any unchanged lines up to this hunk
+            while before_line_num < hunk_start {
                 let this_line = before_lines[before_line_num - 1];
-                println!("Pushing: {}", this_line);
+                println!(
+                    "Injecting unchanged line {}: '{}'",
+                    before_line_num, this_line
+                );
                 standardized_after.push_str(this_line);
                 standardized_after.push('\n');
                 before_line_num += 1;
             }
 
-            // Now advance the cursor by the number of old lines we covered
-            // before_line_num += (hunk.old_lines() as usize);
-
             match line.origin_value() {
                 DiffLineType::Deletion => {
-                    // Deletion: we don't actually need to do anything with deleted content
-                    before_line_num += line.num_lines() as usize;
+                    println!(
+                        "Deletion at line {}: '{}'",
+                        before_line_num,
+                        before_lines[before_line_num - 1]
+                    );
+                    before_line_num += 1;
                 }
                 DiffLineType::Addition => {
-                    // println!(
-                    //     "INJECTING: {} onto {}",
-                    //     std::str::from_utf8(line.content()).unwrap(),
-                    //     standardized_after
-                    // );
-                    // // Addition: inject the new content directly
-                    standardized_after.push_str(std::str::from_utf8(line.content()).unwrap());
+                    let new_content = std::str::from_utf8(line.content()).unwrap().to_string();
+                    let target_position = hunk.new_start() as usize;
+                    println!(
+                        "Queueing addition at position {}: '{}'",
+                        target_position, new_content
+                    );
+                    // Insert into pending_additions in sorted order by position
+                    let insert_pos =
+                        pending_additions.partition_point(|(pos, _)| *pos <= target_position);
+                    pending_additions.insert(insert_pos, (target_position, new_content));
                 }
-                // DiffLineType::Context => {
-                //     // Context: do nothing
-                //     println!("Context: {}", std::str::from_utf8(line.content()).unwrap());
-                // }
                 _ => {
-                    println!("fuck you!: {}", line.num_lines());
+                    println!(
+                        "Other line type: {:?}, num_lines: {}",
+                        line.origin_value(),
+                        line.num_lines()
+                    );
                 }
             }
+
+            // Process any pending additions that should come before the next hunk
+            let mut current_line = before_line_num;
+            while let Some((pos, content)) = pending_additions.first() {
+                if *pos <= current_line {
+                    standardized_after.push_str(&content);
+                    pending_additions.remove(0);
+                } else {
+                    break;
+                }
+            }
+
             true
         }),
     )
     .map_err(|e| anyhow::anyhow!("Failed to generate diff: {:?}", e))?;
 
-    // Finally, add the rest of the content
-    while before_line_num < before_lines.len() {
-        standardized_after.push_str(before_lines[before_line_num - 1]);
-        standardized_after.push('\n');
-        before_line_num += 1;
+    // Add any remaining content and pending additions
+    while before_line_num <= before_lines.len() || !pending_additions.is_empty() {
+        let next_pending = pending_additions.first().map(|(pos, _)| *pos);
+        let should_add_original = match next_pending {
+            Some(pos) => before_line_num < pos,
+            None => true,
+        };
+
+        if should_add_original && before_line_num <= before_lines.len() {
+            standardized_after.push_str(before_lines[before_line_num - 1]);
+            standardized_after.push('\n');
+            before_line_num += 1;
+        } else if let Some((_, content)) = pending_additions.first() {
+            standardized_after.push_str(content);
+            pending_additions.remove(0);
+        }
     }
 
     Ok(standardized_after)
