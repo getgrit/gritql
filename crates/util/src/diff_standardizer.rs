@@ -30,7 +30,7 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
 
     let mut before_lines = before.lines().collect::<Vec<_>>();
     let mut standardized_after = String::new();
-    let mut before_line_num = 0 as usize;
+    let mut before_line_num_zero = 0_usize;
 
     repo.diff_blobs(
         Some(&left_blob),
@@ -50,18 +50,20 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
         // }),
         None,
         Some(&mut |_delta, hunk, line| {
+            println!("line: {:?}", line);
             let hunk = hunk.unwrap();
             // Grab the content between before this hunk and inject it
-            while before_line_num < hunk.old_start().try_into().unwrap() {
-                standardized_after.push_str(before_lines[before_line_num]);
+            while (before_line_num_zero + 1) < hunk.old_start().try_into().unwrap() {
+                println!("Pushing: {}", before_lines[before_line_num_zero]);
+                standardized_after.push_str(before_lines[before_line_num_zero]);
                 standardized_after.push('\n');
-                before_line_num += 1;
+                before_line_num_zero += 1;
             }
 
             match line.origin_value() {
                 DiffLineType::Deletion => {
                     // Deletion: advance the offset by the length of the removed content
-                    before_line_num += 1;
+                    before_line_num_zero += line.num_lines() as usize;
                 }
                 DiffLineType::Addition => {
                     // println!(
@@ -69,8 +71,8 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
                     //     std::str::from_utf8(line.content()).unwrap(),
                     //     standardized_after
                     // );
-                    // // Addition: inject the new contnent directly
-                    // standardized_after.push_str(std::str::from_utf8(line.content()).unwrap());
+                    // // Addition: inject the new content directly
+                    standardized_after.push_str(std::str::from_utf8(line.content()).unwrap());
                 }
                 _ => {}
             }
@@ -80,10 +82,10 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
     .map_err(|e| anyhow::anyhow!("Failed to generate diff: {:?}", e))?;
 
     // Finally, add the rest of the content
-    while before_line_num < before_lines.len() {
-        standardized_after.push_str(before_lines[before_line_num]);
+    while before_line_num_zero < before_lines.len() {
+        standardized_after.push_str(before_lines[before_line_num_zero]);
         standardized_after.push('\n');
-        before_line_num += 1;
+        before_line_num_zero += 1;
     }
 
     Ok(standardized_after)
@@ -235,7 +237,8 @@ fn third_function() {
         let after = r#"fn main() {
     let mut total = 0;
     println!("The total is: {}", total);
-}"#
+}
+    "#
         .to_string();
 
         let result = standardize_rewrite(&repo, before, after.clone())?;

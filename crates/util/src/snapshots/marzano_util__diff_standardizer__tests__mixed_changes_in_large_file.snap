@@ -16,4 +16,6 @@ fn second_function() {
 }
 
 fn third_function() {
-    let message = "Hello";
+    let thing = "Hello";
+    debug!("{}", thing);
+}
