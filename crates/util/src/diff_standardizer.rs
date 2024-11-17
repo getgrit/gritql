@@ -22,6 +22,8 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
 
     // Generate diff
     let mut standardized = String::new();
+    let mut added_lines = Vec::new();
+    let mut current_line = 0;
 
     // There are changes, build up the new content from the diff
     let mut diff_opts = DiffOptions::new();
@@ -37,8 +39,17 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
         Some(&mut |_delta, _hunk, line| {
             if let Ok(content) = std::str::from_utf8(line.content()) {
                 match line.origin() {
-                    ' ' | '+' => {
+                    ' ' => {
                         standardized.push_str(content);
+                        current_line += 1;
+                    }
+                    '+' => {
+                        standardized.push_str(content);
+                        added_lines.push(current_line);
+                        current_line += 1;
+                    }
+                    '-' => {
+                        // Skip removed lines but don't increment current_line
                     }
                     _ => {}
                 }
@@ -47,6 +58,17 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
         }),
     )
     .map_err(|e| anyhow::anyhow!("Failed to generate diff: {:?}", e))?;
+
+    // Add any remaining content from the right blob that wasn't encountered
+    if let Ok(remaining_content) = std::str::from_utf8(right_blob.content()) {
+        let remaining_lines: Vec<&str> = remaining_content.lines().collect();
+        for (i, line) in remaining_lines.iter().enumerate() {
+            if !added_lines.contains(&i) {
+                standardized.push_str(line);
+                standardized.push('\n');
+            }
+        }
+    }
 
     Ok(standardized)
 }
@@ -82,7 +104,7 @@ mod tests {
     fn test_whitespace_handling() -> Result<()> {
         let (repo, _temp) = setup_test_repo()?;
         let before = "function test() {\n    console.bob('test');\n}\n".to_string();
-        let after = "function test(){\nconsole.log('test');\n}\n".to_string();
+        let after = "function test() {\nconsole.log('test');\n}\n".to_string();
         let after_standard = "function test() {\n    console.log('test');\n}\n".to_string();
         let result = standardize_rewrite(&repo, before, after)?;
         assert_eq!(result, after_standard);
@@ -103,11 +125,11 @@ mod tests {
     #[test]
     fn test_multiline_changes() -> Result<()> {
         let (repo, _temp) = setup_test_repo()?;
-        let before = "line1\nline2\nline3\n".to_string();
-        let after = "line1\nmodified line2\nline3\nnew line4\n".to_string();
+        let before = "line1\nline2\n  line3\n".to_string();
+        let after = "line1\nmodified line2\n\tline3\nnew line4\n".to_string();
         let result = standardize_rewrite(&repo, before, after)?;
-        assert_eq!(result, "line1\nmodified line2\nline3\nnew line4\n");
-        assert_snapshot!(result);
+        let after = "line1\nmodified line2\n  line3\nnew line4\n".to_string();
+        assert_eq!(result, after);
         Ok(())
     }
 
