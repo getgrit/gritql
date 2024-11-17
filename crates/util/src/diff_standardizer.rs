@@ -5,6 +5,7 @@ use git2::{DiffOptions, Repository};
 pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> Result<String> {
     let mut diff_opts = DiffOptions::new();
     diff_opts.ignore_whitespace(true);
+
     let left_oid = repo
         .blob(before.as_bytes())
         .map_err(|e| anyhow::anyhow!("Failed to create left blob: {:?}", e))?;
@@ -20,42 +21,33 @@ pub fn standardize_rewrite(repo: &Repository, before: String, after: String) -> 
         .map_err(|e| anyhow::anyhow!("Failed to find right blob: {:?}", e))?;
 
     // Generate diff
-    let mut standardized = after.clone(); // Start with the full after content
-    let mut has_changes = false;
-    let diff = repo
-        .diff_blobs(
-            Some(&left_blob),
-            None,
-            Some(&right_blob),
-            None,
-            Some(&mut diff_opts),
-            None,
-            None,
-            None,
-            Some(&mut |delta, _hunk, line| {
-                has_changes = true;
+    let mut standardized = String::new();
+
+    // There are changes, build up the new content from the diff
+    let mut diff_opts = DiffOptions::new();
+    repo.diff_blobs(
+        Some(&left_blob),
+        None,
+        Some(&right_blob),
+        None,
+        Some(&mut diff_opts),
+        None,
+        None,
+        None,
+        Some(&mut |_delta, _hunk, line| {
+            if let Ok(content) = std::str::from_utf8(line.content()) {
                 match line.origin() {
-                    '+' | ' ' => {
-                        if let Ok(_) = std::str::from_utf8(line.content()) {
-                            // Content will be taken from the after string
-                        }
-                    }
-                    '-' => {
-                        // Removed lines are ignored as we're using the after content
+                    ' ' | '+' => {
+                        standardized.push_str(content);
                     }
                     _ => {}
                 }
-                true
-            }),
-        )
-        .map_err(|e| anyhow::anyhow!("Failed to generate diff: {:?}", e))?;
+            }
+            true
+        }),
+    )
+    .map_err(|e| anyhow::anyhow!("Failed to generate diff: {:?}", e))?;
 
-    // If no changes were detected in the diff, return the after content as is
-    if !has_changes {
-        standardized = after;
-    }
-
-    // The temporary directory will be automatically cleaned up when temp_dir is dropped
     Ok(standardized)
 }
 
@@ -89,11 +81,11 @@ mod tests {
     #[test]
     fn test_whitespace_handling() -> Result<()> {
         let (repo, _temp) = setup_test_repo()?;
-        let before = "function test() {\n    console.log('test');\n}\n".to_string();
+        let before = "function test() {\n    console.bob('test');\n}\n".to_string();
         let after = "function test(){\nconsole.log('test');\n}\n".to_string();
+        let after_standard = "function test() {\n    console.log('test');\n}\n".to_string();
         let result = standardize_rewrite(&repo, before, after)?;
-        assert_eq!(result, "function test(){\nconsole.log('test');\n}\n");
-        assert_snapshot!(result);
+        assert_eq!(result, after_standard);
         Ok(())
     }
 
