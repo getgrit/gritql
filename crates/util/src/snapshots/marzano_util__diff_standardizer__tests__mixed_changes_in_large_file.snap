@@ -4,15 +4,15 @@ expression: result
 ---
 /* ================================================================================
 
-    getMulti.
+       getMulti.
 
 ================================================================================ */
 fn second_function() {
-    let mut total = 0;
+ let mut total = 0;
     for i in 0..10 {
         total += i;
     }
-    println!("Total: {}", total);
+  println!("Total: {}", total);
 }
 
 fn third_function() {
