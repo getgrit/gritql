@@ -135,21 +135,11 @@ mod tests {
         let (repo, _temp) = setup_test_repo()?;
         let before = r#"
 // This is a large file with multiple sections
-
-fn first_function() {
-    // Some code here
-    let x = 42;
-    println!("Value: {}", x);
-}
-
 fn second_function() {
     let mut total = 0;
     for i in 0..10 {
         total += i;
     }
-
-
-    // Extra whitespace above
     println!("Total: {}", total);
 }
 
@@ -162,46 +152,41 @@ fn third_function() {
 
         let after = r#"
 // This is a large file with multiple sections
-
-fn first_function() {
-    // Some code here
-    let x = 42;
-    println!("Value: {}", x);
-}
-
 fn second_function() {
     let mut total = 0;
     for i in 0..10 {
         total += i;
     }
-    // No extra whitespace
-    println!("Total: {}", total);
+            println!("Total: {}", total);
 }
 
 fn third_function() {
-    let message = "Hello, World!";  // Changed this line
-    println!("{}", message);
+    let thing = "Hello";
+    debug!("{}", message);
 }
 "#
         .to_string();
 
+        let after_standardized = r#"
+// This is a large file with multiple sections
+fn second_function() {
+    let mut total = 0;
+    for i in 0..10 {
+        total += i;
+    }
+    println!("Total: {}", total);
+}
+
+fn third_function() {
+    let thing = "Hello";
+    debug!("{}", message);
+}
+        "#
+        .to_string();
+
         let result = standardize_rewrite(&repo, before, after)?;
 
-        // The result should:
-        // 1. Keep first_function exactly the same
-        // 2. Ignore whitespace changes in second_function
-        // 3. Include the actual code change in third_function
-        assert!(result.contains("fn first_function()"));
-        assert!(result.contains("let x = 42"));
-        assert!(result.contains("fn second_function()"));
-        assert!(result.contains("println!(\"Total: {}\", total)"));
-        assert!(result.contains("let message = \"Hello, World!\""));
-
-        // Verify whitespace changes were ignored
-        assert!(!result.contains("    \n    \n"));
-
-        // Add snapshot test
-        assert_snapshot!(result);
+        assert_eq!(result, after_standardized);
 
         Ok(())
     }
