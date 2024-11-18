@@ -22,6 +22,7 @@ pub(crate) mod patterns_list;
 pub(crate) mod patterns_test;
 pub(crate) mod plumbing;
 pub(crate) mod version;
+pub(crate) mod format;
 
 #[cfg(feature = "workflows_v2")]
 pub(crate) mod apply_migration;
@@ -96,6 +97,7 @@ use std::process::{ChildStdin, Command, Stdio};
 use std::time::Instant;
 use std::{fmt, process::Child};
 use version::VersionArgs;
+use format::FormatArgs;
 
 #[cfg(feature = "workflows_v2")]
 use crate::commands::workflows::{WorkflowCommands, Workflows};
@@ -127,6 +129,7 @@ use self::{
     patterns_test::run_patterns_test,
     plumbing::run_plumbing,
     version::run_version,
+    format::run_format,
 };
 
 #[derive(Subcommand, Debug, Serialize)]
@@ -171,6 +174,8 @@ pub enum Commands {
     /// Server-only commands (for Grit Cloud)
     #[cfg(feature = "server")]
     Server(cli_server::commands::ServerArgs),
+    /// Format grit patterns in the current directory
+    Format(FormatArgs),
 }
 
 impl fmt::Display for Commands {
@@ -208,6 +213,7 @@ impl fmt::Display for Commands {
             Commands::Docgen(_) => write!(f, "docgen"),
             #[cfg(feature = "server")]
             Commands::Server(_) => write!(f, "server"),
+            Commands::Format(_) => write!(f, "format"),
         }
     }
 }
@@ -443,6 +449,7 @@ async fn run_command(_use_tracing: bool) -> Result<()> {
             Commands::Docgen(arg) => run_docgen(arg).await,
             #[cfg(feature = "server")]
             Commands::Server(arg) => cli_server::commands::run_server_command(arg).await,
+            Commands::Format(arg) => run_format(arg).await,
         };
         let elapsed = start.elapsed();
         let details = if command == "apply" {
