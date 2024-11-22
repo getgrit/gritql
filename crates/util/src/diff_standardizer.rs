@@ -216,4 +216,14 @@ fn third_function() {
         assert_eq!(result, after);
         Ok(())
     }
+
+    #[test]
+    fn test_std_files() -> Result<()> {
+        let before = include_str!("../fixtures/std.before.txt").to_string();
+        let after = include_str!("../fixtures/std.after.txt").to_string();
+
+        let result = standardize_rewrite(before.clone(), after.clone())?;
+        assert_eq!(result, before.replace("OldStuff", "NewStuff"));
+        Ok(())
+    }
 }
