@@ -4,6 +4,8 @@
 
 ================================================================================ */
 
+use std::collections::VecDeque;
+
 use anyhow::Result;
 use similar::{ChangeTag, TextDiff};
 
@@ -25,15 +27,15 @@ pub fn standardize_rewrite(before: String, after: String) -> Result<String> {
                 // Simply skip deleted lines
             }
             similar::DiffTag::Replace => {
-                let mut before_cache = Option::None;
+                let mut before_cache = VecDeque::new();
                 for line in diff.iter_changes(op) {
                     match line.tag() {
                         ChangeTag::Delete => {
-                            before_cache = Some(line.value());
+                            before_cache.push_back(line.value());
                         }
                         ChangeTag::Insert => {
                             let value = line.value();
-                            if let Some(before) = before_cache {
+                            if let Some(before) = before_cache.pop_front() {
                                 if before.trim() == value.trim() {
                                     // skip whitespace-only changes
                                     standardized_after.push_str(before);
@@ -42,13 +44,13 @@ pub fn standardize_rewrite(before: String, after: String) -> Result<String> {
                                     standardized_after.push_str(value);
                                 }
                             } else {
+                                println!("NO BEFORE CACHE: {}", value);
                                 standardized_after.push_str(value);
                             }
-                            before_cache = None;
                         }
                         ChangeTag::Equal => {
                             standardized_after.push_str(line.value());
-                            before_cache = None;
+                            before_cache.clear();
                         }
                     }
                 }

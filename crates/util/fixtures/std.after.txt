@@ -5,3 +5,7 @@
 ================================================================================ */
 
 import type { NewStuff } from "somewhere"
+import type {
+    MemberInfo,
+    UserInfo,
+} from "Team"
