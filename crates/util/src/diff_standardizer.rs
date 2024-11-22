@@ -4,14 +4,16 @@
 
 ================================================================================ */
 
+use std::collections::VecDeque;
+
 use anyhow::Result;
 use similar::{ChangeTag, TextDiff};
 
 /// Given a before and after for a file, edit the *after* to not include any spurious changes
-pub fn standardize_rewrite(before: String, after: String) -> Result<String> {
+pub fn standardize_rewrite(before: &str, after: String) -> Result<String> {
     let mut differ = TextDiff::configure();
     differ.algorithm(similar::Algorithm::Myers);
-    let diff = differ.diff_lines(&before, &after);
+    let diff = differ.diff_lines(before, &after);
     let mut standardized_after = String::new();
 
     for op in diff.ops() {
@@ -25,15 +27,15 @@ pub fn standardize_rewrite(before: String, after: String) -> Result<String> {
                 // Simply skip deleted lines
             }
             similar::DiffTag::Replace => {
-                let mut before_cache = Option::None;
+                let mut before_cache = VecDeque::new();
                 for line in diff.iter_changes(op) {
                     match line.tag() {
                         ChangeTag::Delete => {
-                            before_cache = Some(line.value());
+                            before_cache.push_back(line.value());
                         }
                         ChangeTag::Insert => {
                             let value = line.value();
-                            if let Some(before) = before_cache {
+                            if let Some(before) = before_cache.pop_front() {
                                 if before.trim() == value.trim() {
                                     // skip whitespace-only changes
                                     standardized_after.push_str(before);
@@ -44,11 +46,10 @@ pub fn standardize_rewrite(before: String, after: String) -> Result<String> {
                             } else {
                                 standardized_after.push_str(value);
                             }
-                            before_cache = None;
                         }
                         ChangeTag::Equal => {
                             standardized_after.push_str(line.value());
-                            before_cache = None;
+                            before_cache.clear();
                         }
                     }
                 }
@@ -68,7 +69,7 @@ mod tests {
     fn test_basic_rewrite() -> Result<()> {
         let before = "Hello world\n".to_string();
         let after = "Hello Rust\n".to_string();
-        let result = standardize_rewrite(before, after)?;
+        let result = standardize_rewrite(&before, after)?;
         assert_eq!(result, "Hello Rust\n");
         assert_snapshot!(result);
         Ok(())
@@ -79,7 +80,7 @@ mod tests {
         let before = "function test() {\n    console.bob('test');\n}\n".to_string();
         let after = "function test() {\nconsole.log('test');\n}\n".to_string();
         let after_standard = "function test() {\nconsole.log('test');\n}\n".to_string();
-        let result = standardize_rewrite(before, after)?;
+        let result = standardize_rewrite(&before, after)?;
         assert_eq!(result, after_standard);
         Ok(())
     }
@@ -88,7 +89,7 @@ mod tests {
     fn test_empty_files() -> Result<()> {
         let before = "".to_string();
         let after = "".to_string();
-        let result = standardize_rewrite(before, after)?;
+        let result = standardize_rewrite(&before, after)?;
         assert_eq!(result, "");
         assert_snapshot!(result);
         Ok(())
@@ -99,7 +100,7 @@ mod tests {
         let before = "line1\nline2\n  line3\n".to_string();
         let after1 = "line1\nmodified line2\n  line3\nnew line4\n".to_string();
         let after2 = "line1\nmodified line2\n  line3\nnew line4\n".to_string();
-        let result = standardize_rewrite(before, after1)?;
+        let result = standardize_rewrite(&before, after1)?;
         assert_eq!(result, after2);
         Ok(())
     }
@@ -107,7 +108,7 @@ mod tests {
     #[test]
     fn test_no_changes() -> Result<()> {
         let content = "unchanged content\n".to_string();
-        let result = standardize_rewrite(content.clone(), content)?;
+        let result = standardize_rewrite(&content.clone(), content)?;
         assert_eq!(result, "unchanged content\n");
         assert_snapshot!(result);
         Ok(())
@@ -157,7 +158,7 @@ fn third_function() {
 "#
         .to_string();
 
-        let result = standardize_rewrite(before, after)?;
+        let result = standardize_rewrite(&before, after)?;
         assert_snapshot!(result);
         Ok(())
     }
@@ -190,7 +191,7 @@ fn third_function() {
 "#
         .to_string();
 
-        let result = standardize_rewrite(before, after.clone())?;
+        let result = standardize_rewrite(&before, after.clone())?;
         assert_eq!(result, after);
         Ok(())
     }
@@ -212,8 +213,18 @@ fn third_function() {
 }"#
         .to_string();
 
-        let result = standardize_rewrite(before, after.clone())?;
+        let result = standardize_rewrite(&before, after.clone())?;
         assert_eq!(result, after);
+        Ok(())
+    }
+
+    #[test]
+    fn test_std_files() -> Result<()> {
+        let before = include_str!("../fixtures/std.before.txt").to_string();
+        let after = include_str!("../fixtures/std.after.txt").to_string();
+
+        let result = standardize_rewrite(&before, after)?;
+        assert_eq!(result, before.replace("OldStuff", "NewStuff"));
         Ok(())
     }
 }
