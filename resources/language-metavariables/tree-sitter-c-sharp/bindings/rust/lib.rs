@@ -51,11 +51,12 @@ pub const GRAMMAR: &'static str = include_str!("../../grammar.js");
 /// [`node-types.json`]: https://tree-sitter.github.io/tree-sitter/using-parsers#static-node-types
 pub const NODE_TYPES: &'static str = include_str!("../../src/node-types.json");
 
-/// The symbol tagging query for this language.
-pub const TAGGING_QUERY: &'static str = include_str!("../../queries/tags.scm");
+// NOTE: uncomment these to include any queries that this grammar contains:
 
-/// The syntax highlighting query for this language.
-pub const HIGHLIGHT_QUERY: &'static str = include_str!("../../queries/highlights.scm");
+// pub const HIGHLIGHTS_QUERY: &str = include_str!("../../queries/highlights.scm");
+// pub const INJECTIONS_QUERY: &str = include_str!("../../queries/injections.scm");
+// pub const LOCALS_QUERY: &str = include_str!("../../queries/locals.scm");
+// pub const TAGS_QUERY: &str = include_str!("../../queries/tags.scm");
 
 #[cfg(test)]
 mod tests {

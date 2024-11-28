@@ -15305,3 +15305,35 @@ fn or_file() {
     })
     .unwrap();
 }
+
+#[test]
+fn csharp_simple_parse() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`"Hello, World!"` => `"Test, World!"`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |static void Main(string[] args)
+                |{
+                |   Console.WriteLine("Hello, World!");
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |static void Main(string[] args)
+                |{
+                |   Console.WriteLine("Test, World!");
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}

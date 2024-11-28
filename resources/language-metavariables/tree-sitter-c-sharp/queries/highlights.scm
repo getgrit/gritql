@@ -1,30 +1,40 @@
+(identifier) @variable
+
 ;; Methods
+
 (method_declaration name: (identifier) @function)
 (local_function_statement name: (identifier) @function)
 
 ;; Types
+
 (interface_declaration name: (identifier) @type)
 (class_declaration name: (identifier) @type)
 (enum_declaration name: (identifier) @type)
 (struct_declaration (identifier) @type)
 (record_declaration (identifier) @type)
-(record_struct_declaration (identifier) @type)
 (namespace_declaration name: (identifier) @module)
+
+(generic_name (identifier) @type)
+(type_parameter (identifier) @property.definition)
+(parameter type: (identifier) @type)
+(type_argument_list (identifier) @type)
+(as_expression right: (identifier) @type)
+(is_expression right: (identifier) @type)
 
 (constructor_declaration name: (identifier) @constructor)
 (destructor_declaration name: (identifier) @constructor)
 
-[
-  (implicit_type)
-  (predefined_type)
-] @type.builtin
-
 (_ type: (identifier) @type)
+
+(base_list (identifier) @type)
+
+(predefined_type) @type.builtin
 
 ;; Enum
 (enum_member_declaration (identifier) @property.definition)
 
 ;; Literals
+
 [
   (real_literal)
   (integer_literal)
@@ -33,14 +43,14 @@
 [
   (character_literal)
   (string_literal)
+  (raw_string_literal)
   (verbatim_string_literal)
-  (interpolated_string_text)
-  (interpolated_verbatim_string_text)
-  "\""
-  "$\""
-  "@$\""
-  "$@\""
+  (interpolated_string_expression)
+  (interpolation_start)
+  (interpolation_quote)
  ] @string
+
+(escape_sequence) @string.escape
 
 [
   (boolean_literal)
@@ -48,9 +58,11 @@
 ] @constant.builtin
 
 ;; Comments
+
 (comment) @comment
 
 ;; Tokens
+
 [
   ";"
   "."
@@ -107,12 +119,16 @@
   "]"
   "{"
   "}"
+  (interpolation_brace)
 ]  @punctuation.bracket
 
 ;; Keywords
-(modifier) @keyword
-(this_expression) @keyword
-(escape_sequence) @keyword
+
+[
+  (modifier)
+  "this"
+  (implicit_type)
+] @keyword
 
 [
   "add"
@@ -178,77 +194,19 @@
   "let"
 ] @keyword
 
-
-;; Linq
-(from_clause (identifier) @variable)
-(group_clause (identifier) @variable)
-(order_by_clause (identifier) @variable)
-(join_clause (identifier) @variable)
-(select_clause (identifier) @variable)
-(query_continuation (identifier) @variable) @keyword
-
-;; Record
-(with_expression
-  (with_initializer_expression
-    (simple_assignment_expression
-      (identifier) @variable)))
-
-;; Exprs
-(binary_expression (identifier) @variable (identifier) @variable)
-(binary_expression (identifier)* @variable)
-(conditional_expression (identifier) @variable)
-(prefix_unary_expression (identifier) @variable)
-(postfix_unary_expression (identifier)* @variable)
-(assignment_expression (identifier) @variable)
-(cast_expression (_) (identifier) @variable)
-
-;; Class
-(base_list (identifier) @type) ;; applies to record_base too
-(property_declaration (generic_name))
-(property_declaration
-  name: (identifier) @variable)
-(property_declaration
-  name: (identifier) @variable)
-(property_declaration
-  name: (identifier) @variable)
-
-;; Lambda
-(lambda_expression) @variable
-
 ;; Attribute
-(attribute) @attribute
 
-;; Parameter
+(attribute name: (identifier) @attribute)
+
+;; Parameters
+
 (parameter
   name: (identifier) @variable.parameter)
-(parameter (identifier) @variable.parameter)
-(parameter_modifier) @keyword
-
-;; Variable declarations
-(variable_declarator (identifier) @variable)
-(for_each_statement left: (identifier) @variable)
-(catch_declaration (_) (identifier) @variable)
-
-;; Return
-(return_statement (identifier) @variable)
-(yield_statement (identifier) @variable)
-
-;; Type
-(generic_name (identifier) @type)
-(type_parameter (identifier) @property.definition)
-(type_argument_list (identifier) @type)
-(as_expression right: (identifier) @type)
-(is_expression right: (identifier) @type)
 
 ;; Type constraints
+
 (type_parameter_constraints_clause (identifier) @property.definition)
 
-;; Switch
-(switch_statement (identifier) @variable)
-(switch_expression (identifier) @variable)
-
-;; Lock statement
-(lock_statement (identifier) @variable)
-
 ;; Method calls
+
 (invocation_expression (member_access_expression name: (identifier) @function))

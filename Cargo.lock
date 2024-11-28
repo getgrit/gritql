@@ -4326,7 +4326,7 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter-c-sharp"
-version = "0.20.0"
+version = "0.23.1"
 dependencies = [
  "cc",
  "tree-sitter",

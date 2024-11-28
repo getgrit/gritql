@@ -239,8 +239,23 @@ async function buildLanguage(language) {
   }
 
   if (language === "c-sharp") {
-    //skip generating c-sharp, tree-sitter hangs on it
-    await copyNodeTypes("c-sharp", "csharp");
+    log(`Copying C# files`);
+    await copyMvGrammar(language);
+    log(`Running C# tree-sitter generate`);
+    await treeSitterGenerate(language);
+    log(`Copying C# output node types`);
+    await copyNodeTypes(language);
+    log(`Copying C# wasm parser`);
+    fs.copy(
+      path.join(
+        LANGUAGE_METAVARIABLES_DIR,
+        "tree-sitter-c-sharp/tree-sitter-c_sharp.wasm",
+      ),
+      path.join(
+        resourceDir,
+        `../crates/wasm-bindings/wasm_parsers/tree-sitter-c-sharp.wasm`,
+      ),
+    );
   } else if (language === "markdown") {
     //markdown has sub-grammars
     await Promise.all([

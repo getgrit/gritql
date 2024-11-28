@@ -4,7 +4,7 @@ use marzano_util::node_with_source::NodeWithSource;
 use std::sync::OnceLock;
 
 static NODE_TYPES_STRING: &str =
-    include_str!("../../../resources/node-types/csharp-node-types.json");
+    include_str!("../../../resources/node-types/c-sharp-node-types.json");
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 
@@ -59,7 +59,7 @@ impl Language for CSharp {
     }
 
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[("", "")]
+        &[("", ""), ("", ";")]
     }
 }
 
