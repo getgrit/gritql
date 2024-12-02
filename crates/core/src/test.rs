@@ -15307,28 +15307,782 @@ fn or_file() {
 }
 
 #[test]
-fn csharp_simple_parse() {
+fn csharp_metavariable_swap() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                    |language csharp
+                    |
+                    |`$a.$b("Hello, World!")` => `$b.$a("Hello, Test!")`
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                    |static void Main(string[] args)
+                    |{
+                    |   Console.WriteLine("Hello, World!");
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                    |static void Main(string[] args)
+                    |{
+                    |   WriteLine.Console("Hello, Test!");
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_class_definition() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                    |language csharp
+                    |
+                    |`public class $name {
+                    |    $body
+                    |}` => `public sealed class $name {
+                    |    $body
+                    |}`
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                    |public class MyClass {
+                    |    private int _value;
+                    |
+                    |    public void DoSomething() {
+                    |        Console.WriteLine("Hello");
+                    |    }
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                    |public sealed class MyClass {
+                    |    private int _value;
+                    |
+                    |    public void DoSomething() {
+                    |        Console.WriteLine("Hello");
+                    |    }
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_property_definition() {
+    run_test_expected({
+            TestArgExpected {
+                pattern: r#"
+                    |language csharp
+                    |
+                    |`public $type $name { get; set; }` => `public $type $name { get; private set; }`
+                    |"#
+                .trim_margin()
+                .unwrap(),
+                source: r#"
+                    |public class Person {
+                    |    public string Name { get; set; }
+                    |    public int Age { get; set; }
+                    |}
+                    |"#
+                .trim_margin()
+                .unwrap(),
+                expected: r#"
+                    |public class Person {
+                    |    public string Name { get; private set; }
+                    |    public int Age { get; private set; }
+                    |}
+                    |"#
+                .trim_margin()
+                .unwrap(),
+            }
+        })
+        .unwrap();
+}
+
+#[test]
+fn csharp_async_method() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                    |language csharp
+                    |
+                    |`public $returnType $name($params) {
+                    |    return $calculation;
+                    |}` => `public async Task<$returnType> $name($params) {
+                    |    return await Task.FromResult($calculation);
+                    |}`
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                    |public int Calculate(int x) {
+                    |    return x * 2;
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                    |public async Task<int> Calculate(int x) {
+                    |    return await Task.FromResult(x * 2);
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_linq_query() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                    |language csharp
+                    |
+                    |`$list.Where($predicate)` => `$list.AsEnumerable().Where($predicate)`
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                    |var result = items.Where(x => x.IsValid);
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                    |var result = items.AsEnumerable().Where(x => x.IsValid);
+                    |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_inheritance() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                    |language csharp
+                    |
+                    |`public class $className {
+                    |    $body
+                    |}` => `public class $className : Base {
+                    |    $body
+                    |}`
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                    |public class MyClass {
+                    |    Initialize();
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                    |public class MyClass : Base {
+                    |    Initialize();
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_multiple_interface() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                    |language csharp
+                    |
+                    |`class $name : $interface { $body }` =>
+                    |`class $name : $interface, IDisposable
+                    |{
+                    |   $body
+                    |}`
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                    |class MyService : IService
+                    |{
+                    |   public void DoWork() {}
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                    |class MyService : IService, IDisposable
+                    |{
+                    |   public void DoWork() {}
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_exception_handling() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                    |language csharp
+                    |
+                    |`try {
+                    |    $tryBlock
+                    |} catch {
+                    |    $catchBlock
+                    |}` => `try {
+                    |    $tryBlock
+                    |} catch (Exception ex) {
+                    |    Logger.LogError(ex);
+                    |    $catchBlock
+                    |}`
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                    |try {
+                    |    ProcessData();
+                    |} catch {
+                    |    HandleError();
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                    |try {
+                    |    ProcessData();
+                    |} catch (Exception ex) {
+                    |    Logger.LogError(ex);
+                    |    HandleError();
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_using_statement() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                    |language csharp
+                    |
+                    |`using ($resource) {
+                    |    $body
+                    |}` => `await using ($resource) {
+                    |    $body
+                    |}`
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                    |using (var file = File.OpenRead("path")) {
+                    |    ProcessFile(file);
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                    |await using (var file = File.OpenRead("path")) {
+                    |    ProcessFile(file);
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_attribute_addition() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                    |language csharp
+                    |
+                    |`public class $name { $body }` => `[Serializable]
+                    |public class $name {
+                    |    $body
+                    |}`
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                    |public class DataTransfer {
+                    |    public string Data { get; set; }
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                    |[Serializable]
+                    |public class DataTransfer {
+                    |    public string Data { get; set; }
+                    |}
+                    |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_string_interpolation() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                    |language csharp
+                    |
+                    |`string.Format($template, $args)` => `$"{$args}"`
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                    |var message = string.Format("Hello {0}", name);
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                    |var message = $"{name}";
+                    |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_null_check() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                    |language csharp
+                    |
+                    |`if ($var == null) $body` => `if ($var is null)
+                    |    $body`
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                    |if (customer == null)
+                    |    throw new ArgumentNullException();
+                    |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                    |if (customer is null)
+                    |    throw new ArgumentNullException();
+                    |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_switch_expression() {
     run_test_expected({
         TestArgExpected {
             pattern: r#"
                 |language csharp
                 |
-                |`"Hello, World!"` => `"Test, World!"`
+                |`switch ($value) {
+                |    case $type1 $var1:
+                |        return $result1;
+                |    case $type2 $var2:
+                |        return $result2;
+                |    default:
+                |        return $default;
+                |}` => `return $value switch {
+                |    $type1 $var1 => $result1,
+                |    $type2 $var2 => $result2,
+                |    _ => $default
+                |};`
                 |"#
             .trim_margin()
             .unwrap(),
             source: r#"
-                |static void Main(string[] args)
-                |{
-                |   Console.WriteLine("Hello, World!");
+                |switch (shape) {
+                |    case Circle c:
+                |        return Math.PI * c.Radius * c.Radius;
+                |    case Rectangle r:
+                |        return r.Width * r.Height;
+                |    default:
+                |        return 0;
                 |}
                 |"#
             .trim_margin()
             .unwrap(),
             expected: r#"
-                |static void Main(string[] args)
+                |return shape switch {
+                |    Circle c => Math.PI * c.Radius * c.Radius,
+                |    Rectangle r => r.Width * r.Height,
+                |    _ => 0
+                |};
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_record_declaration() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`public class $name {
+                |    public $name($params) {
+                |        $assignments
+                |    }
+                |
+                |    $_
+                |    $_
+                |
+                |    public override bool Equals($type other) {
+                |        $equality
+                |    }
+                |
+                |    public override int GetHashCode() {
+                |        $hash
+                |    }
+                |}` => `public record $name($params);`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |public class Person {
+                |    public Person(string name, int age) {
+                |        Name = name;
+                |        Age = age;
+                |    }
+                |
+                |    public string Name { get; }
+                |    public int Age { get; }
+                |
+                |    public override bool Equals(object other) {
+                |        return other is Person p &&
+                |               Name == p.Name &&
+                |               Age == p.Age;
+                |    }
+                |
+                |    public override int GetHashCode() {
+                |        return HashCode.Combine(Name, Age);
+                |    }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |public record Person(string name, int age);
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_list_pattern() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`if ($list != null && $list.Count > 0 && $list[0] == $value) {$body}` =>
+                |`if ($list is [$value, ..])
+                |    {
+                |        $body
+                |    }`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |public bool CheckFirstElement(List<int> numbers)
                 |{
-                |   Console.WriteLine("Test, World!");
+                |    if (numbers != null && numbers.Count > 0 && numbers[0] == 42)
+                |    {
+                |        return true;
+                |    }
+                |    return false;
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |public bool CheckFirstElement(List<int> numbers)
+                |{
+                |    if (numbers is [42, ..])
+                |    {
+                |        return true;
+                |    }
+                |    return false;
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_init_only_setter() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`public class $className{
+                |    private readonly $type $name;
+                |
+                |    public $type $prop{
+                |        get => $name;
+                |    }
+                |}` => `public class $className {
+                |    public $type $prop { get; init; }
+                |}`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |public class Configuration{
+                |    private readonly string _apiKey;
+                |
+                |    public string ApiKey{
+                |        get => _apiKey;
+                |    }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |public class Configuration {
+                |    public string ApiKey { get; init; }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_pattern_matching_is() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`if ($obj is $type)
+                |{
+                |    var $var = ($type)$obj;
+                |    $body
+                |}` => `if ($obj is $type $var)
+                |{
+                |    $body
+                |}`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |if (shape is Circle)
+                |{
+                |    var circle = (Circle)shape;
+                |    DrawCircle(circle.Radius);
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |if (shape is Circle circle)
+                |{
+                |    DrawCircle(circle.Radius);
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_linq_orderby() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`from $item in $collection
+                |orderby $item.$property select $item` =>
+                |                    `from $item in $collection
+                |                    orderby $item.$property descending
+                |                    select $item`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |public class Example {
+                |    public void Query() {
+                |        var result = from user in users
+                |                    orderby user.Name
+                |                    select user;
+                |    }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |public class Example {
+                |    public void Query() {
+                |        var result = from user in users
+                |                    orderby user.Name descending
+                |                    select user;
+                |    }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_groupby_keyword() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`from $item in $collection
+                |group $item by $item.$key` =>
+                |                    `from $item in $collection
+                |                    group $item by $item.$key into g
+                |                    select new { Key = g.Key, Count = g.Count() }`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |public class Example {
+                |    public void Query() {
+                |        var result = from user in users
+                |                    group user by user.Age;
+                |    }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |public class Example {
+                |    public void Query() {
+                |        var result = from user in users
+                |                    group user by user.Age into g
+                |                    select new { Key = g.Key, Count = g.Count() };
+                |    }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_simple_test() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`console($test);` => `console($test + $test);`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |    console("hello");
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |    console("hello" + "hello");
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_or_file() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |or {
+                |    bubble file($body) where {
+                |        $body <: contains `i` => .
+                |    },
+                |    bubble file($body) where {
+                |        $body <: contains `1` => .
+                |    }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |public class Counter {
+                |    public int Increment(int i) {
+                |        return i + 1;
+                |    }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |public class Counter {
+                |    public int Increment(int ) {
+                |        return  + 1;
+                |    }
                 |}
                 |"#
             .trim_margin()
