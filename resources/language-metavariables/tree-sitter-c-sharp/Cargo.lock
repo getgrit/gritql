@@ -62,13 +62,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
-name = "tree-sitter"
-version = "0.20.10"
+name = "streaming-iterator"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e747b1f9b7b931ed39a548c1fae149101497de3c1fc8d9e18c62c1a66c683d3d"
+checksum = "2b2231b7c3057d5e4ad0156fb3dc807d900806020c5ffa3ee6ff2c8c76fb8520"
+
+[[package]]
+name = "tree-sitter"
+version = "0.24.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b67baf55e7e1b6806063b1e51041069c90afff16afcbbccd278d899f9d84bca4"
 dependencies = [
  "cc",
  "regex",
+ "regex-syntax",
+ "streaming-iterator",
+ "tree-sitter-language",
 ]
 
 [[package]]

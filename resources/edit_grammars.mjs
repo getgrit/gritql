@@ -246,7 +246,7 @@ async function buildLanguage(language) {
     log(`Copying C# output node types`);
     await copyNodeTypes(language);
     log(`Copying C# wasm parser`);
-    fs.copy(
+    fs.copyFile(
       path.join(
         LANGUAGE_METAVARIABLES_DIR,
         "tree-sitter-c-sharp/tree-sitter-c_sharp.wasm",

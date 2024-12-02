@@ -3,8 +3,8 @@ name = "tree-sitter-c-sharp"
 description = "C# grammar for tree-sitter"
 version = "0.23.1"
 authors = [
-  "Max Brunsfeld <maxbrunsfeld@gmail.com>",
-  "Amaan Qureshi <amaanq12@gmail.com>",
+    "Max Brunsfeld <maxbrunsfeld@gmail.com>",
+    "Amaan Qureshi <amaanq12@gmail.com>",
 ]
 license = "MIT"
 readme = "README.md"
@@ -16,11 +16,11 @@ autoexamples = false
 
 build = "bindings/rust/build.rs"
 include = [
-  "bindings/rust/*",
-  "grammar.js",
-  "queries/*",
-  "src/*",
-  "tree-sitter.json",
+    "bindings/rust/*",
+    "grammar.js",
+    "queries/*",
+    "src/*",
+    "tree-sitter.json",
 ]
 
 [lib]
@@ -28,9 +28,7 @@ path = "bindings/rust/lib.rs"
 
 [dependencies]
 tree-sitter = "~0.20"
+tree-sitter-language = "0.1"
 
 [build-dependencies]
 cc = "~1"
-
-[dev-dependencies]
-tree-sitter = "0.24"
