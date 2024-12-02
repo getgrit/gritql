@@ -59,7 +59,14 @@ impl Language for CSharp {
     }
 
     fn snippet_context_strings(&self) -> &[(&'static str, &'static str)] {
-        &[("", ""), ("", ";")]
+        &[
+            ("", ""),
+            ("", ";"),
+            ("GRIT_VAR = ", ";"),
+            ("GRIT_FUNC(", ");"),
+            ("public class GRIT_CLASS {", "}"),
+            ("", " { }"),
+        ]
     }
 }
 
