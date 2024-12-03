@@ -1,35 +1,60 @@
 {
   "name": "tree-sitter-c-sharp",
-  "version": "0.20.0",
+  "version": "0.23.1",
   "description": "C# grammar for tree-sitter",
-  "main": "bindings/node",
-  "keywords": [
-    "parser",
-    "tree-sitter",
-    "lexer"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/tree-sitter/tree-sitter-c-sharp.git"
-  },
-  "author": "The Tree-Sitter C# Team",
+  "repository": "https://github.com/tree-sitter/tree-sitter-c-sharp",
   "license": "MIT",
+  "author": {
+    "name": "Max Brunsfeld",
+    "email": "maxbrunsfeld@gmail.com"
+  },
+  "maintainers": [
+    {
+      "name": "Amaan Qureshi",
+      "email": "amaanq12@gmail.com"
+    }
+  ],
+  "main": "bindings/node",
+  "types": "bindings/node",
+  "keywords": [
+    "incremental",
+    "parsing",
+    "tree-sitter",
+    "c-sharp"
+  ],
+  "files": [
+    "grammar.js",
+    "tree-sitter.json",
+    "binding.gyp",
+    "prebuilds/**",
+    "bindings/node/*",
+    "queries/*",
+    "src/**",
+    "*.wasm"
+  ],
   "dependencies": {
-    "nan": "^2.14.0"
+    "node-addon-api": "^8.2.2",
+    "node-gyp-build": "^4.8.2"
   },
   "devDependencies": {
-    "tree-sitter-cli": "^0.20.0"
+    "eslint": "^9.14.0",
+    "eslint-config-treesitter": "^1.0.2",
+    "tree-sitter-cli": "^0.24.4",
+    "prebuildify": "^6.0.1"
+  },
+  "peerDependencies": {
+    "tree-sitter": "^0.21.1"
+  },
+  "peerDependenciesMeta": {
+    "tree-sitter": {
+      "optional": true
+    }
   },
   "scripts": {
-    "test": "tree-sitter test && script/update-file-sizes && script/parse-examples",
-    "test-windows": "tree-sitter test"
-  },
-  "tree-sitter": [
-    {
-      "scope": "source.cs",
-      "file-types": [
-        "cs"
-      ]
-    }
-  ]
+    "install": "node-gyp-build",
+    "lint": "eslint grammar.js",
+    "prestart": "tree-sitter build --wasm",
+    "start": "tree-sitter playground",
+    "test": "node --test bindings/node/*_test.js"
+  }
 }

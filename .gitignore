@@ -2,3 +2,4 @@ target
 .vscode
 node_modules
 .aider*
+.zed

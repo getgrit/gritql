@@ -3,8 +3,8 @@ name = "tree-sitter-html"
 description = "HTML grammar for tree-sitter"
 version = "0.20.2"
 authors = [
-	"Max Brunsfeld <maxbrunsfeld@gmail.com>",
-	"Amaan Qureshi <amaanq12@gmail.com>",
+    "Max Brunsfeld <maxbrunsfeld@gmail.com>",
+    "Amaan Qureshi <amaanq12@gmail.com>",
 ]
 license = "MIT"
 readme = "bindings/rust/README.md"

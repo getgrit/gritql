@@ -6,33 +6,32 @@ let package = Package(
     products: [
         .library(name: "TreeSitterCSharp", targets: ["TreeSitterCSharp"]),
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.8.0"),
+    ],
     targets: [
-        .target(name: "TreeSitterCSharp",
-                path: ".",
-                exclude: [
-                    "binding.gyp",
-                    "bindings",
-                    "Cargo.toml",
-                    "corpus",
-                    "grammar.js",
-                    "index.js",
-                    "LICENSE",
-                    "Makefile",
-                    "package.json",
-                    "README.md",
-                    "script",
-                    "src/grammar.json",
-                    "src/node-types.json",
-                ],
-                sources: [
-                    "src/parser.c",
-                    "src/scanner.c",
-                ],
-                resources: [
-                    .copy("queries")
-                ],
-                publicHeadersPath: "bindings/swift",
-                cSettings: [.headerSearchPath("src")])
-    ]
+        .target(
+            name: "TreeSitterCSharp",
+            dependencies: [],
+            path: ".",
+            sources: [
+                "src/parser.c",
+                "src/scanner.c",
+            ],
+            resources: [
+                .copy("queries")
+            ],
+            publicHeadersPath: "bindings/swift",
+            cSettings: [.headerSearchPath("src")]
+        ),
+        .testTarget(
+            name: "TreeSitterCSharpTests",
+            dependencies: [
+                "SwiftTreeSitter",
+                "TreeSitterCSharp",
+            ],
+            path: "bindings/swift/TreeSitterCSharpTests"
+        )
+    ],
+    cLanguageStandard: .c11
 )
