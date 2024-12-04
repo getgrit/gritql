@@ -66,6 +66,8 @@ impl Language for CSharp {
             ("GRIT_FUNC(", ");"),
             ("public class GRIT_CLASS {", "}"),
             ("", " { }"),
+            ("return from GRIT_VAR in GRIT_VAR ", ";"),
+            ("return from GRIT_VAR in GRIT_VAR ", " select GRIT_VAR;"),
         ]
     }
 }
