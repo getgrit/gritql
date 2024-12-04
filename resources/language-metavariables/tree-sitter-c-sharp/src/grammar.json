@@ -7682,7 +7682,7 @@
           "name": "query",
           "content": {
             "type": "SYMBOL",
-            "name": "_query_body"
+            "name": "query_body"
           }
         }
       ]
@@ -7732,7 +7732,7 @@
         }
       ]
     },
-    "_query_body": {
+    "query_body": {
       "type": "PREC_RIGHT",
       "value": 0,
       "content": {
@@ -8010,8 +8010,12 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "SYMBOL",
-          "name": "expression"
+          "type": "FIELD",
+          "name": "expression",
+          "content": {
+            "type": "SYMBOL",
+            "name": "expression"
+          }
         },
         {
           "type": "CHOICE",
@@ -8026,6 +8030,10 @@
                 {
                   "type": "STRING",
                   "value": "descending"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "grit_metavariable"
                 }
               ]
             },

@@ -4594,6 +4594,16 @@
     "type": "order_by_clause",
     "named": true,
     "fields": {
+      "expression": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "expression",
+            "named": true
+          }
+        ]
+      },
       "ordering": {
         "multiple": true,
         "required": true,
@@ -4608,6 +4618,10 @@
           },
           {
             "type": "expression",
+            "named": true
+          },
+          {
+            "type": "grit_metavariable",
             "named": true
           }
         ]
@@ -5513,6 +5527,62 @@
     }
   },
   {
+    "type": "query_body",
+    "named": true,
+    "fields": {
+      "group": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "group_clause",
+            "named": true
+          }
+        ]
+      },
+      "select": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "select_clause",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "from_clause",
+          "named": true
+        },
+        {
+          "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "join_clause",
+          "named": true
+        },
+        {
+          "type": "let_clause",
+          "named": true
+        },
+        {
+          "type": "order_by_clause",
+          "named": true
+        },
+        {
+          "type": "where_clause",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "query_expression",
     "named": true,
     "fields": {
@@ -5526,64 +5596,12 @@
           }
         ]
       },
-      "group": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": "group_clause",
-            "named": true
-          }
-        ]
-      },
       "query": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
           {
-            "type": "from_clause",
-            "named": true
-          },
-          {
-            "type": "group_clause",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "into",
-            "named": false
-          },
-          {
-            "type": "join_clause",
-            "named": true
-          },
-          {
-            "type": "let_clause",
-            "named": true
-          },
-          {
-            "type": "order_by_clause",
-            "named": true
-          },
-          {
-            "type": "select_clause",
-            "named": true
-          },
-          {
-            "type": "where_clause",
-            "named": true
-          }
-        ]
-      },
-      "select": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": "select_clause",
+            "type": "query_body",
             "named": true
           }
         ]
