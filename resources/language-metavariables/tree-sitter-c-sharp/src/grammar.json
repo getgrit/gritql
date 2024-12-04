@@ -1800,96 +1800,96 @@
             "type": "CHOICE",
             "members": [
               {
-                "type": "STRING",
-                "value": "!"
+                "type": "SYMBOL",
+                "name": "op_not"
               },
               {
-                "type": "STRING",
-                "value": "~"
+                "type": "SYMBOL",
+                "name": "op_bitwise_not"
               },
               {
-                "type": "STRING",
-                "value": "++"
+                "type": "SYMBOL",
+                "name": "op_plus_plus"
               },
               {
-                "type": "STRING",
-                "value": "--"
+                "type": "SYMBOL",
+                "name": "op_minus_minus"
               },
               {
-                "type": "STRING",
-                "value": "true"
+                "type": "SYMBOL",
+                "name": "op_true"
               },
               {
-                "type": "STRING",
-                "value": "false"
+                "type": "SYMBOL",
+                "name": "op_false"
               },
               {
-                "type": "STRING",
-                "value": "+"
+                "type": "SYMBOL",
+                "name": "op_plus"
               },
               {
-                "type": "STRING",
-                "value": "-"
+                "type": "SYMBOL",
+                "name": "op_minus"
               },
               {
-                "type": "STRING",
-                "value": "*"
+                "type": "SYMBOL",
+                "name": "op_multiply"
               },
               {
-                "type": "STRING",
-                "value": "/"
+                "type": "SYMBOL",
+                "name": "op_divide"
               },
               {
-                "type": "STRING",
-                "value": "%"
+                "type": "SYMBOL",
+                "name": "op_modulo"
               },
               {
-                "type": "STRING",
-                "value": "^"
+                "type": "SYMBOL",
+                "name": "op_bitwise_xor"
               },
               {
-                "type": "STRING",
-                "value": "|"
+                "type": "SYMBOL",
+                "name": "op_bitwise_or"
               },
               {
-                "type": "STRING",
-                "value": "&"
+                "type": "SYMBOL",
+                "name": "op_bitwise_and"
               },
               {
-                "type": "STRING",
-                "value": "<<"
+                "type": "SYMBOL",
+                "name": "op_left_shift"
               },
               {
-                "type": "STRING",
-                "value": ">>"
+                "type": "SYMBOL",
+                "name": "op_right_shift"
               },
               {
-                "type": "STRING",
-                "value": ">>>"
+                "type": "SYMBOL",
+                "name": "op_unsigned_right_shift"
               },
               {
-                "type": "STRING",
-                "value": "=="
+                "type": "SYMBOL",
+                "name": "op_eq"
               },
               {
-                "type": "STRING",
-                "value": "!="
+                "type": "SYMBOL",
+                "name": "op_neq"
               },
               {
-                "type": "STRING",
-                "value": ">"
+                "type": "SYMBOL",
+                "name": "op_gt"
               },
               {
-                "type": "STRING",
-                "value": "<"
+                "type": "SYMBOL",
+                "name": "op_lt"
               },
               {
-                "type": "STRING",
-                "value": ">="
+                "type": "SYMBOL",
+                "name": "op_gte"
               },
               {
-                "type": "STRING",
-                "value": "<="
+                "type": "SYMBOL",
+                "name": "op_lte"
               }
             ]
           }
@@ -6903,6 +6903,30 @@
     "op_coalescing": {
       "type": "STRING",
       "value": "??"
+    },
+    "op_not": {
+      "type": "STRING",
+      "value": "!"
+    },
+    "op_bitwise_not": {
+      "type": "STRING",
+      "value": "~"
+    },
+    "op_plus_plus": {
+      "type": "STRING",
+      "value": "++"
+    },
+    "op_minus_minus": {
+      "type": "STRING",
+      "value": "--"
+    },
+    "op_true": {
+      "type": "STRING",
+      "value": "true"
+    },
+    "op_false": {
+      "type": "STRING",
+      "value": "false"
     },
     "binary_expression": {
       "type": "CHOICE",
