@@ -15769,8 +15769,7 @@ fn csharp_record_declaration() {
                 |        $assignments
                 |    }
                 |
-                |    $_
-                |    $_
+                |    $...
                 |
                 |    public override bool Equals($type other) {
                 |        $equality
