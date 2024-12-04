@@ -16149,3 +16149,154 @@ fn csharp_or_file() {
     })
     .unwrap();
 }
+
+#[test]
+fn csharp_empty_namespace() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`namespace MyNamespace {
+                |    $body
+                |}` => `namespace Empty {
+                |}`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |namespace MyNamespace {
+                |    public class MyClass { }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |namespace Empty {
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_operator_overloading_rewrite() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`public static MyClass operator >>>(MyClass $a, MyClass $b) {
+                |        return new MyClass();
+                |}` => `public static MyClass operator <<(MyClass $a, MyClass $b) {
+                |        return new MyClass();
+                |    }`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |public class MyClass {
+                |    public static MyClass operator >>>(MyClass a, MyClass b) {
+                |        return new MyClass();
+                |    }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |public class MyClass {
+                |    public static MyClass operator <<(MyClass a, MyClass b) {
+                |        return new MyClass();
+                |    }
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_delegate() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`public delegate void MyDelegate(int $x);` => `public delegate void MyDelegate(string $x);`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |public delegate void MyDelegate(int x);
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |public delegate void MyDelegate(string x);
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_generics_remove_type() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`public class GenericClass<T> { }` => `public class GenericClass<T, U> { }`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |public class GenericClass<T> { }
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |public class GenericClass<T, U> { }
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_attribute_swap() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`void $methodName([$attribute1][$attribute2] ref double x) { }` =>
+                |`void $methodName([$attribute2][$attribute1] ref double x) { }`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |void MethodA([In][Out] ref double x) { }
+                |void MethodB([Out][In] ref double x) { }
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |void MethodA([Out][In] ref double x) { }
+                |void MethodB([In][Out] ref double x) { }
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
