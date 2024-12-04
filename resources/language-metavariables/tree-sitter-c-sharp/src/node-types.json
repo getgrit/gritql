@@ -5540,10 +5540,50 @@
           }
         ]
       },
+      "queries": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "from_clause",
+            "named": true
+          },
+          {
+            "type": "join_clause",
+            "named": true
+          },
+          {
+            "type": "let_clause",
+            "named": true
+          },
+          {
+            "type": "order_by_clause",
+            "named": true
+          },
+          {
+            "type": "where_clause",
+            "named": true
+          }
+        ]
+      },
       "select": {
         "multiple": true,
         "required": false,
         "types": [
+          {
+            "type": "select_clause",
+            "named": true
+          }
+        ]
+      },
+      "select_or_group": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "group_clause",
+            "named": true
+          },
           {
             "type": "select_clause",
             "named": true
@@ -5556,27 +5596,7 @@
       "required": false,
       "types": [
         {
-          "type": "from_clause",
-          "named": true
-        },
-        {
           "type": "identifier",
-          "named": true
-        },
-        {
-          "type": "join_clause",
-          "named": true
-        },
-        {
-          "type": "let_clause",
-          "named": true
-        },
-        {
-          "type": "order_by_clause",
-          "named": true
-        },
-        {
-          "type": "where_clause",
           "named": true
         }
       ]

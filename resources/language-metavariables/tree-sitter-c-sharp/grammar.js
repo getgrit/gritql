@@ -1418,7 +1418,7 @@ module.exports = grammar({
     query_body: ($) =>
       prec.right(
         sep1(
-          seq(repeat($._query_clause), $._select_or_group_clause),
+          seq(field("queries", repeat($._query_clause)), field("select_or_group", $._select_or_group_clause)),
           seq("into", $.identifier),
         ),
       ),

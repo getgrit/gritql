@@ -7742,15 +7742,23 @@
             "type": "SEQ",
             "members": [
               {
-                "type": "REPEAT",
+                "type": "FIELD",
+                "name": "queries",
                 "content": {
-                  "type": "SYMBOL",
-                  "name": "_query_clause"
+                  "type": "REPEAT",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "_query_clause"
+                  }
                 }
               },
               {
-                "type": "SYMBOL",
-                "name": "_select_or_group_clause"
+                "type": "FIELD",
+                "name": "select_or_group",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_select_or_group_clause"
+                }
               }
             ]
           },
@@ -7776,15 +7784,23 @@
                   "type": "SEQ",
                   "members": [
                     {
-                      "type": "REPEAT",
+                      "type": "FIELD",
+                      "name": "queries",
                       "content": {
-                        "type": "SYMBOL",
-                        "name": "_query_clause"
+                        "type": "REPEAT",
+                        "content": {
+                          "type": "SYMBOL",
+                          "name": "_query_clause"
+                        }
                       }
                     },
                     {
-                      "type": "SYMBOL",
-                      "name": "_select_or_group_clause"
+                      "type": "FIELD",
+                      "name": "select_or_group",
+                      "content": {
+                        "type": "SYMBOL",
+                        "name": "_select_or_group_clause"
+                      }
                     }
                   ]
                 }
