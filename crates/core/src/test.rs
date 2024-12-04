@@ -16025,6 +16025,65 @@ fn csharp_groupby_keyword() {
 }
 
 #[test]
+fn csharp_partial_linq_query() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`group $item by $item.$key into $g select $k` => `select $k`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |var result = from user in users
+                |                    group user by user.Age into g
+                |                    select new { Key = g.Key, Count = g.Count()};
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |var result = from user in users
+                |                    select new { Key = g.Key, Count = g.Count()};
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
+fn csharp_partial_linq_query_2() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`orderby $column $order` => `orderby $column`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |var orderedNames = from name in names
+                |    orderby name ascending
+                |    select name;
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |var orderedNames = from name in names
+                |    orderby name
+                |    select name;
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn csharp_simple_test() {
     run_test_expected({
         TestArgExpected {

@@ -1404,7 +1404,7 @@ module.exports = grammar({
     _pointer_indirection_expression: ($) =>
       prec.right(PREC.UNARY, seq("*", $.lvalue_expression)),
 
-    query_expression: ($) => seq(field("from", $.from_clause), field("query", $._query_body)),
+    query_expression: ($) => seq(field("from", $.from_clause), field("query", $.query_body)),
 
     from_clause: ($) =>
       seq(
@@ -1415,7 +1415,7 @@ module.exports = grammar({
         field("expression", $.expression),
       ),
 
-    _query_body: ($) =>
+    query_body: ($) =>
       prec.right(
         sep1(
           seq(repeat($._query_clause), $._select_or_group_clause),
@@ -1447,7 +1447,7 @@ module.exports = grammar({
     order_by_clause: ($) => seq("orderby", commaSep1(field("ordering", $._ordering))),
 
     _ordering: ($) =>
-      seq($.expression, optional(choice("ascending", "descending"))),
+      seq(field("expression", $.expression), optional(choice("ascending", "descending", $.grit_metavariable))),
 
     where_clause: ($) => seq("where", field("expression", $.expression)),
 
