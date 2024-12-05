@@ -664,7 +664,7 @@ module.exports = grammar({
         field("attributes", repeat($._attribute_list)),
         optional($._parameter_type_with_modifiers),
         field("name", $.identifier),
-        optional(seq("=", $.expression)),
+        optional(seq("=", field("value", $.expression))),
       ),
 
     _parameter_array: ($) =>
@@ -723,11 +723,11 @@ module.exports = grammar({
       seq(
         choice(field("name", $.identifier), $.tuple_pattern),
         optional($.bracketed_argument_list),
-        optional(seq("=", $.expression)),
+        optional(seq("=", field("value", $.expression))),
       ),
 
     using_variable_declarator: ($) =>
-      seq(field("name", $.identifier), optional(seq("=", $.expression))),
+      seq(field("name", $.identifier), optional(seq("=", field("value", $.expression)))),
 
     bracketed_argument_list: ($) =>
       seq("[", commaSep1(field("argumment", $.argument)), optional(","), "]"),
@@ -969,10 +969,10 @@ module.exports = grammar({
 
     return_statement: ($) => seq("return", field("expression", optional($.expression)), ";"),
 
-    lock_statement: ($) => seq("lock", "(", $.expression, ")", $.statement),
+    lock_statement: ($) => seq("lock", "(", field("expression", $.expression), ")", field("statement", $.statement)),
 
     yield_statement: ($) =>
-      seq("yield", choice(seq("return", $.expression), "break"), ";"),
+      seq("yield", choice(seq("return", field("expression", $.expression)), "break"), ";"),
 
     switch_statement: ($) =>
       seq(
@@ -1001,7 +1001,7 @@ module.exports = grammar({
         ),
       ),
 
-    throw_statement: ($) => seq("throw", optional($.expression), ";"),
+    throw_statement: ($) => seq("throw", optional(field("expression", $.expression)), ";"),
 
     try_statement: ($) =>
       seq(
@@ -1554,11 +1554,11 @@ module.exports = grammar({
     switch_expression_arm: ($) =>
       seq(field("pattern", $.pattern), field("when", optional($.when_clause)), $.switch_arrow, field("expression", $.expression)),
 
-    when_clause: ($) => seq("when", $.expression),
+    when_clause: ($) => seq("when", field("expression", $.expression)),
 
-    await_expression: ($) => prec.right(PREC.UNARY, seq("await", $.expression)),
+    await_expression: ($) => prec.right(PREC.UNARY, seq("await", field("expression", $.expression))),
 
-    throw_expression: ($) => seq("throw", $.expression),
+    throw_expression: ($) => seq("throw", field("exception", $.expression)),
 
     element_access_expression: ($) =>
       prec(

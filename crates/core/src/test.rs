@@ -16300,3 +16300,47 @@ fn csharp_attribute_swap() {
     })
     .unwrap();
 }
+
+#[test]
+fn csharp_throw_exception() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language csharp
+                |
+                |`throw $a;` => .
+                |
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |try
+                |{
+                |    result = SafeDivision(a, b);
+                |    Console.WriteLine("{0} divided by {1} = {2}", a, b, result);
+                |}
+                |catch (DivideByZeroException)
+                |{
+                |    Console.WriteLine("Attempted divide by zero.");
+                |    throw new Exception("Something went wrong.");
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |try
+                |{
+                |    result = SafeDivision(a, b);
+                |    Console.WriteLine("{0} divided by {1} = {2}", a, b, result);
+                |}
+                |catch (DivideByZeroException)
+                |{
+                |    Console.WriteLine("Attempted divide by zero.");
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
