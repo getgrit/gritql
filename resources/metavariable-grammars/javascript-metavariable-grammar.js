@@ -729,6 +729,7 @@ module.exports = grammar({
         repeat(choice(
           alias($.unescaped_double_jsx_string_fragment, $.string_fragment),
           $.html_character_reference,
+          $.escape_sequence,
         )),
         '"',
       ),
@@ -737,6 +738,7 @@ module.exports = grammar({
         repeat(choice(
           alias($.unescaped_single_jsx_string_fragment, $.string_fragment),
           $.html_character_reference,
+          $.escape_sequence,
         )),
         '\'',
       ),
