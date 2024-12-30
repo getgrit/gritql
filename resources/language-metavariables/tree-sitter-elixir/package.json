@@ -1,0 +1,48 @@
+{
+  "name": "tree-sitter-elixir",
+  "version": "0.3.3",
+  "description": "Elixir grammar for the tree-sitter parsing library",
+  "main": "bindings/node",
+  "types": "bindings/node",
+  "keywords": [
+    "parser",
+    "lexer",
+    "elixir",
+    "tree-sitter"
+  ],
+  "files": [
+    "grammar.js",
+    "binding.gyp",
+    "prebuilds/**",
+    "bindings/node/*",
+    "queries/*",
+    "src/**"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elixir-lang/tree-sitter-elixir.git"
+  },
+  "scripts": {
+    "build": "tree-sitter generate",
+    "test": "tree-sitter test",
+    "format": "prettier --write grammar.js && clang-format -i src/scanner.c",
+    "format-check": "prettier --check grammar.js && cat src/scanner.c | clang-format src/scanner.c | diff src/scanner.c -",
+    "install": "node-gyp-build",
+    "prestart": "tree-sitter build --wasm",
+    "start": "tree-sitter playground"
+  },
+  "dependencies": {
+    "node-addon-api": "^7.1.0",
+    "node-gyp-build": "^4.8.0"
+  },
+  "devDependencies": {
+    "clang-format": "^1.8.0",
+    "prettier": "^3.4.2",
+    "tree-sitter-cli": "^0.24.0",
+    "prebuildify": "^6.0.0"
+  },
+  "peerDependencies": {
+    "tree-sitter": "^0.21.0"
+  }
+}

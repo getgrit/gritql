@@ -41,6 +41,7 @@ static MARKDOWN_INLINE_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static GO_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static RUST_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static RUBY_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static ELIXIR_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static SOLIDITY_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static HCL_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static YAML_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
@@ -474,6 +475,7 @@ fn pattern_language_to_path(lang: &PatternLanguage) -> anyhow::Result<String> {
         PatternLanguage::Go => Ok("/tree-sitter-go.wasm"),
         PatternLanguage::Rust => Ok("/tree-sitter-rust.wasm"),
         PatternLanguage::Ruby => Ok("/tree-sitter-ruby.wasm"),
+        PatternLanguage::Elixir=> Ok("/tree-sitter-elixir.wasm"),
         PatternLanguage::Solidity => Ok("/tree-sitter-solidity.wasm"),
         PatternLanguage::Hcl => Ok("/tree-sitter-hcl.wasm"),
         PatternLanguage::Yaml => Ok("/tree-sitter-yaml.wasm"),
@@ -518,6 +520,7 @@ fn get_lang_store(language: &PatternLanguage) -> anyhow::Result<&'static OnceLoc
         PatternLanguage::Go => Ok(&GO_LANGUAGE),
         PatternLanguage::Rust => Ok(&RUST_LANGUAGE),
         PatternLanguage::Ruby => Ok(&RUBY_LANGUAGE),
+        PatternLanguage::Elixir => Ok(&ELIXIR_LANGUAGE),
         PatternLanguage::Solidity => Ok(&SOLIDITY_LANGUAGE),
         PatternLanguage::Hcl => Ok(&HCL_LANGUAGE),
         PatternLanguage::Yaml => Ok(&YAML_LANGUAGE),
