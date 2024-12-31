@@ -96,8 +96,7 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
 
     /// If only the paths are available, create a FileRegistry with empty owners
     /// This is a logic error if you do not later insert the appropriate owners before get_file_owner is called
-    pub fn new_from_paths(file_paths: impl Iterator<Item = &'a Path>) -> Self {
-        let file_paths: Vec<&Path> = file_paths.collect();
+    pub fn new_from_paths(file_paths: Vec<&'a Path>) -> Self {
         Self {
             version_count: file_paths.iter().map(|_| 0).collect(),
             owners: file_paths.iter().map(|_| Vec::new()).collect(),

@@ -37,7 +37,7 @@ use sha2::{Digest, Sha256};
 use crate::api::FileMatchResult;
 use std::{
     collections::HashMap,
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::mpsc::{self, Receiver, Sender},
 };
 use std::{fmt::Debug, str::FromStr};
@@ -268,7 +268,7 @@ impl Problem {
             .iter()
             .map(|f| PathBuf::from_str(&f.name()).unwrap())
             .collect();
-        let borrowed_names: Vec<&PathBuf> = file_names.iter().collect();
+        let borrowed_names: Vec<&Path> = file_names.iter().map(PathBuf::as_path).collect();
         let lazy_files: Vec<Box<dyn LoadableFile>> = files
             .into_iter()
             .map(|file| Box::new(file) as Box<dyn LoadableFile>)
@@ -512,8 +512,7 @@ impl Problem {
         context: &'a ExecutionContext,
         owned_files: &'a FileOwners<Tree>,
     ) -> (State<MarzanoQueryContext>, MarzanoContext<'a>) {
-        let file_registry: FileRegistry<MarzanoQueryContext> =
-            FileRegistry::new_from_paths([].into_iter());
+        let file_registry: FileRegistry<MarzanoQueryContext> = FileRegistry::new_from_paths(vec![]);
 
         let bindings = self.variables.initial_bindings();
         let state = State::new(bindings, file_registry);
@@ -539,7 +538,7 @@ impl Problem {
         &self,
         binding: FilePattern,
         files: Vec<Box<dyn LoadableFile + 'a>>,
-        file_names: Vec<&PathBuf>,
+        file_names: Vec<&Path>,
         owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
     ) -> Result<Vec<MatchResult>> {
@@ -562,8 +561,7 @@ impl Problem {
 
         let bindings = self.variables.initial_bindings();
 
-        let file_registry =
-            FileRegistry::new_from_paths(file_names.into_iter().map(PathBuf::as_path));
+        let file_registry = FileRegistry::new_from_paths(file_names);
         let mut state = State::new(bindings, file_registry);
 
         let the_new_files = state.bindings[GLOBAL_VARS_SCOPE_INDEX as usize]
