@@ -512,7 +512,8 @@ impl Problem {
         context: &'a ExecutionContext,
         owned_files: &'a FileOwners<Tree>,
     ) -> (State<MarzanoQueryContext>, MarzanoContext<'a>) {
-        let file_registry: FileRegistry<MarzanoQueryContext> = FileRegistry::new_from_paths(vec![]);
+        let file_registry: FileRegistry<MarzanoQueryContext> =
+            FileRegistry::new_from_paths([].into_iter());
 
         let bindings = self.variables.initial_bindings();
         let state = State::new(bindings, file_registry);
@@ -561,7 +562,8 @@ impl Problem {
 
         let bindings = self.variables.initial_bindings();
 
-        let file_registry = FileRegistry::new_from_paths(file_names);
+        let file_registry =
+            FileRegistry::new_from_paths(file_names.into_iter().map(PathBuf::as_path));
         let mut state = State::new(bindings, file_registry);
 
         let the_new_files = state.bindings[GLOBAL_VARS_SCOPE_INDEX as usize]
