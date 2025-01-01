@@ -22,6 +22,7 @@ pub(crate) mod patterns_list;
 pub(crate) mod patterns_test;
 pub(crate) mod plumbing;
 pub(crate) mod version;
+pub(crate) mod format;
 
 #[cfg(feature = "workflows_v2")]
 pub(crate) mod blueprints;
@@ -87,6 +88,7 @@ use indicatif_log_bridge::LogWrapper;
 use init::InitArgs;
 use install::InstallArgs;
 use list::ListArgs;
+use format::{run_format, FormatArgs};
 use log::LevelFilter;
 use lsp::LspArgs;
 use marzano_messenger::emit::ApplyDetails;
@@ -171,6 +173,8 @@ pub enum Commands {
     Plumbing(PlumbingArgs),
     /// Display version information about the CLI and agents
     Version(VersionArgs),
+    /// Format files using patterns in current directory
+    Format(FormatArgs),
     /// Generate documentation for the Grit CLI (internal use only)
     #[cfg(feature = "docgen")]
     #[clap(hide = true)]
@@ -217,6 +221,7 @@ impl fmt::Display for Commands {
             },
             Commands::Plumbing(_) => write!(f, "plumbing"),
             Commands::Version(_) => write!(f, "version"),
+            Commands::Format(_) => write!(f, "format"),
             #[cfg(feature = "docgen")]
             Commands::Docgen(_) => write!(f, "docgen"),
             #[cfg(feature = "server")]
@@ -458,6 +463,7 @@ async fn run_command(_use_tracing: bool) -> Result<()> {
                 run_plumbing(arg, multi, &mut apply_details, app.format_flags).await
             }
             Commands::Version(arg) => run_version(arg).await,
+            Commands::Format(arg) => run_format(&arg).await,
             #[cfg(feature = "docgen")]
             Commands::Docgen(arg) => run_docgen(arg).await,
             #[cfg(feature = "server")]
