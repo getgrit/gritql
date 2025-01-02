@@ -18,7 +18,7 @@ use grit_util::{
 };
 use rand::SeedableRng;
 use std::ops::Range as StdRange;
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, path::Path};
 
 #[derive(Debug, Clone)]
 pub struct EffectRange<'a, Q: QueryContext> {
@@ -37,7 +37,7 @@ pub struct FileRegistry<'a, Q: QueryContext> {
     /// The number of versions for each file
     version_count: Vec<u16>,
     /// Original file paths, for lazy loading
-    file_paths: Vec<&'a PathBuf>,
+    file_paths: Vec<&'a Path>,
     /// The actual FileOwner, which has the full file available
     owners: Vec<Vec<&'a FileOwner<Q::Tree<'a>>>>,
 }
@@ -68,7 +68,7 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
         self.owners[pointer.file as usize][pointer.version as usize]
     }
 
-    pub fn get_file_name(&self, pointer: FilePtr) -> &'a PathBuf {
+    pub fn get_file_name(&self, pointer: FilePtr) -> &'a Path {
         let file_index = pointer.file as usize;
         let version_index = pointer.version as usize;
         if let Some(owners) = self.owners.get(file_index) {
@@ -81,7 +81,7 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
             .expect("File path should exist for given file index.")
     }
 
-    pub fn get_absolute_path(&self, pointer: FilePtr) -> GritResult<&'a PathBuf> {
+    pub fn get_absolute_path(&self, pointer: FilePtr) -> GritResult<&'a Path> {
         let file_index = pointer.file as usize;
         let version_index = pointer.version as usize;
         if let Some(owners) = self.owners.get(file_index) {
@@ -95,8 +95,8 @@ impl<'a, Q: QueryContext> FileRegistry<'a, Q> {
     }
 
     /// If only the paths are available, create a FileRegistry with empty owners
-    /// This is *unsafe* if you do not later insert the appropriate owners before get_file_owner is called
-    pub fn new_from_paths(file_paths: Vec<&'a PathBuf>) -> Self {
+    /// This is a logic error if you do not later insert the appropriate owners before get_file_owner is called
+    pub fn new_from_paths(file_paths: Vec<&'a Path>) -> Self {
         Self {
             version_count: file_paths.iter().map(|_| 0).collect(),
             owners: file_paths.iter().map(|_| Vec::new()).collect(),

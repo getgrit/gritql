@@ -37,7 +37,7 @@ use sha2::{Digest, Sha256};
 use crate::api::FileMatchResult;
 use std::{
     collections::HashMap,
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::mpsc::{self, Receiver, Sender},
 };
 use std::{fmt::Debug, str::FromStr};
@@ -268,7 +268,7 @@ impl Problem {
             .iter()
             .map(|f| PathBuf::from_str(&f.name()).unwrap())
             .collect();
-        let borrowed_names: Vec<&PathBuf> = file_names.iter().collect();
+        let borrowed_names: Vec<&Path> = file_names.iter().map(PathBuf::as_path).collect();
         let lazy_files: Vec<Box<dyn LoadableFile>> = files
             .into_iter()
             .map(|file| Box::new(file) as Box<dyn LoadableFile>)
@@ -538,7 +538,7 @@ impl Problem {
         &self,
         binding: FilePattern,
         files: Vec<Box<dyn LoadableFile + 'a>>,
-        file_names: Vec<&PathBuf>,
+        file_names: Vec<&Path>,
         owned_files: &FileOwners<Tree>,
         context: &ExecutionContext,
     ) -> Result<Vec<MatchResult>> {
