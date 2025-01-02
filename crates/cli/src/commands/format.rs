@@ -16,8 +16,11 @@ pub struct FormatArgs {
 }
 
 pub async fn run_format(arg: &FormatArgs) -> Result<()> {
-    let (resolved, _) = resolve_from_cwd(&Source::Local).await?;
-    // TODO: make this run in parallel, if needed
+    let (mut resolved, _) = resolve_from_cwd(&Source::Local).await?;
+    // sort to have consistent output for tests
+    resolved.sort();
+
+    // TODO: do we need this to be runned in parallel?
     for definition in resolved {
         if let Err(error) = format_resolv(&definition, &arg).await {
             eprintln!("couldn't format '{}': {error:?}", definition.config.path)
@@ -46,17 +49,23 @@ async fn format_resolv(definition: &ResolvedGritDefinition, arg: &FormatArgs) ->
     let doc_print = doc.print()?;
     let new_body = doc_print.as_code();
 
+    // don't show any output when the file is already formatted
+    if old_body == new_body {
+        return Ok(());
+    }
+
     if arg.write {
         // TODO: i think there is already a rewriting feature that `apply` subcommand uses
         // that i think can be re used here, look into it or at least
         // use definition.config.range instead of replacing
-        let raw_data = definition.config.raw.as_ref().unwrap();
-        tokio::fs::write(
-            &definition.config.path,
-            raw_data.content.replace(old_body, new_body),
-        )
-        .await
-        .with_context(|| "could not write to file")?;
+        let content = if let Some(raw_data) = &definition.config.raw {
+            raw_data.content.clone()
+        } else {
+            old_body.clone()
+        };
+        tokio::fs::write(&definition.config.path, content.replace(old_body, new_body))
+            .await
+            .with_context(|| "could not write to file")?;
     } else {
         println!(
             "{}:\n{}",

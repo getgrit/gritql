@@ -1,0 +1,11 @@
+version: 0.0.1
+patterns:
+  - name: aspect_ratio_yaml
+    description: Yaml version of aspect_ratio.md
+    body: |
+      language css
+
+      `a { $props }` where {
+        $props <: contains `aspect-ratio: $x`
+      }
+
