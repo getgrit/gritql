@@ -5,6 +5,7 @@ use crate::{
 use anyhow::{ensure, Context, Result};
 use biome_grit_formatter::context::GritFormatOptions;
 use clap::Args;
+use colored::Colorize;
 use marzano_gritmodule::{config::ResolvedGritDefinition, parser::PatternFileExt};
 use serde::Serialize;
 
@@ -59,7 +60,7 @@ async fn format_resolv(definition: &ResolvedGritDefinition, arg: &FormatArgs) ->
     } else {
         println!(
             "{}:\n{}",
-            definition.config.path,
+            definition.config.path.bold(),
             format_diff(&file_content, &new_file_content)
         );
     }
