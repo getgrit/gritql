@@ -43,13 +43,16 @@ fn format_patterns_with_rewrite() -> Result<()> {
         "Command didn't finish successfully"
     );
 
-    // let aspect_ratio_yaml_file_content = std::fs::read_to_string(grit_dir.join(".grit/grit.yaml"))?;
+    let yaml_file_content = std::fs::read_to_string(grit_dir.join(".grit/grit.yaml"))?;
+    let test_move_import_file_content =
+        std::fs::read_to_string(grit_dir.join(".grit/others/test_move_import.md"))?;
     let aspect_ratio_md_file_content =
         std::fs::read_to_string(grit_dir.join(".grit/patterns/aspect_ratio.md"))?;
     let dependency_grit_file_content =
         std::fs::read_to_string(grit_dir.join(".grit/patterns/dependency.grit"))?;
     assert_yaml_snapshot!(vec![
-        // aspect_ratio_yaml_file_content,
+        yaml_file_content,
+        test_move_import_file_content,
         aspect_ratio_md_file_content,
         dependency_grit_file_content
     ]);

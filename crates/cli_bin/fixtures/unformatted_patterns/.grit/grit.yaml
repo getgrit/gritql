@@ -9,3 +9,4 @@ patterns:
         $props <: contains `aspect-ratio: $x`
       }
 
+  - file: ./others/test_move_import.md
