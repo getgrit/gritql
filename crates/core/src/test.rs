@@ -14821,34 +14821,6 @@ fn elixir_static() {
 }
 
 #[test]
-fn elixir_hello_world() {
-    run_test_expected({
-        TestArgExpected {
-            pattern: r#"
-                |language elixir
-                |
-                |`IO.puts ^string` => `IO.puts ^string <> " modified"`
-                |"#
-            .trim_margin()
-            .unwrap(),
-            source: r#"
-                |IO.puts "hello world"
-                |IO.puts "hello again"
-                |"#
-            .trim_margin()
-            .unwrap(),
-            expected: r#"
-                |IO.puts "hello world" <> " modified"
-                |IO.puts "hello again" <> " modified"
-                |"#
-            .trim_margin()
-            .unwrap(),
-        }
-    })
-    .unwrap();
-}
-
-#[test]
 fn ruby_hello_world() {
     run_test_expected({
         TestArgExpected {

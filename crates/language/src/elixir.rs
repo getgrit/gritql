@@ -55,15 +55,6 @@ impl NodeTypes for Elixir {
     }
 }
 
-lazy_static! {
-    static ref EXACT_VARIABLE_REGEX: Regex = Regex::new(r"^\^([A-Za-z_][A-Za-z0-9_]*)$")
-        .expect("Failed to compile EXACT_VARIABLE_REGEX");
-    static ref VARIABLE_REGEX: Regex =
-        Regex::new(r"\^(\.\.\.|[A-Za-z_][A-Za-z0-9_]*)").expect("Failed to compile VARIABLE_REGEX");
-    static ref BRACKET_VAR_REGEX: Regex =
-        Regex::new(r"\^\[([A-Za-z_][A-Za-z0-9_]*)\]").expect("Failed to compile BRACKET_VAR_REGEX");
-}
-
 impl Language for Elixir {
     use_marzano_delegate!();
 
@@ -83,22 +74,6 @@ impl Language for Elixir {
 
     fn comment_prefix(&self) -> &'static str {
         "#"
-    }
-
-    fn metavariable_prefix(&self) -> &'static str {
-        "^"
-    }
-
-    fn metavariable_regex(&self) -> &'static Regex {
-        &VARIABLE_REGEX
-    }
-
-    fn metavariable_bracket_regex(&self) -> &'static Regex {
-        &BRACKET_VAR_REGEX
-    }
-
-    fn exact_variable_regex(&self) -> &'static Regex {
-        &EXACT_VARIABLE_REGEX
     }
 
     fn make_single_line_comment(&self, text: &str) -> String {
