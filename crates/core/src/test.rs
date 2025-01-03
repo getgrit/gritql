@@ -14791,6 +14791,36 @@ fn yaml_indents_join() {
 }
 
 #[test]
+fn elixir_static() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language elixir
+                |
+                |call(target=$target) => `MODIFIED` where {
+                | $target <: "IO.puts"
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |IO.puts "hello world"
+                |Enum.map([1, 2, 3], fn x -> x * 2 end)
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |MODIFIED
+                |Enum.map([1, 2, 3], fn x -> x * 2 end)
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn elixir_hello_world() {
     run_test_expected({
         TestArgExpected {

@@ -5,7 +5,8 @@ use marzano_util::node_with_source::NodeWithSource;
 use regex::Regex;
 use std::sync::OnceLock;
 
-static NODE_TYPES_STRING: &str = include_str!("../../../resources/node-types/elixir-node-types.json");
+static NODE_TYPES_STRING: &str =
+    include_str!("../../../resources/node-types/elixir-node-types.json");
 
 static NODE_TYPES: OnceLock<Vec<Vec<Field>>> = OnceLock::new();
 static LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
@@ -16,6 +17,7 @@ fn language() -> TSLanguage {
         "tree-sitter parser must be initialized before use when [builtin-parser] is off."
     )
 }
+
 #[cfg(feature = "builtin-parser")]
 fn language() -> TSLanguage {
     tree_sitter_elixir::language().into()
