@@ -22,13 +22,17 @@ pub async fn run_format(arg: &FormatArgs) -> Result<()> {
     // sort to have consistent output for tests
     resolved.sort();
 
-    let file_path_to_resolved: HashMap<String, Vec<ResolvedGritDefinition>> = resolved
+    // TODO: maybe rewrite this to use fewer allocations
+    let mut file_path_to_resolved: Vec<(String, Vec<ResolvedGritDefinition>)> = resolved
         .into_iter()
         .fold(HashMap::new(), |mut acc, resolved| {
             let file_path = resolved.config.path.clone();
             acc.entry(file_path).or_insert_with(Vec::new).push(resolved);
             acc
-        });
+        })
+        .into_iter()
+        .collect();
+    file_path_to_resolved.sort_by_key(|(file_path, _)| file_path.clone());
 
     // TODO: this can be easilly runned in parallel, just the test that reads stdout will get failed
     for (file_path, definitions) in file_path_to_resolved {
