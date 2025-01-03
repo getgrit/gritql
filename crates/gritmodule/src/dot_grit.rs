@@ -1,10 +1,10 @@
 use crate::{
     config::{
         DefinitionKind, GritDefinitionConfig, GritPatternMetadata, ModuleGritPattern,
-        PatternVisibility,
+        PatternVisibility, RawGritDefinition,
     },
     fetcher::ModuleRepo,
-    parser::extract_relative_file_path,
+    parser::{extract_relative_file_path, PatternFileExt},
 };
 use anyhow::{anyhow, bail, Result};
 use grit_util::{Ast, AstNode, Position, Range};
@@ -61,15 +61,15 @@ pub fn get_patterns_from_grit(
             };
             let range = Range::new(
                 Position::new(
-                    name_node.node.start_position().row() + 1,
-                    name_node.node.start_position().column() + 1,
+                    pattern_definition.node.start_position().row() + 1,
+                    pattern_definition.node.start_position().column() + 1,
                 ),
                 Position::new(
-                    name_node.node.end_position().row() + 1,
-                    name_node.node.end_position().column() + 1,
+                    pattern_definition.node.end_position().row() + 1,
+                    pattern_definition.node.end_position().column() + 1,
                 ),
-                name_node.node.start_byte(),
-                name_node.node.end_byte(),
+                pattern_definition.node.start_byte(),
+                pattern_definition.node.end_byte(),
             );
 
             let module_grit_pattern = ModuleGritPattern {
@@ -87,6 +87,10 @@ pub fn get_patterns_from_grit(
                         },
                         ..Default::default()
                     },
+                    raw: Some(RawGritDefinition {
+                        format: PatternFileExt::Grit,
+                        content: file.content.clone(),
+                    }),
                     ..Default::default()
                 },
                 visibility: if is_public {
