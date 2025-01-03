@@ -1,7 +1,7 @@
 use crate::updater::{SupportedApp, Updater};
 use anyhow::Result;
 use console::style;
-use log::{debug, info};
+use log::debug;
 use marzano_auth::env::{get_grit_api_url, ENV_VAR_GRIT_API_URL, ENV_VAR_GRIT_AUTH_TOKEN};
 use marzano_auth::info::AuthInfo;
 use marzano_gritmodule::config::REPO_CONFIG_DIR_NAME;
