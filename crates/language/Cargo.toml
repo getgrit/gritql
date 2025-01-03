@@ -29,6 +29,7 @@ tree-sitter-python = { path = "../../resources/language-metavariables/tree-sitte
 tree-sitter-md = { path = "../../resources/language-metavariables/tree-sitter-markdown", optional = true }
 tree-sitter-go = { path = "../../resources/language-metavariables/tree-sitter-go", optional = true }
 tree-sitter-rust = { path = "../../resources/language-metavariables/tree-sitter-rust", optional = true }
+tree-sitter-elixir = { path = "../../resources/language-metavariables/tree-sitter-elixir", optional = true }
 tree-sitter-ruby = { path = "../../resources/language-metavariables/tree-sitter-ruby", optional = true }
 tree-sitter-sql = { path = "../../resources/language-metavariables/tree-sitter-sql", optional = true }
 tree-sitter-vue = { path = "../../resources/language-metavariables/tree-sitter-vue", optional = true }
@@ -70,6 +71,7 @@ builtin-parser = [
     "tree-sitter-go",
     "tree-sitter-rust",
     "tree-sitter-ruby",
+    "tree-sitter-elixir",
     "tree-sitter-sql",
     "tree-sitter-vue",
     "tree-sitter-toml",

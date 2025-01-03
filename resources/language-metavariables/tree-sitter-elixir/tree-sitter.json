@@ -1,0 +1,40 @@
+{
+  "grammars": [
+    {
+      "name": "elixir",
+      "camelcase": "Elixir",
+      "scope": "source.elixir",
+      "path": ".",
+      "file-types": ["ex", "exs"],
+      "highlights": "queries/highlights.scm",
+      "tags": "queries/tags.scm",
+      "injection-regex": "^(ex|elixir)$"
+    }
+  ],
+  "metadata": {
+    "version": "0.3.3",
+    "license": "Apache-2.0",
+    "description": "Elixir grammar for the tree-sitter parsing library",
+    "authors": [
+      {
+        "name": "Jonatan Kłosko",
+        "email": "jonatanklosko@gmail.com"
+      },
+      {
+        "name": "Michael Davis",
+        "email": "mcarsondavis@gmail.com"
+      }
+    ],
+    "links": {
+      "repository": "https://github.com/elixir-lang/tree-sitter-elixir"
+    }
+  },
+  "bindings": {
+    "c": true,
+    "go": true,
+    "node": true,
+    "python": true,
+    "rust": true,
+    "swift": true
+  }
+}

@@ -2341,6 +2341,7 @@ dependencies = [
  "serde_json",
  "tree-sitter-c-sharp",
  "tree-sitter-css",
+ "tree-sitter-elixir",
  "tree-sitter-facade-sg",
  "tree-sitter-go",
  "tree-sitter-gritql",
@@ -4339,6 +4340,15 @@ version = "0.20.0"
 dependencies = [
  "cc",
  "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-elixir"
+version = "0.3.3"
+dependencies = [
+ "cc",
+ "tree-sitter",
+ "tree-sitter-language",
 ]
 
 [[package]]

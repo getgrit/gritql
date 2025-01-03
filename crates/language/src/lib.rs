@@ -77,6 +77,7 @@ mod php_like;
 pub mod php_only;
 pub mod python;
 pub mod ruby;
+pub mod elixir;
 pub mod rust;
 pub mod solidity;
 pub mod sourcemap;

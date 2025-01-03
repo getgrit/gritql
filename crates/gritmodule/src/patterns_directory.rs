@@ -20,6 +20,7 @@ pub struct PatternsDirectory {
     go: BTreeMap<String, String>,
     rust: BTreeMap<String, String>,
     ruby: BTreeMap<String, String>,
+    elixir: BTreeMap<String, String>,
     solidity: BTreeMap<String, String>,
     hcl: BTreeMap<String, String>,
     yaml: BTreeMap<String, String>,
@@ -76,6 +77,7 @@ impl PatternsDirectory {
             go: BTreeMap::new(),
             rust: BTreeMap::new(),
             ruby: BTreeMap::new(),
+            elixir: BTreeMap::new(),
             solidity: BTreeMap::new(),
             hcl: BTreeMap::new(),
             yaml: BTreeMap::new(),
@@ -107,6 +109,7 @@ impl PatternsDirectory {
             PatternLanguage::Go => &mut self.go,
             PatternLanguage::Rust => &mut self.rust,
             PatternLanguage::Ruby => &mut self.ruby,
+            PatternLanguage::Elixir => &mut self.elixir,
             PatternLanguage::Solidity => &mut self.solidity,
             PatternLanguage::Hcl => &mut self.hcl,
             PatternLanguage::Yaml => &mut self.yaml,
@@ -135,6 +138,7 @@ impl PatternsDirectory {
             PatternLanguage::Go => &self.go,
             PatternLanguage::Rust => &self.rust,
             PatternLanguage::Ruby => &self.ruby,
+            PatternLanguage::Elixir => &self.elixir,
             PatternLanguage::Solidity => &self.solidity,
             PatternLanguage::Hcl => &self.hcl,
             PatternLanguage::Yaml => &self.yaml,
@@ -256,6 +260,8 @@ impl PatternsDirectory {
         self.rust = other.rust;
         other.ruby.extend(mem::take(&mut self.ruby));
         self.ruby = other.ruby;
+        other.elixir.extend(mem::take(&mut self.elixir));
+        self.elixir = other.elixir;
         other.solidity.extend(mem::take(&mut self.solidity));
         self.solidity = other.solidity;
         other.hcl.extend(mem::take(&mut self.hcl));
