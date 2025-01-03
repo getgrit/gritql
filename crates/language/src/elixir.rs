@@ -1,8 +1,6 @@
 use crate::language::{fields_for_nodes, Field, MarzanoLanguage, NodeTypes, SortId, TSLanguage};
 use grit_util::Language;
-use lazy_static::lazy_static;
 use marzano_util::node_with_source::NodeWithSource;
-use regex::Regex;
 use std::sync::OnceLock;
 
 static NODE_TYPES_STRING: &str =
