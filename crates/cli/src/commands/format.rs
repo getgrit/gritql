@@ -9,6 +9,21 @@ use colored::Colorize;
 use marzano_gritmodule::{config::ResolvedGritDefinition, parser::PatternFileExt};
 use serde::Serialize;
 
+/// Specifies amount of indent that consumed to get to grit body in yaml files
+// Yaml files that contains grit body are like this:
+// ```yaml
+// patterns:
+//   - name: some_name
+//     body: |
+//       language css
+//
+//       `a { $props }` where {
+//         $props <: contains `aspect-ratio: $x`
+//       }
+// ```
+// the grit body is prefixed by some amount of spaces due to yaml format
+const YAML_GRIT_BODY_INDENT_SIZE: usize = 6;
+
 #[derive(Args, Debug, Serialize)]
 pub struct FormatArgs {
     /// Write formats to file instead of just showing them
@@ -88,11 +103,12 @@ fn format_grit_code(source: &str) -> Result<String> {
 }
 
 fn grit_code_with_yaml_indent(grit_code: &str) -> String {
+    let indent = " ".repeat(YAML_GRIT_BODY_INDENT_SIZE);
     grit_code
         .lines()
         .map(|line| {
             if !line.is_empty() {
-                format!("      {line}")
+                format!("{indent}{line}")
             } else {
                 line.to_owned()
             }
