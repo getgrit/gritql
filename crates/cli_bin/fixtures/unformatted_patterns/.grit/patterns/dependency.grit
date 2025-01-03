@@ -17,3 +17,7 @@ pattern upgrade_dependency($target_dep, $target_version, $dependency_key) {
         }
     }
 }
+
+pattern console_method_to_info($method) {
+  `console.$method($message)` => `console.info($message)`
+}

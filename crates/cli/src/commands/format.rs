@@ -10,21 +10,6 @@ use marzano_gritmodule::{config::ResolvedGritDefinition, parser::PatternFileExt}
 use serde::Serialize;
 use std::collections::HashMap;
 
-/// Specifies amount of indent that consumed to get to grit body in yaml files
-// Yaml files that contains grit body are like this:
-// ```yaml
-// patterns:
-//   - name: some_name
-//     body: |
-//       language css
-//
-//       `a { $props }` where {
-//         $props <: contains `aspect-ratio: $x`
-//       }
-// ```
-// the grit body is prefixed by some amount of spaces due to yaml format
-const YAML_GRIT_BODY_INDENT_SIZE: usize = 6;
-
 #[derive(Args, Debug, Serialize, Clone)]
 pub struct FormatArgs {
     /// Write formats to file instead of just showing them
@@ -64,15 +49,20 @@ async fn format_file_definitations(
     definitions: Vec<ResolvedGritDefinition>,
     arg: FormatArgs,
 ) -> Result<()> {
-    let hunks = definitions
-        .iter()
-        .map(|definition| definitation_to_hunk(definition))
-        .collect::<Result<Vec<HunkChange>>>()?;
-
     let first_definitation = definitions.first().unwrap();
     let first_definitation_raw_config = first_definitation.config.raw.as_ref().unwrap();
     let old_file_content = &first_definitation_raw_config.content;
-    let new_file_content = apply_hunk_changes(&old_file_content, hunks);
+
+    let new_file_content = match first_definitation_raw_config.format {
+        PatternFileExt::Yaml => format_yaml_file(old_file_content)?,
+        PatternFileExt::Md | PatternFileExt::Grit => {
+            let hunks = definitions
+                .iter()
+                .map(|definition| format_definitions_as_hunk_changes(definition))
+                .collect::<Result<Vec<HunkChange>>>()?;
+            apply_hunk_changes(&old_file_content, hunks)
+        }
+    };
 
     if &new_file_content == old_file_content {
         return Ok(());
@@ -93,7 +83,29 @@ async fn format_file_definitations(
     Ok(())
 }
 
-fn definitation_to_hunk(definition: &ResolvedGritDefinition) -> Result<HunkChange> {
+fn format_yaml_file(file_content: &str) -> Result<String> {
+    // deserializing manually and not using `SerializedGritConfig` because
+    // i don't want to remove any fields that `SerializedGritConfig` don't have such as 'version'
+    let mut config: serde_yaml::Value = serde_yaml::from_str(file_content)?;
+    let patterns = config
+        .get_mut("patterns")
+        .ok_or_else(|| anyhow!("couldn't parse yaml file"))?
+        .as_sequence_mut()
+        .ok_or_else(|| anyhow!("couldn't parse yaml file"))?;
+    for pattern in patterns {
+        let Some(body) = pattern.get_mut("body") else {
+            continue;
+        };
+        if let serde_yaml::Value::String(body_str) = body {
+            *body_str = format_grit_code(&body_str)?;
+            // extra new line at end of grit body looks more readable
+            body_str.push('\n');
+        }
+    }
+    Ok(serde_yaml::to_string(&config)?)
+}
+
+fn format_definitions_as_hunk_changes(definition: &ResolvedGritDefinition) -> Result<HunkChange> {
     let unformatted_grit_code = &definition.body;
     let mut formatted_grit_code = format_grit_code(unformatted_grit_code)?;
 
@@ -110,13 +122,12 @@ fn definitation_to_hunk(definition: &ResolvedGritDefinition) -> Result<HunkChang
 
     if raw_data.format == PatternFileExt::Grit {
         // TODO: fix langauge line not getting formatted
-        // this needed because we add additional "language {}\n\n" to body when parsing .grit file
+        // this needed because down the line the grit body gets prefixed with "language {}\n\n"
         if formatted_grit_code.starts_with("language ") {
             let formatted_lines = formatted_grit_code.lines();
             formatted_grit_code = formatted_lines.skip(1).collect::<Vec<_>>().join("\n");
         }
     }
-    println!("range: {:?}", body_range);
 
     Ok(HunkChange {
         starting_byte: body_range.start_byte as usize,
@@ -144,21 +155,6 @@ fn format_grit_code(source: &str) -> Result<String> {
         .with_context(|| "biome couldn't format")?;
     let doc_print = doc.print()?;
     Ok(doc_print.into_code())
-}
-
-fn grit_code_with_yaml_indent(grit_code: &str) -> String {
-    let indent = " ".repeat(YAML_GRIT_BODY_INDENT_SIZE);
-    grit_code
-        .lines()
-        .map(|line| {
-            if !line.is_empty() {
-                format!("{indent}{line}")
-            } else {
-                line.to_owned()
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
 }
 
 /// Represent a hunk of text that needs to be changed
