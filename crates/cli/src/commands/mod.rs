@@ -173,7 +173,7 @@ pub enum Commands {
     Plumbing(PlumbingArgs),
     /// Display version information about the CLI and agents
     Version(VersionArgs),
-    /// Format files using patterns in current directory
+    /// Format grit files under current directory
     Format(FormatArgs),
     /// Generate documentation for the Grit CLI (internal use only)
     #[cfg(feature = "docgen")]
