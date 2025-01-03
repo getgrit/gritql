@@ -22,10 +22,7 @@ pub async fn run_format(arg: &FormatArgs) -> Result<()> {
     // sort to have consistent output for tests
     resolved.sort();
 
-    // we process each file resolves separetly because we want
-    // to write to file once and also fix the bugs that may happen when
-    // overwriting same file multiple times for different patterns
-    let file_path_to_resolves: HashMap<String, Vec<ResolvedGritDefinition>> = resolved
+    let file_path_to_resolved: HashMap<String, Vec<ResolvedGritDefinition>> = resolved
         .into_iter()
         .fold(HashMap::new(), |mut acc, resolved| {
             let file_path = resolved.config.path.clone();
@@ -33,8 +30,8 @@ pub async fn run_format(arg: &FormatArgs) -> Result<()> {
             acc
         });
 
-    // TODO: do we need this to be runned in parallel?
-    for (file_path, definitions) in file_path_to_resolves {
+    // TODO: this can be easilly runned in parallel, just the test that reads stdout will get failed
+    for (file_path, definitions) in file_path_to_resolved {
         if let Err(error) =
             format_file_definitations(file_path.clone(), definitions, arg.clone()).await
         {
@@ -83,6 +80,7 @@ async fn format_file_definitations(
     Ok(())
 }
 
+// TODO: ask if it's ok to format whole yaml file
 fn format_yaml_file(file_content: &str) -> Result<String> {
     // deserializing manually and not using `SerializedGritConfig` because
     // i don't want to remove any fields that `SerializedGritConfig` don't have such as 'version'
