@@ -22,8 +22,6 @@ pub async fn run_format(arg: &FormatArgs) -> Result<()> {
     resolved.sort();
 
     let file_path_to_resolved = group_resolved_patterns_by_group(resolved);
-
-    // TODO: this can be easilly runned in parallel, just the test that reads stdout will get failed
     for (file_path, resovled_patterns) in file_path_to_resolved {
         if let Err(error) =
             format_file_resovled_patterns(file_path.clone(), resovled_patterns, arg.clone()).await
@@ -93,7 +91,6 @@ async fn format_file_resovled_patterns(
     Ok(())
 }
 
-// TODO: ask if it's ok to format whole yaml file
 fn format_yaml_file(file_content: &str) -> Result<String> {
     // deserializing manually and not using `SerializedGritConfig` because
     // i don't want to remove any fields that `SerializedGritConfig` don't have such as 'version'

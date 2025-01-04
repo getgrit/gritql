@@ -20,7 +20,6 @@ anyhow = { version = "1.0.70" }
 clap = { version = "4.1.13", features = ["derive"] }
 indicatif = { version = "0.17.5" }
 # Do *NOT* upgrade beyond 1.0.171 until https://github.com/serde-rs/serde/issues/2538 is fixed
-# TODO: ask if above note is still important
 serde = { version = "1.0.217", features = ["derive"] }
 serde_json = { version = "1.0.96" }
 serde_yaml = { version = "0.9.25" }
