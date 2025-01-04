@@ -42,8 +42,8 @@ pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
                 let mut definitation =
                     GritDefinitionConfig::from_serialized(p, source_path.to_string());
                 definitation.raw = Some(RawGritDefinition {
+                    format: PatternFileExt::Yaml,
                     content: source.to_owned(),
-                    format: crate::parser::PatternFileExt::Yaml,
                 });
                 patterns.push(definitation);
             }
