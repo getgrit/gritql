@@ -61,15 +61,15 @@ pub fn get_patterns_from_grit(
             };
             let range = Range::new(
                 Position::new(
-                    pattern_definition.node.start_position().row() + 1,
-                    pattern_definition.node.start_position().column() + 1,
+                    name_node.node.start_position().row() + 1,
+                    name_node.node.start_position().column() + 1,
                 ),
                 Position::new(
-                    pattern_definition.node.end_position().row() + 1,
-                    pattern_definition.node.end_position().column() + 1,
+                    name_node.node.end_position().row() + 1,
+                    name_node.node.end_position().column() + 1,
                 ),
-                pattern_definition.node.start_byte(),
-                pattern_definition.node.end_byte(),
+                name_node.node.start_byte(),
+                name_node.node.end_byte(),
             );
 
             let module_grit_pattern = ModuleGritPattern {
