@@ -56,12 +56,10 @@ async fn format_file_resovled_patterns(
     patterns: Vec<ResolvedGritDefinition>,
     arg: FormatArgs,
 ) -> Result<()> {
+    // patterns has atleast one resolve so unwrap is safe
     let first_pattern = patterns.first().unwrap();
-    let first_pattern_raw_data = first_pattern
-        .config
-        .raw
-        .as_ref()
-        .ok_or_else(|| anyhow!("pattern does not have config raw data"))?;
+    // currently all patterns has raw data so unwrap is safe
+    let first_pattern_raw_data = first_pattern.config.raw.as_ref().unwrap();
     let old_file_content = &first_pattern_raw_data.content;
 
     let new_file_content = match first_pattern_raw_data.format {
