@@ -21,24 +21,12 @@ pub async fn run_format(arg: &FormatArgs) -> Result<()> {
     // sort to have consistent output for tests
     resolved.sort();
 
-    let file_path_to_resolved: Vec<(String, Vec<ResolvedGritDefinition>)> =
-        resolved.into_iter().fold(Vec::new(), |mut acc, resolved| {
-            let file_path = &resolved.config.path;
-            if let Some((_, resolves)) = acc
-                .iter_mut()
-                .find(|(resolv_file_path, _)| resolv_file_path == file_path)
-            {
-                resolves.push(resolved);
-            } else {
-                acc.push((file_path.clone(), vec![resolved]));
-            }
-            acc
-        });
+    let file_path_to_resolved = group_resolved_patterns_by_group(resolved);
 
     // TODO: this can be easilly runned in parallel, just the test that reads stdout will get failed
-    for (file_path, definitions) in file_path_to_resolved {
+    for (file_path, resovled_patterns) in file_path_to_resolved {
         if let Err(error) =
-            format_file_definitations(file_path.clone(), definitions, arg.clone()).await
+            format_file_resovled_patterns(file_path.clone(), resovled_patterns, arg.clone()).await
         {
             eprintln!("couldn't format '{}': {error:?}", file_path)
         }
@@ -46,21 +34,42 @@ pub async fn run_format(arg: &FormatArgs) -> Result<()> {
     Ok(())
 }
 
-async fn format_file_definitations(
+fn group_resolved_patterns_by_group(
+    resolved: Vec<ResolvedGritDefinition>,
+) -> Vec<(String, Vec<ResolvedGritDefinition>)> {
+    resolved.into_iter().fold(Vec::new(), |mut acc, resolved| {
+        let file_path = &resolved.config.path;
+        if let Some((_, resolved_patterns)) = acc
+            .iter_mut()
+            .find(|(resolv_file_path, _)| resolv_file_path == file_path)
+        {
+            resolved_patterns.push(resolved);
+        } else {
+            acc.push((file_path.clone(), vec![resolved]));
+        }
+        acc
+    })
+}
+
+async fn format_file_resovled_patterns(
     file_path: String,
-    definitions: Vec<ResolvedGritDefinition>,
+    patterns: Vec<ResolvedGritDefinition>,
     arg: FormatArgs,
 ) -> Result<()> {
-    let first_definitation = definitions.first().unwrap();
-    let first_definitation_raw_config = first_definitation.config.raw.as_ref().unwrap();
-    let old_file_content = &first_definitation_raw_config.content;
+    let first_pattern = patterns.first().unwrap();
+    let first_pattern_raw_data = first_pattern
+        .config
+        .raw
+        .as_ref()
+        .ok_or_else(|| anyhow!("pattern does not have config raw data"))?;
+    let old_file_content = &first_pattern_raw_data.content;
 
-    let new_file_content = match first_definitation_raw_config.format {
+    let new_file_content = match first_pattern_raw_data.format {
         PatternFileExt::Yaml => format_yaml_file(old_file_content)?,
         PatternFileExt::Md | PatternFileExt::Grit => {
-            let hunks = definitions
+            let hunks = patterns
                 .iter()
-                .map(|definition| format_definitions_as_hunk_changes(definition))
+                .map(format_pattern_as_hunk_changes)
                 .collect::<Result<Vec<HunkChange>>>()?;
             apply_hunk_changes(&old_file_content, hunks)
         }
@@ -78,7 +87,7 @@ async fn format_file_definitations(
         println!(
             "{}:\n{}",
             file_path.bold(),
-            format_diff(&old_file_content, &new_file_content)
+            format_diff(old_file_content, &new_file_content)
         );
     }
 
@@ -89,12 +98,13 @@ async fn format_file_definitations(
 fn format_yaml_file(file_content: &str) -> Result<String> {
     // deserializing manually and not using `SerializedGritConfig` because
     // i don't want to remove any fields that `SerializedGritConfig` don't have such as 'version'
-    let mut config: serde_yaml::Value = serde_yaml::from_str(file_content)?;
+    let mut config: serde_yaml::Value =
+        serde_yaml::from_str(file_content).with_context(|| "couldn't parse yaml file")?;
     let patterns = config
         .get_mut("patterns")
-        .ok_or_else(|| anyhow!("couldn't parse yaml file"))?
+        .ok_or_else(|| anyhow!("couldn't find patterns in yaml file"))?
         .as_sequence_mut()
-        .ok_or_else(|| anyhow!("couldn't parse yaml file"))?;
+        .ok_or_else(|| anyhow!("patterns in yaml file are not sequence"))?;
     for pattern in patterns {
         let Some(body) = pattern.get_mut("body") else {
             continue;
@@ -108,20 +118,20 @@ fn format_yaml_file(file_content: &str) -> Result<String> {
     Ok(serde_yaml::to_string(&config)?)
 }
 
-fn format_definitions_as_hunk_changes(definition: &ResolvedGritDefinition) -> Result<HunkChange> {
-    let unformatted_grit_code = &definition.body;
+fn format_pattern_as_hunk_changes(pattern: &ResolvedGritDefinition) -> Result<HunkChange> {
+    let unformatted_grit_code = &pattern.body;
     let mut formatted_grit_code = format_grit_code(unformatted_grit_code)?;
 
-    let raw_data = definition
+    let raw_data = pattern
         .config
         .raw
         .as_ref()
-        .ok_or_else(|| anyhow!("definition doesn't have raw_data"))?;
-    let body_range = definition
+        .ok_or_else(|| anyhow!("pattern doesn't have raw_data"))?;
+    let body_range = pattern
         .config
         .range
         .as_ref()
-        .ok_or_else(|| anyhow!("definition doesn't have config range"))?;
+        .ok_or_else(|| anyhow!("pattern doesn't have config range"))?;
 
     if raw_data.format == PatternFileExt::Grit {
         // TODO: fix langauge line not getting formatted
@@ -156,8 +166,7 @@ fn format_grit_code(source: &str) -> Result<String> {
     let options = GritFormatOptions::default();
     let doc = biome_grit_formatter::format_node(options, &parsed.syntax())
         .with_context(|| "biome couldn't format")?;
-    let doc_print = doc.print()?;
-    Ok(doc_print.into_code())
+    Ok(doc.print()?.into_code())
 }
 
 /// Represent a hunk of text that needs to be changed
