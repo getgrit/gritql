@@ -8,7 +8,6 @@ use clap::Args;
 use colored::Colorize;
 use marzano_gritmodule::{config::ResolvedGritDefinition, parser::PatternFileExt};
 use serde::Serialize;
-use std::collections::HashMap;
 
 #[derive(Args, Debug, Serialize, Clone)]
 pub struct FormatArgs {
@@ -22,17 +21,19 @@ pub async fn run_format(arg: &FormatArgs) -> Result<()> {
     // sort to have consistent output for tests
     resolved.sort();
 
-    // TODO: maybe rewrite this to use fewer allocations
-    let mut file_path_to_resolved: Vec<(String, Vec<ResolvedGritDefinition>)> = resolved
-        .into_iter()
-        .fold(HashMap::new(), |mut acc, resolved| {
-            let file_path = resolved.config.path.clone();
-            acc.entry(file_path).or_insert_with(Vec::new).push(resolved);
+    let file_path_to_resolved: Vec<(String, Vec<ResolvedGritDefinition>)> =
+        resolved.into_iter().fold(Vec::new(), |mut acc, resolved| {
+            let file_path = &resolved.config.path;
+            if let Some((_, resolves)) = acc
+                .iter_mut()
+                .find(|(resolv_file_path, _)| resolv_file_path == file_path)
+            {
+                resolves.push(resolved);
+            } else {
+                acc.push((file_path.clone(), vec![resolved]));
+            }
             acc
-        })
-        .into_iter()
-        .collect();
-    file_path_to_resolved.sort_by_key(|(file_path, _)| file_path.clone());
+        });
 
     // TODO: this can be easilly runned in parallel, just the test that reads stdout will get failed
     for (file_path, definitions) in file_path_to_resolved {
