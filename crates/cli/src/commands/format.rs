@@ -66,7 +66,8 @@ async fn format_file_resovled_patterns(
 
     let new_file_content = match first_pattern_raw_data.format {
         PatternFileExt::Yaml => format_yaml_file(old_file_content)?,
-        PatternFileExt::Md | PatternFileExt::Grit => {
+        PatternFileExt::Grit => format_grit_code(old_file_content)?,
+        PatternFileExt::Md => {
             let hunks = patterns
                 .iter()
                 .map(format_pattern_as_hunk_changes)
@@ -119,29 +120,11 @@ fn format_yaml_file(file_content: &str) -> Result<String> {
 }
 
 fn format_pattern_as_hunk_changes(pattern: &ResolvedGritDefinition) -> Result<HunkChange> {
-    let unformatted_grit_code = &pattern.body;
-    let mut formatted_grit_code = format_grit_code(unformatted_grit_code)?;
-
-    let raw_data = pattern
-        .config
-        .raw
-        .as_ref()
-        .ok_or_else(|| anyhow!("pattern doesn't have raw_data"))?;
+    let formatted_grit_code = format_grit_code(&pattern.body)?;
     let body_range = pattern
         .config
         .range
-        .as_ref()
         .ok_or_else(|| anyhow!("pattern doesn't have config range"))?;
-
-    if raw_data.format == PatternFileExt::Grit {
-        // TODO: fix langauge line not getting formatted
-        // this needed because down the line the grit body gets prefixed with "language {}\n\n"
-        if formatted_grit_code.starts_with("language ") {
-            let formatted_lines = formatted_grit_code.lines();
-            formatted_grit_code = formatted_lines.skip(1).collect::<Vec<_>>().join("\n");
-        }
-    }
-
     Ok(HunkChange {
         starting_byte: body_range.start_byte as usize,
         ending_byte: body_range.end_byte as usize,
