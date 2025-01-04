@@ -71,7 +71,7 @@ async fn format_file_resovled_patterns(
                 .iter()
                 .map(format_pattern_as_hunk_changes)
                 .collect::<Result<Vec<HunkChange>>>()?;
-            apply_hunk_changes(&old_file_content, hunks)
+            apply_hunk_changes(old_file_content, hunks)
         }
     };
 
@@ -110,7 +110,7 @@ fn format_yaml_file(file_content: &str) -> Result<String> {
             continue;
         };
         if let serde_yaml::Value::String(body_str) = body {
-            *body_str = format_grit_code(&body_str)?;
+            *body_str = format_grit_code(body_str)?;
             // extra new line at end of grit body looks more readable
             body_str.push('\n');
         }
