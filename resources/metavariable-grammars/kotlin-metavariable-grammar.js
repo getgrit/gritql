@@ -370,8 +370,8 @@ module.exports = grammar({
 
     variable_declaration: $ => prec.left(PREC.VAR_DECL, seq(
       // repeat($.annotation), TODO
-      $.simple_identifier,
-      optional(seq(":", $._type))
+      field("simple_identifier", $.simple_identifier),
+      optional(seq(":", field("type", $._type))),
     )),
 
     property_declaration: $ => prec.right(seq(
@@ -379,10 +379,10 @@ module.exports = grammar({
       $.binding_pattern_kind,
       optional($.type_parameters),
       optional(seq($._receiver_type, optional('.'))),
-      choice($.variable_declaration, $.multi_variable_declaration),
+      field("declaration", choice($.variable_declaration, $.multi_variable_declaration)),
       optional($.type_constraints),
       optional(choice(
-        seq("=", $._expression),
+        seq("=", field("expression", $._expression)),
         $.property_delegate
       )),
       optional(';'),
@@ -621,11 +621,11 @@ module.exports = grammar({
     // Expressions
     // ==========
 
-    _expression: $ => choice(
+    _expression: $ => field("expression", choice(
       $._unary_expression,
       $._binary_expression,
       $._primary_expression,
-    ),
+    )),
 
     // Unary expressions
 
@@ -641,7 +641,7 @@ module.exports = grammar({
 
     postfix_expression: $ => prec.left(PREC.POSTFIX, seq($._expression, $._postfix_unary_operator)),
 
-    call_expression: $ => prec.left(PREC.POSTFIX, seq($._expression, $.call_suffix)),
+    call_expression: $ => prec.left(PREC.POSTFIX, seq(field("expression", $._expression), $.call_suffix)),
 
     indexing_expression: $ => prec.left(PREC.POSTFIX, seq($._expression, $.indexing_suffix)),
 
@@ -849,7 +849,7 @@ module.exports = grammar({
         seq(
           optional(field('consequence', $.control_structure_body)),
           optional(";"),
-          "else", 
+          "else",
           choice(field('alternative', $.control_structure_body), ";")
         ),
         ";"
