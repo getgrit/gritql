@@ -3510,6 +3510,36 @@ fn kotlin_includes_any() {
 }
 
 #[test]
+fn kotlin_simple_function() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language kotlin
+                |
+                |`fun $name($var: $type) $body` => `fun modified($var: $type) $body`
+                |"#
+            .trim_margin()
+            .unwrap(),
+            source: r#"
+                |fun hello(name: String) {
+                |    println("Hello, $name!")
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            expected: r#"
+                |fun modified(name: String) {
+                |    println("Hello, $name!")
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
+#[test]
 fn multi_args_snippet() {
     run_test_match({
         TestArg {
