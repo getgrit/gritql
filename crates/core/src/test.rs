@@ -3174,7 +3174,7 @@ fn kotlin_replace_binding_pattern_kind() {
             pattern: r#"
                 |language kotlin
                 |
-                |`binding_pattern_kind()` => `var`
+                |binding_pattern_kind() => `var`
                 |"#
             .trim_margin()
             .unwrap(),
@@ -3297,7 +3297,7 @@ fn kotlin_match_string_literal() {
             pattern: r#"
                 |language kotlin
                 |
-                |`var name = ^name`
+                |`var name = $name`
                 |"#
             .trim_margin()
             .unwrap(),
@@ -3408,7 +3408,7 @@ fn kotlin_match_simple_assignment() {
             pattern: r#"
                 |language kotlin
                 |
-                |`val key = ^value`
+                |`val key = $value`
                 |"#
             .trim_margin()
             .unwrap(),
