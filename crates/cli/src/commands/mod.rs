@@ -16,13 +16,15 @@ pub(crate) mod lsp;
 
 pub(crate) mod check;
 
-pub(crate) mod blueprints;
 pub(crate) mod parse;
 pub(crate) mod patterns;
 pub(crate) mod patterns_list;
 pub(crate) mod patterns_test;
 pub(crate) mod plumbing;
 pub(crate) mod version;
+
+#[cfg(feature = "workflows_v2")]
+pub(crate) mod blueprints;
 
 #[cfg(feature = "workflows_v2")]
 pub(crate) mod apply_migration;
@@ -37,7 +39,6 @@ pub(crate) mod workflows_watch;
 
 use crate::error::GoodError;
 
-use blueprints::{BlueprintCommands, Blueprints};
 #[cfg(feature = "grit_tracing")]
 use marzano_util::base64;
 #[cfg(feature = "grit_tracing")]
@@ -145,8 +146,9 @@ pub enum Commands {
     /// Print diagnostic information about the current environment
     Doctor(DoctorArgs),
     /// Manage blueprints for the Grit Agent
+    #[cfg(feature = "workflows_v2")]
     #[clap(aliases = ["blueprint", "bp"])]
-    Blueprints(Blueprints),
+    Blueprints(blueprints::Blueprints),
     /// Authentication commands, run `grit auth --help` for more information
     #[clap(name = "auth")]
     Auth(Auth),
@@ -201,10 +203,11 @@ impl fmt::Display for Commands {
                 PatternCommands::Edit(_) => write!(f, "patterns edit"),
                 PatternCommands::Describe(_) => write!(f, "patterns describe"),
             },
+            #[cfg(feature = "workflows_v2")]
             Commands::Blueprints(arg) => match arg.blueprint_commands {
-                BlueprintCommands::List(_) => write!(f, "blueprints list"),
-                BlueprintCommands::Pull(_) => write!(f, "blueprints pull"),
-                BlueprintCommands::Push(_) => write!(f, "blueprints push"),
+                blueprints::BlueprintCommands::List(_) => write!(f, "blueprints list"),
+                blueprints::BlueprintCommands::Pull(_) => write!(f, "blueprints pull"),
+                blueprints::BlueprintCommands::Push(_) => write!(f, "blueprints push"),
             },
             #[cfg(feature = "workflows_v2")]
             Commands::Workflows(arg) => match arg.workflows_commands {
@@ -437,10 +440,11 @@ async fn run_command(_use_tracing: bool) -> Result<()> {
                 PatternCommands::Edit(arg) => run_patterns_edit(arg).await,
                 PatternCommands::Describe(arg) => run_patterns_describe(arg).await,
             },
+            #[cfg(feature = "workflows_v2")]
             Commands::Blueprints(arg) => match arg.blueprint_commands {
-                BlueprintCommands::List(arg) => arg.run(&app.format_flags).await,
-                BlueprintCommands::Pull(arg) => arg.run(&app.format_flags).await,
-                BlueprintCommands::Push(arg) => arg.run(&app.format_flags).await,
+                blueprints::BlueprintCommands::List(arg) => arg.run(&app.format_flags).await,
+                blueprints::BlueprintCommands::Pull(arg) => arg.run(&app.format_flags).await,
+                blueprints::BlueprintCommands::Push(arg) => arg.run(&app.format_flags).await,
             },
             #[cfg(feature = "workflows_v2")]
             Commands::Workflows(arg) => match arg.workflows_commands {
