@@ -175,7 +175,7 @@ module.exports = grammar({
 
     import_header: $ => seq(
       "import",
-      alias($._import_identifier, $.identifier),
+      field("import_identifier", alias($._import_identifier, $.identifier)),
       optional(choice(seq(".", $.wildcard_import), $.import_alias)),
       $._semi
     ),
@@ -1116,14 +1116,14 @@ module.exports = grammar({
       // TODO: More soft keywords
     ),
 
-    identifier: $ => sep1($.simple_identifier, "."),
+    identifier: $ => field("identifier", sep1($.simple_identifier, ".")),
 
-    // Adapted from tree-sitter-java, helps to avoid a conflic with
+    // Adapted from tree-sitter-java, helps to avoid a conflict with
     // wildcard_import node while being compatible with identifier
-    _import_identifier: $ => choice(
+    _import_identifier: $ => field("import_identifier", choice(
       $.simple_identifier,
       seq($._import_identifier, ".", $.simple_identifier),
-    ),
+    )),
 
     // ====================
     // Lexical grammar
