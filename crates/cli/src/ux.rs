@@ -65,13 +65,18 @@ pub fn format_table(table: &Table) -> String {
 
     // Build formatted table string
     let mut output = String::new();
-
     // Print headers if present
     if let Some(headers) = &table.headers {
         let formatted_headers = headers
             .iter()
             .enumerate()
-            .map(|(i, header)| format!("{:<width$}", header, width = column_widths[i]))
+            .map(|(i, header)| {
+                format!(
+                    "{:<width$}",
+                    header.bold().yellow(),
+                    width = column_widths[i]
+                )
+            })
             .collect::<Vec<_>>()
             .join("  ");
 
