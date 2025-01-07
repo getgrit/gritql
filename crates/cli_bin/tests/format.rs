@@ -23,6 +23,7 @@ fn format_patterns_with_rewrite() -> Result<()> {
         output.status.success(),
         "Command didn't finish successfully"
     );
+    assert_eq!(output.stderr, b"couldn't format '.grit/patterns/not_parsable.grit': biome couldn't parse: Expected a predicate here.\n");
 
     let yaml_file_content = std::fs::read_to_string(grit_dir.join(".grit/grit.yaml"))?;
     let test_move_import_file_content =
