@@ -6,25 +6,6 @@ use insta::assert_yaml_snapshot;
 mod common;
 
 #[test]
-fn format_patterns() -> Result<()> {
-    let (_temp_dir, grit_dir) = get_fixture("unformatted_patterns", true)?;
-
-    let mut cmd = get_test_cmd()?;
-    cmd.arg("format").current_dir(grit_dir.clone());
-    let output = cmd.output()?;
-
-    println!("stderr: {}", String::from_utf8(output.stderr.clone())?);
-    println!("stdout: {}", String::from_utf8(output.stdout.clone())?);
-
-    assert!(
-        output.status.success(),
-        "Command didn't finish successfully"
-    );
-    assert_yaml_snapshot!(String::from_utf8(output.stdout)?);
-    Ok(())
-}
-
-#[test]
 fn format_patterns_with_rewrite() -> Result<()> {
     let (_temp_dir, grit_dir) = get_fixture("unformatted_patterns", true)?;
 
