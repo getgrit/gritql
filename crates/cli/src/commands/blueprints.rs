@@ -76,7 +76,7 @@ async fn run_blueprint_workflow(
 
 impl ListArgs {
     pub async fn run(&self, parent: &GlobalFormatFlags) -> Result<()> {
-        run_blueprint_workflow("list_blueprints", None, parent).await
+        run_blueprint_workflow("blueprints/list", None, parent).await
     }
 }
 
@@ -97,7 +97,7 @@ impl DownloadArgs {
             r#"{{"workflow_id": "{}", "force": {} }}"#,
             self.workflow_id, self.force
         );
-        run_blueprint_workflow("download_blueprint", Some(input), parent).await
+        run_blueprint_workflow("blueprints/download", Some(input), parent).await
     }
 }
 
@@ -111,6 +111,6 @@ pub struct UploadArgs {
 impl UploadArgs {
     pub async fn run(&self, parent: &GlobalFormatFlags) -> Result<()> {
         let input = format!(r#"{{"workflow_id": "{}"}}"#, self.workflow_id);
-        run_blueprint_workflow("upload_blueprint", Some(input), parent).await
+        run_blueprint_workflow("blueprints/upload", Some(input), parent).await
     }
 }
