@@ -17,7 +17,13 @@ jobs:
           submodules: recursive
       - name: Install Protoc
         run: sudo apt-get install -y protobuf-compiler
-      - run: rustup component add clippy
+      - name: install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          # If you update this, also update build.mjs
+          toolchain: nightly-2023-11-16
+          override: true
+      - run: rustup component add clippy rustfmt
       - name: format
         run: cargo fmt --all -- --check
       - name: lint
