@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1](https://github.com/getgrit/gritql/compare/grit-pattern-matcher-v0.5.0...grit-pattern-matcher-v0.5.1) - 2025-01-07
+
+### Other
+
+- use `&Path` in `FileRegistry::new_from_paths()` (#594)
+
 ## [0.5.0](https://github.com/getgrit/gritql/compare/grit-pattern-matcher-v0.4.0...grit-pattern-matcher-v0.5.0) - 2024-10-24
 
 ### Added
