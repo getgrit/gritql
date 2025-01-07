@@ -281,8 +281,11 @@ mod tests {
         };
 
         let output = format_table(&table);
-        let expected =
-            "\u{1b}[1;33mName \u{1b}[0m  \u{1b}[1;33mAge\u{1b}[0m\nAlice  25 \nBob    30 \n";
+        let expected = format!(
+            "{}  {}\nAlice  25 \nBob    30 \n",
+            "Name ".bold().yellow(),
+            "Age".bold().yellow()
+        );
 
         assert_eq!(output, expected);
     }
