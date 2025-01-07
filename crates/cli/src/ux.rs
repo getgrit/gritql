@@ -264,3 +264,55 @@ pub fn get_check_summary(
 
     Ok((grouped_results, summary))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_format_table() {
+        let table = Table {
+            format: Format::Table,
+            headers: Some(vec!["Name".to_string(), "Age".to_string()]),
+            data: vec![
+                vec!["Alice".to_string(), "25".to_string()],
+                vec!["Bob".to_string(), "30".to_string()],
+            ],
+        };
+
+        let output = format_table(&table);
+        let expected =
+            "\u{1b}[1;33mName \u{1b}[0m  \u{1b}[1;33mAge\u{1b}[0m\nAlice  25 \nBob    30 \n";
+
+        assert_eq!(output, expected);
+    }
+
+    #[test]
+    fn test_format_table_no_headers() {
+        let table = Table {
+            format: Format::Table,
+            headers: None,
+            data: vec![
+                vec!["Alice".to_string(), "25".to_string()],
+                vec!["Bob".to_string(), "30".to_string()],
+            ],
+        };
+
+        let output = format_table(&table);
+        let expected = "Alice  25\nBob    30\n";
+
+        assert_eq!(output, expected);
+    }
+
+    #[test]
+    fn test_format_empty_table() {
+        let table = Table {
+            format: Format::Table,
+            headers: Some(vec!["Name".to_string(), "Age".to_string()]),
+            data: vec![],
+        };
+
+        let output = format_table(&table);
+        assert_eq!(output, "");
+    }
+}
