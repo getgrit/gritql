@@ -27,6 +27,79 @@ pub fn heading(s: &str) -> String {
     format!("\n{}", s.bold().yellow())
 }
 
+#[derive(Debug, serde::Deserialize)]
+pub enum Format {
+    #[serde(rename = "table")]
+    Table,
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct Table {
+    pub format: Format,
+    pub headers: Option<Vec<String>>,
+    pub data: Vec<Vec<String>>,
+}
+
+pub fn format_table(table: &Table) -> String {
+    if table.data.is_empty() {
+        return String::new();
+    }
+
+    // Get max width of each column
+    let column_count = table.data[0].len();
+    let mut column_widths = vec![0; column_count];
+
+    // Account for headers in column widths
+    if let Some(headers) = &table.headers {
+        for (i, header) in headers.iter().enumerate() {
+            column_widths[i] = column_widths[i].max(header.len());
+        }
+    }
+
+    // Account for data in column widths
+    for row in &table.data {
+        for (i, cell) in row.iter().enumerate() {
+            column_widths[i] = column_widths[i].max(cell.len());
+        }
+    }
+
+    // Build formatted table string
+    let mut output = String::new();
+    // Print headers if present
+    if let Some(headers) = &table.headers {
+        let formatted_headers = headers
+            .iter()
+            .enumerate()
+            .map(|(i, header)| {
+                format!(
+                    "{:<width$}",
+                    header.bold().yellow(),
+                    width = column_widths[i]
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("  ");
+
+        output.push_str(&formatted_headers);
+        output.push('\n');
+    }
+
+    // Print data rows
+    for row in &table.data {
+        let formatted_row = row
+            .iter()
+            .enumerate()
+            .map(|(i, cell)| format!("{:<width$}", cell, width = column_widths[i]))
+            .collect::<Vec<_>>()
+            .join("  ");
+
+        output.push_str(&formatted_row);
+        output.push('\n');
+    }
+
+    output
+}
+
 #[derive(Debug)]
 pub struct CheckResult<'a> {
     pub pattern: &'a ResolvedGritDefinition,
@@ -190,4 +263,59 @@ pub fn get_check_summary(
     );
 
     Ok((grouped_results, summary))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_format_table() {
+        let table = Table {
+            format: Format::Table,
+            headers: Some(vec!["Name".to_string(), "Age".to_string()]),
+            data: vec![
+                vec!["Alice".to_string(), "25".to_string()],
+                vec!["Bob".to_string(), "30".to_string()],
+            ],
+        };
+
+        let output = format_table(&table);
+        let expected = format!(
+            "{}  {}\nAlice  25 \nBob    30 \n",
+            "Name ".bold().yellow(),
+            "Age".bold().yellow()
+        );
+
+        assert_eq!(output, expected);
+    }
+
+    #[test]
+    fn test_format_table_no_headers() {
+        let table = Table {
+            format: Format::Table,
+            headers: None,
+            data: vec![
+                vec!["Alice".to_string(), "25".to_string()],
+                vec!["Bob".to_string(), "30".to_string()],
+            ],
+        };
+
+        let output = format_table(&table);
+        let expected = "Alice  25\nBob    30\n";
+
+        assert_eq!(output, expected);
+    }
+
+    #[test]
+    fn test_format_empty_table() {
+        let table = Table {
+            format: Format::Table,
+            headers: Some(vec!["Name".to_string(), "Age".to_string()]),
+            data: vec![],
+        };
+
+        let output = format_table(&table);
+        assert_eq!(output, "");
+    }
 }

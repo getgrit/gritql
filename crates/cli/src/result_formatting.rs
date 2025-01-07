@@ -10,13 +10,14 @@ use marzano_core::api::{
 use marzano_core::constants::DEFAULT_FILE_NAME;
 use marzano_messenger::output_mode::OutputMode;
 use marzano_messenger::workflows::StatusManager;
+use serde::Deserialize as _;
 use std::fmt::Display;
 use std::{
     io::Write,
     sync::{Arc, Mutex},
 };
 
-use crate::ux::{format_result_diff, indent};
+use crate::ux::{format_result_diff, format_table, indent, Table};
 use marzano_messenger::emit::{Messager, VisibilityLevels};
 
 #[derive(Debug)]
@@ -419,7 +420,13 @@ impl Messager for FormattedMessager<'_> {
             let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
             writeln!(writer, "[{:?}] {}", log.level, log.message)?;
         } else {
-            let msg = format!("[{:?}] {} {:?}", log.level, log.message, log.step_id);
+            let msg = log
+                .meta
+                .as_ref()
+                .and_then(|meta| serde_json::to_value(meta).ok())
+                .and_then(|v| Table::deserialize(v).ok())
+                .map(|table| format_table(&table).to_string())
+                .unwrap_or_else(|| format!("[{:?}] {} {:?}", log.level, log.message, log.step_id));
             match log.level {
                 AnalysisLogLevel::Debug => {
                     debug!("{}", msg);
