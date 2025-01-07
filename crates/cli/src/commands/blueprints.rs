@@ -4,7 +4,7 @@ use crate::messenger_variant::create_emitter;
 use crate::workflows::fetch_remote_workflow;
 use anyhow::{bail, Result};
 use clap::{Parser, Subcommand};
-use marzano_gritmodule::searcher::WorkflowInfo;
+
 use marzano_messenger::emit::VisibilityLevels;
 use serde::Serialize;
 use serde_json::json;

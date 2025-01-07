@@ -420,18 +420,13 @@ impl Messager for FormattedMessager<'_> {
             let mut writer = writer.lock().map_err(|_| anyhow!("Output lock poisoned"))?;
             writeln!(writer, "[{:?}] {}", log.level, log.message)?;
         } else {
-            let msg = if let Some(meta) = &log.meta {
-                if let Some(table) = serde_json::to_value(meta)
-                    .ok()
-                    .and_then(|v| Table::deserialize(v).ok())
-                {
-                    format_table(&table).to_string()
-                } else {
-                    format!("[{:?}] {} {:?}", log.level, log.message, log.step_id)
-                }
-            } else {
-                format!("[{:?}] {} {:?}", log.level, log.message, log.step_id)
-            };
+            let msg = log
+                .meta
+                .as_ref()
+                .and_then(|meta| serde_json::to_value(meta).ok())
+                .and_then(|v| Table::deserialize(v).ok())
+                .map(|table| format_table(&table).to_string())
+                .unwrap_or_else(|| format!("[{:?}] {} {:?}", log.level, log.message, log.step_id));
             match log.level {
                 AnalysisLogLevel::Debug => {
                     debug!("{}", msg);
