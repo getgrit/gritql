@@ -1,6 +1,7 @@
 use crate::{
     csharp::CSharp,
     css::Css,
+    elixir::Elixir,
     go::Go,
     grit_parser::MarzanoGritParser,
     hcl::Hcl,
@@ -17,7 +18,6 @@ use crate::{
     php_only::PhpOnly,
     python::Python,
     ruby::Ruby,
-    elixir::Elixir,
     rust::Rust,
     solidity::Solidity,
     sql::Sql,
