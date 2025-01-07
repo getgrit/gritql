@@ -18,7 +18,15 @@ jobs:
       - name: Install Protoc
         run: sudo apt-get install -y protobuf-compiler
       - run: rustup component add clippy
-      - uses: actions-rs/clippy-check@v1
+  check:
+    name: Lint/Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --workspace --features test_ci --exclude grit-wasm-bindings -- -D warnings
+          submodules: true
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Lint
+        run: cargo clippy --all-targets --all-features --workspace --release --locked -- -D clippy::all
