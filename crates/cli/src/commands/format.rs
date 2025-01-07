@@ -22,9 +22,9 @@ pub async fn run_format(arg: &FormatArgs) -> Result<()> {
     resolved.sort();
 
     let file_path_to_resolved = group_resolved_patterns_by_group(resolved);
-    for (file_path, resovled_patterns) in file_path_to_resolved {
+    for (file_path, resolved_patterns) in file_path_to_resolved {
         if let Err(error) =
-            format_file_resovled_patterns(file_path.clone(), resovled_patterns, arg.clone()).await
+            format_file_resolved_patterns(file_path.clone(), resolved_patterns, arg.clone()).await
         {
             eprintln!("couldn't format '{}': {error:?}", file_path)
         }
@@ -49,7 +49,7 @@ fn group_resolved_patterns_by_group(
     })
 }
 
-async fn format_file_resovled_patterns(
+async fn format_file_resolved_patterns(
     file_path: String,
     patterns: Vec<ResolvedGritDefinition>,
     arg: FormatArgs,
