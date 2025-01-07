@@ -621,11 +621,11 @@ module.exports = grammar({
     // Expressions
     // ==========
 
-    _expression: $ => field("expression", choice(
+    _expression: $ => choice(
       $._unary_expression,
       $._binary_expression,
       $._primary_expression,
-    )),
+    ),
 
     // Unary expressions
 
@@ -641,7 +641,7 @@ module.exports = grammar({
 
     postfix_expression: $ => prec.left(PREC.POSTFIX, seq($._expression, $._postfix_unary_operator)),
 
-    call_expression: $ => prec.left(PREC.POSTFIX, seq(field("expression", $._expression), $.call_suffix)),
+    call_expression: $ => prec.left(PREC.POSTFIX, seq(field("expression", $._expression), field("suffix", $.call_suffix))),
 
     indexing_expression: $ => prec.left(PREC.POSTFIX, seq($._expression, $.indexing_suffix)),
 
@@ -710,7 +710,7 @@ module.exports = grammar({
       optional($.type_arguments),
       choice(
         prec(PREC.ARGUMENTS, seq(optional($.value_arguments), $.annotated_lambda)),
-        $.value_arguments
+        field("args", $.value_arguments),
       )
     )),
 
@@ -725,10 +725,10 @@ module.exports = grammar({
     value_arguments: $ => seq(
       "(",
       optional(
-        seq(
+        field("args", seq(
           sep1($.value_argument, ","),
           optional(","),
-        )
+        ))
       ),
       ")"
     ),
