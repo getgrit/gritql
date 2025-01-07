@@ -1,12 +1,13 @@
 use crate::{
     resolver::{resolve_from_cwd, Source},
-    ux::format_diff,
+    ux::{format_diff, DiffString},
 };
 use anyhow::{anyhow, ensure, Context, Result};
 use biome_grit_formatter::context::GritFormatOptions;
 use clap::Args;
 use colored::Colorize;
 use marzano_gritmodule::{config::ResolvedGritDefinition, parser::PatternFileExt};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::Serialize;
 
 #[derive(Args, Debug, Serialize, Clone)]
@@ -17,16 +18,28 @@ pub struct FormatArgs {
 }
 
 pub async fn run_format(arg: &FormatArgs) -> Result<()> {
-    let (mut resolved, _) = resolve_from_cwd(&Source::Local).await?;
-    // sort to have consistent output for tests
-    resolved.sort();
+    let (resolved, _) = resolve_from_cwd(&Source::Local).await?;
 
     let file_path_to_resolved = group_resolved_patterns_by_group(resolved);
-    for (file_path, resolved_patterns) in file_path_to_resolved {
-        if let Err(error) =
-            format_file_resolved_patterns(file_path.clone(), resolved_patterns, arg.clone()).await
-        {
-            eprintln!("couldn't format '{}': {error:?}", file_path)
+    let mut results = file_path_to_resolved
+        .into_par_iter()
+        .map(|(file_path, resolved_patterns)| {
+            (
+                file_path.clone(),
+                format_file_resolved_patterns(file_path, resolved_patterns, arg.clone()),
+            )
+        })
+        .collect::<Vec<_>>();
+
+    // sort outputs to ensure consistent stdout output
+    // also avoid using sort_by_key to prevent additional cloning of file_path
+    results.sort_by(|(file_path, _), (other_file_path, _)| file_path.cmp(&other_file_path));
+
+    for (file_path, result) in results {
+        match result {
+            Err(error) => eprintln!("couldn't format '{}': {error:?}", file_path),
+            Ok(Some(diff)) => println!("{}:\n{}", file_path.bold(), diff),
+            Ok(None) => (), // `args.write` is true or file is already formated
         }
     }
     Ok(())
@@ -49,11 +62,11 @@ fn group_resolved_patterns_by_group(
     })
 }
 
-async fn format_file_resolved_patterns(
+fn format_file_resolved_patterns(
     file_path: String,
     patterns: Vec<ResolvedGritDefinition>,
     arg: FormatArgs,
-) -> Result<()> {
+) -> Result<Option<DiffString>> {
     let first_pattern = patterns
         .first()
         .ok_or_else(|| anyhow!("patterns is empty"))?;
@@ -77,22 +90,15 @@ async fn format_file_resolved_patterns(
     };
 
     if &new_file_content == old_file_content {
-        return Ok(());
+        return Ok(None);
     }
 
     if arg.write {
-        tokio::fs::write(file_path, new_file_content)
-            .await
-            .with_context(|| "could not write to file")?;
+        std::fs::write(file_path, new_file_content).with_context(|| "could not write to file")?;
+        Ok(None)
     } else {
-        println!(
-            "{}:\n{}",
-            file_path.bold(),
-            format_diff(old_file_content, &new_file_content)
-        );
+        Ok(Some(format_diff(old_file_content, &new_file_content)))
     }
-
-    Ok(())
 }
 
 fn format_yaml_file(file_content: &str) -> Result<String> {
