@@ -145,7 +145,7 @@ pub enum Commands {
     /// Print diagnostic information about the current environment
     Doctor(DoctorArgs),
     /// Manage blueprints for the Grit Agent
-    #[clap(alias = "blueprint")]
+    #[clap(aliases = ["blueprint", "bp"])]
     Blueprints(Blueprints),
     /// Authentication commands, run `grit auth --help` for more information
     #[clap(name = "auth")]
@@ -203,8 +203,8 @@ impl fmt::Display for Commands {
             },
             Commands::Blueprints(arg) => match arg.blueprint_commands {
                 BlueprintCommands::List(_) => write!(f, "blueprints list"),
-                BlueprintCommands::Download(_) => write!(f, "blueprints download"),
-                BlueprintCommands::Upload(_) => write!(f, "blueprints upload"),
+                BlueprintCommands::Pull(_) => write!(f, "blueprints pull"),
+                BlueprintCommands::Push(_) => write!(f, "blueprints push"),
             },
             #[cfg(feature = "workflows_v2")]
             Commands::Workflows(arg) => match arg.workflows_commands {
@@ -439,8 +439,8 @@ async fn run_command(_use_tracing: bool) -> Result<()> {
             },
             Commands::Blueprints(arg) => match arg.blueprint_commands {
                 BlueprintCommands::List(arg) => arg.run(&app.format_flags).await,
-                BlueprintCommands::Download(arg) => arg.run(&app.format_flags).await,
-                BlueprintCommands::Upload(arg) => arg.run(&app.format_flags).await,
+                BlueprintCommands::Pull(arg) => arg.run(&app.format_flags).await,
+                BlueprintCommands::Push(arg) => arg.run(&app.format_flags).await,
             },
             #[cfg(feature = "workflows_v2")]
             Commands::Workflows(arg) => match arg.workflows_commands {

@@ -18,10 +18,10 @@ pub struct Blueprints {
 pub enum BlueprintCommands {
     /// List available blueprints
     List(ListArgs),
-    /// Download a blueprint by workflow ID
-    Download(DownloadArgs),
-    /// Upload a blueprint by workflow ID
-    Upload(UploadArgs),
+    /// Pull a blueprint by workflow ID
+    Pull(PullArgs),
+    /// Push a blueprint by workflow ID
+    Push(PushArgs),
 }
 
 #[derive(Parser, Debug, Serialize)]
@@ -81,17 +81,17 @@ impl ListArgs {
 }
 
 #[derive(Parser, Debug, Serialize)]
-pub struct DownloadArgs {
-    /// The workflow ID of the blueprint to download
+pub struct PullArgs {
+    /// The workflow ID of the blueprint to pull
     #[clap(long)]
     workflow_id: String,
 
-    /// Force download even if the blueprint already exists
+    /// Force pull even if the blueprint already exists
     #[clap(long)]
     force: bool,
 }
 
-impl DownloadArgs {
+impl PullArgs {
     pub async fn run(&self, parent: &GlobalFormatFlags) -> Result<()> {
         let input = format!(
             r#"{{"workflow_id": "{}", "force": {} }}"#,
@@ -102,13 +102,13 @@ impl DownloadArgs {
 }
 
 #[derive(Parser, Debug, Serialize)]
-pub struct UploadArgs {
-    /// The workflow ID of the blueprint to upload
+pub struct PushArgs {
+    /// The workflow ID of the blueprint to push
     #[clap(long)]
     workflow_id: String,
 }
 
-impl UploadArgs {
+impl PushArgs {
     pub async fn run(&self, parent: &GlobalFormatFlags) -> Result<()> {
         let input = format!(r#"{{"workflow_id": "{}"}}"#, self.workflow_id);
         run_blueprint_workflow("blueprints/upload", Some(input), parent).await
