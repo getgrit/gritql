@@ -7,6 +7,7 @@ use clap::{Parser, Subcommand};
 use marzano_gritmodule::searcher::WorkflowInfo;
 use marzano_messenger::emit::VisibilityLevels;
 use serde::Serialize;
+use serde_json::json;
 
 #[derive(Parser, Debug, Serialize)]
 pub struct Blueprints {
@@ -29,7 +30,7 @@ pub struct ListArgs {}
 
 async fn run_blueprint_workflow(
     workflow_name: &str,
-    input: Option<String>,
+    input: Option<serde_json::Value>,
     parent: &GlobalFormatFlags,
 ) -> Result<()> {
     if parent.json || parent.jsonl {
@@ -42,7 +43,7 @@ async fn run_blueprint_workflow(
     ).await?;
 
     let apply_migration_args = ApplyMigrationArgs {
-        input,
+        input: input.map(|v| v.to_string()),
         ..Default::default()
     };
 
@@ -97,10 +98,11 @@ pub struct PullArgs {
 
 impl PullArgs {
     pub async fn run(&self, parent: &GlobalFormatFlags) -> Result<()> {
-        let input = format!(
-            r#"{{"workflow_id": "{}", "force": {}, "path": {}}}"#,
-            self.workflow_id, self.force, self.file
-        );
+        let input = json!({
+            "workflow_id": self.workflow_id,
+            "force": self.force,
+            "path": self.file,
+        });
         run_blueprint_workflow("blueprints/download", Some(input), parent).await
     }
 }
@@ -118,10 +120,10 @@ pub struct PushArgs {
 
 impl PushArgs {
     pub async fn run(&self, parent: &GlobalFormatFlags) -> Result<()> {
-        let input = format!(
-            r#"{{"workflow_id": "{}", "path": {}}}"#,
-            self.workflow_id, self.file
-        );
+        let input = json!({
+            "workflow_id": self.workflow_id,
+            "path": self.file,
+        });
         run_blueprint_workflow("blueprints/upload", Some(input), parent).await
     }
 }
