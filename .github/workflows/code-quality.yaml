@@ -24,7 +24,7 @@ jobs:
           toolchain: nightly-2023-11-16
           override: true
       - run: rustup component add clippy rustfmt
-      - name: format
-        run: cargo fmt --all -- --check
       - name: lint
         run: cargo clippy --features test_ci --exclude grit-wasm-bindings --workspace --locked -- -D warnings
+      - name: format
+        run: cargo fmt --all -- --check
