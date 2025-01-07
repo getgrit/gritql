@@ -83,19 +83,23 @@ impl ListArgs {
 #[derive(Parser, Debug, Serialize)]
 pub struct PullArgs {
     /// The workflow ID of the blueprint to pull
-    #[clap(long)]
+    #[clap(long, alias = "id")]
     workflow_id: String,
 
     /// Force pull even if the blueprint already exists
-    #[clap(long)]
+    #[clap(long, short = 'f')]
     force: bool,
+
+    /// File to save the blueprint to (defaults to blueprint.md)
+    #[clap(long, default_value = "blueprint.md")]
+    file: String,
 }
 
 impl PullArgs {
     pub async fn run(&self, parent: &GlobalFormatFlags) -> Result<()> {
         let input = format!(
-            r#"{{"workflow_id": "{}", "force": {} }}"#,
-            self.workflow_id, self.force
+            r#"{{"workflow_id": "{}", "force": {}, "path": {}}}"#,
+            self.workflow_id, self.force, self.file
         );
         run_blueprint_workflow("blueprints/download", Some(input), parent).await
     }
@@ -104,13 +108,20 @@ impl PullArgs {
 #[derive(Parser, Debug, Serialize)]
 pub struct PushArgs {
     /// The workflow ID of the blueprint to push
-    #[clap(long)]
+    #[clap(long, alias = "id")]
     workflow_id: String,
+
+    /// File containing the blueprint (defaults to blueprint.md)
+    #[clap(long, default_value = "blueprint.md")]
+    file: String,
 }
 
 impl PushArgs {
     pub async fn run(&self, parent: &GlobalFormatFlags) -> Result<()> {
-        let input = format!(r#"{{"workflow_id": "{}"}}"#, self.workflow_id);
+        let input = format!(
+            r#"{{"workflow_id": "{}", "path": {}}}"#,
+            self.workflow_id, self.file
+        );
         run_blueprint_workflow("blueprints/upload", Some(input), parent).await
     }
 }
