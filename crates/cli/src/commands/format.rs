@@ -33,7 +33,7 @@ pub async fn run_format(arg: &FormatArgs) -> Result<()> {
 
     // sort outputs to ensure consistent stdout output
     // also avoid using sort_by_key to prevent additional cloning of file_path
-    results.sort_by(|(file_path, _), (other_file_path, _)| file_path.cmp(&other_file_path));
+    results.sort_by(|(file_path, _), (other_file_path, _)| file_path.cmp(other_file_path));
 
     for (file_path, result) in results {
         match result {
