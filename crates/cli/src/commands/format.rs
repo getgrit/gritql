@@ -1,14 +1,17 @@
 use crate::{
-    resolver::{resolve_from_cwd, Source},
+    resolver::{resolve_from_cwd, GritModuleResolver, Source},
     ux::{format_diff, DiffString},
 };
-use anyhow::{anyhow, ensure, Context, Result};
+use anyhow::{anyhow, bail, ensure, Context, Result};
 use biome_grit_formatter::context::GritFormatOptions;
 use clap::Args;
 use colored::Colorize;
+use marzano_core::api::MatchResult;
 use marzano_gritmodule::{config::ResolvedGritDefinition, parser::PatternFileExt};
+use marzano_util::{rich_path::RichFile, runtime::ExecutionContext};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::Serialize;
+use std::collections::BTreeMap;
 
 #[derive(Args, Debug, Serialize, Clone)]
 pub struct FormatArgs {
@@ -78,7 +81,7 @@ fn format_file_resolved_patterns(
     let old_file_content = &first_pattern_raw_data.content;
 
     let new_file_content = match first_pattern_raw_data.format {
-        PatternFileExt::Yaml => format_yaml_file(old_file_content)?,
+        PatternFileExt::Yaml => format_yaml_file(patterns.clone(), old_file_content)?,
         PatternFileExt::Grit => format_grit_code(old_file_content)?,
         PatternFileExt::Md => {
             let hunks = patterns
@@ -101,27 +104,84 @@ fn format_file_resolved_patterns(
     }
 }
 
-fn format_yaml_file(file_content: &str) -> Result<String> {
-    // deserializing manually and not using `SerializedGritConfig` because
-    // i don't want to remove any fields that `SerializedGritConfig` don't have such as 'version'
-    let mut config: serde_yaml::Value =
-        serde_yaml::from_str(file_content).with_context(|| "couldn't parse yaml file")?;
-    let patterns = config
-        .get_mut("patterns")
-        .ok_or_else(|| anyhow!("couldn't find patterns in yaml file"))?
-        .as_sequence_mut()
-        .ok_or_else(|| anyhow!("patterns in yaml file are not sequence"))?;
-    for pattern in patterns {
-        let Some(body) = pattern.get_mut("body") else {
-            continue;
-        };
-        if let serde_yaml::Value::String(body_str) = body {
-            *body_str = format_grit_code(body_str)?;
-            // extra new line at end of grit body looks more readable
-            body_str.push('\n');
+/// bubble clause that finds a grit pattern with name "<pattern_name>" in yaml and
+/// replaces it's body to new_body, `format_yaml_file` uses this pattern to replace
+/// pattern bodies with formatted ones
+const YAML_REPLACE_BODY_PATERN: &'static str = r#"
+    bubble file($body) where {
+        $body <: contains block_mapping(items=$items) where {
+            $items <: within `patterns: $_`,
+            $items <: contains `name: $name`,
+            $name <: "<pattern_name>",
+            $items <: contains `body: $yaml_body`,
+            $new_body = "<new_body>",
+            $yaml_body => $new_body
+        },
+    }
+"#;
+
+/// format each pattern and use gritql pattern to match and rewrite
+fn format_yaml_file(patterns: Vec<ResolvedGritDefinition>, file_content: &str) -> Result<String> {
+    let bubbles = patterns
+        .iter()
+        .map(|pattern| {
+            let formatted_body = format_grit_code(&pattern.body)
+                .with_context(|| format!("could not format '{}'", pattern.name()))?;
+            let bubble = YAML_REPLACE_BODY_PATERN
+                .replace("<pattern_name>", pattern.name())
+                .replace("<new_body>", &format_yaml_body_code(&formatted_body));
+            Ok(bubble)
+        })
+        .collect::<Result<Vec<_>>>()?
+        .join(",\n");
+    let pattern_body = format!("language yaml\nsequential{{ {bubbles} }}");
+    apply_grit_rewrite(file_content, &pattern_body)
+}
+
+fn format_yaml_body_code(input: &str) -> String {
+    // yaml body still needs two indentation to look good
+    let body_with_prefix = prefix_lines(&input, &" ".repeat(2));
+    let escaped_body = body_with_prefix.replace("\"", "\\\"");
+    // body: |
+    //   escaped_body
+    format!("|\n{escaped_body}")
+}
+
+fn prefix_lines(input: &str, prefix: &str) -> String {
+    input
+        .lines()
+        .map(|line| {
+            if line.is_empty() {
+                line.to_owned()
+            } else {
+                format!("{prefix}{line}")
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn apply_grit_rewrite(input: &str, pattern: &str) -> Result<String> {
+    let resolver = GritModuleResolver::new();
+    let rich_pattern = resolver.make_pattern(&pattern, None)?;
+
+    let compiled = rich_pattern
+        .compile(&BTreeMap::new(), None, None, None)
+        .map(|cr| cr.problem)
+        .with_context(|| "could not compile pattern")?;
+
+    let rich_file = RichFile::new(String::new(), input.to_owned());
+    let runtime = ExecutionContext::default();
+    for result in compiled.execute_file(&rich_file, &runtime) {
+        if let MatchResult::Rewrite(rewrite) = result {
+            let content = rewrite
+                .rewritten
+                .content
+                .ok_or_else(|| anyhow!("rewritten content is empty"))?;
+            return Ok(content);
         }
     }
-    Ok(serde_yaml::to_string(&config)?)
+    bail!("no rewrite result after applying grit pattern")
 }
 
 fn format_pattern_as_hunk_changes(pattern: &ResolvedGritDefinition) -> Result<HunkChange> {
