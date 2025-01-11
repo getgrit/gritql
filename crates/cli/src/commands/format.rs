@@ -81,7 +81,7 @@ fn format_file_resolved_patterns(
     let old_file_content = &first_pattern_raw_data.content;
 
     let new_file_content = match first_pattern_raw_data.format {
-        PatternFileExt::Yaml => format_yaml_file(patterns.clone(), old_file_content)?,
+        PatternFileExt::Yaml => format_yaml_file(&patterns, old_file_content)?,
         PatternFileExt::Grit => format_grit_code(old_file_content)?,
         PatternFileExt::Md => {
             let hunks = patterns
@@ -121,7 +121,7 @@ const YAML_REPLACE_BODY_PATERN: &'static str = r#"
 "#;
 
 /// format each pattern and use gritql pattern to match and rewrite
-fn format_yaml_file(patterns: Vec<ResolvedGritDefinition>, file_content: &str) -> Result<String> {
+fn format_yaml_file(patterns: &[ResolvedGritDefinition], file_content: &str) -> Result<String> {
     let bubbles = patterns
         .iter()
         .map(|pattern| {
