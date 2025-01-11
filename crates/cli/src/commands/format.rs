@@ -228,17 +228,11 @@ fn apply_hunk_changes(input: &str, mut hunks: Vec<HunkChange>) -> String {
     if hunks.is_empty() {
         return input.to_string();
     }
-    hunks.sort_by_key(|hunk| hunk.starting_byte);
-    let mut buffer = String::new();
-    let mut last_ending_byte = 0;
-    for (index, hunk) in hunks.iter().enumerate() {
-        buffer.push_str(&input[last_ending_byte..hunk.starting_byte]);
-        buffer.push_str(&hunk.new_content);
-        last_ending_byte = hunk.ending_byte;
-
-        if index == hunks.len() - 1 {
-            buffer.push_str(&input[last_ending_byte..]);
-        }
+    hunks.sort_by_key(|hunk| -(hunk.starting_byte as isize));
+    let mut buffer = input.to_owned();
+    for hunk in hunks {
+        let hunk_range = hunk.starting_byte..hunk.ending_byte;
+        buffer.replace_range(hunk_range, &hunk.new_content);
     }
     buffer
 }
