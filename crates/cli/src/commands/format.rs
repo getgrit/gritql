@@ -27,10 +27,8 @@ pub async fn run_format(arg: &FormatArgs) -> Result<()> {
     let mut results = file_path_to_resolved
         .into_par_iter()
         .map(|(file_path, resolved_patterns)| {
-            (
-                file_path.clone(),
-                format_file_resolved_patterns(file_path, resolved_patterns, arg.clone()),
-            )
+            let result = format_file_resolved_patterns(&file_path, resolved_patterns, arg.clone());
+            (file_path, result)
         })
         .collect::<Vec<_>>();
 
@@ -66,7 +64,7 @@ fn group_resolved_patterns_by_group(
 }
 
 fn format_file_resolved_patterns(
-    file_path: String,
+    file_path: &str,
     patterns: Vec<ResolvedGritDefinition>,
     arg: FormatArgs,
 ) -> Result<Option<DiffString>> {
