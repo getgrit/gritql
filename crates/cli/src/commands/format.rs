@@ -104,8 +104,8 @@ fn format_file_resolved_patterns(
     }
 }
 
-/// bubble clause that finds a grit pattern with name "<pattern_name>" in yaml and
-/// replaces it's body to new_body, `format_yaml_file` uses this pattern to replace
+/// bubble clause that finds a grit pattern with name "\<pattern_name\>" in yaml and
+/// replaces it's body to "\<new_body\>", `format_yaml_file` uses this pattern to replace
 /// pattern bodies with formatted ones
 const YAML_REPLACE_BODY_PATERN: &'static str = r#"
     bubble file($body) where {
