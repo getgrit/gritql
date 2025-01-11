@@ -107,7 +107,7 @@ fn format_file_resolved_patterns(
 /// bubble clause that finds a grit pattern with name "\<pattern_name\>" in yaml and
 /// replaces it's body to "\<new_body\>", `format_yaml_file` uses this pattern to replace
 /// pattern bodies with formatted ones
-const YAML_REPLACE_BODY_PATERN: &'static str = r#"
+const YAML_REPLACE_BODY_PATERN: &str = r#"
     bubble file($body) where {
         $body <: contains block_mapping(items=$items) where {
             $items <: within `patterns: $_`,
@@ -140,7 +140,7 @@ fn format_yaml_file(patterns: &[ResolvedGritDefinition], file_content: &str) -> 
 
 fn format_yaml_body_code(input: &str) -> String {
     // yaml body still needs two indentation to look good
-    let body_with_prefix = prefix_lines(&input, &" ".repeat(2));
+    let body_with_prefix = prefix_lines(input, &" ".repeat(2));
     let escaped_body = body_with_prefix.replace("\"", "\\\"");
     // body: |
     //   escaped_body
@@ -163,7 +163,7 @@ fn prefix_lines(input: &str, prefix: &str) -> String {
 
 fn apply_grit_rewrite(input: &str, pattern: &str) -> Result<String> {
     let resolver = GritModuleResolver::new();
-    let rich_pattern = resolver.make_pattern(&pattern, None)?;
+    let rich_pattern = resolver.make_pattern(pattern, None)?;
 
     let compiled = rich_pattern
         .compile(&BTreeMap::new(), None, None, None)
