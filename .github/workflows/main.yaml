@@ -62,8 +62,7 @@ jobs:
             --exclude google-cloud-auth \
             --exclude google-cloud-googleapis \
             --exclude google-cloud-gax \
-            --exclude google-cloud-pubsub \
-            -- -Z unstable-options
+            --exclude google-cloud-pubsub
   test-rust-wasm:
     name: Rust wasm
     timeout-minutes: 15
