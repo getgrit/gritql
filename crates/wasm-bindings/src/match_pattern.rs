@@ -477,7 +477,7 @@ fn pattern_language_to_path(lang: &PatternLanguage) -> anyhow::Result<String> {
         PatternLanguage::Go => Ok("/tree-sitter-go.wasm"),
         PatternLanguage::Rust => Ok("/tree-sitter-rust.wasm"),
         PatternLanguage::Ruby => Ok("/tree-sitter-ruby.wasm"),
-        PatternLanguage::Elixir=> Ok("/tree-sitter-elixir.wasm"),
+        PatternLanguage::Elixir => Ok("/tree-sitter-elixir.wasm"),
         PatternLanguage::Solidity => Ok("/tree-sitter-solidity.wasm"),
         PatternLanguage::Hcl => Ok("/tree-sitter-hcl.wasm"),
         PatternLanguage::Yaml => Ok("/tree-sitter-yaml.wasm"),

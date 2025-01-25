@@ -58,6 +58,7 @@ macro_rules! use_marzano_delegate {
 
 pub mod csharp;
 pub mod css;
+pub mod elixir;
 pub mod foreign_language;
 pub mod go;
 pub mod grit_parser;
@@ -78,7 +79,6 @@ mod php_like;
 pub mod php_only;
 pub mod python;
 pub mod ruby;
-pub mod elixir;
 pub mod rust;
 pub mod solidity;
 pub mod sourcemap;

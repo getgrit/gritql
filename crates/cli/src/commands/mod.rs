@@ -24,6 +24,9 @@ pub(crate) mod plumbing;
 pub(crate) mod version;
 
 #[cfg(feature = "workflows_v2")]
+pub(crate) mod blueprints;
+
+#[cfg(feature = "workflows_v2")]
 pub(crate) mod apply_migration;
 #[cfg(feature = "workflows_v2")]
 pub(crate) mod workflows;
@@ -142,6 +145,10 @@ pub enum Commands {
     Lsp(LspArgs),
     /// Print diagnostic information about the current environment
     Doctor(DoctorArgs),
+    /// Manage blueprints for the Grit Agent
+    #[cfg(feature = "workflows_v2")]
+    #[clap(aliases = ["blueprint", "bp"])]
+    Blueprints(blueprints::Blueprints),
     /// Authentication commands, run `grit auth --help` for more information
     #[clap(name = "auth")]
     Auth(Auth),
@@ -195,6 +202,12 @@ impl fmt::Display for Commands {
                 PatternCommands::Test(_) => write!(f, "patterns test"),
                 PatternCommands::Edit(_) => write!(f, "patterns edit"),
                 PatternCommands::Describe(_) => write!(f, "patterns describe"),
+            },
+            #[cfg(feature = "workflows_v2")]
+            Commands::Blueprints(arg) => match arg.blueprint_commands {
+                blueprints::BlueprintCommands::List(_) => write!(f, "blueprints list"),
+                blueprints::BlueprintCommands::Pull(_) => write!(f, "blueprints pull"),
+                blueprints::BlueprintCommands::Push(_) => write!(f, "blueprints push"),
             },
             #[cfg(feature = "workflows_v2")]
             Commands::Workflows(arg) => match arg.workflows_commands {
@@ -426,6 +439,12 @@ async fn run_command(_use_tracing: bool) -> Result<()> {
                 PatternCommands::Test(arg) => run_patterns_test(arg, app.format_flags).await,
                 PatternCommands::Edit(arg) => run_patterns_edit(arg).await,
                 PatternCommands::Describe(arg) => run_patterns_describe(arg).await,
+            },
+            #[cfg(feature = "workflows_v2")]
+            Commands::Blueprints(arg) => match arg.blueprint_commands {
+                blueprints::BlueprintCommands::List(arg) => arg.run(&app.format_flags).await,
+                blueprints::BlueprintCommands::Pull(arg) => arg.run(&app.format_flags).await,
+                blueprints::BlueprintCommands::Push(arg) => arg.run(&app.format_flags).await,
             },
             #[cfg(feature = "workflows_v2")]
             Commands::Workflows(arg) => match arg.workflows_commands {
