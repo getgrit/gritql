@@ -14,10 +14,10 @@ impl ExternalFunction {
         // Currently the JS PDK requires WASI to be enabled; this is not really secure
         let mut plugin = Plugin::new(manifest, [], true)?;
 
-        plugin.call("register_function", js_function_body)?;
-        plugin.call(
+        plugin.call::<&[u8], ()>("register_function", js_function_body)?;
+        plugin.call::<&[u8], ()>(
             "register_parameter_names",
-            serde_json::to_vec(&param_names)?,
+            serde_json::to_vec(&param_names)?.as_slice(),
         )?;
 
         Ok(Self {

@@ -29,8 +29,8 @@ jobs:
       - name: install Rust
         uses: actions-rs/toolchain@v1
         with:
-          # If you update this, also update build.mjs
-          toolchain: nightly-2023-11-16
+          # Sync with rust-toolchain.toml
+          toolchain: 1.82
           override: true
       - name: install Terraform
         run: |
@@ -62,8 +62,7 @@ jobs:
             --exclude google-cloud-auth \
             --exclude google-cloud-googleapis \
             --exclude google-cloud-gax \
-            --exclude google-cloud-pubsub \
-            -- -Z unstable-options
+            --exclude google-cloud-pubsub
   test-rust-wasm:
     name: Rust wasm
     timeout-minutes: 15
@@ -79,7 +78,8 @@ jobs:
       - name: install Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          # Sync with rust-toolchain.toml
+          toolchain: 1.82
           override: true
       - name: install wasm-pack
         run: |
@@ -103,7 +103,8 @@ jobs:
       - name: install Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2023-11-16
+          # Sync with rust-toolchain.toml
+          toolchain: 1.82
           override: true
       - name: build
         run: |

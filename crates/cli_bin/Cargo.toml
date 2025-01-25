@@ -47,6 +47,7 @@ marzano-gritmodule = { path = "../gritmodule" }
 
 [features]
 default = ["marzano-cli/default", "grit_tracing"]
+ai_builtins = []
 grit_tracing = [
   "marzano-cli/grit_tracing",
   "opentelemetry",

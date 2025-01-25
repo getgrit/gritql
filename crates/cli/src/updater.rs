@@ -6,7 +6,6 @@ use colored::Colorize;
 use indicatif::ProgressBar;
 use log::info;
 use marzano_auth::info::AuthInfo;
-use marzano_gritmodule::config::REPO_CONFIG_DIR_NAME;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
 
 use serde::Deserialize;
@@ -138,7 +137,6 @@ pub struct Updater {
     pub manifest_path: PathBuf,
     pub install_path: PathBuf,
     bin_path: PathBuf,
-    pub global_grit_path: PathBuf,
     pub binaries: HashMap<String, AppManifest>,
     #[cfg(feature = "updater")]
     last_checked_update: Option<NaiveDateTime>,
@@ -168,7 +166,6 @@ impl Updater {
             return Ok(Self {
                 manifest_path,
                 bin_path: install_path.join("bin"),
-                global_grit_path: install_path.join(REPO_CONFIG_DIR_NAME),
                 install_path,
                 binaries: manifest.binaries,
                 #[cfg(feature = "updater")]
@@ -181,12 +178,10 @@ impl Updater {
 
         let bin_path = install_path.join("bin");
 
-        let global_grit_path = install_path.join(REPO_CONFIG_DIR_NAME);
         let updater = Self {
             manifest_path: install_path.join(MANIFEST_FILE),
             install_path,
             bin_path,
-            global_grit_path,
             binaries: HashMap::new(),
             #[cfg(feature = "updater")]
             last_checked_update: None,

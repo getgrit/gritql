@@ -163,3 +163,6 @@ grit_beta = [
   # "grit_tracing",
 ]
 grit_timing = []
+# Copied from otel
+experimental_metadata_attributes = []
+logs_level_enabled = []

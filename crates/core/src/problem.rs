@@ -292,12 +292,12 @@ impl Problem {
                             continue;
                         }
                         if let Some(name) = message.file_name() {
-                            if let Ok(path) = PathBuf::from_str(name) {
-                                if let Some(done_file) =
-                                    done_files.get_mut(path.to_string_lossy().as_ref())
-                                {
-                                    done_file.has_results = Some(true);
-                                }
+                            // .unwrap() is safe, because from_str is infallible
+                            let path = PathBuf::from_str(name).unwrap();
+                            if let Some(done_file) =
+                                done_files.get_mut(path.to_string_lossy().as_ref())
+                            {
+                                done_file.has_results = Some(true);
                             }
                         }
                     }
