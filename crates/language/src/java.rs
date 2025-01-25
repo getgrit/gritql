@@ -99,4 +99,30 @@ mod tests {
         let nodes = nodes_from_indices(&snippets);
         assert!(!nodes.is_empty());
     }
+
+    #[test]
+    fn list_snippet() {
+        let snippet = r#"List<String> fruits = Arrays.asList("Apple", "Banana", "Cherry");"#;
+        let lang = Java::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        println!("nodes: {:#?}", nodes);
+        nodes.iter().for_each(|n| {
+            n.print_node_tree();
+        });
+        assert!(!nodes.is_empty());
+    }
+
+    #[test]
+    fn array_snippet() {
+        let snippet = r#"int[] numbers = {1, 2, 3, 4, 5};"#;
+        let lang = Java::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        println!("nodes: {:#?}", nodes);
+        nodes.iter().for_each(|n| {
+            n.print_node_tree();
+        });
+        assert!(!nodes.is_empty());
+    }
 }

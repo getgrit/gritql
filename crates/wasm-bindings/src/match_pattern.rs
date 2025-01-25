@@ -34,6 +34,7 @@ static HTML_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static CSS_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static JSON_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static JAVA_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
+static KOTLIN_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static CSHARP_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static PYTHON_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
 static MARKDOWN_BLOCK_LANGUAGE: OnceLock<TSLanguage> = OnceLock::new();
@@ -468,6 +469,7 @@ fn pattern_language_to_path(lang: &PatternLanguage) -> anyhow::Result<String> {
         PatternLanguage::Css => Ok("/tree-sitter-css.wasm"),
         PatternLanguage::Json => Ok("/tree-sitter-json.wasm"),
         PatternLanguage::Java => Ok("/tree-sitter-java.wasm"),
+        PatternLanguage::Kotlin => Ok("/tree-sitter-kotlin.wasm"),
         PatternLanguage::CSharp => Err(anyhow::anyhow!("CSharp wasm is not currently supported")),
         PatternLanguage::Python => Ok("/tree-sitter-python.wasm"),
         PatternLanguage::MarkdownBlock => Ok("/tree-sitter-markdown-block.wasm"), // def wrong
@@ -513,6 +515,7 @@ fn get_lang_store(language: &PatternLanguage) -> anyhow::Result<&'static OnceLoc
         PatternLanguage::Css => Ok(&CSS_LANGUAGE),
         PatternLanguage::Json => Ok(&JSON_LANGUAGE),
         PatternLanguage::Java => Ok(&JAVA_LANGUAGE),
+        PatternLanguage::Kotlin => Ok(&KOTLIN_LANGUAGE),
         PatternLanguage::CSharp => Ok(&CSHARP_LANGUAGE),
         PatternLanguage::Python => Ok(&PYTHON_LANGUAGE),
         PatternLanguage::MarkdownBlock => Ok(&MARKDOWN_BLOCK_LANGUAGE),

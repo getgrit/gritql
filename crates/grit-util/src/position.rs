@@ -4,7 +4,6 @@ use std::fmt::Display;
 #[cfg_attr(feature = "napi", napi_derive::napi(object))]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "camelCase")]
-
 pub struct Position {
     /// 1-based line number in the source file.
     pub line: u32,

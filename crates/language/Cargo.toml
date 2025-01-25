@@ -24,6 +24,7 @@ tree-sitter-typescript = { path = "../../resources/language-metavariables/tree-s
 tree-sitter-javascript = { path = "../../resources/language-metavariables/tree-sitter-javascript", optional = true }
 tree-sitter-html = { path = "../../resources/language-metavariables/tree-sitter-html", optional = true }
 tree-sitter-java = { path = "../../resources/language-metavariables/tree-sitter-java", optional = true }
+tree-sitter-kotlin = { path = "../../resources/language-metavariables/tree-sitter-kotlin", optional = true }
 tree-sitter-c-sharp = { path = "../../resources/language-metavariables/tree-sitter-c-sharp", optional = true }
 tree-sitter-python = { path = "../../resources/language-metavariables/tree-sitter-python", optional = true }
 tree-sitter-md = { path = "../../resources/language-metavariables/tree-sitter-markdown", optional = true }
@@ -65,6 +66,7 @@ builtin-parser = [
     "tree-sitter-javascript",
     "tree-sitter-html",
     "tree-sitter-java",
+    "tree-sitter-kotlin",
     "tree-sitter-c-sharp",
     "tree-sitter-python",
     "tree-sitter-md",

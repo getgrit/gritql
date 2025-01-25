@@ -69,6 +69,19 @@ impl<'a> NodeWithSource<'a> {
             end_byte: ts_range.end_byte(),
         }
     }
+
+    pub fn print_node_tree(&self) {
+        let mut stack = vec![(self.node.clone(), 0)];
+        while let Some((node, depth)) = stack.pop() {
+            let sort_id = node.kind_id();
+            println!("{:indent$}{}: {:?}", "", sort_id, node, indent = depth * 2);
+            for i in (0..node.child_count()).rev() {
+                if let Some(child) = node.child(i) {
+                    stack.push((child, depth + 1));
+                }
+            }
+        }
+    }
 }
 
 impl<'a> PartialEq for NodeWithSource<'a> {

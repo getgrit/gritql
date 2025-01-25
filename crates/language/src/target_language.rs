@@ -9,6 +9,7 @@ use crate::{
     java::Java,
     javascript::JavaScript,
     json::Json,
+    kotlin::Kotlin,
     language::{
         Field, FieldId, LeafEquivalenceClass, MarzanoLanguage, NodeTypes, SortId, TSLanguage, Tree,
     },
@@ -59,6 +60,7 @@ pub enum PatternLanguage {
     Css,
     Json,
     Java,
+    Kotlin,
     CSharp,
     Python,
     MarkdownBlock,
@@ -88,6 +90,7 @@ impl fmt::Display for PatternLanguage {
             PatternLanguage::Css => write!(f, "css"),
             PatternLanguage::Json => write!(f, "json"),
             PatternLanguage::Java => write!(f, "java"),
+            PatternLanguage::Kotlin => write!(f, "kotlin"),
             PatternLanguage::CSharp => write!(f, "csharp"),
             PatternLanguage::Python => write!(f, "python"),
             PatternLanguage::MarkdownBlock => write!(f, "markdown"),
@@ -125,6 +128,7 @@ impl ValueEnum for PatternLanguage {
             Self::Css,
             Self::Json,
             Self::Java,
+            Self::Kotlin,
             Self::CSharp,
             Self::Python,
             Self::MarkdownBlock,
@@ -225,6 +229,7 @@ impl PatternLanguage {
             "css" => Some(Self::Css),
             "json" => Some(Self::Json),
             "java" => Some(Self::Java),
+            "kotlin" => Some(Self::Kotlin),
             "csharp" => Some(Self::CSharp),
             "markdown" => match flavor {
                 Some("block") => Some(Self::MarkdownBlock),
@@ -291,6 +296,7 @@ impl PatternLanguage {
             PatternLanguage::Css => &["css", "vue"],
             PatternLanguage::Json => &["json"],
             PatternLanguage::Java => &["java"],
+            PatternLanguage::Kotlin => &["kt", "kts"],
             PatternLanguage::CSharp => &["cs"],
             PatternLanguage::Python => &["py", "pyi", "ipynb"],
             PatternLanguage::MarkdownBlock => &["md", "mdx", "mdoc"],
@@ -320,6 +326,7 @@ impl PatternLanguage {
             PatternLanguage::Css => Some("css"),
             PatternLanguage::Json => Some("json"),
             PatternLanguage::Java => Some("java"),
+            PatternLanguage::Kotlin => Some("kt"),
             PatternLanguage::CSharp => Some("cs"),
             PatternLanguage::Python => Some("py"),
             PatternLanguage::MarkdownBlock => Some("md"),
@@ -348,6 +355,7 @@ impl PatternLanguage {
             "css" => Some(Self::Css),
             "json" => Some(Self::Json),
             "java" => Some(Self::Java),
+            "kt" | "kts" => Some(Self::Kotlin),
             "cs" => Some(Self::CSharp),
             "ipynb" => Some(Self::Python),
             "py" | "pyi" => Some(Self::Python),
@@ -390,6 +398,7 @@ impl PatternLanguage {
             PatternLanguage::Html => Ok(TargetLanguage::Html(Html::new(Some(lang)))),
             PatternLanguage::Css => Ok(TargetLanguage::Css(Css::new(Some(lang)))),
             PatternLanguage::Json => Ok(TargetLanguage::Json(Json::new(Some(lang)))),
+            PatternLanguage::Kotlin => Ok(TargetLanguage::Kotlin(Kotlin::new(Some(lang)))),
             PatternLanguage::Java => Ok(TargetLanguage::Java(Java::new(Some(lang)))),
             PatternLanguage::CSharp => Ok(TargetLanguage::CSharp(CSharp::new(Some(lang)))),
             PatternLanguage::Python => Ok(TargetLanguage::Python(Python::new(Some(lang)))),
@@ -750,6 +759,7 @@ generate_target_language! {
     Css,
     Json,
     Java,
+    Kotlin,
     CSharp,
     Python,
     MarkdownBlock,
@@ -778,6 +788,7 @@ impl fmt::Display for TargetLanguage {
             TargetLanguage::Css(_) => write!(f, "css"),
             TargetLanguage::Json(_) => write!(f, "json"),
             TargetLanguage::Java(_) => write!(f, "java"),
+            TargetLanguage::Kotlin(_) => write!(f, "kotlin"),
             TargetLanguage::CSharp(_) => write!(f, "csharp"),
             TargetLanguage::Python(_) => write!(f, "python"),
             TargetLanguage::MarkdownBlock(_) => write!(f, "markdown"),
@@ -828,6 +839,7 @@ impl TargetLanguage {
             TargetLanguage::CSharp(_)
             | TargetLanguage::Go(_)
             | TargetLanguage::Java(_)
+            | TargetLanguage::Kotlin(_)
             | TargetLanguage::JavaScript(_)
             | TargetLanguage::Json(_)
             | TargetLanguage::Rust(_)

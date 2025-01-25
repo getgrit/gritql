@@ -2852,6 +2852,68 @@ fn apply_stdin_simple() -> Result<()> {
     Ok(())
 }
 
+/// simple stdin example from documentation but with js array append query/operation
+#[test]
+fn apply_stdin_js_array_append() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
+
+    let input_file = r#"const allLanguages = ["python", "java",]"#;
+    let expected_output = r#"const allLanguages = ["python", "java", "kotlin",]"#;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg(r#"`const allLanguages = [$langs]` where { $langs += `"kotlin",` }"#)
+        .arg("--stdin")
+        .arg("--lang")
+        .arg("js")
+        .current_dir(&fixture_dir);
+
+    cmd.write_stdin(String::from_utf8(input_file.into())?);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command should have succeeded");
+    assert!(stdout.contains(expected_output));
+
+    Ok(())
+}
+
+/// simple stdin example from documentation but with python list append query/operation
+#[test]
+fn apply_stdin_python_list_append() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("limit_files", false)?;
+
+    let input_file = r#"all_languages = ["python", "java"]"#;
+    let expected_output = r#"all_languages = ["python", "java", "kotlin",]"#;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg(r#"`all_languages = [$langs]` where { $langs += `"kotlin",` }"#)
+        .arg("--stdin")
+        .arg("--lang")
+        .arg("py")
+        .current_dir(&fixture_dir);
+
+    cmd.write_stdin(String::from_utf8(input_file.into())?);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command should have succeeded");
+    assert!(stdout.contains(expected_output));
+
+    Ok(())
+}
+
 /// simple stdin example from documentation, but using a language alias
 #[test]
 fn apply_stdin_with_lang_alias() -> Result<()> {
@@ -3080,6 +3142,72 @@ fn apply_to_yaml_with_multiple_equivalent_strings() -> Result<()> {
 
     // ensure all equivalent strings were replaced
     assert!(stdout.contains("Processed 1 files and found 3 matches"));
+
+    Ok(())
+}
+
+/// test that we can apply to a kotlin file containing equivalent strings
+/// but with different formatting/representations (double quotes vs triple double quotes)
+#[test]
+fn apply_to_kotlin_with_multiple_equivalent_strings() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("kotlin_examples", false)?;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg(r#"`"ubuntu-latest"` => `"ubuntu-22.04"`"#)
+        .arg("build.kt")
+        .arg("--lang=kotlin")
+        .arg("--force")
+        .current_dir(&fixture_dir);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command failed");
+    // Read back the build.yml file to ensure it was processed correctly
+    let target_file = fixture_dir.join("build.kt");
+    let content: String = fs_err::read_to_string(target_file)?;
+    assert_snapshot!(content);
+
+    // ensure all equivalent strings were replaced
+    assert!(stdout.contains("Processed 1 files and found 2 matches"));
+
+    Ok(())
+}
+
+/// test that we can apply to a python file containing equivalent strings
+/// but with different formatting/representations (single quotes vs double quotes vs triple double quotes)
+#[test]
+fn apply_to_python_with_multiple_equivalent_strings() -> Result<()> {
+    let (_temp_dir, fixture_dir) = get_fixture("python_examples", false)?;
+
+    let mut cmd = get_test_cmd()?;
+    cmd.arg("apply")
+        .arg(r#"`"ubuntu-latest"` => `"ubuntu-22.04"`"#)
+        .arg("build.py")
+        .arg("--lang=python")
+        .arg("--force")
+        .current_dir(&fixture_dir);
+
+    let result = cmd.output()?;
+
+    let stderr = String::from_utf8(result.stderr)?;
+    println!("stderr: {:?}", stderr);
+    let stdout = String::from_utf8(result.stdout)?;
+    println!("stdout: {:?}", stdout);
+
+    assert!(result.status.success(), "Command failed");
+    // Read back the build.yml file to ensure it was processed correctly
+    let target_file = fixture_dir.join("build.py");
+    let content: String = fs_err::read_to_string(target_file)?;
+    assert_snapshot!(content);
+
+    // ensure all equivalent strings were replaced
+    assert!(stdout.contains("Processed 1 files and found 4 matches"));
 
     Ok(())
 }

@@ -204,4 +204,43 @@ mod tests {
         println!("nodes: {:#?}", nodes);
         assert!(!nodes.is_empty());
     }
+
+    #[test]
+    fn assignment_snippet() {
+        let snippet = r#"key = "value""#;
+        let lang = Python::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        println!("nodes: {:#?}", nodes);
+        nodes.iter().for_each(|n| {
+            n.print_node_tree();
+        });
+        assert!(!nodes.is_empty());
+    }
+
+    #[test]
+    fn def_snippet() {
+        let snippet: &str = "def add(a: int, b: int) -> int: a + b;";
+        let lang = Python::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        println!("nodes: {:#?}", nodes);
+        nodes.iter().for_each(|n| {
+            n.print_node_tree();
+        });
+        assert!(!nodes.is_empty());
+    }
+
+    #[test]
+    fn lambda_snippet() {
+        let snippet: &str = "add = lambda a, b: a + b;";
+        let lang = Python::new(None);
+        let snippets = lang.parse_snippet_contexts(snippet);
+        let nodes = nodes_from_indices(&snippets);
+        println!("nodes: {:#?}", nodes);
+        nodes.iter().for_each(|n| {
+            n.print_node_tree();
+        });
+        assert!(!nodes.is_empty());
+    }
 }

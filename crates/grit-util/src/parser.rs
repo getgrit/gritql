@@ -17,6 +17,7 @@ where
     _Phantom(PhantomData<&'tree Tree>),
 }
 
+#[allow(clippy::needless_lifetimes)]
 impl<'tree, Tree: Ast> FileOrigin<'tree, Tree> {
     /// Is this a file we are parsing for the first time, from outside Grit?
     pub fn is_fresh(&self) -> bool {
