@@ -6,7 +6,6 @@ use colored::Colorize;
 use indicatif::ProgressBar;
 use log::info;
 use marzano_auth::info::AuthInfo;
-use marzano_gritmodule::config::REPO_CONFIG_DIR_NAME;
 use marzano_util::runtime::{ExecutionContext, LanguageModelAPI};
 
 use serde::Deserialize;
