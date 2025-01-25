@@ -88,15 +88,12 @@ pub async fn get_marzano_pattern_test_results(
                             let mut actual_sample = sample.clone();
                             debug!("Sample: {:?}, result {:?}", sample, result);
 
-                            match &result.actual_output {
-                                Some(output) => {
-                                    debug!(
-                                        "Sample output: {:?}, {:?}",
-                                        result.message, result.expected_output
-                                    );
-                                    actual_sample.output = Some(output.clone())
-                                }
-                                None => (),
+                            if let Some(output) = &result.actual_output {
+                                debug!(
+                                    "Sample output: {:?}, {:?}",
+                                    result.message, result.expected_output
+                                );
+                                actual_sample.output = Some(output.clone())
                             }
 
                             let wrapped = WrappedResult {

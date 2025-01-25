@@ -239,10 +239,7 @@ impl From<&LocalRepo> for ModuleRepo {
     fn from(local_repo: &LocalRepo) -> Self {
         let remote = local_repo.remote().unwrap_or_default();
 
-        match ModuleRepo::from_remote(&remote) {
-            Ok(module_repo) => module_repo,
-            Err(_) => Default::default(),
-        }
+        ModuleRepo::from_remote(&remote).unwrap_or_default()
     }
 }
 

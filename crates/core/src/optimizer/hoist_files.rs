@@ -226,16 +226,13 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
                 match &m.val {
                     grit_pattern_matcher::pattern::Container::Variable(var) => {
                         if var.is_file_name() {
-                            match &m.pattern {
-                                Some(pattern) => {
-                                    // This is the key line of this entire file
-                                    if is_safe_to_hoist(pattern)? {
-                                        return Ok(Some(pattern.clone()));
-                                    } else {
-                                        return Ok(None);
-                                    }
+                            if let Some(pattern) = &m.pattern {
+                                // This is the key line of this entire file
+                                if is_safe_to_hoist(pattern)? {
+                                    return Ok(Some(pattern.clone()));
+                                } else {
+                                    return Ok(None);
                                 }
-                                None => {}
                             }
                         }
                     }
@@ -244,10 +241,11 @@ impl<Q: QueryContext> FilenamePatternExtractor<Q> for Predicate<Q> {
                     | grit_pattern_matcher::pattern::Container::FunctionCall(_) => {}
                 };
 
-                match &m.pattern {
-                    Some(pattern) => extract_filename_pattern(pattern),
+                if let Some(pattern) = &m.pattern {
+                    extract_filename_pattern(pattern)
+                } else {
                     // TODO: is this right? Why do we ever have an empty pattern?
-                    None => Ok(None),
+                    Ok(None)
                 }
             }
             Predicate::Accumulate(_) | Predicate::Assignment(_) | Predicate::Return(_) => {
