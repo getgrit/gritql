@@ -28,6 +28,10 @@ jobs:
         run: sudo apt-get install -y protobuf-compiler
       - name: install Rust
         uses: actions-rs/toolchain@v1
+        with:
+          # Sync with rust-toolchain.toml
+          toolchain: 1.82
+          override: true
       - name: install Terraform
         run: |
           wget https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
@@ -75,7 +79,8 @@ jobs:
       - name: install Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          # Sync with rust-toolchain.toml
+          toolchain: 1.82
           override: true
       - name: install wasm-pack
         run: |
@@ -98,6 +103,10 @@ jobs:
           submodules: recursive
       - name: install Rust
         uses: actions-rs/toolchain@v1
+        with:
+          # Sync with rust-toolchain.toml
+          toolchain: 1.82
+          override: true
       - name: build
         run: |
           cargo build --release
