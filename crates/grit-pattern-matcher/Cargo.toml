@@ -21,3 +21,7 @@ grit-util = { path = "../grit-util", version = "0.5.1" }
 itertools = { version = "0.10.5" }
 rand = { version = "0.8.5" }
 regex = { version = "1.7.3" }
+
+[features]
+default = []
+grit_tracing = []
