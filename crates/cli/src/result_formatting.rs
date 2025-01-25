@@ -25,8 +25,10 @@ pub enum FormattedResult {
     AnalysisLog(AnalysisLog),
     Match(Match),
     InputFile(InputFile),
+    #[allow(unused)]
     DoneFile(DoneFile),
     AllDone(AllDone),
+    #[allow(unused)]
     PatternInfo(PatternInfo),
     Rewrite(Rewrite),
     CreateFile(CreateFile),

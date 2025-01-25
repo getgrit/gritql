@@ -35,6 +35,7 @@ pub enum Format {
 
 #[derive(Debug, serde::Deserialize)]
 pub struct Table {
+    #[allow(unused)]
     pub format: Format,
     pub headers: Option<Vec<String>>,
     pub data: Vec<Vec<String>>,
