@@ -27,4 +27,4 @@ jobs:
       - name: lint
         run: cargo clippy --features test_ci --exclude grit-wasm-bindings --workspace --locked -- -D warnings
       - name: format
-        run: cargo fmt --all -- --check
+        run: cargo fmt -- --check
