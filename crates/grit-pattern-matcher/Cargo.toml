@@ -25,3 +25,4 @@ regex = { version = "1.7.3" }
 [features]
 default = []
 grit_tracing = []
+embeddings = []
