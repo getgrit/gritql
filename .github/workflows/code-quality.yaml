@@ -19,10 +19,6 @@ jobs:
         run: sudo apt-get install -y protobuf-compiler
       - name: install Rust
         uses: actions-rs/toolchain@v1
-        with:
-          # If you update this, also update build.mjs
-          toolchain: nightly-2023-11-16
-          override: true
       - run: rustup component add clippy rustfmt
       - name: lint
         run: cargo clippy --features test_ci --exclude grit-wasm-bindings --workspace --locked -- -D warnings

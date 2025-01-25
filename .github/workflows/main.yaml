@@ -28,10 +28,6 @@ jobs:
         run: sudo apt-get install -y protobuf-compiler
       - name: install Rust
         uses: actions-rs/toolchain@v1
-        with:
-          # If you update this, also update build.mjs
-          toolchain: nightly-2023-11-16
-          override: true
       - name: install Terraform
         run: |
           wget https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
@@ -102,9 +98,6 @@ jobs:
           submodules: recursive
       - name: install Rust
         uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly-2023-11-16
-          override: true
       - name: build
         run: |
           cargo build --release
