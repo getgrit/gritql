@@ -16,13 +16,13 @@ pub(crate) mod lsp;
 
 pub(crate) mod check;
 
+pub(crate) mod format;
 pub(crate) mod parse;
 pub(crate) mod patterns;
 pub(crate) mod patterns_list;
 pub(crate) mod patterns_test;
 pub(crate) mod plumbing;
 pub(crate) mod version;
-pub(crate) mod format;
 
 #[cfg(feature = "workflows_v2")]
 pub(crate) mod blueprints;
@@ -83,12 +83,12 @@ use check::CheckArg;
 use clap::Parser;
 use clap::Subcommand;
 use doctor::DoctorArgs;
+use format::{run_format, FormatArgs};
 use indicatif::MultiProgress;
 use indicatif_log_bridge::LogWrapper;
 use init::InitArgs;
 use install::InstallArgs;
 use list::ListArgs;
-use format::{run_format, FormatArgs};
 use log::LevelFilter;
 use lsp::LspArgs;
 use marzano_messenger::emit::ApplyDetails;
