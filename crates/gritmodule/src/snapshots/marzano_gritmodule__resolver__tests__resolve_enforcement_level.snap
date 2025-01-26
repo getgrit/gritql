@@ -1,6 +1,7 @@
 ---
 source: crates/gritmodule/src/resolver.rs
 expression: resolved_patterns
+snapshot_kind: text
 ---
 - config:
     name: hidden_pattern
@@ -20,7 +21,9 @@ expression: resolved_patterns
         column: 11
       startByte: 35
       endByte: 35
-    raw: ~
+    raw:
+      format: yaml
+      content: "version: 0.0.1\npatterns:\n  - name: hidden_pattern\n    level: none\n    body: |\n      language js\n      `console.log($_)` => .\n  - name: remove_console_log\n    level: warn\n    body: |\n      engine marzano(0.1)\n      language js\n\n      `console.log($_)` => .\n  - name: remove_console_error\n    level: error\n    body: |\n      engine marzano(0.1)\n      language js\n\n      `console.error($_)` => .\n"
   module:
     type: Module
     host: github.com
@@ -50,7 +53,9 @@ expression: resolved_patterns
         column: 11
       startByte: 266
       endByte: 266
-    raw: ~
+    raw:
+      format: yaml
+      content: "version: 0.0.1\npatterns:\n  - name: hidden_pattern\n    level: none\n    body: |\n      language js\n      `console.log($_)` => .\n  - name: remove_console_log\n    level: warn\n    body: |\n      engine marzano(0.1)\n      language js\n\n      `console.log($_)` => .\n  - name: remove_console_error\n    level: error\n    body: |\n      engine marzano(0.1)\n      language js\n\n      `console.error($_)` => .\n"
   module:
     type: Module
     host: github.com
@@ -80,7 +85,9 @@ expression: resolved_patterns
         column: 11
       startByte: 135
       endByte: 135
-    raw: ~
+    raw:
+      format: yaml
+      content: "version: 0.0.1\npatterns:\n  - name: hidden_pattern\n    level: none\n    body: |\n      language js\n      `console.log($_)` => .\n  - name: remove_console_log\n    level: warn\n    body: |\n      engine marzano(0.1)\n      language js\n\n      `console.log($_)` => .\n  - name: remove_console_error\n    level: error\n    body: |\n      engine marzano(0.1)\n      language js\n\n      `console.error($_)` => .\n"
   module:
     type: Module
     host: github.com

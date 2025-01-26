@@ -1,6 +1,7 @@
 ---
 source: crates/gritmodule/src/yaml.rs
 expression: patterns
+snapshot_kind: text
 ---
 - config:
     name: "github.com/getgrit/js#*"
@@ -20,7 +21,9 @@ expression: patterns
         column: 11
       startByte: 35
       endByte: 35
-    raw: ~
+    raw:
+      format: yaml
+      content: "version: 0.0.1\npatterns:\n  - name: github.com/getgrit/js#*\n    level: info\n  - name: github.com/getgrit/json#no_console_log\n    level: error\n  - name: github.com/getgrit/json#strict_tsconfig\n    level: info\n  - name: remove_console_error\n    level: error\n    body: |\n      engine marzano(0.1)\n      language js\n\n      `console.error($_)` => .\ngithub:\n  reviewers:\n  - morgante\n  - gritagent\n    "
   module:
     host: github.com
     fullName: getgrit/js
@@ -45,7 +48,9 @@ expression: patterns
         column: 11
       startByte: 85
       endByte: 85
-    raw: ~
+    raw:
+      format: yaml
+      content: "version: 0.0.1\npatterns:\n  - name: github.com/getgrit/js#*\n    level: info\n  - name: github.com/getgrit/json#no_console_log\n    level: error\n  - name: github.com/getgrit/json#strict_tsconfig\n    level: info\n  - name: remove_console_error\n    level: error\n    body: |\n      engine marzano(0.1)\n      language js\n\n      `console.error($_)` => .\ngithub:\n  reviewers:\n  - morgante\n  - gritagent\n    "
   module:
     host: github.com
     fullName: getgrit/json
@@ -70,7 +75,9 @@ expression: patterns
         column: 11
       startByte: 151
       endByte: 151
-    raw: ~
+    raw:
+      format: yaml
+      content: "version: 0.0.1\npatterns:\n  - name: github.com/getgrit/js#*\n    level: info\n  - name: github.com/getgrit/json#no_console_log\n    level: error\n  - name: github.com/getgrit/json#strict_tsconfig\n    level: info\n  - name: remove_console_error\n    level: error\n    body: |\n      engine marzano(0.1)\n      language js\n\n      `console.error($_)` => .\ngithub:\n  reviewers:\n  - morgante\n  - gritagent\n    "
   module:
     host: github.com
     fullName: getgrit/json
@@ -95,6 +102,8 @@ expression: patterns
         column: 11
       startByte: 217
       endByte: 217
-    raw: ~
+    raw:
+      format: yaml
+      content: "version: 0.0.1\npatterns:\n  - name: github.com/getgrit/js#*\n    level: info\n  - name: github.com/getgrit/json#no_console_log\n    level: error\n  - name: github.com/getgrit/json#strict_tsconfig\n    level: info\n  - name: remove_console_error\n    level: error\n    body: |\n      engine marzano(0.1)\n      language js\n\n      `console.error($_)` => .\ngithub:\n  reviewers:\n  - morgante\n  - gritagent\n    "
   module: ~
   local_name: remove_console_error

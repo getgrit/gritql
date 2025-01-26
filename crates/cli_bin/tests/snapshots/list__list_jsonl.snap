@@ -1,6 +1,7 @@
 ---
 source: crates/cli_bin/tests/list.rs
 expression: parsed_patterns
+snapshot_kind: text
 ---
 - config:
     name: HiddenUtility
@@ -20,7 +21,9 @@ expression: parsed_patterns
         column: 22
       startByte: 322
       endByte: 335
-    raw: ~
+    raw:
+      format: grit
+      content: "pattern OtherPattern() {\n    `$foo.other` => `$foo.replacement`\n}\n\npattern NamedPattern() {\n    `$foo.named` => `$foo.replacement`\n}\n\npattern PatternWithArgs($arg) {\n    `$foo.$arg` => `$foo.replacement`\n}\n\nfunction cool_thing_wrapper($input) {\n  return `bob.$input`\n}\n\n// This should still show up in --json mode\npattern HiddenUtility($oneArg, $twoArg) {\n  `$foo.hidden` => cool_thing_wrapper(input=`$foo.$oneArg.$twoArg`)\n}"
   module:
     type: Module
     host: ""
@@ -50,7 +53,9 @@ expression: parsed_patterns
         column: 21
       startByte: 75
       endByte: 87
-    raw: ~
+    raw:
+      format: grit
+      content: "pattern OtherPattern() {\n    `$foo.other` => `$foo.replacement`\n}\n\npattern NamedPattern() {\n    `$foo.named` => `$foo.replacement`\n}\n\npattern PatternWithArgs($arg) {\n    `$foo.$arg` => `$foo.replacement`\n}\n\nfunction cool_thing_wrapper($input) {\n  return `bob.$input`\n}\n\n// This should still show up in --json mode\npattern HiddenUtility($oneArg, $twoArg) {\n  `$foo.hidden` => cool_thing_wrapper(input=`$foo.$oneArg.$twoArg`)\n}"
   module:
     type: Module
     host: ""
@@ -80,7 +85,9 @@ expression: parsed_patterns
         column: 21
       startByte: 8
       endByte: 20
-    raw: ~
+    raw:
+      format: grit
+      content: "pattern OtherPattern() {\n    `$foo.other` => `$foo.replacement`\n}\n\npattern NamedPattern() {\n    `$foo.named` => `$foo.replacement`\n}\n\npattern PatternWithArgs($arg) {\n    `$foo.$arg` => `$foo.replacement`\n}\n\nfunction cool_thing_wrapper($input) {\n  return `bob.$input`\n}\n\n// This should still show up in --json mode\npattern HiddenUtility($oneArg, $twoArg) {\n  `$foo.hidden` => cool_thing_wrapper(input=`$foo.$oneArg.$twoArg`)\n}"
   module:
     type: Module
     host: ""
@@ -110,7 +117,9 @@ expression: parsed_patterns
         column: 24
       startByte: 142
       endByte: 157
-    raw: ~
+    raw:
+      format: grit
+      content: "pattern OtherPattern() {\n    `$foo.other` => `$foo.replacement`\n}\n\npattern NamedPattern() {\n    `$foo.named` => `$foo.replacement`\n}\n\npattern PatternWithArgs($arg) {\n    `$foo.$arg` => `$foo.replacement`\n}\n\nfunction cool_thing_wrapper($input) {\n  return `bob.$input`\n}\n\n// This should still show up in --json mode\npattern HiddenUtility($oneArg, $twoArg) {\n  `$foo.hidden` => cool_thing_wrapper(input=`$foo.$oneArg.$twoArg`)\n}"
   module:
     type: Module
     host: ""
@@ -505,7 +514,9 @@ expression: parsed_patterns
         column: 11
       startByte: 35
       endByte: 35
-    raw: ~
+    raw:
+      format: yaml
+      content: "version: 0.0.1\npatterns:\n  - name: remove_console_error\n    level: error\n    body: |\n      engine marzano(0.1)\n      language js\n\n      `console.error($_)` => .\n"
   module:
     type: Module
     host: ""

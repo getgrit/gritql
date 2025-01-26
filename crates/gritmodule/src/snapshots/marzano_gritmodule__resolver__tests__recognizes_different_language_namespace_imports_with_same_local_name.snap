@@ -1,6 +1,7 @@
 ---
 source: crates/gritmodule/src/resolver.rs
 expression: resolved_patterns
+snapshot_kind: text
 ---
 - config:
     name: before_each_file_prep_imports
@@ -20,7 +21,9 @@ expression: resolved_patterns
         column: 38
       startByte: 41
       endByte: 70
-    raw: ~
+    raw:
+      format: grit
+      content: "engine marzano(0.1)\nlanguage js\n\npattern before_each_file_prep_imports() {\n    $_ where {\n        $GLOBAL_IMPORTED_SOURCES = [],\n        $GLOBAL_IMPORTED_NAMES = [],\n    }\n}\n"
   module:
     type: Module
     host: github.com
@@ -50,7 +53,9 @@ expression: resolved_patterns
         column: 38
       startByte: 45
       endByte: 74
-    raw: ~
+    raw:
+      format: grit
+      content: "engine marzano(0.1)\nlanguage python\n\npattern before_each_file_prep_imports() {\n    $_ where {\n        $GLOBAL_IMPORTED_SOURCES = [],\n        $GLOBAL_IMPORTED_NAMES = [],\n        $GLOBAL_BARE_IMPORTS = [],\n    }\n}\n"
   module:
     type: Module
     host: github.com

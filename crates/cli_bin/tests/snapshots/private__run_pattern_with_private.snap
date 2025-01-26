@@ -1,6 +1,7 @@
 ---
 source: crates/cli_bin/tests/private.rs
 expression: parsed
+snapshot_kind: text
 ---
 - config:
     name: combined
@@ -20,7 +21,9 @@ expression: parsed
         column: 17
       startByte: 122
       endByte: 130
-    raw: ~
+    raw:
+      format: grit
+      content: "pattern this_is_public() {\n  `cool` => `fool`\n}\n\nprivate pattern this_is_private() {\n  `hidden` => `forbidden`\n}\n\npattern combined() {\n  or {\n    this_is_public(),\n    this_is_private()\n  }\n}"
   module:
     type: Module
     host: ""
@@ -83,7 +86,9 @@ expression: parsed
         column: 32
       startByte: 65
       endByte: 80
-    raw: ~
+    raw:
+      format: grit
+      content: "pattern this_is_public() {\n  `cool` => `fool`\n}\n\nprivate pattern this_is_private() {\n  `hidden` => `forbidden`\n}\n\npattern combined() {\n  or {\n    this_is_public(),\n    this_is_private()\n  }\n}"
   module:
     type: Module
     host: ""
@@ -113,7 +118,9 @@ expression: parsed
         column: 23
       startByte: 8
       endByte: 22
-    raw: ~
+    raw:
+      format: grit
+      content: "pattern this_is_public() {\n  `cool` => `fool`\n}\n\nprivate pattern this_is_private() {\n  `hidden` => `forbidden`\n}\n\npattern combined() {\n  or {\n    this_is_public(),\n    this_is_private()\n  }\n}"
   module:
     type: Module
     host: ""
