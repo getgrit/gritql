@@ -39,13 +39,13 @@ pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
                 pattern_files.push(file);
             }
             crate::config::GritPatternConfig::Pattern(p) => {
-                let mut definitation =
+                let mut definition =
                     GritDefinitionConfig::from_serialized(p, source_path.to_string());
-                definitation.raw = Some(RawGritDefinition {
+                definition.raw = Some(RawGritDefinition {
                     format: PatternFileExt::Yaml,
                     content: source.to_owned(),
                 });
-                patterns.push(definitation);
+                patterns.push(definition);
             }
         }
     }
