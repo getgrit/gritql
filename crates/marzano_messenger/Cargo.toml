@@ -16,7 +16,6 @@ rust.unused_crate_dependencies = "warn"
 
 [dependencies]
 clap = { version = "4.1.13", features = ["derive"] }
-# Do *NOT* upgrade beyond 1.0.171 until https://github.com/serde-rs/serde/issues/2538 is fixed
 serde = { version = "1.0.164", features = ["derive"] }
 anyhow = { version = "1.0.70" }
 colored = { version = "2.0.4" }

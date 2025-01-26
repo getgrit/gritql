@@ -1,0 +1,21 @@
+version: 0.0.1
+patterns:
+  - name: aspect_ratio_yaml
+    description: Yaml version of aspect_ratio.md
+    body: |
+      language css
+
+      `a { $props }` where {
+        $props <: contains `aspect-ratio: $x`
+      }
+
+  - file: ./others/test_move_import.md
+
+  - name: some_json_pattern
+    body: |
+      language json
+
+      `account: $val` where {
+        $val <: contains `password: $password`,
+        $password => raw`hidden`
+      }

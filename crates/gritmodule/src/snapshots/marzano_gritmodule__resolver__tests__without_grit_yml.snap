@@ -1,6 +1,7 @@
 ---
 source: crates/gritmodule/src/resolver.rs
 expression: ordered_resolved_patterns
+snapshot_kind: text
 ---
 ReactNode:
   js:
@@ -22,7 +23,9 @@ ReactNode:
           column: 18
         startByte: 41
         endByte: 50
-      raw: ~
+      raw:
+        format: grit
+        content: "engine marzano(0.1)\nlanguage js\n\npattern ReactNode($name, $props, $children) {\n  or {\n    `<$name $props>$children</$name>`,\n    `<$name $props />`\n  }\n}\n"
     module:
       type: Module
       host: github.com

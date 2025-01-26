@@ -1,10 +1,10 @@
 use crate::{
     config::{
         DefinitionKind, GritDefinitionConfig, GritPatternMetadata, ModuleGritPattern,
-        PatternVisibility,
+        PatternVisibility, RawGritDefinition,
     },
     fetcher::ModuleRepo,
-    parser::extract_relative_file_path,
+    parser::{extract_relative_file_path, PatternFileExt},
 };
 use anyhow::{anyhow, bail, Result};
 use grit_util::{Ast, AstNode, Position, Range};
@@ -87,6 +87,10 @@ pub fn get_patterns_from_grit(
                         },
                         ..Default::default()
                     },
+                    raw: Some(RawGritDefinition {
+                        format: PatternFileExt::Grit,
+                        content: file.content.clone(),
+                    }),
                     ..Default::default()
                 },
                 visibility: if is_public {

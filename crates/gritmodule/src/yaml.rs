@@ -11,7 +11,8 @@ use tokio::fs;
 use crate::{
     config::{
         pattern_config_to_model, DefinitionKind, GritConfig, GritDefinitionConfig,
-        ModuleGritPattern, SerializedGritConfig, CONFIG_FILE_NAMES, REPO_CONFIG_DIR_NAME,
+        ModuleGritPattern, RawGritDefinition, SerializedGritConfig, CONFIG_FILE_NAMES,
+        REPO_CONFIG_DIR_NAME,
     },
     fetcher::ModuleRepo,
     parser::{extract_relative_file_path, get_patterns_from_file, PatternFileExt},
@@ -38,10 +39,13 @@ pub fn get_grit_config(source: &str, source_path: &str) -> Result<GritConfig> {
                 pattern_files.push(file);
             }
             crate::config::GritPatternConfig::Pattern(p) => {
-                patterns.push(GritDefinitionConfig::from_serialized(
-                    p,
-                    source_path.to_string(),
-                ));
+                let mut definition =
+                    GritDefinitionConfig::from_serialized(p, source_path.to_string());
+                definition.raw = Some(RawGritDefinition {
+                    format: PatternFileExt::Yaml,
+                    content: source.to_owned(),
+                });
+                patterns.push(definition);
             }
         }
     }

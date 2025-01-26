@@ -1,6 +1,7 @@
 ---
 source: crates/gritmodule/src/resolver.rs
 expression: resolved_patterns
+snapshot_kind: text
 ---
 - config:
     name: PatternWithBody
@@ -20,7 +21,9 @@ expression: resolved_patterns
         column: 11
       startByte: 203
       endByte: 203
-    raw: ~
+    raw:
+      format: yaml
+      content: "version: 0.0.1\npatterns:\n  - name: NoConsoleLog\n    description: Removes all console.log statements\n    tags: ['style', 'debugging']\n    level: error\n    body: |\n      `console.log($any)` => .\n  - name: PatternWithBody\n    body: '`sum($a, $b)` => `sum([$a, $b])`'\n  - name: RemovalPattern\n    body: '`sum($a, $b)` => .'\n"
   module:
     type: Module
     host: github.com
@@ -50,7 +53,9 @@ expression: resolved_patterns
         column: 11
       startByte: 274
       endByte: 274
-    raw: ~
+    raw:
+      format: yaml
+      content: "version: 0.0.1\npatterns:\n  - name: NoConsoleLog\n    description: Removes all console.log statements\n    tags: ['style', 'debugging']\n    level: error\n    body: |\n      `console.log($any)` => .\n  - name: PatternWithBody\n    body: '`sum($a, $b)` => `sum([$a, $b])`'\n  - name: RemovalPattern\n    body: '`sum($a, $b)` => .'\n"
   module:
     type: Module
     host: github.com
@@ -80,7 +85,9 @@ expression: resolved_patterns
         column: 11
       startByte: 35
       endByte: 35
-    raw: ~
+    raw:
+      format: yaml
+      content: "version: 0.0.1\npatterns:\n  - name: SwapPattern\n    body: '`sum($a, $b)` => `sum($b, $a)`'\n\n"
   module:
     type: Module
     host: github.com

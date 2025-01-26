@@ -1,6 +1,7 @@
 ---
 source: crates/gritmodule/src/resolver.rs
 expression: resolved_patterns
+snapshot_kind: text
 ---
 - config:
     name: NamedPattern
@@ -20,7 +21,9 @@ expression: resolved_patterns
         column: 21
       startByte: 75
       endByte: 87
-    raw: ~
+    raw:
+      format: grit
+      content: "pattern OtherPattern() {\n    `$foo.other` => `$foo.replacement`\n}\n\npattern NamedPattern() {\n    `$foo.named` => `$foo.replacement`\n}\n\npattern PatternWithArgs($arg) {\n    `$foo.$arg` => `$foo.replacement`\n}\n"
   module:
     type: Module
     host: github.com
@@ -50,7 +53,9 @@ expression: resolved_patterns
         column: 21
       startByte: 8
       endByte: 20
-    raw: ~
+    raw:
+      format: grit
+      content: "pattern OtherPattern() {\n    `$foo.other` => `$foo.replacement`\n}\n\npattern NamedPattern() {\n    `$foo.named` => `$foo.replacement`\n}\n\npattern PatternWithArgs($arg) {\n    `$foo.$arg` => `$foo.replacement`\n}\n"
   module:
     type: Module
     host: github.com
@@ -80,7 +85,9 @@ expression: resolved_patterns
         column: 24
       startByte: 142
       endByte: 157
-    raw: ~
+    raw:
+      format: grit
+      content: "pattern OtherPattern() {\n    `$foo.other` => `$foo.replacement`\n}\n\npattern NamedPattern() {\n    `$foo.named` => `$foo.replacement`\n}\n\npattern PatternWithArgs($arg) {\n    `$foo.$arg` => `$foo.replacement`\n}\n"
   module:
     type: Module
     host: github.com
@@ -110,7 +117,9 @@ expression: resolved_patterns
         column: 18
       startByte: 41
       endByte: 50
-    raw: ~
+    raw:
+      format: grit
+      content: "engine marzano(0.1)\nlanguage js\n\npattern ReactNode($name, $props, $children) {\n  or {\n    `<$name $props>$children</$name>`,\n    `<$name $props />`\n  }\n}\n"
   module:
     type: Module
     host: github.com
@@ -256,7 +265,9 @@ expression: resolved_patterns
         column: 22
       startByte: 118
       endByte: 131
-    raw: ~
+    raw:
+      format: grit
+      content: "engine marzano(0.1)\nlanguage js\n\npattern literal_value() {\n  or { number(), string(), `null`, `undefined`}\n}\n\npattern function_like($name, $args, $statements) {\n  or {\n    `function $name($args) { $statements }`,\n    `($args) => { $statements }`,\n    `($args) => $statements`\n  }\n}"
   module:
     type: Module
     host: github.com
@@ -286,7 +297,9 @@ expression: resolved_patterns
         column: 22
       startByte: 41
       endByte: 54
-    raw: ~
+    raw:
+      format: grit
+      content: "engine marzano(0.1)\nlanguage js\n\npattern literal_value() {\n  or { number(), string(), `null`, `undefined`}\n}\n\npattern function_like($name, $args, $statements) {\n  or {\n    `function $name($args) { $statements }`,\n    `($args) => { $statements }`,\n    `($args) => $statements`\n  }\n}"
   module:
     type: Module
     host: github.com
@@ -316,7 +329,9 @@ expression: resolved_patterns
         column: 11
       startByte: 35
       endByte: 35
-    raw: ~
+    raw:
+      format: yaml
+      content: "version: 0.0.1\npatterns:\n  - name: no_console_log\n    level: info\n    body: '`console.log($x)`'\n\n"
   module:
     type: Module
     host: github.com
@@ -567,7 +582,9 @@ expression: resolved_patterns
         column: 11
       startByte: 217
       endByte: 217
-    raw: ~
+    raw:
+      format: yaml
+      content: "version: 0.0.1\npatterns:\n  - name: github.com/getgrit/js#*\n    level: info\n  - name: github.com/getgrit/json#no_console_log\n    level: error\n  - name: github.com/getgrit/json#strict_tsconfig\n    level: info\n  - name: remove_console_error\n    level: error\n    body: |\n      engine marzano(0.1)\n      language js\n\n      `console.error($_)` => .\n"
   module:
     type: Module
     host: github.com

@@ -1,6 +1,7 @@
 ---
 source: crates/gritmodule/src/dot_grit.rs
 expression: patterns
+snapshot_kind: text
 ---
 - config:
     name: no_tests_with_only
@@ -20,7 +21,9 @@ expression: patterns
         column: 27
       startByte: 120
       endByte: 138
-    raw: ~
+    raw:
+      format: grit
+      content: "engine marzano(0.1)\nlanguage js\n\npattern test_identifier() {\n  or {\n    `describe`,\n    `it`,\n    `test`\n  }\n}\n\npattern no_tests_with_only() {\n  `$testlike.only` => `$testlike` where {\n    $testlike <: test_identifier()\n  }\n}\n\npattern no_tests_with_skip() {\n  `$testlike.skip` => `$testlike` where {\n    $testlike <: test_identifier()\n  }\n}"
   module: ~
   local_name: no_tests_with_only
 - config:
@@ -41,7 +44,9 @@ expression: patterns
         column: 27
       startByte: 235
       endByte: 253
-    raw: ~
+    raw:
+      format: grit
+      content: "engine marzano(0.1)\nlanguage js\n\npattern test_identifier() {\n  or {\n    `describe`,\n    `it`,\n    `test`\n  }\n}\n\npattern no_tests_with_only() {\n  `$testlike.only` => `$testlike` where {\n    $testlike <: test_identifier()\n  }\n}\n\npattern no_tests_with_skip() {\n  `$testlike.skip` => `$testlike` where {\n    $testlike <: test_identifier()\n  }\n}"
   module: ~
   local_name: no_tests_with_skip
 - config:
@@ -62,6 +67,8 @@ expression: patterns
         column: 24
       startByte: 41
       endByte: 56
-    raw: ~
+    raw:
+      format: grit
+      content: "engine marzano(0.1)\nlanguage js\n\npattern test_identifier() {\n  or {\n    `describe`,\n    `it`,\n    `test`\n  }\n}\n\npattern no_tests_with_only() {\n  `$testlike.only` => `$testlike` where {\n    $testlike <: test_identifier()\n  }\n}\n\npattern no_tests_with_skip() {\n  `$testlike.skip` => `$testlike` where {\n    $testlike <: test_identifier()\n  }\n}"
   module: ~
   local_name: test_identifier

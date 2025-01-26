@@ -1,0 +1,10 @@
+language json
+
+pattern some_pattern($target_dep, $target_version) {
+    or {
+        `$key: $value` where {
+            $key <: `"$target_dep"`,
+            no_meta_variable => `"$target_version"`
+        },
+    }
+}
