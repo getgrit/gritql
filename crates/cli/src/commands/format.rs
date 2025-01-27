@@ -24,25 +24,27 @@ pub async fn run_format(arg: &FormatArgs) -> Result<()> {
     let (resolved, _) = resolve_from_cwd(&Source::Local).await?;
 
     let file_path_to_resolved = group_resolved_patterns_by_group(resolved);
-    let mut results = file_path_to_resolved
+
+    println!("Formtting {} files", file_path_to_resolved.len());
+
+    let _ = file_path_to_resolved
         .into_par_iter()
         .map(|(file_path, resolved_patterns)| {
             let result = format_file_resolved_patterns(&file_path, resolved_patterns, arg.clone());
             (file_path, result)
-        })
-        .collect::<Vec<_>>();
+        });
 
     // sort outputs to ensure consistent stdout output
     // also avoid using sort_by_key to prevent additional cloning of file_path
-    results.sort_by(|(file_path, _), (other_file_path, _)| file_path.cmp(other_file_path));
+    // results.sort_by(|(file_path, _), (other_file_path, _)| file_path.cmp(other_file_path));
 
-    for (file_path, result) in results {
-        match result {
-            Err(error) => eprintln!("couldn't format '{}': {error:?}", file_path),
-            Ok(Some(diff)) => println!("{}:\n{}", file_path.bold(), diff),
-            Ok(None) => (), // `args.write` is true or file is already formated
-        }
-    }
+    // for (file_path, result) in results {
+    //     match result {
+    //         Err(error) => eprintln!("couldn't format '{}': {error:?}", file_path),
+    //         Ok(Some(diff)) => println!("{}:\n{}", file_path.bold(), diff),
+    //         Ok(None) => (), // `args.write` is true or file is already formated
+    //     }
+    // }
     Ok(())
 }
 
@@ -235,4 +237,28 @@ fn apply_hunk_changes(input: &str, mut hunks: Vec<HunkChange>) -> String {
         buffer.replace_range(hunk_range, &hunk.new_content);
     }
     buffer
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[tokio::test]
+    async fn test_format_fixtures() -> Result<()> {
+        // Change to the fixtures directory relative to the project root
+        let fixtures_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .join("cli_bin")
+            .join("fixtures");
+
+        println!("fixtures_path: {:?}", fixtures_path);
+        std::env::set_current_dir(&fixtures_path)?;
+
+        let args = FormatArgs { write: false };
+        run_format(&args).await?;
+
+        Ok(())
+    }
 }
