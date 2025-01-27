@@ -47,7 +47,9 @@ pub async fn run_format(arg: &FormatGritArgs, flags: &GlobalFormatFlags) -> Resu
     for (file_path, resolved_patterns) in file_path_to_resolved {
         let results = format_file_resolved_patterns(&file_path, resolved_patterns);
         if let Ok(results) = results {
-            emitter.emit(&results).unwrap();
+            for result in results {
+                emitter.emit(&result).unwrap();
+            }
         }
     }
 
@@ -91,7 +93,10 @@ fn format_file_resolved_patterns(
             // println!("format_yaml_file not implemented");
             (vec![], old_file_content.to_owned())
         }
-        PatternFileExt::Grit => format_grit_code(old_file_content)?,
+        PatternFileExt::Grit => {
+            format_grit_code(old_file_content)?;
+            (vec![], old_file_content.to_owned())
+        }
         PatternFileExt::Md => {
             // println!("format_md_file not implemented");
             // let hunks = patterns
@@ -103,15 +108,17 @@ fn format_file_resolved_patterns(
         }
     };
 
+    println!("parsed file:\n{}", new_file_content);
+
     if &new_file_content == old_file_content {
         return Ok(results);
     }
 
-    results.push(MatchResult::Rewrite(Rewrite::for_file(
-        file_path,
-        old_file_content,
-        &new_file_content,
-    )));
+    // results.push(MatchResult::Rewrite(Rewrite::for_file(
+    //     file_path,
+    //     old_file_content,
+    //     &new_file_content,
+    // )));
 
     Ok(results)
 }
@@ -198,10 +205,9 @@ fn apply_grit_rewrite(input: &str, pattern: &str) -> Result<String> {
 
 /// format grit code using `biome`
 fn format_grit_code(source: &str) -> Result<(Vec<MatchResult>, String)> {
-    // Biome might panic when parsing, so we need to catch it
-    set_hook(Box::new(panic_handler));
-
     let parsed = biome_grit_parser::parse_grit(source);
+
+    println!("parsed: {:?}", parsed);
 
     // TODO: restore this part
     // ensure!(
@@ -215,46 +221,12 @@ fn format_grit_code(source: &str) -> Result<(Vec<MatchResult>, String)> {
     //         .join("\n")
     // );
 
-    let options = GritFormatOptions::default();
-    let doc = biome_grit_formatter::format_node(options, &parsed.syntax())
-        .with_context(|| "biome couldn't format")?;
-    Ok((vec![], doc.print()?.into_code()))
-}
-
-fn panic_handler(info: &std::panic::PanicHookInfo) {
-    // Buffer the error message to a string before printing it at once
-    // to prevent it from getting mixed with other errors if multiple threads
-    // panic at the same time
-    let mut error = String::new();
-
-    writeln!(error, "Biome encountered an unexpected error").unwrap();
-    writeln!(error).unwrap();
-
-    writeln!(error, "This is a bug in Biome, not an error in your code, and we would appreciate it if you could report it to https://github.com/biomejs/biome/issues/ along with the following information to help us fixing the issue:").unwrap();
-    writeln!(error).unwrap();
-
-    if let Some(location) = info.location() {
-        writeln!(error, "Source Location: {location}").unwrap();
-    }
-
-    if let Some(thread) = std::thread::current().name() {
-        writeln!(error, "Thread Name: {thread}").unwrap();
-    }
-
-    let payload = info.payload();
-    if let Some(msg) = payload.downcast_ref::<&'static str>() {
-        writeln!(error, "Message: {msg}").unwrap();
-    } else if let Some(msg) = payload.downcast_ref::<String>() {
-        writeln!(error, "Message: {msg}").unwrap();
-    }
-
-    // Write the panic to stderr
-    eprintln!("{error}");
-
-    // Write the panic to the log file, this is done last since the `tracing`
-    // infrastructure could panic a second time and abort the process, so we
-    // want to ensure the error has at least been logged to stderr beforehand
-    tracing::error!("{error}");
+    // let options = GritFormatOptions::default();
+    // let doc = biome_grit_formatter::format_node(options, &parsed.syntax())
+    //     .with_context(|| "biome couldn't format")?;
+    // println!("formatted file:\n{}", doc.print()?.into_code());
+    // Ok((vec![], doc.print()?.into_code()))
+    Ok((vec![], source.to_owned()))
 }
 
 /// Represent a hunk of text that needs to be changed
@@ -285,23 +257,21 @@ mod tests {
     use std::path::PathBuf;
 
     #[tokio::test]
-    async fn test_format_fixtures() -> Result<()> {
-        // Change to the fixtures directory relative to the project root
-        // let fixtures_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        //     .parent()
-        //     .unwrap()
-        //     .join("cli_bin")
-        //     .join("fixtures");
+    async fn test_format_go_imports() -> Result<()> {
+        // This somehow has a massive memory leak but only in --release mode
 
-        let fixtures_path = PathBuf::from("/Users/morgante/code/grit/stdlib");
+        let fixtures_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .join("cli_bin")
+            .join("fixtures")
+            .join("go")
+            .join("imports.grit");
 
-        println!("fixtures_path: {:?}", fixtures_path);
-        std::env::set_current_dir(&fixtures_path)?;
+        let input = std::fs::read_to_string(&fixtures_path)?;
+        let result = format_grit_code(&input);
 
-        let args = FormatGritArgs { write: false };
-        run_format(&args, &GlobalFormatFlags::default()).await?;
-
-        println!("done");
+        println!("done: {:?}", result);
 
         Ok(())
     }
