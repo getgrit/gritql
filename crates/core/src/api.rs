@@ -510,6 +510,15 @@ impl Rewrite {
         let rewritten = EntireFile::from_file(rewritten_file)?;
         Ok(Rewrite::new(original, rewritten, None))
     }
+
+    pub fn for_file(path: &str, old_content: &str, new_content: &str) -> Self {
+        Self {
+            original: EntireFile::file_to_entire_file(path, old_content, None),
+            rewritten: EntireFile::file_to_entire_file(path, new_content, None),
+            reason: None,
+            id: Uuid::new_v4(),
+        }
+    }
 }
 
 impl FileMatchResult for Rewrite {
