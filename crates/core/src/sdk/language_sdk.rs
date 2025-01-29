@@ -5,9 +5,7 @@ use marzano_language::target_language::TargetLanguage;
 
 use crate::{
     built_in_functions::BuiltIns,
-    pattern_compiler::{
-        auto_wrap::auto_wrap_pattern, build_standard_global_vars, compiler::VariableLocations,
-    },
+    pattern_compiler::{auto_wrap::auto_wrap_pattern, compiler::VariableLocations},
     problem::{MarzanoQueryContext, Problem},
 };
 
@@ -48,7 +46,6 @@ impl LanguageSdk {
         pattern: Pattern<MarzanoQueryContext>,
     ) -> Result<Problem> {
         let _logs: AnalysisLogs = vec![].into();
-        let global_vars = build_standard_global_vars();
         let mut pattern_definitions = vec![];
 
         let is_multifile = false;
@@ -69,10 +66,7 @@ impl LanguageSdk {
             is_multifile,
             false,
             None,
-            VariableLocations::new(vec![global_vars
-                .into_keys()
-                .map(VariableSource::new_global)
-                .collect()]),
+            VariableLocations::globals(),
             pattern_definitions,
             vec![],
             vec![],
