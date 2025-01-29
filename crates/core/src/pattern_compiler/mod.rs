@@ -77,6 +77,7 @@ pub(crate) mod variable_compiler;
 pub(crate) mod where_compiler;
 pub(crate) mod within_compiler;
 
+pub use auto_wrap::wrap_pattern_in_before_and_after_each_file;
 pub use builder::CompiledPatternBuilder;
 pub use compiler::build_standard_global_vars;
 pub use compiler::{src_to_problem_libs, CompilationResult};
