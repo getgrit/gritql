@@ -15,7 +15,6 @@ use marzano_messenger::{
     emit::{ApplyDetails, Messager},
     output_mode::OutputMode,
 };
-use rayon::iter::ParallelIterator;
 use serde::Serialize;
 use std::collections::BTreeMap;
 

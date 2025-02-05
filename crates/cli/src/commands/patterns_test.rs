@@ -257,9 +257,9 @@ pub async fn get_marzano_pattern_test_results(
 
 pub(crate) fn filter_patterns_by_regex(
     patterns: Vec<ResolvedGritDefinition>,
-    filter: &String,
+    filter: &str,
 ) -> Result<Vec<ResolvedGritDefinition>> {
-    let regex = regex::Regex::new(filter.as_str())?;
+    let regex = regex::Regex::new(filter)?;
     Ok(patterns
         .into_iter()
         .filter(|p| regex.is_match(&p.local_name))
