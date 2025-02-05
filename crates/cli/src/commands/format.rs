@@ -129,7 +129,7 @@ fn format_file_resolved_patterns(
 ) -> Result<Vec<MatchResult>> {
     // Apply patterns in reverse order to avoid conflicts
     let mut patterns = patterns;
-    patterns.sort_by_key(|p| p.config.range.map_or(0, |r| r.start_byte));
+    patterns.sort_by_key(|p| std::cmp::Reverse(p.config.range.map_or(0, |r| r.start_byte)));
 
     let first_pattern = patterns
         .first()
@@ -196,86 +196,6 @@ fn format_file_resolved_patterns(
     Ok(results)
 }
 
-/// bubble clause that finds a grit pattern with name "\<pattern_name\>" in yaml and
-/// replaces it's body to "\<new_body\>", `format_yaml_file` uses this pattern to replace
-/// pattern bodies with formatted ones
-const YAML_REPLACE_BODY_PATERN: &str = r#"
-    bubble file($body) where {
-        $body <: contains block_mapping(items=$items) where {
-            $items <: within `patterns: $_`,
-            $items <: contains `name: $name`,
-            $name <: "<pattern_name>",
-            $items <: contains `body: $yaml_body`,
-            $new_body = "<new_body>",
-            $yaml_body => $new_body
-        },
-    }
-"#;
-
-/// format each pattern and use gritql pattern to match and rewrite
-// fn format_yaml_file(patterns: &[ResolvedGritDefinition], file_content: &str) -> Result<String> {
-//     let bubbles = patterns
-//         .iter()
-//         .map(|pattern| {
-//             let formatted_body = format_grit_code(&pattern.body)
-//                 .with_context(|| format!("could not format '{}'", pattern.name()))?;
-//             let bubble = YAML_REPLACE_BODY_PATERN
-//                 .replace("<pattern_name>", pattern.name())
-//                 .replace("<new_body>", &format_yaml_body_code(&formatted_body));
-//             Ok(bubble)
-//         })
-//         .collect::<Result<Vec<_>>>()?
-//         .join(",\n");
-//     let pattern_body = format!("language yaml\nsequential{{ {bubbles} }}");
-//     apply_grit_rewrite(file_content, &pattern_body)
-// }
-
-// fn format_yaml_body_code(input: &str) -> String {
-//     // yaml body still needs two indentation to look good
-//     let body_with_prefix = prefix_lines(input, &" ".repeat(2));
-//     let escaped_body = body_with_prefix.replace("\"", "\\\"");
-//     // body: |
-//     //   escaped_body
-//     format!("|\n{escaped_body}")
-// }
-
-// fn prefix_lines(input: &str, prefix: &str) -> String {
-//     input
-//         .lines()
-//         .map(|line| {
-//             if line.is_empty() {
-//                 line.to_owned()
-//             } else {
-//                 format!("{prefix}{line}")
-//             }
-//         })
-//         .collect::<Vec<_>>()
-//         .join("\n")
-// }
-
-// fn apply_grit_rewrite(input: &str, pattern: &str) -> Result<String> {
-//     let resolver = GritModuleResolver::new();
-//     let rich_pattern = resolver.make_pattern(pattern, None)?;
-
-//     let compiled = rich_pattern
-//         .compile(&BTreeMap::new(), None, None, None)
-//         .map(|cr| cr.problem)
-//         .with_context(|| "could not compile pattern")?;
-
-//     let rich_file = RichFile::new(String::new(), input.to_owned());
-//     let runtime = ExecutionContext::default();
-//     for result in compiled.execute_file(&rich_file, &runtime) {
-//         if let MatchResult::Rewrite(rewrite) = result {
-//             let content = rewrite
-//                 .rewritten
-//                 .content
-//                 .ok_or_else(|| anyhow!("rewritten content is empty"))?;
-//             return Ok(content);
-//         }
-//     }
-//     bail!("no rewrite result after applying grit pattern")
-// }
-
 /// format grit code using `biome`
 fn format_grit_code(source: &str) -> Result<(Vec<MatchResult>, String)> {
     let result = std::panic::catch_unwind(|| {
@@ -292,6 +212,105 @@ fn format_grit_code(source: &str) -> Result<(Vec<MatchResult>, String)> {
         .with_context(|| "biome couldn't format")?;
     let formatted = doc.print()?.into_code();
     Ok((vec![], formatted))
+}
+
+mod yaml {
+    use std::collections::BTreeMap;
+
+    use anyhow::{anyhow, bail, Context, Result};
+    use marzano_core::api::MatchResult;
+    use marzano_gritmodule::config::ResolvedGritDefinition;
+    use marzano_util::{rich_path::RichFile, runtime::ExecutionContext};
+
+    use crate::resolver::GritModuleResolver;
+
+    use super::format_grit_code;
+
+    /// bubble clause that finds a grit pattern with name "\<pattern_name\>" in yaml and
+    /// replaces it's body to "\<new_body\>", `format_yaml_file` uses this pattern to replace
+    /// pattern bodies with formatted ones
+    const YAML_REPLACE_BODY_PATERN: &str = r#"
+    bubble file($body) where {
+        $body <: contains block_mapping(items=$items) where {
+            $items <: within `patterns: $_`,
+            $items <: contains `name: $name`,
+            $name <: "<pattern_name>",
+            $items <: contains `body: $yaml_body`,
+            $new_body = "<new_body>",
+            $yaml_body => $new_body
+        },
+    }
+"#;
+
+    /// format each pattern and use gritql pattern to match and rewrite
+    fn apply_yaml_rewrites(
+        patterns: &[ResolvedGritDefinition],
+        file_content: &str,
+    ) -> Result<(Vec<MatchResult>, String)> {
+        let mut results = vec![];
+        let bubbles = patterns
+            .iter()
+            .map(|pattern| {
+                let (this_results, formatted_body) = format_grit_code(&pattern.body)
+                    .with_context(|| format!("could not format '{}'", pattern.name()))?;
+                results.extend(this_results);
+                let bubble = YAML_REPLACE_BODY_PATERN
+                    .replace("<pattern_name>", pattern.name())
+                    .replace("<new_body>", &format_yaml_body_code(&formatted_body));
+                Ok(bubble)
+            })
+            .collect::<Result<Vec<_>>>()?
+            .join(",\n");
+        let pattern_body = format!("language yaml\nsequential{{ {bubbles} }}");
+        let rewritten = apply_grit_rewrite(file_content, &pattern_body)?;
+        Ok((results, rewritten))
+    }
+
+    fn format_yaml_body_code(input: &str) -> String {
+        // yaml body still needs two indentation to look good
+        let body_with_prefix = prefix_lines(input, &" ".repeat(2));
+        let escaped_body = body_with_prefix.replace("\"", "\\\"");
+        // body: |
+        //   escaped_body
+        format!("|\n{escaped_body}")
+    }
+
+    fn prefix_lines(input: &str, prefix: &str) -> String {
+        input
+            .lines()
+            .map(|line| {
+                if line.is_empty() {
+                    line.to_owned()
+                } else {
+                    format!("{prefix}{line}")
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    fn apply_grit_rewrite(input: &str, pattern: &str) -> Result<String> {
+        let resolver = GritModuleResolver::new();
+        let rich_pattern = resolver.make_pattern(pattern, None)?;
+
+        let compiled = rich_pattern
+            .compile(&BTreeMap::new(), None, None, None)
+            .map(|cr| cr.problem)
+            .with_context(|| "could not compile pattern")?;
+
+        let rich_file = RichFile::new(String::new(), input.to_owned());
+        let runtime = ExecutionContext::default();
+        for result in compiled.execute_file(&rich_file, &runtime) {
+            if let MatchResult::Rewrite(rewrite) = result {
+                let content = rewrite
+                    .rewritten
+                    .content
+                    .ok_or_else(|| anyhow!("rewritten content is empty"))?;
+                return Ok(content);
+            }
+        }
+        bail!("no rewrite result after applying grit pattern")
+    }
 }
 
 #[cfg(test)]
