@@ -12,7 +12,11 @@ use clap::Args;
 use colored::Colorize;
 use marzano_core::api::{DoneFile, EntireFile, MatchResult, Rewrite};
 use marzano_gritmodule::{config::ResolvedGritDefinition, parser::PatternFileExt};
-use marzano_messenger::{emit::Messager, output_mode::OutputMode};
+use marzano_language::{markdown_block::MarkdownBlock, target_language::TargetLanguage};
+use marzano_messenger::{
+    emit::{ApplyDetails, Messager},
+    output_mode::OutputMode,
+};
 use marzano_util::{rich_path::RichFile, runtime::ExecutionContext};
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator as _, ParallelIterator};
 use serde::Serialize;
@@ -44,7 +48,15 @@ pub async fn run_format(arg: &FormatGritArgs, flags: &GlobalFormatFlags) -> Resu
 
     let file_path_to_resolved = group_resolved_patterns_by_group(resolved);
 
-    println!("Formatting {} files", file_path_to_resolved.len());
+    println!(
+        "Formatting {} {}",
+        format!("{}", file_path_to_resolved.len()).bold().yellow(),
+        if file_path_to_resolved.len() == 1 {
+            "pattern"
+        } else {
+            "patterns"
+        }
+    );
 
     // Create an emitter for formatting results
     let mut emitter = create_emitter(
@@ -58,14 +70,39 @@ pub async fn run_format(arg: &FormatGritArgs, flags: &GlobalFormatFlags) -> Resu
     )
     .await?;
 
+    let mut details = ApplyDetails {
+        matched: 0,
+        rewritten: 0,
+        named_pattern: None,
+    };
+    let dry_run = !arg.write;
+
     for (file_path, resolved_patterns) in file_path_to_resolved {
         let results = format_file_resolved_patterns(&file_path, resolved_patterns);
         if let Ok(results) = results {
-            for result in results {
-                emitter.emit(&result).unwrap();
-            }
+            emitter.handle_results(
+                results,
+                &mut details,
+                dry_run,
+                false,
+                &mut false,
+                None,
+                None,
+                None,
+                &TargetLanguage::MarkdownBlock(MarkdownBlock::new(None)),
+            );
         }
     }
+
+    println!(
+        "Modified {} {}",
+        format!("{}", details.rewritten).bold().yellow(),
+        if details.rewritten == 1 {
+            "file"
+        } else {
+            "files"
+        }
+    );
 
     Ok(())
 }
@@ -110,8 +147,14 @@ fn format_file_resolved_patterns(
 
     let new_file_content = match format {
         PatternFileExt::Yaml => {
-            // println!("format_yaml_file not implemented");
-            // (vec![], old_file_content.to_owned())
+            let mut new_file_content = old_file_content.clone();
+            for pattern in &patterns {
+                if let Some(range) = pattern.config.range {
+                    let (this_results, formatted_pattern) = format_grit_code(&pattern.body)
+                        .with_context(|| format!("could not format '{}'", pattern.name()))?;
+                    results.extend(this_results);
+                }
+            }
             old_file_content.to_owned()
         }
         PatternFileExt::Grit => {
@@ -187,51 +230,51 @@ const YAML_REPLACE_BODY_PATERN: &str = r#"
 //     apply_grit_rewrite(file_content, &pattern_body)
 // }
 
-fn format_yaml_body_code(input: &str) -> String {
-    // yaml body still needs two indentation to look good
-    let body_with_prefix = prefix_lines(input, &" ".repeat(2));
-    let escaped_body = body_with_prefix.replace("\"", "\\\"");
-    // body: |
-    //   escaped_body
-    format!("|\n{escaped_body}")
-}
+// fn format_yaml_body_code(input: &str) -> String {
+//     // yaml body still needs two indentation to look good
+//     let body_with_prefix = prefix_lines(input, &" ".repeat(2));
+//     let escaped_body = body_with_prefix.replace("\"", "\\\"");
+//     // body: |
+//     //   escaped_body
+//     format!("|\n{escaped_body}")
+// }
 
-fn prefix_lines(input: &str, prefix: &str) -> String {
-    input
-        .lines()
-        .map(|line| {
-            if line.is_empty() {
-                line.to_owned()
-            } else {
-                format!("{prefix}{line}")
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-}
+// fn prefix_lines(input: &str, prefix: &str) -> String {
+//     input
+//         .lines()
+//         .map(|line| {
+//             if line.is_empty() {
+//                 line.to_owned()
+//             } else {
+//                 format!("{prefix}{line}")
+//             }
+//         })
+//         .collect::<Vec<_>>()
+//         .join("\n")
+// }
 
-fn apply_grit_rewrite(input: &str, pattern: &str) -> Result<String> {
-    let resolver = GritModuleResolver::new();
-    let rich_pattern = resolver.make_pattern(pattern, None)?;
+// fn apply_grit_rewrite(input: &str, pattern: &str) -> Result<String> {
+//     let resolver = GritModuleResolver::new();
+//     let rich_pattern = resolver.make_pattern(pattern, None)?;
 
-    let compiled = rich_pattern
-        .compile(&BTreeMap::new(), None, None, None)
-        .map(|cr| cr.problem)
-        .with_context(|| "could not compile pattern")?;
+//     let compiled = rich_pattern
+//         .compile(&BTreeMap::new(), None, None, None)
+//         .map(|cr| cr.problem)
+//         .with_context(|| "could not compile pattern")?;
 
-    let rich_file = RichFile::new(String::new(), input.to_owned());
-    let runtime = ExecutionContext::default();
-    for result in compiled.execute_file(&rich_file, &runtime) {
-        if let MatchResult::Rewrite(rewrite) = result {
-            let content = rewrite
-                .rewritten
-                .content
-                .ok_or_else(|| anyhow!("rewritten content is empty"))?;
-            return Ok(content);
-        }
-    }
-    bail!("no rewrite result after applying grit pattern")
-}
+//     let rich_file = RichFile::new(String::new(), input.to_owned());
+//     let runtime = ExecutionContext::default();
+//     for result in compiled.execute_file(&rich_file, &runtime) {
+//         if let MatchResult::Rewrite(rewrite) = result {
+//             let content = rewrite
+//                 .rewritten
+//                 .content
+//                 .ok_or_else(|| anyhow!("rewritten content is empty"))?;
+//             return Ok(content);
+//         }
+//     }
+//     bail!("no rewrite result after applying grit pattern")
+// }
 
 /// format grit code using `biome`
 fn format_grit_code(source: &str) -> Result<(Vec<MatchResult>, String)> {
