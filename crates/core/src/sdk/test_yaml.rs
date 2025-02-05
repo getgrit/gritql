@@ -98,10 +98,20 @@ patterns:
                 )]),
             )
             .unwrap();
+        let our_block = sdk
+            .compiler()
+            .node(
+                "block_mapping",
+                HashMap::from([(
+                    "items",
+                    Pattern::Some(Box::new(grit_pattern_matcher::pattern::Some::new(our_name))),
+                )]),
+            )
+            .unwrap();
 
         let file = Pattern::File(Box::new(FilePattern::new(
             Pattern::Top,
-            Contains::new_pattern(our_name, None),
+            Contains::new_pattern(our_block, None),
         )));
 
         let results = run_on_test_files(
