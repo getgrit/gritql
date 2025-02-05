@@ -2,7 +2,9 @@
 mod tests {
     use std::collections::HashMap;
 
-    use grit_pattern_matcher::pattern::{Contains, DynamicPattern, FilePattern, Pattern, Rewrite};
+    use grit_pattern_matcher::pattern::{
+        Contains, DynamicPattern, FilePattern, Pattern, Rewrite, StringConstant,
+    };
     use insta::assert_snapshot;
     use itertools::Itertools;
     use marzano_language::target_language::TargetLanguage;
@@ -88,7 +90,13 @@ patterns:
 
         let our_name = sdk
             .compiler()
-            .node("block_mapping_pair", HashMap::from([("key", Pattern::Top)]))
+            .node(
+                "block_mapping_pair",
+                HashMap::from([(
+                    "key",
+                    Pattern::StringConstant(StringConstant::new("name".to_owned())),
+                )]),
+            )
             .unwrap();
 
         let file = Pattern::File(Box::new(FilePattern::new(
@@ -100,7 +108,7 @@ patterns:
             &sdk.build(file).unwrap(),
             &[
                 SyntheticFile::new("test.yaml".to_owned(), yaml_content.to_owned(), true),
-                SyntheticFile::new("bad.yaml".to_owned(), "funky\n".to_owned(), true),
+                SyntheticFile::new("bad.yaml".to_owned(), "no: name\n".to_owned(), true),
             ],
         );
 
