@@ -215,7 +215,7 @@ mod yaml {
     use marzano_core::api::MatchResult;
     use marzano_core::sdk::LanguageSdk;
     use marzano_gritmodule::config::ResolvedGritDefinition;
-    use marzano_language::target_language::TargetLanguage;
+    use marzano_language::target_language::{PatternLanguage, TargetLanguage};
     use marzano_util::{rich_path::RichFile, runtime::ExecutionContext};
 
     use crate::resolver::GritModuleResolver;
@@ -227,8 +227,7 @@ mod yaml {
         file_content: &str,
     ) -> Result<(Vec<MatchResult>, String)> {
         let mut results = vec![];
-        let mut sdk =
-            LanguageSdk::from_language(TargetLanguage::from_string("yaml", None).unwrap());
+        let mut sdk = LanguageSdk::from_language(PatternLanguage::Yaml.try_into().unwrap());
 
         // Build pattern for each grit definition
         let pattern_rewrites = patterns
