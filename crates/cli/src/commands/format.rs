@@ -206,55 +206,120 @@ fn format_grit_code(source: &str) -> Result<(Vec<MatchResult>, String)> {
 }
 
 mod yaml {
-    use std::collections::BTreeMap;
+    use std::collections::{BTreeMap, HashMap};
 
     use anyhow::{anyhow, bail, Context, Result};
+    use grit_pattern_matcher::pattern::{
+        Contains, DynamicPattern, FilePattern, Pattern, Rewrite as PatternRewrite, StringConstant,
+    };
     use marzano_core::api::MatchResult;
+    use marzano_core::sdk::LanguageSdk;
     use marzano_gritmodule::config::ResolvedGritDefinition;
+    use marzano_language::target_language::TargetLanguage;
     use marzano_util::{rich_path::RichFile, runtime::ExecutionContext};
 
     use crate::resolver::GritModuleResolver;
 
     use super::format_grit_code;
 
-    /// bubble clause that finds a grit pattern with name "\<pattern_name\>" in yaml and
-    /// replaces it's body to "\<new_body\>", `format_yaml_file` uses this pattern to replace
-    /// pattern bodies with formatted ones
-    const YAML_REPLACE_BODY_PATERN: &str = r#"
-    bubble file($body) where {
-        $body <: contains block_mapping(items=$items) where {
-            $items <: within `patterns: $_`,
-            $items <: contains `name: $name`,
-            $name <: "<pattern_name>",
-            $items <: contains `body: $yaml_body`,
-            $new_body = "<new_body>",
-            $yaml_body => $new_body
-        },
-    }
-"#;
-
-    /// format each pattern and use gritql pattern to match and rewrite
     pub(crate) fn apply_yaml_rewrites(
         patterns: &[ResolvedGritDefinition],
         file_content: &str,
     ) -> Result<(Vec<MatchResult>, String)> {
         let mut results = vec![];
-        let bubbles = patterns
+        let mut sdk =
+            LanguageSdk::from_language(TargetLanguage::from_string("yaml", None).unwrap());
+
+        // Build pattern for each grit definition
+        let pattern_rewrites = patterns
             .iter()
             .map(|pattern| {
                 let (this_results, formatted_body) = format_grit_code(&pattern.body)
                     .with_context(|| format!("could not format '{}'", pattern.name()))?;
                 results.extend(this_results);
-                let bubble = YAML_REPLACE_BODY_PATERN
-                    .replace("<pattern_name>", pattern.name())
-                    .replace("<new_body>", &format_yaml_body_code(&formatted_body));
-                Ok(bubble)
+
+                // Create the pattern name matcher
+                let name_pair = sdk.compiler().node(
+                    "block_mapping_pair",
+                    HashMap::from([
+                        (
+                            "key",
+                            Pattern::StringConstant(StringConstant::new("name".to_owned())),
+                        ),
+                        (
+                            "value",
+                            Pattern::StringConstant(StringConstant::new(pattern.name().to_owned())),
+                        ),
+                    ]),
+                )?;
+
+                // Create the body replacement
+                let body_pair = sdk.compiler().node(
+                    "block_mapping_pair",
+                    HashMap::from([
+                        (
+                            "key",
+                            Pattern::StringConstant(StringConstant::new("body".to_owned())),
+                        ),
+                        (
+                            "value",
+                            Pattern::Rewrite(Box::new(PatternRewrite::new(
+                                Pattern::Top,
+                                DynamicPattern::from_str_constant(&format_yaml_body_code(
+                                    &formatted_body,
+                                ))?,
+                                None,
+                            ))),
+                        ),
+                    ]),
+                )?;
+
+                // Combine into a block mapping
+                let block = sdk.compiler().node(
+                    "block_mapping",
+                    HashMap::from([(
+                        "items",
+                        Pattern::And(Box::new(grit_pattern_matcher::pattern::And::new(vec![
+                            Pattern::Some(Box::new(grit_pattern_matcher::pattern::Some::new(
+                                name_pair,
+                            ))),
+                            Pattern::Some(Box::new(grit_pattern_matcher::pattern::Some::new(
+                                body_pair,
+                            ))),
+                        ]))),
+                    )]),
+                )?;
+
+                Ok(block)
             })
-            .collect::<Result<Vec<_>>>()?
-            .join(",\n");
-        let pattern_body = format!("language yaml\nsequential{{ {bubbles} }}");
-        let rewritten = apply_grit_rewrite(file_content, &pattern_body)?;
-        Ok((results, rewritten))
+            .collect::<Result<Vec<_>>>()?;
+
+        // Combine all patterns into a single file pattern
+        let file_pattern = Pattern::File(Box::new(FilePattern::new(
+            Pattern::Top,
+            Pattern::And(Box::new(grit_pattern_matcher::pattern::And::new(
+                pattern_rewrites
+                    .into_iter()
+                    .map(|p| Contains::new_pattern(p, None))
+                    .collect(),
+            ))),
+        )));
+
+        let compiled = sdk.build(file_pattern)?;
+        let rich_file = RichFile::new(String::new(), file_content.to_owned());
+        let runtime = ExecutionContext::default();
+
+        for result in compiled.execute_file(&rich_file, &runtime) {
+            if let MatchResult::Rewrite(rewrite) = result {
+                let content = rewrite
+                    .rewritten
+                    .content
+                    .ok_or_else(|| anyhow!("rewritten content is empty"))?;
+                return Ok((results, content));
+            }
+        }
+
+        bail!("no rewrite result after applying pattern")
     }
 
     fn format_yaml_body_code(input: &str) -> String {
@@ -278,29 +343,6 @@ mod yaml {
             })
             .collect::<Vec<_>>()
             .join("\n")
-    }
-
-    fn apply_grit_rewrite(input: &str, pattern: &str) -> Result<String> {
-        let resolver = GritModuleResolver::new();
-        let rich_pattern = resolver.make_pattern(pattern, None)?;
-
-        let compiled = rich_pattern
-            .compile(&BTreeMap::new(), None, None, None)
-            .map(|cr| cr.problem)
-            .with_context(|| "could not compile pattern")?;
-
-        let rich_file = RichFile::new(String::new(), input.to_owned());
-        let runtime = ExecutionContext::default();
-        for result in compiled.execute_file(&rich_file, &runtime) {
-            if let MatchResult::Rewrite(rewrite) = result {
-                let content = rewrite
-                    .rewritten
-                    .content
-                    .ok_or_else(|| anyhow!("rewritten content is empty"))?;
-                return Ok(content);
-            }
-        }
-        bail!("no rewrite result after applying grit pattern")
     }
 }
 
