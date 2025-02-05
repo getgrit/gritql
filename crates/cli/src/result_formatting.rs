@@ -58,7 +58,8 @@ impl FormattedResult {
 fn print_file_ranges<T: FileMatchResult>(item: &mut T, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let name = item.file_name().bold();
     if item.ranges().is_empty() {
-        writeln!(f, "{}", name)?;
+        // Not we only print the file name if there are no ranges, the newline is handled by the caller
+        write!(f, "{}", name)?;
     } else {
         for range in item.ranges() {
             writeln!(
