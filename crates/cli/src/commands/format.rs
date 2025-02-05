@@ -108,17 +108,15 @@ fn format_file_resolved_patterns(
         }
     };
 
-    println!("parsed file:\n{}", new_file_content);
-
     if &new_file_content == old_file_content {
         return Ok(results);
     }
 
-    // results.push(MatchResult::Rewrite(Rewrite::for_file(
-    //     file_path,
-    //     old_file_content,
-    //     &new_file_content,
-    // )));
+    results.push(MatchResult::Rewrite(Rewrite::for_file(
+        file_path,
+        old_file_content,
+        &new_file_content,
+    )));
 
     Ok(results)
 }
@@ -205,28 +203,20 @@ fn apply_grit_rewrite(input: &str, pattern: &str) -> Result<String> {
 
 /// format grit code using `biome`
 fn format_grit_code(source: &str) -> Result<(Vec<MatchResult>, String)> {
-    let parsed = biome_grit_parser::parse_grit(source);
+    let result = std::panic::catch_unwind(|| {
+        let parsed = biome_grit_parser::parse_grit(source);
+        parsed
+    });
 
-    println!("parsed: {:?}", parsed);
+    let Ok(parsed) = result else {
+        return Err(anyhow!("Syntax error in grit code, parsing failed"));
+    };
 
-    // TODO: restore this part
-    // ensure!(
-    //     parsed.diagnostics().is_empty(),
-    //     "biome couldn't parse: {}",
-    //     parsed
-    //         .diagnostics()
-    //         .iter()
-    //         .map(|diag| diag.message.to_string())
-    //         .collect::<Vec<_>>()
-    //         .join("\n")
-    // );
-
-    // let options = GritFormatOptions::default();
-    // let doc = biome_grit_formatter::format_node(options, &parsed.syntax())
-    //     .with_context(|| "biome couldn't format")?;
-    // println!("formatted file:\n{}", doc.print()?.into_code());
-    // Ok((vec![], doc.print()?.into_code()))
-    Ok((vec![], source.to_owned()))
+    let options = GritFormatOptions::default();
+    let doc = biome_grit_formatter::format_node(options, &parsed.syntax())
+        .with_context(|| "biome couldn't format")?;
+    let formatted = doc.print()?.into_code();
+    Ok((vec![], formatted))
 }
 
 /// Represent a hunk of text that needs to be changed
