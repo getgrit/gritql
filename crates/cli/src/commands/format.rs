@@ -312,6 +312,7 @@ mod tests {
     #[tokio::test]
     async fn test_format_go_imports() -> Result<()> {
         // This somehow has a massive memory leak but only in --release mode
+        // See https://github.com/biomejs/biome/issues/5032
 
         let fixtures_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .parent()
