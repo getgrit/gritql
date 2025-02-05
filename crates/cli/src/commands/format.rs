@@ -147,15 +147,10 @@ fn format_file_resolved_patterns(
 
     let new_file_content = match format {
         PatternFileExt::Yaml => {
-            let mut new_file_content = old_file_content.clone();
-            for pattern in &patterns {
-                if let Some(range) = pattern.config.range {
-                    let (this_results, formatted_pattern) = format_grit_code(&pattern.body)
-                        .with_context(|| format!("could not format '{}'", pattern.name()))?;
-                    results.extend(this_results);
-                }
-            }
-            old_file_content.to_owned()
+            let (this_results, new_file_content) =
+                yaml::apply_yaml_rewrites(&patterns, old_file_content)?;
+            results.extend(this_results);
+            new_file_content
         }
         PatternFileExt::Grit => {
             let (this_results, new_file_content) = format_grit_code(old_file_content)?;
@@ -243,7 +238,7 @@ mod yaml {
 "#;
 
     /// format each pattern and use gritql pattern to match and rewrite
-    fn apply_yaml_rewrites(
+    pub(crate) fn apply_yaml_rewrites(
         patterns: &[ResolvedGritDefinition],
         file_content: &str,
     ) -> Result<(Vec<MatchResult>, String)> {
