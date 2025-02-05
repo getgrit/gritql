@@ -10,7 +10,7 @@ mod tests {
     use marzano_language::target_language::TargetLanguage;
 
     use crate::{
-        api::MatchResult,
+        api::{FileMatchResult, MatchResult},
         sdk::language_sdk::LanguageSdk,
         test_utils::{run_on_test_files, SyntheticFile},
     };
@@ -92,10 +92,36 @@ patterns:
             .compiler()
             .node(
                 "block_mapping_pair",
-                HashMap::from([(
-                    "key",
-                    Pattern::StringConstant(StringConstant::new("name".to_owned())),
-                )]),
+                HashMap::from([
+                    (
+                        "key",
+                        Pattern::StringConstant(StringConstant::new("name".to_owned())),
+                    ),
+                    (
+                        "value",
+                        Pattern::StringConstant(StringConstant::new("target_pattern".to_owned())),
+                    ),
+                ]),
+            )
+            .unwrap();
+        let our_body = sdk
+            .compiler()
+            .node(
+                "block_mapping_pair",
+                HashMap::from([
+                    (
+                        "key",
+                        Pattern::StringConstant(StringConstant::new("body".to_owned())),
+                    ),
+                    (
+                        "value",
+                        Pattern::Rewrite(Box::new(grit_pattern_matcher::pattern::Rewrite::new(
+                            Pattern::Top,
+                            DynamicPattern::from_str_constant("replacement body").unwrap(),
+                            None,
+                        ))),
+                    ),
+                ]),
             )
             .unwrap();
         let our_block = sdk
@@ -104,7 +130,10 @@ patterns:
                 "block_mapping",
                 HashMap::from([(
                     "items",
-                    Pattern::Some(Box::new(grit_pattern_matcher::pattern::Some::new(our_name))),
+                    Pattern::And(Box::new(grit_pattern_matcher::pattern::And::new(vec![
+                        Pattern::Some(Box::new(grit_pattern_matcher::pattern::Some::new(our_name))),
+                        Pattern::Some(Box::new(grit_pattern_matcher::pattern::Some::new(our_body))),
+                    ]))),
                 )]),
             )
             .unwrap();
@@ -124,13 +153,15 @@ patterns:
 
         println!("{:?}", results);
 
-        assert!(
-            results
-                .iter()
-                .filter(|r| matches!(r, MatchResult::Match(_)))
-                .exactly_one()
-                .is_ok(),
-            "should have exactly one match"
-        );
+        let rewrite = results
+            .iter()
+            .filter(|r| matches!(r, MatchResult::Rewrite(_)))
+            .exactly_one()
+            .unwrap();
+
+        if let MatchResult::Rewrite(content) = rewrite {
+            let after = content.content().unwrap();
+            assert_snapshot!("rewrite", after);
+        }
     }
 }
