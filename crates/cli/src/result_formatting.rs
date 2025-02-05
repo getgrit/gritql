@@ -57,15 +57,19 @@ impl FormattedResult {
 
 fn print_file_ranges<T: FileMatchResult>(item: &mut T, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let name = item.file_name().bold();
-    for range in item.ranges() {
-        writeln!(
-            f,
-            "{}:{}:{} - {}",
-            name,
-            range.start.line,
-            range.start.column,
-            T::action()
-        )?;
+    if item.ranges().is_empty() {
+        writeln!(f, "{}", name)?;
+    } else {
+        for range in item.ranges() {
+            writeln!(
+                f,
+                "{}:{}:{} - {}",
+                name,
+                range.start.line,
+                range.start.column,
+                T::action()
+            )?;
+        }
     }
     Ok(())
 }
@@ -179,7 +183,6 @@ impl fmt::Display for FormattedResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             FormattedResult::Compact(result) => {
-                eprintln!("Compact result: {:?}", result);
                 match result {
                     MatchResult::AnalysisLog(log) => {
                         print_error_log(log, f)?;

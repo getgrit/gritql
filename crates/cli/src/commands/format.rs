@@ -1,27 +1,23 @@
 use crate::{
     commands::patterns_test::filter_patterns_by_regex,
     flags::GlobalFormatFlags,
-    messenger_variant::{create_emitter, MessengerVariant},
-    resolver::{resolve_from_cwd, GritModuleResolver, Source},
-    ux::{format_diff, DiffString},
+    messenger_variant::create_emitter,
+    resolver::{resolve_from_cwd, Source},
 };
-use anyhow::{anyhow, bail, ensure, Context, Result};
+use anyhow::{anyhow, Context, Result};
 use biome_grit_formatter::context::GritFormatOptions;
-use biome_grit_parser::GritParse;
 use clap::Args;
 use colored::Colorize;
-use marzano_core::api::{DoneFile, EntireFile, MatchResult, Rewrite};
+use marzano_core::api::{DoneFile, MatchResult, Rewrite};
 use marzano_gritmodule::{config::ResolvedGritDefinition, parser::PatternFileExt};
 use marzano_language::{markdown_block::MarkdownBlock, target_language::TargetLanguage};
 use marzano_messenger::{
     emit::{ApplyDetails, Messager},
     output_mode::OutputMode,
 };
-use marzano_util::{rich_path::RichFile, runtime::ExecutionContext};
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator as _, ParallelIterator};
+use rayon::iter::ParallelIterator;
 use serde::Serialize;
-use std::fmt::Write;
-use std::{collections::BTreeMap, panic::set_hook, sync::mpsc};
+use std::collections::BTreeMap;
 
 #[derive(Args, Debug, Serialize, Clone)]
 pub struct FormatGritArgs {
@@ -31,7 +27,7 @@ pub struct FormatGritArgs {
     // Level of detail to show for results
     #[clap(
         long = "output",
-        default_value_t = OutputMode::Standard,
+        default_value_t = OutputMode::Compact,
     )]
     output: OutputMode,
     /// Regex of a specific pattern to test
@@ -197,10 +193,7 @@ fn format_file_resolved_patterns(
 
 /// format grit code using `biome`
 fn format_grit_code(source: &str) -> Result<(Vec<MatchResult>, String)> {
-    let result = std::panic::catch_unwind(|| {
-        let parsed = biome_grit_parser::parse_grit(source);
-        parsed
-    });
+    let result = std::panic::catch_unwind(|| biome_grit_parser::parse_grit(source));
 
     let Ok(parsed) = result else {
         return Err(anyhow!("Syntax error in grit code, parsing failed"));
