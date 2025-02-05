@@ -115,7 +115,7 @@ impl UncompiledPatternBuilder {
         let mut compiler = sdk.compiler();
 
         let compiled = self.compile(&mut compiler)?;
-        let built = sdk.build(compiler.built_ins, compiled)?;
+        let built = sdk.build_custom(compiler.built_ins, compiled)?;
         Ok(built)
     }
 
