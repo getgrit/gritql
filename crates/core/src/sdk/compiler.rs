@@ -83,7 +83,7 @@ impl StatelessCompilerContext {
         for (name, pattern) in fields {
             let node_sort = self.lang.get_ts_language().node_kind_for_id(sort).unwrap();
             let field_id = self.lang.get_ts_language()
-                .field_id_for_name(&name)
+                .field_id_for_name(name)
                 .ok_or_else(|| {
                     if node_field_names.is_empty() {
                         anyhow!(

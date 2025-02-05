@@ -3,7 +3,7 @@ mod tests {
     use std::collections::HashMap;
 
     use grit_pattern_matcher::pattern::{
-        Contains, DynamicPattern, FilePattern, Pattern, Rewrite, StringConstant,
+        Contains, DynamicPattern, FilePattern, Pattern, StringConstant,
     };
     use insta::assert_snapshot;
     use itertools::Itertools;

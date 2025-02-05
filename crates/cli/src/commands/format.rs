@@ -206,7 +206,7 @@ fn format_grit_code(source: &str) -> Result<(Vec<MatchResult>, String)> {
 }
 
 mod yaml {
-    use std::collections::{BTreeMap, HashMap};
+    use std::collections::HashMap;
 
     use anyhow::{anyhow, bail, Context, Result};
     use grit_pattern_matcher::pattern::{
@@ -215,10 +215,8 @@ mod yaml {
     use marzano_core::api::MatchResult;
     use marzano_core::sdk::LanguageSdk;
     use marzano_gritmodule::config::ResolvedGritDefinition;
-    use marzano_language::target_language::{PatternLanguage, TargetLanguage};
+    use marzano_language::target_language::PatternLanguage;
     use marzano_util::{rich_path::RichFile, runtime::ExecutionContext};
-
-    use crate::resolver::GritModuleResolver;
 
     use super::format_grit_code;
 
