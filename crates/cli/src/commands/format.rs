@@ -49,8 +49,7 @@ pub async fn run_format(arg: &FormatGritArgs, flags: &GlobalFormatFlags) -> Resu
     let file_path_to_resolved = group_resolved_patterns_by_group(resolved);
 
     if file_path_to_resolved.is_empty() {
-        println!("No patterns to format");
-        return Ok(());
+        return Err(anyhow!("No patterns found to format"));
     }
 
     println!(

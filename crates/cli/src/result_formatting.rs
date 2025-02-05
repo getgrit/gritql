@@ -179,6 +179,7 @@ impl fmt::Display for FormattedResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             FormattedResult::Compact(result) => {
+                eprintln!("Compact result: {:?}", result);
                 match result {
                     MatchResult::AnalysisLog(log) => {
                         print_error_log(log, f)?;
