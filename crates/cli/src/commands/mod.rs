@@ -83,7 +83,7 @@ use check::CheckArg;
 use clap::Parser;
 use clap::Subcommand;
 use doctor::DoctorArgs;
-use format::{run_format, FormatArgs};
+use format::{run_format, FormatGritArgs};
 use indicatif::MultiProgress;
 use indicatif_log_bridge::LogWrapper;
 use init::InitArgs;
@@ -174,7 +174,7 @@ pub enum Commands {
     /// Display version information about the CLI and agents
     Version(VersionArgs),
     /// Format grit files under current directory
-    Format(FormatArgs),
+    Format(FormatGritArgs),
     /// Generate documentation for the Grit CLI (internal use only)
     #[cfg(feature = "docgen")]
     #[clap(hide = true)]
@@ -463,7 +463,7 @@ async fn run_command(_use_tracing: bool) -> Result<()> {
                 run_plumbing(arg, multi, &mut apply_details, app.format_flags).await
             }
             Commands::Version(arg) => run_version(arg).await,
-            Commands::Format(arg) => run_format(&arg).await,
+            Commands::Format(arg) => run_format(&arg, &app.format_flags).await,
             #[cfg(feature = "docgen")]
             Commands::Docgen(arg) => run_docgen(arg).await,
             #[cfg(feature = "server")]

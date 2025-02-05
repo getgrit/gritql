@@ -87,8 +87,10 @@ tracing-subscriber = { version = "0.3", default-features = false, optional = tru
 tracing-log = { version = "0.2.0", optional = true }
 
 fs-err = { version = "2.11.0" }
-biome_grit_parser = { git = "https://github.com/biomejs/biome" }
-biome_grit_formatter = { git = "https://github.com/biomejs/biome" }
+biome_grit_parser = { git = "https://github.com/biomejs/biome", rev = "71c825e65e58fc1937b55b4f26edafdd183a50f3" }
+biome_grit_formatter = { git = "https://github.com/biomejs/biome", rev = "71c825e65e58fc1937b55b4f26edafdd183a50f3" }
+# biome_grit_parser = { path = "../../../../../../biome/crates/biome_grit_parser" }
+# biome_grit_formatter = { path = "../../../../../../biome/crates/biome_grit_formatter" }
 
 [target.'cfg(not(windows))'.dependencies]
 openssl = { version = "0.10", features = ["vendored"] }
