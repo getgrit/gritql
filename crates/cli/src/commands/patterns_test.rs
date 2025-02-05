@@ -4,7 +4,7 @@ use log::{debug, info};
 
 use marzano_core::analysis::get_dependents_of_target_patterns_by_traversal_from_src;
 use marzano_core::api::MatchResult;
-use marzano_gritmodule::config::{GritPatternSample, GritPatternTestInfo};
+use marzano_gritmodule::config::{GritPatternSample, GritPatternTestInfo, ResolvedGritDefinition};
 use marzano_gritmodule::formatting::format_rich_files;
 use marzano_gritmodule::markdown::replace_sample_in_md_file;
 use marzano_gritmodule::patterns_directory::PatternsDirectory;
@@ -255,6 +255,17 @@ pub async fn get_marzano_pattern_test_results(
     Ok(AggregatedTestResult::AllPassed)
 }
 
+pub(crate) fn filter_patterns_by_regex(
+    patterns: Vec<ResolvedGritDefinition>,
+    filter: &String,
+) -> Result<Vec<ResolvedGritDefinition>> {
+    let regex = regex::Regex::new(filter.as_str())?;
+    Ok(patterns
+        .into_iter()
+        .filter(|p| regex.is_match(&p.local_name))
+        .collect())
+}
+
 pub(crate) async fn run_patterns_test(
     arg: PatternsTestArgs,
     flags: GlobalFormatFlags,
@@ -262,13 +273,8 @@ pub(crate) async fn run_patterns_test(
     let (mut patterns, _) = resolve_from_cwd(&Source::Local).await?;
     let libs = get_grit_files_from_flags_or_cwd(&flags).await?;
 
-    if arg.filter.is_some() {
-        let filter = arg.filter.as_ref().unwrap();
-        let regex = regex::Regex::new(filter)?;
-        patterns = patterns
-            .into_iter()
-            .filter(|p| regex.is_match(&p.local_name))
-            .collect::<Vec<_>>()
+    if let Some(filter) = &arg.filter {
+        patterns = filter_patterns_by_regex(patterns, filter)?;
     }
 
     if !arg.exclude.is_empty() {

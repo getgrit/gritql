@@ -1,4 +1,5 @@
 use crate::{
+    commands::patterns_test::filter_patterns_by_regex,
     flags::GlobalFormatFlags,
     messenger_variant::{create_emitter, MessengerVariant},
     resolver::{resolve_from_cwd, GritModuleResolver, Source},
@@ -9,7 +10,7 @@ use biome_grit_formatter::context::GritFormatOptions;
 use biome_grit_parser::GritParse;
 use clap::Args;
 use colored::Colorize;
-use marzano_core::api::{EntireFile, MatchResult, Rewrite};
+use marzano_core::api::{DoneFile, EntireFile, MatchResult, Rewrite};
 use marzano_gritmodule::{config::ResolvedGritDefinition, parser::PatternFileExt};
 use marzano_messenger::{emit::Messager, output_mode::OutputMode};
 use marzano_util::{rich_path::RichFile, runtime::ExecutionContext};
@@ -23,10 +24,23 @@ pub struct FormatGritArgs {
     /// Write formats to file instead of just showing them
     #[clap(long)]
     pub write: bool,
+    // Level of detail to show for results
+    #[clap(
+        long = "output",
+        default_value_t = OutputMode::Standard,
+    )]
+    output: OutputMode,
+    /// Regex of a specific pattern to test
+    #[clap(long = "filter")]
+    pub filter: Option<String>,
 }
 
 pub async fn run_format(arg: &FormatGritArgs, flags: &GlobalFormatFlags) -> Result<()> {
-    let (resolved, _) = resolve_from_cwd(&Source::Local).await?;
+    let (mut resolved, _) = resolve_from_cwd(&Source::Local).await?;
+
+    if let Some(filter) = &arg.filter {
+        resolved = filter_patterns_by_regex(resolved, filter)?;
+    }
 
     let file_path_to_resolved = group_resolved_patterns_by_group(resolved);
 
@@ -35,7 +49,7 @@ pub async fn run_format(arg: &FormatGritArgs, flags: &GlobalFormatFlags) -> Resu
     // Create an emitter for formatting results
     let mut emitter = create_emitter(
         &crate::flags::OutputFormat::from(flags),
-        OutputMode::default(),
+        arg.output.clone(),
         None,
         false,
         None,
@@ -76,6 +90,10 @@ fn format_file_resolved_patterns(
     file_path: &str,
     patterns: Vec<ResolvedGritDefinition>,
 ) -> Result<Vec<MatchResult>> {
+    // Apply patterns in reverse order to avoid conflicts
+    let mut patterns = patterns;
+    patterns.sort_by_key(|p| p.config.range.map_or(0, |r| r.start_byte));
+
     let first_pattern = patterns
         .first()
         .ok_or_else(|| anyhow!("patterns is empty"))?;
@@ -84,29 +102,43 @@ fn format_file_resolved_patterns(
         .raw
         .as_ref()
         .ok_or_else(|| anyhow!("pattern doesn't have raw data"))?;
+
+    let format = first_pattern_raw_data.format;
     let old_file_content = &first_pattern_raw_data.content;
 
-    println!("Parsing {:?}", file_path);
+    let mut results = vec![];
 
-    let (mut results, new_file_content) = match first_pattern_raw_data.format {
+    let new_file_content = match format {
         PatternFileExt::Yaml => {
             // println!("format_yaml_file not implemented");
-            (vec![], old_file_content.to_owned())
+            // (vec![], old_file_content.to_owned())
+            old_file_content.to_owned()
         }
         PatternFileExt::Grit => {
-            format_grit_code(old_file_content)?;
-            (vec![], old_file_content.to_owned())
+            let (this_results, new_file_content) = format_grit_code(old_file_content)?;
+            results.extend(this_results);
+            new_file_content
         }
         PatternFileExt::Md => {
-            // println!("format_md_file not implemented");
-            // let hunks = patterns
-            //     .iter()
-            //     .map(format_pattern_as_hunk_changes)
-            //     .collect::<Result<Vec<HunkChange>>>()?;
-            // apply_hunk_changes(old_file_content, hunks)
-            (vec![], old_file_content.to_owned())
+            let mut new_file_content = old_file_content.clone();
+            for pattern in &patterns {
+                if let Some(range) = pattern.config.range {
+                    let (this_results, formatted_pattern) = format_grit_code(&pattern.body)
+                        .with_context(|| format!("could not format '{}'", pattern.name()))?;
+                    results.extend(this_results);
+                    new_file_content.replace_range(
+                        range.start_byte as usize..range.end_byte as usize,
+                        formatted_pattern.as_str(),
+                    );
+                } else {
+                    println!("pattern {} has no range", pattern.name());
+                }
+            }
+            new_file_content
         }
     };
+
+    results.push(MatchResult::DoneFile(DoneFile::new(file_path.to_owned())));
 
     if &new_file_content == old_file_content {
         return Ok(results);
@@ -217,28 +249,6 @@ fn format_grit_code(source: &str) -> Result<(Vec<MatchResult>, String)> {
         .with_context(|| "biome couldn't format")?;
     let formatted = doc.print()?.into_code();
     Ok((vec![], formatted))
-}
-
-/// Represent a hunk of text that needs to be changed
-#[derive(Debug)]
-struct HunkChange {
-    starting_byte: usize,
-    ending_byte: usize,
-    new_content: String,
-}
-
-/// returns a new string that applies hunk changes
-fn apply_hunk_changes(input: &str, mut hunks: Vec<HunkChange>) -> String {
-    if hunks.is_empty() {
-        return input.to_string();
-    }
-    hunks.sort_by_key(|hunk| -(hunk.starting_byte as isize));
-    let mut buffer = input.to_owned();
-    for hunk in hunks {
-        let hunk_range = hunk.starting_byte..hunk.ending_byte;
-        buffer.replace_range(hunk_range, &hunk.new_content);
-    }
-    buffer
 }
 
 #[cfg(test)]
