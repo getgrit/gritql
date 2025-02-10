@@ -1,0 +1,25 @@
+---
+source: crates/core/src/sdk/test_yaml.rs
+expression: after
+---
+version: 0.0.1
+patterns:
+  - name: github.com/getgrit/stdlib#*
+  - name: other_pattern
+    level: error
+    body: |
+      language toml
+
+      other_pattern() where $filename <: includes "test.yaml"
+  - name: target_pattern
+    level: error
+    body: replacement body
+  - name: our_cargo_use_long_dependency
+    level: error
+    body: |
+      language toml
+
+      cargo_use_long_dependency() where $filename <: not includes or {
+        "language-submodules",
+        "language-metavariables"
+      }

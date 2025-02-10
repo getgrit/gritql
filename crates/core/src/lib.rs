@@ -16,7 +16,6 @@ mod foreign_function_definition;
 pub mod fs;
 mod inline_snippets;
 
-#[cfg(any(feature = "napi", feature = "wasm_core"))]
 pub mod sdk;
 
 mod limits;

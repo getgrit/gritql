@@ -25,14 +25,18 @@ pub struct LanguageSdk {
 impl Default for LanguageSdk {
     fn default() -> Self {
         let language = TargetLanguage::from_string("js", None).unwrap();
+        Self::from_language(language)
+    }
+}
+
+impl LanguageSdk {
+    pub fn from_language(language: TargetLanguage) -> Self {
         Self {
             compiler: StatelessCompilerContext::new(language),
             language,
         }
     }
-}
 
-impl LanguageSdk {
     pub fn compiler(&self) -> StatelessCompilerContext {
         StatelessCompilerContext::new(self.language)
     }
@@ -42,7 +46,12 @@ impl LanguageSdk {
         compiler.parse_snippet(snippet)
     }
 
-    pub fn build(
+    pub fn build(&mut self, pattern: Pattern<MarzanoQueryContext>) -> Result<Problem> {
+        let built_ins = BuiltIns::get_built_in_functions();
+        self.build_custom(built_ins, pattern)
+    }
+
+    pub fn build_custom(
         &mut self,
         built_ins: BuiltIns,
         pattern: Pattern<MarzanoQueryContext>,
