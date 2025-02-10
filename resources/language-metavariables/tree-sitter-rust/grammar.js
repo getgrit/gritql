@@ -1055,13 +1055,15 @@ module.exports = grammar({
       repeat($.attribute_item),
       choice(
         seq(
-          $._expression,
+          field('repeat', $._expression),
           ';',
           field('length', $._expression)
         ),
-        seq(
-          sepBy(',', $._expression),
-          optional(',')
+	      field('elements',
+          seq(
+            sepBy(',', $._expression),
+            optional(',')
+          )
         )
       ),
       ']'

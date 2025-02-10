@@ -523,7 +523,31 @@
     "type": "array_expression",
     "named": true,
     "fields": {
+      "elements": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "_expression",
+            "named": true
+          }
+        ]
+      },
       "length": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "_expression",
+            "named": true
+          }
+        ]
+      },
+      "repeat": {
         "multiple": false,
         "required": false,
         "types": [
@@ -538,10 +562,6 @@
       "multiple": true,
       "required": false,
       "types": [
-        {
-          "type": "_expression",
-          "named": true
-        },
         {
           "type": "attribute_item",
           "named": true

@@ -523,10 +523,34 @@
     "type": "array_expression",
     "named": true,
     "fields": {
+      "repeat": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "_expression",
+            "named": true
+          }
+        ]
+      },
       "length": {
         "multiple": false,
         "required": false,
         "types": [
+          {
+            "type": "_expression",
+            "named": true
+          }
+        ]
+      },
+      "elements": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": ",",
+            "named": false
+          },
           {
             "type": "_expression",
             "named": true
