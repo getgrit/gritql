@@ -16,7 +16,10 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use grit_pattern_matcher::{
-    constants::{DEFAULT_FILE_NAME, GLOBAL_VARS_SCOPE_INDEX, MATCH_VAR},
+    constants::{
+        ABSOLUTE_PATH_INDEX, DEFAULT_FILE_NAME, FILENAME_INDEX, GLOBAL_VARS_SCOPE_INDEX, MATCH_VAR,
+        NEW_FILES_INDEX, PROGRAM_INDEX,
+    },
     pattern::{
         DynamicSnippetPart, GritFunctionDefinition, Pattern, PatternDefinition,
         PredicateDefinition, Variable, VariableContent, VariableSource,
@@ -395,7 +398,7 @@ pub(crate) fn get_definitions(
         global_vars
             .iter()
             .sorted_by(|x, y| Ord::cmp(x.1, y.1))
-            .map(|x| VariableSource::new(x.0.clone(), context.file.to_owned()))
+            .map(|x| VariableSource::new(x.0.clone(), DEFAULT_FILE_NAME.to_owned()))
             .collect(),
     );
 
@@ -702,7 +705,7 @@ pub fn src_to_problem(src: String, default_lang: TargetLanguage) -> Result<Probl
     Ok(problem)
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct VariableLocations {
     /// List of scopes, each scope with an array of variables
     pub(crate) locations: Vec<Vec<VariableSource>>,
@@ -745,6 +748,15 @@ impl VariableLocations {
             }
         }
         variables
+    }
+
+    pub(crate) fn globals() -> Self {
+        let global_vars = build_standard_global_vars();
+        let locations = global_vars
+            .iter()
+            .map(|(name, index)| VariableSource::new_global(name.to_owned()))
+            .collect();
+        Self::new(vec![locations])
     }
 }
 
@@ -817,4 +829,13 @@ mod tests {
             tsx.language_name()
         );
     }
+}
+
+pub fn build_standard_global_vars() -> BTreeMap<String, usize> {
+    BTreeMap::from([
+        ("$new_files".to_owned(), NEW_FILES_INDEX),
+        ("$filename".to_owned(), FILENAME_INDEX),
+        ("$program".to_owned(), PROGRAM_INDEX),
+        ("$absolute_filename".to_owned(), ABSOLUTE_PATH_INDEX),
+    ])
 }
