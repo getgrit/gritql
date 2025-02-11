@@ -38,6 +38,9 @@ pub struct ApplyMigrationArgs {
     /// Print verbose output
     #[clap(long)]
     pub(crate) verbose: bool,
+    // Capture remaining arguments
+    #[arg(trailing_var_arg = true, allow_hyphen_values = true, index = 2)]
+    pub(crate) inputs: Vec<String>,
 }
 
 impl ApplyMigrationArgs {
@@ -103,4 +106,28 @@ pub(crate) async fn run_apply_migration(
     }
 
     Ok(workflow_status.clone())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anyhow::Result;
+    use clap::{Arg, ArgAction, Command, FromArgMatches};
+
+    #[test]
+    fn test_arg_parsing() -> Result<()> {
+        let args = ApplyMigrationArgs::augment_args(Command::new("test"));
+
+        let matches =
+            args.get_matches_from(vec!["test", "--watch", "--test", "bob", "--suzy=queue"]);
+
+        let apply_args = ApplyMigrationArgs::from_arg_matches(&matches)?;
+
+        println!("{:?}", apply_args);
+
+        // assert_eq!(payload.get("test").unwrap().as_str().unwrap(), "bob");
+        // assert_eq!(payload.get("suzy").unwrap().as_str().unwrap(), "queue");
+
+        Ok(())
+    }
 }
