@@ -86,6 +86,7 @@ network_requests_external = [
 ]
 wasm_core = [
   "dep:getrandom",
+  "uuid/js",
   "getrandom/js",
   "network_requests_external",
   "external_functions_common",

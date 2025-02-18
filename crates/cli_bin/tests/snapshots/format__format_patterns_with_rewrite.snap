@@ -1,9 +1,23 @@
 ---
 source: crates/cli_bin/tests/format.rs
-expression: "vec![yaml_file_content, test_move_import_file_content,\naspect_ratio_md_file_content, dependency_grit_file_content]"
-snapshot_kind: text
+expression: yaml_file_content
 ---
-- "version: 0.0.1\npatterns:\n  - name: aspect_ratio_yaml\n    description: Yaml version of aspect_ratio.md\n    body: |\n      language css;\n      `a { $props }` where { $props <: contains `aspect-ratio: $x` }\n\n  - file: ./others/test_move_import.md\n\n  - name: some_json_pattern\n    body: |\n      language json;\n      `account: $val` where {\n      \t$val <: contains `password: $password`,\n      \t$password => raw`hidden`\n      }"
-- "---\nprivate: true\ntags: [private]\n---\n```grit\nlanguage js;\n`sanitizeFilePath` as $s where {\n\tmove_import(`sanitizeFilePath`, `'@getgrit/universal'`)\n}\n```\n"
-- "---\ntitle: Aspect ratio\n---\n\n```grit\nlanguage css;\n`a { $props }` where { $props <: contains `aspect-ratio: $x` }\n```\n\n## Matches the right selector and declaration block\n\n```css\na {\n  width: calc(100% - 80px);\n  aspect-ratio: 1/2;\n  font-size: calc(10px + (56 - 10) * ((100vw - 320px) / (1920 - 320)));\n}\n\n#some-id {\n  some-property: 5px;\n}\n\na.b ~ c.d {\n}\n.e.f + .g.h {\n}\n\n@font-face {\n  font-family: 'Open Sans';\n  src: url('/a') format('woff2'), url('/b/c') format('woff');\n}\n```\n\n```css\na {\n  width: calc(100% - 80px);\n  aspect-ratio: 1/2;\n  font-size: calc(10px + (56 - 10) * ((100vw - 320px) / (1920 - 320)));\n}\n\n#some-id {\n  some-property: 5px;\n}\n\na.b ~ c.d {\n}\n.e.f + .g.h {\n}\n\n@font-face {\n  font-family: 'Open Sans';\n  src: url('/a') format('woff2'), url('/b/c') format('woff');\n}\n```\n"
-- "language json;\npattern upgrade_dependency($target_dep, $target_version, $dependency_key) {\n\tor {\n\t\t`$key: $value` where {\n\t\t\t$key <: `\"$target_dep\"`,\n\t\t\t$value => `\"$target_version\"`\n\t\t},\n\t\tpair($key, $value) where {\n\t\t\t$key <: `\"$dependency_key\"`,\n\t\t\t$value <: object($properties) where {\n\t\t\t\t$properties <: notcontains pair(key = $dep_key) where {\n\t\t\t\t\t$dep_key <: contains `$target_dep`\n\t\t\t\t},\n\t\t\t\t$properties => `\"$target_dep\": \"$target_version\",\\n$properties`\n\t\t\t}\n\t\t}\n\t}}\n\npattern console_method_to_info($method) {\n\t`console.$method($message)` => `console.info($message)`}\n"
+version: 0.0.1
+patterns:
+  - name: aspect_ratio_yaml
+    description: Yaml version of aspect_ratio.md
+    body: |
+      language css
+    
+      `a { $props }` where { $props <: contains `aspect-ratio: $x` }
+
+  - file: ./others/test_move_import.md
+
+  - name: some_json_pattern
+    body: |
+      language json
+    
+      `account: $val` where {
+      	$val <: contains `password: $password`,
+      	$password => raw`hidden`
+      }

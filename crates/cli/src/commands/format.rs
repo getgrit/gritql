@@ -1,5 +1,6 @@
 use crate::{
     commands::patterns_test::filter_patterns_by_regex,
+    error::GoodError,
     flags::GlobalFormatFlags,
     messenger_variant::create_emitter,
     resolver::{resolve_from_cwd, Source},
@@ -26,7 +27,7 @@ pub struct FormatGritArgs {
     // Level of detail to show for results
     #[clap(
         long = "output",
-        default_value_t = OutputMode::Compact,
+        default_value_t = OutputMode::Standard,
     )]
     output: OutputMode,
     /// Regex of a specific pattern to test
@@ -93,16 +94,21 @@ pub async fn run_format(arg: &FormatGritArgs, flags: &GlobalFormatFlags) -> Resu
         }
     }
 
-    println!(
-        "Modified {} {}",
-        format!("{}", details.rewritten).bold().yellow(),
-        if details.rewritten == 1 {
-            "file"
-        } else {
-            "files"
-        }
-    );
+    if details.rewritten > 0 {
+        println!(
+            "{} formatting changes in {} {}",
+            if arg.write { "Made" } else { "Found" },
+            format!("{}", details.rewritten).bold().yellow(),
+            if details.rewritten == 1 {
+                "file"
+            } else {
+                "files"
+            }
+        );
+        anyhow::bail!(GoodError::new());
+    }
 
+    println!("No formatting changes were made");
     Ok(())
 }
 

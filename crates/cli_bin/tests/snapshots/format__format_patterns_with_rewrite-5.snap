@@ -1,0 +1,15 @@
+---
+source: crates/cli_bin/tests/format.rs
+expression: test_move_import_file_content
+---
+---
+private: true
+tags: [private]
+---
+```grit
+language js
+
+`sanitizeFilePath` as $s where {
+	move_import(`sanitizeFilePath`, `'@getgrit/universal'`)
+}
+```

@@ -1,7 +1,7 @@
 use crate::common::get_test_cmd;
 use anyhow::Result;
 use common::get_fixture;
-use insta::assert_yaml_snapshot;
+use insta::assert_snapshot;
 
 mod common;
 
@@ -18,24 +18,25 @@ fn format_patterns_with_rewrite() -> Result<()> {
     println!("stderr: {}", String::from_utf8(output.stderr.clone())?);
     println!("stdout: {}", String::from_utf8(output.stdout.clone())?);
 
-    assert!(
-        output.status.success(),
-        "Command didn't finish successfully"
-    );
+    assert!(!output.status.success());
     assert!(output.stderr.is_empty());
 
     let yaml_file_content = std::fs::read_to_string(grit_dir.join(".grit/grit.yaml"))?;
+    assert_snapshot!(yaml_file_content);
     let test_move_import_file_content =
         std::fs::read_to_string(grit_dir.join(".grit/others/test_move_import.md"))?;
+    assert_snapshot!(test_move_import_file_content);
     let aspect_ratio_md_file_content =
         std::fs::read_to_string(grit_dir.join(".grit/patterns/aspect_ratio.md"))?;
+    assert_snapshot!(aspect_ratio_md_file_content);
     let dependency_grit_file_content =
         std::fs::read_to_string(grit_dir.join(".grit/patterns/dependency.grit"))?;
-    assert_yaml_snapshot!(vec![
-        yaml_file_content,
-        test_move_import_file_content,
-        aspect_ratio_md_file_content,
-        dependency_grit_file_content
-    ]);
+    assert_snapshot!(dependency_grit_file_content);
+    let test_move_import_file_content =
+        std::fs::read_to_string(grit_dir.join(".grit/others/test_move_import.md"))?;
+    assert_snapshot!(test_move_import_file_content);
+    let aspect_ratio_md_file_content =
+        std::fs::read_to_string(grit_dir.join(".grit/patterns/aspect_ratio.md"))?;
+    assert_snapshot!(aspect_ratio_md_file_content);
     Ok(())
 }
