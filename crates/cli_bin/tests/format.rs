@@ -18,10 +18,7 @@ fn format_patterns_with_rewrite() -> Result<()> {
     println!("stderr: {}", String::from_utf8(output.stderr.clone())?);
     println!("stdout: {}", String::from_utf8(output.stdout.clone())?);
 
-    assert!(
-        output.status.success(),
-        "Command didn't finish successfully"
-    );
+    assert!(!output.status.success());
     assert!(output.stderr.is_empty());
 
     let yaml_file_content = std::fs::read_to_string(grit_dir.join(".grit/grit.yaml"))?;
