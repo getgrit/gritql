@@ -2522,7 +2522,6 @@ dependencies = [
  "env_logger",
  "flate2",
  "fs-err",
- "getrandom",
  "git2",
  "grit-pattern-matcher",
  "grit-util",

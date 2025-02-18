@@ -1,0 +1,27 @@
+---
+source: crates/cli_bin/tests/format.rs
+expression: dependency_grit_file_content
+---
+language json
+
+pattern upgrade_dependency($target_dep, $target_version, $dependency_key) {
+	or {
+		`$key: $value` where {
+			$key <: `"$target_dep"`,
+			$value => `"$target_version"`
+		},
+		pair($key, $value) where {
+			$key <: `"$dependency_key"`,
+			$value <: object($properties) where {
+				$properties <: not contains pair(key=$dep_key) where {
+					$dep_key <: contains `$target_dep`
+				},
+				$properties => `"$target_dep": "$target_version",\n$properties`
+			}
+		}
+	}
+}
+
+pattern console_method_to_info($method) {
+	`console.$method($message)` => `console.info($message)`
+}
