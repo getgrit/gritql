@@ -16,7 +16,7 @@ patterns:
   - name: some_json_pattern
     body: |
       language json
-
+    
       `account: $val` where {
       	$val <: contains `password: $password`,
       	$password => raw`hidden`
