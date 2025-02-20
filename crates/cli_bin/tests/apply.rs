@@ -3307,7 +3307,7 @@ fn large_file_fails() -> Result<()> {
     println!("Successfully ran the command the first time");
 
     // Now run the command again, but with GRIT_MAX_FILE_SIZE=0
-    let new_command = apply_cmd.env("GRIT_MAX_FILE_SIZE", "0");
+    let new_command = apply_cmd.env("GRIT_MAX_FILE_SIZE_BYTES", "0");
     let output = new_command.output()?;
     let stdout = String::from_utf8(output.stdout)?;
     let stderr = String::from_utf8(output.stderr)?;

@@ -4,7 +4,7 @@ use marzano_util::rich_path::RichFile;
 use std::env;
 
 pub(crate) fn is_file_too_big(file: &RichFile) -> Option<AnalysisLog> {
-    let max_size = env::var("GRIT_MAX_FILE_SIZE")
+    let max_size = env::var("GRIT_MAX_FILE_SIZE_BYTES")
         .ok()
         .and_then(|s| s.parse::<usize>().ok())
         .unwrap_or(MAX_FILE_SIZE);
