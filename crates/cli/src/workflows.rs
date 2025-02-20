@@ -107,17 +107,20 @@ where
         );
     }
 
-    let auth = updater.get_valid_auth().await.map_err(|_| {
-        anyhow::anyhow!(
+    let auth = updater.get_valid_auth().await;
+    if auth.is_err() {
+        log::warn!(
             "No valid authentication token found, please run {}",
             style("grit auth login").bold().red()
-        )
-    })?;
+        );
+    }
 
-    if let Some(username) = auth.get_user_name()? {
-        if !arg.input.contains_key(GRIT_VCS_USER_NAME) {
-            arg.input
-                .insert(GRIT_VCS_USER_NAME.to_string(), username.into());
+    if let Ok(ref auth) = auth {
+        if let Some(username) = auth.get_user_name()? {
+            if !arg.input.contains_key(GRIT_VCS_USER_NAME) {
+                arg.input
+                    .insert(GRIT_VCS_USER_NAME.to_string(), username.into());
+            }
         }
     }
 
@@ -157,11 +160,17 @@ where
 
     let mut final_child = child
         .env(ENV_VAR_GRIT_API_URL, get_grit_api_url())
-        .env(ENV_VAR_GRIT_AUTH_TOKEN, auth.access_token)
         .env(ENV_GRIT_WORKSPACE_ROOT, root)
         .arg("--file")
         .arg(&tempfile_path)
-        .kill_on_drop(true)
+        .kill_on_drop(true);
+
+    let mut final_child = if let Ok(auth) = auth {
+        final_child.env(ENV_VAR_GRIT_AUTH_TOKEN, auth.access_token)
+    } else {
+        final_child
+    };
+    let mut final_child = final_child
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
