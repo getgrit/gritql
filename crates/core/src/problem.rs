@@ -7,7 +7,7 @@ use crate::{
     marzano_code_snippet::MarzanoCodeSnippet,
     marzano_context::MarzanoContext,
     marzano_resolved_pattern::{MarzanoFile, MarzanoResolvedPattern},
-    pattern_compiler::compiler::VariableLocations,
+    pattern_compiler::{build_standard_global_vars, compiler::VariableLocations},
 };
 use anyhow::{bail, Result};
 use grit_pattern_matcher::{
@@ -82,6 +82,26 @@ impl Problem {
             defs.skippable_indexes = vec![0, 1, 2];
         }
         defs
+    }
+
+    pub fn new(
+        pattern: Pattern<MarzanoQueryContext>,
+        language: TargetLanguage,
+        built_ins: BuiltIns,
+    ) -> Self {
+        Self::new_from_pattern(
+            pattern,
+            language,
+            built_ins,
+            false, // is_multifile
+            false, // has_limit
+            None,  // name
+            VariableLocations::globals(),
+            vec![], // pattern_definitions
+            vec![], // predicate_definitions
+            vec![], // function_definitions
+            vec![], // foreign_function_definitions
+        )
     }
 }
 
