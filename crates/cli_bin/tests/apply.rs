@@ -3267,3 +3267,57 @@ fn apply_remote_pattern() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn large_file_fails() -> Result<()> {
+    let tempdir = tempfile::tempdir()?;
+    let large_file = tempdir.path().join("large.js");
+
+    // Create a large file with many console.log statements
+    // Each line is about 50 bytes, so 25,000 lines = ~1.25MB
+    let mut content = String::with_capacity(1_250_000);
+    for i in 0..25_000 {
+        content.push_str(&format!("console.log('This is log message number {i} which should make the file quite large');\n"));
+    }
+    content.push_str("console.error('This is an error message, at the end');");
+    fs_err::write(&large_file, content)?;
+
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd.current_dir(tempdir.path());
+    apply_cmd
+        .arg("apply")
+        .arg("`console.error` => `console.warn`")
+        .arg("large.js");
+
+    let output = apply_cmd.output()?;
+    let stdout = String::from_utf8(output.stdout)?;
+    let stderr = String::from_utf8(output.stderr)?;
+
+    println!("stdout first time: {:?}", stdout);
+    println!("stderr first time: {:?}", stderr);
+
+    // Command should succeed but with a warning about file size
+    assert!(output.status.success());
+    assert!(stdout.contains("Processed 1 files and found 0 matches"));
+
+    // Verify that the file is unmodified
+    let content: String = fs_err::read_to_string(large_file.clone())?;
+    assert!(!content.contains("console.warn"));
+
+    println!("Successfully ran the command the first time");
+
+    // Now run the command again, but with GRIT_MAX_FILE_SIZE=0
+    let new_command = apply_cmd.env("GRIT_MAX_FILE_SIZE_BYTES", "0");
+    let output = new_command.output()?;
+    let stdout = String::from_utf8(output.stdout)?;
+    let stderr = String::from_utf8(output.stderr)?;
+
+    println!("stdout second time: {:?}", stdout);
+    println!("stderr second time: {:?}", stderr);
+
+    // Verify that the file is modified
+    let content: String = fs_err::read_to_string(large_file)?;
+    assert!(content.contains("console.warn"));
+
+    Ok(())
+}
