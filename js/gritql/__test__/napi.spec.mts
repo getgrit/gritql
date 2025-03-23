@@ -2,10 +2,9 @@ import { expect, describe, it } from 'bun:test';
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 import { QueryBuilder } from '../__generated__/index.js';
-import type { RichFile } from '@getgrit/universal';
 
 describe('Node API interfaces ', () => {
-  const file: RichFile = {
+  const file = {
     path: 'test.js',
     content: `console.log("hello")
 console.log("world")`,
