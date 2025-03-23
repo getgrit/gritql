@@ -1,0 +1,15 @@
+{
+  "name": "@getgrit/gritql-darwin-universal",
+  "version": "0.0.0",
+  "os": [
+    "darwin"
+  ],
+  "main": "gritql.darwin-universal.node",
+  "files": [
+    "gritql.darwin-universal.node"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">= 10"
+  }
+}
