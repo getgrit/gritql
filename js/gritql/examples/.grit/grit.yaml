@@ -1,0 +1,6 @@
+patterns:
+  - name: foo_bar
+    body: |
+      language js
+
+      `foo` => `bar`

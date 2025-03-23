@@ -1,0 +1,3 @@
+function helloTwo() {
+  return foo();
+}

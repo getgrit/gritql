@@ -1,6 +1,6 @@
 {
   "name": "@getgrit/gritql",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "main": "__generated__/index.js",
   "types": "__generated__/index.d.ts",
   "napi": {
