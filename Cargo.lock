@@ -1804,6 +1804,25 @@ version = "0.1.0"
 source = "git+https://github.com/getgrit/grit_cloud_client.git#7221ad63b697fd2c14e14a1872de602a7b3c135a"
 
 [[package]]
+name = "gritql_napi"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "grit-pattern-matcher",
+ "grit-util",
+ "marzano-core",
+ "marzano-gritmodule",
+ "marzano-language",
+ "marzano-util",
+ "marzano_messenger",
+ "napi",
+ "napi-build",
+ "napi-derive",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "h2"
 version = "0.3.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2878,6 +2897,12 @@ dependencies = [
  "once_cell",
  "tokio",
 ]
+
+[[package]]
+name = "napi-build"
+version = "2.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e28acfa557c083f6e254a786e01ba253fc56f18ee000afcd4f79af735f73a6da"
 
 [[package]]
 name = "napi-derive"

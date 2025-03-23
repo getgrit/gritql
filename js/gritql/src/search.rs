@@ -209,7 +209,7 @@ async fn prep_query(
 
     let libs = grit_files.get_language_directory_or_default(lang)?;
 
-    let injected_builtins = Some(ai_builtins::ai_builtins::get_ai_built_in_functions());
+    let injected_builtins = None;
 
     let mut builder = CompiledPatternBuilder::start(
         pattern_body,
@@ -311,28 +311,24 @@ async fn prep_queries(
 
 enum EmbeddedMessenger {
     Testing(TestingMessenger),
-    Relay(RelayMessenger),
 }
 
 impl EmbeddedMessenger {
     fn emit(&mut self, message: &MatchResult) -> anyhow::Result<()> {
         match self {
             EmbeddedMessenger::Testing(messenger) => messenger.emit(message),
-            EmbeddedMessenger::Relay(messenger) => messenger.emit(message),
         }
     }
 
     async fn flush(&mut self) -> anyhow::Result<()> {
         match self {
             EmbeddedMessenger::Testing(messenger) => messenger.flush().await,
-            EmbeddedMessenger::Relay(messenger) => messenger.flush().await,
         }
     }
 
     fn emit_estimate(&mut self, total: usize) -> anyhow::Result<()> {
         match self {
             EmbeddedMessenger::Testing(messenger) => messenger.emit_estimate(total),
-            EmbeddedMessenger::Relay(messenger) => messenger.emit_estimate(total),
         }
     }
 }
@@ -342,14 +338,7 @@ fn get_messenger(root_address: &Path, step_id: String, silent: bool) -> Embedded
         return EmbeddedMessenger::Testing(TestingMessenger::new());
     }
 
-    match std::env::var("GRIT_LOCAL_SERVER") {
-        Ok(server_addr) => EmbeddedMessenger::Relay(RelayMessenger::new(
-            server_addr,
-            Some(root_address.into()),
-            step_id,
-        )),
-        Err(_) => EmbeddedMessenger::Testing(TestingMessenger::new()),
-    }
+    EmbeddedMessenger::Testing(TestingMessenger::new())
 }
 
 async fn apply_internal(
@@ -458,7 +447,7 @@ async fn search_internal(
             });
         }
 
-        let context = ExecutionContext::default()
+        let context = ExecutionContext::default();
 
         if let Some(parent_rx) = parent_rx {
             current_query
