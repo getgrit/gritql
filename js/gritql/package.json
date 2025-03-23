@@ -15,7 +15,7 @@
     "node": ">= 10"
   },
   "scripts": {
-    "build": "RUSTFLAGS=\"-A warnings\" napi build --no-const-enum --platform --release --dts __generated__/index.d.ts --js __generated__/index.js && mv *.node __generated__",
+    "build": "RUSTFLAGS=\"-A warnings\" napi build --no-const-enum --platform --release --dts __generated__/index.d.ts --js __generated__/index.js && mv gritql.darwin-arm64.node npm/darwin-arm64/",
     "test": "bun test",
     "test:ci": "bun test --run",
     "example:search": "bun run examples/search.ts",
