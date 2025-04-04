@@ -135,12 +135,12 @@ server = [
 ]
 updater = []
 grit_tracing = [
-  "dep:opentelemetry-otlp",
-  "dep:opentelemetry",
-  "dep:opentelemetry_sdk",
-  "dep:tracing-opentelemetry",
-  "dep:tracing-subscriber",
-  "dep:tracing-log",
+  "opentelemetry-otlp",
+  "opentelemetry",
+  "opentelemetry_sdk",
+  "tracing-opentelemetry",
+  "tracing-subscriber",
+  "tracing-log",
   "marzano-core/grit_tracing",
 ]
 external_functions = ["marzano-core/external_functions"]
