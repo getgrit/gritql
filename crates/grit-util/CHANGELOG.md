@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2](https://github.com/getgrit/gritql/compare/grit-util-v0.5.1...grit-util-v0.5.2) - 2025-04-14
+
+### Added
+
+- 570 kotlin support ([#573](https://github.com/getgrit/gritql/pull/573))
+
 ## [0.4.0](https://github.com/getgrit/gritql/compare/grit-util-v0.3.0...grit-util-v0.4.0) - 2024-10-10
 
 ### Added
