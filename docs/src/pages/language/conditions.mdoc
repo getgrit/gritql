@@ -1,0 +1,188 @@
+---
+title: Conditional Operators
+---
+
+## `where` clause
+
+The `where` clause introduces one or more conditions that must be true for the pattern preceding it to execute.
+
+{% diffeditor %}
+
+```grit
+`console.log($message)` => . where $message <: js"'Hello, world!'"
+```
+
+```typescript
+console.log('Hi');
+console.log('Hello, world!');
+```
+
+```typescript
+console.log('Hi');
+```
+
+{% /diffeditor %}
+
+The `where` clause can be followed by either a single condition or a list of conditions, wrapped in braces and separated by commas (`{ cond1, cond2 }`).
+If a `where` clause contains multiple conditions, all must be true for the pattern to match.
+
+## Match (`<:`) condition
+
+Grit's most common condition, the match operator `<:` specifies what part of the codebase you want to target.
+It does this by matching a [metavariable](/language/patterns#metavariables) to its left against a pattern to its right.
+
+```grit
+`console.log('$message')` where $message <: `Hello, world!`
+```
+
+## `!` condition {% #exclaim-condition %}
+
+The `!` operator is used to negate a condition.
+
+{% diffeditor %}
+
+```grit
+`console.log('$message');` => `console.warn('$message');` where {
+  ! $message <: "Hello, world!"
+}
+```
+
+```typescript
+console.log('Hello, world!');
+console.log('Hello, people!');
+```
+
+```typescript
+console.log('Hello, world!');
+console.warn('Hello, people!');
+```
+
+{% /diffeditor %}
+
+`!` is similar to [the `not` modifier](/language/modifiers#not-clause), except it applies to the entire condition, rather than the pattern within the condition. For example, `!
+$message <: "Hello, world!"` is equivalent to `$message <: not "Hello, world!"`.
+
+## `and` condition {%#and-condition %}
+
+The `and` operator is true if all of the conditions are true. Note that the `and` in the following example is redundant, as the `where` clause already requires all conditions to be true.
+
+{% diffeditor %}
+
+```grit
+`console.$method('$message');` => `console.warn('$message');` where {
+  and {
+    $message <: r"Hello, .*!",
+    $method <: `log`
+  }
+}
+```
+
+```typescript
+console.log('Hello, world!');
+console.error('Hello, world!');
+```
+
+```typescript
+console.warn('Hello, world!');
+console.error('Hello, world!');
+```
+
+{% /diffeditor %}
+
+## `or` condition {% #or-condition %}
+
+The `or` operator is true if any of the conditions are true.
+
+{% diffeditor %}
+
+```grit
+`console.$method('$message');` => `console.warn('$message');` where {
+  or {
+    $message <: "Hello, world!",
+    $method <: `error`
+  }
+}
+```
+
+```typescript
+console.log('Hello, world!');
+console.error('Hello, people!');
+console.info('Hello, people!');
+```
+
+```typescript
+console.warn('Hello, world!');
+console.warn('Hello, people!');
+console.info('Hello, people!');
+```
+
+{% /diffeditor %}
+
+## `if` as a condition {% #if-condition %}
+
+The `if` clause can be used to add a condition only if another condition is true.
+
+{% diffeditor %}
+
+```grit
+`$method('$message')` where {
+  if ($message <: r"Hello, .*!") {
+    $method => `console.info`
+  } else {
+    $method => `console.warn`
+  }
+}
+```
+
+```typescript
+console.log('Hello, world!');
+console.log('Hello, people!');
+console.log('Hi!');
+```
+
+```typescript
+console.info('Hello, world!');
+console.info('Hello, people!');
+console.warn('Hi!');
+```
+
+{% /diffeditor %}
+
+## Rewrite (`=>`) as condition
+
+Rewrites can also be used within conditions.
+The syntax is the same as for rewrites, but the left-hand side of the rewrite **must** be a metavariable.
+
+The rewrite will be applied to the code locations referenced by the metavariable, and the condition will match if the
+rewrite succeeds for all locations.
+
+{% diffeditor %}
+
+```grit
+`console.log('$message')` where $message => `Hello, world!`
+```
+
+```typescript
+console.log('Hello?');
+```
+
+```typescript
+console.log('Hello, world!');
+```
+
+{% /diffeditor %}
+
+## Assignment `=`
+
+The assignment operator `=` is used to assign a value to a metavariable, much in the same way as you would assign to a variable in other programming languages.
+
+The value can be anything that can appear on the right-hand side of a rewrite.
+
+An assignment can appear inside a where clause, and always succeeds.
+
+```grit
+`console.log($message)` as $log where {
+  $new_log_call = `logger.log($message)`,
+  $log => $new_log_call
+}
+```

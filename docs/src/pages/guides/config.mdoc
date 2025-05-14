@@ -1,0 +1,239 @@
+---
+title: Grit Configuration
+---
+
+Grit does not require any configuration to use patterns from the standard library.
+
+If you need to customize Grit's behavior further, add a `.grit/grit.yaml` file in your repository.
+
+```shell
+/repo
+├── .grit
+│ └── grit.yaml
+├── foobar
+| └── baz
+├── src
+└── etc
+```
+
+A Grit configuration might look like this.
+
+```yaml {% fileName="grit.yaml" %}
+version: 0.0.1
+patterns:
+  - name: avoid_only
+    tags: ["style", "debugging"]
+    level: error
+    body: |
+      `$testlike.only` => `$testlike` where {
+        `$testlike` <: or {
+          `describe`
+          `it`
+          `test`
+        }
+      }
+    description: |
+      .only is usually a mistake left over from local debugging. Pushing it to
+      main risks false negatives on CI.
+    samples:
+      - input: |
+          describe.only('this is a test', () => {
+            // ...
+          });
+        output: |
+          describe('this is a test', () => {
+            // ...
+          });
+  - name: disabled_pattern
+    level: none # This pattern is disabled
+    body: |
+      `something` => `somewhere`
+  - file: ../other/doc/file.md
+```
+
+## Configuration Reference
+
+Grit can be configured using a `.grit/grit.yaml` file. The file is in YAML format.
+
+### Patterns
+
+The `patterns` field is a list of patterns which are applicable to your codebase.
+
+Each pattern can specify the following fields:
+
+- `name`: (Required, `string`) The name of the pattern. Conventionally in snake case.
+- `title`: (Optional, `string`) A short, human-readable title for the pattern. Defaults to the name if not set.
+- `body`: (Optional, `string`) The body of the pattern. This is useful for short, inline patterns. If not provided, the pattern should either be imported from a remote Grit module, or defined in a separate file within the `.grit` directory.
+- `description`: (Optional, `string`) A longer description of the pattern.
+
+{% partial file="pattern_shared_meta.md" /%}
+
+{% note type="info" %}
+**Note**: You do _not_ need to list patterns which are [defined](/guides/patterns) in Markdown or `.grit` files, they are automatically merged in.
+{% /note %}
+
+#### Importing Files
+
+By default, all patterns in the `.grit/patterns` directory are imported.
+
+If you want to import a Markdown or .grit pattern file from elsewhere in your repository, you can use the `file` field to do so. The path is relative to the `.grit` directory.
+
+```yaml {% fileName="grit.yaml" %}
+patterns:
+  - file: ../other/doc/file.md
+```
+
+#### Imported Remote Patterns {% #importing-patterns %}
+
+The patterns listed in the `patterns` field don't need be local to your module. If you want to enable a pattern from another module, you just need to name it in your list, prefixed with the module name and a `#`.
+
+For example, to enable the [`no_console_log` pattern](https://github.com/getgrit/stdlib/blob/main/.grit/patterns/js/no_console_log.md) from the JavaScript standard library, you would add the following to your `grit.yaml` file.
+
+```yaml {% fileName="grit.yaml" %}
+patterns:
+  - name: github.com/getgrit/stdlib#no_console_log
+```
+
+If you want to enable all patterns from another module, just use a `*` for the pattern name.
+
+For example, to enable all patterns from the standard library, you would add the following to your `grit.yaml` file.
+
+```yaml {% fileName="grit.yaml" %}
+patterns:
+  - name: github.com/getgrit/stdlib#*
+```
+
+By default, all patterns from the standard library are automatically imported. If you define custom patterns,
+make sure their names don't conflict with the standard library.
+
+{% note style="info" %}
+Grit modules are simply referenced by their git URL. This means that you can import configurations from any git repository, including private repositories.
+{% /note %}
+
+To download remote patterns, run the `grit init` command through the Grit CLI. Grit searches up the directory tree from your current working directory to find the nearest `grit.yaml` config.
+For each remote gritmodule specified in the config, Grit clones a [sparse](https://git-scm.com/docs/git-clone#Documentation/git-clone.txt---sparse),
+[shallow](https://git-scm.com/docs/git-clone#Documentation/git-clone.txt---depthltdepthgt) copy of the repository's root `.grit` directory into your local `.gritmodules` directory. Because
+the remote module's pattern can itself be a reference to another module's pattern, Grit recursively traverses the dependency graph and downloads all modules referenced by `grit.yaml` files
+(but only the patterns specified in your `grit.yaml` will be enforced).
+
+Since gritmodules' patterns are identified by their root `.grit/grit.yaml` file, you must ensure that any patterns you wish to export from a repository you are using as a remote gritmodule are exposed
+in the root `grit.yaml`.
+
+{% note type="warning" %}
+**Note**: The result of the pattern module downloading process is flat. Defining two patterns with the same name in different modules will cause an error.
+Grit considers all pattern names that are referenced within modules in the dependency graph, so you may get a pattern naming conflict even
+if you don't directly reference the conflicting pattern in your `grit.yaml` file.
+{% /note %}
+
+### Version
+
+The version field specifies the version of this configuration file. We follow semantic versioning. The current version is `0.0.2`.
+
+```yaml {% fileName="grit.yaml" %}
+version: 0.0.2
+```
+
+### GitHub
+
+The GitHub field contains GitHub-specific configuration.
+
+#### Reviewers
+
+The `reviewers` field is a list of GitHub users and teams which will be requested to review pull requests opened by Grit. Teams should be prefixed with an `@` symbol and use the full team name, including the organization.
+
+```yaml {% fileName="grit.yaml" %}
+version: 0.0.2
+patterns: []
+github:
+  reviewers:
+    - gritbot
+    - "@getgrit/core"
+```
+
+## Markdown patterns
+
+Patterns can be stored in `*.md` files within a `.grit/patterns` folder at the root of your repo, including in subdirectories.
+
+### Spec
+
+{% partial file="markdown_rules.md" /%}
+
+{% note type="warning" %}
+**Note**: Grit's pattern resolution logic relies on each named pattern being associated with a single unique `body`. You should avoid defining multiple patterns with the same file name in different subdirectories, as this will cause conflicts.
+{% /note %}
+
+### Example
+
+{% partial file="markdown_example.md" /%}
+
+You can find many more examples in the [Grit standard library](https://github.com/getgrit/stdlib/tree/main/.grit/patterns).
+
+## Ignoring patterns
+
+If `grit check` is flagging too many files, you can ignore specific patterns or files.
+
+Pattern suppression should be used when you want to ignore a _true positive_ result. For example, if you have a pattern that flags a deprecated function, but you have a good reason to use it, you can suppress the pattern.
+
+If patterns are yielding _false positives_, you should consider modifying the pattern to add [conditions](/language/conditions) that better capture the intent of the code.
+
+### `.gritignore` files
+
+By default, Grit will ignore any files listed in your `.gitignore` file and any files in a `.grit` directory.
+
+You can tell Grit to ignore additional files and directories by creating `.gritignore` files. A `.gritignore` file is a plain text file where each line is a glob pattern indicating which paths should be omitted from Grit's analysis. For example, the following omits all JavaScript files:
+
+```{% fileName=".gritignore" %}
+**/*.js
+```
+
+`.gritignore` files are cascading, so you can define them at multiple levels of the directory hierarchy. The exact semantics are detailed [here](https://docs.rs/ignore/latest/ignore/struct.WalkBuilder.html#ignore-rules).
+
+### Inline suppression
+
+Named GritQL patterns can be suppressed for a particular line by adding a comment with the `grit-ignore` directive
+alongside or above the line to be disabled.
+
+{% diffeditor %}
+
+```grit
+`console.$method($message)` => `console.info($message)`
+```
+
+```typescript
+console.log("Hello, world!");
+// grit-ignore
+console.log("Can you hear me?");
+```
+
+```typescript
+console.info("Hello, world!");
+// grit-ignore
+console.log("Can you hear me?");
+```
+
+{% /diffeditor %}
+
+To suppress only a particular set of rules, include their comma-separated names after the `grit-ignore` directive:
+
+```js {% fileName="index.js" %}
+console.log('This will be rewritten!')
+// grit-ignore no_console_log, replace_console_log
+console.log('This won't!')
+```
+
+Then when the patterns `no_console_log` or `replace_console_log` are invoked by name, such as by running `grit apply
+no_console_log`, the second `console.log` statement will not be rewritten.
+
+Additional context can be added after the rule names, separated by a colon. We recommend using this to explain why the rule is being ignored.
+
+```py {% fileName="index.py" %}
+print('Hello world!') # grit-ignore print_to_log: We want to keep this
+```
+
+## User configuration
+
+In addition to the repository-level configuration described above, Grit also supports user-level configuration under a user `.grit/patterns` directory. By default, this is located in your home directory at `~/.grit/patterns`.
+You can override its location by setting the `GRIT_USER_CONFIG` environment variable to point at a `.grit` directory of your choice.
+
+Repository patterns always take precedence over user patterns. If a pattern is defined in both the repository and user configuration, the repository pattern will be used.
+User patterns cannot be imported by repository configurations, but can be applied through `grit apply` invocations on the CLI.

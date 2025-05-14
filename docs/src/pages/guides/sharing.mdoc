@@ -1,0 +1,35 @@
+---
+title: Sharing Patterns
+---
+
+Patterns can be shared with others by publishing them to a Git repository.
+This allows you to reuse patterns across different repositories, or to use patterns created by others (including the Grit standard library).
+
+## Publishing Patterns
+
+Publishing a Grit pattern is as simple as pushing it to a Git repository.
+The repository can be public or private, but currently only GitHub is supported.
+If you want to run your pattern through the Grit web app, private pattern repositories must be configured under the same [GitHub app](https://github.com/apps/grit-app) installation as all repositories which depend on them.
+
+As long as the repository has `.grit` directory (in the root) with at least one [pattern](/guides/patterns) defined, it will be recognized as a pattern repository.
+
+## Importing Patterns {% #importing %}
+
+Once a pattern repository is published, you can reference patterns from it in your own repository simply be prefixing the pattern name with the repository name and a hash. Patterns are always pulled from the default branch of the repository.
+
+{% note type="info" %}
+You can set an enforcement level - for example, `level: error` or `level: warn` - to override the default enforcement setting for the pattern.
+{% /note %}
+
+For example, to import the [no dead code](https://github.com/getgrit/stdlib/blob/main/.grit/patterns/js/no_dead_code.md) pattern from the JavaScript standard library, you would add the pattern your `.grit/grit.yaml` file:
+
+```yaml {% fileName="grit.yaml" %}
+version: 0.0.1
+patterns:
+  - name: github.com/getgrit/stdlib#no_dead_code
+    level: info
+```
+
+{% note type="warning" %}
+As a reminder, the file name for `.grit` patterns is [not important](/guides/patterns#grit-pattern-files). You should import patterns by the name of the pattern, not the file name.
+{% /note %}

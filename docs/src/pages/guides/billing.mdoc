@@ -1,0 +1,11 @@
+---
+title: Grit Billing Guide
+---
+
+## Agents
+
+Grit plans come with a certain number of [agents](/guides/agent). Each _agent_ can work on one pull request at a time, either by generating it or by responding to comments. Until the pull request is merged (or closed), the agent will not move on to any other pull requests.
+
+Each project (typically, a migration or other large project) starts with a default of one agent assigned to it. This means a maximum of one pull request will be open for that project at any given time. You can optionally increase the number of agents assigned to a project to allow more pull requests to be open at once. Agents will automatically coordinate with each other to avoid repeating work or creating merge conflicts.
+
+If you have delegated more projects to Grit than your plan allows, when an agent finishes work on a pull request it will randomly select another project to work on. **If you want to prioritize certain tasks, you should pause lower priority tasks.**

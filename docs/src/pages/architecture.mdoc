@@ -1,0 +1,36 @@
+---
+title: Grit's Architecture
+---
+
+Grit can be used in two different modes:
+
+- As a local CLI tool
+- As a SaaS application
+
+## Local CLI
+
+![CLI architecture](/arch-cli.png)
+
+Grit can be used as local CLI. This keeps all data local to the workstation it is run from.
+The Grit CLI is a static binary with no external dependencies.
+It depends on two additional agent binaries, which are installed automatically when the CLI is installed.
+
+Once the CLI is installed, only telemetry data is sent to Grit.
+
+There are a few limitations to this architecture:
+
+- The web interface is not available locally
+- Patterns can auto-fix the code, but you need to commit the changes manually. There is no management of pull requests and migrations in the local CLI.
+- No advanced AI features, like pattern guessing, are available in the local CLI
+
+## SaaS
+
+![SaaS architecture](/arch-saas.png)
+
+Grit can be used as a SaaS application. This is the most feature-rich architecture.
+
+The SaaS application is hosted in Google Cloud. Most analysis is done on ephemeral Cloud Run instances that are spun up on demand for handling GitHub webhooks or user requests. These instances clone a shallow copy of the Git repository for analysis. The clone is deleted after 10 minutes of inactivity.
+
+All data is encrypted at rest and in transit. Google Cloud's security model is extensively documented [here](https://cloud.google.com/docs/security/overview/whitepaper).
+
+Administrators do not routinely have access to customer data. When we do need to access customer data, we do so through an escalation flow that generates audit logs.

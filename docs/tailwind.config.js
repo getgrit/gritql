@@ -1,0 +1,171 @@
+const defaultTheme = require('tailwindcss/defaultTheme');
+
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  important: true,
+  content: [
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/templates/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    screens: {
+      ...defaultTheme.screens,
+      xs: '475px',
+    },
+    extend: {
+      keyframes: {
+        slideInRightToLeft: {
+          '0%': { transform: 'translateX(100%)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        slideInBottomToTop: {
+          '0%': { transform: 'translateY(100%)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+      },
+      animation: {
+        slideIn: 'slideInRightToLeft 300ms ease-in-out',
+        slideUp: 'slideInBottomToTop 200ms ease-in-out forwards',
+      },
+      typography: {
+        DEFAULT: {
+          css: {
+            'code::before': {
+              content: '""',
+            },
+            'code, pre.codeblock': {
+              backgroundColor: '#e5e7eb',
+              color: '#111827',
+              padding: '3px 6px',
+              fontWeight: '500',
+              'border-radius': '4px',
+            },
+            'code::after': {
+              content: '""',
+            },
+          },
+        },
+      },
+      colors: {
+        codeblock: {
+          DEFAULT: '#1d1f21',
+          light: '#e5e7eb',
+        },
+        primary: {
+          DEFAULT: '#2D1DFF',
+          50: '#B0AEFF',
+          100: '#8E88FF',
+          200: '#6F66FF',
+          300: '#564AFF',
+          400: '#392AFF',
+          500: '#2D1DFF',
+          600: '#1D12D4',
+          700: '#130DBB',
+          800: '#09069F',
+          900: '#000087',
+        },
+        emerald: {
+          DEFAULT: '#00CC66',
+          50: '#99FFC9',
+          100: '#74F3B1',
+          200: '#50E79A',
+          300: '#2DDB83',
+          400: '#00CC66',
+          500: '#00AF57',
+          600: '#008F47',
+          700: '#006C35',
+          800: '#004E26',
+          900: '#003318',
+        },
+        yellow: {
+          DEFAULT: '#FFE646',
+          50: '#FFF5C5',
+          100: '#FFF1A3',
+          200: '#FFED84',
+          300: '#FFEA69',
+          400: '#FFE646',
+          500: '#DAC338',
+          600: '#B8A52C',
+          700: '#8F7E1C',
+          800: '#64560D',
+          900: '#423700',
+        },
+        tart: {
+          DEFAULT: '#FF3C38',
+          50: '#FFDCDC',
+          100: '#FFAEAD',
+          200: '#FF8D8B',
+          300: '#FF6764',
+          400: '#FF3C38',
+          500: '#DC312E',
+          600: '#B92623',
+          700: '#8F1917',
+          800: '#680C0B',
+          900: '#420000',
+        },
+        blizzardBlue: {
+          DEFAULT: '#C1EEF8',
+          50: '#E6FBFF',
+          100: '#D5F5FC',
+          200: '#C1EEF8',
+          300: '#B5E0EA',
+          400: '#9DC5CE',
+          500: '#81A5AD',
+          600: '#6A8B92',
+          700: '#506E73',
+          800: '#344E53',
+          900: '#1D3438',
+        },
+        platinum: {
+          DEFAULT: '#EAEAEA',
+          50: '#F7F7F7',
+          100: '#EAEAEA',
+          200: '#D0D7DE',
+          300: '#AFB8C1',
+          400: '#8C959F',
+          500: '#6E7781',
+          600: '#57606A',
+          700: '#424A53',
+          800: '#32383F',
+          900: '#24292F',
+        },
+        oxfordBlue: {
+          DEFAULT: '#0B1E35',
+          50: '#C7E6FF',
+          100: '#B0CEE6',
+          200: '#9BB7CF',
+          300: '#839EB6',
+          400: '#748EA6',
+          500: '#5B738B',
+          600: '#475E75',
+          700: '#334860',
+          800: '#1D3249',
+          900: '#0B1E35',
+        },
+        language: {
+          javascript: '#f7df1e',
+        },
+      },
+      spacing: {
+        128: '32rem',
+        144: '36rem',
+      },
+      borderRadius: {
+        '4xl': '2rem',
+      },
+      fontFamily: {
+        sans: ['Inter', ...defaultTheme.fontFamily.sans],
+        serif: ['Merriweather', ...defaultTheme.fontFamily.serif],
+        mono: ['Menlo', ...defaultTheme.fontFamily.mono],
+        system: ['Inter', ...defaultTheme.fontFamily.sans],
+      },
+    },
+  },
+  plugins: [require('@tailwindcss/typography'), require('tailwindcss-animate')],
+  extend: {
+    print: { raw: 'print' },
+    screen: { raw: 'screen' },
+  },
+};

@@ -1,0 +1,11 @@
+---
+title: Autopilot Sequences
+---
+
+{% partial file="paid.md" /%}
+
+When running a [limit query](/language/modifiers#limit-clause) through the studio, you can choose to start an autopilot sequence along with your pull request. An autopilot sequence automatically opens a new PR with the same settings – including the original limit – whenever your previous PR has been merged, until your repository is fully migrated or you decide to abort the sequence.
+
+![Autopilot sequence](/migration-sequence.png)
+
+Every PR generated as part of an autopilot sequence contains a link allowing you to terminate it. Currently, only one sequence is allowed per migration at any given time, so that if you want to change the query, limit or globs, you will need to abort the sequence and start a new one.

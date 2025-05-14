@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import code highlight */
+/* NOTE[chai]: use @import "prism-atom-dark.css"; when enabling prism */
+
+@import "editor.css";
+
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+#nprogress .bar {
+  @apply !bg-primary-200;
+}
+
+.hidden-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hidden-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* This only adds smooth scroll when navigating within page  */
+@keyframes smoothscroll {
+  from,
+  to {
+    scroll-behavior: smooth;
+  }
+}
+
+html:focus-within {
+  animation-name: smoothscroll;
+  scroll-behavior: smooth;
+}
+
+/* This leaves some room when scrolling to the headings */
+h1 {
+  margin-bottom: 0 !important;
+  outline: none;
+}
+
+h2 {
+  padding-top: 78px;
+  margin-top: -33px !important;
+  outline: none;
+}
+
+h3 {
+  padding-top: 78px;
+  margin-top: -60px !important;
+  outline: none;
+}
+
+.note-tag > p {
+  @apply my-3;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 10px rgba(116, 111, 188, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(116, 111, 188, 0.8), 0 0 20px rgba(116, 111, 188, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(116, 111, 188, 0.7);
+  }
+}
+
+.pulse-animation {
+  animation: pulse 2s infinite;
+}
+
+.pulse-button:hover {
+  box-shadow: none;
+  animation: none;
+}
+
+@keyframes animatedgradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 90% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-border {
+  --borderWidth: 2px;
+  @apply rounded-md relative overflow-hidden;
+}
+
+.gradient-border::before {
+  content: " ";
+  position: absolute;
+  top: var(--borderWidth);
+  left: var(--borderWidth);
+  bottom: var(--borderWidth);
+  right: var(--borderWidth);
+  width: calc(100% - 2 * var(--borderWidth));
+  height: calc(100% - 2 * var(--borderWidth));
+  z-index: 1;
+  border-radius: 0.28rem;
+  @apply bg-zinc-800;
+}
+
+.gradient-border::after {
+  content: " ";
+  position: absolute;
+  top: calc(-1 * var(--borderWidth));
+  left: calc(-1 * var(--borderWidth));
+  right: calc(-1 * var(--borderWidth));
+  bottom: calc(-1 * var(--borderWidth));
+  background: linear-gradient(60deg, #ffea69, #ff3c38, #392aff, #2a78ff, #1098ad, #07b39b);
+  z-index: 0;
+  background-size: 300% 300%;
+  animation: animatedgradient 3s ease alternate infinite;
+}
+
+/* Unfortunately, other suggested workarounds to disable the overlay error on our codebase, as documented by https://github.com/microsoft/monaco-editor/issues/1742#issuecomment-1230553932 */
+.monaco-editor-overlaymessage {
+  display: none !important;
+}

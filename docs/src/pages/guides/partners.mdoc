@@ -1,0 +1,67 @@
+---
+title: Linking to project reports
+heading: Partner Docs
+---
+
+Projects can be linked at
+`https://app.grit.io/projects/<org-name>/<repo-name>/branches/main`.
+
+This will prompt the user to log in, and then redirect them to the project
+report. Their access will mirror what they have on GitHub.
+
+If you want to allow users to view a project report _without_ having access to
+the GitHub repository, you will need to append a `vouch` to the URL. See
+directions below for more information.
+
+## How to generate a voucher
+
+As a partner, you are able to vouch for users by appending a voucher token to
+links you generate.
+
+When you are onboarded as a partner, you will be given a private key that you
+can use to sign tokens. You are also given a name.
+
+**It is very important that you not leak your private key. It should only be
+used server-side, never client-side.**
+
+1. Choose the set of claims you want to include in the token. Claims are
+   JSON-encoded. A typical claim that the user is allowed to access repo a repo
+   is:
+
+   ```json
+   {
+     "claims": [
+       {
+         "repo": "custodian-sample-org/sample-repo"
+       }
+     ]
+   }
+   ```
+
+2. Sign the claims using your private key to generate a JWT. Make sure to set
+   the `issuer` to your name.
+
+   For example, [in Node.js](https://github.com/auth0/node-jsonwebtoken) you
+   could sign like this:
+
+   ```javascript
+   var token = jwt.sign(
+     {
+       claims: [
+         {
+           repo: 'custodian-sample-org/sample-repo',
+         },
+       ],
+     },
+     privateKey,
+     { algorithm: 'RS256', issuer: 'sample-partner' },
+   );
+   ```
+
+3. You can use the resulting token in a link to the user. Simply attach it as
+   the `vouch` querystring. For example, to link to the report for the repo
+   `custodian-sample-org/sample-repo`, you could use:
+
+   ```text
+   https://app.powder.dev/projects/custodian-sample-org/sample-repo/branches/main?vouch=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGFpbXMiOlt7InJlcG8iOiJjdXN0b2RpYW4tc2FtcGxlLW9yZy9qdWljZS1zaG9wIn1dLCJpYXQiOjE2NjEzODQzMTYsImlzcyI6InNhbXBsZSJ9.ZLyNIJDkw-tx_Ihu5An3D8y0jyetyWxT0vcedY04UUxFOvwhl2RqE4Jl4m2lJEYwatnzTe5Z34gIYv93dcfFfUex-87e_muq8H2ZpIaUsJB9Q-lVJN-xj6c86yFnYtQqqvUhRghZQUPlGPCzLbs3gRvcrDLUjZfK-rrzA3ZOPfe1uKlYJBMmI9jNZ_ec2yF9ftfyXurSfh_12R_tL0KW5vzdEQh1JrXkFsbu_OYAxJDRImnFOtU9_a2y8EzDP_Y5bW_BJKTpw8GCsa2_vNDqKaKTPu6xQSBNjtuxceiT1DwdkQktTz2Phzok5z_y4EvUkUi11XKAIgUoCdkESy2nxHv-KNKokuusKJS3N00jitMHKqxbmda1N9V_81y4HvIo2mvwWU8HYBPo8oj2KIfLVzYLfyPZsi48ECI5gmJxjjyniInLn9Z2h9DfIbTPuTFyApcoAFuxmCn9Pc6S-f93eyxu_hD1XDcctoaOOUNbBCE0Zi_pe0gkP7FhqT-EVE7XIUaBdhTJusXr7n8MGFwyMv6kNTXSWexncG9yylDvdoB-4qxafH-o73yIUpT85lyLgsGEeBu4gH0r2QZXz8N65bjvNe-_6TobET0Vt84cPoSML4r7Dhs4dgQgSQHDeVX5hnd4OWtI0gDmxWqxz8EtwWSRmx7sCRrKDdR1U7FLkSc
+   ```

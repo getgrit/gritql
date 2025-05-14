@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "noUncheckedIndexedAccess": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/markdoc/*": ["./src/markdoc/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/templates/*": ["./src/templates/*"],
+      "@/custom-types/*": ["./src/custom-types/*"],
+      "@/statics/*": ["./src/statics/*"],
+      "@/styles/*": ["./src/styles/*"],
+      "@/libs/*": ["./src/libs/*"]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "types": ["node"]
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": ["node_modules"]
+}

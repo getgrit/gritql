@@ -1,0 +1,34 @@
+---
+title: Drift Detection
+---
+
+{% partial file="paid.md" /%}
+
+When you are in the midst of a large project, sometimes multiple files must be kept in sync. Grit includes built-in support for drift detection, which can help you keep your codebase consistent.
+
+## Setup
+
+To enable drift detection for an autpilot migration, open the migration [list](https://app.grit.io/migrations) and click on the migration you want to enable drift detection for. Toggle drift detection on in the top right.
+
+![Drift detection toggle](/drift-detection.png)
+
+## Details
+
+When drift detection is enabled, every incoming pull request will be scanned to see if the files in the pull request are related to the project. If the files were used, then any _downstream_ files must also be updated.
+
+If the files are not updated, then a failing check will be reported on the pull request with details of the impacted files.
+
+![Drift detection failing check](/drift-found.png)
+
+If the files are updated, then the check will pass.
+
+{% note %}
+**Note**: We recommend configuring [status checks](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks) on GitHub to prevent merging pull requests with failing drift detection checks.
+{% /note %}
+
+## Limitations
+
+1. Drift detection is only available for migrations that are part of an autopilot project.
+2. Drift detection is currently only available for GitHub repositories.
+3. Drift detection does not run on commits that are not part of a pull request.
+4. Drift detection does not inspect the contents of the files, only the file paths. So long as both upstream and downstream files are updated, the check will pass.

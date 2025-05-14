@@ -1,0 +1,126 @@
+---
+title: Custom Patterns
+---
+
+The true power of `grit` comes with the ability to write and share your own
+patterns. There are several ways to add custom patterns. Once configured in your repo,
+a custom pattern can be used through the CLI, the VSC extension, or the web app in the same way
+as any pattern from the Grit standard library.
+
+## Pattern definitions
+
+The basic syntax for defining a pattern is to use the `pattern` keyword followed by the pattern name and a body.
+
+The `pattern` keyword can be used to define a named pattern that is used by other patterns.
+Patterns can only be defined at the top level of a file - you can't nest pattern definitions.
+
+{% diffeditor %}
+
+```grit
+pattern console_method_to_info($method) {
+  `console.$method($message)` => `console.info($message)`
+}
+console_method_to_info(method = `log`)
+```
+
+```typescript
+console.log('Hello, world!');
+console.warn('Can you hear me?');
+```
+
+```typescript
+console.info('Hello, world!');
+console.warn('Can you hear me?');
+```
+
+{% /diffeditor %}
+
+Pattern names must begin with a letter or an underscore, followed by any combination of alphanumeric characters and underscores.
+
+Pattern parameter names can be omitted as long as arguments are provided in the same order as the parameters are
+defined. For example, the `console_method_to_info` pattern from above could be called like this:
+
+{% diffeditor %}
+
+```grit
+pattern console_method_to_info($method) {
+  `console.$method($message)` => `console.info($message)`
+}
+console_method_to_info(`log`)
+```
+
+```typescript
+console.log('Hello, world!');
+console.warn('Can you hear me?');
+```
+
+```typescript
+console.info('Hello, world!');
+console.warn('Can you hear me?');
+```
+
+{% /diffeditor %}
+
+### Private patterns
+
+Patterns can be marked as private by including the `private` keyword before the pattern. Private patterns are not visible in the pattern list and are only meant to be used within a module's context.
+
+```grit
+private pattern this_pattern_is_hidden() {
+  `console`
+}
+```
+
+## Predicate definitions
+
+In addition to patterns, you can also define predicates, which comprise full statements specifying a metavariable to match against as well as a pattern to check.
+In other words, a predicate definition consists exclusively of clauses that would be valid within a `where` condition. For example, the following is a valid predicate definition that returns true as long as the program contains a `logger` instance:
+
+```grit
+predicate program_contains_logger() {
+  $program <: contains `logger`
+}
+```
+
+For illustration, two patterns below are equivalent:
+
+```grit
+predicate program_contains_logger() {
+  $program <: contains `logger`
+}
+`console.log` => `logger.info` where {
+  program_contains_logger()
+}
+```
+
+```grit
+pattern contains_logger() {
+  contains `logger`
+}
+`console.log` => `logger.info` where {
+  $program <: contains_logger()
+}
+```
+
+## .grit pattern files
+
+Any patterns defined in `.grit` files within a `.grit/patterns` folder at the root of your repo will be automatically loaded for use within your repo.
+
+The filename does not matter, so you can organize them however you want within that directory. You can also use subdirectories inside `.grit/patterns` to organize your patterns.
+
+For example, place this file at `.grit/patterns/example.grit`:
+
+```grit
+pattern replace_console_log() {
+  `console.log($args)` => `console.error($args)`
+}
+```
+
+## YAML configuration patterns
+
+If you prefer to inline pattern definitions with other Grit config settings, custom patterns can be included in `grit.yaml` configuration files. For more information,
+see the [config](./config#patterns) guide.
+
+## Markdown pattern files
+
+Patterns can also be defined in markdown files. See the [markdown patterns spec](/guides/config#spec) for more information.

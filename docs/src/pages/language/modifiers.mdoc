@@ -1,0 +1,507 @@
+---
+title: Pattern Modifiers
+---
+
+Various modifiers can be applied to patterns to transform how they are matched. All pattern modifiers yield a new pattern with the modified behavior.
+Importantly, none of these modifiers represent base patterns by themselves, but instead modify or combine other patterns.
+
+## `and` clause
+
+`and` clauses are used to combine one or more comma-separated patterns.
+
+The `and` clause matches only if all of the patterns match.
+
+In the example below, we combine [the `where` clause](/language/conditions#where-clause) with `and` to rewrite two types of React hooks in one pattern.
+
+{% diffeditor %}
+
+```grit
+arrow_function($body) where $body <: and {
+  contains js"React.useState" => js"useState",
+  contains js"React.useMemo" => js"useMemo",
+}
+```
+
+```typescript
+const someComponent = () => {
+  const [count, setCount] = React.useState(0);
+};
+
+const anotherComponent = () => {
+  const [count, setCount] = React.useState(0);
+  const math = React.useMemo(() => count + 5, [count]);
+};
+```
+
+```typescript
+const someComponent = () => {
+  const [count, setCount] = React.useState(0);
+};
+
+const anotherComponent = () => {
+  const [count, setCount] = useState(0);
+  const math = useMemo(() => count + 5, [count]);
+};
+```
+
+{% /diffeditor %}
+
+## `or` clause
+
+`or` clauses are used to match against multiple patterns.
+They are written using the `or` keyword, and their arguments are separated by a comma.
+
+The `or` clause matches if any of the patterns match.
+
+`or` is short-circuited, so the first pattern that matches will be the one that is used.
+
+{% diffeditor %}
+
+```grit
+arrow_function($body) where $body <: or {
+  contains js"React.useState" => js"useState",
+  contains js"React.useMemo" => js"useMemo",
+}
+```
+
+```typescript
+const someComponent = () => {
+  const [count, setCount] = React.useState(0);
+};
+
+const anotherComponent = () => {
+  const [count, setCount] = React.useState(0);
+  const math = React.useMemo(() => count + 5, [count]);
+};
+```
+
+```typescript
+const someComponent = () => {
+  const [count, setCount] = useState(0);
+};
+
+const anotherComponent = () => {
+  const [count, setCount] = useState(0);
+  const math = React.useMemo(() => count + 5, [count]);
+};
+```
+
+{% /diffeditor %}
+
+## `any` clause
+
+The `any` clause is a non-short-circuiting version of `or`.
+It will match if any of the provided patterns matches, but will continue to try to match all of the patterns and execute
+any applicable transformations:
+
+{% diffeditor %}
+
+```grit
+arrow_function($body) where $body <: any {
+  contains js"React.useState" => js"useState",
+  contains js"React.useMemo" => js"useMemo",
+}
+```
+
+```typescript
+const someComponent = () => {
+  const [count, setCount] = React.useState(0);
+};
+
+const anotherComponent = () => {
+  const [count, setCount] = React.useState(0);
+  const math = React.useMemo(() => count + 5, [count]);
+};
+```
+
+```typescript
+const someComponent = () => {
+  const [count, setCount] = useState(0);
+};
+
+const anotherComponent = () => {
+  const [count, setCount] = useState(0);
+  const math = useMemo(() => count + 5, [count]);
+};
+```
+
+{% /diffeditor %}
+
+## `not` clause
+
+`not` clauses are used to negate a pattern.
+They are written using the `not` keyword.
+
+A `not` clause matches if the pattern it negates does not match.
+
+{% diffeditor %}
+
+```grit
+`$method($message)` => `console.warn($message)` where {
+  $method <: not `console.error`
+}
+```
+
+```typescript
+console.log("Hello, world!");
+console.error("Hello, world!");
+```
+
+```typescript
+console.warn("Hello, world!");
+console.error("Hello, world!");
+```
+
+{% /diffeditor %}
+
+## `maybe` clause
+
+`maybe` clauses are used to optionally match against a pattern.
+If the pattern inside does not match, the `maybe` clause will still match as a whole.
+
+{% diffeditor %}
+
+```grit
+`throw new Error($err)` as $thrown => `throw new CustomError($err);` where {
+  $err <: maybe string(fragment=$fun) => `{ message: $err }`
+}
+```
+
+```typescript
+if (Math.random() < 0.5) {
+  throw new Error();
+} else {
+  throw new Error("nest the message in an object");
+}
+```
+
+```typescript
+if (Math.random() < 0.5) {
+  throw new CustomError();
+} else {
+  throw new CustomError({ message: "nest the message in an object" });
+}
+```
+
+{% /diffeditor %}
+
+{% note type="warning" %}
+**Warning**: In the pattern above, the metavariable `$fun` serves only an illustrative example and so isn't actually used after it's assigned.
+However, if we were to use it, we'd have to be careful: metavariables in `maybe` clauses are bound only if the `maybe` clause matches, and Grit will throw an error if you attempt to use one when the clause does not match.
+{% /note %}
+
+## `contains` operator
+
+The `contains` keyword is used to modify a pattern to match any node that contains a specific pattern by traversing downwards through the syntax tree.
+
+```grit
+`function ($args) { $body }` where {
+  $args <: contains `x`
+}
+```
+
+In the example above, the pattern will only match functions where one of the arguments is `x`.
+
+### `until` modifier
+
+The `until` modifier is appended to `contains` pattern is used to stop traversal within a `contains` clause.
+
+The `contains` pattern will only traverse within the parts of the node that are not matched by the `until` pattern.
+When the `until` pattern is reached, traversal will not continue any deeper.
+
+For example, the `until` here stops traversal inside `sanitized` calls:
+
+{% matcheditor %}
+
+```grit
+`console.$_($content)` where {
+  $content <: contains `secret` until `sanitized($_)`
+}
+```
+
+```javascript
+{hl}console.log(secret){/hl};
+console.log(sanitized(secret));
+{hl}console.log(random(secret)){/hl};
+console.log(other + sanitized(secret));
+{hl}console.log(random(secret) + sanitized(secret)){/hl};
+```
+
+{% /matcheditor %}
+
+## `as` modifier
+
+`as` can be used to assign a matched snippet to a metavariable. This is often useful when you want to perform some change on a section of code as a whole
+while also making more granular changes within that section. For example:
+
+{% diffeditor %}
+
+```grit
+engine marzano(0.1)
+language js
+
+`function $name ($args) { $body }` as $func where {
+  $func => `const $name = ($args) => { $body }`,
+  $args <: contains `apple` => `mango`
+}
+```
+
+```typescript
+function fruits(apple, pear) {
+  console.log("fruits");
+}
+```
+
+```typescript
+const fruits = (mango, pear) => {
+  console.log("fruits");
+};
+```
+
+{% /diffeditor %}
+
+## `within` clause
+
+`within` restricts the pattern to only match if the target node appears within code matching another pattern.
+
+For example, the pattern below only matches the second console.log, as it appears within the if block.
+
+{% matcheditor %}
+
+```grit
+`console.log($arg)` where {
+  $arg <: within `if (DEBUG) { $_ }`
+}
+```
+
+```typescript
+console.log('Hello, world!');
+if (DEBUG) {
+  {hl}console.log('Hello, world!'){/hl};
+}
+```
+
+{% /matcheditor %}
+
+## `after` clause
+
+`after` clauses are used to restrict the pattern to only match if the target node is directly after a node matching a specific pattern.
+They are written using the `after` keyword.
+
+```grit
+`console.warn($_)` as $warn where {
+  $warn <: after `console.log($_)`
+}
+```
+
+`after` can also be used to _retrieve_ the node that comes after the target node.
+
+{% diffeditor %}
+
+```grit
+`const $x = 5` as $const where {
+  $next = after $const
+} += `// Next: $next`
+```
+
+```typescript
+const x = 5;
+const nine = 10;
+```
+
+```typescript
+const x = 5; // Next: const nine = 10;
+const nine = 10;
+```
+
+{% /diffeditor %}
+
+## `before` clause
+
+`before` clauses are used to restrict the pattern to only match if the target node is directly before a node matching a specific pattern.
+They are written using the `before` keyword.
+
+```grit
+`console.warn($_)` as $warn where {
+  $warn <: before `console.log($_)`
+}
+```
+
+`before` can also be used to _retrieve_ the node that comes before the target node.
+
+{% diffeditor %}
+
+```grit
+`const $_ = 10` as $const where {
+  $next = before $const,
+  $next <: `const $name = $_`
+} += `// Comes after $name`
+```
+
+```typescript
+const x = 5;
+const nine = 10;
+```
+
+```typescript
+const x = 5;
+const nine = 10; // Comes after x
+```
+
+{% /diffeditor %}
+
+## `some` clause
+
+The `some` clause can be used to match a metavariable which represents a list against a pattern which represents some element of that list.
+The list can be any ordered set of syntax tree nodes, for example, a list of statements.
+
+As long as one of the nodes matches the pattern, the `some` clause will match.
+
+{% diffeditor %}
+
+```grit
+`var $x = [$names]` => `var coolPeople = [$names]` where {
+  $names <: some { `"andrew"` }
+}
+```
+
+```typescript
+var people = ["alex", "andrew", "susan"];
+var peopleTwo = ["beth", "max", "right"];
+```
+
+```typescript
+var coolPeople = ["alex", "andrew", "susan"];
+var peopleTwo = ["beth", "max", "right"];
+```
+
+{% /diffeditor %}
+
+{% note %}
+**Tip**: If you would like the `some` clause to succeed even if no match is found, prefix it with `maybe`.
+Ex. `` $names <: maybe some { `"andrew"` } ``
+{% /note %}
+
+## `every` clause
+
+The `every` clause can be used to match a pattern against every element of a list. It matches only if all elements of the list match the pattern.
+
+{% diffeditor %}
+
+```grit
+`var $x = [$names]` => `var coolPeople = [$names]` where {
+  $names <: every or {`"andrew"`, `"alex"`}
+}
+```
+
+```typescript
+var people = ["alex", "andrew", "alex"];
+var peopleTwo = ["alex", "max", "right"];
+var nobody = ["sam", "susan"];
+```
+
+```typescript
+var coolPeople = ["alex", "andrew", "susan"];
+var peopleTwo = ["alex", "max", "right"];
+var nobody = ["sam", "susan"];
+```
+
+{% /diffeditor %}
+
+{% note %}
+**Tip**: `every` is short-circuited, so the first element that does not match will cause the `every` clause to fail.
+{% /note %}
+
+## List patterns
+
+List patterns are used to match against a list of terms.
+They are written using the `[]` syntax.
+
+The list pattern matches if all of the terms in the list match in order.
+
+{% diffeditor %}
+
+```grit
+`var $x = [$numbers]` => `var firstPrimes = [$numbers]` where {
+  $numbers <: [ `2`, `3`, `5` ]
+}
+```
+
+```typescript
+var someNumbers = [2, 3, 5];
+```
+
+```typescript
+var firstPrimes = [2, 3, 5];
+```
+
+{% /diffeditor %}
+
+## `...` clause
+
+The `...` clause is used to match against a sublist of a list, ignoring the `...` elements.
+
+{% diffeditor %}
+
+```grit
+`var $x = [$numbers]` => `var firstPrimes = [$numbers]` where {
+  $numbers <: [ `2`, `3`, ..., `11` ]
+}
+```
+
+```typescript
+var someNumbers = [2, 3, 5, 7, 11];
+```
+
+```typescript
+var firstPrimes = [2, 3, 5, 7, 11];
+```
+
+{% /diffeditor %}
+
+## `limit` clause
+
+The `limit` clause can be added after any root pattern to limit the number of matches that are returned.
+
+Limits can only be defined in the root query and are enforced globally across all files queried.
+
+{% diffeditor %}
+
+```grit
+`console.$method($message)` => `console.warn($message)` where {
+  $method <: not `error`
+} {hl}limit 2{/hl} // Only find 2 files
+```
+
+```typescript
+// @filename: file.tsx
+console.log("Hello, world!");
+console.log("Hello, world 2!");
+
+// @filename: file2
+console.log("This is another file");
+
+// @filename: file3
+console.log("This is a third file");
+```
+
+```typescript
+// @filename: file.tsx
+console.warn("Hello, world!");
+console.warn("Hello, world 2!");
+
+// @filename: file2
+console.warn("This is another file");
+
+// @filename: file3
+console.log("This is a third file");
+```
+
+{% /matcheditor %}
+
+{% note %}
+**Note**: The `limit` is moved to apply to the _file_ as part of [pattern auto-wrapping](/language/bubble#pattern-auto-wrap).
+If you use `sequential` or `multifile` patterns, you will need to be careful to place the `limit` clause in the desired location.
+{% /note %}
+
+When running a `limit` query through the studio, paid customers can configure Grit to [automatically generate a new PR](/workflows/sequence) whenever the previous PR is merged.

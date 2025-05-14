@@ -1,0 +1,299 @@
+---
+title: Functions
+---
+
+While patterns are used to match against AST nodes, functions are used as replacement values.
+Thus, functions can only be used on the right hand side of GritQL queries. Specifically:
+
+- In assignments: `$x = function_call()`
+- In insertions: `$x += 'function_call()`
+- In rewrites: `$x => function_call()`
+
+## Function definitions
+
+Just like with patterns, custom functions can be defined using the `function` keyword. Functions must have a name, and can optionally take parameters.
+
+The body of the function consists of [predicates](/guides/patterns#predicate-definitions) that are evaluated in order. Below the hood, a function is simply a predicate that produces a return value if all constituent statements evaluate to true.
+
+The final line of the function should be `return` followed by the value to return.
+
+{% diffeditor %}
+
+```grit
+// define a lines function
+function lines($string) {
+    return split($string, separator=`\n`)
+}
+
+// Define a my_todo function
+function my_todo($target, $message) {
+   if($message <: undefined) {
+       $message = "This requires manual intervention."
+   },
+   $lines = lines(string = $message),
+   $lines <: some bubble($result) $x where {
+       if ($result <: undefined) {
+            $result = `// TODO: $x`
+        } else {
+            $result += `\n// $x`
+        }
+   },
+   $target_lines = lines(string = $target),
+   $target_lines <: some bubble($result) $x where { $result += `\n// $x` },
+   return $result,
+}
+
+// Use the my_todo function
+`module.exports = $_` as $x => my_todo(target=$x, message=`Fix this\nAnd that`)
+```
+
+```typescript
+module.exports = {
+  king,
+  queen: '8',
+};
+```
+
+```typescript
+// TODO: Fix this
+// And that
+// module.exports = {
+//   king,
+//   queen: '8',
+// };
+```
+
+{% /diffeditor %}
+
+Function parameter names can be omitted as long as arguments are provided in the same order as the parameters are defined. For example, the `my_todo` function from above could be called like this:
+
+```grit
+`module.exports = $_` as $x => my_todo($x, `Fix this\nAnd that`)
+```
+
+## JavaScript functions {% #foreign-functions %}
+
+{% partial file="alpha.md" /%}
+
+Functions are not limited to using GritQL. By including `js` after the function parameters, you can define a function that is implemented in JavaScript.
+
+{% diffeditor %}
+
+```grit
+language js
+
+function fizzbuzz($x) {hl}js{/hl} {
+    // Use $var.text to access the binding's value
+    const parsed = parseInt($x.text, 10);
+    let output = '';
+    if (parsed % 3 === 0) output += 'Fizz';
+    if (parsed % 5 === 0) output += 'Buzz';
+    return output || parsed;
+}
+
+`console.log($x)` => fizzbuzz($x)
+```
+
+```js
+console.log(3);
+console.log(8);
+console.log(10);
+console.log(15);
+```
+
+```js
+Fizz;
+8;
+Buzz;
+FizzBuzz;
+```
+
+{% /diffeditor %}
+
+### Limitations
+
+- JavaScript functions _must_ return a stringable value. This means that the return value must be a string, or an object with a `toString` method.
+- Functions are executed in a WebAssembly sandbox. They cannot access the filesystem or make network requests.
+- If the function throws an error, the pattern will error and fail to match.
+- Parameters are accessible _only_ via the `$variable.text` property. Metavariables without a string representation cannot be accessed. If you need to parse a parameter as a number, you can use `parseInt` or `parseFloat`.
+- Foreign functions cannot bind new variables. They can only access the variables that are passed in as parameters.
+
+## Built-in functions
+
+GritQL provides several built-in functions that can be used in queries targeting any language.
+
+### `log`
+
+`log` takes a message and a variable (both optional) and logs their values to the console. It is useful for debugging.
+For example, the following query produces log output in addition to rewriting the source code:
+
+{% diffeditor %}
+
+```grit
+`console.log($arg)` => . where {
+  log(message="This is a debug log", variable=$arg),
+}
+```
+
+```javascript {% fileName="index.js" }
+console.log("grape");
+```
+
+```javascript {% fileName="index.js" }
+
+```
+
+{% /diffeditor %}
+
+```bash
+Log in index.js: This is a debug log
+
+- Range: 1:13 - 1:20
+- Source:
+'grape'
+- Syntax tree:
+(string fragment: (string_fragment))
+```
+
+### `capitalize`
+
+`capitalize` takes a string and returns a new string with the first character capitalized.
+
+```grit
+capitalize(string = "hello") // "Hello"
+```
+
+### `trim`
+
+`trim(s)` returns a new string with the whitespace removed from the beginning and end of `s`.
+
+```grit
+trim(string = "  hello  ", trim_chars = " ") // returns "hello"
+```
+
+### `join`
+
+`join(delimiter, strings)` concatenates a list of `strings` with a `delimiter` to form a single string.
+
+```grit
+join(list = ["a", "b", "c"], separator = "_") // returns "a_b_c"
+join(list = ["a", "b", "c"], separator = "") // returns "abc"
+```
+
+### `split`
+
+`split(string, separator)` splits a `string` into a list of substrings, using `separator` as the delimiter.
+
+```grit
+split(string = "a_b_c", separator = "_") // returns ["a", "b", "c"]
+```
+
+### `todo`
+
+In some cases, a transformation cannot be completed fully automatically. You can use the `todo` function to mark a `target` snippet as incomplete and add a comment to the generated code. An optional `message` can be provided to give more information about the incomplete transformation.
+
+{% diffeditor %}
+
+```grit
+or {
+  `console.log($msg)` => todo(target=$msg),
+  `console.error($msg)` as $log => todo(target=$log, message="Consider a lower error level.")
+}
+```
+
+```javascript
+console.log("hello");
+console.error("This is an error");
+```
+
+```javascript
+// TODO: This requires manual intervention.
+// "hello"
+// TODO: Consider a lower error level.
+// console.error("This is an error")
+```
+
+{% /diffeditor %}
+
+### `uppercase`
+
+`uppercase` takes a string and returns a new string with all characters uppercased.
+
+```grit
+uppercase(string = "HELLO") // "HELLO"
+uppercase(string = "Hello") // "HELLO"
+uppercase(string = "hello") // "HELLO"
+```
+
+### `lowercase`
+
+`lowercase` takes a string and returns a new string with all characters lowercased.
+
+```grit
+lowercase(string = "HELLO") // "hello"
+lowercase(string = "Hello") // "hello"
+lowercase(string = "hello") // "hello"
+```
+
+### `resolve`
+
+`resolve` takes a string and interprets it as a path relative to the current file. It returns the absolute path to the resolved file.
+
+```grit
+resolve(path = "./index.js") // returns "/path/to/index.js"
+resolve(".././foo.js") // returns "/path/foo.js"
+resolve(path = "../index.js") // returns "/path/index.js"
+```
+
+{% note type="warning" %}
+The target file does not need to exist on disk - the resolve function just looks at the string. It does not follow symlinks, but it does normalize `..` and `.` segments.
+{% /note %}
+
+### `length`
+
+`length(target=$items)` returns the number of elements in a `target` list. It can also be used to get the length of a target string.
+
+```grit
+length(target=[7, 8, 9]) // returns 3
+length(target="hello") // returns 5
+```
+
+### `shuffle`
+
+`shuffle(target=$items)` returns a new list with the elements of `target` in a [pseudo-random order](/language/runtime#randomness).
+
+```grit
+shuffle(target=[7, 8, 9]) // returns [8, 9, 7]
+```
+
+### `text`
+
+`text($target)` captures the _current_ text of the target node as a string. This is typically useful for cases where you want to keep the original text of a node before modifying it, such as when [duplicating](/guides/duplicating) code.
+
+```grit
+`console.log($msg)` where {
+  $clone = text($msg), // keep a clone of $msg, since we are about to modify it
+  $msg => `"log", $clone`
+}
+```
+
+### `random`
+
+`random` returns a pseudorandom number between 0 and 1. If a `random($min, $max)` is provided, it returns a random integer between `$min` and `$max`, inclusive.
+
+```grit
+random() // returns a random number between 0 and 1, ex. 0.123456789
+random(min = 1, max = 10) // returns a random integer between 1 and 10, ex. 7
+```
+
+{% note %}
+**Note**: The Grit runtime is [deterministic](/language/runtime#randomness), so the same query will always return the same result.
+{% /note %}
+
+### `distinct`
+
+`distinct` takes a list and returns a new list with all duplicate elements removed.
+
+```grit
+distinct(list = [1, 2, 3, 2, 1]) // returns [1, 2, 3]
+```

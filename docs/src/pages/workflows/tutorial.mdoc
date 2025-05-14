@@ -1,0 +1,274 @@
+---
+title: Custom Workflows
+description: Introduction to constructing a custom workflow in Grit.
+---
+
+Custom workflows allow you to seamlessly combine custom logic, GritQL queries, and AI reasoning, allowing for complex transformations to be reliably made across your codebase.
+
+Workflows are simple functions that anyone can execute to make progress on a migration.
+
+In this tutorial, you will construct a basic workflow for migrating from [styled-components](https://styled-components.com/) to [Tailwind CSS](https://tailwindcss.com/).
+
+## Defining the workflow
+
+To start our workflow, we will create a new file in the `.grit/workflows` directory called `styled.ts`.
+
+```typescript {% fileName=".grit/workflows/styled.ts" %}
+import * as grit from '@getgrit/api';
+
+export async function execute(options: grit.WorkflowOptions) {
+  return { success: true, message: `Migration complete, called with ${options.paths.length} paths` };
+};
+```
+
+We can call this workflow to verify it works as expected:
+
+```bash
+$ grit apply styled
+Complete: Migration complete, called with 1670 paths
+```
+
+## Transforming code
+
+The most powerful step in the standard library is [transform](/sdk/api/Namespace.stdlib#transform-pair), which allows you to transform files using large language models.
+
+### Querying for ranges
+
+The first thing Grit requires for a transform is a [GritQL](/language/overview) query to find the code you want to target. Providing a declarative query allows the migration to be _only_ focused on the parts of the codebase you want to modify, without introducing unintentional changes elsewhere.
+
+In most cases, the query for a transform can be very simple. For our migration, we just want to target styled components, so a simple query like this will work:
+
+{% snippet %}
+
+```javascript
+import styled, { css } from 'styled-components';
+
+export const Button = styled.a<{ $primary?: boolean }>`
+  background: transparent;
+  border-radius: 3px;
+
+  &:hover {
+    filter: brightness(0.85);
+  }
+
+  ${(props) =>
+    props.$primary &&
+    css`
+    background: red;
+    color: black;
+  `}
+`;
+```
+
+```grit
+or {
+    js"styled.$_`$_`",
+    js"styled($_)`$_`"
+}
+```
+
+{% /snippet %}
+
+### Objective and principles
+
+Each `transform` is designed to target a specific `objective` in your migration. The objective is the high level goal for the migration and will always be reinforced with each transformation.
+
+The migration can also include a set of additional `principles` that are used to guide the transformation. For example, principles might be to "avoid using any inline styles" or "use the `className` prop instead of`css`". Principles will be used to guide the transformation, but sometimes will be automatically excluded when they are irrelevant.
+
+### Examples
+
+The final important part of a transform is a set of examples. Examples are used to _seed_ the workflow with samples of how the code should be transformed. Grit will dynamically accumulate additional examples over time, but you must provide at least one example to start.
+
+Each example consists of an `input` code snippet that _must_ include at least one match to the query, and an array of output `replacements` that fill in for each of the matched snippets.
+
+### Our transform
+
+Putting it all together, we can construct a transform for our migration in a few lines of code
+
+```typescript {% fileName=".grit/workflows/styled.ts" %}
+import * as grit from '@getgrit/api';
+
+export async function execute(options: grit.WorkflowOptions) {
+  const transformResult = await grit.stdlib.transform(
+    {
+      objective: `You are an expert software engineer working on a migration from styled-components to Tailwind CSS.
+      Given a styled component, you must migrate it a simple component with appropriate Tailwind classes.`,
+      principles: ['Use the twMerge library to conditionally combine classes.'],
+      model: 'slow',
+      query: 'or { js"styled.$_`$_`", js"styled($_)`$_`" }',
+      examples: [
+        {
+          input: `const StyledContainer = styled(({ backgroundColor, ...otherProps }) => (
+  <MyContainer {...otherProps} />
+))\`
+  position: relative;
+  background-color: \${({ backgroundColor }) => backgroundColor};
+\`;`,
+          replacements: [
+            `({backgroundColor, ...otherProps}) => {
+  const bgColorClass = backgroundColor ? \`bg-\${backgroundColor}\` : '';
+  const className = twMerge(\`relative \${bgColorClass}\`);
+  return (
+    <MyContainer className={className} {...otherProps} />
+  );
+}`,
+          ],
+        },
+      ],
+    },
+    {},
+  );
+  return transformResult;
+}
+```
+
+## Adding a heal step
+
+LLMs are powerful, but they are not perfect. In some cases, the LLM may make a mistake and introduce bugs – for example,
+invalid Tailwind classes – into your codebase.
+
+To address this, you can use the [`heal_tailwind`](/sdk/api/Namespace.stdlib#heal-tailwind) step to automatically lint
+and fix unrecognized Tailwind classes.
+
+The `heal_tailwind` step takes as an input the `fileHistory` output from the `transform` step.
+
+```typescript {% fileName=".grit/workflows/styled.ts" %}
+import * as grit from '@getgrit/api';
+
+export async function execute(options: grit.WorkflowOptions) {
+  const transformResult = await grit.stdlib.transform(
+    {
+      // ...
+    },
+    {},
+  );
+  if (!transformResult.success) return transformResult;
+
+  const healResult = await grit.stdlib.heal_tailwind(
+    {
+      paths: transformResult.paths,
+      originalFiles: transformResult.fileHistory,
+    },
+    {},
+  );
+
+  return transformResult;
+}
+```
+
+## Adding an apply step
+
+If you run this migration on some code, you will see it successfully transforms the code, but changes are limited only to the specific `styled` calls within files.
+
+In cases where the transformation requires the [`twMerge` library](https://github.com/dcastil/tailwind-merge), you can use the [`apply` step](/sdk/api/Namespace.stdlib#apply) to add the library to applicable files by applying a GritQL query.
+
+In this case, we can use a simple query to find instances `twMerge` library and import the required library using the [`ensure_import_from`](/guides/imports#ensure-import-from) function.
+
+{% snippet %}
+
+{% partial file="tutorial2_transformed.md" /%}
+
+```grit
+engine marzano(0.1)
+language js
+
+js"twMerge" as $mg where {
+    $mg <: ensure_import_from(source="'tailwind-merge'"),
+}
+```
+
+{% /snippet %}
+
+You can constrain this step to only target the transformed files from the previous step by passing `paths` to the step options.
+
+```typescript {% fileName=".grit/workflows/styled.ts" %}
+import * as grit from '@getgrit/api';
+
+export async function execute(options: grit.WorkflowOptions) {
+  const transformResult = await grit.stdlib.transform(
+    // ...
+  );
+  if (!transformResult.success) return transformResult;
+
+  const healResult = await grit.stdlib.heal_tailwind(
+    // ...
+  );
+
+  const applyResult = await grit.stdlib.apply(
+    {
+      query: `js"twMerge" as $mg where { $mg <: ensure_import_from(source=js"'tailwind-merge'") }`,
+      paths: transformResult.paths,
+    },
+    {},
+  );
+  return transformResult;
+}
+```
+
+## Wrapping up
+
+You can continue to add more steps to improve the migration. For example, you could add a step to remove the `styled` import from files that were transformed.
+
+Putting it all together, our workflow looks like this:
+
+```typescript {% fileName=".grit/workflows/styled.ts" %}
+import * as grit from '@getgrit/api';
+
+export async function execute(options: grit.WorkflowOptions) {
+  const transformResult = await grit.stdlib.transform(
+    {
+      objective: `You are an expert software engineer working on a migration from styled-components to Tailwind CSS.
+      Given a styled component, you must migrate it a simple component with appropriate Tailwind classes.`,
+      principles: ['Use the twMerge library to conditionally combine classes.'],
+      model: 'slow',
+      query: 'or { js"styled.$_`$_`", js"styled($_)`$_`" }',
+      examples: [
+        {
+          input: `const StyledComponent = styled(({ backgroundColor, ...otherProps }) => (
+  <MyContainer {...otherProps} />
+))\`
+  position: relative;
+  background-color: \${({ backgroundColor }) => backgroundColor};
+\`;`,
+          replacements: [
+            `({backgroundColor, ...otherProps}) => {
+  const bgColorClass = backgroundColor ? \`bg-\${backgroundColor}\` : '';
+  const className = twMerge(\`relative \${bgColorClass}\`);
+  return (
+    <MyContainer className={className} {...otherProps} />
+  );
+}`,
+          ],
+        },
+      ],
+    },
+    {},
+  );
+  if (!transformResult.success) return transformResult;
+
+  const healResult = await grit.stdlib.heal_tailwind(
+    {
+      paths: transformResult.paths,
+      originalFiles: transformResult.fileHistory,
+    },
+    {},
+  );
+
+  await grit.stdlib.apply(
+    {
+      query: `js"twMerge" as $mg where { $mg <: ensure_import_from(source=js"'tailwind-merge'") }`,
+    },
+    { paths: transformResult.paths },
+  );
+  await grit.stdlib.apply(
+    {
+      query: `js"import $_ from 'styled-components'" => .`,
+    },
+    { paths: transformResult.paths },
+  );
+  return {
+    success: true,
+    message: `Successfully migrated ${transformResult.paths.length} files.`,
+  };
+}
+```

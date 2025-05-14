@@ -1,0 +1,682 @@
+---
+title: Patterns
+---
+
+The primary construct in Grit is a pattern, which searches in a codebase for matching clauses and optionally executes a specified transformation.
+Patterns are also commonly referenced in side conditions, which Grit uses to execute [rewrites](/language/patterns#rewrite-operator).
+Patterns come in several forms.
+
+## Code snippets
+
+The most basic form of a pattern is just a snippet in the target language surrounded by backticks (`` ` ``). For example:
+
+{% matcheditor %}
+
+```grit
+`console.log('Hello, world!')`
+```
+
+```typescript
+{hl}console.log('Hello, world!'){/hl}
+```
+
+{% /matcheditor %}
+
+To match on variations of a snippet, code snippets can include [metavariables](/language/patterns#metavariables):
+
+```grit
+`console.log($message)`
+```
+
+{% note %}
+**Tip:** Dollar signs and backticks can be escaped with a backslash (`\`) if they are needed in the snippet. Ex. `` `console.log(\`$template\`)` ``.
+{% /note %}
+
+### Alternative syntax
+
+Code snippets can alternatively be enclosed by double quotes prefixed with a language annotation. Language annotations correspond to one of Grit's supported target languages
+and limit the snippet to matching only code in that language.
+
+The language annotation for JavaScript/TypeScript is `js`. These two examples are equivalent:
+
+```grit
+`console.log('Hello, world!')`
+```
+
+```grit
+js"console.log('Hello, world!')"
+```
+
+### `raw` output
+
+The `raw` prefix can be added to snippets to output them directly, bypassing any of Grit's built-in attempts at ensuring that the output code is valid.
+Use `raw` for snippets that you _always_ want to output as-is even if it generates invalid code.
+
+For example:
+
+{% diffeditor %}
+
+```grit
+`console.log($message)` => raw`if(' // I like broken code"`
+```
+
+```typescript
+console.log("Hello, world!");
+```
+
+```typescript
+if(' // I like broken code
+```
+
+{% /diffeditor %}
+
+## Metavariables
+
+Metavariables are used to create a binding to a specific part of the syntax tree.
+They are prefixed with a dollar sign and must be alphanumeric.
+Metavariables start with a letter and should use `$lowercase_snake_case`. All metavariables must conform to the regex `$[a-zA-Z_][a-zA-Z0-9_]*`.
+
+Metavariables' default scope is the entire file, but this scope is usually restricted automatically by [pattern
+auto-wrapping](/language/bubble#pattern-auto-wrap).
+
+The [`bubble`](/language/bubble) clause can be used to limit the scope of a metavariable.
+
+{% matcheditor %}
+
+```grit
+`console.log($foo)`
+```
+
+```typescript
+{hl}console.log('Hello, world!'){/hl}
+```
+
+{% /matcheditor %}
+
+`$filename`, `$new_files` and `$program` are reserved metavariables used internally by Grit and should not be used as metavariable names. Likewise, metavariables starting with `$grit_` are reserved for internal use.
+
+### Anonymous metavariables
+
+When we do not care about the value of a metavariable, we can use the wildcard metavariable `$_`. This allow is to match without being bound to a specific value.
+
+{% matcheditor %}
+
+```grit
+`console.log($_)`
+```
+
+```typescript
+{hl}console.log($_){/hl}
+```
+
+{% /matcheditor %}
+
+### Spread metavariables
+
+By default, metavariables match a single node in the syntax tree. However, sometimes it is useful to match a variable number of nodes.
+
+This can be done with the spread metavariable `$...`. It matches 0 or more nodes, and can be used anywhere a metavariable can be used. Spread metavariables are anonymous, so they cannot be bound to a name.
+
+{% diffeditor %}
+
+```grit
+`console.log($message, $...)` => `// Removed console.log: $message`
+```
+
+```typescript
+console.log("Hello, world!");
+console.log("Message 2", "stuff");
+```
+
+```typescript
+// Removed console.log: 'Hello, world!'
+// Removed console.log: 'Message 2'
+```
+
+{% /diffeditor %}
+
+### Explicit assignment
+
+As illustrated in the `console.log($message)` example, metavariables can be used without being declared, simply by replacing
+some of a code snippet with a metavariable meant to represent the substitution's part of the syntax tree.
+
+It is also possible to explicitly declare and assign metavariables:
+
+```grit
+`const $logger = logger.$action($message)` where {
+  $special_logger = js"$[action]Logger",
+  $logger => $special_logger
+}
+```
+
+{% note %}
+**Tip:** When using a metavariable in an output snippet, you can wrap its name in
+braces `[]` to distinguish the metavariable name from the snippet literal. (ex. `$[name]Class`)
+
+{% /note %}
+
+### Predefined metavariables
+
+Grit also includes a few predefined metavariables which are always available.
+
+- `$program` is a metavariable which contains the entire (current) program. You can use this to match against the entire program, even deep inside a pattern.
+- `$filename` is a metavariable which contains the current (relative) file path.
+- `$new_files` is a metavariable which contains a list of new files. Appending to this metavariable is useful for [creating new files](/language/idioms#creating-new-files).
+
+## Rewrite operator `=>`
+
+Once you have matched the relevant code, rewrites can be used to _transform_ the matched pattern.
+They are written using the `=>` operator, with a patterns on the left and right hand sides. The whole rewrite itself is a pattern and can be used anywhere a pattern is used.
+
+{% diffeditor %}
+
+```grit
+`println` => `console.log`
+```
+
+```typescript
+println("Hello, world!");
+```
+
+```typescript
+console.log("Hello, world!");
+```
+
+{% /diffeditor %}
+
+Rewrites can contain metavariables.
+
+So we can restrict the rewrite to only match `println` calls, and no other references to `println`.
+
+{% diffeditor %}
+
+```grit
+`println($message)` => `console.log($message)`
+```
+
+```typescript
+const foo = println;
+println("Hello, world!");
+```
+
+```typescript
+const foo = println;
+console.log("Hello, world!");
+```
+
+{% /diffeditor %}
+
+{% note %}
+**Tip:** Rewrites will work better if you [keep them as specific as possible](./idioms#specific-rewrites).
+{% /note %}
+
+The right-hand side of a rewrite is a code snippet or metavariable bound to a code snippet.
+
+Rewrites are just a special kind of pattern with a side effect. Anywhere that other kinds of patterns can be used, so can a rewrite.
+This means that you can "match a rewrite" to keep your GritQL concise:
+
+{% diffeditor %}
+
+```grit
+engine marzano(0.1)
+language js
+
+`$test($_)` where {
+    $test <: js"test.only" => js"test"
+}
+```
+
+```typescript
+test.only(() => {
+  expect(true).toEqual(true);
+});
+```
+
+```typescript
+test(() => {
+  expect(true).toEqual(true);
+});
+```
+
+{% /diffeditor %}
+
+## Syntax tree (AST) nodes
+
+Syntax tree nodes are one of the most important types in Grit, as they allow you to match directly against the underlying abstract syntax tree (AST) of the code.
+
+Nodes represent unique instances in the syntax tree of the input code.
+
+For example, every distinct appearance of the string `"foo"` in a single file is represented by an individual `string()` node. Nodes can represent
+larger groupings of code as well (ex. every arrow function in JavaScript is represented by an `arrow_function()` node).
+
+For example, the following matches any `augmented_assignment_expression`, regardless of its `operator` (which can be one
+of `=`, `+=`, ...).
+
+{% matcheditor %}
+
+```grit
+augmented_assignment_expression(operator = $op, left = $x, right = $v)
+```
+
+```typescript
+{hl}x = 1{/hl};
+{hl}x += 5{/hl};
+```
+
+{% /matcheditor %}
+
+The fields that we do not care about can be omitted, so the following patterns are equivalent:
+
+```grit
+augmented_assignment_expression(operator = $op)
+// same as
+augmented_assignment_expression(operator = $op, left = $_, right = $_)
+```
+
+{% note %}
+**Tip:** If you click the "debug" button in the [Grit studio](https://app.grit.io/studio) you can see the syntax tree of the input code. This is the best way to understand the structure of the code you are working with.
+{% /note %}
+
+### Node structure
+
+Each node has a type, which determines the node's available fields and their own types.
+Each child field of a node can be another syntax-tree node, a list of syntax-tree nodes, or a primitive value.
+
+For example, `"foo"` is a `string` and has the following structure:
+
+```grit
+string(fragment = "foo")
+```
+
+We distinguish syntax-tree nodes, which represent nodes in the input code, from patterns, which are Grit constructs used to
+match syntax-tree nodes.
+
+## Primitives
+
+Grit has several primitive types which are language-agnostic.
+
+### Strings
+
+Grit allows specifying strings outside of a code snippet in a language-agnostic way. Grit strings are surrounded by double quotes (`"`).
+They can contain any character except for a double quote (`"`) or a backslash (`\`).
+To include one of these characters in a string, you can escape it with a backslash (`\`).
+
+In most cases, code snippets can be used interchangeably with Grit strings. Occasionally, however, Grit strings are useful for matching against exact strings instead of being AST-aware.
+
+In general, any code which would be matched by a Grit string would also be matched by a code snippet, but not vice versa. This means that Grit strings can be used to apply transformations such as formatting changes that would not be possible with code snippets.
+
+```grit
+"Hello, world!" // string
+```
+
+### Numbers
+
+Grit has two number types, `int` and `double`. Functionally they can be used interchangeably, and you do not need to specify which type you want. The compiler will infer the type based on the context.
+
+Numbers are useful for transforming code based on arithmetic operations:
+
+```grit
+js"multiply($x)" where {
+  $y = $x * 2,
+  $x => $y
+}
+```
+
+### Lists
+
+Grit has a single list type, analogous to lists or arrays in other languages. List are constructed with square brackets
+(`[]`). List elements can be accessed via the `$list[index]` syntax, with negative and positive indices supported. Out of bounds indices will return `undefined`.
+
+```grit
+$list = [`1`, `2`, `3`]
+$list[0] // `1`
+$list[-1] // `3`
+```
+
+Lists have two primary uses:
+
+- Accumulating items, which can be done with the `+=` operator.
+- Matching against a specific ordered list of AST nodes.
+
+For example, the following pattern accumulates numbers with the `+=` operator, then uses the built-in [join](/language/functions#join)
+function to format them for rewriting:
+
+{% diffeditor %}
+
+```grit
+engine marzano(0.1)
+language js
+
+and {
+    $new_numbers = [],
+    $new_numbers += 3,
+    $new_numbers += 4,
+    $new_numbers = join(list = $new_numbers, separator = ", "),
+    `const numbers = [$numbers]` => `const numbers = [$new_numbers]`
+}
+```
+
+```typescript
+const numbers = [1, 2];
+```
+
+```typescript
+const numbers = [3, 4];
+```
+
+{% /diffeditor %}
+
+Meanwhile, this pattern looks specifically for a function declaration followed by a return statement (and removes it, for illustrative clarity):
+
+{% diffeditor %}
+
+```grit
+engine marzano(0.1)
+language js
+
+statement_block($statements) where {
+    $statements <: [function_declaration(), return_statement()],
+    $statements => .
+}
+```
+
+```typescript
+var sumToValue = function (x, y) {
+  function Value(v) {
+    this.value = v;
+  }
+  return new Value(x + y);
+};
+
+var times = (x, y) => {
+  return x * y;
+};
+```
+
+```typescript
+var sumToValue = function (x, y) {
+
+};
+
+var times = (x, y) => {
+  return x * y;
+};
+```
+
+{% /diffeditor %}
+
+### Maps
+
+Grit has an immutable map type. Maps are constructed with curly braces (`{}`). Keys can contain letters and underscores, and values can be any valid Grit pattern.
+
+Maps can be accessed using `$key.value` syntax, where `$key` is a metavariable bound to a map and `value` is a key in the map. Accessors can be matched against like variables and used within a rewrite. If the key does not exist, the accessor will return `undefined`.
+
+{% diffeditor %}
+
+```grit
+`const capital = $val` where {
+  $capitals = { england: `london`, ours: $val },
+  $capitals.ours <: `paris`,
+  $val => $capitals.england,
+}
+```
+
+```typescript
+const capital = paris;
+```
+
+```typescript
+const capital = london;
+```
+
+{% /diffeditor %}
+
+## `Sequential` patterns {% #sequential %}
+
+{% note %}
+**Warning**: `sequential` is _only_ supported at the top level of a Grit program. You cannot nest it inside other
+patterns or clauses.
+{% /note %}
+
+By default, a Grit program consist of a single top-level pattern, which is matched against the input code.
+
+In some cases, it is simpler to have the Grit program consist of multiple patterns, processed sequentially.
+
+To do this, wrap the individual steps in a top level `sequential` clause. Note: the individual `sequential` steps are not [auto-wrapped](#pattern-auto-wrap) so you will need to include `contains` yourself.
+
+For example:
+
+{% diffeditor %}
+
+```grit
+language js
+
+sequential {
+    bubble file($body) where $body <: contains `console.log($message)` => `console.warn($message)`,
+    bubble file($body) where $body <: contains `console.warn($message)` => `console.info($message)`
+}
+```
+
+```typescript
+console.log("Hello, world!");
+console.warn("Hello, world!");
+```
+
+```typescript
+console.info("Hello, world!");
+console.info("Hello, world!");
+```
+
+{% /diffeditor %}
+
+`sequential` is equivalent to writing several separate patterns and running each one in order, waiting for the previous
+to complete before starting the next.
+
+## Multifile patterns {% #multifile %}
+
+In most cases, patterns can be evaluated in the context of a single file. However, in some cases, it is useful to evaluate a pattern in the context of other files or to apply a refactoring from one file to another.
+
+This can be done by using the `multifile` pattern.
+
+### The `multifile` pattern
+
+The `multifile` pattern is a special pattern which allows matching against multiple files while keeping a single _global_ state.
+
+Like `sequential` it accepts multiple steps - but each step is evaluated against _all_ files with the same state.
+
+This is typically used to gather some information from one file in the first step, and then apply it to all other files in the second step.
+
+For example, this pattern will find a `Prop` type in one file and rename it, then make sure that rename is applied to all other files:
+
+{% diffeditor %}
+
+```grit
+language js
+
+multifile {
+  // Since multifile has a single global state,
+  // we need to use `bubble` to restrict the scope of $body
+  bubble($prop, $source_file, $new_prop) file($body) where $body <: contains `type $prop = $_` where {
+    // If we already have found a specific $source_file,
+    // we don't want to keep looking for new props
+    $source_file <: undefined,
+    $prop <: `Props`,
+    $new_prop = `New$prop`,
+    // Rename the prop in this file
+    $prop => $new_prop,
+    $source_file = $filename
+  },
+  // Now that we have renamed the prop in the source file, look for usages in other files
+  bubble($prop, $source_file, $new_prop) file($body) where {
+    $body <: contains `$prop` where {
+      // Make sure the prop we are looking at came from the source file
+      $prop <: imported_from(from=includes $source_file),
+    },
+    // Rename it in all other files
+    $body <: contains `$prop` => $new_prop,
+  }
+}
+```
+
+```js
+// file1.js
+type Props = {
+  name: string;
+};
+// file2.js
+type Props = {
+  age: string;
+};
+// file3.js
+import { Props } from './file1.js';
+const foo: Props = {
+  name: 'foo',
+};
+// file4.js
+import { Props } from './file2.js';
+const foo: Props = {
+  age: 'foo',
+};
+```
+
+```js
+// file1.js
+type NewProps = {
+  name: string;
+};
+// file2.js
+type Props = {
+  age: string;
+};
+// file3.js
+import { NewProps } from './file1.js';
+const foo: NewProps = {
+  name: 'foo',
+};
+// file4.js
+import { Props } from './file2.js';
+const foo: Props = {
+  age: 'foo',
+};
+```
+
+{% /diffeditor %}
+
+The top level of a `multifile` step _must_ be a `file()` pattern, optionally preceded by `bubble`.
+
+{% note %}
+**Tip:** If you merely want to create new files, use the `$new_files` metavariable—it is much faster on large codebases.
+{% /note %}
+
+## Empty pattern
+
+The dot (`.`) can be used exclusively on the right-hand side of a rewrite to delete code. Semantically, it represents an empty syntax-tree node, so rewriting to a dot (`=> .`) will remove the matched code.
+
+## Regular expressions
+
+Strings prefixed with the letter `r` are interpreted as regular expressions.
+Capture groups can be named by postfixing the regular expression with a list of metavariable names surrounded by
+parentheses (`(` and `)`).
+
+For example, the following pattern will match the string `"Hello, world!"` and bind the metavariable `$name` to the
+string `"world"`.
+
+```grit
+"Hello, world!" <: r"Hello, (.*)"($name) // $name is now bound to "world"
+```
+
+The patterns are interpreted using the [Rust regular expression syntax](https://docs.rs/regex/latest/regex).
+
+Regular expressions can also be constructed dynamically using snippet syntax:
+
+{% diffeditor %}
+
+```grit
+`console.log("$message")` where {
+    $name = "Lucy",
+    $message <: r`([a-zA-Z]*), $name`($greeting) => `$name, $greeting`
+}
+```
+
+```js
+console.log("Hello, Lucy");
+```
+
+```js
+console.log("Lucy, Hello");
+```
+
+{% /diffeditor %}
+
+Regardless of which syntax you use, regular expressions are matched against the entire variable or node. To match a regular expression corresponding to part of a node, use wildcard characters.
+
+## `file` and `program`
+
+The `file` and `program` patterns are syntax-tree nodes which match the entire file or program within a file, respectively.
+They are useful if your pattern requires context across an entire file.
+
+`file` allows you to match and rewrite the file name as well as its body:
+
+```grit
+engine marzano(0.1)
+language js
+
+file($name, $body) where {
+    $name => `$name.bak`,
+    $body => `// This file was renamed with Grit!\n\n$body`
+}
+```
+
+`program` is special in that it is available by default no matter what pattern you are writing.
+For example, the following pattern rewrites `console.log`s to `logger.log`s only if the file already contains a usage of `logger`:
+
+```grit
+engine marzano(0.1)
+language js
+
+`console.log($log)` => `logger.log($log)` where {
+    $program <: contains `logger`
+}
+```
+
+## Range patterns
+
+The `range` pattern is used to target code by its location within the file. Range takes three parameters:
+
+- `start_line`: The start line of the range, starting at 1 (inclusive).
+- `end_line`: The end line of the range, starting at 1 (inclusive, optional). If not provided, the range will go until the end of the file.
+- `start_column`: The start column of the range, starting at 1 (inclusive), within the start line (inclusive).
+- `end_column`: The end column of the range, starting at 1, within the end line (inclusive).
+
+For example, this pattern will remove the first 3 lines of all files:
+
+```grit
+range(start_line=1, end_line=3) => .
+```
+
+Range patterns are particularly useful when combined with [`contains`](/language/modifiers#contains-operator) to narrow down the code you are targeting. Any AST node will be considered to "contain" a range if the range intersects with the node.
+
+For example, this pattern will remove the `console.log` statements on lines 2 and 5:
+
+{% diffeditor %}
+
+```grit
+`console.log($_)` as $log => . where {
+    $log <: contains or {
+        range(start_line=2, end_line=2),
+        range(start_line=5, end_line=6)
+    }
+}
+```
+
+```typescript
+console.log("hello");
+console.log("ok");
+console.log("wow");
+console.log("multiline");
+```
+
+```typescript
+console.log("hello");
+console.log("wow");
+```

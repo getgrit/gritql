@@ -1,0 +1,44 @@
+---
+title: Visual Studio Code Extension
+---
+
+Grit comes with a Visual Studio Code extension that provides easy integration of Grit into your editor.
+
+## Installation
+
+The Grit extension is available in the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Grit.grit-vscode).
+
+Note: you currently _must_ install the [Grit CLI](/cli/quickstart) separately to use the extension.
+
+## Features
+
+### Command Palette: Apply Pattern
+
+From the command palette, you can run `Grit: Apply Pattern` to apply any [configured pattern](/guides/config#patterns) to the current file.
+
+### Command Palette: Fix File
+
+Alternatively, you can run `Grit: Fix File` to apply all configured patterns to the current file at once.
+
+### Diagnostics and Code Actions
+
+The Grit extension runs configured patterns on your code and highlights any matches.
+For rewrite patterns, a code action is available to quickly fix the issue.
+
+![Grit diagnostics](/vsc-diagnostics.png)
+
+### Search
+
+From the command palette, you can run `Grit: Search with GritQL` to open a search file allowing you to scan for GritQL matches directly in your editor.
+The search input accepts any valid GritQL query and highlights matches in your codebase.
+
+![GritQL mini-studio](/vsc-search.png)
+
+## Troubleshooting
+
+### Unable to connect to language server
+
+You must install the [Grit CLI](/cli/quickstart) separately to use the extension.
+
+Confirm that the engine is installed by running `grit version`.
+If the error persists, try running `grit install --update` to ensure your installation is up to date.

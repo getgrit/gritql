@@ -1,0 +1,31 @@
+---
+title: Grit Agent
+---
+
+The Grit Agent is a powerful agent capable of making large scale changes to codebases. It is designed to execute tasks autonomously and continuously run in the background to improve your codebase.
+
+The Grit Agent follows a flow with three main phases: Planning, Generation, and Refinement.
+
+## 1. Planning
+
+In the planning phase, Grit performs an initial analysis of the codebase to find the right code to modify and to generate a high level plan on how to modify it.
+
+This process combines static analyzers (based on the [GritQL](/language/overview) query language) and LLMs to generate an index of the codebase that covers information like code dependencies, core functionality of each file, and structural facts about class hierarchies.
+
+After the plan phase is complete, Grit has a rough plan for how to fix the code. This plan is then passed to the generation phase.
+
+## 2. Generation
+
+In the generation phase, Grit uses the plan to rewrite the code in a controlled and secure way. It checks out the codebase into a secure sandbox and applies a series of transforms—some static/deterministc, and some powered by AI—that were defined during the planning phase.
+
+When necessary, Grit will also query external tools during the generation phase. For example, documentation about libraries will be automatically fetched from the internet when it is needed.
+
+## 3. Refinement
+
+During the refinement phase, Grit is responsible for validating changes and refining them to a level of mergeability.
+
+Refinement is an iterative process where Grit runs external validation tools from your [CI pipeline](/workflows/healing), including type checkers and unit tests, to ensure that the changes are of high quality. Grit will iterate on the changes until all validation checks pass—sometimes requiring hundreds of iterations.
+
+During this phase, Grit will also run a self-review of the changes before they are submitted for a final code review by developers. This pre-review is guided by a set of default rules, but can also be customized by the user through [autoreview rules](/guides/autoreview).
+
+Once the refinement phase is complete, Grit submits pull requests for the changes to be reviewed by a human where additional feedback [can be provided](/guides/feedback).

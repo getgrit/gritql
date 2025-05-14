@@ -1,0 +1,54 @@
+---
+title: Testing GritQL
+---
+
+If you are crafting a complex query, we recommend iterating on test cases to ensure that your query behaves as expected.
+
+Run the `grit patterns test` command to test all defined patterns in your repo. You can also use `--filter` to run a subset of patterns.
+
+```shell
+grit patterns test --filter=pattern_to_test
+```
+
+## Markdown format
+
+Reusable queries and test cases can be bundled together in a Markdown file to create a pattern. This allows you to combine documentation, GritQL, and source code examples in a single file.
+
+The markdown file should be placed in a `.grit/patterns` folder at the root of your repo. It can be formatted however you like, so long as you follow these conventions:
+
+{% partial file="markdown_rules.md" /%}
+
+### Markdown example
+
+{% partial file="markdown_example.md" /%}
+
+You can find many more examples in the [Grit standard library](https://github.com/getgrit/stdlib/tree/main/.grit/patterns).
+
+## YAML format
+
+If you define patterns directly in the `.grit/grit.yaml` [file](http://localhost:3200/guides/config#configuration-reference), you can also include before and after test cases underneath the `samples` key. Each sample _must_ include a `input` and `output` key.
+
+### YAML example
+
+```yaml
+patterns:
+  - name: avoid_only
+    body: |
+      `$testlike.only` => `$testlike` where {
+        `$testlike` <: or {
+          `describe`
+          `it`
+          `test`
+        }
+      }
+    samples:
+      - input: |
+          describe.only('this is a test', () => {
+            // ...
+          });
+        output: |
+          describe('this is a test', () => {
+            // ...
+          });
+
+```

@@ -1,0 +1,54 @@
+---
+title: Pull Request Feedback
+---
+
+{% partial file="paid.md" /%}
+
+Grit-generated pull requests are not static: you can interact with them like any other pull request. You can comment on them, request changes, and approve them. Grit will update the pull request as you interact with it.
+
+## Natural language feedback
+
+Grit will respond to any PR comment you prefix with `@gritagent`. Feedback can be provided through line-level comments or code suggestions. Grit will automatically apply your feedback to the codebase.
+
+When Grit begins processing your feedback, it will react to each feedback comment with an 👀 emoji. Once it has processed the feedback, Grit will post a comment summarizing the changes made.
+
+See an example of different comments [here](https://github.com/custodian-sample-org/juice-shop/pull/3#pullrequestreview-1774296720) and Grit's changes [here](https://github.com/custodian-sample-org/juice-shop/pull/3/commits/6644ae9115a3b89a0bee6a5378ced742f90c7f75).
+
+## Aggregated feedback
+
+If a pull request is part of an ongoing migration, Grit will aggregate feedback across all pull requests in the migration on the "Feedback" tab of the migration dashboard. This gives migration owners a single place to review all developer feedback across repositories.
+
+[![Screenshot from migration feedback tab](/feedback.png)](/feedback.png)
+
+As a migration owner, you can choose to "promote" a comment to teach Grit that it should be applied to _all_ pull requests in the migration. All open pull requests will be automatically updated to incorporate the feedback, and the feedback will also be used for future pull requests (but pull requests that were already merged will not be changed).
+
+## Manual edits {% #ownership %}
+
+In addition to providing feedback through comments, you can also make manual edits to the pull request. Just push your changes to the branch—this won't affect Grit's ability to make changes to the codebase.
+
+When a non-Grit commit is pushed to the branch, Grit will "pause" its work on the pull request to avoid conflicts with your changes. You can comment `/grit continue` to transfer the pull request back to Grit's control.
+
+Any comments left on the pull request will be processed by Grit once it regains control.
+
+## Limitations
+
+Grit does not aim for real-time feedback. This is because all code modifications are done in [ephemeral environments](https://docs.grit.io/data) and tested before being committed. Instead, Grit batches up feedback and revised commits might take a few minutes to appear.
+
+Once Grit has finished processing the feedback, it will post a comment on the pull request confirming it has incorporated the feedback and should be ready for another review.
+
+## Tips
+
+- Grit works best if you batch up your feedback and provide it all at once. You should typically provide a full review, then come back to re-review Grit has incorporated your feedback. Treat Grit more like a coworker than a robot.
+- Try to be precise with your feedback. Grit has context from other files, but significantly benefits from precise code suggestions.
+- Grit _will_ automatically make changes to other parts of the code if necessary. For example, if you request a change to a function signature, Grit will update all calls to that function—you don't need to request changes to each call site.
+- Keep in mind that many of the changes Grit makes are required to ensure static analysis and unit tests pass. If you don't like a change Grit made, it is often helpful to suggest an alternative resolution.
+- It is fine to check out the pull request locally and make your own changes. Grit will seamlessly incorporate your changes and will never overwrite your work.
+
+## Commands
+
+In addition to the natural language feedback, Grit also supports precise slash commands to take specific actions.
+
+{% partial file="slash_continue.md" /%}
+{% partial file="slash_rebase.md" /%}
+{% partial file="slash_new.md" /%}
+{% partial file="slash_report.md" /%}

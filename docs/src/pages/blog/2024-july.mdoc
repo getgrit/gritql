@@ -1,0 +1,34 @@
+---
+title: July 2024 Release
+variant: blog
+date: "2024-07-08"
+---
+
+Welcome to the latest round of updates from Grit - if you have any feedback or questions, I'd love to [hear from you](mailto:support@grit.io).
+
+## 🧠 Memory Improvements
+
+We've overhauled Grit's memory system to make smarter use of [feedback](https://docs.grit.io/guides/feedback) you provide on pull requests. In particular, you can now ask Grit to do things like ignoring an old/irrelevant file and it will remember that for the duration of a migration.
+
+## 📖 Drafts & Reviewers
+
+After hearing your feedback, we made two changes to streamline the review process:
+
+1. By default, Grit will now open pull requests as drafts. Once [auto-healing](https://docs.grit.io/workflows/healing) is complete and your tests come back green, Grit will promote the draft to be ready for review.
+2. You can now add specific reviewers to a migration, who will be tagged on all pull requests related to that migration.
+
+## 🧪 Test Migrations
+
+After successfully migrating multiple customers to faster/leaner test suites, we're excited to introduce a fully managed [test migration package](https://about.grit.io/testing) that can help you to modernize and accelerate your test suites today.
+
+## 🔦 Slack's Migration Journey
+
+Speaking of test migrations, Slack wrote an [insightful blog post](https://slack.engineering/balancing-old-tricks-with-new-feats-ai-powered-conversion-from-enzyme-to-react-testing-library-at-slack/) about their experience migrating from Enzyme to React Testing Library. We've worked on this exact migration ourselves and the approach they landed on (combining static analysis and AI-based tooling) is similar to the Grit agent architecture.
+
+## Other Improvements
+
+- The local Grit CLI now supports [`--watch` mode for testing patterns]https://docs.grit.io/cli/reference#grit-patterns-test).
+- Grit can now natively parse and update [Jupyter notebooks](https://github.com/getgrit/gritql/pull/354).
+- I'm working on a [TypeScript SDK](https://github.com/getgrit/gritql/discussions/403) and would love early API feedback.
+
+As always, please reach out with any feedback you have or join us on Discord.

@@ -1,0 +1,36 @@
+---
+title: Integrating with GitLab
+---
+
+Status: Alpha Documentation
+
+## Overview
+
+Grit uses **project** or **group** access tokens to integrate with GitLab. For the simplest implementation, we recommend
+creating a [group access token](https://docs.gitlab.com/ee/user/group/settings/group_access_tokens.html) covering the group of repositories you want to use with Grit.
+
+1. On GitLab's top bar, select Main menu > Groups and find your group.
+2. On the left sidebar, select Settings > Access Tokens.
+3. Enter a name. We recommend `grit-integration`.
+4. Enter an expiry date for the token. We recommend one year.
+5. Select the "Developer" role.
+6. Select the "api", "read_repository" and "write_repository" scopes.
+7. Click "Create group access token".
+8. If your GitLab instance is self-hosted, we will also need your instance's host.
+
+Once you have completed the above steps, contact [support@grit.io](mailto:support@grit.io) to finish setup.
+
+## Webhooks
+
+Grit uses webhooks to ensure that our integration is always up-to-date with your GitLab repositories. We recommend enabling webhooks using the following steps:
+
+1. On the top bar, select Main menu > Groups and find your group.
+2. On the left sidebar, select Settings > Webhooks.
+3. Enter the webhook URL https://events.hookdeck.com/e/src_agqx3O6gYeT9
+4. Select at least push events, comments and merge request events.
+5. Check “enable SSL verification”.
+6. Select Add webhook.
+
+## Networking
+
+Grit is hosted in Google Cloud. If you need to whitelist incoming connections, you can use `34.30.6.222` as Grit's IP address.

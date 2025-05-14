@@ -1,0 +1,33 @@
+---
+title: Authoring custom patterns
+---
+
+We recommend authoring Grit patterns in `.md` files, as this format allows you to combine documentation, GritQL, and source code examples in a single file.
+
+## VS Code
+
+We recommend installing the [Grit extension](/guides/vscode) to get syntax highlighting and authoring assistance for Grit patterns.
+
+You can watch [this video](https://www.youtube.com/embed/WICqSP-w2IU?si=KAtvT12uWXaroS_z") to see the extension in action.
+
+[![Authoring Walkthrough](https://img.youtube.com/vi/WICqSP-w2IU/0.jpg)](https://www.youtube.com/watch?v=WICqSP-w2IU)
+
+## Tips
+
+- Use the `grit patterns test` command to test all defined patterns in your repo.
+- As you are iterating on a pattern, you can use `--watch` to automatically re-run tests when you save a file.
+- You can use `--filter` to run a subset of patterns: this speeds up the test cycle when you are working on a specific pattern.
+
+## Markdown Format
+
+Patterns can be stored in `*.md` files within a `.grit/patterns` folder at the root of your repo.
+
+{% partial file="markdown_rules.md" /%}
+
+## Example
+
+Here is an example of a markdown pattern file:
+
+{% partial file="markdown_example.md" /%}
+
+You can find many more examples in the [Grit standard library](https://github.com/getgrit/stdlib/tree/main/.grit/patterns).
