@@ -11,7 +11,7 @@ import { MonacoDiffEditor } from './monaco-diff-editor';
 import { useDiffEditor } from '@/hooks/use-diff-editor';
 import { useEditorCursor } from '@/hooks/use-editor-cursor';
 import { useDelayedLoader } from '@/hooks/use-delayed-loader';
-import { extractMetavariables } from '@/utils/extract-metavariables';
+import { extractMetavariables } from '../../utils/extract-metavariables';
 
 import {
   extractLanguageFromPatternBody,
@@ -92,14 +92,11 @@ export const StandaloneEditor: React.FC<{
 
   const { metaVariables, oldVariables, newVariables } = useMemo(
     () => extractMetavariables(state),
-    // @ts-expect-error
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state.state, state.result],
+    [state],
   );
 
   const match = useMemo(() => {
     return state.state === 'loaded' && isMatch(state.result) ? state.result : undefined;
-    // @ts-expect-error
   }, [state.state, state.result]);
 
   const { onCursorPositionChange, highlightedVariable } = useEditorCursor({
@@ -136,8 +133,6 @@ export const StandaloneEditor: React.FC<{
             ...EDITOR_OPTIONS,
           }}
           onCursorPositionChange={onCursorPositionChange}
-          metaVariables={metaVariables}
-          highlightedVariable={highlightedVariable}
           placeholderColor='#9ca3af'
         />
         {usesAi && (
@@ -170,7 +165,6 @@ export const StandaloneEditor: React.FC<{
             original={input}
             language={language ? getEditorLangIdFromLanguage(language) : 'js'}
             modified={output}
-            onChange={onDiffChange}
             options={{
               renderIndicators: true,
               renderSideBySide: true,
@@ -178,12 +172,7 @@ export const StandaloneEditor: React.FC<{
               originalEditable: true,
               ...EDITOR_OPTIONS,
             }}
-            highlightedVariable={highlightedVariable}
-            oldVariables={oldVariables}
-            newVariables={newVariables}
-            match={match}
             placeholderColor='#9ca3af'
-            focusIfEmpty={!input}
           />
         </div>
       </div>
