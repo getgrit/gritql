@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 
 import config from '@/statics/config';
 import { Template, TemplateProps } from '@/templates/plain';
-import { useMonacoEditorInit } from '@getgrit/editor';
+import { useMonacoEditorInit } from '@/components/editor/monaco-editor-init';
 import { AnalyticsProvider } from '@/components/analytics';
 
 import '@/styles/main.css';

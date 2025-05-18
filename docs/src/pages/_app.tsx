@@ -7,7 +7,7 @@ import NProgress from 'nprogress';
 import config from '@/statics/config';
 import { Template } from '@/templates/plain';
 import { WrapperContainer } from '@/templates/wrapper';
-import { useMonacoEditorInit } from '@getgrit/editor';
+import { useMonacoEditorInit } from '@/components/editor/monaco-editor-init';
 import { AnalyticsProvider } from '@/components/analytics';
 
 import '@/styles/main.css';

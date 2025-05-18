@@ -1,7 +1,7 @@
 'use client';
 
 import { WithChildren } from '@/custom-types/shared';
-import { MonacoDiffEditor } from '@getgrit/editor';
+import { MonacoDiffEditor } from '@/components/editor/monaco-diff-editor';
 
 import { cleanHlTags, getHighlights, SnippetEditor } from './editor';
 import { SnippetHeading } from './heading';

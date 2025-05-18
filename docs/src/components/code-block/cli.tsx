@@ -2,7 +2,7 @@
 
 import { BiTerminal } from 'react-icons/bi';
 
-import { MonacoEditor } from '@getgrit/editor';
+import { MonacoEditor } from '@/components/editor/monaco-editor';
 
 import { CopyButton } from './buttons';
 
