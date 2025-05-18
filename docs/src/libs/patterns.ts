@@ -69,6 +69,17 @@ const getAllPatterns: () => Promise<EnhancedPattern[]> = async () => {
 
     // Fallback patterns for static generation
     return [
+      {
+        __typename: 'ResolvedGritPattern',
+        name: 'example-pattern',
+        title: 'Example Pattern',
+        description: 'An example pattern for static generation',
+        body: '',
+        engine: 'grit',
+        language: 'UNIVERSAL',
+        localName: 'example-pattern',
+        gitHubUrl: 'https://github.com/getgrit/gritql',
+      },
     ];
   } catch (e) {
     console.error('failed to fetch dynamic patterns', e);
