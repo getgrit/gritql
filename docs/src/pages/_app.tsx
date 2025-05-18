@@ -4,18 +4,13 @@ import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import NProgress from 'nprogress';
 
-import config from '@/statics/config';
 import { Template } from '@/templates/plain';
 import { WrapperContainer } from '@/templates/wrapper';
 import { useMonacoEditorInit } from '@/components/editor/monaco-editor-init';
-import { AnalyticsProvider } from '@/components/analytics/analytics';
 
 import '@/styles/main.css';
 import 'nprogress/nprogress.css';
 
-if (typeof window !== 'undefined') {
-  initTracing(config.SENTRY_DSN);
-}
 
 function MyApp({ Component, pageProps, router }: AppProps) {
   NProgress.configure({ showSpinner: false });
@@ -45,7 +40,6 @@ function MyApp({ Component, pageProps, router }: AppProps) {
   const title = pageProps.markdoc?.frontmatter?.title;
 
   return (
-    <AnalyticsProvider>
         <Template path={router.pathname} layout='docs'>
           <Head>
             {title && <title>{title}</title>}
@@ -55,7 +49,6 @@ function MyApp({ Component, pageProps, router }: AppProps) {
             <Component {...pageProps} />
           </WrapperContainer>
         </Template>
-    </AnalyticsProvider>
   );
 }
 
