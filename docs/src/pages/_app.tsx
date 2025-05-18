@@ -45,7 +45,7 @@ function MyApp({ Component, pageProps, router }: AppProps) {
   const title = pageProps.markdoc?.frontmatter?.title;
 
   return (
-    <AnalyticsProvider writeKey={config.SEGMENT_KEY as string}>
+    <AnalyticsProvider>
       <GritFeatureFlagProvider>
         <Template path={router.pathname} layout='docs'>
           <Head>

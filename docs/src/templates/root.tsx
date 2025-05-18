@@ -19,7 +19,7 @@ export function RootClientLayout({ children, ...props }: LayoutProps) {
   return (
     <html lang='en'>
       <body>
-        <AnalyticsProvider writeKey={config.SEGMENT_KEY as string}>
+        <AnalyticsProvider>
           <GritFeatureFlagProvider>
             <Template path={pathname} {...props}>
               <Head>
