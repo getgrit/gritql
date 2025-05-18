@@ -1,0 +1,37 @@
+---
+title: File Imports
+---
+
+Since managing package imports is a common task, Grit includes standard patterns for declaratively adding, removing, and updating imports.
+
+## `ensure_import_from`
+
+This pattern ensures that the given `$value` is imported from the given `$source` (adding the import if it does not exist).
+
+Note: because this is a _pattern_ you must match some `$value` against it.
+
+{% diffeditor %}
+
+```grit
+`class $_ extends $comp { $_ }` where {
+  $comp <: `Component`,
+  $source = `"React"`,
+  $comp <: ensure_import_from($source)
+}
+```
+
+```typescript
+class Button extends Component {
+  // ...
+}
+```
+
+```typescript
+import { Component } from 'React';
+
+class Button extends Component {
+  // ...
+}
+```
+
+{% /diffeditor %}

@@ -1,0 +1,97 @@
+---
+title: Grit Authoring Guide
+---
+
+This guide is for adding content to the Grit documentation. It is not meant for user consumption.
+
+Our docs are primarily written with [Markdoc](https://markdoc.dev).
+
+## Terminology
+
+1. Always refer to metavariables as `metavariables`, not `meta-variables` or `variables`.
+2. Patterns accept `arguments`, not `parameters` or `variables`.
+
+## Tips
+
+1. Use `# Header {% #custom-id %}` to add a custom id anchor to a header. This is useful for linking to a specific section.
+
+## Custom tags
+
+### `note`
+
+Notes show an aside or important detail.
+
+{% note %}
+**Note**: The default type of a note is info.
+{% /note %}
+
+{% note type="warning" %}
+**Warning**: Notes can also be of `type="warning"`.
+{% /note %}
+
+### `gate`
+
+`gate` can be used to hide content behind a feature flag.
+
+{% gate flag="LANG_CSS" %}
+This content is hidden behind the `foo` feature flag.
+{% /gate %}
+
+### `collapse`
+
+Collapses are used to hide large blocks of text.
+
+{% collapse title="Show details" %}
+This is hidden.
+
+`className` is a prop that can be passed to the collapse tag.
+`boxed` is a boolean prop.
+{% /collapse %}
+
+{% collapse title="Boxed collapse" boxed=true %}
+This is a boxed collapse.
+{% /collapse %}
+
+### `diffeditor`
+
+Diff editors are used to show the effect of applying a pattern to a piece of code.
+
+{% diffeditor %}
+
+```grit
+`foo($x)` => `bar($x)` // the pattern, displayed first
+```
+
+```javascript
+`foo(1)`; // the code before, displayed bottom left
+```
+
+```javascript
+`bar(1)`; // the code before, displayed bottom right
+```
+
+{% /diffeditor %}
+
+### `matcheditor`
+
+Match editor is used to show pattern and the output with code highlight.
+
+{% matcheditor %}
+
+```grit
+// A pattern you want to showcase highlighting for. (This is eg. only)
+`foo($x)` => `bar($x)`
+```
+
+```javascript
+// Highlights that span a few characters.
+const {hl}foo{/hl} = bar.{hl}getVal{/hl}(1);
+
+// Highlights that span multiple lines.
+const match = {hl}{
+  name: 'tag',
+  values: [1, 2, 3]
+}{/hl};
+```
+
+{% /matcheditor %}

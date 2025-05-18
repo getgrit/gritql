@@ -1,0 +1,9 @@
+{
+  "framework": "nextjs",
+  "github": {
+    "silent": true
+  },
+  "installCommand": "cd ../.. && ./ops/ci/pruned_install.sh @getgrit/docs",
+  "buildCommand": "cd ../.. && yarn turbo build --filter='@getgrit/docs...'",
+  "ignoreCommand": "cd ../.. && ./ops/ci/check_run.sh '@getgrit/docs'"
+}

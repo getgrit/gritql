@@ -1,0 +1,41 @@
+---
+title: Autoreview
+---
+
+{% partial file="paid.md" /%}
+
+Grit auto-review is a feature that allows you to automatically review pull requests for potential issues before merging.
+
+## Process
+
+When enabled, Grit will automatically review all pull requests for potential issues (including drafts). If the pull request **author** is not opted into any rules, the review will be skipped.
+
+Grit reports the review status as a [check](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/about-status-checks#checks) on the pull request.
+
+![pull request check](/autoreview-check.png)
+
+After Grit completes its review of the pull request, it will report the results as a check on the pull request. The check will pass if there are no blocking issues found, and fail if there are blocking issues found.
+
+Additionally, Grit will leave line-by-line comments on the pull request to provide more detailed information about the issues found. (Note: this is skipped on draft pull requests.)
+
+### Levels
+
+When a rule has a level of `warn` it will not fail the review if the rule is violated (but a comment will still be left).
+
+Rules with a level of `error` will block the pull request by adding a comment and marking the pull request as failed with an ❌ in the [status check](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/about-status-checks).
+
+Disabled rules will not be reviewed.
+
+## Adding new rules
+
+In addition to adding rules through the web UI, you can also simply mention `/grit new` in any pull request comment to have Grit synthesize a new rule based on the feedback you provide.
+
+{% partial file="slash_new.md" /%}
+
+## Improving recommendations
+
+The best way to improve the quality of the Grit reviews is to provide feedback on pull requests.
+
+{% partial file="slash_reject.md" /%}
+
+{% partial file="slash_report.md" /%}

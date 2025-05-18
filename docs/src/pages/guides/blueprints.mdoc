@@ -1,0 +1,85 @@
+---
+title: Blueprints
+---
+
+Blueprints are the main way that you can guide the [Grit Agent](/guides/agent) in performing large scale changes or other repetitive tasks.
+Written in natural language, a blueprint is meant to capture the intent of the changes you want to make and to provide enough guidance for the agent to fill in the details.
+
+## Recommended format
+
+Blueprints themselves are simply markdown files and do not need to follow any special format—but a few recommended sections can be recognized automatically.
+
+### GritQL Queries
+
+If you want to draw Grit's attention to specific parts of a codebase, you can embed [GritQL](/language/overview) queries into your blueprint. Just include a `grit` fenced code block with your query and the Grit agent will automatically focus on the results of the query.
+
+Note that Grit will _not_ necessarily edit every line of code that matches a query, so it is fine to also include queries that are just meant for additional context.
+
+### Examples
+
+Especially when asking Grit to make the same kind of changes many times, it is helpful to include "before" and "after" examples. Grit will use these to ground its understanding of what you want to change.
+
+We recommend using fenced code blocks with the `example` language to include these examples.
+
+### File and commit references
+
+If you want Grit to reference a specific file, just mention it by name in your blueprint. You can also use SHA references to point to specific commits, just by including the 6-character commit hash in the blueprint text. GitHub issues and pull requests can also be referenced by number.
+
+### Guidelines
+
+If you include a `guidelines` section, Grit will use that section to to double check that it is on the right track. Grit won't publish a pull request until it is confident that all your guidelines have been satisfied.
+
+Keep guidelines specific and actionable. Bullet points work well for this.
+
+## Example Blueprint
+
+This is an example blueprint that shows how you might use GritQL queries and examples to guide the agent in replacing your observability implementation.
+
+````markdown {% fileName=".grit/blueprints/fix_logging.md" %}
+# Standardize Open Telemetry spans
+
+Our codebase uses a mix of Open Telemetry spans and, historically, statsd metrics.
+We would like to remove all custom metrics and instead simple attach appropriate attributes
+to our traces.
+
+## Example
+
+Before, we used `statsd` to report metrics like this:
+
+```python
+from datadog import statsd
+
+statsd.gauge('example_metric.gauge', 10, tags=["environment:dev"])
+```
+
+We would like to simply attach these attributes to the current span instead:
+
+```python
+from opentelemetry import metrics
+
+span = trace.get_current_span()
+span.set_attribute("example_metric.gauge", 10)
+span.set_attribute("environment", "dev")
+```
+
+## Scope
+
+We've already started the migration and configured the Open Telemetry SDK in #1093.
+Now this change should be made across the codebase.
+
+At least one edit is needed everywhere statsd is used:
+
+```grit
+language python
+
+`statsd.$_($_)`
+```
+
+## Guidelines
+
+- Remember to remove the `statsd` import once it is no longer used.
+- Where possible, attempt to attach [semantic conventions](https://opentelemetry.io/docs/specs/semconv/)
+  based on the existing metric tags.
+- Make all the edits to a particular file in a single pull request,
+  but only edit 5 files per pull request.
+````

@@ -1,0 +1,2 @@
+- `level`: (Optional, one of `none`, `info`, `warn`, `error`) The enforcement level of the pattern for running diagnostics via `grit check`. Defaults to `info`.
+- `tags`: (Optional, `string[]`) A list of tags which can be used to filter patterns.

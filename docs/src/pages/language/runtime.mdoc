@@ -1,0 +1,11 @@
+---
+title: GritQL Runtime
+---
+
+This page collects information about the GritQL runtime.
+
+## Randomness
+
+The GritQL runtime uses a _static_ seed for built-in random functions like [random](/language/functions#random) and [shuffle](/language/functions#shuffle).
+
+This makes the runtime more deterministic, which is useful for testing and debugging, but means you should _not_ use these functions for security purposes or for anything expecting true randomness.

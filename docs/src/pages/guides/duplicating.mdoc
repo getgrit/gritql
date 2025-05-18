@@ -1,0 +1,41 @@
+---
+title: Duplicating code with the `text()` function
+---
+
+When using [GritQL](https://docs.grit.io/language/overview), rewrites are typically automatically applied on any AST nodes that are matched in the original text.
+
+However, there are cases where you may want to preserve the original code while inserting a modified version of it. This can be done by using the [`text()`](/language/functions#text) function to capture a detached copy of the original code.
+
+For example, consider the following code:
+
+{% diffeditor %}
+
+```grit
+`const $identifier = $obj` as $target where {
+    // Capture an immutable copy of $target
+    $original = text($target),
+    // Apply rewrites as normal
+    $identifier => `b`,
+    $obj <: contains `foo` => `bar`
+}
+// replace $target with $original, and insert $target after it
+=> `$original
+$target`
+```
+
+```javascript
+const a = {
+  something: foo
+}
+```
+
+```javascript
+const a = {
+  something: foo
+}
+const b = {
+  something: bar
+}
+```
+
+{% /diffeditor %}

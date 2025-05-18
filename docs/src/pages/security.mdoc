@@ -1,0 +1,49 @@
+---
+title: Data Security Overview
+---
+
+We take the responsibility of securing our customers' source code very seriously. We have designed our system with security and privacy in mind from the ground up.
+
+{% note %}
+**Grit is proudly SOC2 Type I compliant. You can request a copy of our audit report by emailing [security@grit.io](mailto:security@grit.io).**
+{% /note %}
+
+## Where is Grit hosted?
+
+Grit is hosted on Google Cloud Platform, in the United States. We use Google Cloud's [secure infrastructure](https://cloud.google.com/security/infrastructure/design) to ensure the privacy and security of customer data.
+
+You can find a full list of our subprocessors [here](/suppliers).
+
+## How does Grit ensure the privacy and security of customer data?
+
+Our system is designed with strong security measures including encryption [at rest](https://cloud.google.com/docs/security/encryption/default-encryption) and [in transit](https://cloud.google.com/docs/security/encryption-in-transit). We build on top of Google Cloud Platform's [Cloud Security](https://cloud.google.com/security/) with our own additional security measures.
+
+Our strongest security measure is running code analysis in isolated, ephemeral virtual machines. This ensures that customer repositories are never exposed to other customers and are only stored for the duration of the analysis. Once analysis is complete, the virtual machine is destroyed and the data is deleted within 30 minutes.
+
+## Does Grit train AI models on customer data?
+
+Customer data is used exclusively to provide our services to you. We do not train generally available models on customer data.
+
+If requested, we may develop a fine-tuned model for a customer using their data. Such models are used exclusively for that customer and not shared with other customers.
+
+## Where can I report security issues?
+
+If you have a security concern, please contact us. You can reach us at [security@grit.io](mailto:security@grit.io).
+
+## What authentication and authorization mechanisms does Grit use?
+
+We primarily rely on GitHub for authentication and authorization. Users connect to Grit through OAuth, and can access the same repositories on Grit that they have access to on GitHub. We do not allow escalation of privileges or store GitHub credentials.
+
+For enterprise customers, we also support SAML-based single sign-on (SSO) through Auth0/Okta.
+
+## How does Grit ensure the ongoing security of its codebase?
+
+Grit works with industry experts to conduct penetration tests on a regular basis. In addition to penetration tests, we also implement daily code reviews, static analysis checks, and dependency scanning at the code level.
+
+## Who owns source code modified by Grit?
+
+You own all of your source code. Grit does not claim any ownership rights in your source code, nor do we assume any responsibility for your code. You are responsible for ensuring that your code complies with all applicable laws and regulations.
+
+## What data does Grit collect?
+
+We rely on source code data, including file content and reviews, to provide our services to you. We collect data to provide the service, some of which is then saved for further analysis and product improvements.

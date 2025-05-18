@@ -1,0 +1,61 @@
+---
+title: Custom Workflows
+---
+
+{% partial file="alpha.md" /%}
+
+Custom workflows are a powerful way to automate changes to your codebase, typically in cases where a change needs to be made across dozens or hundreds of files and a [pattern](/guides/patterns) is not sufficient.
+
+They are written in TypeScript and provide a few key features:
+
+- The built in [standard library](/s/api-stdlib) provides utilities for common operations like applying patterns, renaming files, and formatting code.
+- Workflows are deterministic and resumable&mdash;they can be continuously rescanned and executed. This is particularly important for making progress on migrations without pausing all development.
+- Workflows can be invoked from the [CLI](/cli/quickstart) or from the [Grit UI](https://app.grit.io). (Note: currently only standard workflows are available in the UI.)
+
+## Running workflows
+
+Workflows can be invoked from the [CLI](/cli/quickstart) or from the [Grit UI](https://app.grit.io). (Note: currently only standard workflows are available in the UI.)
+
+To run a workflow from the CLI, use the `grit apply` command:
+
+```bash
+grit apply js_to_ts
+```
+
+You can also list all available workflows from the CLI:
+
+```bash
+grit workflows list
+```
+
+## Workflow files
+
+The entrypoint for a workflow is a file in the `.grit/workflows` directory. This file _must_ have a `.ts` extension and export an async function called `execute`.
+
+When the workflow is executed, the `execute` function is called with an [object](/sdk/api#workflow-options) containing the targeted paths.
+
+Within the function, you have the full power of TypeScript for writing your workflow. The actual _transformations_ that you want to make to your codebase are done by invoking [steps](#steps) from the standard library.
+
+## Steps
+
+Steps are simply async functions available from the Grit SDK. They are the building blocks of workflows.
+
+All I/O operations in Grit are performed via steps. This includes reading and writing files, executing shell commands, and applying patterns. By using steps, Grit can track the changes made to your codebase and provide a detailed history of all changes.
+
+{% note type="warning" %}
+While you can use packages and functions within your workflow, all logic that modifies the codebase must be done via steps: your workflow code itself should not have any IO operations.
+{% /note %}
+
+## Sample Workflow
+
+For example, here's a simple migration that applies a pattern.
+This migration would be placed in `.grit/workflows/sum.ts` and invoked via `grit apply sum target.js`.
+
+```typescript {% fileName=".grit/workflows/sum.ts" %}
+import { stdlib } from '@getgrit/api';
+
+export async function execute() {
+  await stdlib.apply({ query: '`sum($a, $b)` => `sum($b, $a)`' }, {});
+  return { success: true, message: 'Migration complete' };
+}
+```

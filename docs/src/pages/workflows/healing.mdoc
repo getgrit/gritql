@@ -1,0 +1,59 @@
+---
+title: Pull request auto-healing
+---
+
+{% partial file="paid.md" /%}
+
+Grit can automatically fix failing tests on pull requests by retrying flaky tests, running configurable shell commands, and using AI to correct simple errors.
+
+Auto-healing is disabled by default and requires a _double opt-in_ before Grit will attempt to make changes to a failing pull request.:
+
+- The **failing check** must [have auto-healing activated](#test-settings) in the repository settings.
+- The **pull request author** must [enable auto-healing](#user-settings) for their pull requests.
+  (**Grit will always attempt to heal pull requests it opened.**)
+- The failing check must have run on the **most recent commit** in the pull request (pushing a new commit will cancel ongoing healing for the previous commit).
+
+## Check settings
+
+Check settings determine which checks Grit monitors for failures. You can enable auto-healing for specific checks or all checks in a repository.
+
+Three different healing strategies are available:
+
+- **AI healing**. This is the default strategy and is intended for simple linting or test errors that can be fixed with limited intelligence. If there are too many errors or errors are too complex, this strategy will not commit a fix.
+- **Custom shell commands**. You can add any number of custom shell commands as part of a check's healing strategy.
+  These commands run on the failing commit from the repository root. These are particularly useful for automatically fixing linting errors or running code formatters.
+- **Rerun**. This helps with flaky tests. It will re-run all failed jobs in a workflow.
+
+For example, the following configuration attempts to fix linting errors in a project with TypeScript and Rust components:
+
+![Test settings](/healing.png)
+
+Strategies can be reordered using drag and drop. In order to improve performance, shell commands are run consecutively on one clone of the repository, and so they are treated as one group when reordering.
+
+## User settings
+
+Activating auto-healing does not immediately apply to all developers on a repository. Instead, each developer must specifically allow Grit to heal their pull requests. This allows you to gradually roll out the feature to your team.
+
+To enable auto-healing on _your_ pull requests, head to the project page and select the "Testing" tab then flip the switch to enable auto-healing.
+
+![User healing](/heal-user.png)
+
+## Supported checks
+
+Grit does not support all checks. Currently, Grit can handle:
+
+### GitHub Actions
+
+GitHub Actions [workflows](https://docs.github.com/en/actions/using-workflows/about-workflows), which correspond to YAML files in your repository's .github/workflows directory.
+
+No additional configuration is required to enable auto-healing for GitHub Actions besides [installing the Grit app](https://github.com/apps/grit-app).
+
+### CircleCI
+
+CircleCI workflows can be fixed _if_ CircleCI is configured to report [checks](https://circleci.com/docs/enable-checks/) to GitHub. Additionally, you must configure the [`CIRCLECI_TOKEN`](/guides/secrets#circle-ci) secret in the Grit app.
+
+CircleCI workflows are reported as a single check to GitHub, so Grit will attempt to heal all jobs in a workflow if any of them fail. Grit will intelligently inspect the logs to determine which specific jobs failed.
+
+{% note type="warning" %}
+**Warning**: Grit requires _Checks_ to be enabled in CircleCI, which are currently only [supported](https://circleci.com/docs/enable-checks/) by the CircleCI OAuth app. You will need to switch to the OAuth app to use Grit with CircleCI.
+{% /note %}

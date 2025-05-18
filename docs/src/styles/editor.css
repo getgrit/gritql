@@ -1,0 +1,102 @@
+.is-dirty .modified-in-monaco-diff-editor:after {
+  color: #9ca3af;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  z-index: 1;
+  transform: translate(0, -100%);
+  text-align: center;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 22px;
+  font-family: "Inter";
+}
+
+.is-dirty.error .modified-in-monaco-diff-editor:after {
+  content: "Error!";
+}
+
+.is-dirty.pending .modified-in-monaco-diff-editor:after {
+  content: "Waiting for new run";
+}
+
+.is-dirty.loading .modified-in-monaco-diff-editor:after {
+  content: "Applying pattern";
+}
+
+.is-dirty.empty .modified-in-monaco-diff-editor:after {
+  content: "No results found";
+}
+
+.is-dirty .modified-in-monaco-diff-editor:before {
+  content: " ";
+  backdrop-filter: blur(3px);
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background-color: rgb(47 47 47 / 80%);
+}
+
+.is-dirty .monaco-editor .diagonal-fill {
+  display: none !important;
+}
+
+.is-dirty .cdr {
+  background-color: inherit !important;
+}
+
+.is-dirty .cmdr {
+  background-color: inherit !important;
+}
+
+.monaco-diff-editor .margin {
+  min-width: 45px !important;
+}
+
+.monaco-diff-editor .monaco-scrollable-element.editor-scrollable {
+  left: 45px !important;
+}
+
+.monaco-diff-editor .margin-view-overlays {
+  min-width: 45px !important;
+}
+
+.monaco-diff-editor .editor.modified {
+  position: relative;
+}
+
+.match-highlight {
+  background-color: #564aff;
+  padding: 4px 1px;
+  margin: -4px -1px;
+  color: #000;
+}
+
+.is-match.monaco-diff-editor .editor.original {
+  width: 100% !important;
+}
+
+.is-match.monaco-diff-editor .editor.original .original-in-monaco-diff-editor {
+  width: 100% !important;
+}
+
+.is-match.monaco-diff-editor .editor.original .original-in-monaco-diff-editor .overflow-guard {
+  width: 100% !important;
+}
+
+.is-match.monaco-diff-editor
+  .editor.original
+  .original-in-monaco-diff-editor
+  .overflow-guard
+  .editor-scrollable {
+  width: 100% !important;
+}
+
+.is-match.monaco-diff-editor .editor.modified {
+  display: none;
+  left: 0 !important;
+}

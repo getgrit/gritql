@@ -1,0 +1,11 @@
+- The `name` of the file is used as the name of the pattern (without the `.md` extension).
+- The `title` of the pattern is retrieved from the first heading in the file. This can be overridden by adding a `title` field in the front matter.
+- The `description` of the pattern is retrieved from the first non-heading paragraph in the file.
+- The GritQL `body` is retrieved from the first fenced code block in the file.
+- Additional pattern metadata can be configured as YAML in the frontmatter of the markdown file, delineated between `---` lines at the start of the document.
+  {% partial file="pattern_shared_meta.md" /%}
+- Subheadings are used for each test case, following these conventions:
+  - If a subheading has a single code block, it represents a test case that should be matched by the pattern. You don't need to provide a transformed example.
+  - If a subheading has two code blocks, the first represents the input and the second represents the expected output.
+  - A negative test case should have two identical code blocks.
+  - Within the sample patterns, you can use `// @filename: example.js` to represent multiple input/output files that should be tested as a group - like [this example](https://github.com/getgrit/stdlib/blob/main/.grit/patterns/js/split_trpc_router.md?plain=1#L129).

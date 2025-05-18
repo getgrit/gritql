@@ -1,0 +1,35 @@
+---
+title: Continuous Integration
+---
+
+Grit patterns can be configured to run as part of your CI pipeline on GitHub.
+
+## Setup
+
+To get started, create a [configuration file](/guides/config) at `.grit/grit.yaml`. Add patterns that you want checked to your `grit.yaml`.
+
+## Enabling hosted checks
+
+Ensure that you have installed Grit's [GitHub App](https://github.com/apps/grit-app). Once installed, navigate to your [project](https://app.grit.io/projects) from the web app and enable the Checks toggle.
+
+![Checks toggle](/check-toggle.png)
+
+Bear in mind that patterns must be enforced (i.e. have a level of `error` or `warn`) in order to be run as part of CI, as per the details below.
+
+### How it works
+
+By default, CI checks run on all files in a commit which are not excluded by `.gritignore`. Grit then reports on
+patterns which have a level of `warn` or higher, and fails the CI check if any files trigger an `error` level pattern
+which did not previously trigger that pattern on the last commit to the repo's default branch.
+
+This means that Grit's CI mechanism is sensitive to the _trend_ of the
+codebase: you can add currently failing patterns to your configuration without breaking the build, and fix them
+incrementally in the knowledge that Grit will catch regressions.
+
+## GitHub Action
+
+As an alternative to the Grit GitHub App, you can use GitHub Actions to run Grit checks. The Grit GitHub Action is [available here](https://github.com/getgrit/github-action-check).
+
+{% note %}
+**Note**: The GitHub action does not include a cache of previous results, so it will annotate all patterns with a level of `warn` or higher—even if they were previously reported on the main branch.
+{% /note %}

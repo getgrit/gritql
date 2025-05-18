@@ -1,0 +1,62 @@
+---
+title: Migrating React components
+---
+
+Complex web applications frequently contain numerous React components.
+Migrating them manually is time-consuming and error-prone, but Grit can help.
+
+## Matching React components directly
+
+JSX elements are supported by Grit, so you can write patterns that match and transform them.
+
+For example, this pattern will replace all components named `Foo` with `Bar`:
+
+{% diffeditor %}
+
+```grit
+`<Foo $props />` => `<Bar $props />`
+```
+
+```javascript
+<div>
+  <Foo alone='yes' />
+  <Foo name='sam'>Test</Foo>
+</div>
+```
+
+```javascript
+<div>
+  <Bar alone='yes' />
+  <Foo name='sam'>Test</Foo>
+</div>
+```
+
+{% /diffeditor %}
+
+However, this pattern will not detect components that have children, as you can see in the diff above.
+To catch patterns that _might_ have children, you would need to use an `or`:
+
+{% diffeditor %}
+
+```grit
+or {
+  `<Foo $props />` => `<Bar $props />`,
+  `<Foo $props>$children</Foo>` => `<Bar $props>$children</Bar>`
+}
+```
+
+```javascript
+<div>
+  <Foo alone='yes' />
+  <Foo name='sam'>Test</Foo>
+</div>
+```
+
+```javascript
+<div>
+  <Bar alone='yes' />
+  <Bar name='sam'>Test</Bar>
+</div>
+```
+
+{% /diffeditor %}
