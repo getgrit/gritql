@@ -1,12 +1,6 @@
 # Docs App
 
-TODO[chai]: add info docs on how to setup the app with Motif.
-
-## FAQ
-
-- Why is authentication not enabled on the docsite?
-
-  A: The docsite is hosted on a different domain (currently `docs.grit.fyi`) than the web app. We authenticate using cookies, which are only shared within the same domain.
+This is a simple Next.js application hosting the GritQL docs.
 
 ## Dev
 
