@@ -45,7 +45,8 @@
     "tailwindcss-animate": "^1.0.7",
     "turbo": "^1.6.3",
     "web-tree-sitter-wasm-bindgen": "0.20.8",
-    "quickjs-emscripten": "0.29.1"
+    "quickjs-emscripten": "0.29.1",
+    "@monaco-editor/react": "^4.6.0"
   },
   "devDependencies": {
     "@types/node": "18.7.13",

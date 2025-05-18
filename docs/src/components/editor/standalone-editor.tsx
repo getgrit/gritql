@@ -6,16 +6,7 @@ import cx from 'classnames';
 
 import { CloseButton } from '@/components/code-block/buttons';
 import { SnippetHeading } from '@/components/code-block/heading';
-import {
-  editor,
-  extractMetavariables,
-  MonacoDiffEditor,
-  MonacoEditor,
-  useDelayedLoader,
-  useDiffEditor,
-  useEditorCursor,
-  useStandaloneEditor,
-} from '@getgrit/editor';
+
 import {
   extractLanguageFromPatternBody,
   getEditorLangIdFromLanguage,
