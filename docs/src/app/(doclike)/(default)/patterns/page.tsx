@@ -1,82 +1,84 @@
-import { groupBy } from 'lodash';
 import type { Metadata } from 'next';
 
-import { Heading } from '@/components/heading';
-import { PatternsList } from '@/components/patterns/list';
-import { getPatternsList } from '@/libs/patterns';
-import { EnhancedPattern } from '@/libs/patterns';
+// import { Heading } from '@/components/heading';
+// import { PatternsList } from '@/components/patterns/list';
+// import { getPatternsList } from '@/libs/patterns';
+import type { EnhancedPattern } from '@/libs/patterns';
 
 export type DocPattern = Partial<Omit<EnhancedPattern, '__typename'>> & {
   preview?: boolean;
   link?: string;
 };
 
-type OrganizedPatterns = Record<'migration' | 'lint' | 'misc', DocPattern[]>;
+// type OrganizedPatterns = Record<'migration' | 'lint' | 'misc', DocPattern[]>;
 
-const getPatterns = async () => {
-  const remotePatterns = await getPatternsList();
+// const getPatterns = async () => {
+//   const remotePatterns = await getPatternsList();
 
-  const organizedPatterns = groupBy(remotePatterns, (pattern) => {
-    if (pattern.tags?.includes('migration')) {
-      return 'migration';
-    }
+//   const organizedPatterns = groupBy(remotePatterns, (pattern) => {
+//     if (pattern.tags?.includes('migration')) {
+//       return 'migration';
+//     }
 
-    if (pattern.tags?.includes('lint')) {
-      return 'lint';
-    }
+//     if (pattern.tags?.includes('lint')) {
+//       return 'lint';
+//     }
 
-    return 'misc';
-  });
+//     return 'misc';
+//   });
 
-  const staticPatterns = getStaticPatterns();
-  const finalPatterns = {
-    lint: [...(organizedPatterns.lint || []), ...staticPatterns.lint],
-    migration: [...(organizedPatterns.migration || []), ...staticPatterns.migration],
-    misc: [...(organizedPatterns.misc || []), ...staticPatterns.misc],
-  };
+//   const staticPatterns = getStaticPatterns();
+//   const finalPatterns = {
+//     lint: [...(organizedPatterns.lint || []), ...staticPatterns.lint],
+//     migration: [...(organizedPatterns.migration || []), ...staticPatterns.migration],
+//     misc: [...(organizedPatterns.misc || []), ...staticPatterns.misc],
+//   };
 
-  return finalPatterns;
-};
+//   return finalPatterns;
+// };
 
-const getStaticPatterns = (): OrganizedPatterns => {
-  return {
-    migration: [
-      {
-        title: 'JavaScript to TypeScript',
-        name: 'js_to_ts',
-        preview: false,
-      },
-      {
-        title: 'AngularJS to Angular',
-        preview: true,
-      },
-      {
-        title: 'Angular to React',
-        preview: true,
-      },
-    ],
-    lint: [
-      {
-        title: 'Harden DOM usage',
-        preview: true,
-      },
-    ],
-    misc: [],
-  };
-};
+// const getStaticPatterns = (): OrganizedPatterns => {
+//   return {
+//     migration: [
+//       {
+//         title: 'JavaScript to TypeScript',
+//         name: 'js_to_ts',
+//         preview: false,
+//       },
+//       {
+//         title: 'AngularJS to Angular',
+//         preview: true,
+//       },
+//       {
+//         title: 'Angular to React',
+//         preview: true,
+//       },
+//     ],
+//     lint: [
+//       {
+//         title: 'Harden DOM usage',
+//         preview: true,
+//       },
+//     ],
+//     misc: [],
+//   };
+// };
 
 export const metadata: Metadata = {
   title: 'Available Patterns',
 };
 
 export default async function Page() {
-  const patterns = await getPatterns();
-  const patternCount = Object.values(patterns).flat().length;
+  // const patterns = await getPatterns();
+  // const patternCount = Object.values(patterns).flat().length;
 
   return (
     <>
       <h1 id={'main-heading'}>Pattern Library</h1>
       <p>
+        You can find the standard library patterns <a href="http://github.com/getgrit/stdlib">on GitHub</a>.
+      </p>
+      {/* <p>
         Grit comes with {patternCount} out of the box patterns that can be leveraged immediately.
       </p>
       {patterns.migration.length > 0 && (
@@ -111,7 +113,7 @@ export default async function Page() {
           <PatternsList patterns={patterns.misc} />
         </>
       )}
-      <p>* Patterns with an asterisk are in private alpha with select customers.</p>
+      <p>* Patterns with an asterisk are in private alpha with select customers.</p> */}
     </>
   );
 }
