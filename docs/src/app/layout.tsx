@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 
-import { StandardLibraryProvider } from '@/components/providers/pattern-library';
-import { getStdlib } from '@/libs/patterns';
+import { RootClientLayout } from '@/templates/root';
 
 export const metadata: Metadata = {
   title: {
@@ -11,7 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const remotePatterns = await getStdlib();
-
-  return <StandardLibraryProvider patterns={remotePatterns}>{children}</StandardLibraryProvider>;
+  return <RootClientLayout layout='docs'>{children}</RootClientLayout>;
 }

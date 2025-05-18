@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "stop": "kill -9 $(lsof -t -i:3200) || true",
-    "dev": "doppler run -- next dev -p 3200",
+    "dev": "next dev -p 3200",
     "clean": "rm -rf ./node_modules && rm -rf .next",
     "build": "next build",
     "test": "yarn test:visual",
