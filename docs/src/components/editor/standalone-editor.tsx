@@ -1,17 +1,23 @@
 'use client';
 
 import { useMemo, createContext, ReactNode, useContext, useEffect, useState } from 'react';
-
+import { editor } from 'monaco-editor';
 import cx from 'classnames';
 
 import { CloseButton } from '@/components/code-block/buttons';
 import { SnippetHeading } from '@/components/code-block/heading';
+import { MonacoEditor } from './monaco-editor';
+import { MonacoDiffEditor } from './monaco-diff-editor';
+import { useDiffEditor } from '@/hooks/use-diff-editor';
+import { useEditorCursor } from '@/hooks/use-editor-cursor';
+import { useDelayedLoader } from '@/hooks/use-delayed-loader';
+import { extractMetavariables } from '@/utils/extract-metavariables';
 
 import {
   extractLanguageFromPatternBody,
   getEditorLangIdFromLanguage,
   isMatch,
-} from '@getgrit/universal';
+} from '../../universal';
 
 const EDITOR_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
   scrollbar: {

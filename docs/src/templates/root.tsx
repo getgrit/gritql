@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import config from '@/statics/config';
 import { Template, TemplateProps } from '@/templates/plain';
 import { useMonacoEditorInit } from '@/components/editor/monaco-editor-init';
-import { AnalyticsProvider } from '@/components/analytics';
 
 import '@/styles/main.css';
 
@@ -19,14 +18,12 @@ export function RootClientLayout({ children, ...props }: LayoutProps) {
   return (
     <html lang='en'>
       <body>
-        <AnalyticsProvider>
             <Template path={pathname} {...props}>
               <Head>
                 <link rel='icon' href='/favicon.svg' />
               </Head>
               {children}
             </Template>
-        </AnalyticsProvider>
       </body>
     </html>
   );

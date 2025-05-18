@@ -182,12 +182,3 @@ export const makeAnalysisLog = (message: string, level: number = 300): AnalysisL
   level,
   message,
 });
-
-export const extractLanguageFromPatternBody = (body: string): string | undefined => {
-  const match = body.match(/```(\w+)/);
-  return match ? match[1] : undefined;
-};
-
-export const extractPath = (path: string): string => {
-  return path.replace(/^\/+/, '');
-}; 

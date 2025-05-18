@@ -3,6 +3,7 @@ import { BiCode, BiCodeBlock, BiTerminal } from 'react-icons/bi';
 import { AiFillThunderbolt } from 'react-icons/ai';
 import upperCase from 'lodash/upperCase';
 import { CSSProperties } from 'react';
+import React from 'react';
 
 type HeadingProps = {
   fileName?: string;
@@ -51,4 +52,16 @@ export const Heading = ({
         </span>
       );
   }
+};
+
+interface SnippetHeadingProps {
+  title: string;
+}
+
+export const SnippetHeading: React.FC<SnippetHeadingProps> = ({ title }) => {
+  return (
+    <div className="text-sm font-medium text-neutral-200">
+      {title}
+    </div>
+  );
 };
