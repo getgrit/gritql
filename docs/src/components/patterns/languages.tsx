@@ -19,7 +19,7 @@ import {
 } from 'react-icons/si';
 import { DocPattern } from 'src/app/(doclike)/(default)/patterns/page';
 
-import { Language } from '../../universal';
+import { Language } from '@/universal/patterns/types';
 
 export const languageConfigs: {
   [key in Language]: {

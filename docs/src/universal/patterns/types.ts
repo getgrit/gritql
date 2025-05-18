@@ -10,6 +10,28 @@ export type FilePin = {
   rewrittenContents: undefined | string;
 };
 
+export const Language = {
+  Css: 'CSS',
+  CSharp: 'C_SHARP',
+  Go: 'GO',
+  Grit: 'GRIT',
+  Hcl: 'HCL',
+  Html: 'HTML',
+  Java: 'JAVA',
+  Js: 'JS',
+  Json: 'JSON',
+  Markdown: 'MARKDOWN',
+  Php: 'PHP',
+  Python: 'PYTHON',
+  Ruby: 'RUBY',
+  Rust: 'RUST',
+  Sol: 'SOL',
+  Sql: 'SQL',
+  Toml: 'TOML',
+  Universal: 'UNIVERSAL',
+  Yaml: 'YAML'
+} as const;
+
 export type Repo = {
   owner: string;
   name: string;
@@ -20,6 +42,8 @@ export function makeRepo(fullName: string, host: string) {
   return {
     owner: nameParts[0]!,
     name: nameParts.slice(1).join('/'),
+    full_name: fullName,
+    host,
   };
 }
 
