@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 import Head from 'next/head';
 
-import { useAnalytics } from '@getgrit/shared';
+import { useAnalytics } from '@/components/analytics/analytics';
 
 export default function Custom404() {
   const { capture } = useAnalytics();

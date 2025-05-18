@@ -8,7 +8,7 @@ import config from '@/statics/config';
 import { Template } from '@/templates/plain';
 import { WrapperContainer } from '@/templates/wrapper';
 import { useMonacoEditorInit } from '@getgrit/editor';
-import { AnalyticsProvider, GritFeatureFlagProvider, initTracing } from '@getgrit/shared';
+import { AnalyticsProvider, GritFeatureFlagProvider } from '@/components/analytics';
 
 import '@/styles/main.css';
 import 'nprogress/nprogress.css';

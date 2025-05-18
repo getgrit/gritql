@@ -1,5 +1,5 @@
 import { WithChildren } from '@/custom-types/shared';
-import { useFeatureFlag } from '@getgrit/shared';
+import { useFeatureFlag } from '@/components/analytics/flags';
 import { FeatureFlag } from '@getgrit/universal';
 
 type GateProps = WithChildren<{

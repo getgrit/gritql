@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import config from '@/statics/config';
 import { Template, TemplateProps } from '@/templates/plain';
 import { useMonacoEditorInit } from '@getgrit/editor';
-import { AnalyticsProvider, GritFeatureFlagProvider } from '@getgrit/shared';
+import { AnalyticsProvider, GritFeatureFlagProvider } from '@/components/analytics';
 
 import '@/styles/main.css';
 
