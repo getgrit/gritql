@@ -1,7 +1,9 @@
 import { useRef, useMemo, useState, useEffect } from 'react';
 import merge from 'lodash/merge';
 import { DiffEditor, DiffEditorProps, useMonaco } from '@monaco-editor/react';
-import { editor } from 'monaco-editor';
+
+import { MatchIndex } from './highlights';
+import { Match, Position } from '@/universal/matching/types';
 
 const noop = () => {};
 
@@ -15,10 +17,19 @@ export const SSRStyle = {
 };
 
 export interface MonacoDiffProps extends DiffEditorProps {
-  minLines?: number;
   maxLines?: number;
+  minLines?: number;
   noCliff?: boolean;
-  onCursorPositionChange?: (data: editor.ICursorPositionChangedEvent) => void;
+  highlightedVariable?: string | null;
+  oldHighlights?: MatchIndex[];
+  newHighlights?: MatchIndex[];
+  oldVariables?: any[];
+  newVariables?: any[];
+  match?: Match;
+  onCursorPositionChange?: (position?: Position) => void;
+  onChange?: (original: string, modified: string) => void;
+  placeholderColor?: string;
+  focusIfEmpty?: boolean;
 }
 
 export const MonacoDiffEditor = ({
@@ -35,7 +46,7 @@ export const MonacoDiffEditor = ({
 }: MonacoDiffProps) => {
   const monaco = useMonaco();
   const readOnly = options?.readOnly ?? true;
-  const editorRef = useRef<editor.IStandaloneDiffEditor | null>(null);
+  const editorRef = useRef<any>(null);
   const [didMount, setDidMount] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
@@ -47,7 +58,7 @@ export const MonacoDiffEditor = ({
     return Math.max(minLines, Math.min(maxLines ?? lines, lines)) * 18;
   }, [original, modified, maxLines, minLines]);
 
-  const handleEditorDidMount = async (editor: editor.IStandaloneDiffEditor) => {
+  const handleEditorDidMount = async (editor: any) => {
     editorRef.current = editor;
     setDidMount(true);
     editor.getModifiedEditor().onDidChangeCursorPosition(onCursorPositionChange);

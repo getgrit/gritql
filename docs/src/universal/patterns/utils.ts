@@ -41,3 +41,49 @@ export const getPatternDescription = (
 ) => {
   return pattern.description ?? `Automatically migrate ${pattern.localName}.`;
 };
+
+export function getEditorLangIdFromLanguage(lang: Language): string {
+  switch (lang) {
+    case 'CSS':
+      return 'css';
+    case 'C_SHARP':
+      return 'cs';
+    case 'GO':
+      return 'go';
+    case 'GRIT':
+      return 'grit';
+    case 'HCL':
+      return 'hcl';
+    case 'HTML':
+      return 'html';
+    case 'JAVA':
+      return 'java';
+    case 'JS':
+      return 'typescript';
+    case 'JSON':
+      return 'json';
+    case 'PYTHON':
+      return 'py';
+    case 'RUBY':
+      return 'rb';
+    case 'RUST':
+      return 'rust';
+    case 'SOL':
+      return 'solidity';
+    case 'SQL':
+      return 'sql';
+    case 'YAML':
+      return 'yaml';
+    case 'MARKDOWN':
+      return 'markdown';
+    case 'TOML':
+      return 'toml';
+    case 'PHP':
+      return 'php';
+    case 'UNIVERSAL':
+      return 'universal';
+    default:
+      exhaustive(lang);
+  }
+}
+

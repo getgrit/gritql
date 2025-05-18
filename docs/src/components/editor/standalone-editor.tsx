@@ -15,9 +15,9 @@ import { extractMetavariables } from '../../utils/extract-metavariables';
 
 import {
   extractLanguageFromPatternBody,
-  getEditorLangIdFromLanguage,
-  isMatch,
-} from '../../universal';
+  getEditorLangIdFromLanguage
+} from '@/universal/patterns/utils';
+import { isMatch } from '@/universal/matching/types';
 
 const EDITOR_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
   scrollbar: {

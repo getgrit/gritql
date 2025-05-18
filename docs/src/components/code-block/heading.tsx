@@ -56,12 +56,13 @@ export const Heading = ({
 
 interface SnippetHeadingProps {
   title: string;
+  fileName?: string;
 }
 
-export const SnippetHeading: React.FC<SnippetHeadingProps> = ({ title }) => {
+export const SnippetHeading: React.FC<SnippetHeadingProps> = ({ title, fileName }) => {
   return (
     <div className="text-sm font-medium text-neutral-200">
-      {title}
+      {title} {fileName}
     </div>
   );
 };

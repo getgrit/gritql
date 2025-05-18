@@ -1,4 +1,5 @@
-import { MatchIndex, MonacoEditor } from '@/components/editor/monaco-editor';
+import { MonacoEditor } from '@/components/editor/monaco-editor';
+import { MatchIndex } from '@/components/editor/highlights';
 
 import { CopyButton } from './buttons';
 import { SnippetHeading } from './heading';
