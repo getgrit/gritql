@@ -56,7 +56,7 @@ export default async function PatternPage(props: PageProps) {
   const markdown =
     pattern.raw && pattern.raw.format === 'markdown'
       ? pattern.raw.content
-      : utils.getPatternDescription(pattern);
+      : getPatternDescription(pattern);
 
   return (
     <>

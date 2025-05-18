@@ -4,9 +4,9 @@ import type { Metadata } from 'next';
 import { Heading } from '@/components/heading';
 import { PatternsList } from '@/components/patterns/list';
 import { getPatternsList } from '@/libs/patterns';
-import { PatternNodeWithLanguage } from '../../../universal';
+import { EnhancedPattern } from '@/libs/patterns';
 
-export type DocPattern = Partial<Omit<PatternNodeWithLanguage, '__typename'>> & {
+export type DocPattern = Partial<Omit<EnhancedPattern, '__typename'>> & {
   preview?: boolean;
   link?: string;
 };

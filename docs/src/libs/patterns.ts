@@ -16,7 +16,7 @@ export interface ResolvedGritPattern {
   language: Language | 'UNIVERSAL';
   name: string;
   level?: string;
-  title?: string;
+  title: string;
   description?: string;
   tags?: string[];
   body?: string;
@@ -33,11 +33,11 @@ export interface ResolvedGritPattern {
 }
 
 
-interface EnhancedPattern extends ResolvedGritPattern {
-  gitHubUrl?: string;
+export interface EnhancedPattern extends ResolvedGritPattern {
+  gitHubUrl: string;
 }
 
-const getAllPatterns = async () => {
+const getAllPatterns: () => Promise<EnhancedPattern[]> = async () => {
   const endpoint = config.NEXT_PUBLIC_GRAPHQL_URL;
 
   // grit-ignore custom_no_console_log
