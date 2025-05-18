@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { parsePlainText, renderPlainText } from '@/libs/markdown';
 import { getPatternsList, getRemotePattern } from '@/libs/patterns';
 import { WrapperContainer } from '@/templates/wrapper';
-import { getPatternTitle } from '@/universal/patterns/utils';
+import { getPatternDescription, getPatternTitle } from '@/universal/patterns/utils';
 
 import { MarkdownPatternPage } from './render';
 
