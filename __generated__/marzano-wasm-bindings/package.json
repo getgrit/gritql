@@ -1,0 +1,25 @@
+{
+  "name": "grit-wasm-bindings",
+  "type": "module",
+  "collaborators": [
+    "Iuvo AI, Inc.",
+    "Grit Contributors"
+  ],
+  "description": "WASM bindings for GritQL",
+  "version": "0.5.1",
+  "license": "MIT",
+  "files": [
+    "grit_wasm_bindings_bg.wasm",
+    "grit_wasm_bindings.js",
+    "grit_wasm_bindings.d.ts"
+  ],
+  "main": "grit_wasm_bindings.js",
+  "homepage": "https://docs.grit.io/language/overview",
+  "types": "grit_wasm_bindings.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ],
+  "dependencies": {
+    "web-tree-sitter-wasm-bindgen": "0.20.8"
+  }
+}
