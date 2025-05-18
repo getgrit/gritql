@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import { Heading } from '@/components/heading';
 import { PatternsList } from '@/components/patterns/list';
 import { getPatternsList } from '@/libs/patterns';
-import { PatternNodeWithLanguage } from '@getgrit/universal';
+import { PatternNodeWithLanguage } from '../../../universal';
 
 export type DocPattern = Partial<Omit<PatternNodeWithLanguage, '__typename'>> & {
   preview?: boolean;

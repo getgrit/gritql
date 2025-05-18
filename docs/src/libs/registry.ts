@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 
-import { Repo } from '@getgrit/universal';
+import { Repo } from '../universal';
 
 const trustedRepos = [
   ['github.com', 'fabian-hiller'],

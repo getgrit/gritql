@@ -19,7 +19,7 @@ import {
 } from 'react-icons/si';
 import { DocPattern } from 'src/app/(doclike)/(default)/patterns/page';
 
-import { Language } from '@getgrit/universal';
+import { Language } from '../../universal';
 
 export const languageConfigs: {
   [key in Language]: {

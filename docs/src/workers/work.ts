@@ -13,7 +13,7 @@ import {
   isAnalysisLog,
   makeAnalysisLog,
   MatchResult,
-} from '@getgrit/universal';
+} from '../universal';
 
 // We need to prep quickJS before we can use it
 // But the core of the worker is

@@ -1,8 +1,7 @@
 import { PropsWithChildren, useEffect, useRef } from 'react';
 
 import { WasmProvider } from '@/components/editor/wasm-provider';
-import type { TokenFetcher } from '@getgrit/shared';
-import { MatchResult } from '@getgrit/universal';
+import { MatchResult } from '../universal';
 
 export const WorkerAnalysisProvider: React.FC<
   PropsWithChildren<{ api_endpoint?: string; getToken?: TokenFetcher }>

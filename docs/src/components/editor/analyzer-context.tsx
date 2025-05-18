@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import { FileResultMessage, PatternResultMessage, RichFile } from '@getgrit/universal';
+import { FileResultMessage, PatternResultMessage, RichFile } from '../../universal';
 
 export interface AnalyzerContextType {
   analyzeFiles: (files: RichFile[], pattern: string, justParse: boolean) => Promise<void>;

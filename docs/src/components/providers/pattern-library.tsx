@@ -4,7 +4,7 @@ import { PropsWithChildren, useCallback, useMemo } from 'react';
 
 import type { ResolvedGritPattern } from '@getgrit/api';
 import { LibraryContext } from '@getgrit/editor';
-import { Language } from '@getgrit/universal';
+import { Language } from '../../universal';
 
 type StandardLibraryPattern = Pick<ResolvedGritPattern, 'name' | 'body' | 'language'>;
 

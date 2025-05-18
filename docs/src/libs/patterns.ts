@@ -8,7 +8,7 @@ import { unstable_cache } from 'next/cache';
 import config from '@/statics/config';
 import { ProvoloneServerClient } from '@getgrit/aglio';
 import type { ResolvedGritPattern } from '@getgrit/api';
-import { Language } from '@getgrit/universal';
+import { Language } from '../universal';
 
 export const PATTERNS_CACHE_KEY = 'patterns';
 

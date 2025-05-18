@@ -8,7 +8,7 @@ import config from '@/statics/config';
 import { Template } from '@/templates/plain';
 import { WrapperContainer } from '@/templates/wrapper';
 import { useMonacoEditorInit } from '@/components/editor/monaco-editor-init';
-import { AnalyticsProvider } from '@/components/analytics';
+import { AnalyticsProvider } from '@/components/analytics/analytics';
 
 import '@/styles/main.css';
 import 'nprogress/nprogress.css';

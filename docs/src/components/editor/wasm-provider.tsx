@@ -11,7 +11,7 @@ import {
   isAllDone,
   isPatternInfo,
   makeAnalysisLog,
-} from '@getgrit/universal';
+} from '../../universal';
 
 export interface AnalyzerData {
   command: 'parse' | 'match';
