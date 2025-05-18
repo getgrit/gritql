@@ -9,7 +9,7 @@ import {
 } from '@/components/buttons/base-button';
 import { useSidebarContext } from '@/hooks/sidebar';
 import { useMainContext } from '@/templates/main-provider';
-import { CopyButton as BaseCopyButton } from '@getgrit/shared';
+import { CopyButton as BaseCopyButton } from './copy-button';
 
 type CopyButtonProps = {
   data: string;
