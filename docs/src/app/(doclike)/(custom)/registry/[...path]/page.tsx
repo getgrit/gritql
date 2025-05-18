@@ -3,9 +3,9 @@ import { notFound } from 'next/navigation';
 import { ForbiddenRegistry } from '@/components/forbidden';
 import { fetchRemotePattern, isRepoTrusted } from '@/libs/registry';
 import { WrapperContainer } from '@/templates/wrapper';
-import { makeRepo } from '../../../universal';
 
 import { MarkdownPatternPage } from '../../patterns/library/[pattern]/render';
+import { makeRepo } from '@/universal/patterns/types';
 
 type PageProps = {
   params: {

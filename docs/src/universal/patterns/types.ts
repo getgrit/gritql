@@ -15,6 +15,14 @@ export type Repo = {
   name: string;
 };
 
+export function makeRepo(fullName: string, host: string) {
+  const nameParts = fullName.split('/');
+  return {
+    owner: nameParts[0]!,
+    name: nameParts.slice(1).join('/'),
+  };
+}
+
 export type RefInput = {
   sha?: string;
   branch?: string;

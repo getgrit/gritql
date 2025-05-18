@@ -6,11 +6,32 @@ import { isObject } from 'lodash';
 import { unstable_cache } from 'next/cache';
 
 import config from '@/statics/config';
-import { ProvoloneServerClient } from '@getgrit/aglio';
-import type { ResolvedGritPattern } from '@getgrit/api';
-import { Language } from '../universal';
 
 export const PATTERNS_CACHE_KEY = 'patterns';
+
+export interface ResolvedGritPattern {
+  __typename: 'ResolvedGritPattern';
+  body: string;
+  engine: BaseEngineKind;
+  language: Language | 'UNIVERSAL';
+  name: string;
+  level?: string;
+  title?: string;
+  description?: string;
+  tags?: string[];
+  body?: string;
+  samples?: {
+    input: string;
+    output: string;
+  }[];
+  path?: string;
+  raw?: {
+    format: 'markdown' | 'grit';
+    content: string;
+  } | null;
+  localName: string;
+}
+
 
 interface EnhancedPattern extends ResolvedGritPattern {
   gitHubUrl?: string;
@@ -22,29 +43,29 @@ const getAllPatterns = async () => {
   // grit-ignore custom_no_console_log
   console.log(`FETCHING REMOTE PATTERNS from ${endpoint}...`);
   try {
-    const client = new ProvoloneServerClient({ endpoint });
-    const query = gql`
-      query Patterns {
-        raw_standard_library {
-          language
-          data
-        }
-      }
-    `;
-    const result = await client.client.request<{
-      raw_standard_library: {
-        language: Language;
-        data: EnhancedPattern[];
-      }[];
-    }>(query);
+    // const client = new ProvoloneServerClient({ endpoint });
+    // const query = gql`
+    //   query Patterns {
+    //     raw_standard_library {
+    //       language
+    //       data
+    //     }
+    //   }
+    // `;
+    // const result = await client.client.request<{
+    //   raw_standard_library: {
+    //     language: Language;
+    //     data: EnhancedPattern[];
+    //   }[];
+    // }>(query);
 
-    if (!isObject(result) || !('raw_standard_library' in result)) {
-      throw new Error('invalid result');
-    }
+    // if (!isObject(result) || !('raw_standard_library' in result)) {
+    //   throw new Error('invalid result');
+    // }
 
-    const allPatterns = result.raw_standard_library.flatMap((p) => p.data);
+    // const allPatterns = result.raw_standard_library.flatMap((p) => p.data);
 
-    return allPatterns;
+    return [];
   } catch (e) {
     console.error('failed to fetch dynamic patterns', e);
     return [];
