@@ -19,3 +19,25 @@ export function extractLanguageFromPatternBody(
   }
   return fallback;
 } 
+
+/**
+ * Given a pattern definition, compute a title
+ */
+export const getPatternTitle = (pattern: {
+  title?: string;
+  localName: string;
+}) => {
+  return pattern.title ?? pattern.localName;
+};
+
+/**
+ * Given a pattern definition, compute an optimized description
+ */
+export const getPatternDescription = (
+  pattern: {
+    description?: string;
+    localName: string;
+  },
+) => {
+  return pattern.description ?? `Automatically migrate ${pattern.localName}.`;
+};

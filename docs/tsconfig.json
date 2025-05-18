@@ -24,7 +24,8 @@
       "@/custom-types/*": ["./src/custom-types/*"],
       "@/statics/*": ["./src/statics/*"],
       "@/styles/*": ["./src/styles/*"],
-      "@/libs/*": ["./src/libs/*"]
+      "@/libs/*": ["./src/libs/*"],
+      "@/universal/*": ["./src/universal/*"]
     },
     "plugins": [
       {

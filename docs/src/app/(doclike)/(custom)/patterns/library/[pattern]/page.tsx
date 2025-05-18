@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { parsePlainText, renderPlainText } from '@/libs/markdown';
 import { getPatternsList, getRemotePattern } from '@/libs/patterns';
 import { WrapperContainer } from '@/templates/wrapper';
-import { utils } from '@getgrit/api';
+import { getPatternTitle } from '@/universal/patterns/utils';
 
 import { MarkdownPatternPage } from './render';
 
@@ -39,10 +39,10 @@ export async function generateMetadata(
   const pattern = await getPattern(props);
 
   return {
-    title: `${utils.getPatternTitle(pattern)}`,
+    title: `${getPatternTitle(pattern)}`,
     openGraph: {
-      title: utils.getPatternTitle(pattern),
-      description: renderPlainText(parsePlainText(utils.getPatternDescription(pattern))),
+      title: getPatternTitle(pattern),
+      description: renderPlainText(parsePlainText(getPatternDescription(pattern))),
       type: 'website',
       url: `https://docs.grit.io/patterns/library/${pattern.name}`,
       siteName: 'Grit',
