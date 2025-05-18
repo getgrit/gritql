@@ -103,7 +103,7 @@ export const StandaloneEditor: React.FC<{
     variables: metaVariables,
   });
 
-  const errorMessage = useMemo(() => ('log' in state ? state.log.message : undefined), [state]);
+  const errorMessage = useMemo(() => ('log' in state ? (state.log as any)?.message : undefined), [state]);
 
   const showDirty = useDelayedLoader(!!editorState);
 

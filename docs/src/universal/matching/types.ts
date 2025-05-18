@@ -2,8 +2,6 @@ const isObject = (obj: unknown): obj is Record<string, unknown> => {
   return typeof obj === 'object' && obj !== null;
 };
 
-export type Language = string;
-
 export type Position = {
   line: number;
   column: number;
@@ -50,6 +48,7 @@ export type AnalysisLog = {
   __typename: 'AnalysisLog';
   level: number;
   message: string;
+  file?: string;
 };
 
 export type InputFile = {
@@ -152,7 +151,7 @@ export const isAllDone = (obj: MatchResult): obj is AllDone => {
   return obj.__typename === 'AllDone';
 };
 
-export const isLanguage = (lang: any): lang is Language => {
+export const isLanguage = (lang: any): lang is any => {
   return typeof lang === 'string';
 };
 
@@ -170,11 +169,6 @@ export type RichFile = {
   path: string;
   content: string;
   language?: string;
-};
-
-export type ImplicitFile = {
-  path: string;
-  content: string;
 };
 
 export const makeAnalysisLog = (message: string, level: number = 300): AnalysisLog => ({

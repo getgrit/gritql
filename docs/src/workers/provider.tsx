@@ -3,6 +3,8 @@ import { PropsWithChildren, useEffect, useRef } from 'react';
 import { WasmProvider } from '@/components/editor/wasm-provider';
 import { MatchResult } from '../universal';
 
+type TokenFetcher = any;
+
 export const WorkerAnalysisProvider: React.FC<
   PropsWithChildren<{ api_endpoint?: string; getToken?: TokenFetcher }>
 > = ({ children, api_endpoint, getToken }) => {

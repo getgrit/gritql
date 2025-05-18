@@ -35,6 +35,8 @@ export const Language = {
 export type Repo = {
   owner: string;
   name: string;
+  host: string;
+  full_name: string;
 };
 
 export function makeRepo(fullName: string, host: string) {
@@ -66,4 +68,10 @@ export type LivePattern = {
 export type LiveData = {
   pins: FilePin[];
   pattern: LivePattern;
-}; 
+};
+
+// Add missing exports
+export type ImplicitFile = any;
+export const extractPath = (path: any): string => path;
+export const exhaustive = (x: never): never => x;
+export const ImplicitFile = { PlaygroundPattern: 'playground-pattern' }; 

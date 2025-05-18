@@ -21,13 +21,7 @@ import { DocPattern } from 'src/app/(doclike)/(default)/patterns/page';
 
 import { Language } from '@/universal/patterns/types';
 
-export const languageConfigs: {
-  [key in Language]: {
-    title: string;
-    icon: IconType;
-    color?: string;
-  };
-} = {
+export const languageConfigs = {
   [Language.Js]: {
     title: 'JavaScript',
     icon: SiJavascript,
@@ -108,14 +102,14 @@ export const languageConfigs: {
     title: 'PHP',
     icon: SiPhp,
   },
-};
+} as any;
 
 export const PatternLanguageButton: React.FC<{
   pattern: Pick<DocPattern, 'language'>;
   size: 'sm' | 'lg';
 }> = ({ pattern, size }) => {
   const language = pattern.language ?? 'JS';
-  const config = languageConfigs[language];
+  const config = languageConfigs[language as keyof typeof Language];
   if (!config) return null;
   const title = `${config.title} pattern`;
 

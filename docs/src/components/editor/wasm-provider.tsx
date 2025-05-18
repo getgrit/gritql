@@ -1,4 +1,4 @@
-import { PropsWithChildren, useCallback, useMemo, useState } from 'react';
+import { PropsWithChildren, useCallback, useMemo, useState, createContext } from 'react';
 
 import {
   FileResultMessage,
@@ -26,16 +26,18 @@ interface AnalyzerInput {
   analyze: (data: AnalyzerData) => Promise<MatchResult[]>;
 }
 
+export const AnalyzerContext = createContext<any>(null);
+
 export const WasmProvider: React.FC<PropsWithChildren<AnalyzerInput>> = ({ children, analyze }) => {
-  const [parseResults, setParseResults] = useState<FileResultMessage[]>([]);
-  const [analyzeResults, setAnalyzeResults] = useState<FileResultMessage[]>([]);
-  const [patternInfo, setPatternInfo] = useState<PatternResultMessage>();
+  const [parseResults, setParseResults] = useState<any[]>([]);
+  const [analyzeResults, setAnalyzeResults] = useState<any[]>([]);
+  const [patternInfo, setPatternInfo] = useState<any>();
   const [dispatched, setDispatched] = useState<{ pattern: string; file: RichFile }[]>([]);
 
   const reset = useCallback((excludeFilePaths?: string[]) => {
     if (excludeFilePaths) {
-      setParseResults((prev) => prev.filter((r) => excludeFilePaths.includes(r.filePath)));
-      setAnalyzeResults((prev) => prev.filter((r) => excludeFilePaths.includes(r.filePath)));
+      setParseResults((prev) => prev.filter((r) => excludeFilePaths.includes((r as any).filePath)));
+      setAnalyzeResults((prev) => prev.filter((r) => excludeFilePaths.includes((r as any).filePath)));
     } else {
       setParseResults([]);
       setAnalyzeResults([]);
@@ -46,10 +48,10 @@ export const WasmProvider: React.FC<PropsWithChildren<AnalyzerInput>> = ({ child
   const rawAnalyzeFiles = useCallback(
     async (files: RichFile[], pattern: string, justParse: boolean) => {
       const originalContentsByPath = new Map(files.map((f) => [f.path, f.content]));
-      const wrapResult = (result: MatchResult): FileResultMessage => {
+      const wrapResult = (result: MatchResult): any => {
         const filePath = extractPath(result);
         return {
-          filePath: filePath ?? ImplicitFile.PlaygroundPattern,
+          filePath: filePath ?? 'playground-pattern',
           originalContent: filePath ? originalContentsByPath.get(filePath) : undefined,
           result,
           pattern,
@@ -86,9 +88,9 @@ export const WasmProvider: React.FC<PropsWithChildren<AnalyzerInput>> = ({ child
           wrapResult(
             makeAnalysisLog({
               message: e.message ?? 'Unknown error',
-              file: ImplicitFile.PlaygroundPattern,
+              file: 'playground-pattern',
               level: 'error',
-            }),
+            } as any),
           ),
         ]);
         return;
@@ -101,7 +103,7 @@ export const WasmProvider: React.FC<PropsWithChildren<AnalyzerInput>> = ({ child
     (
       results: MatchResult[],
       pattern: string,
-      wrapResult: (result: MatchResult) => FileResultMessage,
+      wrapResult: (result: MatchResult) => any,
       command: AnalyzerData['command'],
     ) => {
       const ourResults = [];

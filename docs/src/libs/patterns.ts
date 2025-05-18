@@ -19,7 +19,6 @@ export interface ResolvedGritPattern {
   title: string;
   description?: string;
   tags?: string[];
-  body?: string;
   samples?: {
     input: string;
     output: string;
@@ -36,6 +35,9 @@ export interface ResolvedGritPattern {
 export interface EnhancedPattern extends ResolvedGritPattern {
   gitHubUrl: string;
 }
+
+export type BaseEngineKind = any;
+export type Language = any;
 
 const getAllPatterns: () => Promise<EnhancedPattern[]> = async () => {
   const endpoint = config.NEXT_PUBLIC_GRAPHQL_URL;

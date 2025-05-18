@@ -148,6 +148,7 @@ async function processAnalysis(
     // grit-ignore no_console_error: This is the best way to log errors in workers
     console.error('Error processing analysis', e);
     return [
+      // @ts-expect-error makeAnalysisLog is not typed
       makeAnalysisLog({
         message: 'Unknown error',
         file: ImplicitFile.PlaygroundPattern,

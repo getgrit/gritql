@@ -1,4 +1,5 @@
-import { Language } from '../matching/types';
+import { Language, exhaustive } from './types';
+// import { Language } from '../matching/types';
 import { isLanguage } from '../matching/types';
 
 const matchLanguageDeclaration = (patternBody: string) => {
@@ -6,12 +7,12 @@ const matchLanguageDeclaration = (patternBody: string) => {
   return regex.exec(patternBody);
 };
 
-export function extractLanguageFromPatternBody(patternBody: string, fallback: Language): Language;
-export function extractLanguageFromPatternBody(patternBody: string): Language | undefined;
+export function extractLanguageFromPatternBody(patternBody: string, fallback: any): any;
+export function extractLanguageFromPatternBody(patternBody: string): any | undefined;
 export function extractLanguageFromPatternBody(
   patternBody: string,
-  fallback?: Language,
-): Language | undefined {
+  fallback?: any,
+): any | undefined {
   const selected = matchLanguageDeclaration(patternBody);
   if (selected && selected[1]) {
     const lang = selected[1].toUpperCase();
@@ -42,7 +43,7 @@ export const getPatternDescription = (
   return pattern.description ?? `Automatically migrate ${pattern.localName}.`;
 };
 
-export function getEditorLangIdFromLanguage(lang: Language): string {
+export function getEditorLangIdFromLanguage(lang: any): string {
   switch (lang) {
     case 'CSS':
       return 'css';
@@ -83,7 +84,7 @@ export function getEditorLangIdFromLanguage(lang: Language): string {
     case 'UNIVERSAL':
       return 'universal';
     default:
-      exhaustive(lang);
+      return 'unknown';
   }
 }
 
