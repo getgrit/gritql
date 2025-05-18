@@ -1,6 +1,6 @@
 import { PropsWithChildren, useEffect, useRef } from 'react';
 
-import { WasmProvider } from '@getgrit/editor';
+import { WasmProvider } from '@/components/editor/wasm-provider';
 import type { TokenFetcher } from '@getgrit/shared';
 import { MatchResult } from '@getgrit/universal';
 

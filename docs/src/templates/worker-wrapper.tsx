@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { WorkerAnalysisProvider } from 'src/workers/provider';
 
 import { doesPathHaveEditor } from '@/libs/dynamic';
-import { StandaloneEditorProvider } from '@getgrit/editor';
+import { StandaloneEditorProvider } from '@/components/editor/standalone-editor';
 
 export const WorkerWrapper = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname() ?? '';

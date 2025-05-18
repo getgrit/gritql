@@ -6,7 +6,7 @@ import init, { matchPattern, parseInputFiles } from 'grit-wasm-bindings';
 import { getQuickJS, getQuickJSSync, shouldInterruptAfterDeadline } from 'quickjs-emscripten';
 import TreeSitter from 'web-tree-sitter';
 
-import { AnalyzerData } from '@getgrit/editor';
+import { AnalyzerData } from '@/components/editor/wasm-provider';
 import {
   exhaustive,
   ImplicitFile,

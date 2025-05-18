@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 import cx from 'classnames';
 
@@ -30,6 +30,51 @@ const EDITOR_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
     horizontal: 'auto',
   },
   scrollBeyondLastLine: false,
+};
+
+interface EditorState {
+  pattern: string;
+  setPattern: (newPattern: string) => void;
+  input: string;
+  setInput: (newInput: string) => void;
+  path: string | undefined;
+  setPath: (newPath: string) => void;
+}
+
+export const StandaloneEditorContext = createContext<EditorState>({
+  pattern: '',
+  setPattern: () => {},
+  input: '',
+  setInput: () => {},
+  path: '',
+  setPath: () => {},
+});
+
+export const StandaloneEditorProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
+  const [pattern, setPattern] = useState('');
+  const [input, setInput] = useState('');
+  const [path, setPath] = useState<string | undefined>(undefined);
+
+  const value = {
+    pattern,
+    setPattern,
+    input,
+    setInput,
+    path,
+    setPath,
+  };
+
+  return (
+    <StandaloneEditorContext.Provider value={value}>{children}</StandaloneEditorContext.Provider>
+  );
+};
+
+export const useStandaloneEditor = () => {
+  const context = useContext(StandaloneEditorContext);
+  if (context === undefined) {
+    throw new Error('useStandaloneEditor must be used within a StandaloneEditorProvider');
+  }
+  return context;
 };
 
 export const StandaloneEditor: React.FC<{
