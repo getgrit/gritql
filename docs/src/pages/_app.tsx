@@ -8,7 +8,7 @@ import config from '@/statics/config';
 import { Template } from '@/templates/plain';
 import { WrapperContainer } from '@/templates/wrapper';
 import { useMonacoEditorInit } from '@getgrit/editor';
-import { AnalyticsProvider, GritFeatureFlagProvider } from '@/components/analytics';
+import { AnalyticsProvider } from '@/components/analytics';
 
 import '@/styles/main.css';
 import 'nprogress/nprogress.css';
@@ -46,7 +46,6 @@ function MyApp({ Component, pageProps, router }: AppProps) {
 
   return (
     <AnalyticsProvider>
-      <GritFeatureFlagProvider>
         <Template path={router.pathname} layout='docs'>
           <Head>
             {title && <title>{title}</title>}
@@ -56,7 +55,6 @@ function MyApp({ Component, pageProps, router }: AppProps) {
             <Component {...pageProps} />
           </WrapperContainer>
         </Template>
-      </GritFeatureFlagProvider>
     </AnalyticsProvider>
   );
 }
