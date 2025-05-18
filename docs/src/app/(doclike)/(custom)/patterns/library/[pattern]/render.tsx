@@ -158,8 +158,11 @@ export const MarkdownPatternPage: React.FC<{
   } catch (e: any) {
     // grit-ignore custom_no_console_log
     // eslint-disable-next-line no-console
-    <>
-      <p>Error rendering pattern markdown</p>
-    </>;
+    console.error('Error rendering pattern markdown:', e);
+    return (
+      <>
+        <p>Error rendering pattern markdown</p>
+      </>
+    );
   }
 };
