@@ -1,11 +1,11 @@
-name: Deploy Next.js docs to Pages
+name: Deploy Next.js docs to GitHub Pages
 
 on:
   # Runs on pushes targeting the main branch
   push:
     branches:
       - main
-      - add-docs
+      - publish-docs
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch: {}
@@ -34,6 +34,7 @@ jobs:
         with:
           node-version: 22
           cache: 'yarn'
+          cache-dependency-path: docs/yarn.lock
 
       - name: Install dependencies
         working-directory: docs
@@ -43,19 +44,9 @@ jobs:
         id: setup_pages
         uses: actions/configure-pages@v5
 
-      - name: Restore cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            .next/cache
-          # Generate a new cache whenever packages or source files change.
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/yarn.lock') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
-          # If source files changed but packages didn't, rebuild from a prior cache.
-          restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/yarn.lock') }}-
-
       - name: Build with Next.js
         run: yarn build
+        working-directory: docs
         env:
           PAGES_BASE_PATH: ${{ steps.setup_pages.outputs.base_path }}
 
