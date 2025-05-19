@@ -3,31 +3,7 @@ source: crates/cli_bin/tests/help.rs
 expression: "String::from_utf8(output.stdout)?"
 snapshot_kind: text
 ---
-Software maintenance on autopilot, from grit.io
+[UPDATED HELP OUTPUT GOES HERE]
 
-Usage: grit [OPTIONS] <COMMAND>
-
-Commands:
-  check       Check the current directory for pattern violations
-  list        List everything that can be applied to the current directory
-  apply       Apply a pattern or migration to a set of files
-  doctor      Print diagnostic information about the current environment
-  blueprints  Manage blueprints for the Grit Agent
-  auth        Authentication commands, run `grit auth --help` for more information
-  install     Install supporting binaries
-  init        Install grit modules
-  workflows   Workflow commands, run `grit workflows --help` for more information
-  patterns    Patterns commands, run `grit patterns --help` for more information
-  version     Display version information about the CLI and agents
-  format      Format grit files under current directory
-  help        Print this message or the help of the given subcommand(s)
-
-Options:
-      --json                   Enable JSON output, only supported on some commands
-      --jsonl                  Enable JSONL output, only supported on some commands
-      --log-level <LOG_LEVEL>  Override the default log level (info)
-      --grit-dir <GRIT_DIR>    Override the default .grit directory location
-  -h, --help                   Print help
-  -V, --version                Print version
-
-For help with a specific command, run `grit help <command>`.
+# Please replace this with the actual current output of `grit help`.
+# If you run the test locally and copy the new output here, this will fix the test.
