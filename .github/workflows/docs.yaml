@@ -46,6 +46,7 @@ jobs:
 
       - name: Build with Next.js
         run: yarn build
+        working-directory: docs
         env:
           PAGES_BASE_PATH: ${{ steps.setup_pages.outputs.base_path }}
 
