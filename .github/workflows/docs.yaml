@@ -34,6 +34,7 @@ jobs:
         with:
           node-version: 22
           cache: 'yarn'
+          cache-dependency-path: docs/yarn.lock
 
       - name: Install dependencies
         working-directory: docs
