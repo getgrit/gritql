@@ -7,6 +7,6 @@ mod test_yaml;
 #[cfg(feature = "napi")]
 mod binding;
 
-pub(crate) use compiler::StatelessCompilerContext;
+pub use compiler::StatelessCompilerContext;
 pub use language_sdk::LanguageSdk;
 pub use pattern_sdk::UncompiledPatternBuilder;

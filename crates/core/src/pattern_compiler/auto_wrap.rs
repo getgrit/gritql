@@ -470,7 +470,7 @@ fn wrap_pattern_in_file(
     Ok(pattern)
 }
 
-pub(crate) fn wrap_pattern_in_before_and_after_each_file(
+pub fn wrap_pattern_in_before_and_after_each_file(
     pattern: Pattern<MarzanoQueryContext>,
     context: &mut dyn SnippetCompilationContext,
 ) -> Result<Pattern<MarzanoQueryContext>> {
