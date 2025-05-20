@@ -1,0 +1,36 @@
+[package]
+edition = "2021"
+name = "gritql_napi"
+version = "0.0.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
+napi = { version = "2.16.4", default-features = false, features = [
+  "napi8",
+  "async",
+] }
+napi-derive = "2.12.2"
+anyhow = "1.0.70"
+serde_json = "1.0.113"
+
+
+marzano-gritmodule = { path = "../../crates/gritmodule" }
+marzano-core = { path = "../../crates/core", features = [
+  "non_wasm",
+], default-features = false }
+grit-util = { path = "../../crates/grit-util", features = [] }
+grit-pattern-matcher = { path = "../../crates/grit-pattern-matcher", features = [
+] }
+marzano-language = { path = "../../crates/language", features = ["finder"] }
+marzano-util = { path = "../../crates/util", features = ["napi"] }
+
+marzano_messenger = { path = "../../crates/marzano_messenger", features = [] }
+
+[build-dependencies]
+napi-build = "2.0.1"
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["rt", "macros"] }

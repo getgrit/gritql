@@ -14,6 +14,7 @@ members = [
   "crates/wasm-bindings",
   "crates/marzano_messenger",
   "crates/cli_bin",
+  "js/gritql",
 ]
 exclude = [
   "resources",
