@@ -4543,6 +4543,33 @@ fn pattern_test_filename_match_and_use() {
     .unwrap();
 }
 
+/// Integration test: file predicate should match on empty file (file name only)
+#[test]
+fn file_predicate_on_empty_file() {
+    run_test_expected({
+        TestArgExpected {
+            pattern: r#"
+                |language js
+                |
+                |file($name, $body) where {
+                |  $name <: includes r"(util|component|hook|help|helper)[s]?\..*$"($n),
+                |  $name => `"MATCHED"`
+                |}
+                |"#
+            .trim_margin()
+            .unwrap(),
+            // Simulate an empty file:
+            source: "".to_owned(),
+            expected: r#"
+                |"MATCHED"
+                |"#
+            .trim_margin()
+            .unwrap(),
+        }
+    })
+    .unwrap();
+}
+
 #[test]
 fn test_conditional_snippet() {
     run_test_expected({
