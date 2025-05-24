@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { editor } from 'monaco-editor';
+import { useMemo } from 'react';
 import cx from 'classnames';
+import { editor } from 'monaco-editor';
 
 import { CloseButton } from '@/components/code-block/buttons';
 import { SnippetHeading } from '@/components/code-block/heading';
@@ -12,12 +12,9 @@ import { useDiffEditor } from '@/hooks/use-diff-editor';
 import { useEditorCursor } from '@/hooks/use-editor-cursor';
 import { useDelayedLoader } from '@/hooks/use-delayed-loader';
 import { extractMetavariables } from '../../utils/extract-metavariables';
-
-import {
-  extractLanguageFromPatternBody,
-  getEditorLangIdFromLanguage
-} from '@/universal/patterns/utils';
+import { extractLanguageFromPatternBody, getEditorLangIdFromLanguage } from '@/universal/patterns/utils';
 import { isMatch } from '@/universal/matching/types';
+import { useStandaloneEditor } from './context';
 
 const EDITOR_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
   scrollbar: {
@@ -29,55 +26,12 @@ const EDITOR_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
   scrollBeyondLastLine: false,
 };
 
-interface EditorState {
-  pattern: string;
-  setPattern: (newPattern: string) => void;
-  input: string;
-  setInput: (newInput: string) => void;
-  path: string | undefined;
-  setPath: (newPath: string) => void;
-}
-
-export const StandaloneEditorContext = createContext<EditorState>({
-  pattern: '',
-  setPattern: () => {},
-  input: '',
-  setInput: () => {},
-  path: '',
-  setPath: () => {},
-});
-
-export const StandaloneEditorProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
-  const [pattern, setPattern] = useState('');
-  const [input, setInput] = useState('');
-  const [path, setPath] = useState<string | undefined>(undefined);
-
-  const value = {
-    pattern,
-    setPattern,
-    input,
-    setInput,
-    path,
-    setPath,
-  };
-
-  return (
-    <StandaloneEditorContext.Provider value={value}>{children}</StandaloneEditorContext.Provider>
-  );
-};
-
-export const useStandaloneEditor = () => {
-  const context = useContext(StandaloneEditorContext);
-  if (context === undefined) {
-    throw new Error('useStandaloneEditor must be used within a StandaloneEditorProvider');
-  }
-  return context;
-};
-
 export const StandaloneEditor: React.FC<{
   patternTitle?: string;
   resultTitle?: string;
-}> = ({}) => {
+}> = ({ }) => {
+  // return "bob";
+
   const { pattern, setPattern, input, setInput } = useStandaloneEditor();
 
   const language = useMemo(() => extractLanguageFromPatternBody(pattern), [pattern]);
@@ -99,7 +53,7 @@ export const StandaloneEditor: React.FC<{
     return state.state === 'loaded' && isMatch(state.result) ? state.result : undefined;
   }, [state.state, state.result]);
 
-  const { onCursorPositionChange, highlightedVariable } = useEditorCursor({
+  const { onCursorPositionChange } = useEditorCursor({
     variables: metaVariables,
   });
 
