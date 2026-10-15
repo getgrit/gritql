@@ -21,7 +21,7 @@ jobs:
       BUILD_PLATFORM: amd64
     steps:
       - name: clone code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
       - name: install Rust
@@ -38,7 +38,7 @@ jobs:
           sudo mv terraform /usr/local/bin/
 
       - name: setup node.js environment
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       - name: Install prettier
         run: |
           npm install -g prettier
@@ -70,7 +70,7 @@ jobs:
       id-token: "write"
     steps:
       - name: clone code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
       - name: install Rust
@@ -95,7 +95,7 @@ jobs:
     runs-on: depot-ubuntu-24.04-arm-16
     steps:
       - name: clone code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
       - name: install Rust
@@ -108,7 +108,7 @@ jobs:
         run: |
           cargo build --release
       - name: Checkout js repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: getgrit/stdlib
           path: stdlib
@@ -116,7 +116,7 @@ jobs:
         run: |
           pip install ruff
       - name: Setup Go environment
-        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "^1.22.0"
       - name: test stdlib
