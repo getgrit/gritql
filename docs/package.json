@@ -32,7 +32,7 @@
     "grit-wasm-bindings": "file:./../__generated__/grit-wasm-bindings",
     "lodash": "4.18.1",
     "monaco-editor": "0.56.0",
-    "next": "16.3.3",
+    "next": "16.3.8",
     "next-compose-plugins": "2.2.1",
     "nprogress": "0.2.0",
     "prism-react-renderer": "2.4.1",
