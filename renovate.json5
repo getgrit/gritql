@@ -8,6 +8,19 @@
   separateMajorMinor: true,
   separateMultipleMajor: true,
   separateMinorPatch: true,
+  ignorePaths: [
+    // Defaults from config:recommended (:ignoreModulesAndTests), since this option overrides them
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/vendor/**",
+    "**/examples/**",
+    "**/__tests__/**",
+    "**/test/**",
+    "**/tests/**",
+    "**/__fixtures__/**",
+    // Grammars copied from upstream tree-sitter repositories
+    "resources/language-metavariables/**",
+  ],
   packageRules: [
     {
       groupName: "github-actions",
