@@ -1,2 +1,2 @@
-allowBuilds:
-  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@astrojs/check@0.9.11'

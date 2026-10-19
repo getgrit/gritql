@@ -1,0 +1,56 @@
+---
+import { Icon } from '@astrojs/starlight/components';
+
+import { getPlaygroundHref } from '../playground/share';
+
+interface Props {
+  /** The GritQL pattern shown in the group, used to open it in the playground. */
+  pattern?: string;
+  /** Sample code the pattern runs against in the playground. */
+  input?: string;
+}
+
+const { pattern, input } = Astro.props;
+const href = pattern ? getPlaygroundHref({ pattern, input }) : undefined;
+---
+
+<div class="code-group">
+  <slot />
+  {
+    href && (
+      <a class="run-pattern not-content" href={href}>
+        Run Pattern
+        <Icon name="right-arrow" size="1rem" />
+      </a>
+    )
+  }
+</div>
+
+<style>
+  .code-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .code-group > :global(* + *) {
+    margin-top: 0.5rem;
+  }
+
+  .run-pattern {
+    align-self: flex-end;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--sl-color-accent);
+    border-radius: 999rem;
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+    color: var(--sl-color-accent-high);
+    text-decoration: none;
+  }
+
+  .run-pattern:hover {
+    background-color: var(--sl-color-accent-low);
+  }
+</style>

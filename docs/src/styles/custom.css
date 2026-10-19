@@ -1,0 +1,12 @@
+/* Grit brand colors, from the `primary` palette of the previous site. */
+:root {
+  --sl-color-accent-low: #1b1660;
+  --sl-color-accent: #6f66ff;
+  --sl-color-accent-high: #d4d1ff;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #dedcff;
+  --sl-color-accent: #2d1dff;
+  --sl-color-accent-high: #130dbb;
+}
