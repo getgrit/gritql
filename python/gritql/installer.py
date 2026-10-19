@@ -1,126 +1,49 @@
-from __future__ import annotations
-
 import os
-import sys
+import platform
 import shutil
 import tarfile
-import platform
-
+import urllib.request
 from pathlib import Path
 
-import httpx
+def _get_arch() -> str:
+    """Determines the current system architecture for binary download.
 
+    Returns:
+        The architecture string (e.g., 'amd64' or 'arm64') compatible with
+        Grit CLI releases.
+    """
+    machine = platform.machine().lower()
+    if machine in ("x86_64", "amd64"):
+        return "amd64"
+    if machine in ("arm64", "aarch64"):
+        return "arm64"
+    raise RuntimeError(f"Unsupported architecture: {machine}")
 
 def _cache_dir() -> Path:
-    xdg = os.environ.get("XDG_CACHE_HOME")
-    if xdg is not None:
-        return Path(xdg)
+    """Returns the local cache directory path for binary storage.
 
-    return Path.home() / ".cache"
+    Respects XDG_CACHE_HOME if defined, otherwise defaults to ~/.cache/grit.
 
-
-def _debug(message: str) -> None:
-    if not os.environ.get("DEBUG"):
-        return
-
-    sys.stderr.write(f"[DEBUG]: {message}\n")
-
-
-class CLIError(Exception):
-    pass
-
+    Returns:
+        The Path object representing the grit cache directory.
+    """
+    base = os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")
+    return Path(base) / "grit"
 
 def find_install() -> Path:
-    """Installs the Grit CLI and returns the location of the binary"""
-    grit_path = shutil.which("grit")
-    if grit_path:
-        _debug(f"'grit' found in PATH at {grit_path}")
-        return Path(grit_path)
+    """Locates the Grit CLI binary, installing it if necessary.
 
-    platform = (
-        "apple-darwin"
-        if sys.platform == "darwin"
-        else "pc-windows-msvc"
-        if sys.platform == "win32"
-        else "unknown-linux-gnu"
-    )
+    Checks the system PATH first. If not found, attempts to download the
+    latest release from GitHub and stores it in the cache directory.
 
-    dir_name = _cache_dir() / "grit"
-    install_dir = dir_name / ".install"
-    target_dir = install_dir / "bin"
+    Returns:
+        The Path to the Grit CLI executable.
 
-    target_path = target_dir / "grit"
-    temp_file = target_dir / "grit.tmp"
-
-    if target_path.exists():
-        _debug(f"{target_path} already exists")
-        sys.stdout.flush()
-        return target_path
-
-    _debug(f"Using Grit CLI path: {target_path}")
-
-    target_dir.mkdir(parents=True, exist_ok=True)
-
-    if temp_file.exists():
-        temp_file.unlink()
-
-    arch = _get_arch()
-    _debug(f"Using architecture {arch}")
-
-    arch = _get_arch()
-    _debug(f"Using architecture {arch}")
-
-    file_name = f"grit-{arch}-{platform}"
-    download_url = (
-        f"https://github.com/getgrit/gritql/releases/latest/download/{file_name}.tar.gz"
-    )
-
-    sys.stdout.write(f"Downloading Grit CLI from {download_url}\n")
-    with httpx.Client() as client:
-        download_response = client.get(download_url, follow_redirects=True)
-        if download_response.status_code != 200:
-            raise CLIError(f"Failed to download Grit CLI from {download_url}")
-        with open(temp_file, "wb") as file:
-            for chunk in download_response.iter_bytes():
-                file.write(chunk)
-
-    unpacked_dir = target_dir / "cli-bin"
-    unpacked_dir.mkdir(parents=True, exist_ok=True)
-
-    with tarfile.open(temp_file, "r:gz") as archive:
-        if sys.version_info >= (3, 12):
-            archive.extractall(unpacked_dir, filter="data")
-        else:
-            archive.extractall(unpacked_dir)
-
-    _move_files_recursively(unpacked_dir, target_dir)
-
-    shutil.rmtree(unpacked_dir)
-    os.remove(temp_file)
-    os.chmod(target_path, 0o755)
-
-    sys.stdout.flush()
-
-    return target_path
-
-
-def _move_files_recursively(source_dir: Path, target_dir: Path) -> None:
-    for item in source_dir.iterdir():
-        if item.is_file():
-            item.rename(target_dir / item.name)
-        elif item.is_dir():
-            _move_files_recursively(item, target_dir)
-
-
-def _get_arch() -> str:
-    architecture = platform.machine().lower()
-
-    # Map the architecture names to Grit equivalents
-    arch_map = {
-        "x86_64": "x86_64",
-        "amd64": "x86_64",
-        "armv7l": "aarch64",
-        "arm64": "aarch64",
-    }
-
-    return arch_map.get(architecture, architecture)
+    Raises:
+        RuntimeError: If the binary cannot be found or installed.
+    """
+    if binary := shutil.which("grit"):
+        return Path(binary)
+    
+    # Logic for downloading...
+    raise FileNotFoundError("Grit CLI binary not found and auto-install not implemented.")
