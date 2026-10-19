@@ -9,9 +9,22 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^5.0.8"
+    "vite": "8.2.2"
   },
   "dependencies": {
-    "web-tree-sitter-wasm-bindgen": "^0.20.8"
+    "web-tree-sitter": "0.20.8",
+    "web-tree-sitter-wasm-bindgen": "0.20.8"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.18.1",
+      "onFail": "download"
+    },
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.0.0",
+      "onFail": "download"
+    }
   }
 }
