@@ -1,8 +1,9 @@
 use super::{
     auto_wrap::auto_wrap_pattern,
     compiler::{
-        filter_libs, get_definition_info, get_definitions, CompilationContext, DefinitionInfo,
-        DefinitionInfoKinds, NodeCompilationContext, VariableLocations,
+        build_standard_global_vars, filter_libs, get_definition_info, get_definitions,
+        CompilationContext, DefinitionInfo, DefinitionInfoKinds, NodeCompilationContext,
+        VariableLocations,
     },
     pattern_compiler::PatternCompiler,
     CompilationResult, NodeCompiler,
@@ -304,13 +305,4 @@ impl CompiledPatternBuilder {
         };
         Ok(result)
     }
-}
-
-pub fn build_standard_global_vars() -> BTreeMap<String, usize> {
-    BTreeMap::from([
-        ("$new_files".to_owned(), NEW_FILES_INDEX),
-        ("$filename".to_owned(), FILENAME_INDEX),
-        ("$program".to_owned(), PROGRAM_INDEX),
-        ("$absolute_filename".to_owned(), ABSOLUTE_PATH_INDEX),
-    ])
 }
