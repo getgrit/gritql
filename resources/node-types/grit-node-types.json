@@ -648,6 +648,22 @@
     }
   },
   {
+    "type": "backtickSnippet",
+    "named": true,
+    "fields": {
+      "content": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "snippetContent",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "bubble",
     "named": true,
     "fields": {
@@ -1579,6 +1595,22 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "doubleQuoteSnippet",
+    "named": true,
+    "fields": {
+      "content": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "snippetContent",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -12427,6 +12459,38 @@
     }
   },
   {
+    "type": "rawBacktickSnippet",
+    "named": true,
+    "fields": {
+      "content": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "snippetContent",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "regex",
+    "named": true,
+    "fields": {
+      "regex": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "regexInner",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "regexPattern",
     "named": true,
     "fields": {
@@ -14228,6 +14292,212 @@
             "named": true
           }
         ]
+      },
+      "until": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "addOperation",
+            "named": true
+          },
+          {
+            "type": "assignmentAsPattern",
+            "named": true
+          },
+          {
+            "type": "booleanConstant",
+            "named": true
+          },
+          {
+            "type": "bottom",
+            "named": true
+          },
+          {
+            "type": "bubble",
+            "named": true
+          },
+          {
+            "type": "codeSnippet",
+            "named": true
+          },
+          {
+            "type": "divOperation",
+            "named": true
+          },
+          {
+            "type": "dot",
+            "named": true
+          },
+          {
+            "type": "doubleConstant",
+            "named": true
+          },
+          {
+            "type": "every",
+            "named": true
+          },
+          {
+            "type": "files",
+            "named": true
+          },
+          {
+            "type": "intConstant",
+            "named": true
+          },
+          {
+            "type": "like",
+            "named": true
+          },
+          {
+            "type": "list",
+            "named": true
+          },
+          {
+            "type": "listIndex",
+            "named": true
+          },
+          {
+            "type": "log",
+            "named": true
+          },
+          {
+            "type": "map",
+            "named": true
+          },
+          {
+            "type": "mapAccessor",
+            "named": true
+          },
+          {
+            "type": "modOperation",
+            "named": true
+          },
+          {
+            "type": "mulOperation",
+            "named": true
+          },
+          {
+            "type": "nodeLike",
+            "named": true
+          },
+          {
+            "type": "patternAccumulate",
+            "named": true
+          },
+          {
+            "type": "patternAfter",
+            "named": true
+          },
+          {
+            "type": "patternAnd",
+            "named": true
+          },
+          {
+            "type": "patternAny",
+            "named": true
+          },
+          {
+            "type": "patternAs",
+            "named": true
+          },
+          {
+            "type": "patternBefore",
+            "named": true
+          },
+          {
+            "type": "patternContains",
+            "named": true
+          },
+          {
+            "type": "patternIfElse",
+            "named": true
+          },
+          {
+            "type": "patternIncludes",
+            "named": true
+          },
+          {
+            "type": "patternLimit",
+            "named": true
+          },
+          {
+            "type": "patternMaybe",
+            "named": true
+          },
+          {
+            "type": "patternNot",
+            "named": true
+          },
+          {
+            "type": "patternOr",
+            "named": true
+          },
+          {
+            "type": "patternOrElse",
+            "named": true
+          },
+          {
+            "type": "patternWhere",
+            "named": true
+          },
+          {
+            "type": "range",
+            "named": true
+          },
+          {
+            "type": "regexPattern",
+            "named": true
+          },
+          {
+            "type": "rewrite",
+            "named": true
+          },
+          {
+            "type": "sequential",
+            "named": true
+          },
+          {
+            "type": "some",
+            "named": true
+          },
+          {
+            "type": "stringConstant",
+            "named": true
+          },
+          {
+            "type": "subOperation",
+            "named": true
+          },
+          {
+            "type": "top",
+            "named": true
+          },
+          {
+            "type": "undefined",
+            "named": true
+          },
+          {
+            "type": "underscore",
+            "named": true
+          },
+          {
+            "type": "variable",
+            "named": true
+          },
+          {
+            "type": "within",
+            "named": true
+          }
+        ]
       }
     }
   },
@@ -14241,6 +14511,10 @@
   },
   {
     "type": "!=",
+    "named": false
+  },
+  {
+    "type": "\"",
     "named": false
   },
   {
@@ -14332,6 +14606,10 @@
     "named": false
   },
   {
+    "type": "`",
+    "named": false
+  },
+  {
     "type": "after",
     "named": false
   },
@@ -14354,10 +14632,6 @@
   {
     "type": "ast",
     "named": false
-  },
-  {
-    "type": "backtickSnippet",
-    "named": true
   },
   {
     "type": "before",
@@ -14404,8 +14678,8 @@
     "named": true
   },
   {
-    "type": "doubleQuoteSnippet",
-    "named": true
+    "type": "elixir",
+    "named": false
   },
   {
     "type": "else",
@@ -14472,6 +14746,10 @@
     "named": false
   },
   {
+    "type": "kotlin",
+    "named": false
+  },
+  {
     "type": "language",
     "named": false
   },
@@ -14488,7 +14766,7 @@
     "named": false
   },
   {
-    "type": "log(",
+    "type": "log",
     "named": false
   },
   {
@@ -14514,6 +14792,10 @@
   {
     "type": "name",
     "named": true
+  },
+  {
+    "type": "nix",
+    "named": false
   },
   {
     "type": "noBraces",
@@ -14556,15 +14838,19 @@
     "named": false
   },
   {
-    "type": "range(",
+    "type": "r\"",
     "named": false
   },
   {
-    "type": "rawBacktickSnippet",
-    "named": true
+    "type": "range",
+    "named": false
   },
   {
-    "type": "regex",
+    "type": "raw`",
+    "named": false
+  },
+  {
+    "type": "regexInner",
     "named": true
   },
   {
@@ -14585,6 +14871,10 @@
   },
   {
     "type": "signedIntConstant",
+    "named": true
+  },
+  {
+    "type": "snippetContent",
     "named": true
   },
   {
@@ -14648,6 +14938,10 @@
     "named": true
   },
   {
+    "type": "vue",
+    "named": false
+  },
+  {
     "type": "where",
     "named": false
   },
@@ -14656,7 +14950,15 @@
     "named": false
   },
   {
+    "type": "xml",
+    "named": false
+  },
+  {
     "type": "yaml",
+    "named": false
+  },
+  {
+    "type": "zig",
     "named": false
   },
   {

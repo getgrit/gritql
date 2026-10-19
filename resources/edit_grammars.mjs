@@ -52,6 +52,7 @@ const allLanguages = [
   "json",
   "kotlin",
   "markdown",
+  "nix",
   "php",
   "python",
   "ruby",
@@ -102,6 +103,27 @@ const copyMvGrammar = async (lang, dest) => {
   console.log(`Copied ${from} to ${to}`);
 };
 
+const copyMvCorpus = async (lang) => {
+  const from = path.join(
+    METAVARIABLE_GRAMMARS_DIR,
+    `${lang}-metavariable-corpus.txt`
+  );
+  const corpusDir = path.join(
+    LANGUAGE_METAVARIABLES_DIR,
+    `tree-sitter-${lang}/corpus`
+  );
+
+  try {
+    await fs.access(from);
+  } catch (error) {
+    if (error.code === "ENOENT") return;
+    throw error;
+  }
+
+  await fs.mkdir(corpusDir, { recursive: true });
+  await fs.copyFile(from, path.join(corpusDir, "grit_metavariables.txt"));
+};
+
 /**
  * Copy in the build.rs file for the language,
  * if an override is needed
@@ -120,11 +142,11 @@ const copyMyBuild = async (c, lang, dest) =>
   );
 
 const treeSitterGenerate = async (dir, buildWasm = true) => {
-  const andMaybeBuildWasm = buildWasm ? "&& tree-sitter build --wasm " : "";
+  const andMaybeBuildWasm = buildWasm ? "&& tree-sitter build-wasm " : "";
   await execPromise(
     `tree-sitter generate ${andMaybeBuildWasm} && echo "Generated grammar for ${dir}"`,
     path.join(LANGUAGE_METAVARIABLES_DIR, `tree-sitter-${dir}`)
-  ).catch((e) => console.log("swallowed error, ", e));
+  );
 };
 
 const copyNodeTypes = async (lang, dest) =>
@@ -148,6 +170,25 @@ const copyWasmParser = async (lang, prefix) =>
     )
   );
 
+const silenceUnusedParameterWarnings = async (dir) => {
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+
+  await Promise.all(
+    entries.map(async (entry) => {
+      const entryPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await silenceUnusedParameterWarnings(entryPath);
+      } else if (entry.name === "build.rs") {
+        const contents = await fs.readFile(entryPath, "utf8");
+        const updated = contents.replaceAll("-Wno-unused-parameter", "-w");
+        if (updated !== contents) {
+          await fs.writeFile(entryPath, updated);
+        }
+      }
+    })
+  );
+};
+
 async function rsyncGrammars(language) {
   //If a language is given, only sync that language
   //Otherwise, rm -rf the entire language-metavariables dir and sync it from scratch
@@ -160,7 +201,7 @@ async function rsyncGrammars(language) {
     return;
   }
 
-  await fs.rmdir(mvDir, { recursive: true });
+  await fs.rm(mvDir, { recursive: true, force: true });
   await fs.mkdir(mvDir, { recursive: true });
 
   const submodulesDir = path.join(
@@ -169,14 +210,15 @@ async function rsyncGrammars(language) {
       ? `language-submodules/${treeSitterLang}/.`
       : "language-submodules/."
   );
-  const blobsToExclude = [".git*", "**/*/example", "**/*/test", "**/*/corpus"];
+  const blobsToExclude = [".git*", "example", "test", "corpus"];
+  const exclusions = blobsToExclude
+    .map((blob) => `--exclude="${blob}"`)
+    .join(" ");
 
   console.log(`Copying ${submodulesDir} to ${mvDir}`);
 
   await execPromise(
-    `rsync -r -l "${submodulesDir}/." "${mvDir}/." --exclude={${blobsToExclude.join(
-      ","
-    )}}`
+    `rsync -r -l ${exclusions} "${submodulesDir}/." "${mvDir}/."`
   );
 }
 
@@ -187,6 +229,7 @@ async function rsyncGrammars(language) {
 async function buildSimpleLanguage(log, language) {
   log(`Copying files`);
   await copyMvGrammar(language);
+  await copyMvCorpus(language);
   log(`Running tree-sitter generate`);
   await treeSitterGenerate(language);
   log(`Copying output node types`);
@@ -424,9 +467,7 @@ async function buildLanguage(language) {
     await buildSimpleLanguage(log, language);
   }
 
-  await execPromise(
-    `find "${tsLangDir}" -name "build.rs" -exec sed -i '' -e 's/Wno-unused-parameter/w/g' {} \\;`
-  );
+  await silenceUnusedParameterWarnings(tsLangDir);
 
   log(`Done`);
 }
@@ -445,4 +486,7 @@ async function run() {
   await Promise.all(languagesTobuild.map(buildLanguage));
 }
 
-run().catch(console.error);
+run().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

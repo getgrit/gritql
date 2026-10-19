@@ -20,6 +20,7 @@ tree-sitter-json = { path = "../../resources/language-metavariables/tree-sitter-
 tree-sitter-solidity = { path = "../../resources/language-metavariables/tree-sitter-solidity", optional = true }
 tree-sitter-yaml = { path = "../../resources/language-metavariables/tree-sitter-yaml", optional = true }
 tree-sitter-hcl = { path = "../../resources/language-metavariables/tree-sitter-hcl", optional = true }
+tree-sitter-nix = { path = "../../resources/language-metavariables/tree-sitter-nix", optional = true }
 tree-sitter-typescript = { path = "../../resources/language-metavariables/tree-sitter-typescript", optional = true }
 tree-sitter-javascript = { path = "../../resources/language-metavariables/tree-sitter-javascript", optional = true }
 tree-sitter-html = { path = "../../resources/language-metavariables/tree-sitter-html", optional = true }
@@ -62,6 +63,7 @@ builtin-parser = [
     "tree-sitter-solidity",
     "tree-sitter-yaml",
     "tree-sitter-hcl",
+    "tree-sitter-nix",
     "tree-sitter-typescript",
     "tree-sitter-javascript",
     "tree-sitter-html",

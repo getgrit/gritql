@@ -1,0 +1,35 @@
+[formatter.nix]
+command = "nixpkgs-fmt"
+includes = ["*.nix"]
+excludes = ["test/**.nix"]
+
+[formatter.prettier]
+command = "prettier"
+options = ["--write"]
+includes = [
+    "*.css",
+    "*.html",
+    "*.js",
+    "*.json",
+    "*.jsx",
+    "*.md",
+    "*.mdx",
+    "*.scss",
+    "*.ts",
+]
+excludes = ["src/**.json"]
+
+[formatter.rust]
+command = "rustfmt"
+options = ["--edition", "2018"]
+includes = ["*.rs"]
+
+[formatter.c]
+command = "clang-format"
+options = [ "-i" ]
+includes = [ "*.c", "*.cpp", "*.cc", "*.h", "*.hpp" ]
+excludes = [
+  "bindings/node/binding.cc",
+  "src/parser.c",
+  "src/tree_sitter/parser.h",
+]

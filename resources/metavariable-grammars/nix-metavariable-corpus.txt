@@ -1,0 +1,114 @@
+==================
+Expression metavariable
+==================
+
+µvalue
+
+---
+
+(source_code
+  (grit_metavariable))
+
+==================
+Binding metavariables
+==================
+
+{
+  µbinding
+  services.µname.enable = µvalue;
+  inherit µattr;
+  nested = { µ... };
+}
+
+---
+
+(source_code
+  (attrset_expression
+    (binding_set
+      (grit_metavariable)
+      (binding
+        (attrpath
+          (identifier)
+          (grit_metavariable)
+          (identifier))
+        (grit_metavariable))
+      (inherit
+        (inherited_attrs
+          (grit_metavariable)))
+      (binding
+        (attrpath
+          (identifier))
+        (attrset_expression
+          (binding_set
+            (grit_metavariable)))))))
+
+==================
+Interpolation metavariable
+==================
+
+"value: ${µvalue}"
+
+---
+
+(source_code
+  (string_expression
+    (string_fragment)
+    (interpolation
+      (grit_metavariable))))
+
+==================
+Universal function metavariables
+==================
+
+µname: µbody
+
+---
+
+(source_code
+  (function_expression
+    (grit_metavariable)
+    (grit_metavariable)))
+
+==================
+Formal function metavariables
+==================
+
+{ µformal ? µdefault }: µbody
+
+---
+
+(source_code
+  (function_expression
+    (formals
+      (formal
+        (grit_metavariable)
+        (grit_metavariable)))
+    (grit_metavariable)))
+
+==================
+Strings and comments remain opaque
+==================
+
+{
+  text = "µnot_meta";
+  # µnot_meta
+  block = /* µnot_meta */ true;
+}
+
+---
+
+(source_code
+  (attrset_expression
+    (binding_set
+      (binding
+        (attrpath
+          (identifier))
+        (string_expression
+          (string_fragment)))
+      (comment)
+      (binding
+        (attrpath
+          (identifier))
+        (comment)
+        (variable_expression
+          (identifier))))))

@@ -58,7 +58,7 @@
 	url = https://github.com/getgrit/tree-sitter-facade.git
 [submodule "tree-sitter-gritql"]
 	path = vendor/tree-sitter-gritql
-	url = https://github.com/getgrit/tree-sitter-gritql.git
+	url = https://github.com/kubijo/tree-sitter-gritql.git
 [submodule "resources/language-submodules/tree-sitter-toml"]
 	path = resources/language-submodules/tree-sitter-toml
 	url = https://github.com/ikatyang/tree-sitter-toml
@@ -68,3 +68,6 @@
 [submodule "resources/language-submodules/tree-sitter-kotlin"]
 	path = resources/language-submodules/tree-sitter-kotlin
 	url = https://github.com/fwcd/tree-sitter-kotlin
+[submodule "resources/language-submodules/tree-sitter-nix"]
+	path = resources/language-submodules/tree-sitter-nix
+	url = https://github.com/nix-community/tree-sitter-nix.git

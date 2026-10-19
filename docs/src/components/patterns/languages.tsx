@@ -78,6 +78,10 @@ export const languageConfigs = {
     title: 'Markdown',
     icon: SiMarkdown,
   },
+  [Language.Nix]: {
+    title: 'Nix',
+    icon: HiOutlineCode,
+  },
   [Language.Python]: {
     title: 'Python',
     icon: SiPython,

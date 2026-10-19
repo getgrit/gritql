@@ -24,6 +24,7 @@ pub struct PatternsDirectory {
     elixir: BTreeMap<String, String>,
     solidity: BTreeMap<String, String>,
     hcl: BTreeMap<String, String>,
+    nix: BTreeMap<String, String>,
     yaml: BTreeMap<String, String>,
     sql: BTreeMap<String, String>,
     vue: BTreeMap<String, String>,
@@ -82,6 +83,7 @@ impl PatternsDirectory {
             elixir: BTreeMap::new(),
             solidity: BTreeMap::new(),
             hcl: BTreeMap::new(),
+            nix: BTreeMap::new(),
             yaml: BTreeMap::new(),
             sql: BTreeMap::new(),
             vue: BTreeMap::new(),
@@ -115,6 +117,7 @@ impl PatternsDirectory {
             PatternLanguage::Elixir => &mut self.elixir,
             PatternLanguage::Solidity => &mut self.solidity,
             PatternLanguage::Hcl => &mut self.hcl,
+            PatternLanguage::Nix => &mut self.nix,
             PatternLanguage::Yaml => &mut self.yaml,
             PatternLanguage::Sql => &mut self.sql,
             PatternLanguage::Vue => &mut self.vue,
@@ -145,6 +148,7 @@ impl PatternsDirectory {
             PatternLanguage::Elixir => &self.elixir,
             PatternLanguage::Solidity => &self.solidity,
             PatternLanguage::Hcl => &self.hcl,
+            PatternLanguage::Nix => &self.nix,
             PatternLanguage::Yaml => &self.yaml,
             PatternLanguage::Sql => &self.sql,
             PatternLanguage::Vue => &self.vue,
@@ -272,6 +276,8 @@ impl PatternsDirectory {
         self.solidity = other.solidity;
         other.hcl.extend(mem::take(&mut self.hcl));
         self.hcl = other.hcl;
+        other.nix.extend(mem::take(&mut self.nix));
+        self.nix = other.nix;
         other.yaml.extend(mem::take(&mut self.yaml));
         self.yaml = other.yaml;
         other.sql.extend(mem::take(&mut self.sql));

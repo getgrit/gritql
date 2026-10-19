@@ -30,6 +30,7 @@ export const Language = {
 	Js: "JS",
 	Json: "JSON",
 	Markdown: "MARKDOWN",
+	Nix: "NIX",
 	Php: "PHP",
 	Python: "PYTHON",
 	Ruby: "RUBY",

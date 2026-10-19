@@ -1778,6 +1778,71 @@ fn nested_dir() -> Result<()> {
 }
 
 #[test]
+fn applies_nix_rewrite_by_filename() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("check_nix", true)?;
+
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd
+        .current_dir(dir.clone())
+        .arg("apply")
+        .arg("disable_nix_service")
+        .arg("test.nix");
+
+    let output = apply_cmd.output()?;
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        String::from_utf8(output.stderr)?
+    );
+
+    let content = fs_err::read_to_string(dir.join("test.nix"))?;
+    assert_eq!(
+        content,
+        r#"{
+  # This comment and spacing must survive.
+  services.nginx.enable = false;
+
+  packages.${system} = pkgs.hello;
+  message = "package: ${pkgs.hello}";
+  nested = { answer = 42; };
+  script = ''
+    services.fake.enable = true;
+  '';
+}
+"#
+    );
+
+    Ok(())
+}
+
+#[test]
+fn warns_on_malformed_nix() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("check_nix", true)?;
+    fs_err::write(dir.join("malformed.nix"), "{ broken =")?;
+
+    let mut apply_cmd = get_test_cmd()?;
+    apply_cmd
+        .current_dir(dir)
+        .arg("apply")
+        .arg("disable_nix_service")
+        .arg("malformed.nix")
+        .arg("--force");
+
+    let output = apply_cmd.output()?;
+    assert!(
+        output.status.success(),
+        "Command didn't finish successfully: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let stdout = String::from_utf8(output.stdout)?;
+    assert!(stdout.contains("Error parsing source code"));
+    assert!(stdout.contains("malformed.nix"));
+
+    Ok(())
+}
+
+#[test]
 fn handles_invalid_ffi() -> Result<()> {
     let (_temp_dir, dir) = get_fixture("foreign_js", true)?;
 
@@ -3249,17 +3314,23 @@ def cool(name):
 
 #[test]
 fn apply_remote_pattern() -> Result<()> {
-    let (_temp_dir, dir) = get_fixture("valibot", false)?;
+    let (temp_dir, dir) = get_fixture("valibot", false)?;
 
     let mut cmd = get_test_cmd()?;
 
     cmd.arg("apply")
-        .arg("github.com/fabian-hiller/valibot#migrate_to_v0_31_0")
+        .arg("github.com/open-circle/valibot#migrate_to_v0_31_0")
+        .env(GRIT_GLOBAL_DIR_ENV, temp_dir.path().join(".grit"))
         .current_dir(dir.clone());
 
     let output = cmd.output()?;
 
-    assert!(output.status.success(), "Command should have succeeded");
+    assert!(
+        output.status.success(),
+        "Command should have succeeded:\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr),
+    );
 
     let test_file = dir.join("test.js");
     let content: String = fs_err::read_to_string(test_file)?;

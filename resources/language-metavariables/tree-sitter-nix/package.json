@@ -1,0 +1,40 @@
+{
+  "name": "tree-sitter-nix",
+  "version": "0.0.2",
+  "description": "Tree Sitter grammar for Nix",
+  "main": "bindings/node",
+  "scripts": {
+    "build": "npm run generate && node-gyp build",
+    "generate": "tree-sitter generate --abi 13",
+    "test": "tree-sitter test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nix-community/tree-sitter-nix.git"
+  },
+  "author": "Charles Strahan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nix-community/tree-sitter-nix/issues"
+  },
+  "homepage": "https://github.com/nix-community/tree-sitter-nix#readme",
+  "dependencies": {
+    "nan": "^2.17.0"
+  },
+  "devDependencies": {},
+  "tree-sitter": [
+    {
+      "file-types": [
+        "nix"
+      ],
+      "highlights": [
+        "queries/highlights.scm"
+      ],
+      "injection-regex": "^(nix)$",
+      "locals": [
+        "queries/locals.scm"
+      ],
+      "scope": "source.nix"
+    }
+  ]
+}

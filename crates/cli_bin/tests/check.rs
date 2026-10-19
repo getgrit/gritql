@@ -51,6 +51,16 @@ fn grit_dir_with_pattern_config_js() -> Result<()> {
 }
 
 #[test]
+fn grit_dir_with_pattern_config_nix() -> Result<()> {
+    let (_temp_dir, dir) = get_fixture("check_nix", true)?;
+    let output = check_cmd_output(dir, &[], None)?;
+    assert!(output.contains("Fix available"));
+    assert!(output.contains("test.nix"));
+    assert!(!output.contains("test.txt"));
+    Ok(())
+}
+
+#[test]
 fn grit_dir_multiple_languages_single_target_js() -> Result<()> {
     let (_temp_dir, dir) = get_fixture("check_multiple_targeted", true)?;
     let output = check_cmd_output(dir, &["test.js"], None)?;

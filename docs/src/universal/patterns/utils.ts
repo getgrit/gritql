@@ -63,6 +63,8 @@ export function getEditorLangIdFromLanguage(lang: any): string {
       return 'typescript';
     case 'JSON':
       return 'json';
+    case 'NIX':
+      return 'nix';
     case 'PYTHON':
       return 'py';
     case 'RUBY':
@@ -87,4 +89,3 @@ export function getEditorLangIdFromLanguage(lang: any): string {
       return 'unknown';
   }
 }
-

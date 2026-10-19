@@ -73,6 +73,7 @@ pub mod kotlin;
 pub mod language;
 pub mod markdown_block;
 pub mod markdown_inline;
+pub mod nix;
 mod notebooks;
 pub mod php;
 mod php_like;

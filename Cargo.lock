@@ -2681,6 +2681,7 @@ dependencies = [
  "tree-sitter-json",
  "tree-sitter-kotlin",
  "tree-sitter-md",
+ "tree-sitter-nix",
  "tree-sitter-php",
  "tree-sitter-python",
  "tree-sitter-ruby",
@@ -4855,6 +4856,14 @@ checksum = "e8ddffe35a0e5eeeadf13ff7350af564c6e73993a24db62caee1822b185c2600"
 [[package]]
 name = "tree-sitter-md"
 version = "0.1.7"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-nix"
+version = "0.0.1"
 dependencies = [
  "cc",
  "tree-sitter",

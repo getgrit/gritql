@@ -15,6 +15,7 @@ use crate::{
     },
     markdown_block::MarkdownBlock,
     markdown_inline::MarkdownInline,
+    nix::Nix,
     php::Php,
     php_only::PhpOnly,
     python::Python,
@@ -71,6 +72,7 @@ pub enum PatternLanguage {
     Elixir,
     Solidity,
     Hcl,
+    Nix,
     Yaml,
     Sql,
     Vue,
@@ -101,6 +103,7 @@ impl fmt::Display for PatternLanguage {
             PatternLanguage::Elixir => write!(f, "elixir"),
             PatternLanguage::Solidity => write!(f, "solidity"),
             PatternLanguage::Hcl => write!(f, "hcl"),
+            PatternLanguage::Nix => write!(f, "nix"),
             PatternLanguage::Yaml => write!(f, "yaml"),
             PatternLanguage::Sql => write!(f, "sql"),
             PatternLanguage::Vue => write!(f, "vue"),
@@ -138,6 +141,7 @@ impl ValueEnum for PatternLanguage {
             Self::Elixir,
             Self::Solidity,
             Self::Hcl,
+            Self::Nix,
             Self::Yaml,
             Self::Sql,
             Self::Vue,
@@ -244,6 +248,7 @@ impl PatternLanguage {
             "elixir" => Some(Self::Elixir),
             "sol" | "solidity" => Some(Self::Solidity),
             "hcl" => Some(Self::Hcl),
+            "nix" => Some(Self::Nix),
             "yaml" => Some(Self::Yaml),
             "sql" => Some(Self::Sql),
             "vue" => Some(Self::Vue),
@@ -307,6 +312,7 @@ impl PatternLanguage {
             PatternLanguage::Elixir => &["ex", "exs"],
             PatternLanguage::Solidity => &["sol"],
             PatternLanguage::Hcl => &["hcl", "tf", "tfvars"],
+            PatternLanguage::Nix => &["nix"],
             PatternLanguage::Yaml => &["yaml", "yml"],
             PatternLanguage::Sql => &["sql"],
             PatternLanguage::Vue => &["vue"],
@@ -337,6 +343,7 @@ impl PatternLanguage {
             PatternLanguage::Elixir => Some("ex"),
             PatternLanguage::Solidity => Some("sol"),
             PatternLanguage::Hcl => Some("tf"),
+            PatternLanguage::Nix => Some("nix"),
             PatternLanguage::Yaml => Some("yaml"),
             PatternLanguage::Sql => Some("sql"),
             PatternLanguage::Vue => Some("vue"),
@@ -366,6 +373,7 @@ impl PatternLanguage {
             "ex" | "exs" => Some(Self::Elixir),
             "sol" => Some(Self::Solidity),
             "hcl" | "tf" | "tfvars" => Some(Self::Hcl),
+            "nix" => Some(Self::Nix),
             "yaml" | "yml" => Some(Self::Yaml),
             "sql" => Some(Self::Sql),
             "vue" => Some(Self::Vue),
@@ -414,6 +422,7 @@ impl PatternLanguage {
             PatternLanguage::Elixir => Ok(TargetLanguage::Elixir(Elixir::new(Some(lang)))),
             PatternLanguage::Solidity => Ok(TargetLanguage::Solidity(Solidity::new(Some(lang)))),
             PatternLanguage::Hcl => Ok(TargetLanguage::Hcl(Hcl::new(Some(lang)))),
+            PatternLanguage::Nix => Ok(TargetLanguage::Nix(Nix::new(Some(lang)))),
             PatternLanguage::Yaml => Ok(TargetLanguage::Yaml(Yaml::new(Some(lang)))),
             PatternLanguage::Sql => Ok(TargetLanguage::Sql(Sql::new(Some(lang)))),
             PatternLanguage::Vue => Ok(TargetLanguage::Vue(Vue::new(Some(lang)))),
@@ -770,6 +779,7 @@ generate_target_language! {
     Elixir,
     Solidity,
     Hcl,
+    Nix,
     Yaml,
     Vue,
     Toml,
@@ -799,6 +809,7 @@ impl fmt::Display for TargetLanguage {
             TargetLanguage::Elixir(_) => write!(f, "elixir"),
             TargetLanguage::Solidity(_) => write!(f, "solidity"),
             TargetLanguage::Hcl(_) => write!(f, "hcl"),
+            TargetLanguage::Nix(_) => write!(f, "nix"),
             TargetLanguage::Yaml(_) => write!(f, "yaml"),
             TargetLanguage::Sql(_) => write!(f, "sql"),
             TargetLanguage::Vue(_) => write!(f, "vue"),
@@ -852,6 +863,7 @@ impl TargetLanguage {
             | TargetLanguage::Ruby(_)
             | TargetLanguage::Elixir(_)
             | TargetLanguage::Toml(_)
+            | TargetLanguage::Nix(_)
             | TargetLanguage::Yaml(_) => Regex::new(r"#\s*(.*)").unwrap(),
             TargetLanguage::Hcl(_) => Regex::new(r"(#|//)\s*(.*)").unwrap(),
             TargetLanguage::Html(_)
@@ -947,5 +959,18 @@ mod tests {
             .unwrap()
             .to_module_language();
         assert_eq!(lang, PatternLanguage::Go);
+    }
+
+    #[test]
+    fn detect_nix_language_and_extension() {
+        assert_eq!(
+            PatternLanguage::from_string("nix", None),
+            Some(PatternLanguage::Nix)
+        );
+        assert_eq!(
+            PatternLanguage::from_extension("nix"),
+            Some(PatternLanguage::Nix)
+        );
+        assert_eq!(PatternLanguage::Nix.get_default_extension(), Some("nix"));
     }
 }

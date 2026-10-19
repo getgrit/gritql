@@ -1,4 +1,4 @@
-use std::{env, path, process};
+use std::{env, path, process, sync::OnceLock};
 
 use anyhow::Result;
 use assert_cmd::cargo::CommandCargoExt;
@@ -8,6 +8,46 @@ use marzano_gritmodule::config::GRIT_GLOBAL_DIR_ENV;
 use tempfile::tempdir;
 
 pub const BIN_NAME: &str = "grit";
+
+pub struct TestGlobalDir {
+    _temp_dir: tempfile::TempDir,
+    grit_dir: path::PathBuf,
+}
+
+impl TestGlobalDir {
+    pub fn path(&self) -> &path::Path {
+        &self.grit_dir
+    }
+}
+
+static TEST_GLOBAL_DIR: OnceLock<std::result::Result<TestGlobalDir, String>> = OnceLock::new();
+
+fn test_global_dir() -> Result<&'static TestGlobalDir> {
+    let result = TEST_GLOBAL_DIR.get_or_init(|| {
+        let temp_dir = tempfile::tempdir().map_err(|err| err.to_string())?;
+        let grit_dir = temp_dir.path().join(".grit");
+        let mut init_cmd = Command::cargo_bin(BIN_NAME).map_err(|err| err.to_string())?;
+        init_cmd.env("GRIT_TELEMETRY_DISABLED", "true");
+        init_cmd.env(GRIT_GLOBAL_DIR_ENV, &grit_dir);
+        init_cmd.args(["init", "--global"]);
+
+        let output = init_cmd.output().map_err(|err| err.to_string())?;
+        if output.status.success() {
+            Ok(TestGlobalDir {
+                _temp_dir: temp_dir,
+                grit_dir,
+            })
+        } else {
+            Err(format!(
+                "Failed to initialize the test Grit global directory:\nstdout:\n{}\nstderr:\n{}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr),
+            ))
+        }
+    });
+
+    result.as_ref().map_err(|err| anyhow::anyhow!("{err}"))
+}
 
 #[allow(dead_code)]
 pub const INSTA_FILTERS: &[(&str, &str)] = &[(
@@ -19,6 +59,7 @@ pub const INSTA_FILTERS: &[(&str, &str)] = &[(
 pub fn get_test_cmd() -> Result<Command> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.env("GRIT_TELEMETRY_DISABLED", "true");
+    cmd.env(GRIT_GLOBAL_DIR_ENV, test_global_dir()?.path());
     Ok(cmd)
 }
 
@@ -26,6 +67,7 @@ pub fn get_test_cmd() -> Result<Command> {
 pub fn get_test_process_cmd() -> Result<process::Command> {
     let mut cmd = process::Command::cargo_bin(BIN_NAME)?;
     cmd.env("GRIT_TELEMETRY_DISABLED", "true");
+    cmd.env(GRIT_GLOBAL_DIR_ENV, test_global_dir()?.path());
     Ok(cmd)
 }
 
@@ -74,15 +116,23 @@ pub fn get_fixture(
 
 // Used in tests
 #[allow(dead_code)]
-pub fn run_init_cmd(cwd: &dyn AsRef<path::Path>) -> tempfile::TempDir {
+pub fn run_init_cmd(cwd: &dyn AsRef<path::Path>) -> &'static TestGlobalDir {
+    let cwd = cwd.as_ref();
+    let grit_global_dir = test_global_dir().unwrap();
+
+    let has_local_config = cwd.ancestors().any(|dir| dir.join(".grit").exists());
+    let has_git_dir = cwd.ancestors().any(|dir| dir.join(".git").exists());
+    if !has_local_config && !has_git_dir {
+        // A non-repository fixture can only initialize the global config, which is ready already.
+        return grit_global_dir;
+    }
+
     let mut init_cmd = match Command::cargo_bin(BIN_NAME) {
         Ok(cmd) => cmd,
         Err(err) => {
             panic!("Failed to find binary {}: {}", BIN_NAME, err);
         }
     };
-    let grit_global_dir = tempfile::tempdir().unwrap();
-
     init_cmd.env("GRIT_TELEMETRY_DISABLED", "true");
     init_cmd.env(GRIT_GLOBAL_DIR_ENV, grit_global_dir.path());
     init_cmd.current_dir(cwd);
@@ -96,7 +146,9 @@ pub fn run_init_cmd(cwd: &dyn AsRef<path::Path>) -> tempfile::TempDir {
 
     assert!(
         output.status.success(),
-        "Init command didn't finish successfully"
+        "Init command didn't finish successfully:\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr),
     );
 
     grit_global_dir
