@@ -13,6 +13,7 @@ Found 8 testable patterns.
        done();
     -  console.log("This should be removed by grit patterns test --update");
      }
+    -
     
 
 ✓ no_eq_null
