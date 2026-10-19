@@ -1,0 +1,365 @@
+---
+title: GritQL Reference
+_note_: This reference guide is for AI prompting. Keep it concise.
+---
+
+Grit is a query language for searching and modifying codebases.
+
+<table>
+<thead>
+<tr>
+<th>Syntax</th>
+<th>Explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+
+```grit frame="none"
+`console.log($_)`
+```
+
+</td>
+<td>The **root** of a Grit query is a pattern.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+`console.log`
+```
+
+</td>
+<td>A **pattern** can be a code snippet surrounded in backticks.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+`console.log($message)`
+```
+
+</td>
+<td>Code snippets can contain **metavariables** prefixed with `$`.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+$_
+```
+
+</td>
+<td>The **anonymous metavariable** can be bound to without a name.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+$...
+```
+
+</td>
+<td>`$...` is a **spread metavariable** that matches 0 or more nodes.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+call_expression()
+```
+
+</td>
+<td>**[AST nodes](/language/patterns/#syntax-tree-ast-nodes)** can also be used as patterns.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+call_expression(callee=$callee)
+```
+
+</td>
+<td>AST nodes can specify **fields**, where each field value is bound to a pattern or metavariable.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+`console.log($message)` =>
+`console.warn($message)`
+```
+
+</td>
+<td>A **[rewrite](/language/patterns/#rewrite-operator)** is a pattern followed by a `=>` followed by a pattern. Rewrites are usable as patterns.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+$x => .
+```
+
+</td>
+<td>The `.` is an **empty/null pattern**, it replaces the matched node with nothing.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+r"console\.(log\|warn)"($method)
+```
+
+</td>
+<td>**Regular expressions** can be used as patterns, prefixed with `r"` and followed by capture variables.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+$list = [1, 2, 3]
+$one = $list[0]
+$three = $list[-1]
+```
+
+</td>
+<td>**Lists** can be accessed via index, where negative indices count from the end of the list.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+$map = { a: 1, b: 2, c: 3 }
+$c = $map.c
+```
+
+</td>
+<td>**Maps** can be accessed via dot notation. Map keys must be strings.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+or {`console.log`, `console.warn`}
+```
+
+</td>
+<td>**Compound patterns** can be combined with `and`, `or`, and `any` clauses.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+not `console.log`
+```
+
+</td>
+<td>**`not` clauses** can be used to negate a pattern.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+maybe `console.log`
+```
+
+</td>
+<td>**`maybe` clauses** can be used to optionally match against a pattern, without failing the query.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+contains `console`
+```
+
+</td>
+<td>**`contains` clauses** can be used to match any node that contains a specific pattern by traversing downwards through the syntax tree.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+within `function() { $_ }`
+```
+
+</td>
+<td>**`within` clauses** search up the syntax tree for a matching node.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+after `console.warn($_)`
+```
+
+</td>
+<td>**`after` clauses** search for a pattern that occurs after another pattern.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+`console.log($message)` as $log
+```
+
+</td>
+<td>**`as` clauses** can assign a pattern to a metavariable.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+$statements <: some `console.log($_)`
+```
+
+</td>
+<td>**`some`** matches lists where at least one element matches a pattern.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+`console.log($message)` where { ... }
+```
+
+</td>
+<td>A **`where` clause** can be added after a pattern to introduce conditions that restrict when the pattern matches.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+`console.log($message)` where {
+  $message <: "Hello world"
+}
+```
+
+</td>
+<td>Inside the `where` clause, the **`<:` operator** is used to match metavariables against a pattern.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+`console.log($_)` where {
+  $new = "Hello world"
+} => `console.log($new)`
+```
+
+</td>
+<td>The where block can also **assign values** to metavariables using `=`. Variables can be lists, code snippets, or strings.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+`console.log($message)` where {
+  $new = "Hello",
+  $new += "world"
+} => $new
+```
+
+</td>
+<td>Strings and lists can be appended to using `+=`. (ex. )</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+`function() { $body }` where {
+  $body <: contains bubble {
+    `console.log($body)` =>
+    `console.warn($body)`
+  }
+}
+```
+
+</td>
+<td>The default scope of a GritQL pattern is global. The **`bubble` clause** can be used to create a new scope within which all metavariables are isolated from surrounding code.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+`function $name() { $body }` where {
+  $body <: contains bubble($name) {
+    `console.log($message)` =>
+    `console.warn($message, $name)`
+  }
+}
+```
+
+</td>
+<td>The `bubble` clause optionally accepts **arguments**, which can be used to "pierce" the bubble by allowing metavariables to preserve the values they had outside the bubble scope.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+`console.log` limit 10
+```
+
+</td>
+<td>The [**`limit` clause**](/language/modifiers/#limit-clause) can be used to limit the number of files returned by a query.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+// this is a comment
+```
+
+</td>
+<td>**Comments** in GritQL start with `//` and are ignored by the parser.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+sequential {
+  `console.log` => `console.error`,
+  `console.warn` => `console.info`
+}
+```
+
+</td>
+<td>`sequential` clauses can be used to contain multiple patterns that are applied to the same file in order.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+function custom_example($name) {
+  return `name: $name`
+}
+```
+
+</td>
+<td>**[Custom functions](/language/functions/)** can be used to define reusable right-side values.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+function mod($value) js {
+  return $value % 2
+}
+```
+
+</td>
+<td>Custom functions be written in **JavaScript** by adding the `js` keyword parameters.</td>
+</tr>
+<tr>
+<td>
+
+```grit frame="none"
+range(start_line=1, end_line=3)
+```
+
+</td>
+<td>The **`range` pattern** is used to target code by its location within the file. It takes parameters `start_line`, `end_line`, `start_column`, and `end_column` to specify the range.</td>
+</tr>
+</tbody>
+</table>

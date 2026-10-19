@@ -1,0 +1,33 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+
+import Playground from '../playground/Playground';
+---
+
+<StarlightPage
+  frontmatter={{
+    title: 'Playground',
+    description: 'Write GritQL patterns and run them on sample code in your browser.',
+    template: 'splash',
+    editUrl: false,
+  }}
+  hasSidebar={false}
+>
+  <div class="playground-container not-content">
+    <Playground client:only="react" />
+  </div>
+</StarlightPage>
+
+<style is:global>
+  /* Let the editors use the full width of the page (overrides `html:not([data-has-sidebar])`). */
+  :root:not([data-has-sidebar]) {
+    --sl-content-width: 112.5rem;
+  }
+</style>
+
+<style>
+  .playground-container {
+    height: 85vh;
+    min-height: 30rem;
+  }
+</style>

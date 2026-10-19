@@ -13,7 +13,7 @@ A high-level overview of tools you need to have installed:
 - C/C++ compiler. macOS: [Xcode Command Line Tools](https://download.developer.apple.com/Developer_Tools/Command_Line_Tools_for_Xcode_15.3/Command_Line_Tools_for_Xcode_15.3.dmg) via `xcode-select --install`, Linux: [gcc](https://learnubuntu.com/install-gcc/), Windows: [Microsoft Visual C++](https://visualstudio.microsoft.com/vs/features/cplusplus/).
 - Emscripten: a C/C++ compiler toolchain for WASM. Install v3.1.56 with [`emsdk`](https://emscripten.org/docs/getting_started/downloads.html).
 - Node.js runtime: `node`, `npm`, `npx` are used to generate parsers from `grammar.js` files. You'll need [`node`](https://nodejs.org/en/download) v18.5.0 or newer.
-- Yarn package manager. You'll need [`yarn`](https://classic.yarnpkg.com/en/docs/install) (classic). Install v1.22.19 with `npm install --global yarn`.
+- pnpm package manager. You'll need [`pnpm`](https://pnpm.io/installation). Install it with `npm install --global pnpm`; it switches to the version pinned in `package.json`.
 - Tree-Sitter CLI: provides [`tree-sitter`](https://github.com/tree-sitter/tree-sitter/tree/master/cli) binary for testing grammars. Install v0.22.2 with `npm install --global tree-sitter-cli`.
 - Terraform CLI. Install [`terraform`](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) with `brew tap hashicorp/tap && brew install hashicorp/tap/terraform`.
 - For snapshot testing review, you should install the cargo insta plugin: `curl -LsSf https://insta.rs/install.sh | sh` (<https://insta.rs/docs/cli/>)

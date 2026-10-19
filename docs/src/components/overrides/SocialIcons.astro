@@ -1,0 +1,54 @@
+---
+import Default from '@astrojs/starlight/components/SocialIcons.astro';
+
+const links = [
+  { label: 'Tutorial', href: '/tutorials/gritql/' },
+  { label: 'Playground', href: '/playground/' },
+  { label: 'Docs', href: '/language/overview/' },
+];
+
+const withoutTrailingSlash = (path: string) => path.replace(/\/$/, '');
+const currentPath = withoutTrailingSlash(Astro.url.pathname);
+---
+
+<nav aria-label="Main">
+  <ul>
+    {
+      links.map(({ label, href }) => (
+        <li>
+          <a
+            href={href}
+            aria-current={currentPath === withoutTrailingSlash(href) ? 'page' : undefined}
+          >
+            {label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+<Default />
+
+<style>
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.25rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  a {
+    font-size: var(--sl-text-sm);
+    font-weight: 500;
+    color: var(--sl-color-gray-2);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  a:hover,
+  a[aria-current='page'] {
+    color: var(--sl-color-white);
+  }
+</style>

@@ -1,0 +1,154 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "grit",
+  "displayName": "GritQL",
+  "scopeName": "source.grit",
+  "aliases": ["gritql"],
+  "patterns": [{ "include": "#statement" }],
+  "repository": {
+    "statement": {
+      "patterns": [
+        { "include": "#comment" },
+        { "include": "#language-declaration" },
+        { "include": "#engine-declaration" },
+        { "include": "#definition" },
+        { "include": "#snippet" },
+        { "include": "#regex" },
+        { "include": "#string" },
+        { "include": "#metavariable" },
+        { "include": "#number" },
+        { "include": "#constant" },
+        { "include": "#keyword" },
+        { "include": "#call" },
+        { "include": "#named-argument" },
+        { "include": "#operator" }
+      ]
+    },
+    "comment": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.grit",
+          "begin": "//",
+          "end": "$"
+        },
+        {
+          "name": "comment.block.grit",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "language-declaration": {
+      "match": "^\\s*(language)\\s+([a-z_]+)",
+      "captures": {
+        "1": { "name": "keyword.control.grit" },
+        "2": { "name": "meta.language.grit entity.name.namespace.grit" }
+      }
+    },
+    "engine-declaration": {
+      "match": "^\\s*(engine)\\s+([a-z_]+)",
+      "captures": {
+        "1": { "name": "keyword.control.grit" },
+        "2": { "name": "meta.engine.grit entity.name.namespace.grit" }
+      }
+    },
+    "definition": {
+      "match": "\\b(private\\s+)?(pattern|predicate|function)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": { "name": "storage.modifier.grit" },
+        "2": { "name": "storage.type.grit" },
+        "3": { "name": "entity.name.function.grit" }
+      }
+    },
+    "snippet": {
+      "name": "string.quoted.other.snippet.grit snippet.grit",
+      "begin": "(?:\\b(raw|js|ts|css|json|html|py|python|rb|ruby|rs|rust|go|java|sol|hcl|sql|yaml|md|markdown|toml|php|cs)\\s*)?(`)",
+      "beginCaptures": {
+        "1": { "name": "markup.quote.literal.language.grit" },
+        "2": { "name": "punctuation.definition.string.begin.grit" }
+      },
+      "end": "`",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.end.grit" }
+      },
+      "patterns": [
+        { "include": "#snippet-escape" },
+        { "include": "#interpolated-metavariable" }
+      ]
+    },
+    "snippet-escape": {
+      "name": "constant.character.escape.grit",
+      "match": "\\\\[`$\\\\]"
+    },
+    "interpolated-metavariable": {
+      "patterns": [
+        {
+          "match": "(\\$)(\\.\\.\\.|[A-Za-z_][A-Za-z0-9_]*|\\[[A-Za-z_][A-Za-z0-9_]*\\])",
+          "captures": {
+            "1": { "name": "variable.startsign.grit variable.interpolated.grit" },
+            "2": { "name": "variable.interpolated.grit" }
+          }
+        }
+      ]
+    },
+    "regex": {
+      "name": "string.regexp.grit",
+      "begin": "\\b(r)(\")",
+      "beginCaptures": {
+        "1": { "name": "storage.type.regexp.grit" },
+        "2": { "name": "punctuation.definition.string.begin.grit" }
+      },
+      "end": "\"",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.end.grit" }
+      },
+      "patterns": [
+        { "name": "constant.character.escape.grit", "match": "\\\\." }
+      ]
+    },
+    "string": {
+      "name": "string.quoted.double.grit",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        { "name": "constant.character.escape.grit", "match": "\\\\." },
+        { "include": "#interpolated-metavariable" }
+      ]
+    },
+    "metavariable": {
+      "match": "(\\$)(\\.\\.\\.|[A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": { "name": "variable.startsign.grit variable.other.metavariable.grit" },
+        "2": { "name": "variable.other.metavariable.grit" }
+      }
+    },
+    "number": {
+      "name": "constant.numeric.grit",
+      "match": "(?<![A-Za-z_$])-?\\d+(\\.\\d+)?\\b"
+    },
+    "constant": {
+      "name": "constant.language.grit",
+      "match": "\\b(true|false|undefined)\\b"
+    },
+    "keyword": {
+      "name": "keyword.control.grit",
+      "match": "\\b(and|or|not|maybe|any|some|every|contains|within|until|after|before|as|where|if|else|bubble|limit|sequential|multifile|orelse|includes|like|return|language|engine)\\b"
+    },
+    "call": {
+      "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(?=\\()",
+      "captures": {
+        "1": { "name": "entity.name.function.grit" }
+      }
+    },
+    "named-argument": {
+      "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(?==(?![=>]))",
+      "captures": {
+        "1": { "name": "variable.parameter.grit" }
+      }
+    },
+    "operator": {
+      "name": "keyword.operator.grit",
+      "match": "<:|=>|\\+=|==|!=|<=|>=|!|=|<|>|\\+|-|\\*|/|%"
+    }
+  }
+}

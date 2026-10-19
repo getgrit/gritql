@@ -1,0 +1,86 @@
+.playground {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+  padding: 0.5rem;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background-color: #262626;
+}
+
+.playground-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 0.375rem;
+}
+
+.playground-panel > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #000;
+  color: #e5e5e5;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.playground-status {
+  color: #9ca3af;
+}
+
+.playground-editor {
+  flex: 1;
+  min-height: 0;
+}
+
+.playground-error {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 10;
+  padding: 0.25rem 1rem;
+  background-color: #b92623;
+  color: #fff;
+  font-family: var(--__sl-font-mono, monospace);
+  font-size: 0.875rem;
+  animation: playground-slide-up 200ms ease-in-out forwards;
+}
+
+@keyframes playground-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.match-highlight {
+  background-color: #564aff;
+  color: #000;
+}
+
+/* When the pattern only matches (without rewriting), show the input full width. */
+.playground-diff.is-match .editor.original,
+.playground-diff.is-match .original-in-monaco-diff-editor,
+.playground-diff.is-match .original-in-monaco-diff-editor .overflow-guard,
+.playground-diff.is-match .original-in-monaco-diff-editor .editor-scrollable {
+  width: 100% !important;
+}
+
+.playground-diff.is-match .editor.modified {
+  display: none;
+}
+
+/* Monaco shows "Cannot edit in read-only editor" over the output. See microsoft/monaco-editor#1742. */
+.playground .monaco-editor-overlaymessage {
+  display: none !important;
+}

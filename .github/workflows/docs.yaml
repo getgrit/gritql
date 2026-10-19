@@ -1,4 +1,4 @@
-name: Deploy Next.js docs to GitHub Pages
+name: Deploy docs to GitHub Pages
 
 on:
   # Runs on pushes targeting the main branch
@@ -49,7 +49,7 @@ jobs:
         id: setup_pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
-      - name: Build with Next.js
+      - name: Build with Astro
         run: pnpm run build
         working-directory: docs
         env:
@@ -58,7 +58,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: ./docs/out
+          path: ./docs/dist
 
   deploy:
     environment:

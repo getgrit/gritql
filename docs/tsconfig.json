@@ -1,72 +1,13 @@
 {
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist"],
   "compilerOptions": {
-    "target": "es2022",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "noUncheckedIndexedAccess": true,
-    "isolatedModules": true,
     "jsx": "react-jsx",
-    "incremental": true,
-    "rootDir": ".",
+    "jsxImportSource": "react",
+    "resolveJsonModule": true,
     "paths": {
-      "@/markdoc/*": [
-        "./src/markdoc/*"
-      ],
-      "@/components/*": [
-        "./src/components/*"
-      ],
-      "@/hooks/*": [
-        "./src/hooks/*"
-      ],
-      "@/templates/*": [
-        "./src/templates/*"
-      ],
-      "@/custom-types/*": [
-        "./src/custom-types/*"
-      ],
-      "@/statics/*": [
-        "./src/statics/*"
-      ],
-      "@/styles/*": [
-        "./src/styles/*"
-      ],
-      "@/libs/*": [
-        "./src/libs/*"
-      ],
-      "@/universal/*": [
-        "./src/universal/*"
-      ]
-    },
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "types": [
-      "node"
-    ]
-  },
-  "include": [
-    "next-env.d.ts",
-    "src/**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "**/*.tsx",
-    ".next/dev/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+      "~/*": ["./src/*"]
+    }
+  }
 }

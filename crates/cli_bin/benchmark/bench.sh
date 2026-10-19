@@ -26,30 +26,30 @@ echo "Running these tests: $test_filter"
 
 skip_build=${5:-false}
 
+# Calculate the bin path relative to the repo path
+script_dir="$(dirname "$(readlink -f "$0")")"
+workspace_dir="${script_dir}/../../.."
+fixtures_dir="${script_dir}/../fixtures"
+bin_path="${workspace_dir}/target/release/grit"
 
-# Run yarn build release
+# Build the release binary
 if [ "$skip_build" == "false" ]; then
-    echo "Running yarn build release"
-    yarn build
+    echo "Building the release binary"
+    cargo build --release -p grit --manifest-path "${workspace_dir}/Cargo.toml"
 
-    # Check if yarn build was successful
+    # Check if the build was successful
     if [ $? -ne 0 ]; then
-        echo "Yarn build failed"
+        echo "Build failed"
         exit 1
     fi
 else
     echo "Skipping bin build"
 fi
 
-# Calculate the bin path relative to the repo path
-script_dir="$(dirname "$(readlink -f "$0")")"
-fixtures_dir="${script_dir}/../fixtures"
-bin_path="${script_dir}/../../../../../target/release/grit"
-
 # Create a temp directory for the repo
 temp_repo_path=$(mktemp -d)
 
-# Run hyperfine against the yarn build
+# Run hyperfine against the release build
 if [ "$output_format" == "md" ]; then
     # Extract last part of repo_path as filename
     filename=$(basename "$(dirname "$repo_path")")-$(basename "$repo_path")

@@ -1,0 +1,30 @@
+---
+interface Props {
+  title: string;
+  boxed?: boolean;
+  className?: string;
+}
+
+const { title, boxed = false, className } = Astro.props;
+---
+
+<details class:list={['collapse', { boxed }, className]}>
+  <summary>{title}</summary>
+  <div class="collapse-content">
+    <slot />
+  </div>
+</details>
+
+<style>
+  .collapse.boxed {
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .collapse summary {
+    font-weight: 600;
+    color: var(--sl-color-white);
+    cursor: pointer;
+  }
+</style>
