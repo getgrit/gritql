@@ -1,0 +1,35 @@
+version: 0.0.1
+patterns:
+  - name: windows_path_match
+    body: |
+      engine marzano(0.1)
+      language js
+
+      file($name, $body) where {
+        $name <: `src/index.js`
+      }
+    samples:
+      - input: |
+          // @filename: src/index.js
+
+          console.log('hello from unix path');
+        output: |
+          // @filename: src/index.js
+
+          console.log('hello from unix path');
+      - input: |
+          // @filename: src\index.js
+
+          console.log('hello from windows path');
+        output: |
+          // @filename: src\index.js
+
+          console.log('hello from windows path');
+      - input: |
+          // @filename: src\nested\index.js
+
+          // This should not match
+      - input: |
+          // @filename: other/index.js
+
+          // This should not match

@@ -327,6 +327,22 @@ fn tests_match_only_with_file_name() -> Result<()> {
 }
 
 #[test]
+fn test_windows_path_match() -> Result<()> {
+    // Verifies the fix for GitHub Issue #639:
+    // Filename checks should work regardless of Windows (`\`) vs Unix (`/`) separators.
+    let (_temp_dir, dir) = get_fixture("windows_path_match", false)?;
+
+    let mut test = get_test_cmd()?;
+    test.arg("patterns").arg("test").current_dir(dir);
+
+    let output = test.output()?;
+
+    assert!(output.status.success());
+
+    Ok(())
+}
+
+#[test]
 fn tests_python_pattern_with_file_name() -> Result<()> {
     let (_temp_dir, dir) = get_fixture("python_filename", false)?;
 

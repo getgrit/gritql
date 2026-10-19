@@ -61,16 +61,20 @@ impl MatchResult {
 
 /// Make a path look the way provolone expects it to
 /// Removes leading "./", or the root path if it's provided
-fn normalize_path_in_project<'a>(path: &'a str, root_path: Option<&'a PathBuf>) -> &'a str {
-    if let Some(root_path) = root_path {
+fn normalize_path_in_project(path: &str, root_path: Option<&PathBuf>) -> String {
+    // First, trim project prefix / leading "./"
+    let trimmed = if let Some(root_path) = root_path {
         let basic = path
             .strip_prefix(root_path.to_string_lossy().as_ref())
             .unwrap_or(path);
-        // Stip the leading / if it's there
+        // Strip the leading '/' if it's there
         basic.strip_prefix('/').unwrap_or(basic)
     } else {
         path.strip_prefix("./").unwrap_or(path)
-    }
+    };
+
+    // Finally, ensure we always use forward slashes for path separators
+    trimmed.replace('\\', "/")
 }
 
 impl MatchResult {
@@ -860,5 +864,25 @@ mod tests {
     fn test_normalize_path_in_project_already_normalized() {
         let path = "src/main.rs";
         assert_eq!(normalize_path_in_project(path, None), "src/main.rs");
+    }
+
+    #[test]
+    fn test_normalize_path_in_project_windows_separators() {
+        // Simulate a Windows-style relative path with back-slashes
+        let path = ".\\src\\module\\main.rs";
+        assert_eq!(
+            normalize_path_in_project(path, None),
+            "src/module/main.rs"
+        );
+    }
+
+    #[test]
+    fn test_normalize_path_in_project_mixed_separators() {
+        // A path that has mixed separators should still normalize correctly
+        let path = "./src\\nested/main.rs";
+        assert_eq!(
+            normalize_path_in_project(path, None),
+            "src/nested/main.rs"
+        );
     }
 }
