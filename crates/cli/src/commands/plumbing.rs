@@ -372,6 +372,7 @@ pub(crate) async fn run_plumbing(
                     workflow_id: None,
                     verbose: true,
                     watch: false,
+                    inputs: vec![],
                 },
                 emitter,
                 execution_id.clone(),
