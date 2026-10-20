@@ -34,7 +34,7 @@ serde = { version = "1.0.164", features = ["derive"] }
 sha2 = { version = "0.10.8" }
 rayon = { version = "1.8.0" }
 log = { version = "0.4.20" }
-rand = { version = "0.8.5" }
+rand = { version = "0.8.6" }
 path-absolutize = { version = "3.1.1", optional = false, features = [
   "use_unix_paths_on_wasm",
 ] }
